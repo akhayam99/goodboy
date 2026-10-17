@@ -216,9 +216,9 @@ describe('Analyze with the real store and SQLite', () => {
     await waitFor(() => expect(store.getState().sessionPhaseRuns[seed.sessionId]?.length).toBe(1));
   });
   it.each([
-    { phase: 'running' as const, label: 'Debugger is analyzing', canRetry: false },
-    { phase: 'proposal' as const, label: 'Debugger proposes a fix', canRetry: false },
-    { phase: 'no-fix' as const, label: 'Debugger found no fix', canRetry: true },
+    { phase: 'running' as const, label: 'Analyzing', canRetry: false },
+    { phase: 'proposal' as const, label: 'Fix proposed', canRetry: false },
+    { phase: 'no-fix' as const, label: 'No fix found', canRetry: true },
   ])('derives $label from the agent and transcript', async ({ phase, label, canRetry }) => {
     show({ phase });
     expect(screen.getByText(label)).toBeDefined();

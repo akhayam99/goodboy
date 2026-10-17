@@ -69,12 +69,36 @@ describe('the terminal drawer scenes', () => {
     }
   });
 
+  it('swaps the scope from the picker and keeps the shells of the old one running', async () => {
+    renderScene({ name: 'terminal-drawer-session' });
+    await settle();
+    const before = store.getState().terminalTabs[SESSION_ID] ?? [];
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Terminal folder' }));
+    fireEvent.click(await screen.findByRole('option', { name: /notify-relay/ }));
+    await settle();
+
+    const drawer = store.getState().drawer;
+    expect(drawer?.kind).toBe('terminal');
+    const after = store.getState().terminalTabs[SESSION_ID] ?? [];
+    expect(after.map((tab) => tab.id)).toEqual(before.map((tab) => tab.id));
+    expect(drawer?.kind === 'terminal' ? drawer.payload.terminalId : null).toMatch(/::t2$/);
+    expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
+      'notify-relay · hl/surface-retry-state',
+    );
+  });
+
   it('opens the session terminal in a right drawer with a tab strip and icon buttons', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
 
-    const drawer = screen.getByRole('region', { name: 'payments-api' });
-    expect(within(drawer).getByTestId('worktree-chip').textContent).toBe('gb-7k2q9x');
+    const drawer = screen.getByRole('region', { name: 'Terminal' });
+    expect(within(drawer).queryByTestId('worktree-chip')).toBeNull();
+    expect(within(drawer).getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
+      'payments-api · hl/fix-webhook-idempotency',
+    );
+    expect(within(drawer).getByRole('heading', { name: 'Terminal' })).toBeDefined();
+    expect(within(drawer).queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
     expect(within(drawer).getByRole('button', { name: 'Open on Terminal page' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'Close' })).toBeDefined();
     expect(within(drawer).getByRole('button', { name: 'New tab on payments-api' })).toBeDefined();
@@ -85,13 +109,14 @@ describe('the terminal drawer scenes', () => {
     );
   });
 
-  it('lets the folder chip shrink before the title and keeps the buttons apart', async () => {
+  it('names the scope in the header, never the worktree folder hash', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
 
-    const drawer = screen.getByRole('region', { name: 'payments-api' });
-    const chip = within(drawer).getByTestId('worktree-chip');
-    expect(chip.textContent).toBe('gb-7k2q9x');
+    const drawer = screen.getByRole('region', { name: 'Terminal' });
+    const picker = within(drawer).getByRole('combobox', { name: 'Terminal folder' });
+    expect(picker.textContent).toBe('payments-api · hl/fix-webhook-idempotency');
+    expect(picker.textContent).not.toContain('gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
     expect(
       header?.contains(within(drawer).getByRole('button', { name: 'Open on Terminal page' })),
@@ -102,7 +127,7 @@ describe('the terminal drawer scenes', () => {
   it('switches tabs inside the drawer without leaving the worktree', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
-    const drawer = screen.getByRole('region', { name: 'payments-api' });
+    const drawer = screen.getByRole('region', { name: 'Terminal' });
 
     fireEvent.click(within(drawer).getByRole('tab', { name: 'dev server' }));
     await settle();
@@ -125,14 +150,14 @@ describe('the terminal drawer scenes', () => {
     expect(tabs).toHaveLength(before + 1);
     expect(tabs.at(-1)?.cwd).toBe('~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x');
     expect(tabs.at(-1)?.title).toBe('shell 2');
-    const drawer = screen.getByRole('region', { name: 'payments-api' });
+    const drawer = screen.getByRole('region', { name: 'Terminal' });
     expect(within(drawer).getAllByRole('tab')).toHaveLength(3);
   });
 
   it('keeps the drawer open while another tab of the worktree remains', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
-    const drawer = screen.getByRole('region', { name: 'payments-api' });
+    const drawer = screen.getByRole('region', { name: 'Terminal' });
 
     fireEvent.click(within(drawer).getByRole('button', { name: 'Close dev server' }));
     await settle();
@@ -147,7 +172,7 @@ describe('the terminal drawer scenes', () => {
     const before = Object.values(store.getState().terminalTabs).flat().length;
 
     fireEvent.click(
-      within(screen.getByRole('region', { name: 'payments-api' })).getByRole('button', {
+      within(screen.getByRole('region', { name: 'Terminal' })).getByRole('button', {
         name: 'Close',
       }),
     );
@@ -159,7 +184,7 @@ describe('the terminal drawer scenes', () => {
   it('moves the same worktree and tab to the Terminal page from the drawer', async () => {
     renderScene({ name: 'terminal-drawer-session' });
     await settle();
-    const drawer = screen.getByRole('region', { name: 'payments-api' });
+    const drawer = screen.getByRole('region', { name: 'Terminal' });
     fireEvent.click(within(drawer).getByRole('tab', { name: 'dev server' }));
     await settle();
 
@@ -195,14 +220,18 @@ describe('the terminal drawer scenes', () => {
     renderScene({ name: 'terminal-drawer-page' });
     await settle();
 
-    const groups = screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'));
-    expect(groups).toEqual(['Stop retried webhooks posting a second credit', 'Workspace folder']);
-    const session = screen.getByRole('region', {
+    const terminals = screen.getByRole('list', { name: 'Terminals' });
+    const headings = within(terminals).getAllByRole('heading', { level: 2 });
+    expect(headings.map((heading) => heading.textContent)).toEqual([
+      'Stop retried webhooks posting a second credit',
+      'Workspace folder',
+    ]);
+    const session = within(terminals).getByRole('list', {
       name: 'Stop retried webhooks posting a second credit',
     });
-    const rows = within(session).getAllByRole('listitem');
-    expect(rows).toHaveLength(2);
-    expect(within(rows[0] ?? document.body).getByLabelText('2 terminals')).toBeDefined();
-    expect(within(rows[1] ?? document.body).getByLabelText('1 terminal')).toBeDefined();
+    expect(within(session).getAllByRole('listitem')).toHaveLength(2);
+    expect(headings[0]?.closest('li')?.querySelector('[data-list-grid-count]')?.textContent).toBe(
+      '2',
+    );
   });
 });

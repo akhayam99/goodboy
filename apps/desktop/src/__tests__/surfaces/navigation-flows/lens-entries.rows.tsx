@@ -58,7 +58,7 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     name: 'right click board card: Open',
     covers: ['navigate', 'rightclick:session:Open'],
     open: async (ctx) => {
-      await clickButton(/^Board/);
+      await clickButton(/^Sessions/);
       await openObjectMenu(await sessionRow(ctx));
       await runMenuItem(/^Open$/);
     },
@@ -76,9 +76,9 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
         throw new Error('the seeded session has no standalone agent');
       }
       const [name] = await screen.findAllByText(agent.name, undefined, WAIT);
-      const card = name?.closest('[data-agent-card]');
+      const card = name?.closest('[data-agent-row]');
       if (card === null || card === undefined) {
-        throw new Error('the agents lens shows no agent card');
+        throw new Error('the agents lens shows no agent row');
       }
       await openObjectMenu(card);
       await runMenuItem(/^Open agent/);
@@ -91,7 +91,7 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     },
   },
   ...CRUMB_ROWS.map((row): Row => ({
-    name: `crumb menu: ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
+    name: `session level page: ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `crumb:${row.label}`, `lens:${row.lens ?? 'overview'}`],
     ...(row.seed !== undefined && { seed: row.seed }),
     open: async (ctx) => {
@@ -105,7 +105,7 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     name: `palette: Open ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `palette:Open ${row.label}`],
     ...(row.seed !== undefined && { seed: row.seed }),
-    open: () => openPalette(new RegExp(`^Open ${row.label}`), `Open ${row.label}`),
+    open: () => openPalette(new RegExp(`^Open ${row.label}`, 'i'), `Open ${row.label}`),
     lands: both(lens(row.lens), row.lands),
   })),
 ];

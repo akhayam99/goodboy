@@ -178,7 +178,7 @@ describe('evaluateMobileMerge', () => {
     [{ mergeable: false }, 'Conflicts with main. Rebase on main from the Branch header.'],
     [{ reviewDecision: 'review_required' }, 'Needs an approving review.'],
     [{ reviewDecision: 'changes_requested' }, 'A reviewer asked for changes.'],
-    [{ checks: 'failure' }, '1 check failing.'],
+    [{ checks: 'failure' }, 'Blocked by a failing check.'],
     [{ checks: 'pending' }, 'Checks are still running.'],
   ] as const satisfies ReadonlyArray<readonly [Partial<PullRequestState>, string]>)(
     'refuses %j with the desktop reason',
@@ -207,7 +207,7 @@ describe('evaluateMobileMerge', () => {
         facts: factsOf({ checks: [run('unit tests', 'failure'), run('lint', 'success')] }),
         method: 'squash',
       }),
-    ).toEqual({ ok: false, reason: '1 check failing: unit tests.' });
+    ).toEqual({ ok: false, reason: 'Blocked by unit tests.' });
     expect(
       evaluateMobileMerge({
         facts: factsOf({ checks: [run('unit tests', 'pending'), run('lint', 'pending')] }),

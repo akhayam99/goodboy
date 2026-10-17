@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ResolvePublicationPreview } from '@goodboy/types';
 import { BranchPage } from '../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from './WorktreeSceneColumn';
 import { useAppStore } from '../../../../store';
 import {
   EXPANDED_THREAD_ID,
@@ -103,7 +104,9 @@ export const BranchSceneShell = ({
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
       <div className="mx-auto h-full" style={width === null ? undefined : { width }}>
-        <BranchPage session={SESSION} workingDir={null} />
+        <WorktreeSceneColumn>
+          <BranchPage session={SESSION} workingDir={null} />
+        </WorktreeSceneColumn>
       </div>
     </main>
   );

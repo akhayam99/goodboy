@@ -10,6 +10,8 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'cancel-turn', pattern: /\bCancel turn\b/i, use: NAMES.stop },
   { id: 'verbose', pattern: /\bVerbose\b/, use: NAMES.long },
   { id: 'spend-limit', pattern: /\b[Ss]pend limit\b/i, use: NAMES.spendCap },
+  { id: 'spend-cap', pattern: /\bspend cap\b/i, use: NAMES.spendCap },
+  { id: 'spend-caps', pattern: /\bspend caps\b/i, use: NAMES.spendCaps },
   { id: 'budget-rules', pattern: /\b[Bb]udget rules\b/i, use: NAMES.spendCaps },
   { id: 'copy-as-brief', pattern: /\bCopy as brief\b/i, use: NAMES.copyContext },
   { id: 'budget-cap', pattern: /\b[Bb]udget cap\b/i, use: NAMES.spendCap },
@@ -92,7 +94,6 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     use: NAMES.rebaseOn,
   },
   { id: 'new-worktree', pattern: /\bNew worktree\b/i, use: NAMES.newBranch },
-  { id: 'remove-worktree', pattern: /\bRemove worktree\b/i, use: NAMES.closeBranch },
   { id: 'close-worktree', pattern: /\bClose worktree\b/i, use: NAMES.closeBranch },
   {
     id: 'waiting-for-approval',

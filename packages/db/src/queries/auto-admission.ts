@@ -1,6 +1,6 @@
 import type { AgentId, ArtifactId, AutoDelegationId, AutoTreeId } from '@goodboy/types';
 import type { GuardedStatement, PlainStatement } from '../client';
-import { autoRemainingUsdSql, AUTO_USD_EPSILON } from './auto-reservations';
+import { autoBudgetCoversSql } from './auto-reservations';
 import { AUTO_OWNER_GUARD_SQL, autoOwnerGuardParams } from './auto-trees';
 
 export type AutoAdmissionLimits = Readonly<{
@@ -49,7 +49,7 @@ export const autoAdmissionTreeStatement = ({
       AND delegations_used + ? <= ? AND attempts_used + ? <= ?
       AND (SELECT COUNT(*) FROM auto_delegations
             WHERE tree_id = auto_trees.id AND state <> 'settled') + ? <= ?
-      AND ${autoRemainingUsdSql({ treeRef: 'auto_trees.id' })} + ${AUTO_USD_EPSILON} >= ?`,
+      AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
     count,
@@ -214,7 +214,7 @@ export const autoResumeTreeStatement = ({
       AND phase IN ('deciding', 'delegating') AND stop_state = 'none' AND active_run_id = ?
       AND ${AUTO_OWNER_GUARD_SQL}
       AND ? < hard_deadline_at AND attempts_used + 1 <= ?
-      AND ${autoRemainingUsdSql({ treeRef: 'auto_trees.id' })} + ${AUTO_USD_EPSILON} >= ?`,
+      AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
     treeId,

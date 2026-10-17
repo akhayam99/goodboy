@@ -19,6 +19,7 @@ import { SessionArchiveBridge } from './features/session/components/SessionArchi
 import { SessionRefreshBridge } from './features/session/components/SessionRefreshBridge';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { ShellLeft } from './app/components/SideColumn/ShellLeft';
+import { SessionFrame } from './app/components/SessionRail/SessionFrame';
 import type { ColumnActions } from './app/components/SideColumn/columnDoors';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -288,6 +289,7 @@ export const App = () => {
         <AppShell
           topBar={
             <AppTopBar
+              sidebar={{ isCollapsed: sessionSidebar.isCollapsed, onToggle: sessionSidebar.toggle }}
               onOpenSpend={openSpend}
               onOpenScript={openScript}
               openProviderId={settingsProviderId}
@@ -301,7 +303,6 @@ export const App = () => {
               currentSessionId={currentSession?.id ?? null}
               isDraftShown={isDraftShown}
               actions={columnActions}
-              onToggle={sessionSidebar.toggle}
               settingsSlotRef={setSettingsColumnSlot}
             />
           }
@@ -325,7 +326,6 @@ export const App = () => {
                   currentSessionId={currentSession?.id ?? null}
                   isDraftShown={isDraftShown}
                   actions={columnActions}
-                  onToggle={sessionSidebar.toggle}
                   variant="peek"
                   onNavigate={sessionSidebar.closePeek}
                 />
@@ -339,7 +339,7 @@ export const App = () => {
           main={
             <div className="relative h-full w-full">
               {currentSession ? (
-                <div className="relative h-full w-full">
+                <SessionFrame session={currentSession}>
                   {deferredRenderedIds.map((id) => (
                     <KeepAliveWorkSurface
                       key={id}
@@ -347,7 +347,7 @@ export const App = () => {
                       isActive={id === deferredActiveId}
                     />
                   ))}
-                </div>
+                </SessionFrame>
               ) : currentWorkspace && isDraftShown ? (
                 <SessionDraftPane workspaceId={currentWorkspace.id} />
               ) : currentWorkspace ? (

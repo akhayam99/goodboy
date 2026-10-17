@@ -3,7 +3,7 @@
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -82,10 +82,13 @@ describe('the explore changes scenes', () => {
   it('explore-drawerchanges shows the diff of the file next to the tree', async () => {
     mount({ id: 'explore-drawerchanges' });
 
-    expect(await screen.findByRole('button', { name: /Open in Files/ }, WAIT)).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'Changes' }).getAttribute('aria-selected')).toBe('true');
+    expect(await screen.findByRole('tab', { name: 'Changes', selected: true }, WAIT)).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Preview' })).toBeDefined();
     expect(screen.queryByRole('tab', { name: 'Source' })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Copy path' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /Open in Files/ })).toBeNull();
+    const drawer = screen.getByRole('region', { name: 'rounding.ts' });
+    fireEvent.click(within(drawer).getByRole('button', { name: 'Actions for rounding.ts' }));
+    expect(screen.getByRole('menuitem', { name: 'Open in Files' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Copy path' })).toBeDefined();
   });
 });

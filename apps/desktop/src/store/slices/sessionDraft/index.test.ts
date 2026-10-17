@@ -155,7 +155,7 @@ describe('session draft slice', () => {
   it('creates the session in the project the draft carries', async () => {
     h.slice.patchSessionDraft({
       workspaceId: WORKSPACE_ID,
-      patch: { projectId: 'project-ledger-core' as ProjectId },
+      patch: { projectIds: ['project-ledger-core' as ProjectId] },
     });
 
     await h.slice.startSessionFromDraft({
@@ -318,7 +318,7 @@ describe('session draft slice', () => {
   it('links the issue, mounts the issue project and runs the workflow in one gesture', async () => {
     h.slice.patchSessionDraft({
       workspaceId: WORKSPACE_ID,
-      patch: { projectId: 'project-other' as ProjectId },
+      patch: { projectIds: ['project-other' as ProjectId] },
     });
     const run = vi.fn(async (_session: unknown) => undefined);
     await h.slice.startSessionFromDraft({
@@ -358,7 +358,7 @@ describe('session draft slice', () => {
   it('starts a task with no project when the issue mount is set to none', async () => {
     h.slice.patchSessionDraft({
       workspaceId: WORKSPACE_ID,
-      patch: { projectId: 'project-other' as ProjectId },
+      patch: { projectIds: ['project-other' as ProjectId] },
     });
     await h.slice.startSessionFromDraft({
       workspaceId: WORKSPACE_ID,

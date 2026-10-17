@@ -23,7 +23,6 @@ import {
   toggleArtifactMountId,
 } from '../../artifactMountChoice';
 import type { GeneratedArtifactKind } from '../../artifactCollection';
-import { ArtifactAttachmentsField } from './ArtifactAttachmentsField';
 import { ArtifactBasedOnField, type ArtifactRunOption } from './ArtifactBasedOnField';
 import { ArtifactBriefField } from './ArtifactBriefField';
 import { ArtifactChoiceRows } from './ArtifactChoiceRows';
@@ -43,6 +42,20 @@ type Props = {
   readonly actionsHost?: HTMLElement | null;
   readonly onClose: () => void;
   readonly onStarted: (agentId: AgentId) => void;
+};
+
+type EmptyBriefParams = {
+  readonly kind: GeneratedArtifactKind;
+  readonly choiceLabel: string | null;
+};
+
+const emptyBriefLine = ({ kind, choiceLabel }: EmptyBriefParams): string => {
+  if (kind === 'wireframe') {
+    return 'Leave it empty to draw the screens the session goal needs.';
+  }
+  return choiceLabel === null
+    ? 'Leave it empty for the default report.'
+    : `Leave it empty for a ${choiceLabel.toLowerCase()}.`;
 };
 
 type RunOptionsParams = {
@@ -232,6 +245,10 @@ export const ArtifactCreationPane = ({
       });
   };
 
+  const choiceLabel =
+    adapter.choice.options.find((option) => option.value === choice)?.label ?? null;
+  const placeholder = `${adapter.brief.placeholder} ${emptyBriefLine({ kind, choiceLabel })}`;
+
   return (
     <>
       <div data-testid="artifact-creation-pane" className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
@@ -242,23 +259,13 @@ export const ArtifactCreationPane = ({
         )}
         <ArtifactBriefField
           label={adapter.brief.label}
-          placeholder={adapter.brief.placeholder}
+          placeholder={placeholder}
           value={brief}
           goal={goal.editorText}
           isGoalPending={isGoalPending}
-          defaultRequest={adapter.defaultRequest({ choice })}
+          files={files}
           onChange={handle.setBrief}
           onSubmit={generate}
-        />
-        <ArtifactAttachmentsField
-          attachments={attachments}
-          worktree={files.worktree}
-          isDragging={files.isDragging}
-          note={files.note}
-          composerRef={files.composerRef}
-          fileInputRef={files.fileInputRef}
-          onFileInputChange={files.onFileInputChange}
-          onRemove={files.remove}
         />
         <section className="flex min-w-0 flex-col gap-2">
           <SectionHeader label={adapter.choice.label} />
@@ -280,26 +287,6 @@ export const ArtifactCreationPane = ({
             />
           </section>
         )}
-        {mountOptions.length === 0 ? null : (
-          <section className="flex min-w-0 flex-col gap-2">
-            <SectionHeader label="Read from" />
-            <ArtifactMountRows
-              options={mountOptions}
-              value={mountIds}
-              onChange={(mountId) =>
-                handle.setMountIds(toggleArtifactMountId({ mountIds, mountId }))
-              }
-            />
-          </section>
-        )}
-        <ArtifactBasedOnField
-          runs={runs}
-          value={basedOn}
-          scopeLine={
-            basedOn.kind === 'workflow-run' ? adapter.scopeCopy.run : adapter.scopeCopy.session
-          }
-          onChange={setBasedOn}
-        />
         <ArtifactContextDisclosure
           rows={inventory}
           truncations={preview.truncations}
@@ -307,7 +294,28 @@ export const ArtifactCreationPane = ({
           isCollecting={preview.status === 'collecting'}
           isOpen={isContextOpen}
           onOpenChange={setIsContextOpen}
-        />
+        >
+          {mountOptions.length === 0 ? null : (
+            <section className="flex min-w-0 flex-col gap-2">
+              <SectionHeader label="Read from" />
+              <ArtifactMountRows
+                options={mountOptions}
+                value={mountIds}
+                onChange={(mountId) =>
+                  handle.setMountIds(toggleArtifactMountId({ mountIds, mountId }))
+                }
+              />
+            </section>
+          )}
+          <ArtifactBasedOnField
+            runs={runs}
+            value={basedOn}
+            scopeLine={
+              basedOn.kind === 'workflow-run' ? adapter.scopeCopy.run : adapter.scopeCopy.session
+            }
+            onChange={setBasedOn}
+          />
+        </ArtifactContextDisclosure>
       </div>
       <Docked node={actionsHost}>
         <ArtifactCreationActions

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { IconButton } from '@goodboy/ui';
+import { ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { HandoffSection, HandoffSectionKind, SessionId } from '@goodboy/types';
 import { HANDOFF_SECTION_LABEL } from '../../utils/handoffLabels';
 import { HandoffSectionBody } from './HandoffSectionBody';
@@ -65,14 +65,14 @@ export const HandoffPanel = ({
           <IconButton
             icon={ChevronLeft}
             label="Previous section"
-            iconSize={12}
+            iconSize={ICON_SIZE.row}
             variant="ghost"
             onClick={() => onStep(-1)}
           />
           <IconButton
             icon={ChevronRight}
             label="Next section"
-            iconSize={12}
+            iconSize={ICON_SIZE.row}
             variant="ghost"
             onClick={() => onStep(1)}
           />

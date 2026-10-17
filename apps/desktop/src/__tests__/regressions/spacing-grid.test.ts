@@ -2,6 +2,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
+import { PANE_RHYTHM as RHYTHM } from '@goodboy/ui';
+import { RAIL_NODE_CENTER_Y, RAIL_ROW_HEIGHT } from '../../features/auto/chat/railSpec';
 
 const DESKTOP_SRC = join(__dirname, '..', '..');
 const UI_SRC = join(DESKTOP_SRC, '..', '..', '..', 'packages', 'ui', 'src');
@@ -45,6 +47,24 @@ describe('spacing grid', () => {
 
     expect(heights.length).toBeGreaterThan(0);
     expect(heights.filter((height) => !ROW_HEIGHTS.includes(height))).toEqual([]);
+  });
+
+  it('sets the work rail row on the scale, two lines of 28 and 20 with the node on the first', () => {
+    expect(ROW_HEIGHTS).toContain(RAIL_ROW_HEIGHT);
+    expect(RAIL_ROW_HEIGHT).toBe(48);
+    expect(RAIL_NODE_CENTER_Y * 2).toBe(28);
+    expect(RAIL_ROW_HEIGHT - RAIL_NODE_CENTER_Y * 2).toBe(20);
+  });
+
+  it('names the property grid and the tree row in the pane rhythm, on the scale', () => {
+    expect(RHYTHM.property.grid).toContain('grid-cols-[88px_minmax(0,1fr)]');
+    expect(RHYTHM.property.label).toContain('h-7');
+    expect(RHYTHM.property.value).toContain('min-h-7');
+    expect(RHYTHM.tree.row).toBe('min-h-12');
+    const treeHeights = [RHYTHM.tree.row, RHYTHM.tree.line, RHYTHM.tree.meta].map(
+      (utility) => Number(/-(\d+)$/.exec(utility)?.[1] ?? 0) * SPACING_PX,
+    );
+    expect(treeHeights).toEqual([48, 28, 20]);
   });
 
   it('sets every nav rail row minimum height on the row scale', () => {

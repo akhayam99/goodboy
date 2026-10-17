@@ -241,7 +241,7 @@ const ARTIFACT_GROUP_ORDER: ReadonlyArray<ArtifactGroup> = [
   'needs',
   'ready',
   'running',
-  'ran',
+  'consumed',
   'deleted',
 ];
 
@@ -249,7 +249,7 @@ export const ARTIFACT_GROUP_LABEL: Readonly<Record<ArtifactGroup, string>> = {
   needs: 'Needs you',
   ready: 'Ready',
   running: 'Running',
-  ran: 'Ran',
+  consumed: 'Consumed',
   deleted: 'Recently deleted',
 };
 

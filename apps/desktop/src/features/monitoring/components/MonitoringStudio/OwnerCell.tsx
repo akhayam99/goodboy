@@ -2,8 +2,6 @@ import { Tooltip, cn } from '@goodboy/ui';
 import type { PortRow } from '@goodboy/core';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { MiddleText } from '../../../../shared/components/MiddleText';
-import { MIDDLE_TAIL } from '../../middleTail';
 import { ownerPresentation } from '../../ownerPresentation';
 
 type Props = {
@@ -33,7 +31,7 @@ export const OwnerCell = ({ row }: Props) => {
   );
 
   const text =
-    presentation === null ? null : <MiddleText value={presentation.label} tail={MIDDLE_TAIL} />;
+    presentation === null ? null : <span className="truncate">{presentation.label}</span>;
 
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -61,9 +59,15 @@ export const OwnerCell = ({ row }: Props) => {
         </Tooltip>
       )}
       {row.collision === undefined ? null : (
-        <span className="shrink-0 text-meta text-warning">
-          {otherWorktrees({ others: row.collision.others })}
-        </span>
+        <Tooltip content={otherWorktrees({ others: row.collision.others })}>
+          <span
+            role="img"
+            aria-label={otherWorktrees({ others: row.collision.others })}
+            className="shrink-0 text-meta tabular-nums text-faint-foreground"
+          >
+            {`+${row.collision.others}`}
+          </span>
+        </Tooltip>
       )}
     </div>
   );

@@ -63,7 +63,7 @@ Use real branded id casts (e.g. `'x' as Agent['id']`) and real enum values.
 Pass it straight in. No store involved.
 
 **The component reads the zustand store.** `SessionOverviewPane`,
-`WorkflowRunDetail`, `DefaultsPanel` and `SessionNavSidebar` work
+`OrchestratedRunPage`, `DefaultsPanel` and `SessionNavSidebar` work
 this way. `useAppStore` is a bare `create()` store: no `persist` middleware,
 and no Tauri side effect on `setState`. So it is safe to fill it directly:
 
@@ -230,9 +230,6 @@ because the page is already there. `plan-drawer-approved` is the orchestrated
 case: the run has no next step yet, `?approve=1` presses **Approve** on its own,
 and reopening the plan through **Review plan** shows **Approved** with no
 primary.
-
-`scenes/sceneReveal.ts` opens the completed mounts and keeps a mount row in
-its hover state, so the row actions show up in a still image.
 
 Scenes that set a state through query params (`&mode=`, `&v=`, `&open=`,
 `&view=`) live in `scenes/audit/`, one file per scene, and share the frame,

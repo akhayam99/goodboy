@@ -53,7 +53,7 @@ describe('the ongoing scenes', () => {
   it('draws the Board with its header alone and no Ongoing row', async () => {
     mount({ id: 'board-no-ongoing' });
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
     expect(screen.queryByText('Ongoing')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Ongoing' })).toBeNull();
     expect(screen.queryByText('HBL-400')).toBeNull();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Notice, Skeleton } from '@goodboy/ui';
+import { Notice } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { selectLiveWork } from '../../../store/slices/live-work/selectLiveWork';
@@ -28,10 +28,8 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
     project === null ? false : selectLiveWork({ state }).liveSessionIds.includes(sessionId),
   );
   const loadProjectGitStatus = useAppStore((state) => state.loadProjectGitStatus);
-  const probeProjectRemote = useAppStore((state) => state.probeProjectRemote);
   const resumeBootstrapMove = useAppStore((state) => state.resumeBootstrapMove);
   const navigate = useAppStore((state) => state.navigate);
-  const [isRetrying, setIsRetrying] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   useBootstrapWatch({ projectId: project?.id ?? null, enabled: stage === 'first-lap' });
 
@@ -66,7 +64,6 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
   if (project === null) {
     return <MoveReport sessionId={sessionId} />;
   }
-  const hasRemote = project.remoteUrl !== undefined && project.remoteUrl !== '';
 
   if (stage === 'moving') {
     return (
@@ -85,43 +82,14 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
     );
   }
 
-  const isChecking = hasRemote && (probe === null || isRetrying);
-  const retry = () => {
-    setIsRetrying(true);
-    void probeProjectRemote({ projectId: project.id }).finally(() => setIsRetrying(false));
-  };
+  if (!isOnRemote && notice === null) {
+    return null;
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
       {isOnRemote ? (
         <MoveCard project={project} changedCount={changed} isTurnRunning={isTurnRunning} />
-      ) : (
-        <Notice
-          tone="info"
-          placement="inline"
-          className="bg-transparent"
-          title="Your work is in the project folder. Nothing is published yet."
-        />
-      )}
-      {isChecking && !isOnRemote ? (
-        <div role="status" aria-label="Checking the remote" className="flex items-center gap-2">
-          <Skeleton className="h-3.5 w-48" />
-          <span className="text-meta text-faint-foreground">Checking the remote</span>
-        </div>
-      ) : null}
-      {!isChecking && probe?.kind === 'unreachable' && hasRemote ? (
-        <Notice
-          tone="warning"
-          placement="inline"
-          role="status"
-          title="Couldn't check the remote"
-          body="You can keep working here. Publishing needs the remote to answer."
-          actions={
-            <Button variant="secondary" size="sm" onClick={retry}>
-              Retry
-            </Button>
-          }
-        />
       ) : null}
       {notice !== null ? (
         <Notice tone="warning" placement="inline" role="alert" title={notice} />

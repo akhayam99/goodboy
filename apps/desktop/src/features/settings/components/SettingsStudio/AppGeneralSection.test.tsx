@@ -75,38 +75,29 @@ describe('AppGeneralSection theme control', () => {
 });
 
 describe('AppGeneralSection open with', () => {
-  it('shows up to four editors as a segmented control and keeps the choice', async () => {
-    render(<AppGeneralSection />);
-
-    const group = screen.getByRole('tablist', { name: 'Editor' });
-    expect(
-      within(group)
-        .getAllByRole('tab')
-        .map((tab) => tab.textContent),
-    ).toEqual(['VSVS Code', 'CuCursor', 'ZeZed', 'WeWebStorm']);
-    expect(screen.queryByRole('combobox', { name: 'Editor' })).toBeNull();
-
-    await userEvent.click(within(group).getByRole('tab', { name: /Zed/ }));
-
-    expect(stored.get('editor.binary')).toBe('zed');
-    expect(within(group).getByRole('tab', { name: /Zed/ }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
-  });
-
-  it('turns the editor choice into a list once five editors are found', async () => {
-    seed({ editors: 5, browsers: 3 });
+  it('lists the editors by name alone in one dropdown and keeps the choice', async () => {
     render(<AppGeneralSection />);
 
     expect(screen.queryByRole('tablist', { name: 'Editor' })).toBeNull();
     await userEvent.click(screen.getByRole('combobox', { name: 'Editor' }));
     expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
-      'VSVS Code',
-      'CuCursor',
-      'ZeZed',
-      'WeWebStorm',
-      'NeNeovim',
+      'VS Code',
+      'Cursor',
+      'Zed',
+      'WebStorm',
     ]);
+
+    await userEvent.click(screen.getByRole('option', { name: /Zed/ }));
+
+    expect(stored.get('editor.binary')).toBe('zed');
+  });
+
+  it('keeps the same dropdown once five editors are found', async () => {
+    seed({ editors: 5, browsers: 3 });
+    render(<AppGeneralSection />);
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Editor' }));
+    expect(screen.getAllByRole('option')).toHaveLength(5);
 
     await userEvent.click(screen.getByRole('option', { name: /Neovim/ }));
 
@@ -116,13 +107,12 @@ describe('AppGeneralSection open with', () => {
   it('starts the browser at system default and saves a picked browser', async () => {
     render(<AppGeneralSection />);
 
-    const group = screen.getByRole('tablist', { name: 'Browser' });
-    expect(within(group).getAllByRole('tab')).toHaveLength(4);
-    expect(
-      within(group).getByRole('tab', { name: 'System default' }).getAttribute('aria-selected'),
-    ).toBe('true');
+    const browser = screen.getByRole('combobox', { name: 'Browser' });
+    expect(browser.textContent).toContain('System default');
+    await userEvent.click(browser);
+    expect(screen.getAllByRole('option')).toHaveLength(4);
 
-    await userEvent.click(within(group).getByRole('tab', { name: /Chrome/ }));
+    await userEvent.click(screen.getByRole('option', { name: /Chrome/ }));
 
     expect(stored.get('browser.app')).toBe('chrome');
   });
@@ -148,11 +138,8 @@ describe('AppGeneralSection open with', () => {
       ),
     ).toBeDefined();
 
-    await userEvent.click(
-      within(screen.getByRole('tablist', { name: 'Browser' })).getByRole('tab', {
-        name: 'System default',
-      }),
-    );
+    await userEvent.click(screen.getByRole('combobox', { name: 'Browser' }));
+    await userEvent.click(screen.getByRole('option', { name: 'System default' }));
 
     expect(stored.get('browser.app')).toBe('system');
     expect(screen.queryByText(/is not installed any more/)).toBeNull();

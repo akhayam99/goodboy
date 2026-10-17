@@ -58,6 +58,7 @@ export const AppScopePanel = ({ section, workspaceId }: Props) => {
   const label = APP_SECTIONS.find((entry) => entry.id === section)?.label ?? section;
   return (
     <PaneShell
+      page="settings"
       key={section}
       animationClassName={SETTINGS_PANE_ENTRY}
       title={label}

@@ -139,10 +139,10 @@ export const GITLAB_PAGE_ROWS: ReadonlyArray<Row> = [
       await heading(/Stop retried webhooks/);
       await waitFor(() => {
         expect(selectedBranchTab(ctx)).toBe('pr');
-        expect(sectionLabels()[0]).toBe('Overview');
+        expect(sectionLabels()[0]).toBe('Merge request');
         expect(sectionLabels()).toHaveLength(5);
       }, WAIT);
-      expect(await screen.findByText(/MR !42/, undefined, WAIT)).toBeDefined();
+      expect((await screen.findAllByText(/MR !42/, undefined, WAIT)).length).toBeGreaterThan(0);
       expect(screen.queryByText(/pull request/i)).toBeNull();
     },
   },

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { brandId, type SessionId } from '@goodboy/types';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { batchInput, childInput, makeAutoWorld } from '../auto/testing/autoWorld';
+import { addOutboxRow } from '../auto/testing/deliveryWorld';
 import { readAutoTreeViews } from './readAutoTreeViews';
 import { sameAutoTreeViews } from './sameAutoTreeViews';
 
@@ -23,6 +24,65 @@ describe('readAutoTreeViews', () => {
       'planner',
     ]);
     expect(views[0]?.budget).toMatchObject({ capUsd: 5, reservedUsd: 1.25, remainingUsd: 3.75 });
+  });
+
+  it('reads the newest pending refusal of the current generation, and drops it once delivered', async () => {
+    const world = await makeAutoWorld();
+    const refusal = (code: string) => ({
+      kind: 'refusal',
+      runId: `run-${code}`,
+      action: 'delegate',
+      code,
+      text: 'refused',
+      roles: ['implementer'],
+    });
+    await addOutboxRow({ world, id: 'refusal-old', kind: 'refusal', payload: refusal('budget') });
+    await addOutboxRow({
+      world,
+      id: 'refusal-stale-generation',
+      kind: 'refusal',
+      payload: refusal('tree_busy'),
+      generation: 2,
+      atMs: world.clock.now() + 2,
+    });
+    await addOutboxRow({
+      world,
+      id: 'refusal-new',
+      kind: 'refusal',
+      payload: refusal('mount_ambiguous'),
+      atMs: world.clock.now() + 1,
+    });
+
+    const views = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+    expect(views[0]?.pendingRefusal).toEqual({
+      action: 'delegate',
+      code: 'mount_ambiguous',
+      roles: ['implementer'],
+    });
+
+    await world.db.execute("UPDATE auto_outbox SET state = 'accepted' WHERE kind = 'refusal'", []);
+    const later = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+    expect(later[0]?.pendingRefusal).toBeNull();
+    expect(sameAutoTreeViews({ first: views, second: later })).toBe(false);
+  });
+
+  it('reads an old refusal row without roles as a refusal of no named role', async () => {
+    const world = await makeAutoWorld();
+    await addOutboxRow({
+      world,
+      id: 'refusal-legacy',
+      kind: 'refusal',
+      payload: {
+        kind: 'refusal',
+        runId: 'run-1',
+        action: 'block',
+        code: 'spec_invalid',
+        text: 'x',
+      },
+    });
+
+    const views = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+    expect(views[0]?.pendingRefusal).toEqual({ action: 'block', code: 'spec_invalid', roles: [] });
   });
 
   it('is empty for a session without an Auto tree', async () => {

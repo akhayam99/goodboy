@@ -24,7 +24,7 @@ const picture: PendingAttachment = {
 };
 
 describe('AttachmentChip', () => {
-  it('reveals the remove control on keyboard focus, not only on hover', () => {
+  it('shows the remove control at rest', () => {
     render(
       <AttachmentChip
         {...pendingAttachmentProps({ attachment: doc, url: null })}
@@ -33,9 +33,7 @@ describe('AttachmentChip', () => {
     );
     const remove = screen.getByRole('button', { name: 'Remove notes.txt' });
 
-    expect(remove.className).toContain('opacity-0');
-    expect(remove.className).toContain('focus-visible:opacity-100');
-    expect(remove.className).toContain('group-hover:opacity-100');
+    expect(remove.className).not.toContain('opacity-0');
   });
 
   it('opens the lightbox on an image thumbnail', () => {

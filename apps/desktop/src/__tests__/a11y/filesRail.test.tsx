@@ -26,7 +26,7 @@ const mount = ({
   scene,
   paneWidth,
 }: {
-  readonly scene: 'branch-files-docked' | 'branch-overlay-rail';
+  readonly scene: 'branch-files-docked';
   readonly paneWidth: number;
 }): HTMLElement => {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(
@@ -46,18 +46,11 @@ const mount = ({
 const violationsOf = async (container: HTMLElement): Promise<ReadonlyArray<string>> =>
   (await runA11yCheck(container)).violations.map((violation) => violation.id).sort();
 
-describe('a11y, the sections rail in each mode', () => {
-  it('has no violation docked, with the Files group and the resize handle', async () => {
+describe('a11y, the worktree level files rail', () => {
+  it('has no violation with the Files group open in the worktree level', async () => {
     const container = mount({ scene: 'branch-files-docked', paneWidth: 1676 });
+    await screen.findByRole('complementary', { name: 'Worktree level' }, WAIT);
     await screen.findByRole('navigation', { name: 'Changed files' }, WAIT);
-    await screen.findByRole('separator', { name: /^Resize branch sections/i }, WAIT);
-
-    expect(await violationsOf(container)).toEqual([]);
-  });
-
-  it('has no violation as an overlay over the page', async () => {
-    const container = mount({ scene: 'branch-overlay-rail', paneWidth: 700 });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
 
     expect(await violationsOf(container)).toEqual([]);
   });

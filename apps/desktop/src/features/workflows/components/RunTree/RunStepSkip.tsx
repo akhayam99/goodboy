@@ -26,7 +26,6 @@ export const RunStepSkip = ({ agent, skip }: Props) => {
       description={skip.describe(agent)}
       confirmLabel="Skip step"
       cancelLabel="Cancel"
-      align="end"
       isBusy={isBusy}
       onConfirm={async () => {
         setIsBusy(true);

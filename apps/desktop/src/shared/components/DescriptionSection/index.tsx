@@ -38,7 +38,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
 
   if (edit.isEditing) {
     return (
-      <StudioWidget label="description" variant="frameless">
+      <StudioWidget label="Description" variant="frameless">
         <div className="flex flex-col gap-3">
           <Textarea
             autoFocus
@@ -81,7 +81,7 @@ export const DescriptionSection = ({ text, onSave }: Props) => {
   return (
     <StudioWidget
       presentation="section"
-      label="description"
+      label="Description"
       variant="frameless"
       action={
         edit.canEdit ? (

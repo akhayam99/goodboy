@@ -109,8 +109,8 @@ describe('the u23 frame scenes', () => {
     await waitFor(() => expect(visibleH1s()).toHaveLength(1));
   });
 
-  it.each(STUDIO_SCENES)('draws the band and the title of %s on the same column', async (id) => {
-    const { container } = await renderScene(id);
+  it('draws the Impact band with its Close on the column of its title', async () => {
+    const { container } = await renderScene('frame-studio-impact');
 
     const band = container.querySelector('[data-studio-band]') as HTMLElement;
     expect(band).not.toBeNull();
@@ -121,6 +121,27 @@ describe('the u23 frame scenes', () => {
     const title = visibleH1s()[0] as HTMLElement;
     expect(title.closest('[data-page-column]')?.getAttribute('data-width')).toBe('column');
     expect(title.closest('[data-slot="pane-header"]')?.hasAttribute('data-under-trail')).toBe(true);
+  });
+
+  it.each([
+    ['frame-studio-inbox', false],
+    ['frame-studio-workflows', false],
+    ['frame-studio-guide', true],
+  ] as const)('draws no band around %s, its title alone on the column', async (id, hasClose) => {
+    const { container } = await renderScene(id);
+
+    await waitFor(() => expect(visibleH1s()).toHaveLength(1));
+    expect(container.querySelector('[data-studio-band]')).toBeNull();
+    const header = visibleH1s()[0]?.closest('[data-slot="pane-header"]');
+    expect(visibleH1s()[0]?.closest('[data-page-column]')?.getAttribute('data-width')).toBe(
+      'column',
+    );
+    expect(header?.hasAttribute('data-under-trail')).toBe(false);
+    expect(
+      screen
+        .queryAllByRole('button', { name: /^Close/ })
+        .filter((button) => header?.contains(button) === true),
+    ).toHaveLength(hasClose ? 1 : 0);
   });
 
   it('gives Workflows its title and the tab strip with its one primary under it', async () => {
@@ -142,31 +163,29 @@ describe('the u23 frame scenes', () => {
     expect(within(band).queryByRole('tablist')).toBeNull();
   });
 
-  it('puts the Questions list and detail under the title in one column', async () => {
+  it('puts the Questions list under the title in one column', async () => {
     await renderScene('frame-questions');
 
     const title = await screen.findByRole('heading', { level: 1, name: 'Questions' });
     const column = title.closest('[data-page-column]') as HTMLElement;
     expect(column.getAttribute('data-width')).toBe('column');
-    const queue = await screen.findByRole('region', { name: 'Questions' });
+    const queue = await screen.findByRole('list', { name: 'Questions' });
     const bodyColumn = queue.closest('[data-page-column]') as HTMLElement;
     expect(bodyColumn.getAttribute('data-width')).toBe('column');
     expect(within(bodyColumn).getAllByRole('heading', { level: 2 }).length).toBeGreaterThan(0);
     expect(document.querySelectorAll('[data-page-column][data-width="measure"]')).toHaveLength(0);
   });
 
-  it('shows the first lap as one notice on the column, under the title', async () => {
+  it('shows the first lap as one notice in the Overview notices, under the title', async () => {
     await renderScene('frame-first-lap-notice');
 
-    const notice = await screen.findByText(
-      /Your work is in the project folder\. Nothing is published yet\./,
-    );
-    const banner = notice.closest('[data-slot="pane-banner"]') as HTMLElement;
-    expect(banner).not.toBeNull();
+    const notice = await screen.findByText('Not published yet');
+    const slot = notice.closest('[data-overview-notices]') as HTMLElement;
+    expect(slot).not.toBeNull();
     const title = visibleH1s()[0] as HTMLElement;
-    expect(title.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(banner.closest('[data-page-column]')).toBe(title.closest('[data-page-column]'));
-    expect(screen.getAllByText(/Nothing is published yet/)).toHaveLength(1);
+    expect(title.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByText(/[Pp]ublished yet/)).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 
   it('puts no action in the Commits tab row and no legend', async () => {

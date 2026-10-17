@@ -5,7 +5,7 @@ import { brandedId } from '../../../features/history/testing/brandedId';
 import {
   type Row,
   WAIT,
-  band,
+  studio,
   both,
   click,
   clickButton,
@@ -24,6 +24,14 @@ const doorIn = (name: string): HTMLElement => {
   );
   expect(door).not.toBeNull();
   return door as HTMLElement;
+};
+
+const signalIn = (): HTMLElement => {
+  const signal = document.querySelector<HTMLElement>('[data-top-bar] [data-monitoring-signal]');
+  if (signal === null) {
+    throw new Error('no monitoring signal in the top bar');
+  }
+  return signal;
 };
 
 const createIn = (name: string): HTMLElement => {
@@ -92,13 +100,13 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:Open a folder'],
     door: 'palette',
     open: () => openPalette(/^Open a folder/, 'Open a folder'),
-    lands: () => band('Add workspace'),
+    lands: () => studio('Add workspace'),
   },
   {
     name: 'palette: Start a new project',
     covers: ['palette:Start a new project'],
     open: () => openPalette(/^Start a new project/, 'Start a new project'),
-    lands: () => band('Start a new project'),
+    lands: () => studio('Start a new project'),
   },
   {
     name: 'column: inbox',
@@ -106,7 +114,8 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: () => click(doorIn('inbox')),
     lands: both(
-      () => heading('Tasks'),
+      () => studio('Tasks'),
+      () => heading(/^Tasks$/),
       async () => expect(doorIn('inbox').getAttribute('aria-current')).toBe('page'),
     ),
   },
@@ -123,26 +132,30 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: () => click(doorIn('terminal')),
     lands: both(
-      () => band('Terminal'),
+      () => studio('Terminal'),
       () => visible('heading', 'No terminal yet'),
       async () => expect(doorIn('terminal').getAttribute('aria-current')).toBe('page'),
     ),
   },
   {
-    name: 'column: monitoring',
+    name: 'top bar: the monitoring signal opens Monitoring',
     covers: ['openMonitoring', 'studio:monitoring'],
     door: 'visible',
-    open: () => click(doorIn('monitoring')),
+    open: () => click(signalIn()),
     lands: both(
-      () => band('Monitoring'),
-      async () => expect(doorIn('monitoring').getAttribute('aria-current')).toBe('page'),
+      () => studio('Monitoring'),
+      async () => expect(signalIn().getAttribute('aria-pressed')).toBe('true'),
+      async () =>
+        expect(document.querySelector('[data-side-column] [data-column-door="monitoring"]')).toBe(
+          null,
+        ),
     ),
   },
   {
     name: 'palette: Go to Monitoring',
     covers: ['palette:Monitoring'],
     open: () => openPalette(/^Monitoring/, 'Monitoring'),
-    lands: () => band('Monitoring'),
+    lands: () => studio('Monitoring'),
   },
   {
     name: 'column: chat',
@@ -150,7 +163,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: () => click(doorIn('chat')),
     lands: both(
-      () => band('Chat'),
+      () => studio('Chat'),
       () => heading('New chat'),
       () => visible('complementary', 'Chat list'),
     ),
@@ -175,7 +188,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate'],
     open: () => click(doorIn('board')),
     lands: both(
-      () => heading('Board'),
+      () => heading('Sessions'),
       async () => expect(useAppStore.getState().currentSessionId).toBeNull(),
     ),
   },
@@ -208,7 +221,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       await click(createIn('chat'));
     },
     lands: both(
-      () => band('Chat'),
+      () => studio('Chat'),
       () => heading('New chat'),
       async () => expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: null }),
     ),
@@ -218,7 +231,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['openNewTerminal'],
     open: () => click(createIn('terminal')),
     lands: both(
-      () => band('Terminal'),
+      () => studio('Terminal'),
       () => visible('complementary', 'Terminals'),
       async () =>
         waitFor(
@@ -248,7 +261,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Goodboy: setup/);
       await clickButton(/^Guide/);
     },
-    lands: () => band('Guide'),
+    lands: () => studio('Guide'),
   },
   {
     name: 'column: goodboy chip to pair your iPhone',
@@ -258,7 +271,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Goodboy: setup/);
       await clickButton(/^Pair your iPhone/);
     },
-    lands: () => band('Pair device'),
+    lands: () => studio('Pair device'),
   },
   {
     name: 'column: report a bug opens the sheet',
@@ -301,6 +314,6 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Switch workspace/);
       await clickButton(/^Open a folder/);
     },
-    lands: () => band('Add workspace'),
+    lands: () => studio('Add workspace'),
   },
 ];

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getAutoOutbox, getAutoTree, listAutoOutbox, listAutoReservations } from '@goodboy/db';
-import { brandId, type AutoOutboxId } from '@goodboy/types';
+import { AUTO_TURN_CEILING_USD, EMPTY_USER_FACTS } from '@goodboy/core';
+import { brandId, type AutoOutboxId, type SessionId } from '@goodboy/types';
+import { readAutoTreeViews } from '../auto-view/readAutoTreeViews';
 import { deliverNext } from './deliver';
 import { secondScheduler, WORLD_TREE } from './testing/autoWorld';
 import {
@@ -19,6 +21,65 @@ const deliver = (state: DeliveryWorld) =>
 const phaseOf = async (state: DeliveryWorld) =>
   (await getAutoTree({ db: state.world.db, treeId: WORLD_TREE }))?.phase;
 
+describe('the budget line of a delivery', () => {
+  it('says the Left the rail reads while that turn runs, its own reservation included', async () => {
+    const state = await makeDeliveryWorld();
+    await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'hello' });
+
+    await deliver(state);
+
+    const text = state.ports.autoTurns[0]?.text ?? '';
+    const views = await readAutoTreeViews({
+      db: state.world.db,
+      sessionId: brandId<SessionId>({ value: 'session-harborline' }),
+    });
+    const budget = views[0]?.budget;
+    expect(budget?.reservedUsd).toBe(AUTO_TURN_CEILING_USD);
+    expect(text).toContain(`Left ${budget?.remainingUsd?.toFixed(2)} USD.`);
+    expect(text).toContain(
+      `Reserved ${budget?.reservedUsd.toFixed(2)} USD, of which ${AUTO_TURN_CEILING_USD.toFixed(2)} USD for this answer.`,
+    );
+  });
+});
+
+describe('the images of a user message', () => {
+  it('reach Auto with the delivery of the message that carried them', async () => {
+    const state = await makeDeliveryWorld();
+    const banner = {
+      id: 'attachment-banner',
+      kind: 'image',
+      fileName: 'banner-wide.png',
+      mimeType: 'image/png',
+      relPath: 'attachments/banner-wide.png',
+      dir: '/scratch/session-harborline',
+    };
+    await addOutboxRow({
+      world: state.world,
+      id: 'outbox-user-images',
+      kind: 'user',
+      payload: {
+        kind: 'user',
+        text: 'The banner overlaps the totals on narrow screens, see both shots.',
+        facts: EMPTY_USER_FACTS,
+        images: [banner],
+      },
+    });
+
+    await deliver(state);
+
+    expect(state.ports.autoTurns[0]?.images).toEqual([banner]);
+  });
+
+  it('send nothing extra with a message that had none', async () => {
+    const state = await makeDeliveryWorld();
+    await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'hello' });
+
+    await deliver(state);
+
+    expect(state.ports.autoTurns[0]?.images).toEqual([]);
+  });
+});
+
 describe('delivering stored rows to Auto', () => {
   it('claims the row, makes the tree deciding on the planned run and accepts it once the turn started', async () => {
     const state = await makeDeliveryWorld();
@@ -36,6 +97,9 @@ describe('delivering stored rows to Auto', () => {
     expect(state.ports.autoTurns[0]?.text).toContain('add the ledger export');
     expect(state.ports.autoTurns[0]?.text).toContain('Artifacts in this tree');
     expect(state.ports.autoTurns[0]?.text).toContain('Budget for this conversation');
+    expect(state.ports.autoTurns[0]?.text).toContain(
+      'MOUNTS: mount-ledger-core (ledger-core, branch ak/ledger-export); mount-notify-relay (notify-relay, branch ak/notify-queue).',
+    );
     expect(await getAutoTree({ db: state.world.db, treeId: WORLD_TREE })).toMatchObject({
       phase: 'deciding',
       activeRunId: state.ports.autoTurns[0]?.runId,

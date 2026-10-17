@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { formatError } from '@goodboy/ui';
 
 type Params = {
@@ -13,6 +13,9 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
   const [selfEditing, setSelfEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [canRetry, setCanRetry] = useState(false);
+  const pendingRef = useRef(false);
   const editing = isEditing === undefined ? selfEditing : isEditing;
 
   useEffect(() => {
@@ -25,27 +28,45 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
   const start = () => {
     setDraft(value);
     setError(null);
+    setCanRetry(false);
     setSelfEditing(true);
   };
 
   const cancel = () => {
     setSelfEditing(false);
     setError(null);
+    setCanRetry(false);
     onCancel?.();
   };
 
   const commit = async () => {
+    if (pendingRef.current) {
+      return;
+    }
     const next = draft.trim();
     if (next === '') {
       setError('name cannot be empty');
+      setCanRetry(false);
       return;
     }
+    if (maxLength !== undefined && next.length > maxLength) {
+      setError('name is too long');
+      setCanRetry(false);
+      return;
+    }
+    pendingRef.current = true;
+    setIsPending(true);
     try {
       await onCommit(next);
       setSelfEditing(false);
       setError(null);
+      setCanRetry(false);
     } catch (err) {
       setError(formatError(err));
+      setCanRetry(true);
+    } finally {
+      pendingRef.current = false;
+      setIsPending(false);
     }
   };
 
@@ -74,6 +95,8 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
     editing,
     draft,
     error,
+    canRetry,
+    isPending,
     maxLength,
     setDraft,
     start,

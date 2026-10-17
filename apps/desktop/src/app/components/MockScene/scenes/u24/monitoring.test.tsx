@@ -76,7 +76,10 @@ describe('the monitoring scenes', () => {
     renderScene('monitoring-ports');
     await waitFor(() => expect(hasPortRow(5005)).toBe(true));
 
-    expect(within(portRow(5005)).getByText('Also in 2 other worktrees')).toBeDefined();
+    expect(
+      within(portRow(5005)).getByRole('img', { name: 'Also in 2 other worktrees' }),
+    ).toBeDefined();
+    expect(within(portRow(5005)).getByText('+2')).toBeDefined();
   });
 
   it('folds a free workspace port into one quiet line and lists it on expand', async () => {
@@ -88,7 +91,7 @@ describe('the monitoring scenes', () => {
     const row = portRow(5002);
 
     expect(within(row).getByText('blog')).toBeDefined();
-    expect(within(row).getByText('Free')).toBeDefined();
+    expect(within(row).getByRole('img', { name: 'Free' })).toBeDefined();
   });
 
   it('counts the ports in use across Pinned, Run by Goodboy and From workspace', async () => {
@@ -119,7 +122,7 @@ describe('the monitoring scenes', () => {
 
     const fold = screen.getByRole('button', { name: /^Listening on this Mac/ });
     expect(fold.getAttribute('aria-expanded')).toBe('false');
-    expect(fold.textContent).toContain('2 more');
+    expect(fold.textContent).toBe('Listening on this Mac2');
     expect(hasPortRow(7000)).toBe(false);
   });
 

@@ -155,12 +155,6 @@ export const useTaskDrag = ({ sessionId, task, branch }: Params) => {
 
   const onPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLElement>) => {
-      if (
-        event.target instanceof Element &&
-        event.target.closest('[data-slot="unlink-slot"]') !== null
-      ) {
-        return;
-      }
       clearSwallow();
       engine.onPointerDown({
         event,

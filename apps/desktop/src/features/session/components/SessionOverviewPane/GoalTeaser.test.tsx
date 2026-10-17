@@ -21,11 +21,9 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { GoalTeaser } from './GoalTeaser';
-import { ToastProvider } from '../../../../shared/components/Toast';
 import { GoalTab } from '../ContextDrawer/GoalTab';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import type { ActionEnv } from '../../../actions/types';
-import { SessionHeaderMenu } from './SessionHeaderMenu';
 
 let store: StoryStore;
 const session = aSession({ goal: 'Untitled session' });
@@ -130,11 +128,12 @@ describe('GoalTeaser on the real store', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Goal: Credit each invoice once.' }));
     expect(store.getState().drawer).toEqual(expect.objectContaining({ sessionId: session.id }));
   });
-  it('stays out of the way when the goal is the title', () => {
+  it('reads the goal as prose even when it matches the title, which lives in the sidebar', () => {
     store.setState({
       sessionSlots: { [session.id]: [{ key: 'goal', value: session.goal, enabled: true }] },
     });
-    expect(mount().container.textContent).toBe('');
+    mount();
+    expect(screen.getByRole('button', { name: `Goal: ${session.goal}` })).toBeDefined();
   });
   it('offers Add a goal without a linked issue', () => {
     mount();
@@ -360,19 +359,6 @@ describe('GoalTeaser on the real store', () => {
     await ready();
     expect(screen.getByText('Based on the first five linked issues.')).toBeDefined();
   });
-  it('shows the action in the header menu with at least two rows', () => {
-    store.setState({ sessionExternalTasks: { [session.id]: TASKS } });
-    render(
-      <ToastProvider>
-        <SessionHeaderMenu session={session} onDelete={vi.fn()} />
-      </ToastProvider>,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'More session actions' }));
-    expect(
-      screen.getByRole('menuitem', { name: 'Write title and goal from linked work' }),
-    ).toBeDefined();
-    expect(screen.getAllByRole('menuitem').length).toBeGreaterThanOrEqual(2);
-  });
   it('starts the proposal through the Goal tab button', async () => {
     store.setState({ sessionExternalTasks: { [session.id]: TASKS } });
     mount();
@@ -383,6 +369,7 @@ describe('GoalTeaser on the real store', () => {
         historyCount={0}
         isLoading={false}
         isLocked={false}
+        visibility={null}
         onOpenVersions={vi.fn()}
       />,
     );

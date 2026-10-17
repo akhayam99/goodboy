@@ -14,6 +14,7 @@ import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly providerId: ProviderId;
+  readonly hasImpactLink: boolean;
 };
 
 type BudgetParams = {
@@ -27,7 +28,7 @@ const budgetText = ({ status }: BudgetParams): string | null => {
   return `Budget ${formatUsd(status.capUsd)} a month, ${budgetPctUsed({ status })}% used across all workspaces, resets ${budgetResetLabel({ status })}`;
 };
 
-export const SpendInGoodboy = ({ providerId }: Props) => {
+export const SpendInGoodboy = ({ providerId, hasImpactLink }: Props) => {
   const overview = useProviderBudgetOverview({ providerId });
   const status = overview?.status ?? null;
   const loadBudgetRules = useAppStore((state) => state.loadBudgetRules);
@@ -38,6 +39,9 @@ export const SpendInGoodboy = ({ providerId }: Props) => {
     void loadBudgetRules().catch(() => undefined);
   }, [loadBudgetRules]);
 
+  if (!hasImpactLink && text === null) {
+    return null;
+  }
   return (
     <section
       aria-label="Spend in Goodboy"
@@ -48,10 +52,12 @@ export const SpendInGoodboy = ({ providerId }: Props) => {
           <span className="tabular-nums text-muted-foreground">{text}</span>
         </Tooltip>
       )}
-      <Button variant="ghost" size="sm" onClick={openImpact} className="ml-auto">
-        Open in Impact
-        <ArrowRight size={ICON_SIZE.row} aria-hidden />
-      </Button>
+      {hasImpactLink ? (
+        <Button variant="ghost" size="sm" onClick={openImpact} className="ml-auto">
+          Open in Impact
+          <ArrowRight size={ICON_SIZE.row} aria-hidden />
+        </Button>
+      ) : null}
     </section>
   );
 };

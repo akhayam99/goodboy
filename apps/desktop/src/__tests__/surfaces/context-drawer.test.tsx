@@ -24,7 +24,7 @@ import {
 } from '../../store/storyHarness';
 import { nowIso } from '../../store/slices/project-mounts/nowIso';
 import { DrawerHost } from '../../app/components/DrawerHost';
-import { ContextChip } from '../../features/session/components/SessionOverviewPane/ContextChip';
+import { SessionTools } from '../../features/session/components/SessionTools';
 import {
   SESSION_ID,
   seedActivityRunScene,
@@ -49,7 +49,7 @@ afterEach(() => {
 const renderSurface = () =>
   render(
     <>
-      <ContextChip sessionId={SESSION_ID} />
+      <SessionTools sessionId={SESSION_ID} />
       <DrawerHost />
     </>,
   );
@@ -60,7 +60,11 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const dot = () => screen.queryByTestId('context-change-dot');
+const dot = () => screen.queryByTestId('tool-signal');
+
+const openContext = async (): Promise<void> => {
+  fireEvent.click(await screen.findByTestId('pane-toggle-context'));
+};
 
 const seenAt = (): string | null | undefined =>
   useAppStore.getState().sessionContextSeenAt[SESSION_ID];
@@ -78,7 +82,6 @@ describe('Context drawer change marks', () => {
     await settle();
 
     expect(dot()).toBeNull();
-    expect(screen.getByTestId('context-chip').textContent).toBe('Context');
 
     const template = ledger()[0]!;
     const arrived = new Date().toISOString() as IsoDateTime;
@@ -104,7 +107,6 @@ describe('Context drawer change marks', () => {
     });
 
     expect(dot()).not.toBeNull();
-    expect(screen.getByTestId('context-chip').textContent).toBe('Context');
   });
 
   it('marks it seen on open and lists what was added, removed and reworded', async () => {
@@ -113,17 +115,14 @@ describe('Context drawer change marks', () => {
     await settle();
     expect(dot()).not.toBeNull();
 
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
 
     expect(seenAt()).not.toBe(before);
     expect(dot()).toBeNull();
     const drawer = screen.getByRole('region', { name: 'Context' });
-    expect(
-      within(drawer)
-        .getByRole('tab', { name: /Decisions/ })
-        .getAttribute('aria-selected'),
-    ).toBe('true');
+    expect(within(drawer).queryByRole('tab', { name: /Decisions/ })).toBeNull();
+    expect(within(drawer).getByRole('region', { name: 'Decisions' })).toBeDefined();
     const changed = within(drawer).getByRole('region', { name: 'Changed since you last looked' });
     const labels = within(changed)
       .getAllByRole('button', { name: /: decision \d+$/ })
@@ -140,15 +139,15 @@ describe('Context drawer change marks', () => {
     renderSurface();
     await settle();
 
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
 
     expect(screen.queryByRole('region', { name: 'Context' })).toBeNull();
     expect(dot()).toBeNull();
 
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
 
     const drawer = screen.getByRole('region', { name: 'Context' });
@@ -173,17 +172,15 @@ const persistSeenAt = () => {
 };
 
 describe('Context drawer mark as read', () => {
-  it('clears the changes section and the tab dot without closing the drawer', async () => {
+  it('clears the changes section without closing the drawer, the signal said once', async () => {
     const writes = persistSeenAt();
     renderSurface();
     await settle();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
     const drawer = screen.getByRole('region', { name: 'Context' });
     expect(changesRegion()).not.toBeNull();
-    expect(
-      within(drawer).getByRole('img', { name: 'Changed since you last looked' }),
-    ).toBeDefined();
+    expect(within(drawer).queryByRole('img', { name: 'Changed since you last looked' })).toBeNull();
 
     fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
 
@@ -201,7 +198,7 @@ describe('Context drawer mark as read', () => {
     persistSeenAt();
     renderSurface();
     await settle();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
     fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
     await waitFor(() => expect(changesRegion()).toBeNull());
@@ -240,7 +237,7 @@ describe('Context drawer mark as read', () => {
         : new Promise<never>(() => undefined);
     renderSurface();
     await settle();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    await openContext();
     await settle();
 
     fireEvent.click(within(changesRegion()!).getByRole('button', { name: 'Mark as read' }));
@@ -256,7 +253,7 @@ describe('Context drawer mark as read', () => {
 });
 
 describe('Context drawer summary', () => {
-  it('reads the summary by section, key line first and the rest collapsed', async () => {
+  it('reads the summary by section, counted from two, key line first and the rest collapsed', async () => {
     act(() => {
       useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, tab: 'summary' });
     });
@@ -264,10 +261,11 @@ describe('Context drawer summary', () => {
     await settle();
 
     const drawer = screen.getByRole('region', { name: 'Context' });
-    const sections = within(drawer)
+    const summary = within(drawer).getByRole('region', { name: 'Summary' });
+    const sections = within(summary)
       .getAllByRole('heading', { level: 3 })
       .map((heading) => heading.textContent);
-    expect(sections).toEqual(['State4', 'Next3', 'Open questions1', 'Learned2']);
+    expect(sections).toEqual(['State4', 'Next3', 'Open questions', 'Learned2']);
 
     const state = within(drawer).getByRole('region', { name: 'State' });
     expect(

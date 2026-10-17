@@ -144,8 +144,9 @@ describe('SavedModelsNotice', () => {
 
     open();
 
-    expect(await screen.findByText('Model settings 2 projects had are saved')).toBeDefined();
-    expect(screen.getByText('They no longer apply.')).toBeDefined();
+    expect(
+      await screen.findByText('Saved model settings from 2 projects no longer apply.'),
+    ).toBeDefined();
   });
 
   it('counts one project in the singular', async () => {
@@ -153,7 +154,9 @@ describe('SavedModelsNotice', () => {
 
     open();
 
-    expect(await screen.findByText('Model settings 1 project had are saved')).toBeDefined();
+    expect(
+      await screen.findByText('Saved model settings from 1 project no longer apply.'),
+    ).toBeDefined();
   });
 
   it('lists each project with what it had on Show', async () => {
@@ -207,7 +210,7 @@ describe('SavedModelsNotice', () => {
       ).getByRole('button', { name: 'Apply' }),
     );
 
-    await waitFor(() => expect(screen.queryByText(/had are saved/)).toBeNull());
+    await waitFor(() => expect(screen.queryByText(/no longer apply/)).toBeNull());
     const overrides = useAppStore.getState().workspaceOverrides[WORKSPACE_ID];
     expect(overrides?.taskModels).toEqual(PAYMENTS_SAVED.taskModels);
     expect(overrides?.roleModels).toMatchObject({
@@ -241,7 +244,7 @@ describe('SavedModelsNotice', () => {
       false,
     );
     expect(await getSetting(storySqlite(), `legacy.projectModels.${PAYMENTS.id}`)).not.toBeNull();
-    expect(screen.getByText('Model settings 1 project had are saved')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 1 project no longer apply.')).toBeDefined();
     expect(useAppStore.getState().workspaceOverrides[WORKSPACE_ID]?.taskModels ?? null).toBeNull();
   });
 
@@ -263,7 +266,9 @@ describe('SavedModelsNotice', () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByText('Model settings 1 project had are saved')).toBeDefined(),
+      expect(
+        screen.getByText('Saved model settings from 1 project no longer apply.'),
+      ).toBeDefined(),
     );
     expect(await getSetting(storySqlite(), `legacy.projectModels.${LEDGER.id}`)).toBeNull();
     expect(await getSetting(storySqlite(), `legacy.projectModels.${PAYMENTS.id}`)).not.toBeNull();

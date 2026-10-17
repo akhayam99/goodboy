@@ -267,7 +267,7 @@ describe('parseOrchestratorDecision', () => {
     expect(parsed).toEqual({
       action: 'done',
       reason: 'Goal satisfied.',
-      runSummary: { kind: 'structured', done: ['closed the brace case'], left: [] },
+      runSummary: { kind: 'structured', done: ['closed the brace case'], left: [], leftRoles: {} },
     });
   });
 
@@ -297,7 +297,30 @@ describe('parseOrchestratorDecision', () => {
     expect(parsed).toEqual({
       action: 'done',
       reason: 'Goal satisfied.',
-      runSummary: { kind: 'structured', done: ['shipped the gate'], left: ['port the tests'] },
+      runSummary: {
+        kind: 'structured',
+        done: ['shipped the gate'],
+        left: ['port the tests'],
+        leftRoles: {},
+      },
+    });
+  });
+
+  it('keeps the role a planned left entry names and drops one outside the vocabulary', () => {
+    const parsed = parseOrchestratorDecision({
+      provider: 'anthropic',
+      raw: '<<orchestrator>>{"action":"done","reason":"Goal satisfied."}<</orchestrator>>\n<<run-summary>>{"done":[],"left":[{"text":"prove the batching","role":"Tester"},{"text":"stream rows","role":"wizard"},"write the notes"]}<</run-summary>>',
+    });
+
+    expect(parsed).toEqual({
+      action: 'done',
+      reason: 'Goal satisfied.',
+      runSummary: {
+        kind: 'structured',
+        done: [],
+        left: ['prove the batching', 'stream rows', 'write the notes'],
+        leftRoles: { 'prove the batching': 'tester' },
+      },
     });
   });
 

@@ -31,7 +31,13 @@ export const ReplyBar = ({ target, onClear }: Props) => {
       <span className="min-w-0 flex-1 truncate text-faint-foreground">
         {excerptOf(target.message.body)}
       </span>
-      <IconButton icon={X} label="Cancel reply" variant="ghost" iconSize={12} onClick={onClear} />
+      <IconButton
+        icon={X}
+        label="Cancel reply"
+        variant="ghost"
+        iconSize={ICON_SIZE.row}
+        onClick={onClear}
+      />
     </div>
   );
 };

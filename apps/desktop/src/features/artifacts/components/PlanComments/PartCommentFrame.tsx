@@ -33,7 +33,7 @@ export const PartCommentFrame = ({ index, title, children }: Props) => {
           <CommentButton
             label={`Comment on part ${index + 1}`}
             onClick={() => api.startComposing({ anchor: { kind: 'part', index, title } })}
-            className="absolute right-2 top-1 opacity-0 group-focus-within/part:opacity-100 group-hover/part:opacity-100 focus-visible:opacity-100"
+            className="absolute right-2 top-1"
           />
         ) : null}
       </div>

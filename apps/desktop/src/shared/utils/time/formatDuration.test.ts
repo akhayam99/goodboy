@@ -3,9 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { formatDuration } from './formatDuration';
 
 describe('formatDuration', () => {
-  it('keeps the small units the transcript needs', () => {
-    expect(formatDuration({ durationMs: 420 })).toBe('420ms');
+  it('says nothing under one second, live or done, and never writes ms', () => {
+    expect(formatDuration({ durationMs: 420 })).toBeNull();
+    expect(formatDuration({ durationMs: 999 })).toBeNull();
+    expect(formatDuration({ durationMs: 420, hasTenths: true })).toBeNull();
+    expect(formatDuration({ durationMs: Number.NaN })).toBeNull();
+  });
+
+  it('writes seconds, then minutes and seconds', () => {
+    expect(formatDuration({ durationMs: 1_000 })).toBe('1s');
     expect(formatDuration({ durationMs: 8_000 })).toBe('8s');
+    expect(formatDuration({ durationMs: 157_000 })).toBe('2m 37s');
     expect(formatDuration({ durationMs: 90_000 })).toBe('1m 30s');
     expect(formatDuration({ durationMs: 120_000 })).toBe('2m');
   });
@@ -33,7 +41,7 @@ describe('formatDuration', () => {
   });
 
   it('never goes negative when the clock is behind the start', () => {
-    expect(formatDuration({ durationMs: -500 })).toBe('0ms');
-    expect(formatDuration({ durationMs: -500, hasTenths: true })).toBe('0.0s');
+    expect(formatDuration({ durationMs: -500 })).toBeNull();
+    expect(formatDuration({ durationMs: -500, hasTenths: true })).toBeNull();
   });
 });

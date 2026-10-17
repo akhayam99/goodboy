@@ -53,6 +53,7 @@ const {
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
     agentWriterWait: Record<string, never>;
+    autoTreeViews: Record<string, never>;
     agentModelOverride: Record<string, string>;
     agentProviderOverride: Record<string, string>;
     agentEffortOverride: Record<string, string>;
@@ -113,11 +114,13 @@ const {
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},
     agentWriterWait: {},
+    autoTreeViews: {},
     agentModelOverride: {},
     agentProviderOverride: {},
     agentEffortOverride: {},
     agentKindOverride: {},
     agentRunHistory: {},
+    transcripts: {},
     agentDraft: {},
     agentAttachments: {},
     agentQueue: {},
@@ -234,6 +237,19 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 import { ARCHIVED_SESSION_REASON } from '../../../session/archivedSession';
 import { ChatInput } from './index';
 
+const routingTrigger = (): HTMLElement => screen.getByRole('button', { name: /^Model routing:/ });
+
+type ResetRowParams = {
+  readonly user: ReturnType<typeof userEvent.setup>;
+};
+
+const openResetRow = async ({ user }: ResetRowParams): Promise<HTMLElement> => {
+  if (screen.queryByRole('dialog', { name: 'Model routing' }) === null) {
+    await user.click(routingTrigger());
+  }
+  return screen.findByRole('button', { name: 'reset' });
+};
+
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 'session-1' as Session['id'],
@@ -279,14 +295,14 @@ describe('ChatInput, first message', () => {
     expect(document.activeElement).toBe(textarea);
   });
 
-  it('invites a message without repeating the agent name once its first turn has run', () => {
+  it('invites a message to the role once its first turn has run', () => {
     mockStore.setState({
       sessionPhaseRuns: { 'session-1': [{ id: 'agent-1', name: 'Scout', kind: 'scout' }] },
       agentRunHistory: { 'agent-1': [{}] } as unknown as Record<string, never>,
     });
     render(<ChatInput session={makeSession()} />);
 
-    expect(screen.getByRole('textbox').getAttribute('placeholder')).toBe('Message the agent');
+    expect(screen.getByRole('textbox').getAttribute('placeholder')).toBe('Message Scout');
     mockStore.setState({ agentRunHistory: {} });
   });
 });
@@ -341,15 +357,18 @@ describe('ChatInput, input wiring', () => {
         },
       });
 
-    it('offers Queue and Read now once there is text, with the helper line', async () => {
+    it('shows Send now at rest and enables it once there is text, with the helper line', async () => {
       const user = userEvent.setup();
       render(<ChatInput session={runningSession()} />);
 
-      expect(screen.queryByRole('button', { name: /^Read now/ })).toBeNull();
+      expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(true);
+      expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
       await user.type(screen.getByRole('textbox'), 'keep the flag');
 
       expect(screen.getByRole('button', { name: /^Queue/ })).toBeDefined();
-      expect(screen.getByRole('button', { name: /^Read now/ })).toBeDefined();
+      expect(screen.getByRole('button', { name: /^Send now/ }).hasAttribute('disabled')).toBe(
+        false,
+      );
       expect(screen.getByText(/Queue waits for this turn to end/)).toBeDefined();
     });
 
@@ -662,7 +681,7 @@ describe('ChatInput, agent reference routing', () => {
     const user = userEvent.setup();
     render(<ChatInput session={scoutSession()} />);
 
-    expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+    expect(routingTrigger().textContent).not.toContain('pinned');
 
     await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
     const dialog = screen.getByRole('dialog', { name: 'Model routing' });
@@ -685,9 +704,9 @@ describe('ChatInput, agent reference routing', () => {
       }),
     );
 
-    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+    await waitFor(() => expect(routingTrigger().textContent).toContain('· pinned'));
 
-    await user.click(screen.getByLabelText('Reset routing override'));
+    await user.click(await openResetRow({ user }));
 
     expect(setAgentConfig).toHaveBeenLastCalledWith('session-1', 'agent-1', {
       providerOverride: 'anthropic',
@@ -696,7 +715,7 @@ describe('ChatInput, agent reference routing', () => {
     });
     expect(setSessionConfig).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+      expect(routingTrigger().textContent).not.toContain('pinned');
     });
   });
 
@@ -711,7 +730,7 @@ describe('ChatInput, agent reference routing', () => {
         name: 'Cursor',
       }),
     );
-    await user.click(await screen.findByLabelText('Reset routing override'));
+    await user.click(await openResetRow({ user }));
 
     const textarea = screen.getByRole('textbox');
     await user.type(textarea, 'find the files');
@@ -1007,7 +1026,7 @@ describe('ChatInput, cursor combo axes', () => {
     await togglePicker(user);
     await user.click(modeChip('Fast'));
 
-    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'reset' })).toBeTruthy();
     expect(screen.getByRole('dialog', { name: 'Model routing' }).textContent).toContain(
       'Overriding default',
     );
@@ -1044,7 +1063,7 @@ describe('ChatInput, cursor combo axes', () => {
     const user = userEvent.setup();
     render(<ChatInput session={cursorSession('composer-2.5-fast')} />);
 
-    expect(screen.queryByLabelText('Reset routing override')).toBeNull();
+    expect(routingTrigger().textContent).not.toContain('pinned');
 
     await togglePicker(user);
     expect(modeChip('Fast').getAttribute('aria-pressed')).toBe('true');
@@ -1060,7 +1079,7 @@ describe('ChatInput, cursor combo axes', () => {
     await togglePicker(user);
     await user.click(modeChip('Fast'));
 
-    expect(await screen.findByLabelText('Reset routing override')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'reset' })).toBeTruthy();
     expect(modeChip('Fast').getAttribute('aria-pressed')).toBe('false');
   });
 
@@ -1286,12 +1305,10 @@ describe('ChatInput, composer flows', () => {
     expect(textarea.getAttribute('placeholder')).toBe(ARCHIVED_SESSION_REASON);
   });
 
-  it('cancels the running turn from the stop control', async () => {
-    const user = userEvent.setup();
+  it('leaves Stop to the conversation tail', () => {
     render(<ChatInput session={runningSession()} />);
 
-    await user.click(screen.getByRole('button', { name: 'Stop' }));
-
-    expect(cancelCurrentTurnMock).toHaveBeenCalledWith('session-1', 'agent-1', 'user');
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+    expect(cancelCurrentTurnMock).not.toHaveBeenCalled();
   });
 });

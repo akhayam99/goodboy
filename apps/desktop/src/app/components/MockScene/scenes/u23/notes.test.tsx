@@ -50,17 +50,17 @@ describe('the u23 notes scenes', () => {
     expect(notes.length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByRole('region', { name: 'Your notes' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Notes \d/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /^Fix comments \d/ })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Fix \d+ comments?$/ })).toBeNull();
   });
 
   it('lists the notes on Comments before a pull request, with no empty state in their place', async () => {
     renderScene({ name: 'branch-comments-no-pr' });
 
     const list = await screen.findByRole('navigation', { name: 'Comments' }, WAIT);
-    expect(within(list).getAllByText('Note').length).toBeGreaterThan(0);
+    expect(within(list).getAllByRole('listitem').length).toBeGreaterThan(0);
     expect(screen.queryByText('No pull request yet')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Create pull request' })).toBeNull();
     expect(screen.queryByRole('tab', { name: /^On GitHub/ })).toBeNull();
-    expect(screen.getByRole('tab', { name: /^Notes/ })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: /^Notes/ })).toBeNull();
   });
 });

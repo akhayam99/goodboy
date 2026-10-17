@@ -1,11 +1,11 @@
 import { expect } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import { frameGeometryOf, type FramePage } from '@goodboy/ui';
+import { FRAME_BAND_PX, frameGeometryOf, type FramePage } from '@goodboy/ui';
 import {
   CRUMB_ROWS,
   type Row,
   WAIT,
-  band,
+  studio,
   branchTab,
   click,
   clickButton,
@@ -18,6 +18,16 @@ import {
 } from './harness';
 
 const QUESTIONS_ROW = CRUMB_ROWS.find((row) => row.label === 'Questions');
+
+const doorOf = (name: string): HTMLElement => {
+  const door = document.querySelector<HTMLElement>(
+    `[data-side-column] [data-column-door="${name}"]`,
+  );
+  if (door === null) {
+    throw new Error(`no ${name} door in the side column`);
+  }
+  return door;
+};
 
 const titleRowOf = (title: HTMLElement): HTMLElement | null =>
   title.closest<HTMLElement>('[data-slot="pane-title-row"]');
@@ -35,16 +45,46 @@ type GridParams = {
   readonly isStudio: boolean;
 };
 
+const expectOnPagePrimitive = ({
+  page,
+  title,
+}: {
+  readonly page: FramePage;
+  readonly title: HTMLElement;
+}): void => {
+  const header = title.closest<HTMLElement>('[data-page-header]');
+  expect(header, `${page} draws its title through the page header`).not.toBeNull();
+  expect(header?.getAttribute('data-page')).toBe(page);
+  const isUnderBand = header?.hasAttribute('data-under-trail') ?? false;
+  expect(header?.className.split(' ').includes('pt-3')).toBe(!isUnderBand);
+};
+
 const expectOnGrid = ({ page, isStudio }: GridParams): void => {
   const geometry = frameGeometryOf({ page });
-  expect(geometry.titleCentreY).toBe(56);
-  expect(geometry.bandHeight + geometry.titleRowHeight / 2).toBe(56);
+  expect(geometry.titleCentreY).toBe(geometry.bandHeight + geometry.titleRowHeight / 2);
+  expect(geometry.titleCentreY).toBe(geometry.bandHeight === FRAME_BAND_PX ? 56 : 28);
   const title = onlyH1({
     scope: isStudio ? (document.querySelector('[data-studio-frame]') ?? document) : document,
   });
   const row = titleRowOf(title);
   expect(row).not.toBeNull();
   expect(row?.firstElementChild).toBe(title);
+  expectOnPagePrimitive({ page, title });
+  if (!isStudio) {
+    expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
+    expect(
+      title.closest('[data-slot="pane-header"]')?.hasAttribute('data-under-trail') ?? false,
+    ).toBe(false);
+    return;
+  }
+  const frame = title.closest('[data-studio-frame]');
+  expect(frame).not.toBeNull();
+  const header = title.closest<HTMLElement>('[data-slot="pane-header"]');
+  if (geometry.bandHeight !== FRAME_BAND_PX) {
+    expect(frame?.querySelector('[data-studio-band]')).toBeNull();
+    expect(header?.hasAttribute('data-under-trail') ?? false).toBe(false);
+    return;
+  }
   if (geometry.titleLeft === 'detail') {
     const detail = title.closest('[data-studio-detail]');
     expect(detail).not.toBeNull();
@@ -54,17 +94,10 @@ const expectOnGrid = ({ page, isStudio }: GridParams): void => {
         first?.querySelector('[data-slot="trail-bar"]') !== null,
     ).toBe(true);
   }
-  const header = title.closest<HTMLElement>('[data-slot="pane-header"]');
   if (header !== null) {
     expect(header.hasAttribute('data-under-trail')).toBe(true);
   }
-  if (isStudio) {
-    const frame = title.closest('[data-studio-frame]');
-    expect(frame).not.toBeNull();
-    expect(frame?.querySelector('[data-studio-band] [data-page-column]')).not.toBeNull();
-    return;
-  }
-  expect(document.querySelector('[data-slot="trail-bar"]')).not.toBeNull();
+  expect(frame?.querySelector('[data-studio-band] [data-page-column]')).not.toBeNull();
 };
 
 const landsOnSessionPage =
@@ -78,29 +111,31 @@ const landsOnSessionPage =
 
 export const FRAME_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'frame: the Board title sits under an empty band on the same 32px row',
+    name: 'frame: the Board title sits on one header row, no band above it',
     covers: ['navigate'],
     open: async () => {
-      await clickButton(/^Board/);
+      await clickButton(/^Sessions/);
     },
     lands: async () => {
-      await heading('Board');
+      await heading('Sessions');
       const title = onlyH1({ scope: document });
       const row = titleRowOf(title);
       expect(row).not.toBeNull();
-      expect(row?.previousElementSibling?.getAttribute('data-slot')).toBe('board-band');
-      expect(frameGeometryOf({ page: 'board' }).titleCentreY).toBe(56);
+      expect(row?.previousElementSibling).toBeNull();
+      expect(document.querySelector('[data-slot="board-band"]')).toBeNull();
+      expect(frameGeometryOf({ page: 'board' }).titleCentreY).toBe(28);
+      expectOnPagePrimitive({ page: 'board', title });
     },
   },
   {
-    name: 'frame: the Overview title is the one h1 on the trail grid',
+    name: 'frame: the Overview title is the one h1 on the page header row',
     covers: [],
     open: async () => {
       await settle();
     },
     lands: async (ctx) => {
       await lens(null)(ctx);
-      expect(await screen.findByTestId('context-chip')).toBeDefined();
+      expect((await screen.findByTestId('overview-title')).closest('h1')).not.toBeNull();
       await waitFor(() => expectOnGrid({ page: 'overview', isStudio: false }), WAIT);
     },
   },
@@ -146,27 +181,59 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     lands: landsOnSessionPage({ page: 'questions', title: 'Questions' }),
   },
   {
-    name: 'frame: the Tasks studio draws its band and its title on the column',
+    name: 'frame: the Tasks page draws no band, its title alone on the column',
     covers: ['openInbox', 'studio:inbox'],
     door: 'visible',
     open: async () => {
       await clickButton('Tasks');
     },
     lands: async () => {
-      await band('Tasks');
+      await studio('Tasks');
       await settle();
       expectOnGrid({ page: 'inbox', isStudio: true });
     },
   },
   {
-    name: 'frame: the Workflows studio draws its band and its title on the column',
+    name: 'frame: the Workflows page draws no band, its title alone on the column',
     covers: ['openStudio', 'studio:workflow', 'palette:Workflows'],
     door: 'palette',
     open: () => openPalette(/^Workflows$/),
     lands: async () => {
-      await band('Workflows');
+      await studio('Workflows');
       await heading('Workflows');
       await waitFor(() => expectOnGrid({ page: 'workflows', isStudio: true }), WAIT);
+    },
+  },
+  {
+    name: 'frame: the Chat page sits on the page header inset',
+    covers: ['openChat', 'studio:chat'],
+    door: 'visible',
+    open: () => click(doorOf('chat')),
+    lands: async () => {
+      await studio('Chat');
+      await settle();
+      expectOnGrid({ page: 'chat', isStudio: true });
+    },
+  },
+  {
+    name: 'frame: the Terminal page sits on the page header inset',
+    covers: ['openTerminalStudio', 'studio:terminal'],
+    door: 'visible',
+    open: () => click(doorOf('terminal')),
+    lands: async () => {
+      await studio('Terminal');
+      await heading('Terminal');
+      expectOnGrid({ page: 'terminal', isStudio: true });
+    },
+  },
+  {
+    name: 'frame: the Monitoring page sits on the page header inset, Close last',
+    covers: ['palette:Monitoring'],
+    open: () => openPalette(/^Monitoring/, 'Monitoring'),
+    lands: async () => {
+      await studio('Monitoring');
+      await heading('Monitoring');
+      await waitFor(() => expectOnGrid({ page: 'monitoring', isStudio: true }), WAIT);
     },
   },
 ];

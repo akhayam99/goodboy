@@ -1,17 +1,28 @@
 import {
-  Ban,
-  CircleCheck,
   Copy,
   ListChecks,
   MessageCircleQuestion,
   Pause,
   Play,
   RotateCcw,
+  SkipForward,
+  SlidersHorizontal,
+  Square,
   StepForward,
   Undo2,
 } from 'lucide-react';
-import type { AgentId, OpenQuestionId, SessionId, WorkflowRun } from '@goodboy/types';
-import { isAgentStatusHalted } from '@goodboy/core';
+import type {
+  Agent,
+  AgentId,
+  OpenQuestionId,
+  SessionId,
+  Step,
+  WorkflowAutonomy,
+  WorkflowRun,
+} from '@goodboy/types';
+import { isAgentStatusHalted, isAgentStatusSettled } from '@goodboy/core';
+import { RUN_AUTONOMY_OPTIONS, runAutonomyOf } from '../../workflows/runAutonomy';
+import { skipStepDescription, skipStepTitle } from '../../workflows/skipStepCopy';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/names';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
@@ -44,9 +55,47 @@ export type WorkflowRunFacts = {
   readonly readyStepName: string | null;
   readonly hasChanges: boolean;
   readonly canPause: boolean;
+  readonly canResume: boolean;
   readonly hasStepRouting: boolean;
   readonly canSaveAsPreset: boolean;
   readonly summary: string;
+  readonly skipStep: SkipStepFacts | null;
+  readonly autonomy: WorkflowAutonomy;
+};
+
+type SkipStepFacts = {
+  readonly agent: Agent;
+  readonly number: number;
+  readonly description: string;
+};
+
+type SkipParams = {
+  readonly run: WorkflowRun;
+  readonly agents: ReadonlyArray<Agent>;
+  readonly steps: ReadonlyArray<Step>;
+  readonly stepAgentId: AgentId | null;
+};
+
+const skipStepOf = ({ run, agents, steps, stepAgentId }: SkipParams): SkipStepFacts | null => {
+  const agent = agents.find((candidate) => candidate.id === stepAgentId) ?? null;
+  if (
+    agent === null ||
+    agent.parentAgentId != null ||
+    isAgentStatusSettled({ status: agent.status })
+  ) {
+    return null;
+  }
+  const index = [...steps]
+    .sort((left, right) => left.ordinal - right.ordinal)
+    .findIndex((step) => step.id === agent.stepId);
+  if (index < 0) {
+    return null;
+  }
+  return {
+    agent,
+    number: index + 1,
+    description: skipStepDescription({ run, agent, agents }),
+  };
 };
 
 const openRun = ({ env, facts }: { readonly env: ActionEnv; readonly facts: WorkflowRunFacts }) =>
@@ -181,9 +230,19 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
         isInFlight &&
         !isRunPaused({ run }) &&
         run.orchestrationStop?.kind !== 'operator',
+      canResume: !isEnded && isRunPaused({ run }),
       hasStepRouting: run.executionMode === 'dynamic' && !isEnded && agents.length > 0,
       canSaveAsPreset: workflow !== null && workflow.steps.length > 0 && workflow.isPreset !== true,
       summary: [name, ...agents.map((agent) => `- ${agent.name}: ${agent.status}`)].join('\n'),
+      skipStep: isEnded
+        ? null
+        : skipStepOf({
+            run,
+            agents,
+            steps: workflow?.steps ?? [],
+            stepAgentId: target.stepAgentId ?? null,
+          }),
+      autonomy: runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy }).key,
     };
   },
   actions: [
@@ -291,12 +350,67 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       run: ({ facts, env }) => env.getState().pauseWorkflowRun(facts.sessionId, facts.run.id),
     },
     {
+      id: 'workflowRun.resume',
+      label: 'Resume run',
+      icon: Play,
+      group: 'act',
+      when: ({ facts }) => facts.canResume,
+      run: ({ facts, env }) => env.getState().resumeWorkflowRun(facts.sessionId, facts.run.id),
+    },
+    {
       id: 'workflowRun.routing',
       label: 'Step routing',
       icon: CONCEPT_ICONS.providers,
       group: 'act',
       when: ({ facts }) => facts.hasStepRouting,
       run: ({ facts, env }) => showStepRouting({ env, facts }),
+    },
+    {
+      id: 'workflowRun.autonomy',
+      label: NAMES.autonomy,
+      icon: SlidersHorizontal,
+      group: 'act',
+      when: ({ facts }) => isLive({ facts }),
+      choices: ({ facts }) =>
+        RUN_AUTONOMY_OPTIONS.map((option) => ({
+          id: option.key,
+          label: option.label,
+          detail: option.hint,
+          isCurrent: option.key === facts.autonomy,
+        })),
+      run: async ({ facts, env, choice }) => {
+        const picked = RUN_AUTONOMY_OPTIONS.find((option) => option.key === choice);
+        if (picked === undefined || picked.key === facts.autonomy) {
+          return;
+        }
+        await env.getState().setWorkflowRunAutonomy(facts.sessionId, facts.run.id, picked.key);
+      },
+    },
+    {
+      id: 'workflowRun.skipStep',
+      label: ({ facts }) =>
+        facts.skipStep === null ? 'Skip step' : `Skip step ${facts.skipStep.number}`,
+      icon: SkipForward,
+      group: 'act',
+      when: ({ facts }) => facts.skipStep !== null,
+      confirm: ({ facts }) =>
+        facts.skipStep === null
+          ? null
+          : {
+              title: skipStepTitle({ agent: facts.skipStep.agent }),
+              description: facts.skipStep.description,
+              confirmLabel: 'Skip step',
+              role: 'alert',
+            },
+      run: async ({ facts, env }) => {
+        if (facts.skipStep === null) {
+          return;
+        }
+        await env.getState().skipStuckStepAndAdvance(facts.sessionId, facts.run.id, {
+          force: true,
+          agentId: facts.skipStep.agent.id,
+        });
+      },
     },
     {
       id: 'workflowRun.saveAsPreset',
@@ -332,7 +446,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     {
       id: 'workflowRun.close',
       label: CLOSE_WORKFLOW_COPY.label,
-      icon: CircleCheck,
+      icon: Square,
       group: 'danger',
       when: ({ facts }) => facts.isClosable && isLive({ facts }),
       confirm: () => ({
@@ -346,7 +460,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
     {
       id: 'workflowRun.discard',
       label: NAMES.archiveRun,
-      icon: Ban,
+      icon: CONCEPT_ICONS.archive,
       group: 'danger',
       when: ({ facts }) => facts.state !== 'discarded',
       confirm: () => ({

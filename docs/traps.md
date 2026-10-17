@@ -279,6 +279,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   payload; a multibyte sequence cut at the 8 KB edge still counts as text. Do
   not bring back an extension list, and do not widen the data URL list: a
   `.mts`, a `.jsonc` or a file with no extension must stay readable.
+- The background repo check (`worktree/base_divergence.rs`) passes
+  `--no-prune` to its fetch on purpose. A user's `fetch.prune=true` makes a
+  plain `git fetch` prune, and a check that runs every few minutes must not
+  delete remote-tracking branches behind the user's back. Its scenes stay
+  quiet because `quietSceneRepoCheck` replaces `checkRepoDivergence` in the
+  scene host, where there is no Tauri to answer.
 
 ## Hand-maintained lists the compiler does not check
 
@@ -311,8 +317,12 @@ fails silently at runtime.
   is the release that turns the experiment on.
 - `AUTO_DELEGATION_ROLES` (`packages/core/src/auto/roles.ts`) and the
   `READ_ONLY_ROLES` and `WRITER_ROLES` of `providers/cli_args.rs` name the same
-  seven roles in two languages, and no test ties them. `READ_ONLY_ROLES` also
-  holds `auto`, which is not a delegation role. Change one, change the other.
+  ten roles in two languages. `the_writer_roles_match_the_auto_writer_roles_of_core`
+  reads `AUTO_WRITER_ROLES` out of the TypeScript file and fails when the two
+  writer lists differ; the read only list has no such test. `READ_ONLY_ROLES`
+  also holds `auto`, which is not a delegation role. A role missing from both
+  Rust lists runs read only. The role CHECK of `auto_delegations` (m232) is the
+  third copy: a new Auto role needs a table rebuild. Change one, change all.
   A role id outside the TypeScript list is rejected by
   `parseAutoDelegationRole`, never passed through `normalizeAgentRole`, which
   would turn it into the Generalist.
@@ -402,7 +412,14 @@ fails silently at runtime.
   old URL still listed is "running", never "still fails". An agent carries no
   mount id: `checkTargetOf` ties an analyst to its mount through
   `selectCheckMount`, which matches the analyzed URL against the pull requests
-  and check runs of each mount.
+  and check runs of each mount. Agents started since m233 also store
+  `agents.mount_id`, set to NULL when the worktree row is removed. The Activity
+  row of a CI fix agent resolves its mount through `ciFixMountOf`: the stored
+  mount while it is still attached, then `selectCheckMount`, then the one
+  attached mount whose `repoSlug` is the repo in the job URL, then the session's
+  only attached mount, else it opens the chat. Older agents have no stored
+  mount, and two mounts of one repo cannot be told apart by the URL, so that row
+  opens the chat.
 
 - The CI fix roles are `ci-debugger` and `ci-fixer`, stored as their own kind.
   An older version stored `debugger` and `implementer` on the same agents, and
@@ -446,6 +463,10 @@ fails silently at runtime.
   `origin: 'operator'` expecting the plain path; a delivery uses `origin: 'delegation'`.
 - `auto_*` money columns are REAL dollars. Compare them through
   `autoRemainingUsdSql` and `AUTO_USD_EPSILON`, not with `===`.
+- m232 rebuilds `auto_delegations` with `PRAGMA foreign_keys = OFF` around the
+  drop: without it, dropping the table cascades into `auto_attempts`. Any later
+  rebuild of an `auto_*` table follows the same procedure and its test counts
+  the child rows before and after.
 - The sql of m230 is pinned by hash in `registry.test.ts`. While the release is
   unshipped, a change to it needs the new hash pasted there; once shipped, it
   is immutable.
@@ -460,7 +481,7 @@ fails silently at runtime.
   `isFanOutRejected` therefore read only when the reply holds a question or a
   split. Keep any new read there behind such a condition.
 - An adopted source (Move to Auto) is a delegation row with `adopted = 1`, so
-  `isAutoChildAgent` is true for it too, but the cards, the Work rail and
+  `isAutoChildAgent` is true for it too, but the delegation lines, the Work rail and
   `autoTreeOfAgent` skip it on purpose: it stays an ordinary agent in the lists.
   Its role is the delegation role of its kind, and a Generalist takes `implementer`
   because the role column has no other value for it; the chat never shows that.
@@ -624,11 +645,10 @@ The hint a person types before a fix is plain text carried as a field, never re-
 - A draft is cleared by `settleStartHint` only when its captured revision is still current, and only from a callback that fires when the agent's first turn started (`onKickoffAccepted` in `spawnAgent`, `onAccepted` in `spawnPushFixer` and `startHistoryRewriter`). A resolver launch counts as accepted when its batch and attempt are recorded: its kickoff drains afterwards, and a refused drain shows **Failed** with the batch hint, which **Retry** reuses.
 - `analyzeFailingChecks` rejects a second call that carries a hint while the same check is being analyzed, instead of returning the running agent and dropping the hint.
 
-## Auto switch and screens
+## Auto gate and screens
 
-Auto is gated twice and the legacy role grid never lists it. `AUTO_GATES.isDelegationEnabled` (compile time, read through `AutoReleaseContext`) decides whether any Auto control exists; the setting `agents.autoExperiment` decides, per person, whether the start is Auto. `isAutoStartEnabled` is the only place that combines them, and `visibleAgentKinds()` stays static, so do not add `auto` to a role list to make a menu complete.
+Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegationEnabled` (compile time, read through `AutoReleaseContext` by `useIsAutoOn`) decides whether Auto exists and whether a start is Auto; there is no per person setting. An old `agents.autoExperiment` row can still sit in a database: never read it, a stored `false` must not hide Auto. `visibleAgentKinds()` stays static, so do not add `auto` to a role list to make a menu complete. A test of the role start renders under `AutoReleaseContext` false (or `SessionDraftPane isAuto={false}`).
 
-- An Auto start reads the stored setting at the click (`useConfirmStartMode`), never the cached one. A form that shows the other mode repaints and waits for a new click, so a test that clicks Start must wait for the spawn: the call happens after one database read.
 - Delegation cards are inserted into the transcript by time: before the first user or handoff row at or after the last settle of their batch. Do not anchor them on a run id; the delegation row does not keep the run that created it.
 - The approval of a plan tells Auto once. `approveAutoPlan` reads the artifact before the swap and does not send "Approved plan vN." when that version was already approved, which is what a second window sees. The swap itself is idempotent, so the read is the guard.
 - `useAutoTreeActions.stop` stops the live children and the root agent turn by turn. The tree phase is written by the scheduler, not by this button; once the tree stop of the runtime exists, replace the body and keep the name.

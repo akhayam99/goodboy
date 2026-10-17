@@ -16,14 +16,24 @@ export const drawerKey = (content: DrawerContent): string => {
       return `plan-part:${content.payload.planId}:${content.payload.index}`;
     case 'scriptRun':
       return `scriptRun:${content.payload.mountId ?? ''}:${content.payload.scriptKey}`;
+    case 'explore':
+      return 'explore';
+    case 'scripts':
+      return 'scripts';
     case 'conversation':
       return `conversation:${content.payload.threadId}`;
     case 'ask':
       return 'ask';
+    case 'question':
+      return `question:${content.payload.questionId}`;
     case 'new':
       return 'new';
     case 'transcript':
       return `transcript:${content.payload.agentId}`;
+    case 'auto-child':
+      return `auto-child:${content.payload.agentId}`;
+    case 'run-step':
+      return `run-step:${content.payload.runId}:${content.payload.agentId}`;
     case 'fix-comments':
       return `fix-comments:${content.payload.mountId ?? ''}`;
     case 'terminal':

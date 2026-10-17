@@ -96,10 +96,10 @@ describe('PaletteOverlay, the commands mode', () => {
     const chip = scopeChipOf({ label: 'Speed up the payout export for large merchants' });
     expect(tooltipTextOf({ element: chip })).toBe('Backspace removes the scope');
     expect(screen.getByText('For this session')).toBeDefined();
-    expect(optionNames()[0]).toBe('Open Files');
+    expect(optionNames()[0]).toBe('Open files');
     expect(optionNames()[0]).not.toMatch(/^Message /);
-    expect(optionNames()[1]).toBe('Message Stream the export instead of building it in memory');
-    expect(selectedName()).toBe('Open Files');
+    expect(optionNames()[1]).toBe('Message Implementer');
+    expect(selectedName()).toBe('Open files');
     expect(optionNames()).toContain('All actions for this session');
     expect(optionNames()).not.toContain('Delete…');
   });
@@ -208,7 +208,7 @@ describe('PaletteOverlay, the commands mode', () => {
 
     const preview = screen.getByRole('complementary', { name: 'Preview' });
     expect(within(preview).getByText('Stage')).toBeDefined();
-    expect(within(preview).getByText('Spend')).toBeDefined();
+    expect(within(preview).queryByText('Spend')).toBeNull();
   });
 
   it('morphs Delete into an inline confirm and deletes only after the confirm', () => {
@@ -272,7 +272,7 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     type(input, 'archive');
     expect(optionNames()).not.toContain('Archive');
     type(input, 'review');
-    expect(optionNames()).not.toContain('Open Comments');
+    expect(optionNames()).not.toContain('Open comments');
   });
 
   it('hides a blocked verb until it is searched, then shows it with its reason', () => {
@@ -519,27 +519,27 @@ describe('PaletteOverlay on a focused commit row', () => {
   });
 });
 
-describe('PaletteOverlay, Ask in Chat', () => {
-  it('puts Ask in Chat first on every search, with the query, above Jump to', () => {
+describe('PaletteOverlay, Ask in chat', () => {
+  it('puts Ask in chat first on every search, with the query, above Jump to', () => {
     const { input } = openIn(null);
 
     type(input, 'pay export');
 
-    expect(optionNames()[0]).toBe('Ask in Chat');
+    expect(optionNames()[0]).toBe('Ask in chat');
     expect(
-      screen.getByRole('option', { name: 'Ask in Chat' }).getAttribute('aria-description'),
+      screen.getByRole('option', { name: 'Ask in chat' }).getAttribute('aria-description'),
     ).toBe('"pay export"');
     expect(screen.getByText('Jump to')).toBeDefined();
   });
 
-  it('keeps the best match picked for a name, and Ask in Chat picked for a question', () => {
+  it('keeps the best match picked for a name, and Ask in chat picked for a question', () => {
     const { input } = openIn(null);
 
     type(input, 'pay export');
     expect(selectedName()).toBe('Speed up the payout export for large merchants');
 
     type(input, 'Where do we validate IBANs?');
-    expect(selectedName()).toBe('Ask in Chat');
+    expect(selectedName()).toBe('Ask in chat');
   });
 
   it('opens a new chat with the query as its first message on Enter', async () => {
@@ -565,12 +565,12 @@ describe('PaletteOverlay, Ask in Chat', () => {
     });
   });
 
-  it('offers Ask about this session first inside a session, then Ask in Chat', () => {
+  it('offers Ask about this session first inside a session, then Ask in chat', () => {
     const { input } = openIn(PAYOUT);
 
     type(input, 'pay export');
 
-    expect(optionNames().slice(0, 2)).toEqual(['Ask about this session', 'Ask in Chat']);
+    expect(optionNames().slice(0, 2)).toEqual(['Ask about this session', 'Ask in chat']);
     expect(selectedName()).toBe('Speed up the payout export for large merchants');
     type(input, 'Why did the tester fail?');
     expect(selectedName()).toBe('Ask about this session');
@@ -597,7 +597,7 @@ describe('PaletteOverlay, Ask in Chat', () => {
     );
   });
 
-  it('keeps Ask in Chat alone on the Board', () => {
+  it('keeps Ask in chat alone on the Board', () => {
     const { input } = openIn(null);
     type(input, 'Why did the tester fail?');
     expect(optionNames()).not.toContain('Ask about this session');
@@ -617,12 +617,12 @@ describe('PaletteOverlay, Ask in Chat', () => {
     expect(portal?.parentElement?.className).toContain('z-command-palette');
   });
 
-  it('offers no Ask in Chat on an empty input or a prefixed search', () => {
+  it('offers no Ask in chat on an empty input or a prefixed search', () => {
     const { input } = openIn(null);
 
-    expect(optionNames()).not.toContain('Ask in Chat');
+    expect(optionNames()).not.toContain('Ask in chat');
     type(input, '>refresh');
-    expect(optionNames()).not.toContain('Ask in Chat');
+    expect(optionNames()).not.toContain('Ask in chat');
   });
 });
 

@@ -124,7 +124,7 @@ const ArtifactCreationScene = ({
     useAppStore.getState().openDrawer({
       kind: 'new',
       sessionId: SESSION_ID,
-      payload: { tab: 'write', writeKind: kind },
+      payload: { form: kind },
     });
     setIsReady(true);
   }, [kind, brief]);

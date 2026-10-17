@@ -63,12 +63,19 @@ describe('PrChecks with runs', () => {
     run({ name: 'types', conclusion: 'success' }),
   ];
 
-  it('reads one rollup line, failing first', () => {
+  it('draws no summary line: each group label carries its own count from two rows', () => {
     draw({ checks });
 
-    expect(screen.getByTestId('checks-rollup').textContent).toBe(
-      '1 failing · 1 running · 2 passed · 1 skipped',
-    );
+    expect(screen.queryByTestId('checks-rollup')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Passed 2' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Failing' })).toBeDefined();
+  });
+
+  it('puts every duration in one fixed column, whatever the row carries', () => {
+    draw({ checks });
+
+    const durations = [...document.querySelectorAll('[data-check-row] button > span:last-child')];
+    expect(durations.map((cell) => cell.textContent)).toEqual(['', '', '1m 30s', '', '']);
   });
 
   it('groups the rows as Failing, Running, Passed and Skipped', () => {
@@ -99,7 +106,7 @@ describe('PrChecks with nothing reported', () => {
     const onOpenUrl = vi.fn();
     draw({ checks: [], onOpenUrl });
 
-    expect(screen.getByText('No checks have reported on this pull request yet')).toBeDefined();
+    expect(screen.getByText('No checks have reported on this pull request.')).toBeDefined();
     expect(screen.queryByText(/runs no checks/i)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /View on GitHub/ }));
     expect(onOpenUrl).toHaveBeenCalledWith(FALLBACK);

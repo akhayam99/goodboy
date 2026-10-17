@@ -136,6 +136,7 @@ const storyInvokeHandlers = {
   query_bridge_serving: false,
   get_workspace_overrides: null,
   get_session_overrides: null,
+  session_budget_get: null,
   set_workspace_overrides: null,
   boot_breadcrumb: null,
   log_provider_standing: null,
@@ -156,6 +157,16 @@ const storyInvokeHandlers = {
   other_tools_scan: { status: 'ready', tools: [] },
   other_tools_cancel: null,
   summarize_session: storySummarizeSession('The step finished.'),
+  repo_base_divergence: {
+    state: 'no-upstream',
+    base: null,
+    upstream: null,
+    ahead: 0,
+    behind: 0,
+    checkoutBranch: null,
+    uncommitted: 0,
+    message: null,
+  },
 };
 
 export const storySpies = {
@@ -550,6 +561,8 @@ export const storyDbStubs = () => ({
   countUserTextEvents: vi.fn(async () => 0),
   isAutoChildAgent: vi.fn(async () => false),
   listSessionDecisions: vi.fn(async () => []),
+  getSessionContextSeenAt: vi.fn(async (): Promise<string | null> => null),
+  setSessionContextSeenAt: vi.fn(async () => undefined),
   listSessionContextItemsForRole: vi.fn(async () => []),
   listSessionContextItems: vi.fn(async () => []),
   listWorkspaceLearnings: vi.fn(async () => []),
@@ -564,6 +577,7 @@ export const storyDbStubs = () => ({
   listSettingsWithPrefix: vi.fn(async () => []),
   listResolveCheckRuns: vi.fn(async () => []),
   listPlansForSession: vi.fn(async () => []),
+  listWorkspaceWorkflowRuns: vi.fn(async () => []),
   getArtifactProvenance: vi.fn(async () => null),
   upsertWorkflow: vi.fn(async () => undefined),
   listActiveResolveAttempts: storySpies.listActiveResolveAttempts,

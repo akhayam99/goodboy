@@ -16,7 +16,6 @@ import type { ShortcutEntry } from './registry';
 
 const RESERVED_COMBOS: ReadonlyArray<string> = [
   'cmd+KeyQ',
-  'cmd+KeyW',
   'cmd+KeyM',
   'cmd+KeyH',
   'cmd+alt+KeyH',
@@ -110,6 +109,9 @@ describe('shortcut registry', () => {
         continue;
       }
       if (entry.combo === 'cmd+KeyN' && shadowed === 'session.new') {
+        continue;
+      }
+      if (id === 'terminal.closeTab' && shadowed === 'app.close') {
         continue;
       }
       expect(shadowed, `${id} in ${entry.scope} shadows ${shadowed}`).toBeUndefined();

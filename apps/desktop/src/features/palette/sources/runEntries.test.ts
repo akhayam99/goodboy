@@ -25,9 +25,12 @@ const facts = (
   readyStepName: null,
   hasChanges: false,
   canPause: false,
+  canResume: false,
   hasStepRouting: false,
   canSaveAsPreset: false,
   summary: '',
+  skipStep: null,
+  autonomy: 'step',
   ...overrides,
 });
 

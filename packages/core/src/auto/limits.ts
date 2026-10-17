@@ -11,6 +11,9 @@ export const AUTO_ATTEMPT_CEILING_USD = {
   docs: 0.5,
   tester: 1.5,
   implementer: 3,
+  scribe: 0.5,
+  'ci-fixer': 1.5,
+  rewriter: 1.5,
 } as const satisfies Readonly<Record<AutoDelegationRole, number>>;
 
 export const AUTO_TURN_CEILING_USD = 0.5;
@@ -18,6 +21,8 @@ export const AUTO_TURN_CEILING_USD = 0.5;
 export const AUTO_DEFAULT_TREE_CAP_USD = 5;
 
 export const AUTO_DELEGATION_DEADLINE_MINUTES = 30;
+
+export const AUTO_STALE_DECIDE_MS = 10 * 60 * 1000;
 
 export const AUTO_BATCH_MIN_CHILDREN = 1;
 

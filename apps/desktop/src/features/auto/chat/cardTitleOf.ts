@@ -1,4 +1,5 @@
 import type { DelegationCardModel } from './delegationCardOf';
+import { revisionWordOf } from './revisionWordOf';
 
 type Params = {
   readonly card: Pick<
@@ -8,13 +9,6 @@ type Params = {
 };
 
 export const cardTitleOf = ({ card }: Params): string => {
-  if (!card.isRevision || card.reviseVersion === null) {
-    return card.roleLabel;
-  }
-  if (card.isOpen) {
-    return `${card.roleLabel}, revising v${card.reviseVersion}`;
-  }
-  return card.status.word === 'Done'
-    ? `${card.roleLabel}, v${card.reviseVersion} ready`
-    : card.roleLabel;
+  const word = revisionWordOf({ card });
+  return word === null ? card.roleLabel : `${card.roleLabel}, ${word}`;
 };

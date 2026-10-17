@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_WORKFLOW_RULES,
+  brandId,
   type Agent,
   type AgentId,
   type ArtifactId,
@@ -14,7 +15,8 @@ import {
 } from '@goodboy/types';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import type { PlanRevising } from '../plans/planRevising';
-import type { ArtifactGeneration } from './artifactCollection';
+import { resolveArtifactGenerations, type ArtifactGeneration } from './artifactCollection';
+import { liveArtifactCountOf } from './liveArtifactCountOf';
 import {
   buildArtifactListRows,
   countArtifactRows,
@@ -271,9 +273,9 @@ describe('buildArtifactListRows', () => {
     ]);
   });
 
-  it('files a replaced report under Ran, faint', () => {
+  it('files a replaced report under Consumed, faint', () => {
     const [row] = build({ artifacts: [report({ status: 'superseded' })] });
-    expect(row).toMatchObject({ group: 'ran', isFaint: true });
+    expect(row).toMatchObject({ group: 'consumed', isFaint: true });
     expect(row?.state?.label).toBe('Replaced');
   });
 
@@ -314,7 +316,7 @@ describe('buildArtifactListRows', () => {
     ]);
   });
 
-  it('groups in the order Needs you, Ready, Running, Ran, Recently deleted', () => {
+  it('groups in the order Needs you, Ready, Running, Consumed, Recently deleted', () => {
     const rows = build({
       plans: [
         plan({ id: 'p-ready' as ArtifactId, title: 'Ready plan' }),
@@ -326,14 +328,17 @@ describe('buildArtifactListRows', () => {
     expect(groupArtifactRows({ rows }).map((entry) => entry.group)).toEqual([
       'needs',
       'ready',
-      'ran',
+      'consumed',
       'deleted',
     ]);
   });
 
   it('filters by kind and counts only what is not deleted', () => {
     const rows = build({
-      plans: [plan({}), plan({ id: 'plan-2' as ArtifactId, status: 'discarded' })],
+      plans: [
+        plan({}),
+        plan({ id: brandId<ArtifactId>({ value: 'plan-2' }), status: 'discarded' }),
+      ],
       artifacts: [report({})],
       generations: [generation({})],
     });
@@ -341,5 +346,35 @@ describe('buildArtifactListRows', () => {
       'report',
     ]);
     expect(countArtifactRows({ rows })).toEqual({ all: 3, plan: 1, report: 1, wireframe: 1 });
+  });
+
+  it('gives the session rail the same count as the All tab', () => {
+    const wireframeAgent = agent('agent-wireframe-live', 'Deliveries screen', {
+      kind: 'wireframe',
+      status: 'running',
+    });
+    const producedAgent = agent('agent-report', 'Rounding report', { kind: 'report' });
+    const deletedAgent = agent('agent-report-gone', 'Old report', {
+      kind: 'report',
+      deletedAt: '2026-09-14T18:00:00.000Z' as IsoDateTime,
+    });
+    const agents = [wireframeAgent, producedAgent, deletedAgent];
+    const plans = [
+      plan({}),
+      plan({ id: brandId<ArtifactId>({ value: 'plan-2' }), status: 'discarded' }),
+    ];
+    const artifacts = [
+      report({}),
+      report({ id: brandId<ArtifactId>({ value: 'report-2' }), status: 'discarded' }),
+    ];
+    const generations = resolveArtifactGenerations({
+      agents,
+      artifacts,
+      activeAgentIds: new Set([wireframeAgent.id]),
+      runningAgentIds: new Set([wireframeAgent.id]),
+    });
+    const rows = build({ plans, artifacts, generations, agents });
+    expect(liveArtifactCountOf({ plans, artifacts, agents })).toBe(countArtifactRows({ rows }).all);
+    expect(countArtifactRows({ rows }).all).toBe(3);
   });
 });

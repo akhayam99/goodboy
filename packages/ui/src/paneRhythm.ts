@@ -4,6 +4,8 @@ export const BOARD_LANE_GAP_REM = 0.75;
 
 export const PANE_RHYTHM = {
   inset: 'px-6',
+  headerInset: 'pt-3',
+  headerRow: 'h-8',
   header: 'px-6 py-5',
   body: 'px-6 py-5',
   dock: 'px-6 py-4',
@@ -34,11 +36,25 @@ export const PANE_RHYTHM = {
     nest: 'pl-6',
     door: 'h-7 px-2',
     doorGap: 'gap-1',
+    icon: 'flex w-3 shrink-0 items-center justify-center',
+  },
+  property: {
+    group: 'flex flex-col gap-1',
+    grid: 'grid grid-cols-[88px_minmax(0,1fr)] items-start gap-x-2 gap-y-1',
+    label: 'flex h-7 items-center pl-2',
+    value: 'flex min-h-7 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-2',
+    groupGap: 'gap-6',
+  },
+  tree: {
+    row: 'min-h-12',
+    line: 'h-7',
+    meta: 'h-5',
   },
   board: {
     pad: 'px-6 pb-5',
     laneGap: 'gap-3',
     maxWidth: 'max-w-[123.75rem]',
+    listMaxWidth: 'max-w-[var(--column-max)]',
     lanesSix: 'grid-cols-[repeat(6,minmax(13rem,20rem))]',
     lanesFive: 'grid-cols-[repeat(5,minmax(13rem,20rem))]',
     lanesScroll: 'w-max grid-cols-[repeat(5,13rem)]',

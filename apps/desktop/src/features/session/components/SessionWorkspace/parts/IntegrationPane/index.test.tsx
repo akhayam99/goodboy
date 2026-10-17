@@ -2,6 +2,7 @@
 
 import { useInheritedPaneActions } from '@goodboy/ui';
 import type { ReactNode } from 'react';
+import { RecordHeader } from '../../../../../../shared/components/StudioDetail/RecordHeader';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
@@ -54,7 +55,9 @@ vi.mock('./LinearTaskDetail', () => ({
         Linear detail {task.externalId}
       </a>
       <button type="button" aria-label="Copy issue link" />
-      <div data-testid="task-detail-actions">{useInheritedPaneActions()}</div>
+      <div data-testid="task-detail-actions">
+        <RecordHeader provider="linear" identifier={task.identifier} title={task.title} />
+      </div>
     </div>
   ),
 }));
@@ -340,18 +343,22 @@ describe('IntegrationPane', () => {
     const actions = screen.getByTestId('task-detail-actions');
 
     expect(screen.queryByText('Linear')).toBeNull();
-    expect(within(actions).getByRole('button', { name: 'Unlink GB-42' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Unlink GB-42' })).toBeNull();
+    expect(within(actions).getByRole('button', { name: 'More actions for GB-42' })).toBeDefined();
     expect(within(actions).getByRole('button', { name: 'All issues' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Link/ })).toBeNull();
   });
 
-  it('shows where the focused issue lives and moves it from the Linked to value', async () => {
+  it('shows where the focused issue lives as a Links property and moves it from there', async () => {
     const moveSessionExternalTask = vi.fn(async () => undefined);
     useAppStore.setState({ moveSessionExternalTask });
     render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
     fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
 
-    screen.getByText('Linked to');
+    expect(
+      within(screen.getByRole('region', { name: 'Links' })).getByText('Placed on'),
+    ).toBeDefined();
+    expect(screen.queryByText('Linked to')).toBeNull();
     const value = screen.getByRole('button', { name: 'Move GB-42 from This session' });
     expect(value.textContent).toContain('This session');
     fireEvent.click(value);
@@ -471,7 +478,7 @@ describe('IntegrationPane', () => {
     expect(screen.queryByRole('button', { name: /^Completed/ })).toBeNull();
   });
 
-  it('unlinks the focused task immediately and restores it through app Undo', async () => {
+  it('unlinks the focused task from its menu after a confirm and restores it through app Undo', async () => {
     render(
       <ToastProvider>
         <UndoToastBridge />
@@ -479,8 +486,11 @@ describe('IntegrationPane', () => {
       </ToastProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for GB-42' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Unlink from session/ }));
+    expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Unlink GB-42' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }));
     });
     expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([]);
     expect(screen.queryByRole('group', { name: /Unlink/ })).toBeNull();

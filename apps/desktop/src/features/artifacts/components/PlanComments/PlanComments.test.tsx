@@ -293,7 +293,7 @@ describe('PlanProse', () => {
       ],
     });
     render(withApi({ value, children: <PlanProse text={TEXT} section="lead" /> }));
-    expect(await screen.findByText('On text the planner changed')).toBeDefined();
+    expect(await screen.findByText('Your notes on changed text')).toBeDefined();
     expect(screen.getByText('Why this?')).toBeDefined();
   });
 

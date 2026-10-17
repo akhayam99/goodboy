@@ -17,15 +17,16 @@ type ViewParams = {
 export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
   switch (view.tree.phase) {
     case 'answering':
-    case 'done':
       return null;
+    case 'done':
+      return { phase: 'done', word: 'Idle', short: 'Idle' };
     case 'deciding':
       return { phase: 'running', word: 'Deciding what to do', short: 'Deciding' };
     case 'delegating':
       return { phase: 'running', word: 'Starting agents', short: 'Delegating' };
     case 'waiting': {
       if (isAutoPlanAwaitingApproval({ view })) {
-        return { phase: 'waiting', word: 'Needs your approval', short: 'Needs you' };
+        return { phase: 'waiting', word: 'Needs you', short: 'Needs you' };
       }
       const nouns = openRoleNouns({ delegations: view.delegations });
       return {
@@ -35,13 +36,15 @@ export const autoRowFacts = ({ view }: ViewParams): AutoRowFacts | null => {
       };
     }
     case 'merging':
-      return { phase: 'running', word: 'Reading the results', short: 'Merging' };
+      return { phase: 'running', word: 'Reading the results', short: 'Reading' };
     case 'blocked':
       return { phase: 'waiting', word: 'Blocked, open the chat', short: 'Blocked' };
     case 'stopping':
       return { phase: 'running', word: 'Stopping', short: 'Stopping' };
     case 'stopped':
       return { phase: 'closed', word: 'Stopped by you', short: 'Stopped' };
+    case 'finished':
+      return { phase: 'closed', word: 'Finished by you', short: 'Finished' };
     default: {
       const exhaustive: never = view.tree.phase;
       return exhaustive;

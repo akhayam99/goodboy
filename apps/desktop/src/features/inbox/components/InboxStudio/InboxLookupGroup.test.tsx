@@ -108,17 +108,21 @@ describe('InboxLookupGroup', () => {
     );
 
     expect(
-      screen.getByText('Linear asked Goodboy to slow down. Trying again in 20s.'),
+      screen.getByText('Linear asked Goodboy to slow down. Trying again in 20s. Retry'),
     ).toBeDefined();
 
     act(() => {
       vi.advanceTimersByTime(5_000);
     });
     expect(
-      screen.getByText('Linear asked Goodboy to slow down. Trying again in 15s.'),
+      screen.getByText('Linear asked Goodboy to slow down. Trying again in 15s. Retry'),
     ).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Linear asked Goodboy to slow down. Trying again in 15s. Retry',
+      }),
+    );
     expect(retry).toHaveBeenCalled();
     vi.useRealTimers();
   });
@@ -148,7 +152,7 @@ describe('InboxLookupGroup', () => {
     expect(onSelect).toHaveBeenCalledWith(hit);
   });
 
-  it('shows the assignee as the second line when known', () => {
+  it('keeps a found issue on one grid row, with no second line of meta', () => {
     const assigned = {
       ...hit,
       record: {
@@ -174,7 +178,8 @@ describe('InboxLookupGroup', () => {
       />,
     );
 
-    expect(screen.getByText('Assigned to Priya Moss')).toBeDefined();
+    expect(screen.queryByText('Assigned to Priya Moss')).toBeNull();
+    expect(screen.getAllByRole('option')).toHaveLength(1);
   });
 
   it('offers Sign in again for a rejected key and Retry for a network failure', () => {
@@ -214,10 +219,11 @@ describe('InboxLookupGroup', () => {
       />,
     );
 
-    expect(screen.getByText('Linear stopped accepting your key.')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Linear stopped accepting your key. Sign in again' }),
+    );
     expect(openToolSettings).toHaveBeenCalledWith({ tool: 'linear' });
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    fireEvent.click(screen.getByRole('button', { name: /Retry$/ }));
     expect(retry).toHaveBeenCalled();
   });
 

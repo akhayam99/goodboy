@@ -8,7 +8,7 @@ type EmptyCopy = {
 
 export const EMPTY_COPY: Record<ColumnKey, EmptyCopy> = {
   building: { title: 'Nothing in progress' },
-  running: { title: 'No agent running' },
+  running: { title: 'Nothing running' },
   attention: { title: 'Nothing needs you' },
   review: { title: 'Nothing in review' },
   done: { title: 'Nothing done yet' },

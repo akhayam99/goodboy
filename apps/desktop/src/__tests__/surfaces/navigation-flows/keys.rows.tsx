@@ -29,6 +29,7 @@ import {
   clickFirstButton,
   heading,
   lens,
+  pane,
   openCrumb,
   openPalette,
   settle,
@@ -136,7 +137,7 @@ const switcherRowOf = (id: ShortcutId): HTMLElement | null => {
   const pill = Array.from(document.querySelectorAll('kbd')).find(
     (candidate) => candidate.textContent === glyph,
   );
-  return pill?.closest<HTMLElement>('div[class*="group"]') ?? null;
+  return pill?.closest<HTMLElement>('[data-workspace-row]') ?? null;
 };
 
 const DIGIT_IDS = [
@@ -252,6 +253,11 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'column.toggle',
     lands: () => visible('button', /^Show sidebar/),
   }),
+  pressRow({
+    id: 'innerColumn.toggle',
+    note: 'folds the session rail, the inner column of a session page',
+    lands: () => visible('button', 'Show session rail'),
+  }),
   keyRow({
     id: 'chat.new',
     note: 'a new chat even with a last chat',
@@ -277,7 +283,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'session.board',
-    lands: () => heading('Board'),
+    lands: () => heading('Sessions'),
   }),
   pressRow({
     id: 'terminal.studio',
@@ -388,11 +394,37 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({ id: 'lens.workflows', lands: both(lens('workflows'), () => heading('Runs')) }),
   pressRow({ id: 'lens.agents', lands: both(lens('agents'), () => heading('Agents')) }),
+  keyRow({
+    id: 'lens.agents',
+    note: 'again on Agents opens Auto agents while the session has Auto',
+    open: async (ctx) => {
+      useAppStore.setState((state) => ({
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [ctx.sessionId]: [
+            ...(state.sessionPhaseRuns[ctx.sessionId] ?? []),
+            {
+              id: brandedId({ value: 'agent-auto-keys' }),
+              sessionId: ctx.sessionId,
+              ordinal: 99,
+              name: 'Why does the ledger retry post a second credit?',
+              status: 'completed',
+              kind: 'auto',
+            },
+          ],
+        },
+      }));
+      await press('lens.agents')();
+      await lens('agents')(ctx);
+      await press('lens.agents')();
+    },
+    lands: both(lens('auto'), () => heading('Why does the ledger retry post a second credit?')),
+  }),
   pressRow({ id: 'lens.review', lands: branchTab('comments') }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
   pressRow({ id: 'lens.files', lands: branchTab('files') }),
   pressRow({ id: 'lens.plans', lands: both(lens('plans'), () => heading('Artifacts')) }),
-  pressRow({ id: 'lens.scripts', lands: both(lens('scripts'), () => heading('Scripts')) }),
+  pressRow({ id: 'lens.scripts', lands: pane('Scripts') }),
   pressRow({
     id: 'session.terminal',
     lands: async () => {
@@ -408,7 +440,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'pullRequest.edit',
     open: async () => {
       await press('lens.pr')();
-      expect((await findSection(/^Overview/)).getAttribute('aria-current')).toBe('page');
+      expect((await findSection(/^Pull request/)).getAttribute('aria-current')).toBe('page');
       await pressed('pullRequest.edit', document.body);
     },
     lands: async () =>
@@ -461,15 +493,15 @@ const seedInbox = async (): Promise<void> => {
     starredIssues: { [workspaceId]: [0, 1, 2].map(starredIssue) },
   });
   await clickButton('Tasks');
-  await visible('region', 'Starred');
+  await visible('listbox', 'Starred');
 };
 
 const inboxRows = (): ReadonlyArray<HTMLElement> =>
-  Array.from(document.querySelectorAll<HTMLElement>('[data-inbox-key]'));
+  Array.from(document.querySelectorAll<HTMLElement>('[data-row-key]'));
 
 const inboxRowButton = (identifier: string): HTMLElement => {
   const row = inboxRows().find((candidate) => candidate.textContent?.includes(identifier));
-  const button = row?.querySelector('button') ?? null;
+  const button = row ?? null;
   if (button === null) {
     throw new Error(`the inbox lists no ${identifier}`);
   }
@@ -570,6 +602,35 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT),
   }),
   keyRow({
+    id: 'terminal.closeTab',
+    note: 'on the Terminal page the close chord closes the selected tab, not the page',
+    open: async () => {
+      await press('terminal.studio')();
+      await screen.findByRole('heading', { name: 'No terminal yet' }, WAIT);
+      await pressed('terminal.newHere', document.body);
+      await waitFor(() => expect(terminalRows().length).toBe(1), WAIT);
+      await pressed('terminal.closeTab', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => expect(terminalRows().length).toBe(0), WAIT);
+      expect(useAppStore.getState().appStudio?.kind).toBe('terminal');
+    },
+  }),
+  keyRow({
+    id: 'app.close',
+    note: 'closes the open page one level and never quits',
+    open: async () => {
+      useAppStore.getState().openStudio({
+        studio: { kind: 'chat', chatId: brandedId<ChatId>({ value: 'keys-close-chat' }) },
+      });
+      await settle();
+      await pressed('app.close', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+    },
+  }),
+  keyRow({
     id: 'ask.reset',
     note: 'inside the Ask panel the new chord resets the chat, not a session',
     open: async (ctx) => {
@@ -599,12 +660,12 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'overview.newHere',
-    note: 'on a session overview the new chord opens the New drawer, not a new session',
+    note: 'on a session overview the new chord opens the New menu, not a new session',
     open: async () => {
       await settle();
       await pressed('overview.newHere', document.body);
     },
-    lands: () => visible('region', 'New'),
+    lands: () => visible('menu', 'New'),
   }),
   keyRow({
     id: 'session.linkWork',
@@ -622,7 +683,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await focusAnchor();
       await pressed('lens.explore');
     },
-    lands: both(lens('explore'), () => heading('Explore')),
+    lands: pane('Explore'),
   }),
   keyRow({
     id: 'lens.linear',
@@ -693,8 +754,11 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'list.open',
-    open: inboxKey('list.open'),
-    lands: () => visible('region', 'Brief from HBL-501'),
+    open: async (ctx) => {
+      await inboxKey('list.open')(ctx);
+      await pressed('list.open', document.body);
+    },
+    lands: () => visible('region', 'Brief'),
   }),
   keyRow({
     id: 'list.openInTool',
@@ -907,6 +971,22 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
     id: 'review.previous',
     world: 'resolve',
     open: reviewKey('review.previous', THREADS.metrics),
+    lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics), WAIT),
+  }),
+  worldRow({
+    id: 'review.down',
+    world: 'resolve',
+    open: async () => {
+      await openReview();
+      neighbour = neighbourOf(THREADS.metrics, 1);
+      await pressed('review.down', await focusThread(THREADS.metrics));
+    },
+    lands: async () => waitFor(() => expect(currentThread()).toBe(neighbour), WAIT),
+  }),
+  worldRow({
+    id: 'review.up',
+    world: 'resolve',
+    open: reviewKey('review.up', THREADS.metrics),
     lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics), WAIT),
   }),
   worldRow({
@@ -1164,7 +1244,7 @@ let terminalTabCount = 0;
 
 const openBoardCard = async (): Promise<HTMLElement> => {
   await press('session.board')();
-  await heading('Board');
+  await heading('Sessions');
   const card = await waitFor(() => {
     const found = document.querySelector<HTMLElement>('[data-select-id]');
     expect(found).not.toBeNull();
@@ -1294,9 +1374,12 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       expect(await activeTreeFile()).toContain('notify.ts');
       await visible('navigation', 'Changed files');
+      const tree = within(screen.getByRole('navigation', { name: 'Changed files' }));
       expect(
-        within(await findSection(/^Files/)).getByRole('img', { name: '1 of 3 viewed' }),
-      ).toBeDefined();
+        tree
+          .getAllByRole('button', { name: /^Viewed: / })
+          .filter((toggle) => toggle.getAttribute('aria-pressed') === 'true'),
+      ).toHaveLength(1);
     },
   }),
   keyRow({

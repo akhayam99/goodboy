@@ -148,7 +148,7 @@ const seed = ({ mounts, active }: SeedParams) => {
 const Shell = () => (
   <ToastProvider>
     <ObjectMenuProvider>
-      <ExplorePane sessionId={SESSION_ID} />
+      <ExplorePane sessionId={SESSION_ID} onClose={vi.fn()} />
     </ObjectMenuProvider>
   </ToastProvider>
 );

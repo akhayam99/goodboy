@@ -157,9 +157,10 @@ describe('ToolCallCard', () => {
     expect(document.querySelector('img')).toBeNull();
   });
 
-  it('renders collapsed with tool name', () => {
+  it('renders collapsed with the act it took, with no tool eyebrow', () => {
     render(<ToolCallCard item={tool()} />);
-    screen.getByText('read');
+    screen.getByText('Read foo.ts');
+    expect(screen.queryByText('tool')).toBeNull();
     expect(screen.getByRole('button').getAttribute('aria-expanded')).toBe('false');
   });
 

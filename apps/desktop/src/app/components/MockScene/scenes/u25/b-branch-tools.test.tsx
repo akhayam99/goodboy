@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -42,10 +42,16 @@ describe('the branch tools scenes', () => {
       </ToastProvider>,
     );
 
-    await waitFor(() => expect(screen.getAllByTestId('project-mount-row')).toHaveLength(2));
+    const branchesOf = () =>
+      Array.from(
+        document.querySelectorAll('[data-level-layer="session"] [data-worktree-branch]'),
+      ).map((row) => row.textContent ?? '');
+    await waitFor(() => expect(branchesOf().length).toBeGreaterThanOrEqual(1));
+    screen
+      .queryAllByRole('button', { name: / finished in / })
+      .forEach((fold) => fireEvent.click(fold));
 
-    const rows = screen.getAllByTestId('project-mount-row');
-    const text = rows.map((row) => row.textContent ?? '');
+    const text = branchesOf();
     expect(text.some((row) => row.includes('fix/ledger-reconciliation-rounding-drift'))).toBe(true);
     expect(text.some((row) => row.includes('fix/ledger-reconciliation-idempotent-postings'))).toBe(
       true,

@@ -1,5 +1,7 @@
 import { invokeCommand } from './invokeCommand';
 import type {
+  BaseDivergence,
+  BaseUpdateResult,
   BootstrapAlignOutcome,
   BootstrapClearReport,
   BootstrapPrepared,
@@ -107,6 +109,51 @@ export const checkoutFastForward = async ({
 }: CheckoutFastForwardParams): Promise<FastForwardResult> => {
   return invokeCommand<FastForwardResult>('checkout_fast_forward', {
     checkoutPath,
+    workspaceId,
+    projectId,
+  });
+};
+
+type CheckoutUpdateBaseParams = {
+  readonly checkoutPath: string;
+  readonly baseBranch: string | null;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
+};
+
+export const checkoutUpdateBase = async ({
+  checkoutPath,
+  baseBranch,
+  workspaceId,
+  projectId,
+}: CheckoutUpdateBaseParams): Promise<BaseUpdateResult> => {
+  return invokeCommand<BaseUpdateResult>('checkout_update_base', {
+    checkoutPath,
+    baseBranch,
+    workspaceId,
+    projectId,
+  });
+};
+
+type RepoBaseDivergenceParams = {
+  readonly projectPath: string;
+  readonly baseBranch: string | null;
+  readonly maxAgeMs: number;
+  readonly workspaceId: string;
+  readonly projectId: string;
+};
+
+export const repoBaseDivergence = async ({
+  projectPath,
+  baseBranch,
+  maxAgeMs,
+  workspaceId,
+  projectId,
+}: RepoBaseDivergenceParams): Promise<BaseDivergence> => {
+  return invokeCommand<BaseDivergence>('repo_base_divergence', {
+    projectPath,
+    baseBranch,
+    maxAgeMs,
     workspaceId,
     projectId,
   });

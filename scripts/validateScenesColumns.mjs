@@ -3,14 +3,16 @@ export const COLUMN_TOLERANCE_PX = 1;
 export const COLUMN_WIDTHS = [1100, 1440, 1920];
 export const COLUMN_SCENES = ['step-rows-activity', 'step-rows-runs', 'workflow-run-plan-review'];
 
-export const columnEdgesProbe = ({ names }) =>
-  [...document.querySelectorAll('[data-row-id]')].map((row) => {
+export const COLUMN_ROW_SELECTOR = '[data-row-id], [data-testid^="run-tree-row-"]';
+
+export const columnEdgesProbe = ({ names, selector }) =>
+  [...document.querySelectorAll(selector)].map((row) => {
     const edges = {};
     for (const name of names) {
       const column = row.querySelector(`[data-meta-column="${name}"]`);
       edges[name] = column === null ? null : column.getBoundingClientRect().right;
     }
-    return { row: row.dataset.rowId, edges };
+    return { row: row.dataset.rowId ?? row.dataset.testid, edges };
   });
 
 export const columnDriftFailures = ({ scene, width, rows, tolerance = COLUMN_TOLERANCE_PX }) => {

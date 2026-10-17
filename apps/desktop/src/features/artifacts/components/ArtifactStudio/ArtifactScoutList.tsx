@@ -16,13 +16,20 @@ const DOT_CLASS: Record<ArtifactScoutState, string> = {
 };
 
 const STATE_WORD: Record<ArtifactScoutState, string> = {
-  planned: 'planned',
-  queued: 'queued',
-  running: 'running',
-  done: 'done',
-  skipped: 'skipped',
-  failed: 'failed',
+  planned: 'Planned',
+  queued: 'Queued',
+  running: 'Running',
+  done: 'Done',
+  skipped: 'Skipped',
+  failed: 'Failed',
 };
+
+type SentenceParams = {
+  readonly text: string;
+};
+
+const sentenceCase = ({ text }: SentenceParams): string =>
+  text.length === 0 ? text : `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 const stateLine = ({ row }: Readonly<{ row: ArtifactScoutRow }>): string => {
   const parts = [STATE_WORD[row.state]];
@@ -53,7 +60,7 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
   if (rows.length === 0) {
     return (
       <p data-testid="artifact-scouts-empty" className="text-meta text-muted-foreground">
-        {emptyLine}
+        {sentenceCase({ text: emptyLine })}
       </p>
     );
   }
@@ -73,7 +80,9 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
                 aria-hidden
                 className={cn('mt-1 size-1.5 shrink-0 rounded-full', DOT_CLASS[row.state])}
               />
-              <span className="shrink-0 font-medium text-foreground">{row.name}</span>
+              <span className="shrink-0 font-medium text-foreground">
+                {sentenceCase({ text: row.name })}
+              </span>
               {where === null ? null : (
                 <TruncatedText
                   tooltip={row.root === null ? where : row.root}
@@ -86,7 +95,7 @@ export const ArtifactScoutList = ({ rows, emptyLine }: Props) => {
             </span>
             {row.reason === null ? null : (
               <TruncatedText data-testid="artifact-scout-reason" className="min-w-0 truncate pl-4">
-                {row.reason}
+                {sentenceCase({ text: row.reason })}
               </TruncatedText>
             )}
           </li>

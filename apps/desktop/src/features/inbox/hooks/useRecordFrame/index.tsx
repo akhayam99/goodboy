@@ -21,13 +21,15 @@ import { useLaunchMount } from '../../useLaunchMount';
 import { launchMountSourceOf } from '../../launchMountSourceOf';
 import type { InboxRecord } from '../../types';
 
+const START_SESSION_LABEL = 'Start session';
+
 type Params = {
   readonly record: InboxRecord;
   readonly workspaceId: WorkspaceId;
   readonly launchRequest: number;
   readonly onLaunched: () => void;
   readonly onRefresh: () => void;
-  readonly onClose: () => void;
+  readonly onClose: (() => void) | null;
 };
 
 export const useRecordFrame = ({
@@ -99,7 +101,7 @@ export const useRecordFrame = ({
           />
         );
       case 'kickoff':
-        return <StartButton label={label} onClick={startKickoff} />;
+        return <StartButton label={START_SESSION_LABEL} onClick={startKickoff} />;
       case 'review':
         return (
           <StartButton
@@ -122,14 +124,10 @@ export const useRecordFrame = ({
     }
   })();
 
-  const primary =
-    spec == null || startControl === null ? null : (
-      <>
-        {startControl}
-        {start?.kind === 'open' ? null : (
-          <LinkToSessionPicker workspaceId={workspaceId} task={spec.externalTask} />
-        )}
-      </>
+  const primary = spec == null ? null : startControl;
+  const link =
+    spec == null || start === null || start.kind === 'open' ? null : (
+      <LinkToSessionPicker workspaceId={workspaceId} task={spec.externalTask} />
     );
 
   const sentryIssueId = record.payload.provider === 'sentry' ? record.payload.issue.id : null;
@@ -157,6 +155,7 @@ export const useRecordFrame = ({
 
   return {
     primary,
+    link,
     sessionVerbs: unlink == null ? [] : [unlink],
     onRefresh,
     onClose,

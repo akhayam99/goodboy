@@ -1,16 +1,27 @@
-import { CircleCheck, CircleDot, Copy, MessageSquare, OctagonX, Cpu, Tag } from 'lucide-react';
-import { isAdoptableKind, parseHiddenModels, visibleCatalog } from '@goodboy/core';
+import {
+  CircleCheck,
+  CircleDot,
+  Copy,
+  MessageSquare,
+  OctagonX,
+  Cpu,
+  Pencil,
+  ScrollText,
+  Tag,
+} from 'lucide-react';
+import { AUTO_GATES, isAdoptableKind, parseHiddenModels, visibleCatalog } from '@goodboy/core';
 import type { Agent, AgentStatus, ProviderId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { agentPlace } from '../../../store/slices/navigation/place';
 import type { AgentPane } from '../../../store/slices/navigation/types';
-import { SETTING_AUTO_EXPERIMENT, SETTING_HIDDEN_MODELS } from '../../settings/settings';
+import { SETTING_HIDDEN_MODELS } from '../../settings/settings';
 import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../auto/adopt/moveToAutoEvent';
-import { autoExperimentSettings } from '../../auto/autoExperimentSettings';
 import { autoMembershipOf } from '../../auto/autoMembershipOf';
+import { autoRestOf, type AutoRest } from '../../auto/autoRestOf';
+import { moveAutoRestingPhase } from '../../auto/moveAutoRestingPhase';
+import { tauriDatabase } from '../../../shared/lib/db';
 import { detachFromAuto } from '../../auto/detachFromAuto';
-import { isAutoStartEnabled } from '../../auto/isAutoStartEnabled';
 import { classifyAgent } from '../../session/agent-kind';
 import {
   isAgentClosable,
@@ -19,6 +30,8 @@ import {
 } from '../../session/agent-lifecycle';
 import { lastReplyOf } from '../../session/lastReplyOf';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
+import { agentObjectKey } from '../agentObjectKey';
+import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
 import { OPEN_AGENT_INTENT } from '../../../shared/utils/openAgentReveal';
 import type { ActionEnv, AgentActionTarget, ObjectKindDefinition } from '../types';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -42,6 +55,7 @@ export type AgentFacts = {
   readonly isAutoOn: boolean;
   readonly canMoveToAuto: boolean;
   readonly isAdopted: boolean;
+  readonly autoRest: AutoRest | null;
 };
 
 const NO_MOUNT_REASON = 'This session has no project yet';
@@ -100,15 +114,17 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         'anthropic',
       modelKey: state.agentModelOverride[agent.id] ?? agent.modelOverride ?? null,
       hiddenModels: state.settings?.[SETTING_HIDDEN_MODELS] ?? null,
-      isAutoOn: isAutoStartEnabled({
-        settings: autoExperimentSettings({ raw: state.settings?.[SETTING_AUTO_EXPERIMENT] }),
-      }),
+      isAutoOn: AUTO_GATES.isDelegationEnabled,
       canMoveToAuto:
         isAdoptableKind({ kind }) &&
         agent.workflowRunId == null &&
         agent.stepId == null &&
         !membership.isMember,
       isAdopted: membership.adoption !== null,
+      autoRest: autoRestOf({
+        views: state.autoTreeViews[target.sessionId] ?? [],
+        agentId: agent.id,
+      }),
     };
   },
   actions: [
@@ -143,6 +159,39 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         dispatchAfterNavigation({
           name: 'goodboy:reveal-chat',
           detail: { intent: OPEN_AGENT_INTENT },
+        });
+      },
+    },
+    {
+      id: 'agent.rename',
+      label: 'Rename',
+      icon: Pencil,
+      group: 'act',
+      when: ({ facts }) => !facts.isWorkflowStep,
+      run: ({ facts, env }) => {
+        const objectKey = agentObjectKey({ agentId: facts.agent.id });
+        if (requestRename({ objectKey, anchorKey: env.anchorKey })) {
+          return;
+        }
+        openAgent({ env, facts });
+        dispatchAfterNavigation({
+          name: RENAME_REQUEST_EVENT,
+          detail: { objectKey, anchorKey: `agent-header:${facts.agent.id}` },
+        });
+      },
+    },
+    {
+      id: 'agent.transcript',
+      label: 'View transcript',
+      icon: ScrollText,
+      group: 'open',
+      when: ({ facts }) => classifyAgent({ agent: facts.agent, override: null }) === 'auto',
+      run: ({ facts, env }) => {
+        openAgent({ env, facts });
+        env.getState().openDrawer({
+          kind: 'transcript',
+          sessionId: facts.sessionId,
+          payload: { agentId: facts.agent.id },
         });
       },
     },
@@ -222,6 +271,55 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
           sessionId: facts.sessionId,
         });
         return 'unchanged';
+      },
+    },
+    {
+      id: 'agent.markAutoFinished',
+      label: 'Mark finished',
+      icon: CircleCheck,
+      group: 'act',
+      isUndoable: true,
+      description: () => 'Closes this Auto conversation. Write to reopen it.',
+      when: ({ facts }) => facts.autoRest !== null && facts.autoRest.phase !== 'finished',
+      run: async ({ facts, env }) => {
+        const rest = facts.autoRest;
+        if (rest === null || rest.phase === 'finished') {
+          return 'unchanged';
+        }
+        const from = rest.phase;
+        try {
+          await moveAutoRestingPhase({
+            db: tauriDatabase,
+            treeId: rest.treeId,
+            from,
+            to: 'finished',
+            nowMs: Date.now(),
+          });
+        } catch (error) {
+          await env.getState().reportError({
+            title: "Couldn't mark Auto finished",
+            error,
+            sessionId: facts.sessionId,
+          });
+          return 'unchanged';
+        }
+        await env.getState().loadAutoTrees({ sessionId: facts.sessionId });
+        env.getState().undoable({
+          showToast: env.showToast,
+          title: 'Auto finished',
+          message: 'Write to Auto to reopen it.',
+          undo: async () => {
+            await moveAutoRestingPhase({
+              db: tauriDatabase,
+              treeId: rest.treeId,
+              from: 'finished',
+              to: from,
+              nowMs: Date.now(),
+            });
+            await env.getState().loadAutoTrees({ sessionId: facts.sessionId });
+          },
+        });
+        return 'done';
       },
     },
     {

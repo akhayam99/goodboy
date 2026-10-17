@@ -1,10 +1,11 @@
-import { cn, EmptyLine, EmptyState, Eyebrow, ScrollFade, tintClasses, Tooltip } from '@goodboy/ui';
+import { cn, EmptyLine, EmptyState, Eyebrow, ScrollFade, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId, SessionStage } from '@goodboy/types';
 import { ARCHIVED_LANE, describeStageBucket } from '../../../../session/session-stage';
 import {
   stateDescription,
   type StatePresentation,
 } from '../../../../../shared/utils/statePresentation';
+import { sentenceCase } from '../../../../../shared/utils/sentenceCase';
 import { StageBoardCard } from '../StageBoardCard';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { EMPTY_COPY, type ColumnKey } from './emptyCopy';
@@ -37,6 +38,11 @@ type ColumnSelection = {
   readonly onToggle: (id: SessionId, event: { readonly shiftKey: boolean }) => void;
 };
 
+type CardHover = {
+  readonly sessionId: SessionId;
+  readonly anchor: HTMLElement;
+};
+
 type ModifierEvent = {
   readonly shiftKey: boolean;
   readonly metaKey: boolean;
@@ -53,6 +59,8 @@ type StageColumnProps = {
   readonly onRestore: (session: Session) => void;
   readonly placement?: 'lane' | 'half';
   readonly isLoading?: boolean;
+  readonly onCardEnter?: (target: CardHover) => void;
+  readonly onCardLeave?: () => void;
 };
 
 export const StageColumn = ({
@@ -64,6 +72,8 @@ export const StageColumn = ({
   onRestore,
   placement = 'lane',
   isLoading = false,
+  onCardEnter,
+  onCardLeave,
 }: StageColumnProps) => {
   const view = viewFor(spec);
   const isEmpty = sessions.length === 0;
@@ -78,17 +88,13 @@ export const StageColumn = ({
       className={cn(
         'flex min-h-0 min-w-0 flex-col',
         PANE_RHYTHM.board.laneStack,
-        isHalf && (isEmpty ? 'flex-none' : 'flex-1 basis-0'),
+        isHalf && (isEmpty ? 'flex-none' : 'flex-initial'),
       )}
     >
       <div className="flex h-6 shrink-0 items-center">
         <Tooltip content={stateDescription({ presentation: view.presentation })}>
           <span className="flex items-center gap-2">
-            <Eyebrow
-              label={view.presentation.label}
-              muted={isEmpty}
-              className={cn(!isEmpty && tintClasses(view.presentation.tone).text)}
-            />
+            <Eyebrow label={sentenceCase({ text: view.presentation.label })} muted={isEmpty} />
             {!isEmpty && (
               <span className="text-meta tabular-nums text-faint-foreground">
                 {sessions.length}
@@ -128,6 +134,8 @@ export const StageColumn = ({
                 getSelectedIds={selection.getSelectedIds}
                 onClearSelection={onClearSelection}
                 onRestore={onRestore}
+                onHoverEnter={onCardEnter}
+                onHoverLeave={onCardLeave}
               />
             ))}
           </div>

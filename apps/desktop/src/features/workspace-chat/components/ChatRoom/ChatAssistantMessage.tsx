@@ -5,6 +5,9 @@ import type { ChatMessage, ChatMessageId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
 import { chatAnswerMeta } from '../../chatAnswerMeta';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
+import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { ChatReads } from './ChatReads';
 import { ChatTyping } from './ChatTyping';
 
@@ -19,7 +22,14 @@ const PROSE_CLASS = 'text-prose';
 const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props) => {
   const isStreaming = message.status === 'streaming';
   const hasText = message.content.trim() !== '';
-  const meta = chatAnswerMeta({ message });
+  const meta = joinFacts({
+    facts: [
+      chatAnswerMeta({ message }),
+      formatDuration({
+        durationMs: Math.max(0, Date.parse(message.updatedAt) - Date.parse(message.createdAt)),
+      }),
+    ],
+  });
   if (message.status === 'failed') {
     return (
       <div data-chat-message="assistant" className="flex flex-col gap-2">
@@ -48,17 +58,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
       ) : null}
       {isStreaming || !hasText ? null : (
         <div className="-ml-2 flex h-7 items-center gap-1">
-          <div className="flex items-center gap-1 opacity-0 motion-safe:transition-opacity group-focus-within/answer:opacity-100 group-hover/answer:opacity-100">
-            <CopyButton
-              value={message.content}
-              label="Copy the answer"
-              presentation="icon"
-              tone="faint"
-              size={ICON_SIZE.row}
-              className="h-6 gap-1 px-2 text-meta"
-            >
-              Copy
-            </CopyButton>
+          <div className="flex items-center gap-1">
             {onStartWork === undefined ? null : (
               <button
                 type="button"
@@ -71,9 +71,22 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
             )}
           </div>
           <span className="flex-1" />
-          {meta === null ? null : (
-            <span className="truncate pl-2 text-meta text-faint-foreground">{meta}</span>
+          {meta === '' ? null : (
+            <span className="flex min-w-0 items-center gap-1 pl-2 text-meta text-faint-foreground">
+              {message.provider === null ? null : (
+                <ProviderGlyph id={message.provider} size={ICON_SIZE.row} />
+              )}
+              <span className="truncate">{meta}</span>
+            </span>
           )}
+          <CopyButton
+            value={message.content}
+            label="Copy the answer"
+            presentation="icon"
+            tone="faint"
+            size={ICON_SIZE.row}
+            className="h-6 px-1"
+          />
         </div>
       )}
     </div>

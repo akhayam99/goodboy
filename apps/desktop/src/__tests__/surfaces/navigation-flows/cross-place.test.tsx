@@ -246,13 +246,15 @@ const expectCentredColumns = (): void => {
   }
 };
 
-const expectAskInColumn = (): void => {
-  const end = document.querySelector('main [data-slot="trail-end"]');
-  const column = end?.closest<HTMLElement>('[data-page-column]') ?? null;
-  expect(column, 'the Ask button sits in the trail column').not.toBeNull();
-  expect(column?.querySelector('[data-testid="ask-trail-button"]')).not.toBeNull();
-  expect(end?.parentElement).toBe(column);
-  expect(end?.nextElementSibling).toBeNull();
+const expectAskInToolColumn = (): void => {
+  const ask = shown('[data-testid="pane-toggle-ask"]');
+  expect(
+    ask?.closest('[role="toolbar"][aria-label="Session tools"]'),
+    'Ask sits in the session tools column',
+  ).not.toBeNull();
+  expect(ask?.closest('nav[aria-label="Session"]') ?? null).toBeNull();
+  expect(ask?.closest('[data-slot="pane-header"]') ?? null).toBeNull();
+  expect(document.querySelector('main [data-slot="trail-bar"]')).toBeNull();
 };
 
 const expectDrawerBesideContent = ({
@@ -325,8 +327,24 @@ const sessionRow = (sessionId: SessionId): HTMLElement => {
   return found as HTMLElement;
 };
 
+const SESSION_LEVEL = '[data-level-layer="session"]:not([inert])';
+
+const PROJECTS = `${SESSION_LEVEL} [aria-labelledby="level-projects-label"]`;
+
 const pageRow = (label: string): HTMLElement => {
-  const pages = screen.getByTestId('session-pages');
+  if (label === 'Branch') {
+    const worktree = document.querySelector<HTMLElement>(`${PROJECTS} li button`);
+    if (worktree === null) {
+      throw new Error('no worktree row on the session level');
+    }
+    return worktree;
+  }
+  const pages = document.querySelector<HTMLElement>(
+    `${SESSION_LEVEL} [data-testid="session-pages"]`,
+  );
+  if (pages === null) {
+    throw new Error('the sidebar is not on a session level');
+  }
   const found = within(pages)
     .getAllByRole('button')
     .find((button) => button.textContent?.startsWith(label));
@@ -334,8 +352,21 @@ const pageRow = (label: string): HTMLElement => {
   return found as HTMLElement;
 };
 
+const WORKTREE_LEVEL = '[data-level-layer="worktree"]:not([inert])';
+
+const openPage = async (label: string): Promise<void> => {
+  const back = document.querySelector<HTMLElement>(`${WORKTREE_LEVEL} [data-level-back] button`);
+  if (back !== null) {
+    await click(back);
+  }
+  await click(pageRow(label));
+};
+
 const currentPage = (): string | null => {
-  const pages = document.querySelector('[data-testid="session-pages"]');
+  if (document.querySelector(`${WORKTREE_LEVEL} [data-worktree-identity]`) !== null) {
+    return 'Branch';
+  }
+  const pages = document.querySelector(`${SESSION_LEVEL} [data-testid="session-pages"]`);
   const current = pages?.querySelector('[aria-current="page"]');
   return current?.querySelector('span')?.textContent ?? null;
 };
@@ -403,6 +434,8 @@ const railOf = (element: Element | null): string => {
 
 const COLUMN_RAIL = 'column mx-auto max-w-[var(--column-frame)]';
 
+const MEASURE_RAIL = 'measure mx-auto max-w-[var(--measure-frame)]';
+
 const placeRoot = (): Element => {
   const root =
     document.querySelector('[data-studio-slot]') ??
@@ -439,7 +472,6 @@ const expectOneRail = ({
 
 const sessionLayers = (extra: RailLayers): RailLayers => ({
   header: shown('[data-slot="pane-header"]'),
-  trail: document.querySelector('main [data-slot="trail-end"]'),
   ...extra,
 });
 
@@ -479,7 +511,7 @@ describe('moving across every place keeps one frame', () => {
       const { sessionId } = await boot({ seed: 'pr' });
 
       await click(door('board'));
-      await heading('Board');
+      await heading('Sessions');
       expect(currentDoors()).toEqual(['board']);
 
       await click(historyButton('Back'));
@@ -634,8 +666,13 @@ describe('moving across every place keeps one frame', () => {
       await boot({ seed: 'pr' });
 
       await press('column.toggle');
-      expect(document.querySelector('[data-column-rail]')).not.toBeNull();
+      const rail = document.querySelector<HTMLElement>('[data-column-rail]');
+      if (rail === null) {
+        throw new Error('no rail after the fold');
+      }
+      expect(rail.querySelector('[data-column-door="board"]')).not.toBeNull();
       expect(document.querySelector('[data-side-column]')).toBeNull();
+      expect(document.querySelector('[data-session-rail="session"]')).not.toBeNull();
 
       await click(door('inbox'));
       expect(studio()).toBe('inbox');
@@ -651,7 +688,7 @@ describe('moving across every place keeps one frame', () => {
 
       await backToApp();
       await click(door('board'));
-      await heading('Board');
+      await heading('Sessions');
       await press('column.toggle');
       expect(door('board').getAttribute('aria-current')).toBe('page');
       await press('column.toggle');
@@ -693,7 +730,7 @@ describe('moving across every place keeps one frame', () => {
 
       const PAGES = ['Overview', 'Runs', 'Agents', 'Artifacts'] as const;
       const trailColumn = (): string =>
-        document.querySelector('main [data-slot="trail-bar"] [data-page-column]')?.className ?? '';
+        shown('[data-slot="pane-header"]')?.closest('[data-page-column]')?.className ?? '';
       const columnTiers = (): ReadonlySet<string> =>
         new Set(
           visiblePageColumns()
@@ -704,7 +741,7 @@ describe('moving across every place keeps one frame', () => {
       const walk = async (withDrawer: boolean): Promise<ReadonlyArray<string>> => {
         const trails: Array<string> = [];
         for (const page of PAGES) {
-          await click(pageRow(page));
+          await openPage(page);
           expect(currentPage()).toBe(page);
           if (withDrawer) {
             act(() =>
@@ -718,7 +755,7 @@ describe('moving across every place keeps one frame', () => {
             expect(openDrawerKind(), `${page} opens the drawer`).toBe('context');
           }
           expectCentredColumns();
-          expectAskInColumn();
+          expectAskInToolColumn();
           for (const shape of columnTiers()) {
             expect(['column', 'measure'], `${page} centres its column`).toContain(shape);
           }
@@ -731,10 +768,13 @@ describe('moving across every place keeps one frame', () => {
       };
 
       const atRest = await walk(false);
+      expect(atRest[0], 'the Overview sits on the column of the other pages').toContain(
+        'max-w-[var(--column-frame)]',
+      );
       expect(new Set(atRest).size, 'the trail column keeps one shape without a drawer').toBe(1);
       const withDrawer = await walk(true);
       expect(new Set(withDrawer).size, 'the trail column keeps one shape with a drawer').toBe(1);
-      expect(withDrawer[0], 'a drawer slides the column, it does not reshape it').toBe(atRest[0]);
+      expect(withDrawer, 'a drawer slides the column, it does not reshape it').toEqual(atRest);
 
       door('settings').focus();
       await click(door('settings'));
@@ -781,18 +821,6 @@ describe('moving across every place keeps one frame', () => {
       });
       await escape();
 
-      await click(screen.getByRole('tab', { name: 'Brief' }));
-      const briefLayers = (): RailLayers =>
-        sessionLayers({ body: shown('[data-slot="pane-body"]') });
-      expectOneRail({ place: 'Agent brief', layers: briefLayers(), rail: COLUMN_RAIL });
-      await openContextDrawer(sessionId);
-      expectOneRail({
-        place: 'Agent brief with a drawer',
-        layers: briefLayers(),
-        rail: COLUMN_RAIL,
-      });
-      await escape();
-
       act(() => {
         const state = useAppStore.getState();
         useAppStore.setState({
@@ -819,7 +847,7 @@ describe('moving across every place keeps one frame', () => {
       expectOneRail({
         place: 'Chat',
         layers: { header: shown('header h1'), composer: shown('textarea') },
-        rail: COLUMN_RAIL,
+        rail: MEASURE_RAIL,
       });
 
       await click(door('settings'));
@@ -843,28 +871,27 @@ describe('moving across every place keeps one frame', () => {
       seedShipAFix();
 
       await click(door('board'));
-      await heading('Board');
+      await heading('Sessions');
       expectPlace({ session: null, lens: 'board', studio: null, doors: ['board'] });
       expectColumn('column');
 
       await click(sessionRow(sessionId));
       expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
-      expect(sessionRow(sessionId).getAttribute('aria-current')).toBeNull();
-      expect(sessionRow(sessionId).getAttribute('data-current-sign')).toBe('overview');
+      expect(sessionRow(sessionId).getAttribute('aria-current')).toBe('page');
       expect(currentPage()).toBe('Overview');
 
       for (const [page, lens] of SESSION_PAGES) {
-        await click(pageRow(page));
+        await openPage(page);
         expectPlace({ session: sessionId, lens, studio: null, doors: [] });
         expect(currentPage()).toBe(page);
         expectCentredColumns();
-        expectAskInColumn();
+        expectAskInToolColumn();
         if (lens === 'branch') {
           expect(leftEdge().columns).not.toContain('full');
         }
       }
 
-      await click(pageRow('Branch'));
+      await openPage('Branch');
       for (const tab of ['Files', 'Comments'] as const) {
         await click(getSection(new RegExp(`^${tab}`)));
         expect(useAppStore.getState().branchTab[sessionId]).toBe(tab.toLowerCase());
@@ -909,7 +936,7 @@ describe('moving across every place keeps one frame', () => {
       await settle();
       expect(screen.queryByRole('listbox', { name: 'Recent sessions' })).toBeNull();
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
-      expect(sessionRow(other).getAttribute('data-current-sign')).toBe('overview');
+      expect(currentPage()).toBe('Overview');
 
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'branch', studio: null, doors: [] });
@@ -923,11 +950,16 @@ describe('moving across every place keeps one frame', () => {
       fireEvent.pointerEnter(screen.getByTestId('sidebar-peek-edge'));
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
-      expect(
-        peek.querySelector(`[data-select-id="${sessionId}"]`)?.getAttribute('data-current-sign'),
-      ).toBe('branch');
+      expect(peek.querySelector('[data-column-door="board"]')).not.toBeNull();
+      const sessionRail = document.querySelector<HTMLElement>('[data-session-rail="worktree"]');
+      if (sessionRail === null) {
+        throw new Error('the session rail is not on the worktree level');
+      }
+      await click(within(sessionRail).getByRole('button', { name: /^Back to session / }));
       await click(peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) as HTMLElement);
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
+      await click(historyButton('Back'));
+      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
       await click(historyButton('Back'));
       await press('column.toggle');
       expectColumn('column');
@@ -959,30 +991,36 @@ describe('moving across every place keeps one frame', () => {
       await clickButton('Start run');
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1), WAIT);
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
+      expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
+        'run',
+      );
+      await click(screen.getByRole('button', { name: 'Back to Runs' }));
       expect(currentPage()).toBe('Runs');
       const page = document.querySelector<HTMLElement>('main [data-drawer-main]') as HTMLElement;
       expect(
         (await within(page).findAllByText(/Ship a fix/, undefined, WAIT)).length,
       ).toBeGreaterThan(0);
-      expect(pageRow('Runs').textContent).toBe('Runs1 run');
+      expect(pageRow('Runs').textContent).toBe('Runs1');
       expect(screen.queryByText(/workflow run/i)).toBeNull();
 
       const startedRun = currentSession(sessionId).workflowRuns.at(-1)?.id ?? null;
       expect(startedRun).not.toBeNull();
       act(() => useAppStore.getState().setFocusedWorkflowRun(sessionId, startedRun));
       await settle();
-      await click(pageRow('Agents'));
+      await press('lens.agents');
+      await settle();
       expectPlace({ session: sessionId, lens: 'agents', studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId]).toBe(startedRun);
 
-      await click(pageRow('Artifacts'));
+      await press('lens.plans');
+      await settle();
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       act(() => useAppStore.getState().setFocusedArtifactId(sessionId, JOURNEY_ARTIFACT));
       await settle();
-      await click(pageRow('Agents'));
+      await openPage('Agents');
       expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });

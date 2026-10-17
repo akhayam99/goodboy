@@ -50,7 +50,7 @@ const LABELS = {
   resume: 'Resume',
   continue: 'Continue the run',
   retry: 'Retry',
-  'raise-cap': 'Raise spend cap',
+  'raise-cap': 'Raise limit',
   'decide-next': 'Decide next step',
   'start-run': 'Start run',
   restore: 'Restore',

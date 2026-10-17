@@ -9,6 +9,7 @@ import type {
   MountId,
   ProjectId,
   PullRequestState,
+  SessionMountView,
 } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
@@ -46,6 +47,33 @@ type CheckAgentParams = {
   readonly kind: string;
   readonly isFromCheck?: boolean;
 };
+
+type MountParams = {
+  readonly id: string;
+  readonly repoSlug: string | null;
+  readonly isAttached?: boolean;
+};
+
+const mountOf = ({ id, repoSlug, isAttached = true }: MountParams): SessionMountView => ({
+  id: brandedId<MountId>({ value: id }),
+  sessionId: SESSION.id,
+  projectId: brandedId<ProjectId>({ value: 'project-payments' }),
+  repoRoot: `/repos/${id}`,
+  worktreePath: `/work/${id}`,
+  lastWorktreePath: null,
+  branch: 'ak/fix-retry',
+  baseBranch: 'main',
+  parallelIndex: 0,
+  mountName: id,
+  repoSlug,
+  isAttached,
+  diskState: 'present',
+  revision: 1,
+  createdAt: brandedId<IsoDateTime>({ value: '2026-10-10T09:00:00.000Z' }),
+  updatedAt: brandedId<IsoDateTime>({ value: '2026-10-10T09:00:00.000Z' }),
+});
+
+const JOB_URL = 'https://github.com/harborline/payments-api/actions/runs/77/job/88';
 
 const checkAgent = ({ id, kind, isFromCheck = true }: CheckAgentParams): Agent => ({
   id: brandedId<AgentId>({ value: id }),
@@ -183,5 +211,136 @@ describe('the verb of a CI fix row', () => {
     const target = result.current({ entry: entryOf({ agents: [own] }) });
 
     expect(target?.label).toBe('Open chat');
+  });
+});
+
+describe('the CI fix row when the pull request detail is not loaded', () => {
+  const rowOf = () => {
+    const agent = {
+      ...checkAgent({ id: 'agent-ci', kind: 'ci-fixer' }),
+      sourceCommentUrl: JOB_URL,
+    };
+    const { result } = renderHook(() => useTimelineOpen({ sessionId: SESSION.id }));
+    return result.current({ entry: entryOf({ agents: [agent] }) });
+  };
+
+  it.each([
+    {
+      name: 'exactly one mount holds the repo of the job URL',
+      mounts: [
+        mountOf({ id: 'mount-payments', repoSlug: 'Harborline/payments-api' }),
+        mountOf({ id: 'mount-ledger', repoSlug: 'harborline/ledger-core' }),
+      ],
+      expected: 'mount-payments',
+    },
+    {
+      name: 'the session holds one mount',
+      mounts: [mountOf({ id: 'mount-only', repoSlug: null })],
+      expected: 'mount-only',
+    },
+  ])('opens the drawer when $name', ({ mounts, expected }) => {
+    const openDrawer = vi.fn();
+    const navigate = vi.fn();
+    useAppStore.setState({ openDrawer, navigate, sessionMounts: { [SESSION.id]: mounts } });
+
+    const target = rowOf();
+    target?.open();
+
+    expect(target?.label).toBe('Open CI fix');
+    expect(openDrawer).toHaveBeenCalledWith({
+      kind: 'check-analysis',
+      sessionId: SESSION.id,
+      payload: {
+        sessionId: SESSION.id,
+        mountId: brandedId<MountId>({ value: expected }),
+        checkUrl: JOB_URL,
+      },
+    });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  const twoMounts = [
+    mountOf({ id: 'mount-a', repoSlug: 'harborline/payments-api' }),
+    mountOf({ id: 'mount-b', repoSlug: 'harborline/payments-api' }),
+  ];
+
+  it('opens the drawer on the stored mount even when two mounts hold the repo', () => {
+    const openDrawer = vi.fn();
+    useAppStore.setState({ openDrawer, sessionMounts: { [SESSION.id]: twoMounts } });
+    const agent = {
+      ...checkAgent({ id: 'agent-ci', kind: 'ci-fixer' }),
+      sourceCommentUrl: JOB_URL,
+      mountId: brandedId<MountId>({ value: 'mount-b' }),
+    };
+    const { result } = renderHook(() => useTimelineOpen({ sessionId: SESSION.id }));
+
+    const target = result.current({ entry: entryOf({ agents: [agent] }) });
+    target?.open();
+
+    expect(target?.label).toBe('Open CI fix');
+    expect(openDrawer).toHaveBeenCalledWith({
+      kind: 'check-analysis',
+      sessionId: SESSION.id,
+      payload: {
+        sessionId: SESSION.id,
+        mountId: brandedId<MountId>({ value: 'mount-b' }),
+        checkUrl: JOB_URL,
+      },
+    });
+  });
+
+  it('falls back to the R6 chain when the stored mount is no longer attached', () => {
+    const openDrawer = vi.fn();
+    const mounts = [
+      mountOf({ id: 'mount-a', repoSlug: 'harborline/payments-api' }),
+      mountOf({ id: 'mount-b', repoSlug: 'harborline/ledger-core' }),
+    ];
+    useAppStore.setState({ openDrawer, sessionMounts: { [SESSION.id]: mounts } });
+    const agent = {
+      ...checkAgent({ id: 'agent-ci', kind: 'ci-fixer' }),
+      sourceCommentUrl: JOB_URL,
+      mountId: brandedId<MountId>({ value: 'mount-removed' }),
+    };
+    const { result } = renderHook(() => useTimelineOpen({ sessionId: SESSION.id }));
+
+    result.current({ entry: entryOf({ agents: [agent] }) })?.open();
+
+    expect(openDrawer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          mountId: brandedId<MountId>({ value: 'mount-a' }),
+        }),
+      }),
+    );
+  });
+
+  it.each([
+    {
+      name: 'two mounts hold the repo of the job URL',
+      mounts: [
+        mountOf({ id: 'mount-a', repoSlug: 'harborline/payments-api' }),
+        mountOf({ id: 'mount-b', repoSlug: 'harborline/payments-api' }),
+      ],
+    },
+    { name: 'the session holds no mount', mounts: [] },
+    {
+      name: 'the only mount is detached',
+      mounts: [mountOf({ id: 'mount-gone', repoSlug: null, isAttached: false })],
+    },
+    {
+      name: 'several mounts and none holds the repo',
+      mounts: [
+        mountOf({ id: 'mount-a', repoSlug: 'harborline/ledger-core' }),
+        mountOf({ id: 'mount-b', repoSlug: 'harborline/notify-relay' }),
+      ],
+    },
+  ])('keeps the chat when $name', ({ mounts }) => {
+    const openDrawer = vi.fn();
+    useAppStore.setState({ openDrawer, sessionMounts: { [SESSION.id]: mounts } });
+
+    const target = rowOf();
+
+    expect(target?.label).toBe('Open chat');
+    expect(openDrawer).not.toHaveBeenCalled();
   });
 });

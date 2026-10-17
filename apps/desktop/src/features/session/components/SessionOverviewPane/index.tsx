@@ -1,12 +1,12 @@
 import { PaneShell } from '@goodboy/ui';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { HeaderBand } from './HeaderBand';
-import { ArchivedGate } from './ArchivedGate';
+import { OverviewTitle } from './OverviewTitle';
+import { OverviewHeaderActions } from './OverviewHeaderActions';
+import { OverviewNotices } from './OverviewNotices';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
-import { OverviewActions } from './OverviewActions';
-import { ProjectMountRows } from './ProjectMountRows';
 import { UnassignedNotes } from './UnassignedNotes';
 import { NextStepSlot } from '../../../suggestions/components/NextStepSlot';
 
@@ -15,33 +15,42 @@ type Props = {
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
+type LeadChange = {
+  readonly hasLead: boolean;
+};
+
 const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
 
 export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionId: SessionId = session.id;
-  const isArchived = session.archivedAt != null;
   const [shownQuestionIds, setShownQuestionIds] = useState<ReadonlySet<string>>(NO_SHOWN_QUESTIONS);
+  const [hasNextLead, setHasNextLead] = useState(false);
+  const onLeadChange = useCallback(({ hasLead }: LeadChange) => setHasNextLead(hasLead), []);
+  const isArchived = session.archivedAt != null;
 
   return (
     <PaneShell
-      header={<HeaderBand session={session} onSelectLens={onSelectLens} />}
+      page="overview"
+      title={<OverviewTitle session={session} />}
+      actions={<OverviewHeaderActions session={session} hasNextLead={hasNextLead} />}
       headerRhythm="section"
       animationClassName="animate-fade-in"
     >
-      <ProjectMountRows session={session} />
-      <UnassignedNotes sessionId={sessionId} />
-      <NextStepSlot
-        session={session}
-        onSelectLens={onSelectLens}
-        shownQuestionIds={shownQuestionIds}
-      />
+      <HeaderBand session={session} />
+      {isArchived ? null : <OverviewNotices session={session} />}
+      {isArchived ? null : <UnassignedNotes sessionId={sessionId} />}
       <TimelinePane
         session={session}
         onShownQuestionsChange={setShownQuestionIds}
-        actions={
-          <ArchivedGate isArchived={isArchived}>
-            <OverviewActions session={session} />
-          </ArchivedGate>
+        lead={
+          isArchived ? null : (
+            <NextStepSlot
+              session={session}
+              onSelectLens={onSelectLens}
+              shownQuestionIds={shownQuestionIds}
+              onLeadChange={onLeadChange}
+            />
+          )
         }
       />
     </PaneShell>

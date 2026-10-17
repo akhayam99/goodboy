@@ -192,10 +192,22 @@ vi.mock('../../../../store', () => {
   return { EMPTY_ARRAY: [], useAppStore };
 });
 
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { ScriptsPanel } from './index';
 
 const renderPanel = () =>
-  render(<ScriptsPanel workspaceId={WORKSPACE as never} sessionId={SESSION as never} />);
+  render(
+    <ObjectMenuProvider>
+      <ScriptsPanel
+        workspaceId={WORKSPACE as never}
+        sessionId={SESSION as never}
+        onClose={vi.fn()}
+      />
+    </ObjectMenuProvider>,
+  );
+
+const rowMenu = (scope: HTMLElement, name: string) =>
+  fireEvent.contextMenu(within(scope).getByRole('button', { name: `Show ${name} output` }));
 
 const group = (name: string) => screen.getByRole('region', { name });
 
@@ -237,7 +249,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
 
     expect(screen.getByRole('heading', { name: 'Scripts' })).toBeDefined();
-    expect(screen.getByText('2 projects')).toBeDefined();
+    expect(screen.queryByText('2 projects')).toBeNull();
     const settlement = group('ledger-core · nw/settlement');
     const rounding = group('ledger-core · nw/fix-rounding');
     const names = within(settlement)
@@ -254,7 +266,7 @@ describe('ScriptsPanel', () => {
     expect(within(rounding).getByText('Replay settlement batch')).toBeDefined();
   });
 
-  it('gives each project one refresh and one overflow per row', () => {
+  it('gives each project one refresh and no visible overflow on its rows', () => {
     renderPanel();
 
     for (const name of ['ledger-core · nw/settlement', 'notify-relay · nw/retry-backoff']) {
@@ -263,7 +275,7 @@ describe('ScriptsPanel', () => {
       );
     }
     const settlement = group('ledger-core · nw/settlement');
-    expect(within(settlement).getAllByRole('button', { name: /^More for / })).toHaveLength(3);
+    expect(within(settlement).queryAllByRole('button', { name: /^More for / })).toHaveLength(0);
   });
 
   it('splits a monorepo into its packages, root first, and runs each in its folder', () => {
@@ -361,7 +373,7 @@ describe('ScriptsPanel', () => {
     const settlement = group('ledger-core · nw/settlement');
     const web = within(settlement).getByRole('region', { name: '@northwind/web scripts' });
 
-    fireEvent.click(within(web).getByRole('button', { name: 'More for dev' }));
+    rowMenu(web, 'dev');
     fireEvent.click(screen.getByRole('menuitem', { name: 'Copy command' }));
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
@@ -419,7 +431,7 @@ describe('ScriptsPanel', () => {
 
     state.mounts = [];
     renderPanel();
-    expect(screen.getByRole('heading', { level: 2, name: 'No scripts yet' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 3, name: 'No scripts yet' })).toBeDefined();
     expect(screen.getByText('Scripts run inside a project of this session.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
@@ -476,14 +488,14 @@ describe('ScriptsPanel', () => {
     expect(state.toggleDrawer).toHaveBeenCalledWith({
       kind: 'scriptRun',
       sessionId: SESSION,
-      payload: { scriptKey: testKey, mountId: ROUNDING.mountId },
+      payload: { scriptKey: testKey, mountId: ROUNDING.mountId, from: 'scripts' },
     });
 
     fireEvent.click(within(rounding).getByRole('button', { name: 'Run test' }));
     expect(state.openDrawer).toHaveBeenCalledWith({
       kind: 'scriptRun',
       sessionId: SESSION,
-      payload: { scriptKey: testKey, mountId: ROUNDING.mountId },
+      payload: { scriptKey: testKey, mountId: ROUNDING.mountId, from: 'scripts' },
     });
     expect(state.runDiscoveredScript).toHaveBeenCalledWith(
       expect.objectContaining({ scriptId: testKey, cwd: ROUNDING_PATH, mountId: ROUNDING.mountId }),
@@ -510,7 +522,7 @@ describe('ScriptsPanel', () => {
 
     const settlement = group('ledger-core · nw/settlement');
     const rounding = group('ledger-core · nw/fix-rounding');
-    expect(screen.getByText('2 projects · 1 running')).toBeDefined();
+    expect(screen.queryByText('2 projects · 1 running')).toBeNull();
     expect(within(settlement).getByRole('button', { name: `Stop ${REPLAY.name}` })).toBeDefined();
     expect(within(rounding).getByRole('button', { name: `Run ${REPLAY.name}` })).toBeDefined();
     expect(settlement.querySelectorAll('[data-selected="true"]')).toHaveLength(1);
@@ -547,7 +559,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
     const settlement = group('ledger-core · nw/settlement');
 
-    fireEvent.click(within(settlement).getByRole('button', { name: `More for ${REPLAY.name}` }));
+    rowMenu(settlement, REPLAY.name);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Edit' }));
     const editor = within(settlement).getByRole('region', { name: `Edit ${REPLAY.name}` });
     expect(
@@ -555,7 +567,7 @@ describe('ScriptsPanel', () => {
     ).toBe(REPLAY.body);
     fireEvent.click(within(editor).getByRole('button', { name: 'Cancel' }));
 
-    fireEvent.click(within(settlement).getByRole('button', { name: `More for ${REPLAY.name}` }));
+    rowMenu(settlement, REPLAY.name);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
     expect(state.deleteScript).not.toHaveBeenCalled();
     const confirm = screen.getByRole('group', { name: `Delete "${REPLAY.name}"?` });
@@ -570,7 +582,7 @@ describe('ScriptsPanel', () => {
     renderPanel();
     const settlement = group('ledger-core · nw/settlement');
 
-    fireEvent.click(within(settlement).getByRole('button', { name: 'More for lint' }));
+    rowMenu(settlement, 'lint');
     fireEvent.click(screen.getByRole('menuitem', { name: 'Save as script' }));
 
     const editor = within(settlement).getByRole('region', { name: 'New script' });
@@ -751,6 +763,6 @@ describe('ScriptsPanel', () => {
     expect(within(services).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(2);
     expect(within(services).getByText('2')).toBeDefined();
     expect(within(tasks).getAllByRole('button', { name: /^Show .* output$/ })).toHaveLength(1);
-    expect(within(tasks).getByText('1')).toBeDefined();
+    expect(within(tasks).queryByText('1')).toBeNull();
   });
 });

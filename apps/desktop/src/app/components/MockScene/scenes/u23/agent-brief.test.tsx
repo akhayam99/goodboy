@@ -7,8 +7,9 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -45,24 +46,30 @@ describe('the u23 agent brief scenes', () => {
     ]);
   });
 
-  it('opens a running agent on the Brief with its subagents, no Now block and no 0 turns', async () => {
+  it('says each subagent as one delegation line, with no tabs, no Now block and no 0 turns', async () => {
     renderScene('agent-brief-door');
 
-    const tab = await screen.findByRole('tab', { name: 'Brief' }, WAIT);
-    expect(tab.getAttribute('aria-selected')).toBe('true');
-    await screen.findByText('Subagents', undefined, WAIT);
-    await screen.findByText('1 of 2 done', undefined, WAIT);
+    const lines = await screen.findByRole('list', { name: 'Delegations' }, WAIT);
+    expect(within(lines).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(lines).queryByText('Delegated to')).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
     expect(screen.queryByText('Now')).toBeNull();
-    expect(screen.queryByText('ready')).toBeNull();
     expect(screen.queryByText(/\b0 turns\b/u)).toBeNull();
-    expect(within(screen.getByTestId('subagent-tree')).queryByText('Implementer')).toBeNull();
   });
 
-  it('opens on the Transcript when the door asked for it', async () => {
+  it('opens a subagent in the pane from Open, and the transcript door lands on the same page', async () => {
     renderScene('agent-brief-door-transcript');
 
-    const tab = await screen.findByRole('tab', { name: 'Transcript' }, WAIT);
-    expect(tab.getAttribute('aria-selected')).toBe('true');
-    expect(screen.queryByText('Subagents')).toBeNull();
+    const more = await screen.findByRole(
+      'button',
+      { name: 'Open Read the cap in the retry loop' },
+      WAIT,
+    );
+    fireEvent.click(more);
+    const drawer = useAppStore.getState().drawer;
+    expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe(
+      'mock-agent-doors-done',
+    );
+    expect(screen.queryByRole('tab', { name: 'Transcript' })).toBeNull();
   });
 });

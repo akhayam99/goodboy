@@ -205,6 +205,7 @@ export const QuestionCard = ({
         isBlocking={question.isBlocking && isOpen}
         age={age}
         pager={pager}
+        isInAskerConversation={isCompact}
         onDismiss={isOpen && !question.isBlocking && !isWaiting ? onDismiss : null}
       />
       <div className="flex min-w-0 flex-col gap-3">

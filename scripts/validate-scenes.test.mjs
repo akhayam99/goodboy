@@ -14,7 +14,12 @@ import {
   readDevToolsPort,
   summaryLine,
 } from './validateScenesBrowser.mjs';
-import { columnDriftFailures, columnEdgesProbe } from './validateScenesColumns.mjs';
+import { headerLineFailures } from './validateScenesHeaderLine.mjs';
+import {
+  COLUMN_ROW_SELECTOR,
+  columnDriftFailures,
+  columnEdgesProbe,
+} from './validateScenesColumns.mjs';
 import {
   FRAME_SCENES,
   frameFailures,
@@ -23,6 +28,7 @@ import {
   missingFrameScenes,
 } from './validateScenesFrame.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
+import { chatMeasureFailures } from './validateScenesChatMeasure.mjs';
 
 const { Window } = createRequire(new URL('../apps/desktop/package.json', import.meta.url))(
   'happy-dom',
@@ -403,9 +409,24 @@ describe('columnEdgesProbe', () => {
     const rows = await runInWindow({
       window,
       probe: columnEdgesProbe,
-      params: { names: ['model', 'action'] },
+      params: { names: ['model', 'action'], selector: COLUMN_ROW_SELECTOR },
     });
     assert.deepEqual(rows, [{ row: 'a', edges: { model: 321, action: null } }]);
+    await window.happyDOM.close();
+  });
+
+  it('reads a run tree row by its test id', async () => {
+    const window = new Window();
+    window.document.body.innerHTML =
+      '<div data-testid="run-tree-row-agent-1"><span data-meta-column="action"></span></div>';
+    const column = window.document.querySelector('[data-meta-column="action"]');
+    column.getBoundingClientRect = () => ({ right: 640 });
+    const rows = await runInWindow({
+      window,
+      probe: columnEdgesProbe,
+      params: { names: ['action'], selector: COLUMN_ROW_SELECTOR },
+    });
+    assert.deepEqual(rows, [{ row: 'run-tree-row-agent-1', edges: { action: 640 } }]);
     await window.happyDOM.close();
   });
 });
@@ -492,8 +513,12 @@ describe('frameFailures', () => {
     );
   });
 
-  it('names rule 1 when the crumb is missing, and skips the spread check', () => {
-    assert.deepEqual(rulesOf(framed({ crumb: null })), ['rule 1']);
+  it('aligns the h1 and the body alone on a page without a crumb', () => {
+    assert.deepEqual(rulesOf(framed({ crumb: null })), []);
+    assert.deepEqual(
+      rulesOf(framed({ crumb: null, title: rect({ left: 344, top: 40, right: 500, bottom: 72 }) })),
+      ['rule 1'],
+    );
   });
 
   it('names rule 1 when the h1 is missing, and skips the spread check', () => {
@@ -551,6 +576,16 @@ describe('frameFailures', () => {
     assert.deepEqual(rulesOf(framed({ slots: [wide] })), ['slots inside the sheet']);
     assert.deepEqual(rulesOf(framed({ slots: [below] })), []);
     assert.deepEqual(rulesOf(framed({ slots: [fallen] })), ['slots inside the sheet']);
+  });
+
+  it('spares a slot scrolled out sideways by a horizontal scroller', () => {
+    const scrolled = {
+      name: 'scrolled',
+      isClipped: false,
+      isClippedX: true,
+      ...rect({ left: 80, top: 200, right: 230, bottom: 224 }),
+    };
+    assert.deepEqual(rulesOf(framed({ slots: [scrolled] })), []);
   });
 
   it('fails a rail that overlaps the crumb band and spares one that only touches it', () => {
@@ -651,5 +686,81 @@ describe('the frame probe scene list', () => {
       'utf8',
     ).split('\n');
     assert.deepEqual(missingFrameScenes({ ids }), []);
+  });
+});
+
+const chatEdges = ({ left, right }) => ({ left, right });
+
+const alignedChat = () => ({
+  header: chatEdges({ left: 911, right: 1620 }),
+  title: chatEdges({ left: 911, right: 1174 }),
+  remove: chatEdges({ left: 1592, right: 1620 }),
+  messages: chatEdges({ left: 911, right: 1620 }),
+  copy: chatEdges({ left: 1600, right: 1620 }),
+  composer: chatEdges({ left: 911, right: 1620 }),
+});
+
+describe('chatMeasureFailures', () => {
+  it('passes a room whose header, thread and composer share one column', () => {
+    assert.deepEqual(
+      chatMeasureFailures({ scene: 'fixture', width: 2000, probe: alignedChat() }),
+      [],
+    );
+  });
+
+  it('fails a room whose thread runs on the wider list column', () => {
+    const probe = { ...alignedChat(), messages: chatEdges({ left: 788, right: 1748 }) };
+    assert.deepEqual(
+      chatMeasureFailures({ scene: 'fixture', width: 2000, probe }).map((failure) => failure.check),
+      [
+        'chat header, thread and composer start on different left edges',
+        'chat header, thread and composer end on different right edges',
+      ],
+    );
+  });
+
+  it('fails a room with no thread or a missing control', () => {
+    assert.equal(
+      chatMeasureFailures({ scene: 'fixture', width: 1100, probe: null })[0]?.check,
+      'no chat room to measure',
+    );
+    const probe = { ...alignedChat(), remove: null };
+    assert.equal(
+      chatMeasureFailures({ scene: 'fixture', width: 1100, probe })[0]?.check,
+      'chat room is missing remove',
+    );
+  });
+});
+
+describe('headerLineFailures', () => {
+  const line = ({ top }) => ({ top, centre: top + 16 });
+  const measured = {
+    rail: line({ top: 49 }),
+    title: line({ top: 49 }),
+    tool: line({ top: 49.5 }),
+    drawer: line({ top: 49 }),
+  };
+
+  it('passes four header rows on one line within a pixel', () => {
+    assert.deepEqual(headerLineFailures({ scene: 'fixture', width: 1440, measured }), []);
+  });
+
+  it('fails a drawer header that sits on its own line', () => {
+    const drawer = { top: 42, centre: 56 };
+    const checks = headerLineFailures({
+      scene: 'fixture',
+      width: 1100,
+      measured: { ...measured, drawer },
+    }).map((failure) => failure.check);
+    assert.equal(checks.length, 2);
+  });
+
+  it('fails a scene that does not show all four rows', () => {
+    const failures = headerLineFailures({
+      scene: 'fixture',
+      width: 1100,
+      measured: { ...measured, tool: null },
+    });
+    assert.deepEqual(failures[0]?.missing, ['tool']);
   });
 });

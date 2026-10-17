@@ -53,15 +53,17 @@ describe('the u21 files rail scene', () => {
     expect(Object.keys(U21_FILES_RAIL_SCENES)).toEqual(['branch-files-docked']);
   });
 
-  it('docks the rail on a wide pane with the Files group, six files and one viewed', async () => {
+  it('opens the Files entry in the sidebar with its six files and the tree on the right', async () => {
     renderScene({ name: 'branch-files-docked', paneWidth: 1676 });
 
-    const rail = await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    const rail = await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     const files = within(rail).getByRole('button', { name: /^Files/ });
     expect(files.getAttribute('aria-current')).toBe('page');
-    expect(within(files).getByRole('img', { name: '1 of 6 viewed' })).toBeDefined();
-    expect(within(rail).getByRole('navigation', { name: 'Changed files' })).toBeDefined();
-    expect(within(rail).getByRole('tab', { name: /^Commented/ })).toBeDefined();
+    expect(files.textContent).toBe('Files6');
+    expect(within(rail).queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    const fileRail = within(screen.getByRole('complementary', { name: 'Files' }));
+    expect(fileRail.getByRole('navigation', { name: 'Changed files' })).toBeDefined();
+    expect(fileRail.getByRole('button', { name: 'Filter and group files' })).toBeDefined();
     expect(within(toolbar()).queryByRole('button', { name: /^Files/ })).toBeNull();
     expect(screen.getByRole('heading', { level: 1 })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();

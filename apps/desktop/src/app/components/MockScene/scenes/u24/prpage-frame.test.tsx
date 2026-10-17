@@ -15,6 +15,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { sectionNames, sectionRow } from '../../../../../test/branchRail';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { MOCK_SCENES } from '../..';
 import { U24_PRPAGE_FRAME_SCENES } from './prpage-frame';
@@ -58,12 +59,6 @@ const renderScene = ({ name, paneWidth }: { readonly name: Name; readonly paneWi
   return view;
 };
 
-const sectionNames = (): ReadonlyArray<string> =>
-  within(screen.getByRole('navigation', { name: 'Sections' }))
-    .getAllByRole('button')
-    .filter((button) => button.closest('[data-slot="branch-rail-files"]') === null)
-    .map((button) => (button.textContent ?? '').replace(/[\d/-]+$/, '').trim());
-
 const chip = (): HTMLElement => {
   const element = document.querySelector<HTMLElement>('[data-slot="branch-state"]');
   if (element === null) {
@@ -73,7 +68,7 @@ const chip = (): HTMLElement => {
 };
 
 describe('the u24 prpage frame scenes', () => {
-  it('registers the seven scenes under the names the plan uses', () => {
+  it('registers the six scenes under the names the plan uses', () => {
     expect(Object.keys(U24_PRPAGE_FRAME_SCENES)).toEqual([
       'branch-nopr',
       'branch-nopr-notes',
@@ -81,7 +76,6 @@ describe('the u24 prpage frame scenes', () => {
       'branch-open',
       'branch-queued',
       'branch-merged',
-      'branch-overlay-rail',
     ]);
     for (const name of Object.keys(U24_PRPAGE_FRAME_SCENES)) {
       expect(Object.keys(MOCK_SCENES)).toContain(name);
@@ -90,33 +84,33 @@ describe('the u24 prpage frame scenes', () => {
 
   it('draws Overview, Files and Commits and no Comments or Checks with no pull request', async () => {
     renderScene({ name: 'branch-nopr' });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Files', 'Commits']);
-    expect(chip().textContent).toBe('No pull request');
+    expect(sectionNames()).toEqual(['Pull request', 'Files', 'Commits']);
+    expect(sectionRow(/^Pull request/).textContent).toBe('Pull request');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
   });
 
-  it('adds Comments with its count when a local note exists and still no Checks', async () => {
+  it('adds Comments when a local note exists, no count since no note needs you', async () => {
     renderScene({ name: 'branch-nopr-notes' });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits']);
     expect(
-      within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', {
+      within(screen.getByRole('navigation', { name: 'Worktree' })).getByRole('button', {
         name: /^Comments/,
       }).textContent,
-    ).toBe('Comments1');
+    ).toBe('Comments');
   });
 
   it('draws all five sections with Mark ready for review as the one primary of a draft', async () => {
     renderScene({ name: 'branch-draft' });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     await settle();
 
-    expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits', 'Checks']);
+    expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
     expect(chip().textContent).toBe('Draft');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
     expect(screen.getByRole('button', { name: /Mark ready for review/ })).toBeDefined();
@@ -124,16 +118,16 @@ describe('the u24 prpage frame scenes', () => {
 
   it('draws the open state with Merge as the one primary', async () => {
     renderScene({ name: 'branch-open' });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     await settle();
 
     expect(chip().getAttribute('data-state')).toBe('approved');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(1);
   });
 
-  it('draws the queued state with no primary and the queue in the meta line', async () => {
+  it('draws the queued state with no primary and the queue in the Readiness property', async () => {
     renderScene({ name: 'branch-queued' });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     await settle();
 
     expect(chip().getAttribute('data-state')).toBe('queued');
@@ -144,19 +138,10 @@ describe('the u24 prpage frame scenes', () => {
 
   it('draws the merged state in the merged tone with no primary', async () => {
     renderScene({ name: 'branch-merged' });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
+    await screen.findByRole('navigation', { name: 'Worktree' }, WAIT);
     await settle();
 
     expect(chip().getAttribute('data-tone')).toBe('merged');
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
-  });
-
-  it('shows the rail over the page on a stage under 780, with the scrim', async () => {
-    renderScene({ name: 'branch-overlay-rail', paneWidth: 700 });
-    await screen.findByRole('navigation', { name: 'Sections' }, WAIT);
-
-    expect(document.querySelector('[data-branch-rail="overlay"]')).not.toBeNull();
-    expect(document.querySelector('[data-branch-rail-scrim]')).not.toBeNull();
-    expect(sectionNames()).toEqual(['Overview', 'Comments', 'Files', 'Commits', 'Checks']);
   });
 });

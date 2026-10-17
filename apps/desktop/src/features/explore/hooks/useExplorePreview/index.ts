@@ -8,6 +8,7 @@ export type ExplorePreviewState =
   | {
       readonly status: 'error';
       readonly message: string;
+      readonly retry: () => void;
     }
   | {
       readonly status: 'ready';
@@ -28,6 +29,7 @@ type Params = {
 
 export const useExplorePreview = ({ sessionDir, entry }: Params): ExplorePreviewState => {
   const [state, setState] = useState<ExplorePreviewState>({ status: 'loading' });
+  const [attempt, setAttempt] = useState(0);
   const relPath = entry.relPath;
 
   useEffect(() => {
@@ -41,13 +43,17 @@ export const useExplorePreview = ({ sessionDir, entry }: Params): ExplorePreview
       })
       .catch((error: unknown) => {
         if (!isCancelled) {
-          setState({ status: 'error', message: toErrorMessage({ error }) });
+          setState({
+            status: 'error',
+            message: toErrorMessage({ error }),
+            retry: () => setAttempt((count) => count + 1),
+          });
         }
       });
     return () => {
       isCancelled = true;
     };
-  }, [relPath, sessionDir]);
+  }, [relPath, sessionDir, attempt]);
 
   return state;
 };

@@ -146,10 +146,10 @@ describe('the Branch sections by state', () => {
     expect(tabIds('none', false)).not.toContain('checks');
   });
 
-  it('labels the first section Overview in every state', () => {
+  it('labels the first section Pull request in every state', () => {
     for (const { pr, hasNote } of CASES) {
       const scope = { state: pr ?? 'none', hasComments: hasNote } as const;
-      expect(branchTabsOf(scope)[0]?.label).toBe('Overview');
+      expect(branchTabsOf(scope)[0]?.label).toBe('Pull request');
     }
   });
 

@@ -205,7 +205,7 @@ describe('RunTree sub-agent sets', () => {
     expect(orderOf()).toContain('scout-b');
   });
 
-  it('says how long the set worked and what it cost, next to what it holds', () => {
+  it('says what the set holds and its state, never its time or cost again', () => {
     const runIds = { 'scout-a': 'run-a', 'scout-b': 'run-b', 'scout-c': 'run-c' } as const;
     useAppStore.setState({
       agentRunHistory: Object.fromEntries(
@@ -242,7 +242,7 @@ describe('RunTree sub-agent sets', () => {
     seed({ agents: [...baseAgents, ...scouts()] });
     render(<RunTreeHarness kinds={SCOUT_KINDS} source={source} />);
 
-    expect(foldButton().getAttribute('aria-label')).toBe('3 scouts · done · 3m · $0.09, expand');
+    expect(foldButton().getAttribute('aria-label')).toBe('3 scouts · done, expand');
   });
 
   it('reveals the live row only, never a row of a folded set', () => {

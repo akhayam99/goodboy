@@ -1,6 +1,7 @@
 import {
   describeAutoRefusal,
   parseAutoBlock,
+  parseDelegateSpec,
   type AutoBlock,
   type AutoRefusalCode,
   type RefusalPayload,
@@ -66,6 +67,21 @@ const commandOf = ({ block, grant }: CommandParams): AgentCommand => {
   }
 };
 
+type RolesParams = {
+  readonly block: AutoBlock;
+};
+
+const rolesOf = ({ block }: RolesParams): ReadonlyArray<string> => {
+  if (block.action !== 'delegate') {
+    return [];
+  }
+  const spec = parseDelegateSpec({ text: block.spec });
+  if (spec.kind !== 'ok') {
+    return [];
+  }
+  return spec.children.flatMap((child) => (child.role === null ? [] : [child.role]));
+};
+
 type WriteRefusalParams = {
   readonly ctx: AgentVerbContext;
   readonly tree: AutoTree;
@@ -73,6 +89,7 @@ type WriteRefusalParams = {
   readonly action: string;
   readonly code: string;
   readonly text: string;
+  readonly roles: ReadonlyArray<string>;
 };
 
 const writeRefusal = async ({
@@ -82,8 +99,9 @@ const writeRefusal = async ({
   action,
   code,
   text,
+  roles,
 }: WriteRefusalParams): Promise<void> => {
-  const payload: RefusalPayload = { kind: 'refusal', runId, action, code, text };
+  const payload: RefusalPayload = { kind: 'refusal', runId, action, code, text, roles };
   await insertAutoOutbox({
     db: ctx.db,
     outbox: {
@@ -128,6 +146,7 @@ export const applyAutoBlock = async ({
       action: 'block',
       code: INVALID_BLOCK_CODE,
       text,
+      roles: [],
     });
     return { kind: 'refused', action: 'block', code: INVALID_BLOCK_CODE };
   }
@@ -157,6 +176,7 @@ export const applyAutoBlock = async ({
     action: parsed.block.action,
     code,
     text: outcome.error ?? describeAutoRefusal({ code: INVALID_BLOCK_CODE }),
+    roles: rolesOf({ block: parsed.block }),
   });
   return { kind: 'refused', action: parsed.block.action, code };
 };

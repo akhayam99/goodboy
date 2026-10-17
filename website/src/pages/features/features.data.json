@@ -65,7 +65,7 @@
         },
         {
           "title": "How do you want to start?",
-          "text": "A new session draft offers three tabs: pick up a task, run a workflow or ask an agent. It becomes a session only when you press Start.",
+          "text": "A new session draft asks how you want to start: pick up a task, run a workflow, orchestrate or ask an agent. It becomes a session only when you press Start.",
           "group": "Start a task",
           "also": "start tabs",
           "shown": true
@@ -96,7 +96,7 @@
         },
         {
           "title": "Start more work in a session",
-          "text": "New in a session opens one drawer with Run, Agent and Write. Run plans the steps from a goal, Agent starts one role and Write drafts a report or a wireframe.",
+          "text": "New in a session lists Run a workflow, Orchestrate, Ask an agent, Start Auto, Write a report and Draw a wireframe. Each opens its form beside the page.",
           "group": "Start a task",
           "also": "new in a session"
         },
@@ -186,7 +186,7 @@
       "items": [
         {
           "title": "Session overview",
-          "text": "Find the goal, linked issues, projects, cost and the buttons to start an agent on one screen. Each project lists its branches and pull request state.",
+          "text": "The Overview shows the session name, renamed in one click, then the goal, what needs you, Next and Activity. Projects, branches and their pull request state sit in the session rail beside it.",
           "group": "Overview and activity",
           "main": true
         },
@@ -256,7 +256,7 @@
         },
         {
           "title": "Sidebar",
-          "text": "One column on the left holds Board, Tasks, Chat, Workflows and your sessions, on every screen. Fold it with ⌘B and the icons stay.",
+          "text": "One column on the left holds Sessions, Tasks, Chat, Workflows, Terminal and your sessions, on every screen. An open session adds its own rail with its pages, projects and branches. Fold the sidebar with ⌘B and the icons stay.",
           "group": "Search and navigation",
           "also": "sidebar"
         },
@@ -294,9 +294,16 @@
         },
         {
           "title": "Session card",
-          "text": "Read a task at a glance: pull request or status, agent count, project, cost and age. A round button opens a waiting action.",
+          "text": "Read a task at a glance: its title, its project and one signal, such as an open question or the pull request. The rest waits in the hover card.",
           "group": "The board",
           "also": "session cards",
+          "shown": true
+        },
+        {
+          "title": "List view",
+          "text": "See every session in one table, grouped by the same stages as the board, with aligned columns: key, title, project, signal and last update.",
+          "group": "The board",
+          "also": "sessions list",
           "shown": true
         },
         {
@@ -364,10 +371,10 @@
           "also": "who receives what"
         },
         {
-          "title": "Learned",
+          "title": "Explanations",
           "text": "List the topics you want explained, and read back what agents explained about them, grouped by topic.",
           "group": "Shared context",
-          "also": "learned",
+          "also": "explanations",
           "shown": true
         },
         {
@@ -437,7 +444,7 @@
         },
         {
           "title": "Repo status across projects",
-          "text": "See which repos are behind, uncommitted or diverged. Update the safe ones together, fast-forward only, and leave the rest to you.",
+          "text": "See which repos are behind or diverged from origin, checked every few minutes, next to the workspace switcher. Pull the safe ones together, fast-forward only, and leave the rest to you.",
           "group": "Workspace and projects",
           "also": "repo status",
           "shown": true
@@ -503,6 +510,12 @@
           "also": "built-in workflows"
         },
         {
+          "title": "Runs of a workflow",
+          "text": "Each workflow row shows when it last ran and how many runs it has. The run count opens every run of that workflow beside the list, newest first.",
+          "group": "Workflows",
+          "also": "runs of a workflow"
+        },
+        {
           "title": "Saved steps",
           "text": "Reuse steps across workflows. The built-in steps are read-only, and Save a copy makes your own.",
           "group": "Workflows",
@@ -524,8 +537,8 @@
           "shown": true
         },
         {
-          "title": "Spend cap",
-          "text": "Cap what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise spend cap.",
+          "title": "Limit",
+          "text": "Limit what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise limit.",
           "group": "Workflows",
           "main": true
         },
@@ -538,7 +551,7 @@
         },
         {
           "title": "Run defaults",
-          "text": "Set once what every new run starts with: when it asks, a spend cap and guidance. Spread work by what each provider has left.",
+          "text": "Set once what every new run starts with: when it asks, a limit and guidance. Spread work by what each provider has left.",
           "group": "Workflows",
           "also": "run defaults",
           "shown": true
@@ -699,7 +712,7 @@
         },
         {
           "title": "Review sources",
-          "text": "Each comment says its host, GitHub, GitLab or Bitbucket. Your notes sit in the same list, marked Note. Reading and replying work everywhere, and resolving works where the host allows it.",
+          "text": "Each comment says its host, GitHub, GitLab or Bitbucket. Your notes sit in the same list, marked Note, and a row opens the comment in a drawer with Fix, Reply and Skip. Reading and replying work everywhere, and resolving works where the host allows it.",
           "group": "Review and resolve on the Branch page",
           "also": "review sources",
           "shown": true
@@ -774,7 +787,7 @@
         },
         {
           "title": "One trail to the Branch page",
-          "text": "Open a branch from the palette, a notification, a chat card or the board and the trail reads the same. Up is the crumb on the left, and Back is history.",
+          "text": "Open a branch from the palette, a notification, a chat card or the board and the session rail steps into the same branch. The back row steps out, and Back is history.",
           "group": "Review and resolve on the Branch page",
           "also": "review layers"
         },
@@ -793,7 +806,7 @@
         },
         {
           "title": "Read the code",
-          "text": "Files has a file tree in the rail with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent. Show more lines opens the context around a change, and a double click on a name shows where it is defined and used.",
+          "text": "Files has a file tree in a rail on the right of the diff with a progress ring per folder, filters, and the changes with syntax colors, word-level highlights and a unified or split view. Comment on a line or on a whole file, and quote a line into a note or a question for an agent. Show more lines opens the context around a change, and a double click on a name shows where it is defined and used.",
           "group": "Review and resolve on the Branch page",
           "also": "diff"
         },
@@ -856,7 +869,7 @@
         },
         {
           "title": "Tasks",
-          "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together, grouped by day. Filters sit in a rail beside the list.",
+          "text": "Work from one list instead of seven tabs. Issues, Slack threads, Sentry errors and pull requests sit together in groups of five that open on demand. It starts on what is yours, and one Filter menu narrows the rest.",
           "group": "Tasks and your tools",
           "main": true
         },
@@ -1137,7 +1150,7 @@
         },
         {
           "title": "Agent header",
-          "text": "Read who an agent is at a glance. Role, status, time and model sit on one line under the title.",
+          "text": "Read who an agent is at a glance. Its role, name and provider share one row with View transcript and its menu.",
           "group": "Agents",
           "also": "agent header"
         },
@@ -1149,13 +1162,13 @@
         },
         {
           "title": "Agent transcript",
-          "text": "Follow one agent's work in order. Plans and reports show as chips, file edits group together, and questions appear where you answer them.",
+          "text": "Follow one agent's work as one conversation. Each turn says in one line what it did, then its answer; View transcript shows every tool call.",
           "group": "Agents",
           "main": true
         },
         {
           "title": "Queue or send now",
-          "text": "Keep talking while an agent works. Enter queues your message for its next turn, and ⌘Enter sends it now.",
+          "text": "Keep talking while an agent works. Enter queues your message for its next turn, and Send now, in view while it works, sends it now.",
           "group": "Agents",
           "also": "queue or send now",
           "shown": true
@@ -1169,7 +1182,7 @@
         },
         {
           "title": "Turn footer",
-          "text": "See what each turn cost: provider, model, duration, tokens, cache share, estimated cost and a context meter.",
+          "text": "See what each turn cost: the model with its provider mark, the duration and the estimated cost on the line, and tokens, cache share and context window in its detail.",
           "group": "Agents",
           "also": "turn footer"
         },
@@ -1214,7 +1227,7 @@
         },
         {
           "title": "Auto agent",
-          "text": "Try an agent that picks the roles, models and next steps for you. It is an experiment, off until you turn it on in Settings, and you can stop it or take an agent back.",
+          "text": "Try an agent that picks the roles, models and next steps for you. It is always on, marked as an experiment, and you can stop it or take an agent back.",
           "group": "Agents",
           "also": "auto agent"
         },
@@ -1375,7 +1388,7 @@
         },
         {
           "title": "Guide",
-          "text": "Learn how Goodboy works in 19 short chapters that follow a task. Open Guide from the palette.",
+          "text": "Learn how Goodboy works in short chapters that follow a task. Open Guide from the palette.",
           "group": "Security, backup and updates",
           "also": "guide"
         },

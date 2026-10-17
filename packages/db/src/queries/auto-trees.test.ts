@@ -246,7 +246,7 @@ describe('auto trees', () => {
         capUsd: 8,
         nowMs: AUTO_SEED_NOW,
       }),
-    ).toBe(true);
+    ).toEqual({ kind: 'applied' });
     expect(
       await setAutoTreeCapIfUnchanged({
         db,
@@ -255,7 +255,7 @@ describe('auto trees', () => {
         capUsd: 9,
         nowMs: AUTO_SEED_NOW,
       }),
-    ).toBe(false);
+    ).toEqual({ kind: 'stale', capUsd: 8 });
     expect((await getAutoTree({ db, treeId }))?.capUsd).toBe(8);
     expect(
       await grantAutoTreeIfUnchanged({

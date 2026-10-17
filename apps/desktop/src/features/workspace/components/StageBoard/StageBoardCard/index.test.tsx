@@ -1,21 +1,18 @@
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { branchPlace } from '../../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HelpCircle, Play, type LucideIcon } from 'lucide-react';
 import type {
   IsoDateTime,
   PullRequestState,
-  Session,
+  SessionAttentionReason,
   SessionExternalTask,
   SessionId,
   SessionPrFetchState,
   SessionStage,
-  WorkflowId,
-  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import { aProject, aSession, aWorkflowRun } from '@goodboy/types/testing';
+import { aSession, aWorkflowRun } from '@goodboy/types/testing';
 import type { GitlabMergeRequest } from '../../../../integrations/gitlab/client';
 import type { BoardNavigation } from '../useBoardNavigation';
 
@@ -37,6 +34,7 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     sessionPins: {} as Record<string, ReadonlyArray<{ id: string; at: number }>>,
     projects: [] as ReadonlyArray<unknown>,
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    agentTurnState: {} as Record<string, unknown>,
     reviewDrafts: {} as Record<string, ReadonlyArray<unknown>>,
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ status: string }>>,
     phaseTemplates: {} as Record<string, ReadonlyArray<unknown>>,
@@ -48,6 +46,9 @@ const { state, hooks, useDynamicActionsMock } = vi.hoisted(() => ({
     stage: 'building' as SessionStage,
     reason: 'no PR yet',
     addsFact: true,
+    attention: null as SessionAttentionReason | null,
+    openQuestionCount: 0,
+    isRunning: false,
     agents: [] as ReadonlyArray<unknown>,
     cost: 0,
     prFetchState: 'known' as SessionPrFetchState,
@@ -68,8 +69,10 @@ vi.mock('../../../../../store', async () => ({
     stage: hooks.stage,
     reason: hooks.reason,
     addsFact: hooks.addsFact,
-    attention: null,
+    attention: hooks.attention,
     prState: null,
+    isRunning: hooks.isRunning,
+    openQuestionCount: hooks.openQuestionCount,
   }),
 }));
 
@@ -147,6 +150,7 @@ beforeEach(() => {
   state.sessionPins = {};
   state.projects = [];
   state.sessionPhaseRuns = {};
+  state.agentTurnState = {};
   state.reviewDrafts = {};
   state.sessionOpenQuestions = {};
   state.phaseTemplates = {};
@@ -156,8 +160,13 @@ beforeEach(() => {
   useDynamicActionsMock.mockReset();
   useDynamicActionsMock.mockReturnValue([]);
   nav.selectCard.mockClear();
+  nav.openPullRequest.mockClear();
+  hooks.stage = 'building';
   hooks.reason = 'no PR yet';
   hooks.addsFact = true;
+  hooks.attention = null;
+  hooks.openQuestionCount = 0;
+  hooks.isRunning = false;
   hooks.agents = [];
   hooks.cost = 0;
   hooks.prFetchState = 'known';
@@ -165,96 +174,30 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-const slotOf = (element: HTMLElement): HTMLElement | null =>
-  (element.closest('[data-tooltip]') ?? element).parentElement;
-
-const costBadge = (): Element | null =>
-  document.querySelector('[data-tooltip="Session spend: $1.25 (excludes summarizer)"]')
-    ?.firstElementChild ?? null;
-
 const cardTitle = () => screen.getByRole('button', { name: session.goal });
 
+const signalSlot = () => screen.getByRole('article').querySelector('[data-slot="card-signal"]');
+
 describe('StageBoardCard layout', () => {
-  it('keeps a fixed height with a two-line goal and a full-width footer row', () => {
+  it('keeps a fixed 96px height with a two-line title and one bottom line', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = screen.getByRole('article');
     const title = screen.getByText(session.goal);
-    const metaRow = card.children[3];
-    expect(card.className).toContain('h-28');
-    expect(card.className).not.toContain('min-h-28');
-    expect(card.className).toContain('gap-y-1');
-    expect(card.className).not.toContain('shadow-sm');
+    expect(card.className).toContain('h-24');
+    expect(card.className).not.toContain('h-28');
     expect(title.className).toContain('line-clamp-2');
-    expect(title.className).toContain('min-h-10');
     expect(title.className).toContain('text-row');
     expect(cardTitle().getAttribute('title')).toBeNull();
     expect(cardTitle().closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(session.goal);
-    expect(metaRow?.className).toContain('col-span-2');
-    expect(metaRow?.className).toContain('col-start-1');
-    expect(metaRow?.className).toContain('row-start-2');
-    expect(metaRow?.className).toContain('h-5');
-    expect(metaRow?.className).not.toContain('self-center');
+    expect(card.querySelector('[data-slot="card-project"]')?.className).toContain('row-start-2');
+    expect(signalSlot()?.className).toContain('row-start-2');
   });
 
-  it('shows the reason under the goal without a native title or status dot', () => {
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(cardTitle().getAttribute('title')).toBeNull();
-    expect(screen.queryByTestId('status-dot')).toBeNull();
-    expect(screen.getByText('no PR yet').className).toContain('truncate');
-    expect(screen.getByText('no PR yet').parentElement?.children.length).toBe(2);
-  });
-
-  it('drops the reason when it only restates the stage', () => {
-    hooks.addsFact = false;
+  it('says nothing under the title: no reason line, no progress, no chevron', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     expect(screen.queryByText('no PR yet')).toBeNull();
-  });
-
-  it('trades the reason for the workflow progress the sidebar row shows', () => {
-    const running = aSession({
-      ...session,
-      workflowRuns: [
-        aWorkflowRun({ id: 'run-1' as WorkflowRunId, workflowId: 'wf-1' as WorkflowId }),
-      ],
-    });
-    state.phaseTemplates = {
-      'workspace-1': [
-        {
-          id: 'wf-1',
-          steps: [
-            { id: 'plan', name: 'Plan', ordinal: 0 },
-            { id: 'implement', name: 'Implement', ordinal: 1 },
-            { id: 'test', name: 'Test', ordinal: 2 },
-          ],
-        },
-      ],
-    };
-    state.sessionPhaseRuns = {
-      [SESSION_ID]: [
-        {
-          id: 'a-plan',
-          name: 'Plan',
-          kind: 'planner',
-          stepId: 'plan',
-          workflowRunId: 'run-1',
-          status: 'completed',
-        },
-        {
-          id: 'a-impl',
-          name: 'Implement',
-          kind: 'implementer',
-          stepId: 'implement',
-          workflowRunId: 'run-1',
-          status: 'running',
-        },
-      ],
-    };
-
-    render(<StageBoardCard session={running} nav={nav} />);
-
-    expect(screen.getByTestId('session-progress').textContent).toContain('Implement');
-    expect(screen.getByRole('img', { name: 'Step 2 of 3' })).toBeDefined();
-    expect(screen.queryByText('no PR yet')).toBeNull();
+    expect(screen.queryByTestId('session-progress')).toBeNull();
+    expect(document.querySelector('.lucide-chevron-right')).toBeNull();
   });
 
   it('renders a backticked goal as inline code and keeps the tooltip plain', () => {
@@ -268,19 +211,24 @@ describe('StageBoardCard layout', () => {
     );
   });
 
-  it('points at the session with a trailing chevron', () => {
+  it('names the project in gray at the left, with a count when there are several', () => {
+    state.sessionProjectMounts = {
+      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'payments-api' }],
+    };
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(document.querySelector('.lucide-chevron-right')).not.toBeNull();
-    expect(document.querySelector('.lucide-chevron-right')?.closest('[role="group"]')).toBeNull();
-  });
+    const project = screen.getByText('payments-api');
+    expect(project.className).toContain('text-muted-foreground');
+    expect(project.className).toContain('truncate');
 
-  it('renders the last update age when the session carries a timestamp', () => {
-    const updated = aSession({
-      ...session,
-      updatedAt: new Date(Date.now() - 7_200_000).toISOString() as IsoDateTime,
-    });
-    render(<StageBoardCard session={updated} nav={nav} />);
-    expect(screen.getByText('2h ago')).toBeDefined();
+    cleanup();
+    state.sessionProjectMounts = {
+      [SESSION_ID]: [
+        { projectId: 'project-1', mountName: 'payments-api' },
+        { projectId: 'project-2', mountName: 'ledger-core' },
+      ],
+    };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByText('payments-api +1')).toBeDefined();
   });
 });
 
@@ -345,79 +293,94 @@ describe('StageBoardCard selection', () => {
   });
 });
 
-describe('StageBoardCard linked request', () => {
-  it('renders no pull request indicator when no PR exists', () => {
+describe('StageBoardCard one signal', () => {
+  it('shows nothing at the right when nothing asks for attention', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.queryByLabelText('No pull request')).toBeNull();
-    expect(screen.queryByLabelText(/open in GitHub/)).toBeNull();
-    expect(screen.getByText(session.goal)).toBeTruthy();
+    expect(signalSlot()?.children.length).toBe(0);
   });
 
-  it('renders a clickable GitHub PR button that opens the pull request', () => {
+  it('puts an open question first, above a failed check, a pull request and running work', () => {
+    hooks.openQuestionCount = 2;
+    hooks.attention = 'ci-failed';
+    hooks.isRunning = true;
     state.sessionGithub = { [SESSION_ID]: { pr: pullRequest } };
     render(<StageBoardCard session={session} nav={nav} />);
-    const btn = screen.getByLabelText('Draft · #9484, open in GitHub');
-    expect(btn.tagName).toBe('BUTTON');
-    fireEvent.click(btn);
+    expect(screen.getByRole('img', { name: '2 open questions' })).toBeDefined();
+    expect(signalSlot()?.querySelectorAll('[data-board-signal]')).toHaveLength(1);
+  });
+
+  it('puts a failed check above the pull request token', () => {
+    hooks.attention = 'ci-failed';
+    state.sessionGithub = { [SESSION_ID]: { pr: pullRequest } };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByRole('img', { name: 'Checks failing' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /Open pull request/ })).toBeNull();
+  });
+
+  it('opens the pull request from its token, keeping its state color, never the session', () => {
+    state.sessionGithub = { [SESSION_ID]: { pr: pullRequest } };
+    render(<StageBoardCard session={session} nav={nav} />);
+    const token = screen.getByRole('button', { name: 'Open pull request 9484' });
+    expect(token.textContent).toContain('#9484');
+    fireEvent.click(token);
     expect(nav.openPullRequest).toHaveBeenCalledWith(session);
-    expect(screen.queryByLabelText('No pull request')).toBeNull();
+    expect(nav.selectCard).not.toHaveBeenCalled();
   });
 
-  it('opens the Branch page from a GitLab MR button', () => {
-    state.sessionGitlabMr = {
-      [SESSION_ID]: { mr: mergeRequest({ state: 'opened' }) },
-    };
-    nav.openPullRequest.mockClear();
+  it('opens the Branch page from a GitLab merge request token', () => {
+    state.sessionGitlabMr = { [SESSION_ID]: { mr: mergeRequest({ state: 'opened' }) } };
     render(<StageBoardCard session={session} nav={nav} />);
-    const btn = screen.getByLabelText('Merge request !12 · open, open in GitLab');
-    fireEvent.click(btn);
+    fireEvent.click(screen.getByRole('button', { name: 'Open pull request 12' }));
     expect(nav.openPullRequest).toHaveBeenCalledWith(session);
-  });
-
-  it('marks the pull request slot as still being checked before GitHub answers', () => {
-    hooks.prFetchState = 'unknown';
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByLabelText('Checking GitHub for a pull request')).toBeTruthy();
-    expect(screen.queryByLabelText(/open in GitHub/)).toBeNull();
-  });
-
-  it('marks the pull request slot offline when GitHub could not be reached', () => {
-    hooks.prFetchState = 'unreachable';
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByLabelText('Could not reach GitHub, will retry')).toBeTruthy();
-    expect(screen.queryByLabelText('Checking GitHub for a pull request')).toBeNull();
-  });
-
-  it('leaves the pull request slot empty once a fetch confirms there is none', () => {
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.queryByLabelText('Checking GitHub for a pull request')).toBeNull();
-    expect(screen.queryByLabelText('Could not reach GitHub, will retry')).toBeNull();
-  });
-
-  it('does not render a clickable button when state is none', () => {
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.queryByLabelText(/open in GitHub/)).toBeNull();
-    expect(screen.queryByLabelText(/open in GitLab/)).toBeNull();
   });
 
   it.each([
-    ['opened', false, 'open'],
-    ['open', false, 'open'],
-    ['opened', true, 'draft'],
-    ['merged', false, 'merged'],
-    ['closed', false, 'closed'],
-  ])('maps GitLab %s with draft %s to %s', (mrState, draft, expected) => {
-    state.sessionGitlabMr = {
-      [SESSION_ID]: { mr: mergeRequest({ state: mrState, draft }) },
+    ['opened', false, 'In review'],
+    ['opened', true, 'Draft'],
+    ['merged', false, 'Merged'],
+    ['closed', false, 'Closed'],
+  ])('maps GitLab %s with draft %s to the %s token', (mrState, draft, word) => {
+    state.sessionGitlabMr = { [SESSION_ID]: { mr: mergeRequest({ state: mrState, draft }) } };
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(
+      signalSlot()?.querySelector('[data-tooltip]')?.getAttribute('data-tooltip')?.toLowerCase(),
+    ).toContain(word.toLowerCase());
+  });
+
+  it('shows the running dot with its count when nothing else speaks', () => {
+    hooks.isRunning = true;
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        { id: 'a-1', status: 'running' },
+        { id: 'a-2', status: 'running' },
+        { id: 'a-3', status: 'completed' },
+      ],
     };
     render(<StageBoardCard session={session} nav={nav} />);
-    const title = `Merge request !12 · ${expected}, open in GitLab`;
-    const btn = screen.getByLabelText(title);
-    expect(btn.tagName).toBe('BUTTON');
+    expect(screen.getByRole('img', { name: '2 agents running' })).toBeDefined();
+  });
+
+  it('leaves the slot empty while GitHub has not answered, no skeleton per card', () => {
+    hooks.prFetchState = 'unknown';
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(signalSlot()?.children.length).toBe(0);
+  });
+
+  it('marks the slot offline when GitHub could not be reached', () => {
+    hooks.prFetchState = 'unreachable';
+    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.getByLabelText('Could not reach GitHub, will retry')).toBeTruthy();
+  });
+
+  it('keeps an archived card to its pull request, never a live signal', () => {
+    hooks.openQuestionCount = 1;
+    hooks.isRunning = true;
+    render(<StageBoardCard session={session} nav={nav} archived />);
+    expect(signalSlot()?.children.length).toBe(0);
   });
 });
 
-describe('StageBoardCard actions visibility', () => {
+describe('StageBoardCard actions', () => {
   it('keeps session details navigation only on the card body and keyboard', () => {
     render(<StageBoardCard session={session} nav={nav} />);
     const card = cardTitle();
@@ -431,7 +394,7 @@ describe('StageBoardCard actions visibility', () => {
     ['warning', '1 open question'],
     ['danger', 'Confirm skip and continue'],
   ] as const)(
-    'keeps a %s quick action quiet at rest, so the tone line is the one signal',
+    'keeps a %s quick action quiet at rest, so the stage track is the one tone',
     (tone, label) => {
       useDynamicActionsMock.mockReturnValue([
         { key: 'attention', icon: HelpCircle, tone, label, onClick: vi.fn() },
@@ -445,22 +408,32 @@ describe('StageBoardCard actions visibility', () => {
     },
   );
 
-  it('swaps the age for the cost on hover in one slot, so the chips never move', () => {
-    hooks.cost = 1.23;
-    const updated = aSession({
-      ...session,
-      updatedAt: new Date(Date.now() - 7_200_000).toISOString() as IsoDateTime,
-    });
-    render(<StageBoardCard session={updated} nav={nav} />);
-
-    expect(slotOf(screen.getByText('2h ago'))).toBe(slotOf(screen.getByText('$1.23')));
+  it.each([
+    ['building', 'neutral'],
+    ['running', 'info'],
+    ['attention', 'warning'],
+    ['review', 'success'],
+    ['done', 'merged'],
+  ] as const)('draws the %s stage as a %s track at the card edge', (stage, tone) => {
+    hooks.stage = stage;
+    render(<StageBoardCard session={session} nav={nav} />);
+    const track = screen.getByTestId('tone-bar');
+    expect(track.getAttribute('data-tone')).toBe(tone);
+    expect(track.className.includes('animate-soft-pulse')).toBe(stage === 'running');
   });
 
-  it('keeps nothing hover-only on the card', () => {
+  it('keeps an archived card on a neutral, still track', () => {
+    hooks.stage = 'running';
+    render(<StageBoardCard session={session} nav={nav} archived />);
+    const track = screen.getByTestId('tone-bar');
+    expect(track.getAttribute('data-tone')).toBe('neutral');
+    expect(track.className.includes('animate-soft-pulse')).toBe(false);
+  });
+
+  it('draws no menu glyph on the card: the lifecycle menu is its right click', () => {
     render(<StageBoardCard session={session} nav={nav} />);
-    const card = cardTitle();
-    expect(card.querySelector('.opacity-0')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Session actions' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Session actions' })).toBeNull();
+    expect(screen.getByRole('article').querySelector('.opacity-0')).toBeNull();
   });
 
   it('shows restore as the one visible action on an archived card', () => {
@@ -470,192 +443,48 @@ describe('StageBoardCard actions visibility', () => {
     const group = screen.getByRole('group', { name: 'Session quick actions' });
     expect(group.contains(restore)).toBe(true);
   });
-});
 
-describe('StageBoardCard review drafts', () => {
-  it('shows a draft comments chip for review sessions with pending drafts', async () => {
-    state.sessionPhaseRuns = {
-      [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
-    };
-    state.reviewDrafts = {
-      [SESSION_ID]: [
-        { id: 'draft-1', status: 'draft' },
-        { id: 'draft-2', status: 'draft' },
-        { id: 'draft-3', status: 'published' },
-      ],
-    };
-    render(<StageBoardCard session={session} nav={nav} />);
-
-    const chip = screen.getByRole('button', { name: 'Review 2 draft comments' });
-    expect(chip.tagName).toBe('BUTTON');
-
-    fireEvent.click(chip);
-
-    await vi.waitFor(() =>
-      expect(state.navigate).toHaveBeenCalledWith({
-        to: branchPlace({ sessionId: SESSION_ID, tab: 'comments' }),
-      }),
+  it('hands its own element to the hover card on enter and lets go on leave', () => {
+    const onHoverEnter = vi.fn();
+    const onHoverLeave = vi.fn();
+    render(
+      <StageBoardCard
+        session={session}
+        nav={nav}
+        onHoverEnter={onHoverEnter}
+        onHoverLeave={onHoverLeave}
+      />,
     );
-    expect(nav.selectCard).not.toHaveBeenCalled();
-  });
-
-  it('loads drafts once for review sessions and hides the chip elsewhere', () => {
-    state.sessionPhaseRuns = {
-      [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
-    };
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(state.loadReviewDrafts).toHaveBeenCalledWith(SESSION_ID);
-    expect(screen.queryByText(/draft comment/)).toBeNull();
-
-    cleanup();
-    state.sessionPhaseRuns = {};
-    state.reviewDrafts = { [SESSION_ID]: [{ id: 'draft-1', status: 'draft' }] };
-    state.loadReviewDrafts.mockClear();
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(state.loadReviewDrafts).not.toHaveBeenCalled();
-    expect(screen.queryByText(/draft comment/)).toBeNull();
+    const card = screen.getByRole('article');
+    fireEvent.mouseEnter(card);
+    expect(onHoverEnter).toHaveBeenCalledWith({ sessionId: SESSION_ID, anchor: card });
+    fireEvent.mouseLeave(card);
+    expect(onHoverLeave).toHaveBeenCalled();
   });
 });
 
-describe('StageBoardCard footer', () => {
-  it('renders compact agents, glyph-only external tasks, cost, and auto metadata in order', () => {
-    hooks.stage = 'running';
+describe('StageBoardCard facts moved to the hover card', () => {
+  it('carries no age, cost, agent count, issue chips, Auto chip, pin or draft chip', () => {
     hooks.agents = [{}, {}];
     hooks.cost = 1.25;
     state.sessionExternalTasks = { [SESSION_ID]: [externalTask] };
-    const autoSession = aSession({ ...session, workflowRuns: [aWorkflowRun({ autoRun: true })] });
-    render(<StageBoardCard session={autoSession} nav={nav} />);
-    const agents = screen.getByLabelText('2 agents');
-    const task = screen.getByLabelText('GB-123 from Linear');
-    const cost = costBadge();
-    const auto = screen.getByLabelText('Autopilot');
-    const metaRow = agents.closest('[data-tooltip]')?.parentElement?.parentElement;
-    const left = metaRow?.firstElementChild;
-    const right = metaRow?.lastElementChild;
-    expect(agents.querySelector('.lucide-bot')).not.toBeNull();
-    expect(screen.queryByText('GB-123')).toBeNull();
-    expect(cost).not.toBeNull();
-    expect(auto).toBeDefined();
-    expect(auto.className).toContain('text-primary');
-    expect(auto.className).not.toContain('text-danger');
-    expect(auto.className).not.toContain('ring-1');
-    expect(screen.queryByText('Autopilot')).toBeNull();
-    expect(auto.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe('Autopilot');
-    expect(Array.from(left?.children ?? [])).toEqual([
-      agents.closest('[data-tooltip]'),
-      auto.closest('[data-tooltip]'),
-      task.closest('[data-tooltip]'),
-    ]);
-    expect(right?.firstElementChild).toBe(cost?.closest('[data-tooltip]'));
-    expect(right?.children.length).toBe(2);
-    expect(right?.lastElementChild?.textContent).toMatch(/ago$/);
-    expect(right?.className).not.toContain('opacity-0');
-    expect(metaRow?.querySelector('.lucide-chevron-right')).toBeNull();
-  });
-
-  it('shows one chip for a task linked to the session and to a branch', () => {
-    state.sessionExternalTasks = {
-      [SESSION_ID]: [
-        { ...externalTask, scope: 'branch', branch: 'hl/compact-cards' } as SessionExternalTask,
-        { ...externalTask, scope: 'session' } as SessionExternalTask,
-      ],
+    state.sessionPins = { [WORKSPACE_ID]: [{ id: SESSION_ID, at: 1 }] };
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [{ id: 'agent-1', name: 'pr review', kind: 'pr-reviewer' }],
     };
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getAllByLabelText('GB-123 from Linear')).toHaveLength(1);
-  });
-
-  it('sizes the project chip to its name, caps it, and lets it yield before the icons', () => {
-    state.projects = [
-      aProject({ workspaceId: WORKSPACE_ID }),
-      aProject({ workspaceId: WORKSPACE_ID }),
-    ];
-    state.sessionProjectMounts = {
-      [SESSION_ID]: [{ projectId: 'project-1', mountName: 'gateway' }],
-    };
-    render(<StageBoardCard session={session} nav={nav} />);
-    const chipLabel = screen.getByText('gateway');
-    const slot = chipLabel.closest('.max-w-24');
-    expect(chipLabel.className).toContain('truncate');
-    expect(slot?.className).toContain('min-w-0');
-    expect(slot?.className).not.toContain('shrink-0');
-    expect(slot?.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe('gateway');
-  });
-
-  it('degrades several projects to a glyphed count that names them, never a mid-word clip', () => {
-    state.projects = [
-      aProject({ workspaceId: WORKSPACE_ID }),
-      aProject({ workspaceId: WORKSPACE_ID }),
-    ];
-    state.sessionProjectMounts = {
-      [SESSION_ID]: [
-        { projectId: 'project-1', mountName: 'core-api' },
-        { projectId: 'project-2', mountName: 'web-console' },
-      ],
-    };
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.queryByText('core-api')).toBeNull();
-    expect(screen.getByLabelText('2 projects: core-api, web-console')).toBeDefined();
-    const chip = screen.getByLabelText('2 projects: core-api, web-console');
-    expect(chip.textContent).toBe('2');
-    expect(chip.querySelector('svg')).not.toBeNull();
-    expect(chip.className).not.toContain('w-24');
-    expect(chip.closest('[data-tooltip]')?.getAttribute('data-tooltip')).toBe(
-      '2 projects: core-api, web-console',
-    );
-  });
-
-  it('reveals the lifecycle menu next to the quick actions on hover', () => {
-    render(<StageBoardCard session={session} nav={nav} />);
-    const group = screen.getByRole('group', { name: 'Session quick actions' });
-    const trigger = within(group).getByRole('button', { name: 'Session actions' });
-    expect(trigger.className).toContain('opacity-0');
-    expect(trigger.className).toContain('group-hover/session-card:opacity-100');
-    expect(trigger.className).toContain('aria-expanded:opacity-100');
-  });
-
-  it('keeps cost and age at the metadata grade', () => {
-    hooks.cost = 1.25;
+    state.reviewDrafts = { [SESSION_ID]: [{ id: 'draft-1', status: 'draft' }] };
     const updated = aSession({
       ...session,
       updatedAt: new Date(Date.now() - 7_200_000).toISOString() as IsoDateTime,
+      workflowRuns: [aWorkflowRun({ autoRun: true })],
     });
     render(<StageBoardCard session={updated} nav={nav} />);
-    const cost = costBadge();
-    expect(cost?.className).toContain('text-meta');
-    expect(screen.getByText('2h ago').className).toContain('text-meta');
-  });
-
-  it('keeps the cost badge in the card, revealed on hover or focus', () => {
-    hooks.cost = 1.25;
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(costBadge()).not.toBeNull();
-  });
-
-  it('singularizes the agent count label at one agent', () => {
-    hooks.agents = [{}];
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByLabelText('1 agent')).toBeDefined();
-    expect(screen.queryByLabelText('1 agents')).toBeNull();
-  });
-
-  it('hides the agent count when there are no agents', () => {
-    hooks.agents = [];
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.queryByLabelText(/agent/)).toBeNull();
-  });
-
-  it('marks a pinned session with a quiet pin and leaves the others bare', () => {
-    render(<StageBoardCard session={session} nav={nav} />);
+    expect(screen.queryByText('2h ago')).toBeNull();
+    expect(screen.queryByText('$1.25')).toBeNull();
+    expect(screen.queryByLabelText('2 agents')).toBeNull();
+    expect(screen.queryByLabelText('GB-123 from Linear')).toBeNull();
+    expect(screen.queryByLabelText('Autopilot')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Pinned' })).toBeNull();
-    cleanup();
-    state.sessionPins = { [WORKSPACE_ID]: [{ id: SESSION_ID, at: 1 }] };
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.getByRole('img', { name: 'Pinned' })).toBeDefined();
-  });
-
-  it('does not mark a pin kept in another workspace', () => {
-    state.sessionPins = { ['workspace-2']: [{ id: SESSION_ID, at: 1 }] };
-    render(<StageBoardCard session={session} nav={nav} />);
-    expect(screen.queryByRole('img', { name: 'Pinned' })).toBeNull();
+    expect(screen.queryByText(/draft comment/)).toBeNull();
   });
 });

@@ -22,7 +22,6 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
   return (
     <ConfirmPopover
       isOpen={action !== null && confirm !== null}
-      align="end"
       anchorClassName="absolute right-0 top-0 size-0"
       trigger={() => <span aria-hidden className="size-0" />}
       role={confirm?.role ?? 'primary'}
@@ -46,6 +45,7 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
       {choice !== null && selected !== null && (
         <ChoiceCards
           ariaLabel={choice.label}
+          className="sm:grid-cols-1"
           value={selected}
           onChange={setPicked}
           options={choice.options.map((option) => ({

@@ -76,7 +76,8 @@ database.
   worktree. The lease is bound to the child process in Rust and released when
   that process exits.
 - **Auto writers hold their write set; today's agents do not.** A turn sent
-  with a writer `confinedRole` (implementer, tester, docs: the turns of an Auto
+  with a writer `confinedRole` (implementer, tester, docs, scribe, ci-fixer,
+  rewriter: the turns of an Auto
   tree, set by the Auto units) takes one lease over its write set before it
   spawns: its working folder, the sibling mounts of the session and the common
   metadata folder of each repo, the same list `turnWriteSet` hands to the CLI as
@@ -87,7 +88,7 @@ database.
   does, and it is released again when the turn ends. A second Auto writer on a
   shared key does not fail: its turn waits in `acquireTurnWriteSet`. The agent
   reads "starting" with the note **Waiting for the writer** (`agentWriterWait`),
-  Stop and Read now cancel the wait, the poll is one second and wakes at once
+  the tail Stop and Send now cancel the wait, the poll is one second and wakes at once
   when this window releases, and after 30 minutes the turn answers
   `isWriterLeaseDenied` like a resolver does. Two Auto writers on different
   worktrees of one repo serialize on the metadata folder on purpose. A turn with
@@ -113,7 +114,7 @@ database.
 The route is resolved once per turn, in this precedence: a fallback retry, a
 model the user explicitly picked for this turn, the workflow node's routing,
 the turn override, then the agent's own pin. `resolveProviderForTurn` then
-applies spend caps and cooldowns. When every provider is over its cap the turn
+applies limits and cooldowns. When every provider is over its limit the turn
 does not start and says so; when budget moved it to another provider, the
 transcript carries a notice. A turn that ran on anything other than the model
 the user picked raises a warning notification naming both. A disconnected
@@ -298,12 +299,18 @@ threadIds? })`), a hint on one comment (`continueResolveThreads`) and a
   message shows closed as "first message · older format", the original text
   clamped to 8 lines with Show all. No parser reads it. `reduceTranscript` makes
   the `handoff` item and `TranscriptRows` counts it as the first user turn.
-- The transcript is the record and the Brief is the dashboard. What the agent
-  received lives only in the handoff block; the Brief shows one line, "Sent by
-  Orchestrator · step 4", that switches to the Transcript tab with
-  the Ask section open (`requestHandoffOpen`). The Brief no longer carries the ask, Why this
-  step or Expected output, and the old kickoff cards and their text parsers
-  are gone.
+- The transcript drawer is the record and the agent page is one conversation.
+  What the agent received lives only in the handoff block at the top of the
+  conversation ("Sent by Orchestrator · step 4", opened in place). The old
+  kickoff cards and their text parsers are gone.
+- The conversation (`ChatView` `mode="conversation"`, rows from
+  `conversationRows`) keeps per turn the user message, one summary line for the
+  turn's tools (`turnSummary`, steps open inline), the final answer, app
+  notices and the turn footer. Narration before the last tool call, the live
+  turn and plan updates leave the center; a pending permission request stays
+  inline. The task list a `TodoWrite`, `update_plan` or `write_todos` call
+  writes is one checklist (`planChecklist`) in the turn that first wrote it.
+  `mode="record"` (the transcript drawer) keeps today's full rows.
 
 Claude and the opencode family resume the provider's own session when the
 agent's stored session belongs to the same provider. Cursor, Codex and
@@ -455,11 +462,84 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   (`continueStoppedAgent`). Nothing restarts on its own after a crash.
   Past the agent itself, Next steps in the overview offers one **Resume all**
   for every agent the restart stopped in the session, and a workflow run
-  shows the same action above its steps for its own agents
-  (`WorkflowResumeStrip`). Both run `resumeStoppedAgents`, which resumes each
+  offers the same action on its run tail for its own agents (**Resume** or
+  **Resume all**, `runTailOf` and `orchestratedTailOf`). Both run
+  `resumeStoppedAgents`, which resumes each
   `isStoppedByRestart` agent, never one you stopped and never a fan-out
   container while a child is unfinished (the children are resumed instead), skips an agent a second click
   is already resuming, and reports a failure only after trying the rest.
+- **An Auto child never gets a plain turn.** Continue, Resume and Resume all
+  on an agent Auto started go through Auto (`autoRetryRouteOf`): the stopped
+  notice offers **Retry through Auto**, which sends Auto "Retry the
+  Implementer that stopped: <task>" so the tree decides the retry and reads
+  its result. `resumeStoppedAgents` skips Auto children: the tree recovers its
+  own work after a restart. The child is found from the tree view, or from its
+  parent being the Auto root when the view has not loaded.
+- **The thinking line counts from the turn start and ends with the turn.** Its
+  clock reads `startedAt` of the running turn state, never the moment it
+  mounted, and it never shows after an `error`, `auth_required` or
+  `cli_too_old` item, even when the turn state was left `running` without a
+  `done` (`isTurnThinking`).
+
+## Live state at the tail
+
+The live state of an operation is said once, as the last line of the content
+the user reads: `TailLine` in `features/live-state/`. It knows no operation:
+it takes `TailFacts` (`state`, `phrase`, `startedAt`, `stepAgentId`, `actions`) and draws the
+glyph, the phrase, the clock and the actions. Each operation has one adapter in
+`features/live-state/adapters/` that builds those facts from its owner of
+truth, and a header word or a rail row of the same host reads the same
+adapter.
+
+| Adapter              | Operation                               |
+| -------------------- | --------------------------------------- |
+| `agentTurnLive`      | a plain agent or chat turn              |
+| `autoTreeLive`       | Auto's tree phase and its root turn     |
+| `autoChildLive`      | a child Auto started                    |
+| `checkFixLive`       | a CI fix on one check                   |
+| `workflowRunLive`    | a preset run step                       |
+| `fixRunLive`         | a fix run on review comments            |
+| `cleanupLive`        | closing a merged worktree               |
+| `draftStartLive`     | starting a session from a draft         |
+| `processStopLive`    | stopping a process from Monitoring      |
+| `historyRewriteLive` | planning and applying a history rewrite |
+
+Rules the adapters hold, each with a test in `adapters.test.ts`:
+
+- The working phrase comes from the last tool event, never from model text and
+  never the command text: "Running pnpm in payments-api", "Reading export.ts",
+  "Searching the code", "Writing the answer" (`workingPhraseOf`).
+- The clock shows execution time, never the time spent waiting on you. A run
+  step tail (`workflowRunLive`, `runTailOf`, `orchestratedTailOf`) names the
+  step in `stepAgentId`, and `TailLine` reads the step's active time from the
+  `WorkTimeContext` source through `agentActiveClock`, the function the step
+  row reads too, so the two always show one value; without that source it
+  draws no clock. The step's own thinking line on a run step page or pane
+  names the step the same way (`RunStepFrame` sets `clockStepAgentId`), and
+  the Auto rail and Auto agents rows (`DelegationClock`) and the Agents list
+  (`AgentsGridRow`) read `agentActiveClock` too, inside a `WorkTimeProvider`. A tail that waits for your answer (`blocked`, a run step
+  waiting on you) draws no clock. A running turn and an operation with no wait
+  in it count from their real start (`startedAt`). Every clock reads like every
+  other duration (`formatDuration`: "42s", "2m 37s", "1h 12m"), nothing in the
+  first second, and only `working`, `waiting` and `queued` tick.
+- A state that waits for the user (`needsYou`, `paused`, `failed`, `stopped`)
+  puts its one forward move first as a small secondary button; other actions
+  are quiet text actions. `needsYou` (an open question or an approval) draws the
+  warning question node, so "Waiting for your answer on step 4" reads in the
+  needs-you tone.
+- One glyph per state everywhere (`TailGlyph`): `working` and `queued` are the
+  running node (the ring with a pulsing dot the run tree uses), `waiting` an
+  info ring, `needsYou` the question node, `paused`, `failed` and `stopped`
+  their nodes, `idle` a gray dot.
+- Stop names its scope: Stop (a turn), Stop agent (a child or a fix), Stop
+  step (a run step), Stop Auto and its agents. Stopping offers no Stop.
+- A stopped or failed Auto child offers Retry through Auto, never Continue.
+- A finished turn draws no tail: it is read from its summary line.
+
+The terminal has no tail by design (its output is its tail), and dependency
+setup has no adapter until its state exists. Hosts move onto the adapters one
+by one; until then today's thinking line and Auto waiting line stay. Scenes
+`c01-tail-*` show every state.
 
 ## Turn events
 
@@ -472,6 +552,20 @@ behavior beyond rendering:
 - `permission_decision` carries the chosen `PermissionScope`, which decides
   whether a retry is offered: an `allow` at session scope or wider is, a
   one-use approval is not, because it cannot carry into a new run.
+- `user_text` with `deliveredBy: 'auto'` is text the app built for an agent
+  (Auto's deliveries and a child's first brief, origin `delegation`). Every
+  reader of the transcript still sees it (resume, the preamble, retry send it
+  again as written); only the chat draws it differently, as the collapsed row
+  `auto_delivery`.
+- `operator_text` is display only: the words a user typed to an Auto agent,
+  written when Auto takes the message. It is not a provider turn, so nothing
+  that resumes or counts turns reads it, and the question ordinals (which count
+  `user_text` events) ignore it (`isOperatorEcho` on the drawn bubble). Its
+  `attachments` are the images the message carried, already written, so the
+  bubble shows them.
+- `storedAttachments` on `sendTurn` are images written before the turn (an Auto
+  delivery and a child brief). `prepareTurn` uses them as they are, like a
+  retry's `attachmentRefs`, and names each by its full path in the prompt.
 - `step_transition` reports a workflow run advancing, with the context it
   carried forward.
 - `error` carries `retryable`; only a retryable error offers Retry in the
@@ -540,6 +634,10 @@ map `listAgentTurnSpanRoutes` seeds from persisted spans on reload
 falls back to the item's own `ProviderUsage` numbers (no provider or model
 yet) until telemetry lands. A cost of exactly zero hides the cost entry
 instead of showing `$0.00`, because zero usually means unknown, not free.
+The line itself (`TurnFooterSummary`) carries only the provider mark, model,
+duration and cost; tokens, cache share and context window live in the
+detail popover (`TurnFooterDetail`) it opens. The transcript pane's
+agent total (`AgentUsageFooter`) keeps the full `UsageStatsRow`.
 
 `turnFootersFor` (`utils/turnOutcome.ts`) derives, per run that produced a
 `usage` item: `outcome` (`done`, `stopped` once a later run is active or
@@ -558,6 +656,29 @@ one exists, never the full stats line. A `done` footer's leading glyph is
 the provider's, not a lifecycle glyph, since done is the expected case;
 clicking it (or `ⓘ`) opens `TurnFooterDetail`, an `AnchoredPopover` with
 the itemized breakdown.
+
+## Chat scroll
+
+The chat scrolls inside the `ScrollFade` viewport of `ChatView`, which carries
+`overflow-anchor: auto`, so the line under the pointer stays put while rows
+above it change height. `useScrollPin` follows the latest line only while the
+reader is within 32 px of the bottom; the first wheel, touch, pointer or key
+event stops its settle loop, and a reader who scrolled up is never pulled back
+down by new rows (the "Jump to latest" button pins again).
+
+Every row is `content-visibility: auto`. Its `contain-intrinsic-size` is
+`auto <estimate>px` from `rowEstimatePx` (`ChatView/rowEstimatePx.ts`): a user
+message and an answer by their line count (capped at 40 lines), an operations
+cluster by its steps (capped at 12), a workflow rail group by its rows, any
+other kind 72 px. `auto` makes the browser keep the real height once a row has
+rendered. A row estimate that is too small is what made the view snap while
+scrolling up; adjust a constant there, never a per-row class. The day divider
+key is the day plus the key of the row that opens it, never the index.
+
+jsdom has no layout, so the tests prove the wiring (the estimate on each row,
+the pin staying off for an unpinned reader). The real check is the
+`transcript-long` scene (about 150 rows): scroll up and watch that the line
+under the pointer does not move.
 
 ## Failure and fallback
 
@@ -602,7 +723,7 @@ the agent in `error` with a retryable error event.
 ## Measured time and estimates
 
 - `listSessionTurnSpans`, `listWorkspaceTurnSpans` and `listTurnSpans` (every workspace) (`@goodboy/db`) read spans with the agent's parent and status. The `durationEstimates` store slice keeps them: `sessionTurnSpans` per session for live rows, `workspaceDurationHistory` per workspace for the estimator (last 90 days). Each workspace history also carries `everyWorkspace`, the same samples built from the spans of every workspace.
-- An agent's active time is the union of its own spans, its subagents' spans and the turn running now (`agentTurnState` `running` since `startedAt`). Parallel subagents count once. A run's active time is the union over all its agents. `familyActiveTime` in `features/workTreeModel/workTimeSource.ts` computes it.
+- An agent's active time is the union of its own spans, its subagents' spans and the turn running now (`agentTurnState` `running` since `startedAt`). Parallel subagents count once. A run's active time is the union over all its agents. `familyActiveTime` in `features/workTreeModel/workTimeSource.ts` computes it, and `agentActiveTime` beside it picks it for one agent (only the turn running now for a running turn row): the row (`agentWorkTime`) and the run tail clock (`agentActiveClock`) both read `agentActiveTime`.
 - `buildDurationHistory` (`@goodboy/core`) turns spans into two units of sample. `steps`: one per root agent whose status is `completed`, keyed by the role, provider, model and effort of its last turn. `turns`: one per `succeeded` span of any agent, chat agents included, since a chat agent never completes but closes turns. It adds one sample per finished orchestrated run.
 - `estimateDuration` takes a `unit`: a workflow step row asks for `step`, any other agent row for `turn`, and a running turn row measures only the turn running now. It picks the first tier with enough samples: role, provider, model and effort (5), then without effort (5), then the same model and effort in every workspace (`modelAnyWorkspace`, 5, and the tooltip says `across your workspaces`), then role and provider (8), then role alone (8). These minimums are the only gate. It keeps the newest 50, caps them at the 95th percentile, and returns a band of time and cost (`lowMs`, `midMs`, `highMs`). An unsized step gets the 25th, 50th and 75th percentiles. A running row measures against the top of the band, so a typical run fills its arc without overflowing it; a queued row shows the band.
 - `workTime` (`features/workTreeModel/workTime.ts`) picks the label per phase: a queued row shows the band with `~`, a running row the time left against the band (`timeLeftLabel`), its elapsed time past the band with the note `Longer than usual`, and `isMuchLonger` at twice the top of the band. A waiting row freezes its elapsed time; a done row shows its active time and the same note when it ran past the band, though a step row (the timeline and the run tree) shows the note only while it runs, as a warm time with the note in its tooltip. `headline` joins elapsed time and time left for the agent header and the Brief's Now.
@@ -769,18 +890,20 @@ avoided on `SendControl`'s own buttons.
   themselves sit above the field, not in this row).
 - The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
   passed in rather than living beside it) then `SendControl` (`parts/`): the
-  same `ArrowUp` glyph as `ConversationComposer`, stop while a turn runs with
-  nothing to send, Read now/Queue (Queue primary) once there is something to deliver while a
-  turn runs.
+  same `ArrowUp` glyph as `ConversationComposer` while idle, and Send now/Queue
+  (Queue primary, both disabled until there is something to deliver) for as
+  long as a turn runs. Stop is not in the composer: it is the conversation
+  tail (`ConversationTail`) under the last turn.
 - `ChatInput/index.tsx` only composes. Its state lives in `hooks/use*` (agent
   selection, draft, queue, send, suggestions), its sections in `parts/`, and
   its derived flags in `composerView.ts`. It stays one component so the draft
   and pending nudges survive a re-render.
 - `composerPlaceholder` (`ChatInput/lib.ts`) replaces the old placeholder that
   advertised every prefix inline: a role's first turn gets its
-  `firstMessagePrompt`, otherwise `Message the agent` idle or `Queue a message`
-  while a turn runs. The agent's name is not repeated, the header already says
-  it. No prefix syntax appears in it.
+  `firstMessagePrompt`, otherwise `Message <role>` (`Message Implementer`),
+  idle or running, and `Message the agent` when the role is unknown. While a
+  turn runs, Queue (Enter) is the primary and Send now (⌘Enter) a quiet word
+  beside it. No prefix syntax appears in it.
 - Queued messages and the agent's own suggestion sit in a tray attached above
   the shell (`bg-muted`, rounded top corners) when either has something to
   show; a routing fallback or all-budgets-exceeded notice (`RoutingIndicator`)
@@ -1007,14 +1130,19 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   pill) and "1 chat running" while any reply streams, otherwise a still
   warning dot (the tone of the bell badge) and "New reply" while any chat is
   unread. The dot is positioned absolutely on the icon corner, so it never
-  shifts the label. Every chat row mirrors it with the same tones, on the
-  row's left edge.
+  shifts the label. Every chat row leads with the session row's state node
+  (`StateNode` in `shared/components`, read from `chatNodeOf`): the running
+  node while its answer streams ("Answering"), a ring with the unread corner
+  dot after a reply the user has not seen ("New reply"), a plain ring at rest.
+  On row hover, focus and while any chat is selected the node gives its slot
+  to the selection checkbox (`isCheckboxSlot`), and Space on a focused row
+  toggles it (Shift extends the range).
   A chat becomes unread when its reply ends, done or failed, while the chat
   studio is not showing that chat; a reply the user stopped never does.
   Opening the chat, or archiving it, clears the mark. `unreadChatIds` lives in
   the chats slice and is saved in `localStorage` (`chat-unread:v1`), so it
   survives a reload without a migration.
-- **Start work from chat.** The button drafts a brief (title, goal, what we know,
+- **Start work from chat.** The button under a finished answer (the room header holds only delete) drafts a brief (title, goal, what we know,
   files, projects) with one `summarize_session` call through `runAuxOneShot`
   with no tools and no working folder (`summarizeChatForWork.ts`). **Drafted
   by** picks the model that writes it: a `RoutingPicker` pill limited to chat
@@ -1046,7 +1174,9 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   brief for the consent and retry chats, so scenes can send, stop and turn a
   chat into work. `?scene=chat-room` takes `work=drawer|project|add|session`
   (opens the panel, then the popover or mode), `chat=<key>` (`retry` drafts two
-  projects) and `activity=running|unread` for the top bar and the list.
+  projects) and `activity=running|unread|mixed` for the top bar and the list
+  (`r4-chatlist-states` and `r4-chatlist-selecting` show the row nodes and
+  the checkbox swap).
 
 ## Session Ask turns
 

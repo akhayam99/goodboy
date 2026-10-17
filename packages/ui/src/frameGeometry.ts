@@ -1,12 +1,12 @@
+import type { PageColumnWidth } from './components/PageColumn';
+
 export const FRAME_BAND_PX = 40;
 
 export const FRAME_TITLE_ROW_PX = 32;
 
 export const FRAME_TITLE_CENTRE_PX = FRAME_BAND_PX + FRAME_TITLE_ROW_PX / 2;
 
-export const FRAME_DRAWER_ROW_PX = 28;
-
-export const FRAME_DRAWER_INSET_PX = (FRAME_BAND_PX - FRAME_DRAWER_ROW_PX) / 2;
+export const FRAME_PAGE_HEADER_INSET_PX = 12;
 
 export const FRAME_PAGES = [
   'board',
@@ -15,8 +15,10 @@ export const FRAME_PAGES = [
   'branch',
   'runs',
   'run',
+  'orchestrated',
   'agents',
   'agent',
+  'auto',
   'questions',
   'inbox',
   'workflows',
@@ -48,8 +50,10 @@ export const PAGE_FRAME: Readonly<Record<FramePage, FrameType>> = {
   overview: 'column',
   runs: 'column',
   run: 'column',
+  orchestrated: 'column',
   agents: 'column',
   agent: 'column',
+  auto: 'column',
   questions: 'column',
   workflows: 'column',
   impact: 'column',
@@ -111,14 +115,49 @@ type FramePageParams = {
   readonly page: FramePage;
 };
 
+export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
+  overview: 'column',
+  runs: 'column',
+  run: 'column',
+  orchestrated: 'column',
+  agents: 'column',
+  agent: 'column',
+  auto: 'column',
+  questions: 'column',
+  artifacts: 'column',
+  branch: 'column',
+  inbox: 'column',
+  workflows: 'column',
+  impact: 'column',
+  guide: 'column',
+  whatsNew: 'column',
+  notifications: 'column',
+  settings: 'column',
+  scripts: 'column',
+  explore: 'column',
+  storage: 'column',
+  monitoring: 'column',
+  plan: 'column',
+  report: 'column',
+  wireframe: 'column',
+  release: 'column',
+  guideChapter: 'column',
+  chat: 'measure',
+  board: 'full',
+  terminal: 'full',
+};
+
+const BAND_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['impact', 'whatsNew', 'release']);
+
 export const frameGeometryOf = ({ page }: FramePageParams): FrameGeometry => {
   const type = PAGE_FRAME[page];
+  const bandHeight = BAND_PAGES.has(page) ? FRAME_BAND_PX : FRAME_PAGE_HEADER_INSET_PX;
   return {
     type,
-    bandHeight: FRAME_BAND_PX,
+    bandHeight,
     titleRowHeight: FRAME_TITLE_ROW_PX,
-    titleCentreY: FRAME_TITLE_CENTRE_PX,
-    drawerRowHeight: FRAME_DRAWER_ROW_PX,
+    titleCentreY: bandHeight + FRAME_TITLE_ROW_PX / 2,
+    drawerRowHeight: FRAME_TITLE_ROW_PX,
     titleLeft: TITLE_LEFT_OF[type],
   };
 };

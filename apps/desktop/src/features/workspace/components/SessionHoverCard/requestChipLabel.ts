@@ -1,5 +1,6 @@
 import type { PullRequestState } from '@goodboy/types';
-import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
+import { pullRequestStateWordOf } from '../../../branch/pullRequestStateWordOf';
 import type { LinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 
 type Params = {
@@ -13,16 +14,23 @@ const CHECKS_WORD = {
   failure: 'checks failing',
 } as const;
 
+const WORDED_STATES: ReadonlySet<LinkedRequest['state']> = new Set<LinkedRequest['state']>([
+  'draft',
+  'merged',
+  'closed',
+]);
+
 export const requestChipLabel = ({ linked, pullRequest }: Params): string => {
   if (linked.state === 'none') {
     return '';
   }
   const mark = pullRequest === null ? '!' : '#';
-  const number = linked.number === undefined ? '' : `${mark}${linked.number} `;
-  const stateLabel = PULL_REQUEST_PRESENTATION[linked.state].label;
+  const number = linked.number === undefined ? null : `${mark}${linked.number}`;
   const isSettled = linked.state === 'merged' || linked.state === 'closed';
+  const stateLabel = WORDED_STATES.has(linked.state)
+    ? pullRequestStateWordOf({ state: linked.state })
+    : null;
   const checks = pullRequest === null || isSettled ? null : pullRequest.checks;
-  return checks === null
-    ? `${number}${stateLabel}`
-    : `${number}${stateLabel} · ${CHECKS_WORD[checks]}`;
+  const head = [number, stateLabel].filter((part) => part !== null).join(' ');
+  return joinFacts({ facts: [head, checks === null ? null : CHECKS_WORD[checks]] });
 };

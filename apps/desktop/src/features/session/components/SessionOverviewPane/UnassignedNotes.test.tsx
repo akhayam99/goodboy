@@ -76,7 +76,7 @@ describe('UnassignedNotes', () => {
     expect(screen.queryByRole('region', { name: 'Unassigned notes' })).toBeNull();
   });
 
-  it('titles the section with a level 2 heading and its count, never a bespoke h2', () => {
+  it('titles the section with a level 2 heading and no count over rows that all show', () => {
     useAppStore.setState({
       diffComments: { [SESSION]: [note('a'), note('c')] },
       loadDiffComments: async () => undefined,
@@ -86,7 +86,7 @@ describe('UnassignedNotes', () => {
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading.textContent).toBe('Unassigned notes');
     const region = screen.getByRole('region', { name: 'Unassigned notes' });
-    expect(within(region).getByText('2')).toBeDefined();
+    expect(within(region).queryByText('2')).toBeNull();
   });
 
   it('reads each unassigned note in full and moves one to the active branch', () => {

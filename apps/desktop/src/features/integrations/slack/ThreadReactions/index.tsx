@@ -28,8 +28,7 @@ const blockReason = ({ canReact, isWriting }: ReasonParams): string | null => {
 const PILL =
   'inline-flex items-center gap-1 rounded-full border border-border-soft px-2 py-0.5 text-chip text-muted-foreground motion-safe:transition-colors hover:border-border hover:bg-hover hover:text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
-const QUICK_ROW =
-  'flex items-center gap-1 opacity-0 motion-safe:transition-opacity focus-within:opacity-100 group-hover:opacity-100';
+const QUICK_ROW = 'flex items-center gap-1';
 
 export const ThreadReactions = ({ messageTs, reactions, isWriting, onReact }: Props) => {
   const reason = blockReason({ canReact: onReact != null, isWriting });

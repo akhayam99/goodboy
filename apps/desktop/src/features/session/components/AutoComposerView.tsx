@@ -1,12 +1,16 @@
+import type { ReactNode } from 'react';
 import { Button, FormActions } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { Docked } from '../../../shared/components/Docked';
 import { PromptField } from '../../../shared/components/PromptField';
-import { RoutingPicker } from '../../../shared/components/RoutingPicker';
 import type { usePromptFiles } from '../../../shared/hooks/usePromptFiles';
+import { openSettings } from '../../settings/openSettings';
 import type { AgentRoutingChoice } from '../hooks/useAgentRouting';
 import { AutoLimitChip } from '../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../auto/useAutoTreeLimit';
+import { ModelControlChip } from '../../../shared/components/ModelControlChip';
+import { START_AUTO_CHOICE } from '../../../shared/lib/startCopy';
+import { NAMES } from '../../../shared/names';
 
 type PromptFiles = ReturnType<typeof usePromptFiles>;
 
@@ -21,10 +25,10 @@ type Props = {
   readonly connected: ReadonlyArray<ProviderId>;
   readonly choice: AutoRoutingChoice;
   readonly limit?: AutoTreeLimitModel;
+  readonly projects?: ReactNode;
   readonly isStarting: boolean;
   readonly error: string | null;
   readonly actionsHost?: HTMLElement | null;
-  readonly action?: HTMLElement | null;
   readonly footerClassName?: string;
   readonly onGoalChange: (goal: string) => void;
   readonly onSubmit: () => void;
@@ -32,19 +36,6 @@ type Props = {
 };
 
 const EMPTY_REASON = 'Set a goal to start';
-const NO_PROVIDER_REASON = 'Auto needs a connected provider. Connect one in Providers.';
-
-type ReasonParams = {
-  readonly hasProvider: boolean;
-  readonly hasGoal: boolean;
-};
-
-const startReason = ({ hasProvider, hasGoal }: ReasonParams): string | null => {
-  if (!hasProvider) {
-    return NO_PROVIDER_REASON;
-  }
-  return hasGoal ? null : EMPTY_REASON;
-};
 
 export const AutoComposerView = ({
   goal,
@@ -52,10 +43,10 @@ export const AutoComposerView = ({
   connected,
   choice,
   limit,
+  projects = null,
   isStarting,
   error,
   actionsHost,
-  action,
   footerClassName,
   onGoalChange,
   onSubmit,
@@ -65,10 +56,10 @@ export const AutoComposerView = ({
   const hasProvider = connected.length > 0;
   const canStart = hasGoal && hasProvider;
   return (
-    <>
-      <section aria-label="Auto" className="flex min-w-0 flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-6">
+      <section aria-label="Auto" className="flex min-w-0 flex-col gap-6">
         <PromptField
-          kind="message"
+          kind="document"
           label="Describe the work"
           value={goal}
           onChange={onGoalChange}
@@ -83,62 +74,66 @@ export const AutoComposerView = ({
           keyLabels={{ send: 'start' }}
           hasChangedKeys
         />
-        <div className="flex min-w-0 items-center justify-between gap-2">
-          <RoutingPicker
-            variant="pill"
-            align="start"
-            ariaLabel="Auto model"
-            connectedProviders={connected}
-            provider={choice.effective.provider}
-            model={choice.effective.model}
-            effort={{ editable: true, value: choice.effective.effort }}
-            recommendation={{
-              provider: choice.suggestion.provider,
-              model: choice.suggestion.model,
-              label: 'Suggested',
-              reason: choice.suggestionReason,
-            }}
-            recommendationKind="auto"
-            autoTrigger="resolved"
-            disabled={isStarting}
-            overridden={choice.routing !== null}
-            onReset={choice.reset}
-            onChange={choice.pick}
-          />
-          {limit === undefined ? null : (
-            <AutoLimitChip
-              usd={limit.usd}
-              isFromSession={limit.isFromSession}
-              isDisabled={isStarting}
-              onChange={limit.change}
-            />
+        {projects}
+      </section>
+      <Docked node={actionsHost}>
+        <div className="flex min-w-0 flex-col gap-2">
+          <FormActions
+            {...(footerClassName !== undefined && { className: footerClassName })}
+            leading={
+              <>
+                <ModelControlChip
+                  connectedProviders={connected}
+                  effective={choice.effective}
+                  suggestion={choice.suggestion}
+                  suggestionReason={choice.suggestionReason}
+                  recommendationKind="auto"
+                  isOverridden={choice.routing !== null}
+                  isDisabled={isStarting}
+                  onChange={(route) => (route === null ? choice.reset() : choice.pick(route))}
+                />
+                {limit === undefined ? null : (
+                  <AutoLimitChip
+                    usd={limit.usd}
+                    isFromSession={limit.isFromSession}
+                    isDisabled={isStarting}
+                    onChange={limit.change}
+                  />
+                )}
+              </>
+            }
+            error={error}
+            reason={hasProvider ? (hasGoal ? null : EMPTY_REASON) : null}
+          >
+            {hasGoal && onDiscard !== undefined ? (
+              <Button variant="ghost" size="sm" disabled={isStarting} onClick={onDiscard}>
+                Discard
+              </Button>
+            ) : null}
+            <Button
+              size={actionsHost === undefined ? 'md' : 'sm'}
+              onClick={onSubmit}
+              disabled={!canStart || isStarting}
+              isBusy={isStarting}
+              busyLabel="Starting Auto"
+            >
+              {error === null ? START_AUTO_CHOICE : NAMES.retry}
+            </Button>
+          </FormActions>
+          {hasProvider ? null : (
+            <p className="flex flex-wrap items-center justify-end gap-1 text-meta text-faint-foreground">
+              Auto needs a connected provider.
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => openSettings({ scope: 'providers' })}
+              >
+                Connect one in Providers
+              </Button>
+            </p>
           )}
         </div>
-      </section>
-      {hasGoal && onDiscard !== undefined ? (
-        <Docked node={action}>
-          <Button variant="ghost" size="sm" disabled={isStarting} onClick={onDiscard}>
-            Discard draft
-          </Button>
-        </Docked>
-      ) : null}
-      <Docked node={actionsHost}>
-        <FormActions
-          {...(footerClassName !== undefined && { className: footerClassName })}
-          error={error}
-          reason={startReason({ hasProvider, hasGoal })}
-        >
-          <Button
-            size="md"
-            onClick={onSubmit}
-            disabled={!canStart || isStarting}
-            isBusy={isStarting}
-            busyLabel="Starting Auto"
-          >
-            Start Auto
-          </Button>
-        </FormActions>
       </Docked>
-    </>
+    </div>
   );
 };

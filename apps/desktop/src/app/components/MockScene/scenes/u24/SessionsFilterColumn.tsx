@@ -84,9 +84,7 @@ export const SessionsFilterColumn = ({ config }: Props) => {
           workspaceId={seed.workspaceId}
           currentSessionId={config.hasOpenSession ? seed.session.id : null}
           place={null}
-          isCollapsed={false}
           actions={ACTIONS}
-          onToggle={noop}
         />
       </div>
     </div>

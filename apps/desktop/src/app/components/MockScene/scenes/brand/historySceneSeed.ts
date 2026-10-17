@@ -53,13 +53,13 @@ const commit = (
 });
 
 const LEDGER_SCENE_COMMITS: ReadonlyArray<BranchCommit> = [
-  commit(SHA.f, 'Fix typo in CSV header', 'Tomas Vey', 1, false, SHA.e),
-  commit(SHA.e, 'wip export tests', 'Tomas Vey', 3, false, SHA.x),
-  commit(SHA.x, 'Add debug logging to the export', 'Tomas Vey', 4, false, SHA.d),
+  commit(SHA.f, 'Fix typo in CSV header', 'Northwind Dev', 1, false, SHA.e),
+  commit(SHA.e, 'wip export tests', 'Northwind Dev', 3, false, SHA.x),
+  commit(SHA.x, 'Add debug logging to the export', 'Northwind Dev', 4, false, SHA.d),
   commit(SHA.d, 'Add retries to the export job', 'Goodboy', 5, false, SHA.c),
   commit(SHA.c, 'Fix webhook signature check', 'Goodboy', 26, true, SHA.b),
-  commit(SHA.b, 'Stream rows in batches of 500', 'Lena Arkwright', 50, true, SHA.a),
-  commit(SHA.a, 'Add ledger export endpoint', 'Lena Arkwright', 52, true, BASE),
+  commit(SHA.b, 'Stream rows in batches of 500', 'Harborline Lead', 50, true, SHA.a),
+  commit(SHA.a, 'Add ledger export endpoint', 'Harborline Lead', 52, true, BASE),
 ];
 
 const LEDGER_SCENE_GRAPH: HistoryGraph = {
@@ -67,7 +67,7 @@ const LEDGER_SCENE_GRAPH: HistoryGraph = {
   mergeBase: {
     sha: BASE,
     subject: 'Release 2.14',
-    author: 'Lena Arkwright',
+    author: 'Harborline Lead',
     timestamp: hoursAgo(53),
   },
   mainHead: MAIN,
@@ -75,13 +75,13 @@ const LEDGER_SCENE_GRAPH: HistoryGraph = {
     {
       sha: MAIN,
       subject: 'Merge #208: Cascadia rounding rules',
-      author: 'Lena Arkwright',
+      author: 'Harborline Lead',
       timestamp: hoursAgo(4),
     },
     {
       sha: '5b90d3e1f5a9c3e7b1d5f9a3c7e1b5d9f3a7c1e5',
       subject: 'Rotate Acme sandbox keys',
-      author: 'Tomas Vey',
+      author: 'Northwind Dev',
       timestamp: hoursAgo(9),
     },
     {
@@ -210,8 +210,8 @@ export const LEDGER_RESULT_COMMITS: ReadonlyArray<BranchCommit> = [
     RESULT_SHA.d,
   ),
   commit(RESULT_SHA.d, 'Add retries to the export job', 'Goodboy', 5, true, RESULT_SHA.b),
-  commit(RESULT_SHA.b, 'Stream rows in batches of 500', 'Lena Arkwright', 50, true, RESULT_SHA.a),
-  commit(RESULT_SHA.a, 'Add ledger export endpoint', 'Lena Arkwright', 52, true, BASE),
+  commit(RESULT_SHA.b, 'Stream rows in batches of 500', 'Harborline Lead', 50, true, RESULT_SHA.a),
+  commit(RESULT_SHA.a, 'Add ledger export endpoint', 'Harborline Lead', 52, true, BASE),
 ];
 
 export const LEDGER_RESULT_GRAPH: HistoryGraph = {

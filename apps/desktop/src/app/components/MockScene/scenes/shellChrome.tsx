@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AppShell, UnderTrailContext } from '@goodboy/ui';
+import { AppShell } from '@goodboy/ui';
 import type {
   IsoDateTime,
   ProviderRunId,
@@ -13,10 +13,8 @@ import { DrawerHost } from '../../DrawerHost';
 import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
+import { SessionFrame } from '../../SessionRail/SessionFrame';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { StudioBandContext } from '../../../../shared/components/StudioShell/studioBandContext';
-import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';
-import { AskTrailButton } from '../../../../features/session/ask/components/AskTrailButton';
 import { useAppStore, type LensKind } from '../../../../store';
 import { DEFAULT_PREFS } from '../../../../store/slices/session-view/types';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
@@ -103,7 +101,6 @@ type ShellFrameProps = {
   readonly main: ReactNode;
   readonly sidebar?: 'collapsed' | 'expanded';
   readonly hasOwnTrail?: boolean;
-  readonly isTrailInDetail?: boolean;
 };
 
 export const ShellFrame = ({
@@ -111,7 +108,6 @@ export const ShellFrame = ({
   main,
   sidebar = 'collapsed',
   hasOwnTrail = false,
-  isTrailInDetail = false,
 }: ShellFrameProps) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const arrangement = shellArrangement({
@@ -125,7 +121,13 @@ export const ShellFrame = ({
       <AppShell
         studio={shell.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
-        topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: noop }}
+            onOpenSpend={noop}
+            onOpenScript={noop}
+          />
+        }
         drawer={isDrawerOpen ? <DrawerHost /> : null}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
@@ -135,33 +137,19 @@ export const ShellFrame = ({
             currentSessionId={session.id}
             isDraftShown={false}
             actions={shell.actions}
-            onToggle={noop}
             settingsSlotRef={shell.settingsSlotRef}
           />
         }
         main={
-          hasOwnTrail ? (
-            main
-          ) : isTrailInDetail ? (
-            <div className="@container flex h-full w-full min-w-0 flex-col">
-              <UnderTrailContext.Provider value>
-                <StudioBandContext.Provider
-                  value={
-                    <TrailBar session={session} end={<AskTrailButton sessionId={session.id} />} />
-                  }
-                >
-                  <div className="min-h-0 flex-1">{main}</div>
-                </StudioBandContext.Provider>
-              </UnderTrailContext.Provider>
-            </div>
-          ) : (
-            <div className="@container flex h-full w-full min-w-0 flex-col">
-              <TrailBar session={session} end={<AskTrailButton sessionId={session.id} />} />
-              <UnderTrailContext.Provider value>
+          <SessionFrame session={session}>
+            {hasOwnTrail ? (
+              main
+            ) : (
+              <div className="@container flex h-full w-full min-w-0 flex-col">
                 <div className="min-h-0 flex-1">{main}</div>
-              </UnderTrailContext.Provider>
-            </div>
-          )
+              </div>
+            )}
+          </SessionFrame>
         }
       />
       {shell.layers}

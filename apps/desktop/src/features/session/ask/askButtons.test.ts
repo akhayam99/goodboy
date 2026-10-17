@@ -16,7 +16,9 @@ const HANDLES: ReadonlyArray<AskHandle> = [
 
 const FACTS: AskButtonFacts = {
   openQuestions: [{ id: QUESTION, number: 1 }],
-  messageableAgents: [{ id: IMPLEMENTER, name: 'Implementer' }],
+  messageableAgents: [
+    { id: IMPLEMENTER, name: 'Add the stuck-delivery banner', noun: 'Implementer' },
+  ],
   readyCount: 5,
 };
 
@@ -33,7 +35,7 @@ describe('askButtons', () => {
     expect(buttons.map((button) => button.label)).toEqual([
       'Answer question 1',
       'Review 5',
-      'Tell Implementer…',
+      'Message Implementer…',
     ]);
     expect(buttons[0]).toMatchObject({ kind: 'answer', prefill: 'Stop after 5.' });
     expect(buttons[2]).toMatchObject({ kind: 'tell', prefill: '' });
@@ -58,7 +60,7 @@ describe('askButtons', () => {
       {
         kind: 'tell',
         key: `tell:${IMPLEMENTER}`,
-        label: 'Tell Implementer…',
+        label: 'Message Implementer…',
         agentId: IMPLEMENTER,
         prefill: 'Update the test.',
       },

@@ -1,13 +1,14 @@
 import type {
   PersistedSessionViewPrefs,
   SessionGroupKey,
+  SessionPageView,
   SessionSortKey,
   SessionStage,
   SessionViewPrefs,
   WorkspaceId,
 } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
-import { DEFAULT_PREFS, VALID_GROUPS, VALID_SORTS, VALID_STAGES } from './types';
+import { DEFAULT_PREFS, VALID_GROUPS, VALID_PAGE_VIEWS, VALID_SORTS, VALID_STAGES } from './types';
 
 const PREFS_VERSION = 3;
 const PREVIOUS_PREFS_VERSION = 2;
@@ -33,6 +34,9 @@ const sortOf = (value: unknown): SessionSortKey =>
 const groupOf = (value: unknown): SessionGroupKey =>
   VALID_GROUPS.find((key) => key === value) ?? DEFAULT_PREFS.group;
 
+const pageViewOf = (value: unknown): SessionPageView =>
+  VALID_PAGE_VIEWS.find((view) => view === value) ?? DEFAULT_PREFS.pageView;
+
 const stagesOf = (value: unknown): ReadonlyArray<SessionStage> =>
   Array.isArray(value) ? VALID_STAGES.filter((stage) => value.includes(stage)) : [];
 
@@ -53,6 +57,7 @@ export const readFromStorage = (workspaceId: WorkspaceId): SessionViewPrefs => {
       return DEFAULT_PREFS;
     }
     const prefs: SessionViewPrefs = {
+      pageView: pageViewOf(parsed['pageView']),
       sort: sortOf(parsed['sort']),
       group: groupOf(parsed['group']),
       isArchivedShown: flagOf({

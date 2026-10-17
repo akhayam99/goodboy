@@ -75,14 +75,35 @@ describe('RecordHeader', () => {
     ).toBeDefined();
     expect(screen.getByText('!87')).toBeDefined();
     expect(screen.getByText('Open')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open in GitLab' })).toBeDefined();
-    const row = screen.getByRole('button', { name: 'Start from HBL-412' })
-      .parentElement as HTMLElement;
+    expect(screen.queryByRole('button', { name: 'Open in GitLab' })).toBeNull();
+    const identity = screen.getByText('!87').parentElement as HTMLElement;
+    expect(within(identity).getByRole('button', { name: 'Start from HBL-412' })).toBeDefined();
+    expect(within(identity).queryByRole('button', { name: 'Merge' })).toBeNull();
+    const actions = screen
+      .getByRole('button', { name: 'Merge' })
+      .closest('[data-slot="record-actions"]');
+    expect(actions).not.toBeNull();
+  });
+
+  it('sets the star and Open full on the identity line when the pane offers them', () => {
+    const onOpenFull = vi.fn();
+    const onToggle = vi.fn();
+    render(
+      <RecordHeader
+        provider="linear"
+        identifier="HBL-412"
+        title="Ledger export times out over 10k rows"
+        frame={{ ...frame(), onOpenFull, star: { isStarred: true, onToggle } }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open full' }));
+    expect(onOpenFull).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'Star HBL-412' }));
+    expect(onToggle).toHaveBeenCalledOnce();
     expect(
-      within(row)
-        .getAllByRole('button')
-        .map((button) => button.textContent),
-    ).toEqual(['Start from HBL-412', 'Merge']);
+      screen.getByRole('heading', { name: 'Ledger export times out over 10k rows' }).className,
+    ).toContain('text-lead');
   });
 
   it('orders the overflow from the registry: tool verbs, session, refresh, copies, then destructive', () => {
@@ -102,6 +123,7 @@ describe('RecordHeader', () => {
     expect(
       screen.getAllByRole('menuitem').map((item) => item.getAttribute('data-menu-label')),
     ).toEqual([
+      'Open in GitLab',
       'Convert to draft',
       'Remove link to session',
       'Refresh',

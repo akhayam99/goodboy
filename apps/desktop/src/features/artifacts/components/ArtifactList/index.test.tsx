@@ -54,7 +54,8 @@ describe('ArtifactList states', () => {
     state.sessionArtifacts = {};
     renderList();
     screen.getByRole('heading', { name: 'Artifacts' });
-    expect(screen.getAllByRole('status', { name: 'Loading artifacts' })).toHaveLength(3);
+    const loading = screen.getByRole('status', { name: 'Loading artifacts' });
+    expect(loading.querySelectorAll('[data-testid="artifact-skeleton-row"]')).toHaveLength(3);
     expect(screen.queryByText('No artifacts yet')).toBeNull();
   });
 
@@ -68,11 +69,13 @@ describe('ArtifactList states', () => {
     screen.getByRole('button', { name: 'Details' });
     expect(screen.queryByText('No artifacts yet')).toBeNull();
   });
-  it('says what will be here and offers one primary the first time', async () => {
+  it('says what will be here, with New in the header as the one way to start and no filters', async () => {
     renderList();
 
     expect(screen.getByRole('heading', { level: 2, name: 'No artifacts yet' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'New artifact' }));
+    expect(screen.queryByRole('button', { name: 'New artifact' })).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'Artifact kind' })).toBeNull();
+    fireEvent.click(screen.getByTestId('artifact-new'));
 
     expect(await screen.findByRole('menu', { name: 'New artifact' })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: /Report/ })).toBeDefined();
@@ -101,20 +104,27 @@ describe('ArtifactList states', () => {
 });
 
 describe('ArtifactList header row', () => {
-  it('holds the tab strip, New and Show in Finder at one 28px control height', () => {
-    renderList();
+  it('holds the tab strip and New at one 28px control height, the folder inside New', () => {
+    render(
+      <ArtifactList
+        sessionId={SESSION_ID}
+        rows={[]}
+        counts={{ all: 2, plan: 1, report: 1, wireframe: 0 }}
+        filter="all"
+        onFilterChange={vi.fn()}
+        onOpen={vi.fn()}
+        onImported={vi.fn()}
+      />,
+    );
 
     const tabs = screen.getByRole('tablist', { name: 'Artifact kind' });
     const create = screen.getByTestId('artifact-new');
-    const folder = screen.getByRole('button', { name: 'Show in Finder' });
     expect(tabs.getAttribute('data-size')).toBe('xs');
     expect(create.getAttribute('data-size')).toBe('sm');
-    expect(folder.getAttribute('data-size')).toBe('sm');
-    const actions = create.closest('[class*="ml-auto"]');
-    expect(actions).not.toBeNull();
-    expect(actions?.contains(folder)).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Show in Finder' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'More' })).toBeNull();
-    expect(actions?.contains(tabs)).toBe(false);
+    fireEvent.click(create);
+    expect(screen.getByRole('menuitem', { name: /Show in Finder/ })).toBeDefined();
   });
 });
 

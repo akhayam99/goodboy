@@ -104,7 +104,7 @@ describe('the four layers', () => {
 
     expect(within(pinned).getByText('Payments web')).toBeDefined();
     expect(within(pinned).getByText('Mock API')).toBeDefined();
-    expect(within(pinned).getByText('Free')).toBeDefined();
+    expect(within(pinned).getByRole('img', { name: 'Free' })).toBeDefined();
   });
 
   it('puts what Goodboy ran, learned ports and agent processes in Run by Goodboy', async () => {
@@ -131,7 +131,7 @@ describe('the four layers', () => {
 
     const fold = screen.getByRole('button', { name: /^Listening on this Mac/ });
     expect(fold.getAttribute('aria-expanded')).toBe('false');
-    expect(fold.textContent).toContain('2 more');
+    expect(fold.textContent).toBe('Listening on this Mac2');
     expect(portRows(7000)).toHaveLength(0);
   });
 
@@ -364,7 +364,7 @@ describe('the row menu of a pinned port', () => {
 
     await act(() => store.getState().undoLastOperation({}));
     await waitFor(() =>
-      expect(within(layer({ name: 'Pinned' })).getByText(/^1 free: /)).toBeDefined(),
+      expect(within(layer({ name: 'Pinned' })).getByText(/^1 free$/)).toBeDefined(),
     );
     openFreeFolds();
     expect(within(layer({ name: 'Pinned' })).getByText('Mock API')).toBeDefined();

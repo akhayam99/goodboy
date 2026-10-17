@@ -47,7 +47,8 @@ describe('the activity-run-hover scene', () => {
     const rows = Array.from(activity.querySelectorAll<HTMLElement>('[data-row-id^="run:"]'));
 
     expect(rows.length).toBeGreaterThan(1);
-    expect(within(activity).getAllByRole('button', { name: /^Open: / }).length).toBeGreaterThan(0);
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    expect(within(needsYou).getAllByRole('button', { name: /^Open: / }).length).toBeGreaterThan(0);
     expect(within(activity).queryByRole('button', { name: 'Answer' })).toBeNull();
     expect(within(activity).queryByRole('button', { name: 'Activity actions' })).toBeNull();
     expect(within(activity).getByRole('button', { name: 'Mark all seen' })).toBeDefined();

@@ -41,7 +41,8 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
   const windows = sortLimitWindows({ windows: chip.windows });
   const detour = useAutoDetour({ providerId });
   const usage = billing === 'token' ? null : usageNotice({ chip, nowMs, detour });
-  const notice = usage !== null && usage.tone === 'info' ? usage : null;
+  const isShareless = billing === 'plan' && chip.state === 'none';
+  const notice = usage !== null && usage.tone === 'info' && !isShareless ? usage : null;
   const reports = PROVIDERS_REPORTING_LIMITS.includes(providerId);
   const isChecking = probe?.isChecking === true;
   const hasFailed = (probe?.failures ?? 0) >= PROBE_FAILURE_LIMIT;
@@ -107,6 +108,10 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
               ),
             })}
           />
+        ) : isShareless ? (
+          <p className={cn(BAND_ROW_CLASS, 'text-label text-muted-foreground')}>
+            {`${label} does not share usage.`}
+          </p>
         ) : notice === null ? null : (
           <Notice
             tone={notice.tone}
@@ -115,11 +120,11 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
             {...(notice.body !== null && { body: notice.body })}
           />
         )}
-        <SpendInGoodboy providerId={providerId} />
+        <SpendInGoodboy providerId={providerId} hasImpactLink={!isShareless} />
       </Band>
       {billing === 'plan' && reports ? (
         <p className="px-2 text-meta text-faint-foreground">
-          {`Your ${planLabel ?? label} plan covers this. The figure is what the same tokens would cost on the API. Goodboy asks the ${label} CLI for these numbers and never reads your sign-in.`}
+          {`Your ${planLabel ?? label} plan covers this. Goodboy asks the ${label} CLI for these numbers and never reads your sign-in.`}
         </p>
       ) : null}
     </div>

@@ -73,66 +73,77 @@ describe('the u23 list scenes', () => {
     expect(Object.keys(U23_LISTS_SCENES).sort()).toEqual([...SCENE_IDS].sort());
   });
 
-  it('names the model of the last turn in the header of a finished agent', async () => {
+  it('shows the provider and no model in the header of a finished agent', async () => {
     renderScene('agent-finished-model');
 
-    const meta = await screen.findByTestId('agent-header-meta');
-    expect(within(meta).getByText('Opus 5')).toBeDefined();
-    expect(within(meta).queryByText('Model unknown')).toBeNull();
-    expect(within(meta).queryByText('Next turn:')).toBeNull();
+    const row = await screen.findByTestId('agent-header-title-row');
+    expect(within(row).getByTestId('agent-header-provider')).toBeDefined();
+    expect(within(row).queryByText('Opus 5')).toBeNull();
+    expect(screen.queryByTestId('agent-header-meta')).toBeNull();
   });
 
-  it('keeps the composer model chip quiet while it matches the header', async () => {
+  it('names the next turn model on the composer chip, never a bare Model word', async () => {
     renderScene('agent-finished-model');
 
     const trigger = await screen.findByRole('button', { name: /^Model routing:/ });
-    expect(trigger.textContent).toContain('Model');
-    expect(trigger.textContent).not.toContain('Opus 5');
+    expect(trigger.textContent).toContain('Opus 5');
+    expect(trigger.textContent).not.toMatch(/^Model/);
   });
 
-  it('labels Stop with a word and the model as the next turn on a running agent', async () => {
+  it('puts Stop as a word on the tail of a running agent, never in the header', async () => {
     renderScene('agent-running-stop');
 
     const stop = await screen.findByRole('button', { name: 'Stop' });
     expect(stop.textContent).toBe('Stop');
-    const meta = screen.getByTestId('agent-header-meta');
-    expect(within(meta).getByText('Next turn:')).toBeDefined();
-    expect(within(meta).getByText('Sonnet 5')).toBeDefined();
+    expect(stop.closest('[data-conversation-tail]')).not.toBeNull();
+    const row = screen.getByTestId('agent-header-title-row');
+    expect(within(row).queryByRole('button', { name: 'Stop' })).toBeNull();
+    expect(within(row).queryByText('Next turn:')).toBeNull();
   });
 
-  it('shows artifact rows with a kind column and one action, Delete only in the overflow', async () => {
+  it('shows artifact rows with no kind column and at most one action, Delete only on right click', async () => {
     renderScene('artifacts-rows');
 
     const list = await screen.findByTestId('artifact-list');
-    const kinds = within(list)
-      .getAllByTestId('artifact-row-kind')
-      .map((cell) => cell.textContent);
-    expect(kinds).toEqual(expect.arrayContaining(['Plan', 'Report', 'Wireframe']));
-    expect(within(list).queryAllByRole('button', { name: /^Delete / })).toEqual([]);
+    expect(within(list).queryAllByTestId('artifact-row-kind')).toEqual([]);
+    expect(within(list).queryAllByRole('button', { name: /^More for / })).toEqual([]);
+    expect(
+      within(list)
+        .queryAllByRole('button', { name: /^Delete / })
+        .filter((button) => button.closest('[data-testid="artifact-group-deleted"]') === null),
+    ).toEqual([]);
     const frames = within(list).getAllByTestId('artifact-row-frame');
     for (const frame of frames) {
       const visible = within(frame)
         .queryAllByRole('button', { hidden: true })
-        .filter((button) => button.closest('[data-reveal="hover"]') === null)
+        .filter((button) => button.closest('[data-row-secondary=""]') === null)
         .filter((button) => button.getAttribute('aria-expanded') === null)
         .filter((button) => button.getAttribute('data-artifact-row') === null)
         .filter((button) => !(button.getAttribute('aria-label') ?? '').startsWith('More for'));
       expect(visible.length).toBeLessThanOrEqual(1);
     }
+    const groups = list.querySelectorAll('section[data-testid^="artifact-group-"]');
+    expect(groups.length).toBeGreaterThan(0);
+    for (const group of groups) {
+      expect(group.querySelector('h2')).not.toBeNull();
+      if (group.getAttribute('data-testid') !== 'artifact-group-deleted') {
+        expect(group.querySelector(':scope > div > button[aria-expanded]')).toBeNull();
+      }
+    }
+    expect(within(list).queryByRole('heading', { name: /^Ran\b/ })).toBeNull();
   });
 
-  it('keeps Run and Stop visible on one right edge and the overflow on hover', async () => {
+  it('keeps Run and Stop visible on one right edge and no overflow on the rows', async () => {
     renderScene('scripts-rows');
 
     const stops = await screen.findAllByRole('button', { name: /^Stop / });
     expect(stops.length).toBeGreaterThan(0);
     for (const stop of stops) {
-      expect(stop.closest('[data-reveal]')).toBeNull();
+      expect(stop.closest('[data-row-secondary]')).toBeNull();
     }
     const run = screen.getAllByRole('button', { name: /^Run / })[0]!;
-    expect(run.closest('[data-reveal]')).toBeNull();
-    const more = screen.getAllByRole('button', { name: /^More for / })[0]!;
-    expect(more.closest('[data-reveal="hover"]')).not.toBeNull();
+    expect(run.closest('[data-row-secondary]')).toBeNull();
+    expect(screen.queryAllByRole('button', { name: /^More for / })).toHaveLength(0);
     expect(screen.getAllByRole('button', { name: /scripts again$/ })).toHaveLength(1);
   });
 
@@ -141,7 +152,7 @@ describe('the u23 list scenes', () => {
     renderScene('scripts-empty-group');
     await settle();
 
-    expect(screen.getByRole('region', { name: /^Suggested of /u })).toBeDefined();
+    expect(screen.queryByRole('region', { name: /^Suggested of /u })).toBeNull();
     expect(screen.queryByText(/Settings/)).toBeNull();
     const picker = screen.getByRole('region', { name: 'Scripts of northwind-storefront' });
     expect(within(picker).getAllByRole('button', { name: /^Pin / }).length).toBeGreaterThan(0);
@@ -155,7 +166,9 @@ describe('the u23 list scenes', () => {
     });
     expect(open).toBeDefined();
     fireEvent.click(open);
-    expect(open.getAttribute('aria-expanded')).toBe('true');
+    expect(
+      await screen.findByRole('region', { name: 'Scripts of northwind-storefront' }),
+    ).toBeDefined();
   });
 });
 

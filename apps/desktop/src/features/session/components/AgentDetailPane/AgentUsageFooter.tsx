@@ -4,7 +4,7 @@ import { contextWindowFor } from '../../contextWindowFor';
 import { TurnFooterDetail } from '../../../chat/components/TurnFooter/TurnFooterDetail';
 import { UsageStatsRow } from '../../../chat/components/TurnFooter/UsageStatsRow';
 import type { TurnFooterData } from '../../../chat/components/TurnFooter/useTurnFooter';
-import type { AgentAggregate } from '../AgentMetrics';
+import type { AgentAggregate } from '../../agentAggregate';
 import type { ProviderContextUsage } from '../AgentTree/ContextWindowBar';
 
 type Props = {
@@ -58,13 +58,7 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
           aria-label="Usage detail"
           className="flex w-fit items-center gap-1 text-meta tabular-nums text-muted-foreground transition-opacity hover:opacity-80"
         >
-          <UsageStatsRow
-            data={data}
-            totalInput={totalInput}
-            cachedPct={cachedPct}
-            contextPct={contextPct}
-            turns={turns === null || turns <= 0 ? null : turns}
-          />
+          <UsageStatsRow data={data} contextPct={contextPct} />
         </button>
       }
     >
@@ -76,6 +70,7 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
         duration={null}
         startedAt={null}
         endedAt={null}
+        turns={turns}
       />
     </AnchoredPopover>
   );

@@ -56,11 +56,11 @@ describe('the rebase row scenes', () => {
     ]);
   });
 
-  it('reads how many commits main gained and offers Rebase onto latest', async () => {
+  it('reads the base as text and leaves Rebase to the worktree status line', async () => {
     renderScene({ name: 'rebase-row-behind' });
 
-    expect(await screen.findByText('15 new commits on main', {}, { timeout: 4000 })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Rebase onto latest' })).toBeDefined();
+    expect(await screen.findByText('Based on main', {}, { timeout: 4000 })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Rebase onto latest' })).toBeNull();
   });
 
   it('lists the other bases in the picker', async () => {

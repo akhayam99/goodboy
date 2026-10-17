@@ -6,12 +6,12 @@ import {
   type Row,
   WAIT,
   settle,
-  band,
+  studio,
   branchTab,
   both,
   click,
   clickButton,
-  clickFirstButton,
+  openWorktreeMenu,
   heading,
   lens,
   openCrumb,
@@ -54,7 +54,7 @@ const seedWorkflow = (): void => {
 };
 
 const openDiffHistory = async (): Promise<void> => {
-  await clickFirstButton(/ on .+ actions$/);
+  await openWorktreeMenu();
   await click(await screen.findByRole('menuitem', { name: /^Rewrite history/ }));
 };
 
@@ -79,20 +79,20 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openRewriteHistory'],
     open: async () => {
       await openDiffHistory();
-      await clickButton(/^Show previous versions/);
+      await clickButton(/^Previous versions/);
     },
     lands: () => visible('region', 'Previous versions'),
   },
   {
-    name: 'context drawer from the overview chip',
+    name: 'context drawer from the session tools',
     covers: ['openContextDrawer', 'drawer:context'],
-    open: async () => click(await screen.findByTestId('context-chip')),
+    open: async () => click(await screen.findByTestId('pane-toggle-context')),
     lands: () => visible('region', 'Context'),
   },
   {
-    name: 'Ask drawer from the trail band',
+    name: 'Ask drawer from the session tools',
     covers: ['openAsk', 'drawer:ask'],
-    open: async () => click(await screen.findByTestId('ask-trail-button')),
+    open: async () => click(await screen.findByTestId('pane-toggle-ask')),
     lands: () => visible('region', 'Ask'),
   },
   {
@@ -105,39 +105,43 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Refresh session',
     covers: ['resyncSession', 'palette:Refresh session'],
     open: () => openPalette(/^Refresh session/, 'refresh session'),
-    lands: () => visible('button', 'More session actions'),
+    lands: () => visible('button', 'Refresh session'),
+  },
+  {
+    name: 'palette: Fold the session rail',
+    covers: ['palette:Fold the session rail'],
+    open: () => openPalette(/^Fold the session rail/, 'fold the session rail'),
+    lands: () => visible('button', 'Show session rail'),
   },
   {
     name: 'palette: Board',
     covers: ['navigate', 'palette:Board'],
     open: () => openPalette(/^Board$/),
-    lands: () => heading('Board'),
+    lands: () => heading('Sessions'),
   },
   {
     name: 'palette: Chat',
     covers: ['openStudio', 'studio:chat', 'palette:Chat'],
     door: 'palette',
     open: () => openPalette(/^Chat$/),
-    lands: () => band('Chat'),
+    lands: () => studio('Chat'),
   },
   {
     name: 'palette: Terminal',
     covers: ['studio:terminal', 'palette:Terminal'],
     door: 'palette',
     open: () => openPalette(/^Terminal$/),
-    lands: () => band('Terminal'),
+    lands: () => studio('Terminal'),
   },
   {
-    name: 'palette: New terminal',
-    covers: ['studio:terminal', 'palette:New terminal'],
+    name: 'palette: New terminal in this session',
+    covers: ['palette:New terminal'],
     door: 'palette',
-    open: () => openPalette(/^New terminal$/, 'new terminal'),
+    open: () => openPalette(/^New terminal in this session$/, 'new terminal'),
     lands: async () => {
-      await band('Terminal');
-      await waitFor(
-        () => expect(document.querySelectorAll('[data-terminal-tab]')).toHaveLength(1),
-        WAIT,
-      );
+      await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
+      expect(useAppStore.getState().drawer?.kind).toBe('terminal');
+      expect(useAppStore.getState().appStudio).toBeNull();
     },
   },
   {
@@ -193,7 +197,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
     lands: async () => {
       await waitFor(
-        () => expect(getSection(/^Overview/).getAttribute('aria-current')).toBe('page'),
+        () => expect(getSection(/^Pull request/).getAttribute('aria-current')).toBe('page'),
         WAIT,
       );
       expect(opened).not.toHaveBeenCalled();
@@ -218,6 +222,25 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
         WAIT,
       ),
   },
+  {
+    name: 'palette: Pull main in all linked repos pulls every repo and says so',
+    covers: ['palette:Pull main in all linked repos'],
+    seed: 'pr',
+    open: () => openPalette(/^Pull main in all linked repos/, 'pull main'),
+    lands: async () => {
+      expect(await screen.findByText('Updated 3 repos', {}, WAIT)).toBeDefined();
+    },
+  },
+  ...['payments-api', 'notify-relay', 'ledger-core'].map((repo): Row => ({
+    name: `palette: Pull the default branch in ${repo} pulls that repo only`,
+    covers: [`palette:Pull the default branch in ${repo}`],
+    seed: 'pr',
+    open: () => openPalette(new RegExp(`^Pull the default branch in ${repo}`), `pull ${repo}`),
+    lands: async () => {
+      expect(await screen.findByText('Updated 1 repo', {}, WAIT)).toBeDefined();
+      expect(screen.getByText(new RegExp(`^${repo}: main updated`))).toBeDefined();
+    },
+  })),
   {
     name: 'palette: Start a run lists the workflows and asks before it starts anything',
     covers: ['palette:Start a run'],
@@ -260,8 +283,8 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Tasks$/),
     lands: both(
-      () => band('Tasks'),
-      () => heading('Tasks'),
+      () => studio('Tasks'),
+      () => heading(/^Tasks$/),
     ),
   },
   {
@@ -270,7 +293,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Workflows$/),
     lands: both(
-      () => band('Workflows'),
+      () => studio('Workflows'),
       () => visible('button', 'New workflow'),
     ),
   },
@@ -280,7 +303,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'run defaults'),
     lands: both(
-      () => band('Workflows'),
+      () => studio('Workflows'),
       () => heading('Run defaults'),
     ),
   },
@@ -289,7 +312,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:impact', 'palette:Impact'],
     door: 'palette',
     open: () => openPalette(/^Impact$/),
-    lands: () => band('Impact'),
+    lands: () => studio('Impact'),
   },
   {
     name: 'palette: Impact: Spend',
@@ -297,7 +320,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Impact: Spend/, 'impact spend'),
     lands: both(
-      () => band('Impact'),
+      () => studio('Impact'),
       () => heading('Spend'),
     ),
   },
@@ -307,7 +330,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^What's new/),
     lands: both(
-      () => band("What's new"),
+      () => studio("What's new"),
       () => heading(/^Goodboy \d/),
     ),
   },
@@ -317,7 +340,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Notifications/),
     lands: both(
-      () => band('Notifications'),
+      () => studio('Notifications'),
       () => heading('Notifications'),
     ),
   },
@@ -346,7 +369,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:chat', 'palette:New chat'],
     door: 'palette',
     open: () => openPalette(/^New chat/),
-    lands: () => band('Chat'),
+    lands: () => studio('Chat'),
   },
   {
     name: 'palette: New session',
@@ -411,8 +434,11 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
           expect(state.openSessionDraftWorkspaceId).toBeNull();
         }, WAIT);
       },
-      () => visible('button', /^Untitled session$/),
-      async () => expect(await screen.findByTestId('context-chip')).toBeDefined(),
+      async () =>
+        expect(
+          (await screen.findAllByRole('button', { name: /^Untitled session$/ }, WAIT)).length,
+        ).toBeGreaterThan(0),
+      async () => expect(await screen.findByTestId('session-tools')).toBeDefined(),
     ),
   },
   {
@@ -429,7 +455,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:companion', 'palette:Pair your iPhone'],
     door: 'palette',
     open: () => openPalette(/^Pair your iPhone/),
-    lands: () => band('Pair device'),
+    lands: () => studio('Pair device'),
   },
   {
     name: 'palette: Report a bug',
@@ -448,7 +474,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:guide', 'palette:Guide'],
     door: 'palette',
     open: () => openPalette(/^Guide/),
-    lands: () => band('Guide'),
+    lands: () => studio('Guide'),
   },
   {
     name: 'palette verb: Rename',

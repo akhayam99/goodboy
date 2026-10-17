@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Chip, IconButton } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, StatusDot } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../../shared/components/AgentKindChip';
 import type { AgentKind } from '../../../../session/agent-kind';
 import { QuestionPager, type QuestionPagerModel } from './QuestionPager';
@@ -10,8 +10,11 @@ type Props = {
   readonly isBlocking: boolean;
   readonly age: string;
   readonly pager: QuestionPagerModel | null;
+  readonly isInAskerConversation: boolean;
   readonly onDismiss: (() => void) | null;
 };
+
+const BLOCKING = 'Blocking';
 
 export const QuestionCardTop = ({
   askerName,
@@ -19,25 +22,43 @@ export const QuestionCardTop = ({
   isBlocking,
   age,
   pager,
+  isInAskerConversation,
   onDismiss,
-}: Props) => (
-  <div className="flex min-h-6 min-w-0 items-center gap-2 text-label text-muted-foreground">
-    <AgentKindChip kind={askerKind ?? 'generic'} />
-    <span className="min-w-0 truncate">
-      <span className="text-foreground">{askerName ?? 'An agent'}</span> asks
-    </span>
-    {isBlocking && <Chip tone="warning" label="Blocking" shape="badge" bordered={false} />}
-    {age.length > 0 && <span className="shrink-0 text-faint-foreground">{age}</span>}
-    <span className="flex-1" />
-    {pager !== null && <QuestionPager pager={pager} />}
-    {onDismiss !== null && (
-      <IconButton
-        icon={X}
-        label="Dismiss question"
-        variant="ghost"
-        iconSize={14}
-        onClick={onDismiss}
-      />
-    )}
-  </div>
-);
+}: Props) => {
+  const hasAsker = !isInAskerConversation;
+  if (!hasAsker && !isBlocking && pager === null && onDismiss === null) {
+    return null;
+  }
+  return (
+    <div className="flex min-h-6 min-w-0 items-center gap-2 text-label text-muted-foreground">
+      {hasAsker ? (
+        <>
+          <AgentKindChip kind={askerKind ?? 'generic'} />
+          <span className="min-w-0 truncate">
+            <span className="text-foreground">{askerName ?? 'An agent'}</span> asks
+          </span>
+        </>
+      ) : null}
+      {isBlocking ? (
+        <span className="inline-flex shrink-0 items-center gap-1">
+          <StatusDot tone="warning" size="sm" />
+          {BLOCKING}
+        </span>
+      ) : null}
+      {hasAsker && age.length > 0 ? (
+        <span className="shrink-0 text-faint-foreground">{age}</span>
+      ) : null}
+      <span className="flex-1" />
+      {pager !== null && <QuestionPager pager={pager} />}
+      {onDismiss !== null && (
+        <IconButton
+          icon={X}
+          label="Dismiss question"
+          variant="ghost"
+          iconSize={ICON_SIZE.control}
+          onClick={onDismiss}
+        />
+      )}
+    </div>
+  );
+};

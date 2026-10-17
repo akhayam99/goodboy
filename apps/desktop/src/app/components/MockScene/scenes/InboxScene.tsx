@@ -1,26 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
 import { mockSceneIpc } from './mockSceneIpc';
-import { PaneShell } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { StudioShell } from '../../../../shared/components/StudioShell';
 import { InboxDetail } from '../../../../features/inbox/components/InboxStudio/InboxDetail';
-import { InboxFacetRail } from '../../../../features/inbox/components/InboxStudio/InboxFacetRail';
-import { InboxList } from '../../../../features/inbox/components/InboxStudio/InboxList';
-import { InboxListHeader } from '../../../../features/inbox/components/InboxStudio/InboxListHeader';
-import { InboxStudioLayout } from '../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
-import { NO_INBOX_FILTERS, inboxFacetCounts } from '../../../../features/inbox/kindFilter';
 import { orderInboxRecords } from '../../../../features/inbox/orderInboxRecords';
-import { useAppStore } from '../../../../store';
 import type { ProjectId } from '@goodboy/types';
-import { groupByDay } from '../../../../shared/utils/groupByDay';
 import type { InboxKind, InboxProvider, InboxRecord } from '../../../../features/inbox/types';
 import type {
   LinearIssue,
   LinearIssueComment,
 } from '../../../../features/integrations/linear/client';
-import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
-import { StudioFrame } from './StudioFrame';
-import { seedStudioChrome } from './shellChrome';
+import { WORKSPACE_ID } from './BoardScene';
+import { TasksStage } from './u25/c12/TasksStage';
 
 const noop = () => undefined;
 const MINUTE = 60_000;
@@ -172,7 +160,12 @@ const record = ({ provider, kind, identifier, title, state, ago, context }: Reco
     url: `https://example.invalid/${provider}/${identifier}`,
     context,
     ...(provider === 'sentry' ? { projectIds: [SCENE_PROJECT_ID] } : {}),
-    payload: { provider, kind, sessionId: null },
+    payload: {
+      provider,
+      kind,
+      issue: { assignee: { name: 'Robin V.', displayName: 'Robin V.' } },
+      sessionId: null,
+    },
   }) as unknown as InboxRecord;
 
 const SELECTED_RECORD: InboxRecord = {
@@ -282,117 +275,30 @@ type Props = {
   readonly isDrawerClosed?: boolean;
 };
 
-export const InboxScene = ({ isDrawerClosed = false }: Props) => {
-  const [isReady, setIsReady] = useState(false);
-  const projects = useAppStore((state) => state.projects);
-  const searchRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    installIpc();
-    seedBoardScene();
-    seedStudioChrome();
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return null;
-  }
-
-  const facets = (
-    <InboxFacetRail
-      filters={NO_INBOX_FILTERS}
-      counts={inboxFacetCounts({
-        records: RECORDS,
-        query: '',
-        filters: NO_INBOX_FILTERS,
-      })}
-      connected={CONNECTED}
-      loading={NOT_LOADING}
-      errors={NO_ERRORS}
-      projects={projects}
-      onFiltersChange={noop}
-      onClearFilters={noop}
-    />
-  );
-
-  const header = {
-    query: '',
-    onQueryChange: noop,
-    searchRef,
-    sessionLabel: null,
-    onClearSession: noop,
-    isRefreshing: false,
-    onRefresh: noop,
-    activeFilterCount: 0,
-    facets,
-  };
-
-  return (
-    <StudioFrame
-      target={{ place: 'inbox', tool: null }}
-      main={
-        <StudioShell
-          icon={CONCEPT_ICONS.inbox}
-          tone={CONCEPT_TONE.inbox}
-          title="Tasks"
-          closeLabel="Close tasks"
+export const InboxScene = ({ isDrawerClosed = false }: Props) => (
+  <TasksStage
+    records={RECORDS}
+    scope="all"
+    groupBy="source"
+    connected={CONNECTED}
+    selectedKey={isDrawerClosed ? null : SELECTED_RECORD.key}
+    cursorKey={isDrawerClosed ? CURSOR_KEY : SELECTED_RECORD.key}
+    onSeed={installIpc}
+    drawer={
+      isDrawerClosed ? null : (
+        <InboxDetail
+          record={SELECTED_RECORD}
+          workspaceId={WORKSPACE_ID}
+          rootPath={ROOT_PATH}
+          errors={NO_ERRORS}
+          onRefresh={noop}
           onClose={noop}
-        >
-          {() => (
-            <InboxStudioLayout
-              rail={facets}
-              railHeader={<InboxListHeader {...header} isRailCollapsed={false} isSearchOnly />}
-              list={({ isRailCollapsed, onDock }) => (
-                <PaneShell
-                  scroll="body"
-                  title="Tasks"
-                  meta={`${RECORDS.length} items`}
-                  actions={
-                    <InboxListHeader
-                      {...header}
-                      isRailCollapsed={isRailCollapsed}
-                      onDock={onDock}
-                    />
-                  }
-                >
-                  <InboxList
-                    days={groupByDay({
-                      items: orderInboxRecords({ records: RECORDS }),
-                      timestampOf: (item) => item.updatedAt,
-                      now: new Date(),
-                    })}
-                    totalCount={RECORDS.length}
-                    connectedCount={CONNECTED.length}
-                    isLoading={false}
-                    failures={[]}
-                    hasFiltersActive={false}
-                    selectedKey={isDrawerClosed ? null : SELECTED_RECORD.key}
-                    cursorKey={isDrawerClosed ? CURSOR_KEY : SELECTED_RECORD.key}
-                    onSelect={noop}
-                    onRetry={noop}
-                    onOpenSettings={noop}
-                    onClearFilters={noop}
-                  />
-                </PaneShell>
-              )}
-              drawer={
-                isDrawerClosed ? null : (
-                  <InboxDetail
-                    record={SELECTED_RECORD}
-                    workspaceId={WORKSPACE_ID}
-                    rootPath={ROOT_PATH}
-                    errors={NO_ERRORS}
-                    onRefresh={noop}
-                    onClose={noop}
-                    onDeselect={noop}
-                    launchFocusRequest={0}
-                  />
-                )
-              }
-            />
-          )}
-        </StudioShell>
-      }
-    />
-  );
-};
+          onDeselect={noop}
+          onOpenFull={noop}
+          star={null}
+          launchFocusRequest={0}
+        />
+      )
+    }
+  />
+);

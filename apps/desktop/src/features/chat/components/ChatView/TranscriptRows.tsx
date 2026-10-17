@@ -1,29 +1,35 @@
 import type { RetryRunParams } from '../../retryRun';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type {
   AgentId,
   IntegrationDraft,
+  IsoDateTime,
   OpenQuestion,
   ProviderRunId,
   SessionId,
 } from '@goodboy/types';
-import type { TranscriptRow } from '../../utils/cluster-operations';
+import type { ConversationRow } from '../../utils/conversationRows';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { OperationsCluster } from '../OperationsCluster';
+import { PlanChecklist } from '../PlanChecklist';
+import { TurnSummaryLine } from '../TurnSummaryLine';
+import type { OpenTranscriptAt } from '../../openTranscriptAt';
 import { ThinkingIndicator } from '../ThinkingIndicator';
+import { ConversationTail } from '../ConversationTail';
 import { TranscriptCard } from '../TranscriptCards';
 import { OpenQuestionCluster } from './OpenQuestionCluster';
 import { BriefCard } from './BriefCard';
 import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, formatDayLabel } from './lib';
 import { planBlockVersions } from './planBlockVersions';
+import { rowEstimatePx } from './rowEstimatePx';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 
 type Props = {
-  rows: ReadonlyArray<TranscriptRow>;
+  rows: ReadonlyArray<ConversationRow>;
   oqByTurnOrdinal: ReadonlyMap<number | null, ReadonlyArray<OpenQuestion>>;
   slackDrafts?: ReadonlyArray<IntegrationDraft>;
   sessionId: SessionId;
@@ -33,6 +39,7 @@ type Props = {
   onOpenDiff: (filePath: string) => void;
   isThinking: boolean;
   thinkingContext: ThinkingContext;
+  thinkingStartedAt?: IsoDateTime | null;
   onRetryRun: (params: RetryRunParams) => void;
   retryingRunId: ProviderRunId | null;
   mountSuggestionsByRun?: ReadonlyMap<ProviderRunId, ReactNode>;
@@ -40,7 +47,36 @@ type Props = {
   turnFooters?: ReadonlyMap<ProviderRunId, TurnFooterInfo>;
   briefLabel?: string;
   insertions?: ReadonlyArray<TranscriptInsertion>;
+  onOpenTranscript?: OpenTranscriptAt;
+  onStop?: () => void;
+  isStepsOnly?: boolean;
+  waitingFor?: string | null;
+  stopLabel?: string;
+  clockStepAgentId?: AgentId;
 };
+
+const STEPS_ONLY_HIDDEN = new Set<TranscriptItem['kind']>(['assistant_text', 'usage']);
+
+type HeadingParams = {
+  readonly text: string;
+};
+
+const turnHeadingOf = ({ text }: HeadingParams): string =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line !== '') ?? 'Turn';
+
+type VisibilityParams = {
+  readonly px: number;
+};
+
+const RAIL_ROW_PX = 56;
+
+const visibilityStyle = ({ px }: VisibilityParams): CSSProperties => ({
+  contentVisibility: 'auto',
+  containIntrinsicSize: `auto ${px}px`,
+});
 
 type FlushParams = {
   readonly beforeMs: number | null;
@@ -54,7 +90,7 @@ const RUN_BEARING_KINDS = new Set<TranscriptItem['kind']>([
   'permission_decision',
 ]);
 
-const rowRunId = ({ row }: { readonly row: TranscriptRow }): ProviderRunId | null => {
+const rowRunId = ({ row }: { readonly row: ConversationRow }): ProviderRunId | null => {
   if (row.kind !== 'item' || !RUN_BEARING_KINDS.has(row.item.kind)) {
     return null;
   }
@@ -64,7 +100,7 @@ const rowRunId = ({ row }: { readonly row: TranscriptRow }): ProviderRunId | nul
 const lastRowIndexByRun = ({
   rows,
 }: {
-  readonly rows: ReadonlyArray<TranscriptRow>;
+  readonly rows: ReadonlyArray<ConversationRow>;
 }): ReadonlyMap<ProviderRunId, number> => {
   const byRun = new Map<ProviderRunId, number>();
   rows.forEach((row, index) => {
@@ -87,6 +123,7 @@ export const TranscriptRows = ({
   onOpenDiff,
   isThinking,
   thinkingContext,
+  thinkingStartedAt = null,
   onRetryRun,
   retryingRunId,
   mountSuggestionsByRun,
@@ -94,6 +131,12 @@ export const TranscriptRows = ({
   turnFooters,
   briefLabel,
   insertions = [],
+  onOpenTranscript,
+  onStop,
+  isStepsOnly = false,
+  waitingFor = null,
+  stopLabel,
+  clockStepAgentId,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -129,6 +172,10 @@ export const TranscriptRows = ({
   const todayKey = dayKey(new Date().toISOString());
   let lastDay: string | null = null;
   let userTurnOrdinal = 0;
+  let turnIndex = -1;
+  const firstAnswerIndex = rows.findIndex(
+    (row) => row.kind === 'summary' || (row.kind === 'item' && row.item.kind === 'assistant_text'),
+  );
   let railGroup: Array<ReactNode> = [];
   let railGroupKey: string | null = null;
 
@@ -139,7 +186,8 @@ export const TranscriptRows = ({
     out.push(
       <li
         key={`workflow-rail-${railGroupKey}`}
-        className="flex flex-col [contain-intrinsic-size:auto_80px] [content-visibility:auto]"
+        className="flex flex-col"
+        style={visibilityStyle({ px: RAIL_ROW_PX * railGroup.length })}
       >
         {railGroup}
       </li>,
@@ -151,7 +199,7 @@ export const TranscriptRows = ({
   const flushOrdinal = (ordinal: number) => {
     flushRailGroup();
     const cards = oqByTurnOrdinal.get(ordinal);
-    if (!cards || cards.length === 0) {
+    if (isStepsOnly || !cards || cards.length === 0) {
       return;
     }
     out.push(
@@ -170,9 +218,16 @@ export const TranscriptRows = ({
       userTurnOrdinal += 1;
       return;
     }
-    if (row.kind === 'item' && (row.item.kind === 'user_text' || row.item.kind === 'handoff')) {
-      flushOrdinal(userTurnOrdinal);
-      userTurnOrdinal += 1;
+    if (
+      row.kind === 'item' &&
+      (row.item.kind === 'user_text' ||
+        row.item.kind === 'handoff' ||
+        row.item.kind === 'auto_delivery')
+    ) {
+      if (!(row.item.kind === 'user_text' && row.item.isOperatorEcho === true)) {
+        flushOrdinal(userTurnOrdinal);
+        userTurnOrdinal += 1;
+      }
       const at = row.item.at;
       flushInsertions({ beforeMs: Date.parse(at) });
       const day = dayKey(at);
@@ -182,19 +237,34 @@ export const TranscriptRows = ({
         if (!isLeadingToday) {
           out.push(
             <li
-              key={`day-${day}-${idx}`}
+              key={`day-${day}-${row.key}`}
               data-testid="transcript-day"
               data-align="start"
               className="flex justify-start"
             >
-              <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-eyebrow text-muted-foreground">
-                {formatDayLabel(at)}
-              </span>
+              <span className="text-meta text-muted-foreground">{formatDayLabel(at)}</span>
             </li>,
           );
         }
         lastDay = day;
       }
+      if (!(row.item.kind === 'user_text' && row.item.isOperatorEcho === true)) {
+        turnIndex += 1;
+      }
+      if (isStepsOnly && row !== briefRow) {
+        flushRailGroup();
+        out.push(
+          <li key={row.key} data-turn-heading={turnIndex}>
+            <p className="truncate text-label text-muted-foreground">
+              {turnHeadingOf({ text: row.item.text })}
+            </p>
+          </li>,
+        );
+        return;
+      }
+    }
+    if (isStepsOnly && row.kind === 'item' && STEPS_ONLY_HIDDEN.has(row.item.kind)) {
+      return;
     }
     if (row.kind === 'item' && isWorkflowRailRow({ row })) {
       railGroupKey = railGroupKey ?? row.key;
@@ -216,10 +286,19 @@ export const TranscriptRows = ({
     }
     flushRailGroup();
     out.push(
-      <li key={row.key} className="[content-visibility:auto] [contain-intrinsic-size:auto_80px]">
-        {row.kind === 'operations' ? (
+      <li key={row.key} style={visibilityStyle({ px: rowEstimatePx({ row }) })}>
+        {row.kind === 'summary' ? (
+          <TurnSummaryLine
+            steps={row.steps}
+            turn={Math.max(0, turnIndex)}
+            {...(onOpenTranscript !== undefined && { onOpenTranscript })}
+          />
+        ) : row.kind === 'plan' ? (
+          <PlanChecklist checklist={row.checklist} isLive={activeRunId != null} />
+        ) : row.kind === 'operations' ? (
           <OperationsCluster
             items={row.items}
+            isInitiallyOpen={isStepsOnly}
             sessionId={sessionId}
             agentId={selectedAgentId}
             workingDir={workingDir}
@@ -253,6 +332,11 @@ export const TranscriptRows = ({
                 ? (turnFooters?.get(row.item.runId)?.startedAt ?? null)
                 : undefined
             }
+            isBrief={
+              (row.item.kind === 'user_text' || row.item.kind === 'handoff') &&
+              turnIndex === 0 &&
+              firstAnswerIndex > idx
+            }
           />
         )}
       </li>,
@@ -276,7 +360,7 @@ export const TranscriptRows = ({
     out.push(<li key={`mount-suggestion-${runId}`}>{node}</li>);
   }
   const tailCards = oqByTurnOrdinal.get(null);
-  if (tailCards != null && tailCards.length > 0) {
+  if (!isStepsOnly && tailCards != null && tailCards.length > 0) {
     out.push(
       <li key="oq-tail">
         <OpenQuestionCluster questions={tailCards} sessionId={sessionId} />
@@ -295,7 +379,18 @@ export const TranscriptRows = ({
       {out}
       {isThinking ? (
         <li>
-          <ThinkingIndicator context={thinkingContext} />
+          {onStop === undefined ? (
+            <ThinkingIndicator context={thinkingContext} startedAt={thinkingStartedAt} />
+          ) : (
+            <ConversationTail
+              context={thinkingContext}
+              onStop={onStop}
+              startedAt={thinkingStartedAt}
+              waitingFor={waitingFor}
+              {...(stopLabel !== undefined && { stopLabel })}
+              {...(clockStepAgentId !== undefined && { stepAgentId: clockStepAgentId })}
+            />
+          )}
         </li>
       ) : null}
     </>

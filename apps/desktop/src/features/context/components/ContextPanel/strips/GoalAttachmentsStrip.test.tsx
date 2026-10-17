@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { brandId, type SessionId, type WorkflowRunId } from '@goodboy/types';
 
 type Attachment = {
   id: string;
@@ -27,7 +28,17 @@ const { state } = vi.hoisted<{ state: MockState }>(() => ({
         { id: 'att-1', fileName: 'notes.txt', mimeType: 'text/plain', kind: 'file', relPath: '' },
       ],
     },
-    workflowRunAttachments: {},
+    workflowRunAttachments: {
+      'run-1': [
+        {
+          id: 'att-2',
+          fileName: 'brief.pdf',
+          mimeType: 'application/pdf',
+          kind: 'file',
+          relPath: '',
+        },
+      ],
+    },
     sessionWorktrees: {},
     currentSessionId: 'sess-1',
     loadGoalAttachments: vi.fn(async () => undefined),
@@ -57,12 +68,25 @@ import { GoalAttachmentsStrip } from './GoalAttachmentsStrip';
 afterEach(cleanup);
 
 describe('GoalAttachmentsStrip', () => {
-  it('reveals the remove control on keyboard focus, not only on hover', () => {
-    render(<GoalAttachmentsStrip owner={{ type: 'session', id: 'sess-1' as never }} />);
+  it('shows the remove control at rest', () => {
+    render(
+      <GoalAttachmentsStrip
+        owner={{ type: 'session', id: brandId<SessionId>({ value: 'sess-1' }) }}
+      />,
+    );
     const remove = screen.getByRole('button', { name: 'Remove notes.txt' });
 
-    expect(remove.className).toContain('opacity-0');
-    expect(remove.className).toContain('focus-visible:opacity-100');
-    expect(remove.className).toContain('group-hover:opacity-100');
+    expect(remove.className).not.toContain('opacity-0');
+  });
+
+  it('reads as a plain chip on a run, with no remove control', () => {
+    render(
+      <GoalAttachmentsStrip
+        owner={{ type: 'workflow_run', id: brandId<WorkflowRunId>({ value: 'run-1' }) }}
+      />,
+    );
+
+    expect(screen.getByText('brief.pdf')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Remove brief.pdf' })).toBeNull();
   });
 });

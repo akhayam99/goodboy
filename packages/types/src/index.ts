@@ -177,6 +177,7 @@ export {
   isSessionExternalTaskProvider,
   INTEGRATION_BINDING_PROVIDERS,
   SESSION_EXTERNAL_TASK_PROVIDERS,
+  SESSION_TITLE_MAX_LENGTH,
 } from './workspace';
 export type {
   AttachmentInput,
@@ -376,6 +377,9 @@ export type {
   BranchCommit,
   BranchIntegration,
   DiffView,
+  BaseDivergence,
+  BaseDivergenceState,
+  BaseUpdateResult,
   FastForwardResult,
   GitDistance,
   GitOperation,
@@ -479,6 +483,7 @@ export type {
   PersistedSessionViewPrefs,
   SessionAttentionReason,
   SessionGroupKey,
+  SessionPageView,
   SessionPrFetchState,
   SessionPrGroup,
   SessionSortKey,

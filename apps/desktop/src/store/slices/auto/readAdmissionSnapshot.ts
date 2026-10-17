@@ -1,4 +1,4 @@
-import type { AdmissionChild, AdmissionSnapshot } from '@goodboy/core';
+import { autoRemainingForGates, type AdmissionChild, type AdmissionSnapshot } from '@goodboy/core';
 import {
   getAutoArtifact,
   getAutoTree,
@@ -66,7 +66,7 @@ export const readAdmissionSnapshot = async ({
     expectedRunId,
     openCount: open.length,
     openChildAgentIds: open.map((delegation) => delegation.childAgentId),
-    remainingUsd: spend?.remainingUsd ?? 0,
+    remainingUsd: autoRemainingForGates({ spend }),
     artifacts,
     isPlanApprovalRequired,
   };

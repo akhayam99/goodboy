@@ -50,6 +50,10 @@ import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
 import { branchLandingTabOf } from '../../branchLandingTab';
 import type { BranchReviewCounts } from '../../branchPrimary';
 import { useBranchControls } from '../../hooks/useBranchControls';
+import { pullRequestStateWordOf } from '../../pullRequestStateWordOf';
+import { BranchStateChip } from './BranchStateChip';
+import { BRANCH_MENU_DIFF } from '../../branchPrimary';
+import { BranchSwitcher } from './BranchSwitcher';
 import { BranchHeader } from './index';
 
 const SESSION_ID = 'session-ledger-export' as SessionId;
@@ -185,7 +189,6 @@ type HarnessProps = {
   readonly canEditTitle?: boolean;
   readonly isActive?: boolean;
   readonly isPrimaryYielding?: boolean;
-  readonly commitCount?: number | null;
   readonly onMutated?: () => void;
 };
 
@@ -214,7 +217,6 @@ const Harness = ({
   canEditTitle = false,
   isActive = true,
   isPrimaryYielding = false,
-  commitCount = null,
   onMutated,
 }: HarnessProps) => {
   const controls = useBranchControls({
@@ -227,11 +229,7 @@ const Harness = ({
   return (
     <BranchHeader
       sessionId={SESSION_ID}
-      mountPath={MOUNT.worktreePath}
       pr={pr}
-      projectName="payments-api"
-      branch={MOUNT.branch}
-      baseBranch="main"
       fallbackTitle="feat/export"
       controls={controls}
       isPushBusy={false}
@@ -239,8 +237,6 @@ const Harness = ({
       tab="pr"
       isActive={isActive}
       canEditTitle={canEditTitle}
-      createdAt={null}
-      commitCount={commitCount}
       onMutated={onMutated ?? vi.fn()}
     />
   );
@@ -252,7 +248,6 @@ const renderHeader = ({
   canEditTitle,
   isActive,
   isPrimaryYielding,
-  commitCount,
   onMutated,
 }: Partial<HarnessProps> = {}) =>
   render(
@@ -263,70 +258,37 @@ const renderHeader = ({
         canEditTitle={canEditTitle}
         isActive={isActive}
         isPrimaryYielding={isPrimaryYielding}
-        commitCount={commitCount}
         onMutated={onMutated}
       />
     </ToastProvider>,
   );
 
-const metaOf = (): HTMLElement => {
-  const row = document.querySelector('[data-slot="pane-title-row"]')?.nextElementSibling;
-  if (!(row instanceof HTMLElement)) {
-    throw new Error('the header has no meta line');
+const titleRowOf = (): HTMLElement => {
+  const row = document.querySelector<HTMLElement>('[data-slot="pane-title-row"]');
+  if (row === null) {
+    throw new Error('the header has no title row');
   }
   return row;
 };
 
-const chipState = (): HTMLElement => {
-  const chip = document.querySelector<HTMLElement>('[data-slot="branch-state"]');
-  if (chip === null) {
-    throw new Error('the header has no state chip');
-  }
-  return chip;
-};
-
-describe('BranchHeader identity', () => {
-  it('names the pull request in the chip and the project, branches and number in one line', () => {
+describe('BranchHeader one row', () => {
+  it('holds the title and the actions on one row, with no state chip and no meta line', () => {
     status = statusOf({});
-    renderHeader({ pr: { ...PR, author: 'Maya Ortiz' }, commitCount: 7 });
+    renderHeader({ pr: { ...PR, author: 'Maya Ortiz' } });
 
-    expect(screen.getByText('Ledger export')).toBeDefined();
-    expect(chipState().textContent).toBe('Draft');
-    const meta = metaOf().textContent ?? '';
-    expect(meta).toContain('payments-api');
-    expect(meta).toContain('feat/export');
-    expect(meta).toContain('main');
-    expect(meta).toContain('#318 by Maya Ortiz');
-    expect(meta).toContain('7 commits');
+    expect(titleRowOf().textContent).toContain('Ledger export');
+    expect(document.querySelector('[data-slot="branch-state"]')).toBeNull();
+    expect(titleRowOf().nextElementSibling?.textContent ?? '').toBe('');
+    const header = titleRowOf().parentElement?.textContent ?? '';
+    expect(header).not.toMatch(/#318|Maya Ortiz|commit|feat\/export/);
   });
 
-  it('says one commit in the singular and leaves the count out while it is unknown', () => {
-    status = statusOf({});
-    renderHeader({ pr: PR, commitCount: 1 });
-    expect(metaOf().textContent).toContain('1 commit');
-    expect(metaOf().textContent).not.toContain('1 commits');
-    cleanup();
-
-    renderHeader({ pr: PR, commitCount: null });
-    expect(metaOf().textContent).not.toMatch(/commit/);
-  });
-
-  it('falls back to the branch name and a No pull request chip when there is no pull request', () => {
-    status = statusOf({ upstream: null });
-    renderHeader();
-
-    expect(screen.getByText('feat/export')).toBeDefined();
-    expect(chipState().textContent).toBe('No pull request');
-    expect(chipState().getAttribute('data-state')).toBe('none');
-  });
-
-  it('carries one h1, the pull request title or the branch name, and keeps the chip out of it', () => {
+  it('carries one h1, the pull request title or the branch name', () => {
     status = statusOf({});
     renderHeader({ pr: PR });
     const withPr = screen.getAllByRole('heading', { level: 1 });
     expect(withPr).toHaveLength(1);
     expect(withPr[0]?.textContent).toBe('Ledger export');
-    expect(withPr[0]?.contains(chipState())).toBe(false);
     cleanup();
 
     renderHeader();
@@ -335,66 +297,35 @@ describe('BranchHeader identity', () => {
     expect(without[0]?.textContent).toBe('feat/export');
   });
 
-  it('prints the branch name once in the meta line, between the project and the base', () => {
-    status = statusOf({});
-    renderHeader({ pr: PR });
-
-    const meta = metaOf().textContent ?? '';
-    expect(meta.split('feat/export')).toHaveLength(2);
-    expect(meta).toMatch(/payments-api.*feat\/export.*main/);
-  });
-
-  it('shows no checks word in the meta line, the Overview and the rail own it', () => {
-    status = statusOf({});
-    renderHeader({ pr: { ...PR, checks: 'failure' } });
-
-    expect(metaOf().textContent).not.toMatch(/check|failing/i);
-  });
-});
-
-describe('BranchHeader state chip', () => {
-  const CASES: ReadonlyArray<{
-    readonly pr: PullRequestState | null;
-    readonly state: PullRequestPresentationState;
-  }> = [
-    { pr: null, state: 'none' },
-    { pr: { ...PR, isDraft: true }, state: 'draft' },
-    { pr: { ...PR, isDraft: false }, state: 'open' },
-    { pr: { ...PR, isDraft: false, state: 'approved' }, state: 'approved' },
-    { pr: { ...PR, isDraft: false, state: 'queued' }, state: 'queued' },
-    { pr: { ...PR, isDraft: false, state: 'merged' }, state: 'merged' },
-    { pr: { ...PR, isDraft: false, state: 'closed' }, state: 'closed' },
-  ];
-
-  it.each(CASES)('reads the word and the tone of $state from the presentation table', (item) => {
-    status = statusOf({});
-    renderHeader({ pr: item.pr });
-
-    const expected = PULL_REQUEST_PRESENTATION[item.state];
-    expect(chipState().getAttribute('data-state')).toBe(item.state);
-    expect(chipState().getAttribute('data-tone')).toBe(expected.tone);
-    expect(chipState().textContent).toBe(
-      item.state === 'none' ? 'No pull request' : expected.label,
-    );
-  });
-
-  it('draws Merged in the merged tone and Queued in the primary tone', () => {
-    status = statusOf({});
-    renderHeader({ pr: { ...PR, isDraft: false, state: 'merged' } });
-    expect(chipState().getAttribute('data-tone')).toBe('merged');
-    cleanup();
-
-    renderHeader({ pr: { ...PR, isDraft: false, state: 'queued' } });
-    expect(chipState().getAttribute('data-tone')).toBe('primary');
-  });
-
-  it('keeps the chip out of the way while the title is being edited', () => {
+  it('says how to leave the title edit under the title while it is being edited', () => {
     status = statusOf({});
     renderHeader({ pr: PR, canEditTitle: true });
 
     fireEvent.click(screen.getByRole('button', { name: 'Ledger export' }));
 
-    expect(document.querySelector('[data-slot="branch-state"]')).toBeNull();
+    expect(screen.getByText('Enter saves, Esc cancels')).toBeDefined();
+  });
+});
+
+describe('BranchHeader state chip', () => {
+  const CASES: ReadonlyArray<PullRequestPresentationState> = [
+    'none',
+    'draft',
+    'open',
+    'approved',
+    'queued',
+    'merged',
+    'closed',
+  ];
+
+  it.each(CASES)('reads the tone of %s from the table and its word from the one map', (state) => {
+    render(<BranchStateChip state={state} host="github" />);
+
+    const chip = document.querySelector<HTMLElement>('[data-slot="branch-state"]');
+    const expected = PULL_REQUEST_PRESENTATION[state];
+    expect(chip?.getAttribute('data-state')).toBe(state);
+    expect(chip?.getAttribute('data-tone')).toBe(expected.tone);
+    expect(chip?.textContent).toBe(pullRequestStateWordOf({ state }) ?? 'No pull request');
   });
 });
 
@@ -450,7 +381,19 @@ const withMounts = (mounts: ReadonlyArray<SessionProjectMount>): void => {
 
 const chipOf = (): HTMLElement => screen.getByRole('button', { name: /^Branch feat\/export$/ });
 
-describe('BranchHeader branch switcher', () => {
+const renderSwitcher = () =>
+  render(
+    <ToastProvider>
+      <BranchSwitcher
+        sessionId={SESSION_ID}
+        currentPath={MOUNT.worktreePath}
+        repoName="payments-api"
+        branch={MOUNT.branch}
+      />
+    </ToastProvider>,
+  );
+
+describe('Worktree branch switcher', () => {
   it('lists the session branches with their pull request and moves the page to the landing tab of the one picked', async () => {
     const navigate = vi.fn();
     const setSessionActiveMount = vi.fn<StoreState['setSessionActiveMount']>(async () => undefined);
@@ -458,7 +401,7 @@ describe('BranchHeader branch switcher', () => {
     withMounts([MOUNT, MOUNT_FIX, MOUNT_DOCS]);
     useAppStore.setState({ branchTab: { [SESSION_ID]: 'files' } });
     status = statusOf({});
-    renderHeader({ pr: PR });
+    renderSwitcher();
 
     fireEvent.click(chipOf());
 
@@ -492,12 +435,12 @@ describe('BranchHeader branch switcher', () => {
   it('shows a chevron with several branches and none with one, which opens the New branch form at once', async () => {
     withMounts([MOUNT, MOUNT_FIX]);
     status = statusOf({});
-    renderHeader({ pr: PR });
+    renderSwitcher();
     expect(chipOf().querySelector('[data-slot="switcher-chevron"]')).not.toBeNull();
     cleanup();
 
     withMounts([MOUNT]);
-    renderHeader({ pr: PR });
+    renderSwitcher();
     expect(chipOf().querySelector('[data-slot="switcher-chevron"]')).toBeNull();
 
     fireEvent.click(chipOf());
@@ -521,7 +464,7 @@ describe('BranchHeader branch switcher', () => {
     });
     withMounts([MOUNT, MOUNT_FIX]);
     status = statusOf({});
-    renderHeader({ pr: PR });
+    renderSwitcher();
 
     fireEvent.click(chipOf());
     fireEvent.click(await screen.findByRole('menuitem', { name: 'New branch' }));
@@ -620,10 +563,9 @@ describe('BranchHeader actions by state', () => {
     expect(primaries()).toHaveLength(0);
     expect(secondaries()).toHaveLength(0);
     expect(document.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
-    expect(chipState().getAttribute('data-tone')).toBe('merged');
   });
 
-  it('draws no primary for a queued pull request and names its place in the queue', () => {
+  it('draws no primary for a queued pull request and leaves the queue to the property block', () => {
     const queued: PullRequestState = {
       ...PR,
       isDraft: false,
@@ -636,18 +578,7 @@ describe('BranchHeader actions by state', () => {
 
     expect(primaries()).toHaveLength(0);
     expect(screen.queryByRole('button', { name: /Merge/ })).toBeNull();
-    expect(screen.getByTestId('branch-queue-line').textContent).toBe(
-      'Queued to merge, 3rd in line',
-    );
-  });
-
-  it('says a queued pull request with auto-merge merges when the checks pass', () => {
-    const queued: PullRequestState = { ...PR, isDraft: false, state: 'queued', isAutoMerge: true };
-    withRequest(queued);
-    status = statusOf({});
-    renderHeader({ pr: queued });
-
-    expect(screen.getByTestId('branch-queue-line').textContent).toBe('Merges when checks pass');
+    expect(screen.queryByTestId('branch-queue-line')).toBeNull();
   });
 
   it('adds Cancel auto-merge to the menu of a queued pull request that allows it', () => {
@@ -710,75 +641,40 @@ describe('BranchHeader actions by state', () => {
     expect(primary.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('keeps Abort rebase beside the stopped rebase and confirms it inline', () => {
+  it('keeps Abort rebase off the header and its menu while a rebase stopped, the status line owns it', () => {
     withMountPr();
     status = statusOf({ changed: 3, inProgress: 'rebase' });
     renderHeader({ pr: PR });
 
-    expect(screen.getByRole('button', { name: 'Open terminal' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Abort rebase' }));
-
-    const confirm = screen.getByRole('group', { name: 'Abort the rebase?' });
-    expect(within(confirm).getByRole('button', { name: 'Abort rebase' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Abort rebase' })).toBeNull();
+    expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
+    const more = screen.queryByRole('button', { name: 'Branch actions' });
+    if (more !== null) {
+      fireEvent.click(more);
+    }
+    expect(screen.queryByRole('menuitem', { name: /Abort rebase/ })).toBeNull();
   });
 
-  it('offers Rebase on main as a secondary while the branch is behind its base', () => {
+  it('offers no Rebase in the header while behind, the worktree status line owns it', () => {
     withMountPr();
     status = statusOf({ behind: 18 });
-    renderHeader({ pr: PR });
-
-    expect(screen.getByRole('button', { name: /Rebase on main/ })).toBeDefined();
-  });
-
-  it('offers no Rebase on main once the branch is level with its base', () => {
-    withMountPr();
-    status = statusOf({ behind: 0 });
     renderHeader({ pr: PR });
 
     expect(screen.queryByRole('button', { name: /Rebase on main/ })).toBeNull();
   });
 });
 
-describe('BranchHeader merge state', () => {
-  it('keeps a blocked merge reason in the meta line, never in a stray line under the primary', () => {
-    const readyPr: PullRequestState = { ...PR, isDraft: false, checks: 'pending' };
-    withRequest(readyPr);
-    status = statusOf({});
-    renderHeader({
-      pr: readyPr,
-      review: { accepted: 1, replies: 0, failed: 0, isPushing: false, push: IDLE_PUSH },
-    });
-
-    expect(screen.getByRole('button', { name: /^Push 1 fix$/ })).toBeDefined();
-    const reasons = screen.getAllByText(/still running/);
-    expect(reasons).toHaveLength(1);
-    expect(metaOf().contains(reasons[0] as HTMLElement)).toBe(true);
-    expect(screen.queryByText('Squash and merge')).toBeNull();
-  });
-});
-
 describe('BranchHeader blocked reason', () => {
-  const readyPr: PullRequestState = { ...PR, isDraft: false, checks: 'pending' };
-
-  it('prints why Merge is blocked in the meta line, beside the tooltip', () => {
+  it('disables a blocked Merge and keeps its reason out of the header text', () => {
+    const readyPr: PullRequestState = { ...PR, isDraft: false, checks: 'pending' };
     withRequest(readyPr);
     status = statusOf({});
     renderHeader({ pr: readyPr });
 
     const merge = screen.getByRole('button', { name: /Merge/ }) as HTMLButtonElement;
     expect(merge.disabled).toBe(true);
-    const reason = screen.getByTestId('branch-blocked-reason');
-    expect(reason.textContent).toMatch(/still running/);
-    expect(metaOf().contains(reason)).toBe(true);
-  });
-
-  it('leaves the meta line alone when the primary can run', () => {
-    const clear: PullRequestState = { ...PR, isDraft: false };
-    withRequest(clear);
-    status = statusOf({});
-    renderHeader({ pr: clear });
-
     expect(screen.queryByTestId('branch-blocked-reason')).toBeNull();
+    expect(titleRowOf().textContent).not.toMatch(/still running/);
   });
 });
 
@@ -816,15 +712,19 @@ describe('BranchHeader action row', () => {
 });
 
 describe('BranchHeader overflow', () => {
-  it('holds the rare lifecycle and branch actions, and no Rewrite or Restore', () => {
+  it('holds the pull request verbs and Change base, never a worktree verb of the identity menu', () => {
+    expect(BRANCH_MENU_DIFF).toEqual(['diff.push', 'diff.changeBase', 'diff.copyPatch']);
     withMountPr();
-    status = statusOf({});
+    status = statusOf({ changed: 3 });
     renderHeader({ pr: PR });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
-    const labels = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
-    expect(labels.some((label) => label.startsWith('Change base branch'))).toBe(true);
-    expect(labels.some((label) => label.startsWith('Copy branch name'))).toBe(true);
+    const more = screen.queryByRole('button', { name: 'Branch actions' });
+    if (more !== null) {
+      fireEvent.click(more);
+    }
+    const labels = screen.queryAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels.some((label) => label.startsWith('Copy branch name'))).toBe(false);
+    expect(labels.some((label) => label.startsWith('Open terminal'))).toBe(false);
     expect(labels.some((label) => /Rewrite history|Restore a backup/.test(label))).toBe(false);
   });
 });

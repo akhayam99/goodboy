@@ -1,5 +1,4 @@
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { excerptOf } from '../../excerptOf';
 import type { PaletteEntry } from '../../types';
 import { ExcerptBlock } from './ExcerptBlock';
@@ -54,7 +53,7 @@ export const EntryPreview = ({ entry, subject }: Props) => {
 
   const objectPreview =
     session !== null ? (
-      <SessionPreview session={session} />
+      <SessionPreview session={session} subject={subject} />
     ) : agent !== null ? (
       <div className="flex flex-col gap-4">
         <PreviewHeader
@@ -84,26 +83,16 @@ export const EntryPreview = ({ entry, subject }: Props) => {
       </div>
     );
   }
-  const subtitle =
-    entry.kind === 'verb'
-      ? (subject ?? undefined)
-      : [entry.tag, entry.detail].filter((part) => part !== undefined && part !== '').join(' · ');
+  const hasExcerpt = excerpt !== null && excerpt.trim() !== '';
   return (
     <div className="flex flex-col gap-4">
-      <PreviewHeader title={entry.label} subtitle={subtitle} />
-      {excerpt !== null && excerpt.trim() !== '' && (
-        <ExcerptBlock text={excerptOf({ markdown: excerpt })} />
-      )}
+      {hasExcerpt ? <PreviewHeader title={entry.label} /> : null}
+      {hasExcerpt ? <ExcerptBlock text={excerptOf({ markdown: excerpt })} /> : null}
       {entry.action?.blockedReason != null && (
         <p className="text-label text-muted-foreground">{entry.action.blockedReason}</p>
       )}
       {entry.action?.confirm != null && (
         <p className="text-label text-muted-foreground">{entry.action.confirm.description}</p>
-      )}
-      {entry.shortcut !== undefined && (
-        <p className="text-label text-muted-foreground">
-          Shortcut <kbd className="text-code text-foreground">{shortcutGlyphs(entry.shortcut)}</kbd>
-        </p>
       )}
     </div>
   );

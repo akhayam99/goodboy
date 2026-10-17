@@ -1,12 +1,10 @@
 import { ChevronsUpDown } from 'lucide-react';
 import { ROW_INTERACTIVE, cn, AnchoredPopover, StatusDot, useDropdown, Tooltip } from '@goodboy/ui';
 import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
-import { workspaceAccent } from '../../color';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
+import { WorkspaceTile } from '../WorkspaceSwitcher/WorkspaceTile';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-
-const initialOf = (name: string): string => name.trim().charAt(0).toUpperCase() || '?';
 
 export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
@@ -24,7 +22,6 @@ export const WorkspaceIdentityRow = () => {
   if (!currentWorkspace) {
     return null;
   }
-  const accent = workspaceAccent(currentWorkspace.id);
 
   return (
     <div className="ml-(--titlebar-inset) flex w-full min-w-0 items-center gap-0.5">
@@ -51,13 +48,7 @@ export const WorkspaceIdentityRow = () => {
                 ROW_INTERACTIVE,
               )}
             >
-              <span
-                aria-hidden
-                className="flex size-5 shrink-0 items-center justify-center rounded-md text-chip font-semibold text-on-tone ring-1 ring-inset ring-border-soft"
-                style={{ backgroundColor: accent }}
-              >
-                {initialOf(currentWorkspace.name)}
-              </span>
+              <WorkspaceTile workspace={currentWorkspace} />
               <span className="truncate text-row text-foreground">{currentWorkspace.name}</span>
               {hasUnreadElsewhere ? (
                 <StatusDot tone="warning" size="sm" title="Activity in another workspace" />

@@ -101,7 +101,7 @@ describe('suggestion actions', () => {
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('opens the Agent tab with the card as context from the talk, and starts nothing', async () => {
+  it('opens the Auto form with the card as context from the talk, and starts nothing', async () => {
     const target = targetOf({
       suggestion: checkChangesSuggestion(),
       startsRole: 'reviewer',
@@ -119,7 +119,7 @@ describe('suggestion actions', () => {
     expect(openDrawer).toHaveBeenCalledWith({
       kind: 'new',
       sessionId: SESSION,
-      payload: { tab: 'agent' },
+      payload: { form: 'auto' },
     });
     expect(spawnAgent).not.toHaveBeenCalled();
   });

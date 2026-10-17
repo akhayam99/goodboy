@@ -1,5 +1,10 @@
 import { createContext } from 'react';
-import { unionDurationMs, type DurationHistory, type TimeInterval } from '@goodboy/core';
+import {
+  unionDurationMs,
+  type DurationHistory,
+  type DurationUnit,
+  type TimeInterval,
+} from '@goodboy/core';
 import type { AgentId, MeasuredTurnSpan } from '@goodboy/types';
 
 export type WorkTimeSource = {
@@ -58,4 +63,28 @@ export const familyActiveTime = ({ agentIds, source }: FamilyParams): ActiveTime
     isLive,
     hasStarted: isLive || intervals.length > 0,
   };
+};
+
+type AgentActiveParams = {
+  readonly agentId: AgentId;
+  readonly unit: DurationUnit;
+  readonly isRunning: boolean;
+  readonly source: WorkTimeSource;
+};
+
+export const agentActiveTime = ({
+  agentId,
+  unit,
+  isRunning,
+  source,
+}: AgentActiveParams): ActiveTime => {
+  const liveStartMs = source.liveStartMs.get(agentId);
+  if (unit === 'turn' && isRunning && liveStartMs !== undefined) {
+    return {
+      activeMs: Math.max(0, source.nowMs - liveStartMs),
+      isLive: true,
+      hasStarted: true,
+    };
+  }
+  return familyActiveTime({ agentIds: [agentId], source });
 };

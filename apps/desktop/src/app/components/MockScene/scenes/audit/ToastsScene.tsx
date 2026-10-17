@@ -16,15 +16,15 @@ export const ToastsScene = () => {
   useEffect(() => {
     mockIPC((cmd) => {
       if (cmd === 'plugin:app|version') {
-        return '0.3.13';
+        return '0.27.0';
       }
       return null;
     });
     useAppStore.setState({
-      changelogSeenVersion: '0.3.12',
+      changelogSeenVersion: '0.26.0',
       changelogSeenHydrated: true,
       updaterStatus: VARIANT === 'downloading' ? 'downloading' : 'available',
-      updateVersion: '0.3.14',
+      updateVersion: '0.27.1',
       applyUpdate: async () => undefined,
     });
     setIsReady(true);

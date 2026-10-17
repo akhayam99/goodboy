@@ -173,12 +173,12 @@ describe('PrDetailPanel', () => {
     await waitFor(() => screen.getByText('The tank was empty.'));
   });
 
-  it('rolls the bitbucket build statuses up into plain language above the check list', async () => {
+  it('groups the bitbucket build statuses as Failing and Running, no summary line', async () => {
     renderPanel();
     fireEvent.click(screen.getByRole('button', { name: /^Checks/ }));
-    await waitFor(() =>
-      expect(screen.getByTestId('checks-rollup').textContent).toBe('1 failing · 1 running'),
-    );
+    await waitFor(() => expect(screen.getByRole('list', { name: 'Failing checks' })).toBeDefined());
+    expect(screen.getByRole('list', { name: 'Running checks' })).toBeDefined();
+    expect(screen.queryByTestId('checks-rollup')).toBeNull();
     screen.getByText('unit tests');
   });
 
@@ -238,7 +238,7 @@ describe('PrDetailPanel', () => {
   it('posts a top level comment without a parent', async () => {
     renderPanel();
     await openConversation();
-    fireEvent.change(screen.getByLabelText('Start a new thread'), {
+    fireEvent.change(screen.getByLabelText('Reply on Bitbucket'), {
       target: { value: 'Shipping this' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight, Search, SquarePen } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import {
   ROW_INTERACTIVE,
   cn,
@@ -32,7 +32,6 @@ type Props = {
   readonly chats: ReadonlyArray<ChatSummary>;
   readonly selectedId: ChatId | null;
   readonly onSelect: (chatId: ChatId) => void;
-  readonly onNew: () => void;
   readonly onArchived: (chatIds: ReadonlyArray<ChatId>) => void;
   readonly onDeleted: (chatIds: ReadonlyArray<ChatId>) => void;
 };
@@ -70,11 +69,6 @@ const rowsOf = ({ chats, now, isIdle }: RowsParams): ReadonlyArray<ChatListGroup
       time: chatRowTime({ chat, now }),
       isIdle,
       isPinned: chat.pinnedAt !== null,
-      models: chat.modelsUsed,
-      provider: chat.provider,
-      model: chat.model,
-      effort: chat.effort,
-      messageCount: chat.messageCount,
     };
   });
 
@@ -92,7 +86,6 @@ export const ChatList = ({
   chats,
   selectedId,
   onSelect,
-  onNew,
   onArchived,
   onDeleted,
 }: Props) => {
@@ -298,10 +291,6 @@ export const ChatList = ({
       ref={rootRef}
       className="@container/chat-list relative flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2"
     >
-      <Button variant="secondary" className="justify-start" onClick={onNew}>
-        <SquarePen size={ICON_SIZE.control} aria-hidden />
-        New chat
-      </Button>
       <label className="flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-faint-foreground focus-within:border-border">
         <Search size={ICON_SIZE.row} aria-hidden />
         <input

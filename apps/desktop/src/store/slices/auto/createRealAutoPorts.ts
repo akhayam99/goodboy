@@ -22,6 +22,7 @@ import type {
   StartChildTurnParams,
 } from './ports';
 import { resolveChildRouting } from './resolveChildRouting';
+import { publishScribePullRequest } from './publishScribePullRequest';
 import { makeStartAutoTurn } from './startAutoTurn';
 import { startDeliveredTurn, type ReadRunCostParams, type SleepParams } from './startDeliveredTurn';
 
@@ -79,6 +80,8 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
         sessionId: params.sessionId,
         agentId: params.childAgentId,
         content: params.text,
+        ...(params.images !== undefined &&
+          params.images.length > 0 && { storedAttachments: params.images }),
         origin: 'delegation',
         confinedRole: params.role,
         mountTarget: {
@@ -135,5 +138,7 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     },
     isRunLive: async ({ runId }) => (await deps.listLiveRunIds()).has(runId),
     readRunOutcome: ({ runId, agentId }) => readRunLedgerOutcome({ db: deps.db, runId, agentId }),
+    publishScribePullRequest: (params) =>
+      publishScribePullRequest({ getState: deps.getState, params }),
   };
 };

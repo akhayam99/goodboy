@@ -52,6 +52,7 @@ const STATUS: WorktreeStatus = {
 const BRIDGE: Readonly<Record<string, unknown>> = {
   worktree_commits: COMMITS,
   worktree_diff: '',
+  checkout_update_base: { base: 'main', checkoutBranch: 'main', commitsPulled: 2 },
   worktree_changed_files: {
     paths: ['src/importer.ts'],
     additions: 12,
@@ -293,8 +294,32 @@ export const click = async (element: HTMLElement): Promise<void> => {
   await settle();
 };
 
+const backRow = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>(
+    '[data-level-layer]:not([data-level-layer="workspace"]):not([inert]) [data-level-back] button',
+  );
+
+const LEVELS_ABOVE = 2;
+
 export const clickButton = async (name: RegExp | string): Promise<void> => {
+  for (let step = 0; step < LEVELS_ABOVE; step += 1) {
+    const [visible] = screen.queryAllByRole('button', { name });
+    const back = backRow();
+    if (visible !== undefined || back === null) {
+      break;
+    }
+    await click(back);
+  }
   await click(await screen.findByRole('button', { name }));
+};
+
+const leaveWorktreeLevel = async (): Promise<void> => {
+  const back = document.querySelector<HTMLElement>(
+    '[data-level-layer="worktree"]:not([inert]) [data-level-back] button',
+  );
+  if (back !== null) {
+    await click(back);
+  }
 };
 
 export const clickFirstButton = async (name: RegExp): Promise<void> => {
@@ -302,9 +327,54 @@ export const clickFirstButton = async (name: RegExp): Promise<void> => {
   await click(first!);
 };
 
+const sessionLevel = async (): Promise<HTMLElement> => {
+  await leaveWorktreeLevel();
+  await waitFor(() =>
+    expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull(),
+  );
+  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
+  if (level === null) {
+    throw new Error('the sidebar is not on a session level');
+  }
+  return level;
+};
+
 export const openCrumb = async (label: RegExp): Promise<void> => {
-  await clickButton(/^Session/);
-  await click(await screen.findByRole('menuitemradio', { name: label }));
+  const level = within(await sessionLevel());
+  if (label.test('Branch')) {
+    const projects = within(level.getByRole('group', { name: 'Projects' }));
+    const [first] = projects.getAllByRole('button').filter((row) => row.closest('li') !== null);
+    if (first === undefined) {
+      throw new Error('the session level lists no worktree');
+    }
+    await click(first);
+    return;
+  }
+  await click(
+    within(level.getByRole('list', { name: 'Pages' })).getByRole('button', { name: label }),
+  );
+};
+
+const worktreeLevel = async (): Promise<HTMLElement> => {
+  await openCrumb(/Branch/);
+  await waitFor(() =>
+    expect(document.querySelector('[data-level-layer="worktree"]:not([inert])')).not.toBeNull(),
+  );
+  const level = document.querySelector<HTMLElement>('[data-level-layer="worktree"]:not([inert])');
+  if (level === null) {
+    throw new Error('the sidebar is not on a worktree level');
+  }
+  return level;
+};
+
+export const openWorktreeEntry = async (name: RegExp): Promise<void> => {
+  const level = within(await worktreeLevel());
+  await click(await level.findByRole('button', { name }, WAIT));
+};
+
+export const openWorktreeMenu = async (): Promise<void> => {
+  const level = within(await worktreeLevel());
+  await click(await level.findByRole('button', { name: / actions$/ }, WAIT));
 };
 
 export const openPalette = async (label: RegExp, query?: string): Promise<void> => {
@@ -327,10 +397,12 @@ export const visible = async (role: string, name: RegExp | string): Promise<void
 
 export const heading = (name: RegExp | string): Promise<void> => visible('heading', name);
 
-export const band = async (title: string): Promise<void> => {
+export const studio = async (title: string): Promise<void> => {
   await waitFor(
     () =>
-      expect(document.querySelector(`[data-studio-band][aria-label="${title}"]`)).not.toBeNull(),
+      expect(
+        document.querySelector(`[data-studio-frame][data-studio-title="${title}"]`),
+      ).not.toBeNull(),
     WAIT,
   );
 };
@@ -347,10 +419,26 @@ export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   );
 };
 
+type PaneName = 'Explore' | 'Scripts';
+
+const PANE_KIND: Readonly<Record<PaneName, string>> = {
+  Explore: 'explore',
+  Scripts: 'scripts',
+};
+
+export const pane = (name: PaneName) => async (ctx: Ctx) => {
+  await waitFor(() => {
+    const drawer = useAppStore.getState().drawer;
+    expect(drawer?.kind).toBe(PANE_KIND[name]);
+    expect(drawer?.sessionId).toBe(ctx.sessionId);
+  }, WAIT);
+  await visible('region', name);
+};
+
 type BranchTabName = 'pr' | 'comments' | 'files' | 'commits' | 'checks';
 
 const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
-  pr: /^Overview/,
+  pr: /^Pull request/,
   comments: /^Comments/,
   files: /^Files/,
   commits: /^Commits/,
@@ -358,13 +446,14 @@ const BRANCH_TAB_LABEL: Readonly<Record<BranchTabName, RegExp>> = {
 };
 
 export const getSection = (name: RegExp): HTMLElement =>
-  within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', { name });
+  within(screen.getByRole('navigation', { name: 'Worktree' })).getByRole('button', { name });
 
 export const sectionLabels = (): ReadonlyArray<string> =>
-  within(screen.getByRole('navigation', { name: 'Sections' }))
-    .getAllByRole('button')
-    .filter((button) => button.closest('[data-slot="branch-rail-files"]') === null)
-    .map((button) => (button.textContent ?? '').replace(/[\d/-]+$/, '').trim());
+  [
+    ...screen
+      .getByRole('navigation', { name: 'Worktree' })
+      .querySelectorAll<HTMLElement>('[data-entry-label]'),
+  ].map((label) => label.textContent ?? '');
 
 export const findSection = (name: RegExp): Promise<HTMLElement> =>
   waitFor(() => getSection(name), WAIT);
@@ -418,13 +507,15 @@ type LensRow = {
 };
 
 const overviewLands = async (): Promise<void> =>
-  expect(await screen.findByTestId('context-chip')).toBeDefined();
+  expect((await screen.findByTestId('overview-title')).closest('h1')).not.toBeNull();
 
 export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },
   { label: 'Branch', lens: 'branch', lands: branchTab('pr') },
   { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
+  { label: 'Orchestrated', lens: 'orchestrated', lands: () => heading('Orchestrated') },
   { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
+  { label: 'Auto agents', lens: 'auto', lands: () => heading('Auto agents') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
   {
     label: 'Questions',
@@ -436,8 +527,6 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
       }),
     lands: () => heading('Questions'),
   },
-  { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
-  { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
 ];
 
 export const LENS_ROWS: ReadonlyArray<LensRow> = [
@@ -460,8 +549,6 @@ export const LENS_ROWS: ReadonlyArray<LensRow> = [
     seed: 'issue',
     lands: branchTab('pr'),
   },
-  { label: 'Explore', lens: 'explore', lands: () => heading('Explore') },
-  { label: 'Scripts', lens: 'scripts', lands: () => heading('Scripts') },
 ];
 
 export const openBranchFiles = async (): Promise<void> => {

@@ -40,7 +40,6 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { SETTING_AUTO_EXPERIMENT } from '../../../settings/settings';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import type { SessionSuggestion } from '../../types';
 import { NextStepSlot } from './index';
@@ -157,10 +156,9 @@ type MountParams = {
 
 const mountSlot = ({ isAutoOn, suggestion }: MountParams) => {
   suggestionState.list = [suggestion];
-  useAppStore.setState({ settings: { [SETTING_AUTO_EXPERIMENT]: isAutoOn ? 'true' : 'false' } });
   return render(
     <ToastProvider>
-      <AutoReleaseContext.Provider value>
+      <AutoReleaseContext.Provider value={isAutoOn}>
         <NextStepSlot session={SESSION} onSelectLens={vi.fn()} />
       </AutoReleaseContext.Provider>
     </ToastProvider>,
@@ -197,7 +195,7 @@ describe('the more menu of a Next card on the real store', () => {
     ]);
   });
 
-  it('keeps the other roles and drops Talk it through while the experiment is off', () => {
+  it('keeps the other roles and drops Talk it through while the release gate is closed', () => {
     spies();
     mountSlot({ isAutoOn: false, suggestion: CHECK_CHANGES });
 
@@ -306,7 +304,7 @@ describe('the more menu of a Next card on the real store', () => {
     expect(openDrawer).toHaveBeenCalledWith({
       kind: 'new',
       sessionId: SESSION_ID,
-      payload: { tab: 'agent' },
+      payload: { form: 'auto' },
     });
     expect(spawnAgent).not.toHaveBeenCalled();
   });

@@ -19,6 +19,8 @@
         "src/app/components/MockScene/scenes/u23/bitbucketSeed.ts": ["exports"],
         "src/app/components/MockScene/scenes/u23/prPageSeed.ts": ["exports"],
         "src/app/components/MockScene/scenes/u23/gitlabSeed.ts": ["exports"],
+        "src/app/components/MockScene/scenes/u25/c08RunSeed.ts": ["exports"],
+        "src/app/components/MockScene/scenes/u25/c09OrchestratedSeed.ts": ["exports"],
         "src/shared/components/Toast/toastTiming.ts": ["exports"],
         "src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": ["exports"],
         "src/features/artifacts/artifactQuestionContract.ts": ["exports"],

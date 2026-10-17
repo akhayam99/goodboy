@@ -1,33 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
-import { PaneShell } from '@goodboy/ui';
 import type { GithubInboxPrRole, PullRequestState } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
-import { StudioShell } from '../../../../../shared/components/StudioShell';
-import { groupByDay } from '../../../../../shared/utils/groupByDay';
 import { adaptGithubPrs } from '../../../../../features/inbox/adapters/github';
 import { adaptLinearIssues } from '../../../../../features/inbox/adapters/linear';
 import { InboxDetail } from '../../../../../features/inbox/components/InboxStudio/InboxDetail';
-import { InboxFacetRail } from '../../../../../features/inbox/components/InboxStudio/InboxFacetRail';
-import { InboxList } from '../../../../../features/inbox/components/InboxStudio/InboxList';
-import { InboxListHeader } from '../../../../../features/inbox/components/InboxStudio/InboxListHeader';
-import { InboxStudioLayout } from '../../../../../features/inbox/components/InboxStudio/InboxStudioLayout';
-import {
-  NO_INBOX_FILTERS,
-  activeFilterCount,
-  filterInboxRecords,
-  inboxFacetCounts,
-} from '../../../../../features/inbox/kindFilter';
 import { orderInboxRecords } from '../../../../../features/inbox/orderInboxRecords';
-import { recordCanReply } from '../../../../../features/inbox/recordCanReply';
 import type { InboxProvider, InboxRecord } from '../../../../../features/inbox/types';
 import type { GithubPrGroup } from '../../../../../features/integrations/github/components/PullRequest/useGithubPrs';
 import type { LinearIssue } from '../../../../../features/integrations/linear/client';
 import { buildIssueGroups } from '../../../../../features/integrations/linear/LinearStudio/useLinearIssues';
-import { WORKSPACE_ID, seedBoardScene } from '../BoardScene';
-import { StudioFrame } from '../StudioFrame';
-import { seedStudioChrome } from '../shellChrome';
+import { WORKSPACE_ID } from '../BoardScene';
 import { LINEAR_PICKER_ANSWERS } from '../linearPickerAnswers';
+import { TasksStage } from '../u25/c12/TasksStage';
 
 type Variant = 'issue' | 'review';
 
@@ -81,7 +65,7 @@ const linearIssue = ({ id, identifier, title, description, ago }: LinearParams):
   team: { key: 'HBL' },
   priority: 2,
   priorityLabel: 'High',
-  assignee: { name: 'Nadia Petrov' },
+  assignee: { name: 'Harborline QA' },
   project: { name: 'Payments' },
   labels: { nodes: [] },
   updatedAt: isoAgo(ago),
@@ -207,122 +191,33 @@ const recordsOf = ({ variant }: Props): ReadonlyArray<InboxRecord> =>
     : adaptGithubPrs({ groups: PR_GROUPS });
 
 export const StartInboxScene = ({ variant }: Props) => {
-  const [isReady, setIsReady] = useState(false);
-  const searchRef = useRef<HTMLInputElement | null>(null);
   const records = useMemo(() => recordsOf({ variant }), [variant]);
-
-  useEffect(() => {
-    installIpc();
-    seedBoardScene();
-    seedStudioChrome();
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return null;
-  }
-
-  const visible = filterInboxRecords({
-    records: [...records],
-    query: '',
-    filters: NO_INBOX_FILTERS,
-  });
-  const selected = visible[0] ?? null;
-
-  const facets = (
-    <InboxFacetRail
-      filters={NO_INBOX_FILTERS}
-      counts={inboxFacetCounts({
-        records: [...records],
-        query: '',
-        filters: NO_INBOX_FILTERS,
-      })}
-      connected={CONNECTED}
-      loading={NOT_LOADING}
-      errors={NO_ERRORS}
-      projects={[]}
-      canReply={recordCanReply({ record: selected })}
-      onFiltersChange={noop}
-      onClearFilters={noop}
-    />
-  );
-
-  const header = {
-    query: '',
-    onQueryChange: noop,
-    searchRef,
-    sessionLabel: null,
-    onClearSession: noop,
-    isRefreshing: false,
-    onRefresh: noop,
-    activeFilterCount: activeFilterCount({ filters: NO_INBOX_FILTERS }),
-    facets,
-  };
+  const selected = orderInboxRecords({ records })[0] ?? null;
 
   return (
-    <StudioFrame
-      target={{ place: 'inbox', tool: null }}
-      main={
-        <StudioShell
-          icon={CONCEPT_ICONS.inbox}
-          tone={CONCEPT_TONE.inbox}
-          title="Tasks"
-          closeLabel="Close tasks"
-          onClose={noop}
-        >
-          {() => (
-            <InboxStudioLayout
-              rail={facets}
-              railHeader={<InboxListHeader {...header} isRailCollapsed={false} isSearchOnly />}
-              list={({ isRailCollapsed, onDock }) => (
-                <PaneShell
-                  scroll="body"
-                  title="Tasks"
-                  meta={`${visible.length} items`}
-                  actions={
-                    <InboxListHeader
-                      {...header}
-                      isRailCollapsed={isRailCollapsed}
-                      onDock={onDock}
-                    />
-                  }
-                >
-                  <InboxList
-                    days={groupByDay({
-                      items: orderInboxRecords({ records: visible }),
-                      timestampOf: (item) => item.updatedAt,
-                      now: new Date(),
-                    })}
-                    totalCount={records.length}
-                    connectedCount={CONNECTED.length}
-                    isLoading={false}
-                    failures={[]}
-                    hasFiltersActive
-                    selectedKey={selected?.key ?? null}
-                    onSelect={noop}
-                    onRetry={noop}
-                    onOpenSettings={noop}
-                    onClearFilters={noop}
-                  />
-                </PaneShell>
-              )}
-              drawer={
-                selected === null ? null : (
-                  <InboxDetail
-                    record={selected}
-                    workspaceId={WORKSPACE_ID}
-                    rootPath={ROOT_PATH}
-                    errors={NO_ERRORS}
-                    onRefresh={noop}
-                    onClose={noop}
-                    onDeselect={noop}
-                    launchFocusRequest={0}
-                  />
-                )
-              }
-            />
-          )}
-        </StudioShell>
+    <TasksStage
+      records={records}
+      scope="all"
+      groupBy="source"
+      connected={CONNECTED}
+      selectedKey={selected?.key ?? null}
+      cursorKey={selected?.key ?? null}
+      onSeed={installIpc}
+      drawer={
+        selected === null ? null : (
+          <InboxDetail
+            record={selected}
+            workspaceId={WORKSPACE_ID}
+            rootPath={ROOT_PATH}
+            errors={NO_ERRORS}
+            onRefresh={noop}
+            onClose={noop}
+            onDeselect={noop}
+            onOpenFull={noop}
+            star={null}
+            launchFocusRequest={0}
+          />
+        )
       }
     />
   );

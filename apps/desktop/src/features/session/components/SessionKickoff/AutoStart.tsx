@@ -9,11 +9,12 @@ import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKi
 import type { PickedRoute } from '../../../../shared/components/RoutingPicker/PickedRoute';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
-import { useConfirmStartMode } from '../../../auto/useConfirmStartMode';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AutoComposerView, type AutoRoutingChoice } from '../AutoComposerView';
 import { useDraftStart } from './useDraftStart';
+import { useDraftDiscard } from './useDraftDiscard';
+import { KickoffProjects } from './KickoffProjects';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -45,7 +46,7 @@ export const AutoStart = ({ workspaceId }: Props) => {
   };
   const promptFiles = usePromptFiles({ note: 'Files go to Auto' });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
-  const confirmMode = useConfirmStartMode();
+  const { discard } = useDraftDiscard({ workspaceId });
   const limit = useAutoTreeLimit({ workspaceId });
   const goal = draft.autoGoal;
 
@@ -69,9 +70,6 @@ export const AutoStart = ({ workspaceId }: Props) => {
 
   const submit = async (): Promise<void> => {
     if (goal.trim() === '') {
-      return;
-    }
-    if (!(await confirmMode({ isShown: true }))) {
       return;
     }
     await limit.persist();
@@ -103,6 +101,8 @@ export const AutoStart = ({ workspaceId }: Props) => {
       error={error}
       onGoalChange={(next) => patchSessionDraft({ workspaceId, patch: { autoGoal: next } })}
       onSubmit={() => void submit()}
+      onDiscard={discard}
+      projects={<KickoffProjects workspaceId={workspaceId} isDisabled={isStarting} />}
     />
   );
 };

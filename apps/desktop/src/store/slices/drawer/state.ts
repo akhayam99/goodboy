@@ -1,4 +1,12 @@
-import type { AgentId, ArtifactId, FileDiff, MountId, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  FileDiff,
+  MountId,
+  OpenQuestionId,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import type { ExploreEntry } from '../../../features/explore/explore';
 import type { TerminalTabId } from '../../../shared/types/terminal';
 
@@ -8,13 +16,10 @@ export type ContextDrawerTab = 'goal' | 'decisions' | 'summary' | 'learned';
 
 export type ContextDrawerView = 'current' | 'versions';
 
-export type NewDrawerTab = 'run' | 'agent' | 'write';
-
-export type NewDrawerWriteKind = 'report' | 'wireframe';
+export type NewDrawerForm = 'run' | 'orchestrate' | 'agent' | 'auto' | 'report' | 'wireframe';
 
 export type NewDrawerPayload = {
-  readonly tab: NewDrawerTab;
-  readonly writeKind?: NewDrawerWriteKind;
+  readonly form: NewDrawerForm;
   readonly note?: string;
 };
 
@@ -41,6 +46,7 @@ export type DrawerContent =
         readonly sessionDir: string;
         readonly entry: ExploreEntry;
         readonly line?: number;
+        readonly from?: 'explore';
       };
     }
   | {
@@ -57,7 +63,19 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'scriptRun';
-      readonly payload: { readonly scriptKey: string; readonly mountId: MountId | null };
+      readonly payload: {
+        readonly scriptKey: string;
+        readonly mountId: MountId | null;
+        readonly from?: 'scripts';
+      };
+    }
+  | {
+      readonly kind: 'explore';
+      readonly payload: null;
+    }
+  | {
+      readonly kind: 'scripts';
+      readonly payload: null;
     }
   | {
       readonly kind: 'conversation';
@@ -68,12 +86,24 @@ export type DrawerContent =
       readonly payload: null;
     }
   | {
+      readonly kind: 'question';
+      readonly payload: { readonly questionId: OpenQuestionId; readonly from?: 'ask' };
+    }
+  | {
       readonly kind: 'new';
-      readonly payload: NewDrawerPayload | null;
+      readonly payload: NewDrawerPayload;
     }
   | {
       readonly kind: 'transcript';
+      readonly payload: { readonly agentId: AgentId; readonly turn?: number };
+    }
+  | {
+      readonly kind: 'auto-child';
       readonly payload: { readonly agentId: AgentId };
+    }
+  | {
+      readonly kind: 'run-step';
+      readonly payload: { readonly runId: WorkflowRunId; readonly agentId: AgentId };
     }
   | {
       readonly kind: 'fix-comments';
@@ -81,6 +111,7 @@ export type DrawerContent =
         readonly mountId: MountId | null;
         readonly focusThreadId?: string | null;
         readonly threadIds?: ReadonlyArray<string>;
+        readonly fromThreadId?: string;
       };
     }
   | {

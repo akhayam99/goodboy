@@ -1,4 +1,4 @@
-import { autoTreeCapUsd, isUsableMount, type PickableMount } from '@goodboy/core';
+import { AUTO_GATES, autoTreeCapUsd, isUsableMount, type PickableMount } from '@goodboy/core';
 import type { Database } from '@goodboy/db';
 import {
   brandId,
@@ -19,9 +19,8 @@ import { lastReplyOf } from '../session/lastReplyOf';
 import { invokeAgentList } from '../workflows/workflows';
 import { currentAutoDrivePort } from './autoDrivePort';
 import { readAutoTreeLimit } from './autoTreeLimit';
-import { readIsAutoOn } from './readIsAutoOn';
 
-const OFF_MESSAGE = 'Auto is turned off in Settings, Experiments.';
+const OFF_MESSAGE = 'Auto is not available in this build.';
 const GONE_MESSAGE = 'This agent is no longer in the session.';
 const DEFAULT_EFFORT = 'medium';
 const DEFAULT_PROVIDER = 'anthropic';
@@ -67,13 +66,12 @@ const driveAtOnce = async ({ treeId, sessionId }: DriveAtOnceParams): Promise<vo
 
 export const moveToAuto = async ({
   db = tauriDatabase,
-  isReleased,
+  isReleased = AUTO_GATES.isDelegationEnabled,
   sessionId,
   agentId,
   instruction,
 }: MoveToAutoParams): Promise<MoveToAutoResult> => {
-  const isOn = await readIsAutoOn({ db, ...(isReleased !== undefined && { isReleased }) });
-  if (!isOn) {
+  if (!isReleased) {
     return { kind: 'off', message: OFF_MESSAGE };
   }
   const state = useAppStore.getState();

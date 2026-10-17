@@ -30,8 +30,7 @@ type MsParams = {
   readonly ms: number;
 };
 
-const exactActiveTime = ({ ms }: MsParams): string =>
-  ms < 1_000 ? '0s' : formatDuration({ durationMs: ms });
+const exactActiveTime = ({ ms }: MsParams): string => formatDuration({ durationMs: ms }) ?? '';
 
 export const formatActiveTime = ({ ms }: MsParams): string => exactActiveTime({ ms });
 

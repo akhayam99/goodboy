@@ -6,10 +6,11 @@ type Props = {
   readonly targets: ReadonlyArray<TerminalTarget>;
   readonly label: string;
   readonly valueLabel: ReactNode;
+  readonly disabledReason?: string;
   readonly onPick: (target: TerminalTarget) => void;
 };
 
-export const TargetPicker = ({ targets, label, valueLabel, onPick }: Props) => {
+export const TargetPicker = ({ targets, label, valueLabel, disabledReason, onPick }: Props) => {
   const options: ReadonlyArray<ListboxOption<string>> = targets.map((target) => ({
     value: target.key,
     label: target.label,
@@ -24,8 +25,8 @@ export const TargetPicker = ({ targets, label, valueLabel, onPick }: Props) => {
       size="sm"
       ariaLabel={label}
       valueLabel={valueLabel}
-      align="end"
       popupWidth="content"
+      {...(disabledReason === undefined ? {} : { disabled: true, disabledReason })}
       onChange={(key) => {
         const target = targets.find((candidate) => candidate.key === key);
         if (target !== undefined) {

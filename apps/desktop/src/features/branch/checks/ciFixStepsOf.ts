@@ -7,7 +7,7 @@ export type CiFixStep = {
   readonly agent: Agent | null;
   readonly isRunning: boolean;
   readonly detail: string;
-  readonly tone: 'success' | 'warning' | 'danger' | 'neutral';
+  readonly tone: 'success' | 'warning' | 'danger' | 'neutral' | 'info';
 };
 
 type Params = {
@@ -35,7 +35,7 @@ type StepParams = {
 
 const firstStepOf = ({ chain, hasFixLanded }: StepParams) => {
   if (chain.state === 'analyzing') {
-    return { name: 'Analyze', detail: 'Running', tone: 'warning' as const };
+    return { name: 'Analyze', detail: 'Running', tone: 'info' as const };
   }
   if (chain.state === 'no-fix' && !chain.isDismissed) {
     return { name: 'Analyze', detail: 'No fix proposed', tone: 'neutral' as const };
@@ -60,7 +60,7 @@ const fixStepOf = ({ chain, hasFixLanded }: StepParams) => {
     return { detail: 'Done', tone: 'success' as const };
   }
   if (chain.state === 'fixing') {
-    return { detail: 'Running', tone: 'warning' as const };
+    return { detail: 'Running', tone: 'info' as const };
   }
   return { detail: 'Stopped', tone: 'danger' as const };
 };

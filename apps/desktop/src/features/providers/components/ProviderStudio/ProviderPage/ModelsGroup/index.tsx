@@ -15,6 +15,8 @@ import { PinnedCount } from './PinnedCount';
 
 const LAST_VISIBLE_COPY = 'At least one model stays visible';
 
+const HIDDEN_LEGEND = 'A version with an eye is hidden.';
+
 type Props = {
   readonly providerId: ProviderId;
   readonly workspaceId: WorkspaceId | null;
@@ -85,7 +87,7 @@ export const ModelsGroup = ({ providerId, workspaceId, isFocused }: Props) => {
       <Band
         label="Models in the picker"
         ariaLabel="Models in the picker"
-        hint={HIDDEN_MODELS_LINE}
+        hint={`${HIDDEN_LEGEND} ${HIDDEN_MODELS_LINE}`}
         action={
           <div className="flex items-center gap-2">
             {workspaceId === null ? null : (
@@ -139,6 +141,7 @@ export const ModelsGroup = ({ providerId, workspaceId, isFocused }: Props) => {
                       key={model.key}
                       label={versionLabel(model)}
                       active={isVisible}
+                      isHiddenInPicker={!isVisible}
                       disabled={isLastVisible}
                       {...(isLastVisible && { title: LAST_VISIBLE_COPY })}
                       onSelect={() => setVisible([model.key], !isVisible)}

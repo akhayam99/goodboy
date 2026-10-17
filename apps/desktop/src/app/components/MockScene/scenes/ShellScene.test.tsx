@@ -34,44 +34,50 @@ afterEach(() => {
 const pageRow = (label: string): HTMLElement => {
   const row = screen
     .getAllByRole('button')
-    .find((button) => button.textContent?.trim().startsWith(label) === true);
+    .find((button) =>
+      (button.getAttribute('aria-label') ?? button.textContent ?? '').trim().startsWith(label),
+    );
   if (row === undefined) {
     throw new Error(`no ${label} row in the column`);
   }
   return row;
 };
 
-const trailSegments = (): ReadonlyArray<string> =>
-  [...document.querySelectorAll<HTMLElement>('[data-trail-segment]')].map(
-    (segment) => segment.dataset['trailSegment'] ?? '',
-  );
-
 const renderShell = async () => {
   render(<ShellScene />);
-  await screen.findByTestId('ask-trail-button');
+  await screen.findByTestId('pane-toggle-ask');
 };
 
 describe('the shell scene mounts the real session workspace', () => {
-  it('shows the trail band with Ask over the open session', async () => {
+  it('opens the step of its preset run on the run level, with Ask and no trail band', async () => {
     await renderShell();
-    expect(document.querySelector('[data-slot="trail-bar"]')).not.toBeNull();
-    expect(trailSegments()[0]).toBe('overview');
+    expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
+    expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
+      'run',
+    );
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 
-  it('moves to Branch, Runs, Agents and Artifacts from the column', async () => {
+  it('moves to Runs, Agents and Artifacts from the session level', async () => {
     await renderShell();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to Runs' }));
+    });
+    await waitFor(() =>
+      expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
+        'session',
+      ),
+    );
     const moves: ReadonlyArray<readonly [string, string]> = [
-      ['Branch', 'branch'],
-      ['Runs', 'lens-workflows'],
-      ['Agents', 'lens-agents'],
-      ['Artifacts', 'lens-plans'],
+      ['Runs', 'workflows'],
+      ['Agents', 'agents'],
+      ['Artifacts', 'plans'],
     ];
-    for (const [label, segment] of moves) {
+    for (const [label, lens] of moves) {
       act(() => {
         fireEvent.click(pageRow(label));
       });
-      await waitFor(() => expect(trailSegments()).toContain(segment));
+      await waitFor(() => expect(useAppStore.getState().activeLens[SESSION.id]).toBe(lens));
     }
   });
 
@@ -88,6 +94,6 @@ describe('the shell scene mounts the real session workspace', () => {
     });
     await waitFor(() => expect(document.querySelector('[data-settings-column]')).toBeNull());
     expect(useAppStore.getState().appStudio).toBeNull();
-    expect(screen.getByTestId('ask-trail-button')).toBeDefined();
+    expect(screen.getByTestId('pane-toggle-ask')).toBeDefined();
   });
 });

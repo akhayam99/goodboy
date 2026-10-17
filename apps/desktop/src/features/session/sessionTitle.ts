@@ -38,5 +38,3 @@ export const sessionRowTitle = ({ session, tasks }: DisplayParams): SessionRowTi
   }
   return rest.trim() === '' ? { keys: [], title: full } : { keys, title: rest };
 };
-
-export const sessionDisplayTitle = (params: DisplayParams): string => sessionRowTitle(params).title;

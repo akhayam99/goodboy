@@ -32,7 +32,7 @@ type ArtifactStateKey =
   | 'deleted'
   | 'new';
 
-export type ArtifactGroup = 'needs' | 'ready' | 'running' | 'ran' | 'deleted';
+export type ArtifactGroup = 'needs' | 'ready' | 'running' | 'consumed' | 'deleted';
 
 export type ArtifactState = StatePresentation & {
   readonly key: ArtifactStateKey;
@@ -89,7 +89,7 @@ const ARTIFACT_STATE_PRESENTATION = {
     reason: 'Every part is done',
     tone: 'success',
     icon: CONCEPT_ICONS.runDone,
-    group: 'ran',
+    group: 'consumed',
   },
   partly: {
     key: 'partly',
@@ -121,7 +121,7 @@ const ARTIFACT_STATE_PRESENTATION = {
     reason: 'A newer revision exists',
     tone: 'neutral',
     icon: CircleMinus,
-    group: 'ran',
+    group: 'consumed',
   },
   deleted: {
     key: 'deleted',

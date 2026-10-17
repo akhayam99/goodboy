@@ -140,7 +140,7 @@ export const seedResolveDriftScene = (): void => {
       gitState: 'fixed_elsewhere',
       elsewhere: {
         sha: ELSEWHERE_SHA,
-        author: 'Theo Varga',
+        author: 'Northwind Ops',
         handle: 'tvarga',
         subject: 'Emit the give-up metric with its reason',
         committedAt: now - 22 * MINUTE_MS,

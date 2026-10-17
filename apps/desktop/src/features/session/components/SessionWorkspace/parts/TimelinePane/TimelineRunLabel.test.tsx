@@ -174,7 +174,7 @@ describe('TimelineRunLabel', () => {
     expect(glyphTip({ name: LABEL_OF.orchestrator })).toBe(LABEL_OF.orchestrator);
   });
 
-  it('says which step needs an answer when one of its steps asks', () => {
+  it('leaves a step that asks to the Needs you block and its marker, with no word on the row', () => {
     render(
       <Label
         entry={entryOf({
@@ -186,29 +186,9 @@ describe('TimelineRunLabel', () => {
       />,
     );
 
-    const state = screen.getByTestId('timeline-row-state');
-    expect(state.className).toContain('text-warning');
-    expect(tooltipTextOf({ element: state })).toBe('Needs your answer in step 2');
-    expect(screen.getByText('Needs your answer in step 2').className).toContain('sr-only');
-    expect(screen.getByText('Needs you').getAttribute('aria-hidden')).toBe('true');
-  });
-
-  it('names the step of the oldest open question, nested steps included', () => {
-    render(
-      <Label
-        entry={entryOf({
-          children: [
-            stepOf({ stepLabel: '5', questionAt: '2026-08-18T11:00:00Z' }),
-            stepOf({
-              stepLabel: '4',
-              children: [stepOf({ stepLabel: '4.2', questionAt: '2026-08-18T10:00:00Z' })],
-            }),
-          ],
-        })}
-      />,
-    );
-
-    expect(screen.getByText('Needs your answer in step 4.2')).toBeDefined();
+    expect(screen.queryByTestId('timeline-row-state')).toBeNull();
+    expect(screen.queryByText('Needs you')).toBeNull();
+    expect(screen.queryByText('Needs your answer in step 2')).toBeNull();
   });
 
   it('stays quiet about answers when no step asks anything', () => {

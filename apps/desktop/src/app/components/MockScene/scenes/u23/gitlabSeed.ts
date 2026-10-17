@@ -41,11 +41,11 @@ const MR_BODY = [
   '- Drop the `seenEvents` read from the hot path',
 ].join('\n');
 
-const NADIA = { id: 3, username: 'nadia-p', name: 'Nadia Petrova', avatarUrl: null };
-const OMAR = { id: 4, username: 'omar-t', name: 'Omar Tan', avatarUrl: null };
-const KENJI = { id: 7, username: 'kenji-w', name: 'Kenji Watanabe', avatarUrl: null };
-const PRIYA = { id: 8, username: 'priya-n', name: 'Priya Nair', avatarUrl: null };
-const MARA = { id: 9, username: 'mara-q', name: 'Mara Quinn', avatarUrl: null };
+const NADIA = { id: 3, username: 'nadia-p', name: 'Harborline Dev', avatarUrl: null };
+const OMAR = { id: 4, username: 'omar-t', name: 'Northwind QA', avatarUrl: null };
+const KENJI = { id: 7, username: 'kenji-w', name: 'Acme Lead', avatarUrl: null };
+const PRIYA = { id: 8, username: 'priya-n', name: 'Cascadia Ops', avatarUrl: null };
+const MARA = { id: 9, username: 'mara-q', name: 'Acme Docs', avatarUrl: null };
 
 const MOUNT: SessionProjectMount = {
   mountId: MOUNT_ID,
@@ -106,21 +106,21 @@ const COMMITS: ReadonlyArray<GitlabMrCommit> = [
     id: 'a41c9e2b7d3f',
     shortId: 'a41c9e2b',
     title: 'Drop the seenEvents read',
-    authorName: 'Nadia Petrova',
+    authorName: 'Harborline Dev',
     committedDate: isoAgo({ minutes: 3 * DAY }),
   },
   {
     id: '9f13a7be2c5d',
     shortId: '9f13a7be',
     title: 'Answer 200 for a seen event',
-    authorName: 'Nadia Petrova',
+    authorName: 'Harborline Dev',
     committedDate: isoAgo({ minutes: 11 * DAY - 90 }),
   },
   {
     id: '6c20f48a9e1c',
     shortId: '6c20f48a',
     title: 'Key the credit guard on the event id',
-    authorName: 'Nadia Petrova',
+    authorName: 'Harborline Dev',
     committedDate: isoAgo({ minutes: 11 * DAY }),
   },
 ];

@@ -6,19 +6,6 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-const experiment = vi.hoisted(() => ({ isOn: false }));
-
-vi.mock('../../../auto/useIsAutoOn', () => ({
-  useIsAutoOn: () => experiment.isOn,
-}));
-
-vi.mock('../../../auto/useConfirmStartMode', () => ({
-  useConfirmStartMode:
-    () =>
-    async ({ isShown }: { readonly isShown: boolean }) =>
-      experiment.isOn === isShown,
-}));
-
 vi.mock('../../../auto/useAutoTreeLimit', () => ({
   useAutoTreeLimit: () => ({
     usd: 5,
@@ -51,7 +38,6 @@ import {
 import type { AppStore } from '../../../../store/store';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { WritePanel } from '../../../artifacts/components/WritePanel';
-import { writeLastWorkflowMode } from '../../../workflows/components/WorkflowBuilderView/lastWorkflowMode';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import {
   WORKSPACE_ID,
@@ -102,7 +88,6 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   seedBoardScene();
-  experiment.isOn = false;
   const first = useAppStore.getState().sessions[0];
   if (first === undefined) {
     throw new Error('the board seed has no session');
@@ -131,7 +116,6 @@ beforeEach(async () => {
     createSession,
     spawnAgent,
   });
-  writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode: 'dynamic' });
 });
 
 afterEach(() => {
@@ -146,16 +130,17 @@ const settle = async (): Promise<void> => {
 };
 
 type OpenPageParams = {
-  readonly choice: 'task' | 'workflow' | 'scout';
+  readonly choice: 'task' | 'workflow' | 'orchestrate' | 'scout';
+  readonly isAuto?: boolean;
 };
 
-const openPage = async ({ choice }: OpenPageParams): Promise<void> => {
+const openPage = async ({ choice, isAuto }: OpenPageParams): Promise<void> => {
   useAppStore.getState().navigate({ to: sessionPlace({ sessionId: cameFrom.id }) });
   useAppStore.getState().openSessionDraft();
   useAppStore.getState().patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { choice } });
   render(
     <ToastProvider>
-      <SessionDraftPane workspaceId={WORKSPACE_ID} />
+      <SessionDraftPane workspaceId={WORKSPACE_ID} {...(isAuto !== undefined && { isAuto })} />
     </ToastProvider>,
   );
   await settle();
@@ -170,7 +155,7 @@ const textBox = (name: string): HTMLTextAreaElement => {
 };
 
 const startButton = (): HTMLButtonElement => {
-  const element = screen.getByRole('button', { name: /start run/i });
+  const element = screen.getByRole('button', { name: /start (run|orchestration)/i });
   if (!(element instanceof HTMLButtonElement)) {
     throw new Error('Expected a button');
   }
@@ -190,6 +175,7 @@ describe('New session page, selector', () => {
     expect(tabs.getAllByRole('tab').map((node) => node.textContent)).toEqual([
       'Pick up a task',
       'Run a workflow',
+      'Orchestrate',
       'Ask an agent',
     ]);
     expect(screen.getByText('Several agents work through your goal, step by step.')).toBeDefined();
@@ -203,16 +189,15 @@ describe('New session page, selector', () => {
     expect(screen.getByText('Start from an issue in your tracker.')).toBeDefined();
   });
 
-  it('keeps Start blank in the header and shows Discard draft only once something is written', async () => {
+  it('keeps Start blank in the header and Discard in the actions row once something is written', async () => {
     await openPage({ choice: 'workflow' });
 
     expect(screen.getByRole('button', { name: /start blank/i })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
 
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
 
-    expect(screen.getAllByRole('button', { name: 'Discard draft' })).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Discard workflow draft' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Discard' })).toHaveLength(1);
   });
 });
 
@@ -222,7 +207,7 @@ describe('New session page, Run lane', () => {
       <ToastProvider>
         <NewDrawer
           sessionId={cameFrom.id}
-          payload={{ tab: 'run' }}
+          payload={{ form: 'orchestrate' }}
           writePanel={WritePanel}
           onClose={vi.fn()}
         />
@@ -236,7 +221,7 @@ describe('New session page, Run lane', () => {
     attach.mockClear();
     await settle();
 
-    await openPage({ choice: 'workflow' });
+    await openPage({ choice: 'orchestrate' });
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
     fireEvent.click(startButton());
     await waitFor(() => expect(attach).toHaveBeenCalledOnce());
@@ -249,18 +234,17 @@ describe('New session page, Run lane', () => {
   });
 
   it('blocks the start with Preset when the spend cap is switched on and left empty', async () => {
-    writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode: 'preset' });
     await openPage({ choice: 'workflow' });
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
     fireEvent.click(screen.getByRole('button', { name: /^preset:/i }));
     fireEvent.click(screen.getByRole('option', { name: /scout, plan, build/i }));
     expect(startButton().disabled).toBe(false);
 
-    fireEvent.click(screen.getByRole('button', { name: /^spend cap:/i }));
-    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^limit:/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
 
     expect(startButton().disabled).toBe(true);
-    expect(screen.getByText('Enter a valid spend cap to start')).toBeDefined();
+    expect(screen.getByText('Enter a valid limit to start')).toBeDefined();
     fireEvent.click(startButton());
     await settle();
     expect(createSession).not.toHaveBeenCalled();
@@ -268,14 +252,13 @@ describe('New session page, Run lane', () => {
   });
 
   it('carries a valid spend cap onto a started preset', async () => {
-    writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode: 'preset' });
     await openPage({ choice: 'workflow' });
     fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
     fireEvent.click(screen.getByRole('button', { name: /^preset:/i }));
     fireEvent.click(screen.getByRole('option', { name: /scout, plan, build/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^spend cap:/i }));
-    fireEvent.click(screen.getByRole('switch', { name: /spend cap/i }));
-    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '9' } });
+    fireEvent.click(screen.getByRole('button', { name: /^limit:/i }));
+    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
+    fireEvent.change(screen.getByLabelText('Limit in dollars'), { target: { value: '9' } });
 
     fireEvent.click(startButton());
 
@@ -284,8 +267,8 @@ describe('New session page, Run lane', () => {
   });
 });
 
-describe('New session page, Agent (experiment off)', () => {
-  it('is the agent start of today, with the role and no Auto', async () => {
+describe('New session page, Ask an agent', () => {
+  it('opens the role start with Auto always available, with the role and no Auto', async () => {
     await openPage({ choice: 'scout' });
 
     expect(textBox('Scout focus')).toBeDefined();
@@ -306,9 +289,8 @@ describe('New session page, Agent (experiment off)', () => {
   });
 });
 
-describe('New session page, Agent (experiment on)', () => {
+describe('New session page, Ask an agent drawn as the Auto composer', () => {
   beforeEach(() => {
-    experiment.isOn = true;
     useAppStore.setState({
       providers: [
         {
@@ -332,28 +314,28 @@ describe('New session page, Agent (experiment on)', () => {
       .getState()
       .patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { agentPrompt: GOAL } });
 
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
 
     expect(textBox('Describe the work').value).toBe(GOAL);
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.agentPrompt).toBe('');
   });
 
-  it('is the Auto composer: one goal, one model chip, no roles and no project field', async () => {
-    await openPage({ choice: 'scout' });
+  it('is the Auto composer: one goal, Projects, one model chip and no roles', async () => {
+    await openPage({ choice: 'scout', isAuto: true });
 
     expect(
       screen.getByText('Auto answers, or hands the work to the roles it picks.'),
     ).toBeDefined();
     expect(screen.getByRole('region', { name: 'Auto' })).toBeDefined();
-    expect(screen.queryByText('Experimental')).toBeNull();
+    expect(screen.getByText('Experimental')).toBeDefined();
     expect(screen.queryByText('It may not work well yet.')).toBeNull();
-    expect(screen.getByRole('button', { name: /auto model/i })).toBeDefined();
-    expect(screen.queryByRole('combobox', { name: /project/i })).toBeNull();
+    expect(screen.getAllByRole('button', { name: /^Model:/ })).toHaveLength(1);
+    expect(screen.getByRole('combobox', { name: 'Project' })).toBeDefined();
     expect(screen.queryByText(/guidance/i)).toBeNull();
   });
 
   it('keeps Start Auto disabled until the work is described', async () => {
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
 
     const start = screen.getByRole('button', { name: 'Start Auto' });
     expect(start).toHaveProperty('disabled', true);
@@ -362,7 +344,7 @@ describe('New session page, Agent (experiment on)', () => {
   });
 
   it('creates the session and starts Auto with the goal on the auto agent', async () => {
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
@@ -381,7 +363,7 @@ describe('New session page, Agent (experiment on)', () => {
 
   it('keeps the goal and shows the error when the start fails', async () => {
     createSession.mockRejectedValueOnce(new Error('disk full'));
-    await openPage({ choice: 'scout' });
+    await openPage({ choice: 'scout', isAuto: true });
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
@@ -390,16 +372,16 @@ describe('New session page, Agent (experiment on)', () => {
     expect(spawnAgent).not.toHaveBeenCalled();
     expect(textBox('Describe the work').value).toBe(GOAL);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
   });
 
   it('counts the Auto goal as a draft, so Discard draft appears and clears it', async () => {
-    await openPage({ choice: 'scout' });
-    expect(screen.queryByRole('button', { name: 'Discard draft' })).toBeNull();
+    await openPage({ choice: 'scout', isAuto: true });
+    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
 
     fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
-    fireEvent.click(screen.getByRole('button', { name: 'Discard draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     await settle();
 
     expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toBeUndefined();

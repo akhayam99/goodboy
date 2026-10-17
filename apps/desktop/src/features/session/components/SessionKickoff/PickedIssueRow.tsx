@@ -9,7 +9,7 @@ type Props = {
 };
 
 export const PickedIssueRow = ({ candidate, isBranchNamer, onRemove }: Props) => (
-  <li className="flex min-h-7 items-center gap-2 px-1">
+  <li className="flex min-h-7 items-center gap-2">
     <span className="shrink-0 text-meta text-muted-foreground tabular-nums">
       {candidate.identifier}
     </span>

@@ -85,6 +85,7 @@ import { seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene
 import { ReportSheetHost } from '../../features/bug-report/components/ReportSheetHost';
 import { openReportSheet } from '../../features/bug-report/openReportSheet';
 import { LastCrashBridge } from '../../features/bug-report/components/LastCrashBridge';
+import { ReportBugButton } from '../../app/components/SideColumn/ReportBugButton';
 
 const MAC_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15';
 
@@ -170,6 +171,30 @@ describe('report sheet on the real store', () => {
     for (const chip of ['0.12.0 · 7f3a2c1', 'macOS 26.0 arm64', 'Board']) {
       expect(within(sheet).getByText(chip)).toBeDefined();
     }
+  });
+
+  it('opens beside the bug icon when the icon is on screen, centred otherwise', async () => {
+    const { unmount } = render(
+      <ToastProvider>
+        <ReportBugButton />
+        <ReportSheetHost />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Report a bug' }));
+    const beside = await screen.findByRole('dialog', { name: 'Report a bug' });
+    expect(beside.closest('[data-report-placement]')?.getAttribute('data-report-placement')).toBe(
+      'beside-trigger',
+    );
+    unmount();
+
+    mount();
+    act(() => {
+      openReportSheet();
+    });
+    const centred = await screen.findByRole('dialog', { name: 'Report a bug' });
+    expect(centred.closest('[data-report-placement]')?.getAttribute('data-report-placement')).toBe(
+      'centered',
+    );
   });
 
   it('sends one line with command enter through gh and links the issue in the toast', async () => {

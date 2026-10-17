@@ -19,6 +19,7 @@ export type DeliveryRow = Readonly<{
 export type BuildDeliveryParams = Readonly<{
   ledgerBlock: string;
   budgetLine: string;
+  mountsLine: string;
   digestBlock: string;
   artifactsBlock: string;
   rows: ReadonlyArray<DeliveryRow>;
@@ -135,6 +136,7 @@ const userBlock = ({ payloads }: UserBlockParams): string | null => {
 export const buildDeliveryText = ({
   ledgerBlock,
   budgetLine,
+  mountsLine,
   digestBlock,
   artifactsBlock,
   rows,
@@ -166,6 +168,7 @@ export const buildDeliveryText = ({
     isRestart ? AUTO_RESTART_NOTICE : null,
     ledgerBlock,
     budgetLine,
+    mountsLine,
     digestBlock,
     refusalsBlock({ payloads: refusals }),
     resultsBlock({ payloads: results }),

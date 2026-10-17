@@ -1,5 +1,11 @@
 import { brandId, type AgentId, type AutoTreeId, type SessionId } from '@goodboy/types';
 import type { Database, GuardedStatement } from '../client';
+import {
+  AUTO_USD_EPSILON,
+  autoReservedUsdSql,
+  autoSettledUsdSql,
+  readAutoTreeSpend,
+} from './auto-reservations';
 
 export const AUTO_PHASES = [
   'answering',
@@ -8,6 +14,7 @@ export const AUTO_PHASES = [
   'waiting',
   'merging',
   'done',
+  'finished',
   'blocked',
   'stopping',
   'stopped',
@@ -32,7 +39,7 @@ export type AutoTree = Readonly<{
   activeDeliveryId: string | null;
   isYieldRequested: boolean;
   stopState: AutoStopState;
-  capUsd: number;
+  capUsd: number | null;
   turnsUsed: number;
   delegationsUsed: number;
   attemptsUsed: number;
@@ -61,7 +68,7 @@ type TreeRow = {
   readonly active_delivery_id: string | null;
   readonly is_yield_requested: number;
   readonly stop_state: string;
-  readonly cap_usd: number;
+  readonly cap_usd: number | null;
   readonly turns_used: number;
   readonly delegations_used: number;
   readonly attempts_used: number;
@@ -187,7 +194,7 @@ export const listAutoTreesToRecover = async ({
 }: ListAutoTreesToRecoverParams): Promise<ReadonlyArray<AutoTree>> => {
   const rows = await db.select<TreeRow>(
     `${TREE_SELECT}
-     WHERE phase NOT IN ('answering', 'done', 'stopped') OR stop_state IN ('requested', 'confirming')
+     WHERE phase NOT IN ('answering', 'done', 'finished', 'stopped') OR stop_state IN ('requested', 'confirming')
      ORDER BY created_at`,
   );
   return rows.map((row) => toTree({ row }));
@@ -506,10 +513,16 @@ export const recordAutoRefusal = async ({
 type SetAutoTreeCapParams = {
   readonly db: Database;
   readonly treeId: AutoTreeId;
-  readonly expectedCapUsd: number;
-  readonly capUsd: number;
+  readonly expectedCapUsd: number | null;
+  readonly capUsd: number | null;
   readonly nowMs: number;
 };
+
+export type SetAutoTreeCapOutcome =
+  | Readonly<{ kind: 'applied' }>
+  | Readonly<{ kind: 'stale'; capUsd: number | null }>
+  | Readonly<{ kind: 'below_used'; usedUsd: number }>
+  | Readonly<{ kind: 'missing' }>;
 
 export const setAutoTreeCapIfUnchanged = async ({
   db,
@@ -517,11 +530,51 @@ export const setAutoTreeCapIfUnchanged = async ({
   expectedCapUsd,
   capUsd,
   nowMs,
-}: SetAutoTreeCapParams): Promise<boolean> => {
+}: SetAutoTreeCapParams): Promise<SetAutoTreeCapOutcome> => {
+  const usedSql = `${autoSettledUsdSql({ treeRef: 'auto_trees.id' })} + ${autoReservedUsdSql({ treeRef: 'auto_trees.id' })}`;
   const result = await db.execute(
-    `UPDATE auto_trees SET cap_usd = ?, phase_rev = phase_rev + 1, updated_at = ?
-     WHERE id = ? AND cap_usd = ?`,
-    [capUsd, nowMs, treeId, expectedCapUsd],
+    `UPDATE auto_trees SET cap_usd = ?, updated_at = ?
+     WHERE id = ? AND cap_usd IS ? AND (? IS NULL OR ? + ${AUTO_USD_EPSILON} >= ${usedSql})`,
+    [capUsd, nowMs, treeId, expectedCapUsd, capUsd, capUsd],
+  );
+  if (result.rowsAffected === 1) {
+    return { kind: 'applied' };
+  }
+  const spend = await readAutoTreeSpend({ db, treeId });
+  if (spend === null) {
+    return { kind: 'missing' };
+  }
+  if (spend.capUsd !== expectedCapUsd) {
+    return { kind: 'stale', capUsd: spend.capUsd };
+  }
+  return { kind: 'below_used', usedUsd: spend.settledUsd + spend.reservedUsd };
+};
+
+export const AUTO_RESTING_PHASES = ['answering', 'done', 'finished'] as const;
+
+export type AutoRestingPhase = (typeof AUTO_RESTING_PHASES)[number];
+
+type MoveRestingParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+  readonly from: AutoRestingPhase;
+  readonly to: AutoRestingPhase;
+  readonly nowMs: number;
+};
+
+export const moveRestingAutoTree = async ({
+  db,
+  treeId,
+  from,
+  to,
+  nowMs,
+}: MoveRestingParams): Promise<boolean> => {
+  const result = await db.execute(
+    `UPDATE auto_trees SET phase = ?, phase_rev = phase_rev + 1, updated_at = ?
+     WHERE id = ? AND phase = ? AND stop_state = 'none' AND active_run_id IS NULL
+       AND NOT EXISTS (SELECT 1 FROM auto_delegations
+         WHERE tree_id = auto_trees.id AND state <> 'settled')`,
+    [to, nowMs, treeId, from],
   );
   return result.rowsAffected === 1;
 };

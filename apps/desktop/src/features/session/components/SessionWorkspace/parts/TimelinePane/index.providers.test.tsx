@@ -229,7 +229,7 @@ afterEach(cleanup);
 
 describe('TimelinePane, provider icon on agent rows', () => {
   it('shows a faint glyph and names the provider on a planned workflow step agent', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     fireEvent.click(screen.getByRole('button', { name: /2 steps/ }));
 
     const row = rowOf({ name: 'Step 1' });
@@ -241,7 +241,7 @@ describe('TimelinePane, provider icon on agent rows', () => {
   });
 
   it('keeps the glyph on the right, after the agent name, on a solo agent row', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     const row = rowOf({ name: 'Solo cursor' });
     const glyph = slotIn({ row });
@@ -256,19 +256,19 @@ describe('TimelinePane, provider icon on agent rows', () => {
   });
 
   it('puts the provider name in the accessible name of the row button', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     screen.getByRole('button', { name: /Solo cursor.*Cursor/ });
   });
 
   it('leaves no icon and no empty slot for an agent with no provider', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(slotIn({ row: rowOf({ name: 'Solo unrouted' }) })).toBeNull();
   });
 
   it('shows the glyph on the subagent rows once the group opens', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     fireEvent.click(screen.getByRole('button', { name: /3 subagents/ }));
 
     expect(providerNameIn({ row: rowOf({ name: 'Scout part 1' }) })).toBe('OpenCode');
@@ -277,7 +277,7 @@ describe('TimelinePane, provider icon on agent rows', () => {
   });
 
   it('shows no glyph on a run row, which is not an agent', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     const run = document.querySelector('[data-row-id^="run:"]');
 

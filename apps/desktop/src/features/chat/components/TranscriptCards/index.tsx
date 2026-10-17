@@ -18,6 +18,7 @@ import { PermissionDecisionCard } from '../../../../features/permissions/compone
 import { ToolCallCard } from '../ToolCallCard';
 import { TurnFooter } from '../TurnFooter';
 import { AssistantText } from './AssistantText';
+import { AutoDeliveryRow } from './AutoDeliveryRow';
 import { DecisionNoteRow } from './DecisionNoteRow';
 import { StoppedProcessesLine } from './StoppedProcessesLine';
 import { TranscriptErrorRow } from './TranscriptErrorRow';
@@ -38,6 +39,7 @@ type TranscriptCardProps = {
   readonly permission?: PermissionState;
   readonly turnOutcome?: TurnOutcome;
   readonly turnStartedAt?: IsoDateTime | null;
+  readonly isBrief?: boolean;
 };
 
 const TranscriptCardImpl = ({
@@ -54,6 +56,7 @@ const TranscriptCardImpl = ({
   permission,
   turnOutcome,
   turnStartedAt,
+  isBrief = false,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
@@ -62,17 +65,24 @@ const TranscriptCardImpl = ({
           text={item.text}
           at={item.at}
           attachments={item.attachments}
-          provider={item.provider}
-          model={item.model}
           sentVia={item.sentVia}
           workingDir={workingDir}
           sessionId={sessionId}
           agentId={agentId}
+          isBrief={isBrief}
         />
       );
+    case 'auto_delivery':
+      return <AutoDeliveryRow text={item.text} />;
     case 'handoff':
       return (
-        <HandoffBlock item={item} sessionId={sessionId} agentId={agentId} workingDir={workingDir} />
+        <HandoffBlock
+          item={item}
+          sessionId={sessionId}
+          agentId={agentId}
+          workingDir={workingDir}
+          isBrief={isBrief}
+        />
       );
     case 'assistant_text':
       return <AssistantText text={item.text} sessionId={sessionId} agentId={agentId} />;
@@ -180,5 +190,6 @@ export const TranscriptCard = memo(
     prev.permission?.requested === next.permission?.requested &&
     prev.permission?.decision === next.permission?.decision &&
     prev.turnOutcome === next.turnOutcome &&
-    prev.turnStartedAt === next.turnStartedAt,
+    prev.turnStartedAt === next.turnStartedAt &&
+    prev.isBrief === next.isBrief,
 );

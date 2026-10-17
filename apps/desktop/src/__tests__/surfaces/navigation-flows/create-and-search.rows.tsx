@@ -7,12 +7,12 @@ import {
   type Ctx,
   type Row,
   WAIT,
-  band,
+  studio,
   both,
   branchTab,
   click,
   clickButton,
-  clickFirstButton,
+  openWorktreeEntry,
   heading,
   lens,
   openBranchFiles,
@@ -166,7 +166,7 @@ const SEARCH_JUMPS: ReadonlyArray<{
       const first = workspaceId === null ? undefined : state.phaseTemplates[workspaceId]?.[0];
       return { kind: 'workflow', sessionId: null, refId: first?.id ?? 'workflow-none' };
     },
-    lands: () => band('Workflows'),
+    lands: () => studio('Workflows'),
   },
   {
     kind: 'branch',
@@ -177,9 +177,9 @@ const SEARCH_JUMPS: ReadonlyArray<{
 
 export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'mount row: changes to the mount diff',
-    covers: ['openMountDiff'],
-    open: () => clickFirstButton(/^View the changes of /),
+    name: 'worktree level: the Files entry opens the branch diff',
+    covers: ['lens:branch'],
+    open: () => openWorktreeEntry(/^Files/),
     lands: branchTab('files'),
   },
   ...(['Report', 'Wireframe'] as const).map((kind): Row => ({
@@ -194,17 +194,23 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
       await settle();
     },
     lands: async () => {
-      const drawer = await screen.findByRole('region', { name: 'New' });
-      expect(within(drawer).getByRole('tab', { name: kind, selected: true })).toBeDefined();
+      const drawer = await screen.findByRole('region', {
+        name: kind === 'Report' ? 'Write a report' : 'Draw a wireframe',
+      });
+      expect(within(drawer).getByTestId('artifact-brief')).toBeDefined();
     },
   })),
   {
-    name: 'overview: New opens the drawer on its Run tab',
+    name: 'overview: New opens its menu, and Run a workflow opens that form in the drawer',
     covers: ['overview.new'],
-    open: () => clickButton(/^New$/),
+    open: async () => {
+      await clickButton(/^New$/);
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Run a workflow' }));
+      await settle();
+    },
     lands: async () => {
-      const drawer = await screen.findByRole('region', { name: 'New' });
-      expect(within(drawer).getByRole('tab', { name: 'Run', selected: true })).toBeDefined();
+      const drawer = await screen.findByRole('region', { name: 'Run a workflow' });
+      expect(within(drawer).getByRole('textbox', { name: 'Goal' })).toBeDefined();
     },
   },
   {
@@ -230,7 +236,9 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     covers: ['goToHistory'],
     open: async () => {
       await openBranchFiles();
-      fireEvent.contextMenu(await screen.findByRole('button', { name: /^Back/ }));
+      fireEvent.contextMenu(
+        await screen.findByRole('button', { name: /^Back(?! to Sessions$| to session )/ }),
+      );
       await settle();
       const entries = await screen.findAllByRole('menuitemradio');
       const target = entries.find((entry) => entry.getAttribute('aria-checked') !== 'true');

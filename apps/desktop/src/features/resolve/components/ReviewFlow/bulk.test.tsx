@@ -22,6 +22,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/bulkSeed';
 import { ResolveBulkScene } from '../../../../app/components/MockScene/scenes/ResolveBulkScene';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 import { eligibleReviewThreadCount } from '../../../suggestions/eligibleThreads';
 import { requestReview } from '../../../review/reviewRequest';
 import { isFixableThread } from '../../fixableComments';
@@ -65,6 +66,7 @@ const mount = async ({ stage }: { readonly stage: BulkStage }): Promise<void> =>
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -115,8 +117,8 @@ describe('Fix comments', () => {
     const { spawnAgent, createResolveBatch } = stubAgents();
     await mount({ stage: 'launch' });
 
-    const header = screen.getByRole('button', { name: 'Fix comments 9' });
-    expect(screen.getAllByRole('button', { name: /^Fix comments/ })).toHaveLength(1);
+    const header = screen.getByRole('button', { name: 'Fix 9 comments' });
+    expect(screen.getAllByRole('button', { name: /^Fix \d+ comments?$/ })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^Fix \d+ open comments?/ })).toBeNull();
     fireEvent.click(header);
 
@@ -254,6 +256,7 @@ describe('answers in bulk', () => {
     render(
       <ToastProvider>
         <BranchPage session={SESSION} workingDir={null} />
+        <DrawerHost />
       </ToastProvider>,
     );
     await settle();
@@ -274,15 +277,18 @@ describe('accept in bulk', () => {
     return acceptReviewComments;
   };
 
-  it('puts Apply N fixes on the Needs you header and accepts exactly the proposals to review', async () => {
+  it('keeps verbs off the group labels and applies the proposals from the selection bar', async () => {
     const acceptReviewComments = acceptStub();
     await mount({ stage: 'retry' });
-    useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id });
+    act(() => useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id }));
 
     const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
-    const header = await within(needsYou).findByRole('button', { name: 'Apply 7 fixes' });
-    expect(within(list()).getAllByRole('button', { name: /^Apply \d+ fixes$/ })).toHaveLength(1);
-    fireEvent.click(header);
+    expect(within(list()).queryAllByRole('button', { name: /^Apply \d+ fixes$/ })).toHaveLength(0);
+    for (const box of within(needsYou).getAllByRole('checkbox')) {
+      fireEvent.click(box);
+    }
+    const bar = await screen.findByRole('toolbar', { name: 'Selected comments' });
+    fireEvent.click(await within(bar).findByRole('button', { name: 'Apply 7 fixes' }));
 
     await waitFor(() => expect(acceptReviewComments).toHaveBeenCalledOnce());
     expect(acceptReviewComments.mock.calls[0]?.[0].threadIds).toHaveLength(7);
@@ -321,13 +327,15 @@ describe('accept in bulk', () => {
     await mount({ stage: 'accepted' });
 
     const ready = within(list()).getByRole('region', { name: 'Ready to push' });
-    expect(within(ready).getAllByText('Applied')).toHaveLength(5);
+    expect(within(ready).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(ready).queryByText('Applied')).toBeNull();
     expect(within(ready).queryByText('Accepted')).toBeNull();
     expect(within(ready).queryByRole('button', { name: /^Apply \d+ fixes$/ })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Resolved' }));
     const done = within(list()).getByRole('region', { name: 'Done' });
     expect(within(done).queryByText('Accepted')).toBeNull();
-    expect(within(done).getByText('Done 3')).toBeDefined();
+    expect(within(done).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(done).queryByRole('heading')).toBeNull();
   });
 
   it('gives the list room under the last row for as tall a selection bar as it shows', async () => {
@@ -381,9 +389,14 @@ describe('accept in bulk', () => {
     }));
     stub({ acceptReviewComments });
     await mount({ stage: 'retry' });
-    useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id });
+    act(() => useAppStore.getState().clearReviewSelection({ sessionId: SESSION.id }));
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Apply 7 fixes' }));
+    const needsYou = within(list()).getByRole('region', { name: 'Needs you' });
+    for (const box of within(needsYou).getAllByRole('checkbox')) {
+      fireEvent.click(box);
+    }
+    const bar = await screen.findByRole('toolbar', { name: 'Selected comments' });
+    fireEvent.click(await within(bar).findByRole('button', { name: 'Apply 7 fixes' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('1 comment not accepted');

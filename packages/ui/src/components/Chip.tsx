@@ -101,7 +101,7 @@ export const chipClasses = ({
       ? cn(
           'motion-safe:transition-colors disabled:cursor-not-allowed disabled:opacity-60',
           FOCUS_RING,
-          tint.hoverBg,
+          bordered ? tint.hoverRing : cn('hover:ring-1', tint.hoverRing),
           tint.hoverText,
         )
       : '',

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAppStore } from '../../../../../store';
 import { ColumnRail } from '../../../SideColumn/ColumnRail';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import {
@@ -35,7 +36,8 @@ type Props = {
 export const SidebarNavRailScene = ({ config, isHovered = false }: Props) => {
   const [seed, setSeed] = useState<SidebarNavSeed | null>(null);
   useEffect(() => {
-    setSeed(seedSidebarNav({ ...SIDEBAR_NAV_DEFAULTS, ...config }));
+    const next = seedSidebarNav({ ...SIDEBAR_NAV_DEFAULTS, ...config });
+    setSeed(next);
   }, [config]);
   useEffect(() => {
     if (seed === null || !isHovered) {
@@ -62,7 +64,6 @@ export const SidebarNavRailScene = ({ config, isHovered = false }: Props) => {
           workspaceId={seed.workspaceId}
           currentSessionId={seed.session.id}
           place={null}
-          onToggle={noop}
           actions={ACTIONS}
         />
       </div>

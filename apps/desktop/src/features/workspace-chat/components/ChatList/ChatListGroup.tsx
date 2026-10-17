@@ -10,11 +10,6 @@ export type ChatListGroupRow = {
   readonly time: string;
   readonly isIdle: boolean;
   readonly isPinned: boolean;
-  readonly models: ReadonlyArray<ChatModelUsed>;
-  readonly provider: ProviderId;
-  readonly model: string;
-  readonly effort: EffortLevel | null;
-  readonly messageCount: number;
 };
 
 type GroupAction = {
@@ -77,11 +72,6 @@ export const ChatListGroup = ({
               time={row.time}
               isIdle={row.isIdle}
               isPinned={row.isPinned}
-              models={row.models}
-              provider={row.provider}
-              model={row.model}
-              effort={row.effort}
-              messageCount={row.messageCount}
               isSelected={row.chatId === selectedId}
               isChecked={checkedIds.has(row.chatId)}
               selection={selection}

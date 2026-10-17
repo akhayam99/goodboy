@@ -87,8 +87,14 @@ import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { NAMES } from '../../../../shared/names';
 import { ChatRoom } from './index';
 
-const startWork = (): HTMLElement =>
-  within(screen.getByRole('banner')).getByRole('button', { name: NAMES.startWorkFromChat });
+const startWork = (): HTMLElement => {
+  const buttons = screen.getAllByRole('button', { name: NAMES.startWorkFromChat });
+  const last = buttons[buttons.length - 1];
+  if (last === undefined) {
+    throw new Error('no Start work from chat under an answer');
+  }
+  return last;
+};
 
 type RoomParams = {
   readonly chat: ChatSummary | null;
@@ -287,7 +293,7 @@ describe('ChatRoom', () => {
     expect(store.recordChatLink).toHaveBeenCalledWith({
       chatId: CHAT_ID,
       sessionId: 'session-new',
-      messageId: null,
+      messageId: 'assistant-done',
       kind: 'new',
     });
     expect(store.navigate).toHaveBeenCalledWith({
@@ -589,34 +595,31 @@ describe('ChatRoom', () => {
     expect(store.createSession).toHaveBeenCalledTimes(1);
   });
 
-  it('sizes and tones Copy like the other quiet actions under an answer', () => {
+  it('ends the answer meta row with one copy icon, after the model', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
     const copy = screen.getByRole('button', { name: 'Copy the answer' });
-    const startHere = within(copy.parentElement as HTMLElement).getByRole('button', {
-      name: NAMES.startWorkFromChat,
-    });
-    for (const token of ['text-meta', 'text-faint-foreground', 'h-6', 'px-2']) {
-      expect(copy.classList.contains(token)).toBe(true);
-      expect(startHere.classList.contains(token)).toBe(true);
-    }
+    expect(copy.textContent).toBe('');
+    expect(copy.nextElementSibling).toBeNull();
     expect(copy.classList.contains('text-muted-foreground')).toBe(false);
+    expect(startWork().classList.contains('text-faint-foreground')).toBe(true);
   });
 
-  it('keeps the header to the title and Start work from chat', () => {
+  it('keeps the header to the title and delete, Start work from chat lives under the answer', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
     const header = screen.getByRole('banner');
     expect(within(header).getByRole('heading', { name: CHAT.title })).toBeDefined();
-    expect(within(header).getByRole('button', { name: NAMES.startWorkFromChat })).toBeDefined();
+    expect(within(header).queryByRole('button', { name: NAMES.startWorkFromChat })).toBeNull();
+    expect(startWork()).toBeDefined();
     expect(within(header).queryByText(/Read only/)).toBeNull();
     expect(within(header).queryByText(/Harborline/)).toBeNull();
     expect(within(header).queryByText(/Sonnet/)).toBeNull();
   });
 
-  it('keeps Start work reachable by its full name next to the sessions chip', () => {
+  it('leaves one linked session to the row under the answer, with no header chip', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     store.sessions = [SESSION_CONSENT];
     store.stages = { 'session-consent': 'running' };
@@ -624,11 +627,7 @@ describe('ChatRoom', () => {
     renderRoom({ chat: CHAT });
 
     const header = screen.getByRole('banner');
-    expect(
-      within(header).getByRole('button', { name: '1 session: Linked sessions' }),
-    ).toBeDefined();
-    const action = within(header).getByRole('button', { name: NAMES.startWorkFromChat });
-    expect(action.getAttribute('aria-label')).toBe(NAMES.startWorkFromChat);
+    expect(within(header).queryByRole('button', { name: /Linked sessions/ })).toBeNull();
   });
 
   it('puts the read-only hint in the composer and the keys in the Send tooltip', () => {
@@ -670,12 +669,12 @@ describe('ChatRoom', () => {
 
   it('lists the linked sessions from the chip and opens one', () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
-    store.sessions = [SESSION_CONSENT];
+    store.sessions = [SESSION_CONSENT, SESSION_REFUNDS];
     store.stages = { 'session-consent': 'running' };
-    store.chatLinks = { [CHAT_ID]: [LINK_NEW] };
+    store.chatLinks = { [CHAT_ID]: [LINK_NEW, LINK_ADD] };
     renderRoom({ chat: CHAT });
 
-    const chip = screen.getByRole('button', { name: '1 session: Linked sessions' });
+    const chip = screen.getByRole('button', { name: '2 sessions: Linked sessions' });
     expect(chip.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(chip);
     const dialog = screen.getByRole('dialog', { name: 'Linked sessions' });
@@ -707,31 +706,13 @@ describe('ChatRoom', () => {
     renderRoom({ chat: CHAT });
 
     expect(screen.queryByRole('button', { name: /Linked sessions/ })).toBeNull();
-    expect(screen.queryByText('Started a session ·')).toBeNull();
   });
 
-  it('keeps the handoff note under the answer it came from, from the saved link', () => {
-    store.chatMessages = { [CHAT_ID]: ANSWERED };
-    store.sessions = [SESSION_CONSENT];
-    store.chatLinks = { [CHAT_ID]: [LINK_NEW] };
-    renderRoom({ chat: CHAT });
-
-    const note = screen.getByRole('status');
-    expect(note.textContent).toContain('Started a session');
-    expect(note.textContent).toContain('Ask for consent again when the policy changes');
-    const answer = screen.getByText('It lives in payments-api').closest('li');
-    expect(answer?.nextElementSibling?.contains(note)).toBe(true);
-    fireEvent.click(within(note).getByRole('button', { name: 'Open session' }));
-    expect(store.navigate).toHaveBeenCalledWith({
-      to: { at: 'session', sessionId: 'session-consent' },
-    });
-  });
-
-  it('keeps Start work from chat off until an answer is done', () => {
+  it('offers Start work from chat only under a finished answer', () => {
     store.chatMessages = { [CHAT_ID]: [ANSWERED[0]!] };
     renderRoom({ chat: CHAT });
 
-    expect(startWork().hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: NAMES.startWorkFromChat })).toBeNull();
   });
 
   it('creates the chat with the default model on the first send', async () => {

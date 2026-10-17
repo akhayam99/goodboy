@@ -8,8 +8,10 @@ import type {
   ChildStartOutcome,
   DeliveryRun,
   EnsureChildAgentParams,
+  PublishScribeParams,
   RoutingOutcome,
   RunOutcome,
+  ScribePublication,
   StartAutoTurnParams,
   StartChildTurnParams,
   TurnStartOutcome,
@@ -77,7 +79,15 @@ export type FakePorts = AutoPorts &
     setSnapshots: (path: string, snapshots: ReadonlyArray<MountSnapshot | null>) => void;
     setCancelOutcome: (outcome: CancelRunOutcome, agentId?: string) => void;
     setEnsureFailure: (error: Error | null) => void;
+    publications: Array<PublishScribeParams>;
+    setPublications: (next: ReadonlyArray<ScribePublication>) => void;
   }>;
+
+export const OPENED_PR: ScribePublication = {
+  kind: 'opened',
+  number: 421,
+  url: 'https://github.com/harborline/ledger-core/pull/421',
+};
 
 type FakePortsParams = {
   readonly idPrefix?: string;
@@ -108,6 +118,8 @@ export const makeFakePorts = ({
   const childTurns: Array<StartChildTurnParams> = [];
   const ensuredChildren: Array<EnsureChildAgentParams> = [];
   const cancels: Array<CancelRunParams> = [];
+  const publications: Array<PublishScribeParams> = [];
+  const publicationQueue: Array<ScribePublication> = [];
   return {
     autoTurns,
     childTurns,
@@ -214,5 +226,13 @@ export const makeFakePorts = ({
     },
     isRunLive: async ({ runId }) => liveRuns.has(runId),
     readRunOutcome: async ({ runId }) => runOutcomes.get(runId) ?? null,
+    publications,
+    setPublications: (next) => {
+      publicationQueue.splice(0, publicationQueue.length, ...next);
+    },
+    publishScribePullRequest: async (params) => {
+      publications.push(params);
+      return publicationQueue.shift() ?? OPENED_PR;
+    },
   };
 };

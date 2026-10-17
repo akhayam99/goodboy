@@ -99,11 +99,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('OpenQuestionCluster', () => {
-  it('shows one question at a time with who asks and where it stands', () => {
+  it('shows one question at a time and where it stands, the asker left to the conversation header', () => {
     renderCluster([dbQuestion, cacheQuestion]);
     screen.getByRole('heading', { name: 'Use Postgres or SQLite?' });
     expect(screen.queryByRole('heading', { name: 'Redis or Memcached?' })).toBeNull();
-    screen.getByText('scout');
+    expect(screen.queryByText('scout')).toBeNull();
     screen.getByText('1 of 2');
   });
 
@@ -197,7 +197,7 @@ describe('OpenQuestionCluster', () => {
       makeQuestion({ id: 'oq-9', text: 'Old question?', status: 'answered', userAnswer: 'yes' }),
       dbQuestion,
     ]);
-    screen.getByText('answered');
+    screen.getByText('Answered');
     screen.getByRole('heading', { name: 'Use Postgres or SQLite?' });
   });
 

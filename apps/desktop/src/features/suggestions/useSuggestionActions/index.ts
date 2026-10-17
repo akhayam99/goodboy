@@ -20,7 +20,7 @@ import { showsRunsOn } from '../../session/showsRunsOn';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
-import { fixLabel } from '../../resolve/reviewLaunchCopy';
+import { REVIEW_LAUNCH_LABEL } from '../../resolve/reviewLaunchCopy';
 import { prLifecycleFailureTitle } from '../../review/prLifecycle';
 import { requestReview } from '../../review/reviewRequest';
 import { useFixableThreadIds } from '../../resolve/useFixableThreadIds';
@@ -209,7 +209,7 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'resolve-threads') {
       return {
         primary: {
-          label: fixLabel({ count: threadIds.length }),
+          label: REVIEW_LAUNCH_LABEL.fix,
           isDisabled: false,
           failureTitle: "The fix panel didn't open",
           run: openFixPanel,
@@ -601,26 +601,26 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'close-worktree') {
+      const worktrees = suggestion.payload.worktrees;
+      const isMany = worktrees.length > 1;
       return {
         primary: {
-          label: NAMES.closeBranch,
-          shortLabel: 'Close',
+          label: isMany ? NAMES.removeWorktrees : NAMES.removeWorktree,
+          shortLabel: 'Remove',
           isDisabled: false,
           requiresConfirm: true,
-          failureTitle: "Couldn't close the branch",
-          run: () =>
-            resolveMountCleanup({
-              sessionId,
-              requestId: suggestion.payload.requestId,
-              decision: 'remove',
-            }),
+          failureTitle: isMany ? "Couldn't remove the worktrees" : "Couldn't remove the worktree",
+          run: async () => {
+            for (const worktree of worktrees) {
+              await resolveMountCleanup({
+                sessionId,
+                requestId: worktree.requestId,
+                decision: 'remove',
+              });
+            }
+          },
         },
-        onDismiss: () =>
-          resolveMountCleanup({
-            sessionId,
-            requestId: suggestion.payload.requestId,
-            decision: 'keep',
-          }),
+        onDismiss: null,
       };
     }
     if (suggestion.kind === 'continue-with-workflow') {

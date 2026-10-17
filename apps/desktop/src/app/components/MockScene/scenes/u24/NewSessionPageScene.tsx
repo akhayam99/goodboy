@@ -3,7 +3,6 @@ import type { StepId, Workflow, WorkflowId } from '@goodboy/types';
 import { SessionDraftPane } from '../../../../../features/session/components/SessionDraftPane';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { draftFromWorkflow } from '../../../../../features/workflows/engine';
-import { writeLastWorkflowMode } from '../../../../../features/workflows/components/WorkflowBuilderView/lastWorkflowMode';
 import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
 import type { StartChoice } from '../../../../../store/slices/sessionDraft/state';
@@ -81,7 +80,7 @@ export const NewSessionPageScene = ({ state }: Props) => {
     seedBoardScene();
     seedStudioChrome();
     const mode = state.isPreset === true ? 'preset' : 'dynamic';
-    writeLastWorkflowMode({ workspaceId: WORKSPACE_ID, mode });
+    const choice = state.choice === 'workflow' && mode === 'dynamic' ? 'orchestrate' : state.choice;
     useAppStore.setState({
       phaseTemplates: { [WORKSPACE_ID]: [PRESET] },
       loadPhaseTemplates: async () => undefined,
@@ -89,8 +88,9 @@ export const NewSessionPageScene = ({ state }: Props) => {
       sessionDrafts: {
         [WORKSPACE_ID]: {
           ...EMPTY_SESSION_DRAFT,
-          choice: state.choice,
+          choice,
           ...(state.choice === 'workflow' && { workflowGoal: state.goal }),
+          ...(state.choice === 'orchestrate' && { workflowGoal: state.goal }),
           ...(state.choice === 'scout' && state.isAuto === true && { autoGoal: state.goal }),
           ...(state.choice === 'scout' && state.isAuto !== true && { agentPrompt: state.goal }),
         },

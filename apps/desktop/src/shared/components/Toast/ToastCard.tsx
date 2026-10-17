@@ -96,9 +96,7 @@ export const ToastCard = ({ toast, onDismiss }: ToastCardProps) => {
             <>
               {hasMessageInBody && <p>{toast.message}</p>}
               {hasContext && (
-                <p className="mt-0.5 line-clamp-2 text-meta text-faint-foreground">
-                  {toast.context}
-                </p>
+                <p className="mt-0.5 truncate text-meta text-faint-foreground">{toast.context}</p>
               )}
             </>
           )

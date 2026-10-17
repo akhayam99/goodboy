@@ -9,8 +9,7 @@ import {
   formatError,
   splitErrorMessage,
   useCopyLink,
-  PaneShell,
-  HeaderActions,
+  DrawerFrame,
 } from '@goodboy/ui';
 import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -61,6 +60,7 @@ const packageSectionKey = ({
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId;
+  readonly onClose: () => void;
 };
 
 type RowParams = {
@@ -82,10 +82,7 @@ const recordFor = ({ runs, group, script }: RecordParams): ScriptRunRecord | nul
   return record.mountId === group.mountId ? record : null;
 };
 
-const plural = ({ count, word }: { readonly count: number; readonly word: string }) =>
-  `${count} ${count === 1 ? word : `${word}s`}`;
-
-export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
+export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
   const { groups } = useSessionScripts({ sessionId, workspaceId, shouldScan: true });
   const saved = useAppStore((state) => state.projectScripts[workspaceId] ?? EMPTY_ARRAY);
   const allProjects = useAppStore((state) => state.projects);
@@ -137,10 +134,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     [runs],
   );
   const now = useNow(runningCount > 0 ? 1_000 : 30_000);
-  const projectCount = useMemo(
-    () => new Set(groups.map((group) => group.projectId)).size,
-    [groups],
-  );
   const unmounted = useMemo<ReadonlyArray<UnmountedScriptsEntry>>(() => {
     const mounted = new Set(groups.map((group) => group.projectId));
     return workspaceProjects.flatMap((project) => {
@@ -234,7 +227,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
       toggleDrawer({
         kind: 'scriptRun',
         sessionId,
-        payload: { scriptKey: script.key, mountId: group.mountId },
+        payload: { scriptKey: script.key, mountId: group.mountId, from: 'scripts' },
       });
     },
     [sessionId, toggleDrawer],
@@ -245,7 +238,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
       openDrawer({
         kind: 'scriptRun',
         sessionId,
-        payload: { scriptKey: script.key, mountId: group.mountId },
+        payload: { scriptKey: script.key, mountId: group.mountId, from: 'scripts' },
       });
       void startRunnableScript({
         sessionId,
@@ -340,6 +333,11 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
                 })
             : null,
         onDelete: savedId === null ? null : () => onDelete({ savedId }),
+        onRestart: () => void onRestart({ group, script }),
+        pin: {
+          isPinned: isPinned({ group, script }),
+          onToggle: () => togglePin({ group, script }),
+        },
       },
     };
   };
@@ -501,12 +499,9 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
         }
         blockedReason={group.isReady ? null : `${group.projectName} is still preparing`}
         target={targetFor({ group, script })}
-        isPinned={isPinned({ group, script })}
-        onTogglePin={() => togglePin({ group, script })}
         onOpen={() => onOpen({ group, script })}
         onRun={() => onRun({ group, script })}
         onStop={() => onStop({ script })}
-        onRestart={() => void onRestart({ group, script })}
       />
     );
   };
@@ -607,7 +602,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
             {renderScripts({ group, scripts: tasks, band: 'tasks' })}
           </ScriptBand>
         )}
-        {group.suggested.length === 0 ? null : (
+        {group.suggested.length === 0 || pickerMountId === group.mountId ? null : (
           <ScriptBand
             label="Suggested"
             scope={groupScope}
@@ -643,37 +638,19 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     );
   };
 
-  const meta = [
-    plural({ count: projectCount, word: 'project' }),
-    runningCount > 0 ? `${runningCount} running` : null,
-  ]
-    .filter((part): part is string => part !== null)
-    .join(' · ');
-
-  const actions =
-    groups.length === 0 ? null : (
-      <HeaderActions
-        secondary={<ScriptsFilterInput value={query} onChange={setQuery} />}
-        button={
-          activeGroup === null ? null : (
-            <DiscardDraftConfirm
-              isOpen={draft.hasPending}
-              onSave={draft.saveAndContinue}
-              onDiscard={draft.discardAndContinue}
-              onCancel={draft.keepEditing}
-              trigger={() => (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => openNew({ group: activeGroup })}
-                >
-                  <Plus size={ICON_SIZE.row} aria-hidden />
-                  New script
-                </Button>
-              )}
-            />
-          )
-        }
+  const newScriptAction =
+    groups.length === 0 || activeGroup === null ? null : (
+      <DiscardDraftConfirm
+        isOpen={draft.hasPending}
+        onSave={draft.saveAndContinue}
+        onDiscard={draft.discardAndContinue}
+        onCancel={draft.keepEditing}
+        trigger={() => (
+          <Button variant="secondary" size="sm" onClick={() => openNew({ group: activeGroup })}>
+            <Plus size={ICON_SIZE.row} aria-hidden />
+            New script
+          </Button>
+        )}
       />
     );
 
@@ -687,7 +664,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
             <ScriptGroupSection
               key={group.mountId}
               group={group}
-              count={group.scripts.length}
               isCollapsed={isCollapsed}
               isRefreshing={scans?.[group.worktreePath]?.status === 'loading'}
               editor={isNewHere ? editorNode : null}
@@ -736,47 +712,59 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
   });
 
   return (
-    <PaneShell title="Scripts" meta={groups.length === 0 ? undefined : meta} actions={actions}>
-      {groups.length === 0 ? (
-        <EmptyState
-          size="page"
-          icon={CONCEPT_ICONS.scripts}
-          title="No scripts yet"
-          description="Scripts run inside a project of this session."
-          action={
-            <MountProjectAction
-              sessionId={sessionId}
-              workspaceId={workspaceId}
-              presentation="button"
-            />
-          }
-        />
-      ) : null}
-      {pageError === null ? null : (
-        <p role="alert" className="text-label text-danger">
-          {pageError}
-        </p>
-      )}
-      {query.trim() !== '' && visibleGroups.length === 0 ? (
-        <EmptyLine
-          action={
-            <Button variant="ghost" size="xs" onClick={() => setQuery('')}>
-              Clear filter
-            </Button>
-          }
-        >
-          No scripts match "{query.trim()}".
-        </EmptyLine>
-      ) : null}
-      {groupsNode}
-      {unmounted.length === 0 ? null : (
-        <UnmountedScriptsNote
-          sessionId={sessionId}
-          workspaceId={workspaceId}
-          entries={unmounted}
-          hasAction={groups.length > 0}
-        />
-      )}
-    </PaneShell>
+    <DrawerFrame
+      title="Scripts"
+      icon={CONCEPT_ICONS.scripts}
+      iconClassName="text-faint-foreground"
+      action={newScriptAction}
+      toolbar={
+        groups.length === 0 ? null : <ScriptsFilterInput value={query} onChange={setQuery} />
+      }
+      onClose={onClose}
+    >
+      <div className="flex flex-col gap-4">
+        {groups.length === 0 ? (
+          <EmptyState
+            size="section"
+            headingLevel={3}
+            icon={CONCEPT_ICONS.scripts}
+            title="No scripts yet"
+            description="Scripts run inside a project of this session."
+            action={
+              <MountProjectAction
+                sessionId={sessionId}
+                workspaceId={workspaceId}
+                presentation="button"
+              />
+            }
+          />
+        ) : null}
+        {pageError === null ? null : (
+          <p role="alert" className="text-label text-danger">
+            {pageError}
+          </p>
+        )}
+        {query.trim() !== '' && visibleGroups.length === 0 ? (
+          <EmptyLine
+            action={
+              <Button variant="ghost" size="xs" onClick={() => setQuery('')}>
+                Clear filter
+              </Button>
+            }
+          >
+            No scripts match "{query.trim()}".
+          </EmptyLine>
+        ) : null}
+        {groupsNode}
+        {unmounted.length === 0 ? null : (
+          <UnmountedScriptsNote
+            sessionId={sessionId}
+            workspaceId={workspaceId}
+            entries={unmounted}
+            hasAction={groups.length > 0}
+          />
+        )}
+      </div>
+    </DrawerFrame>
   );
 };

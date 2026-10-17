@@ -34,8 +34,8 @@ import {
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import { HowToWorkOnIt } from './HowToWorkOnIt';
 
-const PAYMENTS = brandedId<ProjectId>({ value: 'project-payments-api' });
-const LEDGER = brandedId<ProjectId>({ value: 'project-ledger-core' });
+const PAYMENTS = brandedId<ProjectId>({ value: 'mock-board-project-payments-api' });
+const LEDGER = brandedId<ProjectId>({ value: 'mock-board-project-ledger-core' });
 
 const CANDIDATE: IssueCandidate = {
   provider: 'github',
@@ -74,7 +74,7 @@ const show = () =>
   );
 
 describe('HowToWorkOnIt, where the work happens', () => {
-  it('says the project in one plain line, with no chip, when it is unambiguous', () => {
+  it('prefills the issue project as a chip and says where it came from', async () => {
     mount.current = {
       options: [{ projectId: PAYMENTS, name: 'payments-api' }],
       selectedId: PAYMENTS,
@@ -83,13 +83,13 @@ describe('HowToWorkOnIt, where the work happens', () => {
 
     show();
 
+    expect(await screen.findByRole('button', { name: 'Remove payments-api' })).toBeDefined();
     expect(
       screen.getByText('In payments-api, from GitHub repo harborline/payments-api.'),
     ).toBeDefined();
-    expect(screen.queryByRole('combobox', { name: 'Project to work in' })).toBeNull();
   });
 
-  it('keeps the project chip when more than one project fits', () => {
+  it('keeps the project picker when more than one project fits', async () => {
     mount.current = {
       options: [
         { projectId: PAYMENTS, name: 'payments-api' },
@@ -101,13 +101,15 @@ describe('HowToWorkOnIt, where the work happens', () => {
 
     show();
 
-    expect(screen.getByRole('combobox', { name: 'Project to work in' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Project' })).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Remove payments-api' })).toBeDefined();
   });
 
-  it('labels the way to start with Then:', () => {
+  it('picks how to work on it with one Runs as option, not a second switch', () => {
     show();
 
-    expect(screen.getByText('Then:')).toBeDefined();
-    expect(screen.getByRole('tablist', { name: 'How to work on it' })).toBeDefined();
+    expect(screen.queryByText('Then:')).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'How to work on it' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
   });
 });

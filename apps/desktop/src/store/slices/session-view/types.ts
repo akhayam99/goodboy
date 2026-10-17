@@ -9,6 +9,7 @@ import type {
   SessionExternalTaskProvider,
   SessionGroupKey,
   SessionId,
+  SessionPageView,
   SessionPrGroup,
   SessionSortKey,
   SessionStage,
@@ -29,7 +30,9 @@ export type { SetFn, GetFn } from '../../slice-types';
 export type LensKind =
   | 'questions'
   | 'agents'
+  | 'auto'
   | 'workflows'
+  | 'orchestrated'
   | 'review'
   | 'plans'
   | 'scripts'
@@ -50,7 +53,9 @@ export type LensKind =
 export const LENS_KINDS: ReadonlySet<LensKind> = new Set<LensKind>([
   'questions',
   'agents',
+  'auto',
   'workflows',
+  'orchestrated',
   'review',
   'plans',
   'scripts',
@@ -99,6 +104,7 @@ export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
 };
 
 export const DEFAULT_PREFS: SessionViewPrefs = {
+  pageView: 'board',
   sort: 'needsYou',
   group: 'none',
   isArchivedShown: false,
@@ -123,6 +129,8 @@ export const VALID_STAGES: ReadonlyArray<SessionStage> = [
 
 export const VALID_GROUPS: ReadonlyArray<SessionGroupKey> = ['none', 'pr', 'stage', 'project'];
 
+export const VALID_PAGE_VIEWS: ReadonlyArray<SessionPageView> = ['board', 'list'];
+
 export const STAGE_ORDER: Record<SessionStage, number> = {
   building: 0,
   running: 1,
@@ -144,6 +152,16 @@ export const FOLD_LIMIT = 8;
 export const NO_PROJECT_GROUP_KEY = 'no-project';
 
 export const PINNED_GROUP_KEY = 'pinned';
+
+export const INACTIVE_GROUP_KEY = 'inactive';
+
+export const INACTIVE_GROUP_LABEL = 'Inactive';
+
+const HOUR_MS = 60 * 60 * 1000;
+
+export const INACTIVE_AFTER_MS = 72 * HOUR_MS;
+
+export const RECENTLY_OPENED_MS = 24 * HOUR_MS;
 
 export const PR_GROUP_ORDER: Record<SessionPrGroup, number> = {
   'not-open': 0,
@@ -198,7 +216,6 @@ type SessionViewSliceState = {
   >;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
   readonly branchTab: Readonly<Record<SessionId, BranchTab>>;
-  readonly sessionPagesFolded: Readonly<Record<SessionId, boolean>>;
   readonly dismissedCheckProposals: Readonly<Record<SessionId, ReadonlyArray<AgentId>>>;
   readonly branchThreadId: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
@@ -231,10 +248,6 @@ type SessionViewSliceActions = {
   setSessionViewPrefs(params: SetSessionViewPrefsParams): void;
   markSessionOpened(params: { readonly sessionId: SessionId }): void;
   toggleSessionGroup(params: { readonly key: string }): void;
-  setSessionPagesFolded(params: {
-    readonly sessionId: SessionId;
-    readonly isFolded: boolean;
-  }): void;
   dismissCheckProposal(params: DismissCheckProposalParams): void;
   setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
   setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;

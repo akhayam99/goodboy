@@ -11,7 +11,7 @@ import {
   type Ctx,
   type Row,
   WAIT,
-  band,
+  studio,
   both,
   click,
   clickButton,
@@ -75,7 +75,7 @@ const railAndSessionBack =
     await waitFor(() => expect(hasRail()).toBe(collapsed === '1'), WAIT);
     expect(document.querySelector('[data-studio-frame]')).toBeNull();
     expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
-    expect(await screen.findByTestId('context-chip')).toBeDefined();
+    expect((await screen.findByTestId('overview-title')).closest('h1')).not.toBeNull();
     expect(storedCollapse()).toBe(collapsed);
   };
 

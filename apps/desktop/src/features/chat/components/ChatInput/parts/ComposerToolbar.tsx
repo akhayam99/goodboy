@@ -11,16 +11,14 @@ type Props = {
   readonly session: Session;
   readonly routing: ReturnType<typeof useTurnRouting>;
   readonly isBlocked: boolean;
+  readonly hasPermissionPicker: boolean;
   readonly attachmentCount: number;
   readonly fileInputRef: RefObject<HTMLInputElement | null>;
   readonly onFileInputChange: (event: ChangeEvent<HTMLInputElement>) => void;
   readonly onInsertPrefix: (symbol: string) => void;
   readonly isRunning: boolean;
-  readonly isEmpty: boolean;
   readonly canSend: boolean;
-  readonly showsDeliveryChoice: boolean;
   readonly sendDisabledTitle: string | undefined;
-  readonly onCancel: () => void;
   readonly onSend: () => void;
   readonly onSendNow: () => void;
 };
@@ -29,16 +27,14 @@ export const ComposerToolbar = ({
   session,
   routing,
   isBlocked,
+  hasPermissionPicker,
   attachmentCount,
   fileInputRef,
   onFileInputChange,
   onInsertPrefix,
   isRunning,
-  isEmpty,
   canSend,
-  showsDeliveryChoice,
   sendDisabledTitle,
-  onCancel,
   onSend,
   onSendNow,
 }: Props) => (
@@ -49,7 +45,9 @@ export const ComposerToolbar = ({
         onAttachFiles={() => fileInputRef.current?.click()}
         onInsertPrefix={onInsertPrefix}
       />
-      <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
+      {hasPermissionPicker ? (
+        <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
+      ) : null}
       {attachmentCount > 0 && (
         <span className="text-meta text-faint-foreground">
           {attachmentCount} {attachmentCount === 1 ? 'file' : 'files'}
@@ -67,14 +65,11 @@ export const ComposerToolbar = ({
       onChange={onFileInputChange}
     />
     <div className="flex items-center gap-2">
-      <ComposerRoutingPicker session={session} routing={routing} />
+      <ComposerRoutingPicker routing={routing} />
       <SendControl
         isRunning={isRunning}
-        isEmpty={isEmpty}
         canSend={canSend}
-        showsDeliveryChoice={showsDeliveryChoice}
         sendDisabledTitle={sendDisabledTitle}
-        onCancel={onCancel}
         onSend={onSend}
         onSendNow={onSendNow}
       />

@@ -1,6 +1,8 @@
 import { FOCUS_RING, TOP_BAR_CONTROL, Tooltip, cn, formatUsd } from '@goodboy/ui';
 import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../store';
 
+const MIN_SHOWN_SPEND = 0.01;
+
 type Props = {
   readonly onOpenSpend: () => void;
 };
@@ -10,7 +12,7 @@ export const SpendButton = ({ onOpenSpend }: Props) => {
   const sessions = useSessions();
   const rollup = useWorkspaceRollup(workspace?.id ?? null, sessions);
 
-  if (workspace == null) {
+  if (workspace == null || rollup.todaySpend < MIN_SHOWN_SPEND) {
     return null;
   }
   const label = 'Spend today. Open Impact';

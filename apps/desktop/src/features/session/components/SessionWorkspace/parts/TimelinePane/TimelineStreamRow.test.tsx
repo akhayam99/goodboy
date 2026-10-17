@@ -486,11 +486,11 @@ describe('TimelineStreamRow, hover cards', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('Models card body');
   });
 
-  it('opens nothing on the time, the cost or the rest of the row', () => {
+  it('opens nothing on the time or the rest of the row', () => {
     renderCardRow();
     startFake();
 
-    fireEvent.mouseEnter(screen.getByText('$0.62'));
+    fireEvent.mouseEnter(screen.getByText('4m 00s'));
     fireEvent.mouseEnter(screen.getByText('Implement the parser'));
     advance({ ms: 3_000 });
 

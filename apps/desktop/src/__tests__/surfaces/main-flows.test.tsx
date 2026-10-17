@@ -23,16 +23,18 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { sessionPlace } from '../../store/slices/navigation/place';
+import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { DrawerHost } from '../../app/components/DrawerHost';
+import { SessionTools } from '../../features/session/components/SessionTools';
 import {
   EXPANDED_THREAD_ID,
   SESSION as RESOLVE_SESSION,
   seedResolveScene,
 } from '../../app/components/MockScene/scenes/resolveSeed';
 import { BranchPage } from '../../features/branch/components/BranchPage';
+import { WorktreeEntriesSlot } from '../../app/components/MockScene/scenes/WorktreeEntriesSlot';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import {
@@ -155,7 +157,9 @@ describe('main flows on the real store', () => {
       start: expect.objectContaining({ kind: 'scout' }),
     });
     const projectId = useAppStore.getState().projects[0]?.id ?? null;
-    expect(useAppStore.getState().sessionDrafts[SETTINGS_WORKSPACE.id]?.projectId).toBe(projectId);
+    expect(useAppStore.getState().sessionDrafts[SETTINGS_WORKSPACE.id]?.projectIds).toEqual(
+      projectId === null ? [] : [projectId],
+    );
     expectNoRenderLoop();
   });
 
@@ -164,7 +168,7 @@ describe('main flows on the real store', () => {
     const startSessionFromDraft = vi.fn(async () => ({ id: 'session-started' }) as Session);
     stubActions({ startSessionFromDraft });
 
-    await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} />);
+    await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} isAuto={false} />);
     fireEvent.click(screen.getByRole('tab', { name: /Ask an agent/ }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
       target: { value: 'the ledger-core importer' },
@@ -201,10 +205,12 @@ describe('main flows on the real store', () => {
         onRefresh={() => undefined}
         onClose={() => undefined}
         onDeselect={() => undefined}
+        onOpenFull={null}
+        star={null}
         launchFocusRequest={0}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: /^Start from #412/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
 
     await waitFor(() =>
       expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toMatchObject({
@@ -230,7 +236,12 @@ describe('main flows on the real store', () => {
       publishConversations: publishConversations as unknown as StoreState['publishConversations'],
     });
 
-    await mountFlow(<BranchPage session={RESOLVE_SESSION} workingDir={null} />);
+    await mountFlow(
+      <>
+        <BranchPage session={RESOLVE_SESSION} workingDir={null} />
+        <DrawerHost />
+      </>,
+    );
     const bar = screen.getByRole('toolbar', { name: 'Comment actions' });
     fireEvent.click(within(bar).getByRole('button', { name: /^Apply fix/ }));
 
@@ -242,15 +253,21 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('opens the diff from the session trail', async () => {
+  it('opens the diff from the Branch page', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
-    await mountFlow(<KeepAliveWorkSurface sessionId={sessionId} isActive />);
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Session/ }));
-    fireEvent.click(await screen.findByRole('menuitemradio', { name: /^Branch/ }));
+    await mountFlow(
+      <>
+        <WorktreeEntriesSlot />
+        <KeepAliveWorkSurface sessionId={sessionId} isActive />
+      </>,
+    );
+    expect(screen.queryByRole('navigation', { name: 'Worktree' })).toBeNull();
+    act(() => {
+      useAppStore.getState().navigate({ to: branchPlace({ sessionId }) });
+    });
     await settle();
-    const rail = within(await screen.findByRole('navigation', { name: 'Sections' }));
+    const rail = within(await screen.findByRole('navigation', { name: 'Worktree' }));
     fireEvent.click(rail.getByRole('button', { name: /^Files/ }));
     await settle();
 
@@ -260,17 +277,18 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('opens and closes the context drawer from the overview chip', async () => {
+  it('opens and closes the context drawer from the session tools', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
     await mountFlow(
       <>
+        <SessionTools sessionId={sessionId} />
         <KeepAliveWorkSurface sessionId={sessionId} isActive />
         <DrawerHost />
       </>,
     );
     expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
-    fireEvent.click(screen.getByTestId('context-chip'));
+    fireEvent.click(screen.getByTestId('pane-toggle-context'));
     await settle();
 
     expect(useAppStore.getState().drawer).toEqual(

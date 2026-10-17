@@ -1,9 +1,9 @@
 import type { WorkNodeState } from '@goodboy/ui';
-import type { Agent, AgentId } from '@goodboy/types';
+import type { Agent, AgentId, TurnState } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type { AgentKind } from '../../session/agent-kind';
-import { autoRowFacts } from '../autoRowFacts';
+import { autoTreeWordOf } from '../autoTreeWordOf';
 import { delegationCardOf, type DelegationCardModel } from './delegationCardOf';
 
 export type RailRow = Readonly<{
@@ -12,14 +12,13 @@ export type RailRow = Readonly<{
   kind: 'root' | 'child';
   role: AgentKind;
   label: string;
+  task: string | null;
   node: WorkNodeState;
   word: string;
   tone: Tone;
   provider: string | null;
   model: string | null;
   effort: string | null;
-  startedAtMs: number | null;
-  endedAtMs: number | null;
   isLive: boolean;
 }>;
 
@@ -33,13 +32,17 @@ type RowParams = {
   readonly view: AutoTreeView;
   readonly agents: ReadonlyArray<Agent>;
   readonly rootRouting: RailRouting;
+  readonly rootTurn?: TurnState | null;
 };
 
 type NodeParams = {
   readonly card: DelegationCardModel;
 };
 
-const childNodeOf = ({ card }: NodeParams): WorkNodeState => {
+const delegationNodeOf = ({ card }: NodeParams): WorkNodeState => {
+  if (card.status.node !== undefined) {
+    return card.status.node;
+  }
   switch (card.status.word) {
     case 'Done':
       return 'done';
@@ -50,10 +53,6 @@ const childNodeOf = ({ card }: NodeParams): WorkNodeState => {
       return 'alert';
     case 'Stopped':
       return 'stopped';
-    case 'Needs your OK':
-      return 'approval';
-    case 'Waiting for an answer':
-      return 'question';
     case 'Queued':
       return 'queued';
     default:
@@ -61,83 +60,57 @@ const childNodeOf = ({ card }: NodeParams): WorkNodeState => {
   }
 };
 
-const ROOT_NODE_BY_PHASE: Readonly<Record<AutoTreeView['tree']['phase'], WorkNodeState>> = {
-  answering: 'running',
-  deciding: 'running',
-  delegating: 'running',
-  waiting: 'running',
-  merging: 'running',
-  done: 'done',
-  blocked: 'alert',
-  stopping: 'running',
-  stopped: 'stopped',
-};
-
 type RootParams = {
   readonly view: AutoTreeView;
-  readonly agent: Agent | null;
   readonly routing: RailRouting;
+  readonly rootTurn: TurnState | null;
 };
 
-type WordParams = {
-  readonly view: AutoTreeView;
-  readonly facts: ReturnType<typeof autoRowFacts>;
-  readonly isApproval: boolean;
-};
-
-const rootWordOf = ({ view, facts, isApproval }: WordParams): string => {
-  if (facts === null) {
-    return view.tree.phase === 'done' ? 'Done' : 'Ready';
-  }
-  return isApproval ? facts.word : facts.short;
-};
-
-type ToneParams = {
-  readonly node: WorkNodeState;
-  readonly isLive: boolean;
-};
-
-const rootToneOf = ({ node, isLive }: ToneParams): Tone => {
-  if (node === 'approval' || node === 'alert') {
-    return 'warning';
-  }
-  return isLive ? 'info' : 'neutral';
-};
-
-type StartParams = {
-  readonly agent: Agent | null;
-};
-
-const startedAtOf = ({ agent }: StartParams): number | null => {
-  const parsed = agent?.startedAt == null ? Number.NaN : Date.parse(agent.startedAt);
-  return Number.isNaN(parsed) ? null : parsed;
-};
-
-const rootRowOf = ({ view, agent, routing }: RootParams): RailRow => {
-  const facts = autoRowFacts({ view });
-  const isApproval = facts?.short === 'Needs you';
-  const node: WorkNodeState = isApproval ? 'approval' : ROOT_NODE_BY_PHASE[view.tree.phase];
-  const isLive = facts !== null && facts.phase === 'running';
+const rootRowOf = ({ view, routing, rootTurn }: RootParams): RailRow => {
+  const state = autoTreeWordOf({ view, rootTurn });
   return {
     id: view.tree.rootAgentId,
     agentId: view.tree.rootAgentId,
     kind: 'root',
     role: 'auto',
     label: 'Auto',
-    node,
-    word: rootWordOf({ view, facts, isApproval }),
-    tone: rootToneOf({ node, isLive }),
+    task: null,
+    node: state.node,
+    word: state.word,
+    tone: 'neutral',
     provider: routing.provider,
     model: routing.model,
     effort: routing.effort,
-    startedAtMs: startedAtOf({ agent }),
-    endedAtMs: view.tree.phase === 'done' ? view.tree.updatedAt : null,
-    isLive,
+    isLive: state.isLive,
   };
 };
 
-export const railRowsOf = ({ view, agents, rootRouting }: RowParams): ReadonlyArray<RailRow> => {
-  const rootAgent = agents.find((agent) => agent.id === view.tree.rootAgentId) ?? null;
+type RestingParams = RailRouting & {
+  readonly agentId: AgentId;
+};
+
+export const restingRootRowOf = ({ agentId, provider, model, effort }: RestingParams): RailRow => ({
+  id: agentId,
+  agentId,
+  kind: 'root',
+  role: 'auto',
+  label: 'Auto',
+  task: null,
+  node: 'queued',
+  word: 'Idle',
+  tone: 'neutral',
+  provider,
+  model,
+  effort,
+  isLive: false,
+});
+
+export const railRowsOf = ({
+  view,
+  agents,
+  rootRouting,
+  rootTurn = null,
+}: RowParams): ReadonlyArray<RailRow> => {
   const latestByChild = new Map<string, DelegationCardModel>();
   for (const delegation of view.delegations) {
     if (delegation.isAdopted) {
@@ -152,15 +125,14 @@ export const railRowsOf = ({ view, agents, rootRouting }: RowParams): ReadonlyAr
     kind: 'child',
     role: card.role,
     label: card.roleLabel,
-    node: childNodeOf({ card }),
+    task: card.task,
+    node: delegationNodeOf({ card }),
     word: card.status.word,
     tone: card.status.tone,
     provider: card.provider,
     model: card.model,
     effort: card.effort,
-    startedAtMs: card.startedAtMs,
-    endedAtMs: card.endedAtMs,
     isLive: card.status.isLive,
   }));
-  return [rootRowOf({ view, agent: rootAgent, routing: rootRouting }), ...children];
+  return [rootRowOf({ view, routing: rootRouting, rootTurn }), ...children];
 };

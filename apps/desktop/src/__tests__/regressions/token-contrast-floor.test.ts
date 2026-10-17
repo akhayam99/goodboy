@@ -489,3 +489,80 @@ describe('translucent edges and thumbs', () => {
     },
   );
 });
+
+const UI_SOURCE = join(__dirname, '..', '..', '..', '..', '..', 'packages', 'ui', 'src');
+const TINT_SOURCE = join(UI_SOURCE, 'tint.ts');
+const CHIP_SOURCE = join(UI_SOURCE, 'components', 'Chip.tsx');
+const SELECTED_ROW_SOURCE = join(UI_SOURCE, 'selectedRow.ts');
+const REST_TINT = 0.1;
+const SELECTED_ROW_TEXT = ['foreground', 'muted-foreground'] as const;
+
+describe('composed contrast', () => {
+  const palettes = readThemes();
+  const blocks = themeBlocks();
+  const themes = [
+    { theme: 'dark', block: blocks.dark },
+    { theme: 'light', block: blocks.light },
+  ] as const;
+  const cases = themes.flatMap(({ theme, block }) =>
+    READ_SURFACES.map((surface) => ({ theme, block, surface })),
+  );
+
+  it('never paints a stronger tint at hover: a tone hover is the neutral overlay', () => {
+    const tint = readFileSync(TINT_SOURCE, 'utf8');
+    const hoverFills = [...tint.matchAll(/hoverBg: '([^']+)'/g)].map((match) => String(match[1]));
+    expect(new Set(hoverFills)).toEqual(new Set(['hover:bg-hover']));
+  });
+
+  it('keeps a tinted chip on its rest fill at hover, so its text keeps the rest contrast', () => {
+    const chip = readFileSync(CHIP_SOURCE, 'utf8');
+    expect(chip).not.toMatch(/tint\.hoverBg/);
+    expect(chip).toMatch(/tint\.hoverRing/);
+  });
+
+  it.each(cases)(
+    'keeps tone text at 4.5:1 on its tint over $surface in $theme',
+    ({ theme, surface }) => {
+      const palette = palettes[theme];
+      const failures = TONES.map((tone) => {
+        const tinted = composite({
+          foreground: swatch(palette, tone),
+          background: swatch(palette, surface),
+          alpha: REST_TINT,
+        });
+        return { tone, ratio: contrast(swatch(palette, tone), tinted) };
+      }).filter(({ ratio }) => ratio < BODY_FLOOR);
+      expect(failures).toEqual([]);
+    },
+  );
+
+  it.each(cases)(
+    'keeps the text of a selected row at 4.5:1 over $surface in $theme',
+    ({ theme, block, surface }) => {
+      const palette = palettes[theme];
+      const selected = readTranslucent({ block, token: 'overlay-selected' });
+      const selectedFill = composite({
+        foreground: selected.rgb,
+        background: swatch(palette, surface),
+        alpha: selected.alpha,
+      });
+      const failures = SELECTED_ROW_TEXT.map((token) => ({
+        token,
+        ratio: contrast(swatch(palette, token), selectedFill),
+      })).filter(({ ratio }) => ratio < BODY_FLOOR);
+      expect(failures).toEqual([]);
+    },
+  );
+
+  it('adds no hover wash on top of a selected row', () => {
+    const selectedRow = readFileSync(SELECTED_ROW_SOURCE, 'utf8');
+    expect(selectedRow).toContain('data-[selected=true]:hover:bg-selected');
+  });
+
+  it('lifts faint text to muted inside a selected row', () => {
+    const css = readFileSync(STYLES, 'utf8');
+    expect(css).toMatch(
+      /\[data-selected='true'\] \.text-faint-foreground\s*\{\s*color: var\(--color-muted-foreground\);\s*\}/,
+    );
+  });
+});

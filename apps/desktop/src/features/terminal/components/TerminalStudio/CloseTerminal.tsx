@@ -5,15 +5,26 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly name: string;
   readonly isBusy: boolean;
+  readonly isArmed: boolean;
   readonly command: string | null;
   readonly onClose: () => void;
+  readonly onArm: () => void;
+  readonly onDisarm: () => void;
 };
 
 type ButtonParams = {
   readonly onClick: () => void;
 };
 
-export const CloseTerminal = ({ name, isBusy, command, onClose }: Props) => {
+export const CloseTerminal = ({
+  name,
+  isBusy,
+  isArmed,
+  command,
+  onClose,
+  onArm,
+  onDisarm,
+}: Props) => {
   const label = `Close ${name}`;
   const button = ({ onClick }: ButtonParams) => (
     <IconButton
@@ -33,13 +44,18 @@ export const CloseTerminal = ({ name, isBusy, command, onClose }: Props) => {
     <ConfirmPopover
       role="danger"
       icon={<TerminalSquare size={ICON_SIZE.row} aria-hidden />}
-      title={
-        command === null ? 'A command is running. Close it?' : `${command} is running. Close it?`
-      }
+      title={`${name} is running. Close it?`}
+      {...(command !== null && command !== name && { description: command })}
+      align="start"
       confirmLabel="Close"
       cancelLabel="Keep"
-      onConfirm={onClose}
-      trigger={({ arm }) => button({ onClick: arm })}
+      isOpen={isArmed}
+      onCancel={onDisarm}
+      onConfirm={() => {
+        onDisarm();
+        onClose();
+      }}
+      trigger={() => button({ onClick: onArm })}
     />
   );
 };

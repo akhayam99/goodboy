@@ -15,7 +15,15 @@ describe('retired names match whatever the casing', () => {
   });
 
   it('flags a lowercase worktree name', () => {
-    expect(retiredIdsIn({ text: 'remove worktree' })).toContain('remove-worktree');
+    expect(retiredIdsIn({ text: 'close worktree' })).toContain('close-worktree');
+  });
+
+  it.each(['Spend cap', 'Raise spend cap', 'over its spend cap'])('flags %s for Limit', (text) => {
+    expect(retiredIdsIn({ text })).toContain('spend-cap');
+  });
+
+  it('leaves the spend_cap cause key alone', () => {
+    expect(retiredIdsIn({ text: 'spend_cap' })).toEqual([]);
   });
 
   it('leaves a data attribute alone', () => {

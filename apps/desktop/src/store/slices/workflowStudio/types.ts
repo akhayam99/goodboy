@@ -1,3 +1,4 @@
+import type { WorkflowRunHistoryRow } from '@goodboy/db';
 import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import type { WorkflowDraft } from '../../../features/workflows/engine';
 import type { StudioHomeView } from '../../../features/workflows/studioHomeView';
@@ -30,10 +31,17 @@ export type StartWorkflowGenerationParams = {
   readonly form: WorkflowDraft | null;
 };
 
+export type WorkflowRunHistoryLoad = {
+  readonly status: 'loading' | 'ready' | 'failed';
+  readonly runs: ReadonlyArray<WorkflowRunHistoryRow> | null;
+  readonly requestId: number;
+};
+
 export type WorkflowStudioState = {
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;
   readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
   readonly workflowStudioFocus: WorkflowId | null;
   readonly workflowStudioView: StudioHomeView;
+  readonly workflowRunHistory: Readonly<Record<WorkspaceId, WorkflowRunHistoryLoad | undefined>>;
 };

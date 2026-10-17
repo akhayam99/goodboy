@@ -63,17 +63,18 @@ describe('WorkflowBuilderView, Use session goal', () => {
   it('is offered in a session that has a goal slot', () => {
     render(
       <ToastProvider>
-        <WorkflowBuilderView session={session} onClose={() => undefined} />
+        <WorkflowBuilderView mode="dynamic" session={session} onClose={() => undefined} />
       </ToastProvider>,
     );
 
-    expect(screen.getByRole('button', { name: /use session goal/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /use the session goal/i })).toBeDefined();
   });
 
   it('is not offered on the New session page', () => {
     render(
       <ToastProvider>
         <WorkflowBuilderView
+          mode="dynamic"
           kickoff={{
             workspaceId: WORKSPACE_ID,
             goal: '',
@@ -86,6 +87,6 @@ describe('WorkflowBuilderView, Use session goal', () => {
     );
 
     expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /use session goal/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /use the session goal/i })).toBeNull();
   });
 });

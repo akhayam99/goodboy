@@ -10,7 +10,7 @@ import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
 import { jobMountPathOf } from '../../timeline/jobMountPathOf';
 import { ciFixRoleOf } from '../../../branch/checks/ciFixRole';
-import { selectCheckMount } from '../../../../store/slices/agents/selectCheckMount';
+import { ciFixMountOf } from './ciFixMountOf';
 
 type EventTarget = {
   readonly lens: LensKind | null;
@@ -116,7 +116,12 @@ export const useTimelineOpen = ({
           checkUrl === undefined ||
           ciFixRoleOf({ agent: entry.agent, kind: entry.agentKind }) === null
             ? null
-            : selectCheckMount({ state: store, url: checkUrl });
+            : ciFixMountOf({
+                state: store,
+                sessionId,
+                checkUrl,
+                storedMountId: entry.agent.mountId,
+              });
         if (checkUrl !== undefined && ciMountId !== null) {
           return {
             label: 'Open CI fix',

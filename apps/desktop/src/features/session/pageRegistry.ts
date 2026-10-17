@@ -9,9 +9,11 @@ import type { CountedPageId } from './pageCountWord';
 
 type PageId =
   | 'overview'
-  | 'branch'
+  | 'files'
   | 'runs'
+  | 'orchestrated'
   | 'agents'
+  | 'auto'
   | 'artifacts'
   | 'questions'
   | 'explore'
@@ -68,53 +70,57 @@ const OVERVIEW_PAGE: Page = {
   currentLenses: [null],
 };
 
-const BRANCH_PAGE: Page = {
-  id: 'branch',
-  label: LENS_LABEL.branch,
-  icon: LENS_ICON.branch,
-  tint: 'branch',
-  shortcut: 'lens.review',
-  count: 'branch',
-  group: 'work',
-  lens: 'review',
-  currentLenses: ['branch', 'review', 'pr', 'files'],
-};
-
 const FILE_VERSIONS_PAGE: Page = {
-  id: 'branch',
+  id: 'files',
   label: lensLabelFor({ lens: 'files', isBranchless: true }),
   icon: LENS_ICON.files,
   tint: 'files',
   shortcut: 'lens.files',
-  count: 'branch',
+  count: null,
   group: 'work',
   lens: 'files',
   currentLenses: ['files'],
 };
 
-const WORK_AFTER_BRANCH: ReadonlyArray<Page> = [
-  lensPage({
-    id: 'runs',
-    lens: 'workflows',
-    shortcut: 'lens.workflows',
-    group: 'work',
-    count: 'runs',
-  }),
-  lensPage({
-    id: 'agents',
-    lens: 'agents',
-    shortcut: 'lens.agents',
-    group: 'work',
-    count: 'agents',
-  }),
-  lensPage({
-    id: 'artifacts',
-    lens: 'plans',
-    shortcut: 'lens.plans',
-    group: 'work',
-    count: 'artifacts',
-  }),
-];
+const RUNS_PAGE = lensPage({
+  id: 'runs',
+  lens: 'workflows',
+  shortcut: 'lens.workflows',
+  group: 'work',
+  count: 'runs',
+});
+
+const ORCHESTRATED_PAGE = lensPage({
+  id: 'orchestrated',
+  lens: 'orchestrated',
+  shortcut: 'lens.workflows',
+  group: 'work',
+  count: 'orchestrated',
+});
+
+const AGENTS_PAGE = lensPage({
+  id: 'agents',
+  lens: 'agents',
+  shortcut: 'lens.agents',
+  group: 'work',
+  count: 'agents',
+});
+
+const AUTO_PAGE = lensPage({
+  id: 'auto',
+  lens: 'auto',
+  shortcut: 'lens.agents',
+  group: 'work',
+  count: 'auto',
+});
+
+const ARTIFACTS_PAGE = lensPage({
+  id: 'artifacts',
+  lens: 'plans',
+  shortcut: 'lens.plans',
+  group: 'work',
+  count: 'artifacts',
+});
 
 const REST: ReadonlyArray<Page> = [
   lensPage({
@@ -164,12 +170,20 @@ const REST: ReadonlyArray<Page> = [
 
 type ColumnParams = {
   readonly isBranchless: boolean;
+  readonly hasAutoAgents?: boolean;
 };
 
-export const columnPagesOf = ({ isBranchless }: ColumnParams): ReadonlyArray<Page> => [
+export const columnPagesOf = ({
+  isBranchless,
+  hasAutoAgents = false,
+}: ColumnParams): ReadonlyArray<Page> => [
   OVERVIEW_PAGE,
-  isBranchless ? FILE_VERSIONS_PAGE : BRANCH_PAGE,
-  ...WORK_AFTER_BRANCH,
+  ...(isBranchless ? [FILE_VERSIONS_PAGE] : []),
+  RUNS_PAGE,
+  ORCHESTRATED_PAGE,
+  AGENTS_PAGE,
+  ...(hasAutoAgents ? [AUTO_PAGE] : []),
+  ARTIFACTS_PAGE,
 ];
 
 type PagesParams = ColumnParams & {
@@ -179,10 +193,11 @@ type PagesParams = ColumnParams & {
 
 export const pagesOf = ({
   isBranchless,
+  hasAutoAgents = false,
   destinations,
   hasOpenQuestions,
 }: PagesParams): ReadonlyArray<Page> => [
-  ...columnPagesOf({ isBranchless }),
+  ...columnPagesOf({ isBranchless, hasAutoAgents }),
   ...REST.filter(
     (page) =>
       (page.id !== 'questions' || hasOpenQuestions) &&

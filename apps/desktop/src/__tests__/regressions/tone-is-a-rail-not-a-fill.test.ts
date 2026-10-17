@@ -31,18 +31,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chip',
   },
-  'apps/desktop/src/features/session/components/AgentTree/ScoutSubtree.tsx': {
-    count: 1,
-    reason: 'chip',
-  },
-  'apps/desktop/src/features/session/components/AgentTree/WorkflowRunStatus.tsx': {
-    count: 5,
-    reason: 'chip',
-  },
-  'apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.tsx': {
-    count: 1,
-    reason: 'chip',
-  },
   'apps/desktop/src/features/history/historyActionClasses.ts': {
     count: 1,
     reason: 'chip',
@@ -51,19 +39,10 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'control',
   },
-  'apps/desktop/src/shared/components/RoutingPicker/index.tsx': {
-    count: 1,
-    reason: 'control',
-  },
   'apps/desktop/src/features/diff/lib/lineTone.ts': {
     count: 2,
     reason: 'diff',
   },
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineStreamRow.tsx':
-    {
-      count: 1,
-      reason: 'debt',
-    },
 };
 
 type ListParams = {

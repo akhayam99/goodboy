@@ -208,7 +208,7 @@ const stubMonitor = ({ snapshot }: { readonly snapshot: MonitorSnapshot }) =>
 const renderLens = () =>
   render(
     <ToastProvider>
-      <ScriptsPanel workspaceId={HARBORLINE.id} sessionId={FIRST.id} />
+      <ScriptsPanel workspaceId={HARBORLINE.id} sessionId={FIRST.id} onClose={vi.fn()} />
     </ToastProvider>,
   );
 
@@ -273,10 +273,9 @@ describe('Scripts page live state', () => {
     expect(within(services).getByText(/^1m \d+s$/)).toBeDefined();
     const link = await within(services).findByRole('button', { name: 'Open localhost:5005' });
     expect(link).toBeDefined();
-    expect(await within(services).findByText('15%')).toBeDefined();
-    expect(within(services).getByText('150 MB')).toBeDefined();
+    expect(within(services).queryByText('150 MB')).toBeNull();
     expect(within(services).getByRole('button', { name: 'Stop dev' })).toBeDefined();
-    expect(within(services).getByRole('button', { name: 'Restart dev' })).toBeDefined();
+    expect(within(services).queryByRole('button', { name: 'Restart dev' })).toBeNull();
   });
 
   it('warns that the expected port is in use by another worktree and keeps Run enabled', async () => {

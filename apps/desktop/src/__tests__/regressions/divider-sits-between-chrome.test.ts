@@ -38,7 +38,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'chrome',
   },
   'apps/desktop/src/features/budget/components/spend/CapEditor.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/chat/components/ChatView/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/companion/components/CompanionStudio/index.tsx': {
     count: 1,
     reason: 'debt',
@@ -46,10 +45,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'packages/ui/src/components/Listbox/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx': {
     count: 2,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/resolve/components/ReviewFlow/ReviewActionBar.tsx': {
-    count: 1,
     reason: 'chrome',
   },
   'apps/desktop/src/features/session/components/SessionOverviewPane/LinkWorkPicker.tsx': {
@@ -78,15 +73,9 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineDayRule.tsx':
-    { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx': {
     count: 2,
     reason: 'debt',
-  },
-  'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx': {
-    count: 2,
-    reason: 'chrome',
   },
   'apps/desktop/src/features/workspace/components/WorkspaceSwitcher/index.tsx': {
     count: 2,
@@ -97,7 +86,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'chrome',
   },
   'packages/ui/src/components/Dialog.tsx': { count: 2, reason: 'chrome' },
-  'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/PaneShell/index.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {

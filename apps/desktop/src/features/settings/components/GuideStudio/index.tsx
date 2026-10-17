@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
+import { ScrollFade, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
@@ -15,6 +15,7 @@ type Props = {
 };
 
 export const GuideStudio = ({ onClose }: Props) => {
+  const fold = useStudioRailFold({ surface: 'guide' });
   const scrollToRef = useRef<(id: string) => void>(() => {});
   const suppressUntilRef = useRef(0);
   const [query, setQuery] = useState('');
@@ -25,10 +26,23 @@ export const GuideStudio = ({ onClose }: Props) => {
     chapters.find((chapter) => chapter.id === activeId)?.id ?? chapters[0]?.id ?? null;
 
   const jump = (id: string) => {
-    suppressUntilRef.current = Date.now() + 700;
+    suppressUntilRef.current = Number.POSITIVE_INFINITY;
     setActiveId(id);
     scrollToRef.current(id);
   };
+
+  useEffect(() => {
+    const release = () => {
+      suppressUntilRef.current = 0;
+    };
+    const options = { passive: true } as const;
+    window.addEventListener('wheel', release, options);
+    window.addEventListener('touchmove', release, options);
+    return () => {
+      window.removeEventListener('wheel', release);
+      window.removeEventListener('touchmove', release);
+    };
+  }, []);
 
   useEffect(() => {
     const requested = peekGuideChapter();
@@ -65,6 +79,8 @@ export const GuideStudio = ({ onClose }: Props) => {
           railWidth="standard"
           surface="guide"
           placement="page"
+          isCollapsed={fold.isCollapsed}
+          onCollapsedChange={fold.setFolded}
           rail={
             <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
               <GuideRail

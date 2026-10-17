@@ -1,42 +1,86 @@
 import { describe, expect, it } from 'vitest';
 import {
   FRAME_BAND_PX,
-  FRAME_DRAWER_INSET_PX,
-  FRAME_DRAWER_ROW_PX,
   FRAME_PAGES,
+  FRAME_PAGE_HEADER_INSET_PX,
   FRAME_TITLE_CENTRE_PX,
   FRAME_TITLE_ROW_PX,
   FRAME_TYPES,
   PAGE_FRAME,
+  PAGE_MEASURE,
   frameGeometryOf,
   frameTierOf,
   type FramePage,
   type FrameType,
 } from '../frameGeometry';
+import type { PageColumnWidth } from '../components/PageColumn';
 
 const pagesOf = ({ type }: { readonly type: FrameType }): ReadonlyArray<FramePage> =>
   FRAME_PAGES.filter((page) => PAGE_FRAME[page] === type);
 
 describe('frameGeometryOf', () => {
-  it('puts every title centre at the band plus half the title row', () => {
+  it('puts every title centre at the space above it plus half the title row', () => {
     expect(FRAME_BAND_PX).toBe(40);
     expect(FRAME_TITLE_ROW_PX).toBe(32);
     expect(FRAME_TITLE_CENTRE_PX).toBe(56);
-    const centres = FRAME_PAGES.map((page) => frameGeometryOf({ page }).titleCentreY);
-
-    expect(new Set(centres)).toEqual(new Set([56]));
+    for (const page of FRAME_PAGES) {
+      const geometry = frameGeometryOf({ page });
+      expect(geometry.titleCentreY, page).toBe(geometry.bandHeight + FRAME_TITLE_ROW_PX / 2);
+    }
   });
 
-  it('gives every page the same band and row', () => {
-    const geometry = FRAME_PAGES.map((page) => frameGeometryOf({ page }));
-
-    expect(geometry.every((entry) => entry.bandHeight === 40)).toBe(true);
-    expect(geometry.every((entry) => entry.titleRowHeight === 32)).toBe(true);
+  it('opens every session page, sidebar door page and closable overlay on its 44px header row', () => {
+    expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX).toBe(44);
+    for (const page of [
+      'board',
+      'settings',
+      'overview',
+      'orchestrated',
+      'auto',
+      'artifacts',
+      'branch',
+      'runs',
+      'agents',
+      'questions',
+      'inbox',
+      'chat',
+      'workflows',
+      'terminal',
+      'monitoring',
+      'notifications',
+      'guide',
+    ] as const) {
+      expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_PAGE_HEADER_INSET_PX);
+    }
   });
 
-  it('centres the drawer header row on the band centre line', () => {
-    expect(FRAME_DRAWER_ROW_PX).toBe(28);
-    expect(FRAME_DRAWER_INSET_PX + FRAME_DRAWER_ROW_PX / 2).toBe(FRAME_BAND_PX / 2);
+  it('keeps the 40px band only where the band still holds Close', () => {
+    expect(
+      FRAME_PAGES.filter((page) => frameGeometryOf({ page }).bandHeight === FRAME_BAND_PX),
+    ).toEqual(['impact', 'whatsNew', 'release']);
+    for (const page of ['impact', 'whatsNew'] as const) {
+      expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_BAND_PX);
+    }
+    expect(FRAME_PAGES.every((page) => frameGeometryOf({ page }).titleRowHeight === 32)).toBe(true);
+  });
+
+  it('puts the drawer header row on the page title line', () => {
+    for (const page of FRAME_PAGES) {
+      expect(frameGeometryOf({ page }).drawerRowHeight, page).toBe(FRAME_TITLE_ROW_PX);
+    }
+    expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX / 2).toBe(28);
+  });
+});
+
+describe('PAGE_MEASURE', () => {
+  it('reads the 720 measure only on the chat room, and the full width only on the work surfaces', () => {
+    const measureOf = (width: PageColumnWidth) =>
+      FRAME_PAGES.filter((page) => PAGE_MEASURE[page] === width);
+
+    expect(measureOf('measure')).toEqual(['chat']);
+    expect(measureOf('full')).toEqual(['board', 'terminal']);
+    expect(PAGE_MEASURE.overview).toBe(PAGE_MEASURE.runs);
+    expect(Object.keys(PAGE_MEASURE).sort()).toEqual([...FRAME_PAGES].sort());
   });
 });
 

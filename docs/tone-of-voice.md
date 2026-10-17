@@ -87,7 +87,7 @@ talking to a market. There are two voices:
   "Retry", never "Try again". Advice inside a sentence may still say "try
   again".
 - **One scale for "stop and ask".** "Ask first" is the only label for it, in
-  Settings, Slack, after-merge cleanup and spend caps.
+  Settings, Slack, after-merge cleanup and limits.
 - **Code identifiers in backticks**: `pnpm tauri:dev`, not "the pnpm tauri:dev
   command".
 

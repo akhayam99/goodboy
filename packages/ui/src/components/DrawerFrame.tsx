@@ -1,28 +1,41 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
-import { Divider } from './Divider';
+import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
-import { FRAME_DRAWER_INSET_PX, FRAME_DRAWER_ROW_PX } from '../frameGeometry';
+import { PANE_RHYTHM } from '../paneRhythm';
 import { ICON_SIZE } from '../iconSize';
+
+export type DrawerBack = {
+  readonly label: string;
+  readonly onBack: () => void;
+};
 
 export type DrawerFrameProps = {
   readonly title: string;
+  readonly titleContent?: ReactNode;
   readonly icon?: LucideIcon;
   readonly iconClassName?: string;
   readonly count?: ReactNode;
+  readonly meta?: ReactNode;
   readonly action?: ReactNode;
+  readonly menu?: ReactNode;
   readonly toolbar?: ReactNode;
+  readonly back?: DrawerBack;
   readonly closeLabel?: string;
   readonly onClose: () => void;
   readonly dock?: ReactNode;
   readonly scroll?: 'frame' | 'self';
   readonly children: ReactNode;
 };
+
+const HEADER_INSET_PX = 16;
+
+const META_INSET_WITH_ICON_PX = HEADER_INSET_PX + ICON_SIZE.control + 8;
 
 const FIELD_SELECTOR = 'textarea, input, [contenteditable="true"]';
 
@@ -54,11 +67,15 @@ const hasDraft = (element: HTMLElement): boolean => {
 
 export const DrawerFrame = ({
   title,
+  titleContent,
   icon: Icon,
   iconClassName,
   count,
+  meta,
   action,
+  menu,
   toolbar,
+  back,
   closeLabel = 'Close',
   onClose,
   dock,
@@ -104,17 +121,27 @@ export const DrawerFrame = ({
       <div className={cn('flex min-w-0 flex-1 gap-2', hasToolbar ? 'items-start' : 'items-center')}>
         {Icon == null ? null : (
           <span className="flex h-5 shrink-0 items-center">
-            <Icon size={ICON_SIZE.control} aria-hidden className={iconClassName} />
+            <Icon
+              size={ICON_SIZE.control}
+              aria-hidden
+              className={cn('text-muted-foreground', iconClassName)}
+            />
           </span>
         )}
-        <h2
-          className={cn(
-            'min-w-0 text-heading text-foreground',
-            hasToolbar ? 'line-clamp-2' : 'truncate',
-          )}
-        >
-          {title}
-        </h2>
+        {titleContent != null ? (
+          <div className="flex h-5 min-w-24 items-center text-heading text-foreground">
+            {titleContent}
+          </div>
+        ) : (
+          <h2
+            className={cn(
+              'min-w-24 text-heading text-foreground',
+              hasToolbar ? 'line-clamp-2' : 'truncate',
+            )}
+          >
+            {title}
+          </h2>
+        )}
         {count != null ? (
           <span className="flex h-5 min-w-0 shrink-[4] items-center text-meta tabular-nums text-muted-foreground">
             {count}
@@ -123,6 +150,7 @@ export const DrawerFrame = ({
       </div>
       <div className={cn('flex shrink-0 items-center gap-1', hasToolbar && 'h-5')}>
         {action}
+        {menu}
         <IconButton icon={X} label={closeLabel} variant="ghost" onClick={onClose} />
       </div>
     </>
@@ -137,26 +165,45 @@ export const DrawerFrame = ({
     >
       <header
         data-drawer-header=""
-        style={{ paddingTop: FRAME_DRAWER_INSET_PX, paddingBottom: FRAME_DRAWER_INSET_PX }}
-        className={hasToolbar ? 'flex shrink-0 flex-col gap-2' : 'flex shrink-0 flex-col'}
+        className={cn(
+          'flex shrink-0 flex-col pb-2',
+          PANE_RHYTHM.headerInset,
+          hasToolbar && 'gap-2',
+        )}
       >
         <div
           data-drawer-header-row=""
-          style={{ minHeight: FRAME_DRAWER_ROW_PX }}
           className={cn(
             'flex min-w-0 gap-2 pl-4 pr-2',
+            hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,
             hasToolbar ? 'items-start' : 'items-center',
           )}
         >
           {titleRow}
         </div>
+        {meta == null ? null : (
+          <p
+            data-drawer-meta=""
+            style={{ paddingLeft: Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX }}
+            className="min-w-0 truncate pr-2 text-meta text-muted-foreground"
+          >
+            {meta}
+          </p>
+        )}
         {hasToolbar ? (
           <div data-drawer-toolbar="" className="flex min-w-0 flex-col gap-2 px-4">
             {toolbar}
           </div>
         ) : null}
       </header>
-      <Divider />
+      {back === undefined ? null : (
+        <div data-drawer-back="" className="flex shrink-0 px-2 pt-2">
+          <Button variant="quiet" size="xs" onClick={back.onBack}>
+            <ArrowLeft size={ICON_SIZE.row} aria-hidden />
+            {back.label}
+          </Button>
+        </div>
+      )}
       {scroll === 'self' ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       ) : (

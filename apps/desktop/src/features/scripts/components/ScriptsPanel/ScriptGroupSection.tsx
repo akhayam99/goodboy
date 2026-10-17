@@ -6,7 +6,6 @@ import type { SessionScriptGroup } from '../../buildSessionScripts';
 
 type Props = {
   readonly group: SessionScriptGroup;
-  readonly count: number;
   readonly isCollapsed: boolean;
   readonly isRefreshing: boolean;
   readonly editor: ReactNode;
@@ -18,7 +17,6 @@ type Props = {
 
 export const ScriptGroupSection = ({
   group,
-  count,
   isCollapsed,
   isRefreshing,
   editor,
@@ -61,9 +59,6 @@ export const ScriptGroupSection = ({
               <BranchIcon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
               <span className="truncate">{group.branch}</span>
             </span>
-          )}
-          {count === 0 ? null : (
-            <span className="shrink-0 text-meta tabular-nums text-muted-foreground">{count}</span>
           )}
         </button>
         {group.isReady ? (

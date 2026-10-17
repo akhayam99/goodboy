@@ -52,15 +52,15 @@ describe('SentryIssueDetail', () => {
 
     expect(screen.getByRole('heading', { name: 'TypeError: request failed' })).toBeDefined();
     expect(screen.getAllByText('api/items').length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Open in Sentry' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^More actions for/ })).toBeDefined();
     expect(screen.getByText(/desktop@1.2.3/)).toBeDefined();
     expect(screen.getByText(/production/)).toBeDefined();
     expect(screen.queryByText('GET /api/items')).toBeNull();
 
-    const facts = screen.getByRole('list', { name: 'Properties' });
+    const facts = screen.getByRole('group', { name: 'Properties' });
     expect(
       within(facts)
-        .getAllByRole('listitem')
+        .getAllByRole('term')
         .map((item) => item.getAttribute('data-fact-slot')),
     ).toEqual(['state', 'weight', 'place', 'labels', 'labels']);
     expect(within(facts).getByText('Unresolved')).toBeDefined();
@@ -82,7 +82,7 @@ describe('SentryIssueDetail', () => {
     );
 
     expect(screen.getByText('128 events · 9 users')).toBeDefined();
-    expect(screen.getByRole('list', { name: 'Properties' }).textContent).not.toContain(
+    expect(screen.getByRole('group', { name: 'Properties' }).textContent).not.toContain(
       formatDateTime({ at: LAST_SEEN, hasYear: true }),
     );
   });

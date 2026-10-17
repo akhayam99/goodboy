@@ -55,6 +55,10 @@ vi.mock('../../../../store', () => ({
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { WorkspaceSwitcher } from './index';
 
+type DigitParams = {
+  readonly name: string;
+};
+
 beforeEach(() => {
   state.workspaces = [
     { id: 'ws-a', name: 'alpha', slug: 'alpha' } as Workspace,
@@ -117,13 +121,13 @@ describe('WorkspaceSwitcher', () => {
     state.currentWorkspace = state.workspaces[0] ?? null;
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    const digits = (name: string): string =>
-      screen.getByText(name).closest('div[class*="group"]')?.querySelector('kbd')?.textContent ??
+    const digits = ({ name }: DigitParams): string =>
+      screen.getByText(name).closest('[data-workspace-row]')?.querySelector('kbd')?.textContent ??
       '';
 
-    expect(digits('delta')).toBe(shortcutGlyphs('workspace.1'));
-    expect(digits('charlie')).toBe(shortcutGlyphs('workspace.2'));
-    expect(digits('bravo')).toBe(shortcutGlyphs('workspace.3'));
+    expect(digits({ name: 'delta' })).toBe(shortcutGlyphs('workspace.1'));
+    expect(digits({ name: 'charlie' })).toBe(shortcutGlyphs('workspace.2'));
+    expect(digits({ name: 'bravo' })).toBe(shortcutGlyphs('workspace.3'));
   });
 
   it('hides the numbers while a search narrows the list', () => {
@@ -134,7 +138,7 @@ describe('WorkspaceSwitcher', () => {
     });
 
     expect(
-      screen.getByText('bravo').closest('div[class*="group"]')?.querySelector('kbd')?.textContent,
+      screen.getByText('bravo').closest('[data-workspace-row]')?.querySelector('kbd')?.textContent,
     ).not.toBe(shortcutGlyphs('workspace.1'));
   });
 
@@ -251,16 +255,84 @@ describe('WorkspaceSwitcher', () => {
     expect(screen.queryByText('Manage projects')).toBeNull();
   });
 
-  it('lists disconnected workspaces closed by default, with Reconnect once expanded', () => {
+  it('lists disconnected workspaces in the same list, each with Reconnect one click away', () => {
     state.disconnectedWorkspaces = [
       { id: 'ws-c', name: 'cascadia', slug: 'cascadia' } as Workspace,
     ];
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    expect(screen.queryByText('Reconnect')).toBeNull();
-    fireEvent.click(screen.getByText('Disconnected'));
-    fireEvent.click(screen.getByText('Reconnect'));
+    const rows = Array.from(document.querySelectorAll('[data-workspace-row]')).map((row) =>
+      row.getAttribute('data-workspace-row'),
+    );
+    expect(rows).toEqual(['bravo', 'cascadia']);
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect cascadia' }));
     expect(state.reconnectWorkspaceById).toHaveBeenCalledWith('ws-c');
+  });
+
+  it('keeps the current workspace on top, apart from the list of the others', () => {
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
+
+    const current = screen.getByRole('region', { name: 'Current workspace: alpha' });
+    expect(current.querySelector('[data-workspace-tile]')?.textContent).toBe('A');
+    expect(current.compareDocumentPosition(screen.getByText('bravo'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(screen.queryByRole('button', { name: 'Switch to alpha' })).toBeNull();
+  });
+
+  it('switches to another workspace with one click on its row', async () => {
+    const onClose = vi.fn();
+    render(<WorkspaceSwitcher onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to bravo' }));
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(state.openWorkspace).toHaveBeenCalledWith({ id: 'ws-b', title: 'bravo' });
+  });
+
+  it('opens another workspace in a new window from its row in one click', async () => {
+    const onClose = vi.fn();
+    render(<WorkspaceSwitcher onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open bravo in a new window' }));
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(state.openWorkspace).toHaveBeenCalledWith({
+      id: 'ws-b',
+      title: 'bravo',
+      target: 'new-window',
+    });
+  });
+
+  it('opens the workspace projects from Manage projects in one click', () => {
+    const onClose = vi.fn();
+    const details: Array<unknown> = [];
+    const listener = (event: Event) => {
+      if (event instanceof CustomEvent) {
+        details.push(event.detail);
+      }
+    };
+    window.addEventListener('goodboy:open-settings', listener);
+    render(<WorkspaceSwitcher onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manage projects' }));
+
+    expect(details).toEqual([{ scope: 'workspace', section: 'projects' }]);
+    expect(onClose).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:open-settings', listener);
+  });
+
+  it('starts a new project via the global event in one click', () => {
+    const onClose = vi.fn();
+    const spy = vi.fn();
+    window.addEventListener('goodboy:start-new-project', spy);
+    render(<WorkspaceSwitcher onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start a new project' }));
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce();
+    window.removeEventListener('goodboy:start-new-project', spy);
   });
 
   it('renders panel content only, leaving anchoring to the popover primitive', () => {

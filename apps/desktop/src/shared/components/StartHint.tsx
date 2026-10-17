@@ -70,7 +70,7 @@ export const StartHint = ({
               icon={X}
               label="Clear hint"
               variant="ghost"
-              iconSize={12}
+              iconSize={ICON_SIZE.row}
               disabled={isDisabled}
               onClick={() => setStartHint({ sessionId, scope, text: '' })}
             />

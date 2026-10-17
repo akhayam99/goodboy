@@ -16,7 +16,6 @@ import type {
 } from '@goodboy/types';
 import { bitbucketPrStateKind } from '@goodboy/core';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
-import { isBranchMergedOf } from '../../../shared/lib/branchPresence';
 import type { AppState } from '../../types';
 import { projectById } from '../projects/projectIndex';
 
@@ -224,11 +223,6 @@ export const isMountRequestMerged = ({ state, mountId }: RequestParams): boolean
 export const isOpenRequest = ({ request }: CompletedParams): boolean =>
   request !== null && !isTerminal({ state: request.state });
 
-export const mountOpenRequestHead = ({ state, mountId }: RequestParams): string | null => {
-  const request = mountRequestOf({ state, mountId });
-  return isOpenRequest({ request }) ? (request?.headSha ?? '') : null;
-};
-
 const seriesPositionOf = ({
   series,
   mountId,
@@ -398,45 +392,4 @@ export const buildMountRows = ({
       },
     ];
   });
-};
-
-export type MountRowClassification = Readonly<{
-  open: ReadonlyArray<MountRowView>;
-  finished: ReadonlyArray<MountRowView>;
-}>;
-
-type ClassifyParams = {
-  readonly group: Pick<MountProjectGroup, 'rows' | 'finishedRows'>;
-  readonly statusOf: (row: MountRowView) => WorktreeStatus | null;
-  readonly commitsAfterMergeOf: (row: MountRowView) => number | null;
-};
-
-export const classifyMountRows = ({
-  group,
-  statusOf,
-  commitsAfterMergeOf,
-}: ClassifyParams): MountRowClassification => {
-  const isMergedRow = (row: MountRowView): boolean =>
-    row.projectKind === 'repo' &&
-    isBranchMergedOf({
-      status: statusOf(row),
-      baseBranch: row.baseBranch,
-      isMainCheckout: row.isMainCheckout,
-      isRequestMerged: row.request?.state === 'merged',
-      hasOpenRequest: isOpenRequest({ request: row.request }),
-      commitsAfterMerge: commitsAfterMergeOf(row),
-    });
-  const hasMovedPastMerge = (row: MountRowView): boolean => commitsAfterMergeOf(row) !== null;
-  return {
-    open: [
-      ...group.rows.filter((row) => !isMergedRow(row)),
-      ...group.finishedRows
-        .filter(hasMovedPastMerge)
-        .map((row): MountRowView => ({ ...row, isFinished: false })),
-    ],
-    finished: [
-      ...group.rows.filter(isMergedRow).map((row): MountRowView => ({ ...row, isFinished: true })),
-      ...group.finishedRows.filter((row) => !hasMovedPastMerge(row)),
-    ],
-  };
 };

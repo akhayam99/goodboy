@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Chip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, FOCUS_RING, ROW_INTERACTIVE, cn, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useBranchSwitcher } from '../../hooks/useBranchSwitcher';
@@ -13,11 +13,12 @@ type Props = {
   readonly currentPath: string | null;
   readonly repoName: string | null;
   readonly branch: string;
+  readonly leading?: ReactNode;
 };
 
-const CHIP_CLASS = 'min-w-0 max-w-full shrink';
+const FACE_CLASS = 'flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-label';
 
-export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Props) => {
+export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch, leading }: Props) => {
   const switcher = useBranchSwitcher({ sessionId, currentPath });
   const dropdown = useDropdown({
     align: 'start',
@@ -37,31 +38,16 @@ export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Pro
     }
   }, [isOpen]);
 
-  const label = (
-    <span className="flex min-w-0 items-center gap-1">
-      {repoName === null ? null : (
-        <>
-          <span className="truncate">{repoName}</span>
-          <span aria-hidden className="text-faint-foreground">
-            ·
-          </span>
-        </>
-      )}
-      <BranchName branch={branch} />
-    </span>
+  const icon = leading ?? (
+    <CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
   );
-  const icon = <CONCEPT_ICONS.projectRepo size={ICON_SIZE.row} aria-hidden className="shrink-0" />;
 
   if (!isInteractive) {
     return (
-      <Chip
-        tone="neutral"
-        shape="badge"
-        size="control"
-        className={CHIP_CLASS}
-        icon={icon}
-        label={label}
-      />
+      <span className={cn(FACE_CLASS, 'text-foreground')}>
+        {icon}
+        <BranchName branch={branch} />
+      </span>
     );
   }
 
@@ -70,32 +56,28 @@ export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Pro
       dropdown={dropdown}
       role={isFormShown ? 'dialog' : 'menu'}
       ariaLabel={isFormShown ? 'New branch' : 'Branches'}
-      anchorClassName="flex min-w-0 max-w-full"
+      anchorClassName="flex min-w-0 flex-1"
       trigger={
-        <Chip
-          as="button"
-          tone="neutral"
-          shape="badge"
-          size="control"
-          className={CHIP_CLASS}
-          icon={icon}
-          label={label}
-          trailing={
-            hasChoices ? (
-              <ChevronDown
-                size={ICON_SIZE.row}
-                aria-hidden
-                data-slot="switcher-chevron"
-                className="shrink-0"
-              />
-            ) : null
-          }
-          ariaLabel={`Branch ${branch}`}
-          testId="branch-switcher"
-          hasPopup={hasChoices ? 'menu' : 'dialog'}
-          expanded={isOpen}
+        <button
+          type="button"
+          aria-label={`Branch ${branch}`}
+          aria-haspopup={hasChoices ? 'menu' : 'dialog'}
+          aria-expanded={isOpen}
+          data-testid="branch-switcher"
           onClick={dropdown.toggle}
-        />
+          className={cn(FACE_CLASS, 'text-foreground', ROW_INTERACTIVE, FOCUS_RING)}
+        >
+          {icon}
+          <BranchName branch={branch} />
+          {hasChoices ? (
+            <ChevronDown
+              size={ICON_SIZE.row}
+              aria-hidden
+              data-slot="switcher-chevron"
+              className="shrink-0 text-muted-foreground"
+            />
+          ) : null}
+        </button>
       }
     >
       {isFormShown ? (

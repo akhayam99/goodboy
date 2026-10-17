@@ -33,6 +33,20 @@ const IMPLEMENTER = {
   mount: 'mount-ledger-core',
 };
 
+const SCRIBE = {
+  role: 'scribe',
+  task: 'write the pull request of the ledger export and open it as a draft',
+  reason: 'pull request text is the work of a scribe',
+  mount: 'mount-ledger-core',
+};
+
+const scribeClosing = (childAgentId: string) =>
+  [
+    '<<pr-title>>Add the ledger export<</pr-title>>',
+    '<<pr-body>>Exports the ledger as CSV.<</pr-body>>',
+    `<<step-done id="${childAgentId}">>`,
+  ].join('\n');
+
 const delegationOf = async (world: RuntimeWorld) => {
   const [delegation] = await listAutoDelegations({
     db: world.state.world.db,
@@ -108,6 +122,68 @@ describe('closing the work of one child', () => {
 
     expect(world.state.ports.autoTurns[1]?.text).toContain('its artifact could not be saved');
     expect((await delegationOf(world)).outcome).toBe('failed');
+  });
+
+  it('opens the pull request a Scribe wrote once and returns its link to Auto', async () => {
+    const world = await startWith(SCRIBE);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+
+    await childTurnEnds({ world, index: 0, text: scribeClosing(turn.childAgentId) });
+
+    expect(world.state.ports.publications).toHaveLength(1);
+    expect(world.state.ports.publications[0]).toMatchObject({
+      sessionId: AUTO_SEED_SESSION,
+      mountId: 'mount-ledger-core',
+      agentId: turn.childAgentId,
+    });
+    expect(world.state.ports.publications[0]?.assistantText).toContain('<<pr-title>>');
+    expect((await delegationOf(world)).outcome).toBe('completed');
+    expect(world.state.ports.autoTurns[1]?.text).toContain(
+      'Pull request #421 is open: https://github.com/harborline/ledger-core/pull/421',
+    );
+  });
+
+  it('fails the Scribe with the reason when the pull request could not be opened', async () => {
+    const world = await startWith(SCRIBE);
+    world.state.ports.setPublications([
+      { kind: 'failed', message: 'GitHub refused the pull request: base branch is missing.' },
+    ]);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+
+    await childTurnEnds({ world, index: 0, text: scribeClosing(turn.childAgentId) });
+
+    const delegation = await delegationOf(world);
+    expect(delegation.outcome).toBe('failed');
+    expect(delegation.reason).toBe('GitHub refused the pull request: base branch is missing.');
+    expect(world.state.ports.autoTurns[1]?.text).toContain('base branch is missing');
+  });
+
+  it('opens no pull request for a Scribe that stopped blocked, nor for other writers', async () => {
+    const blocked = await startWith(SCRIBE);
+    const scribeTurn = blocked.state.ports.childTurns[0];
+    if (scribeTurn === undefined) {
+      throw new Error('a child was expected');
+    }
+    await childTurnEnds({
+      world: blocked,
+      index: 0,
+      text: closing(scribeTurn.childAgentId, ' status="blocked"'),
+    });
+    expect(blocked.state.ports.publications).toHaveLength(0);
+
+    const implementer = await startWith(IMPLEMENTER);
+    const turn = implementer.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+    await childTurnEnds({ world: implementer, index: 0, text: closing(turn.childAgentId) });
+    expect(implementer.state.ports.publications).toHaveLength(0);
   });
 
   it('lists the files a writer changed, not the ones that were dirty before it', async () => {

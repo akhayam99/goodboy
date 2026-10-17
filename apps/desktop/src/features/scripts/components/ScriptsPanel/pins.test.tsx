@@ -28,6 +28,7 @@ import {
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { scriptPinsKey } from '../../scriptPinsKey';
 import { ProjectScriptsField } from '../ProjectScriptsField';
+import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
 import { ScriptsPanel } from './index';
 
 let useAppStore: StoryStore;
@@ -104,7 +105,9 @@ const savedPins = async (): Promise<ReadonlyArray<string>> => {
 const renderLens = (sessionId: SessionId) =>
   render(
     <ToastProvider>
-      <ScriptsPanel workspaceId={HARBORLINE.id} sessionId={sessionId} />
+      <ObjectMenuProvider>
+        <ScriptsPanel workspaceId={HARBORLINE.id} sessionId={sessionId} onClose={vi.fn()} />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
 
@@ -161,9 +164,9 @@ describe('script pins in the Scripts lens', () => {
 
     renderLens(SECOND.id);
     expect(await screen.findAllByRole('button', { name: 'Show test output' })).toHaveLength(1);
-    expect(screen.getByRole('button', { name: 'Unpin test' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Show test output' }));
+    expect(await screen.findByRole('menuitem', { name: 'Unpin' })).toBeDefined();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     fireEvent.click(screen.getByRole('button', { name: 'Run test' }));
 
     await waitFor(() => expect(invokes('workspace_script_run_adhoc')).toHaveLength(1));

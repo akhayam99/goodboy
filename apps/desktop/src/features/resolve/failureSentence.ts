@@ -3,7 +3,7 @@ import type { ResolveAttempt, ResolveFailureCause } from '@goodboy/types';
 const FAILURE_CAUSE_SENTENCE: Readonly<Record<ResolveFailureCause, string>> = {
   start_failed: "The fix didn't start",
   provider_error: 'The model provider stopped the run',
-  spend_cap: 'Every provider is over its spend cap',
+  spend_cap: 'Every provider is over its limit',
   stopped: 'You stopped it',
   app_closed: 'The app closed while it was working',
   accept_conflict: 'It conflicts with a fix you accepted before',

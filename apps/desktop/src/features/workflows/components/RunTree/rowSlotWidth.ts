@@ -1,9 +1,11 @@
 import { RAIL_MARKER_RADIUS, railInsetOf, type RailRow } from '../../../workTreeModel/railGeometry';
+import { RUN_TREE_SLOT_WIDTH } from './runTreeSlotWidth';
 
 type Params = {
   readonly rail: RailRow;
   readonly railWidth: number;
   readonly isNested: boolean;
+  readonly isFixed?: boolean;
   readonly markerRadius?: number;
 };
 
@@ -18,8 +20,12 @@ export const rowSlotWidth = ({
   rail,
   railWidth,
   isNested,
+  isFixed = false,
   markerRadius = RAIL_MARKER_RADIUS,
 }: Params): number => {
+  if (isFixed) {
+    return RUN_TREE_SLOT_WIDTH;
+  }
   if (!isNested) {
     return railWidth;
   }

@@ -3,12 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import { branchPlace, sessionPlace } from '../../store/slices/navigation/place';
 
-const { state } = vi.hoisted(() => ({
-  state: {
-    navigate: vi.fn(),
-    setScriptsLensScope: vi.fn(),
-  },
-}));
+const { state } = vi.hoisted(() => {
+  const noSession = (): SessionId | null => null;
+  return {
+    state: {
+      navigate: vi.fn(),
+      setScriptsLensScope: vi.fn(),
+      openDrawer: vi.fn(),
+      setExploreMountPath: vi.fn(),
+      currentSessionId: noSession(),
+    },
+  };
+});
 
 vi.mock('../../store', async () => ({
   useAppStore: { getState: () => state },
@@ -26,6 +32,8 @@ const toLens = (lens: Parameters<typeof sessionPlace>[0]['lens']) => ({
 beforeEach(() => {
   state.navigate = vi.fn();
   state.setScriptsLensScope = vi.fn();
+  state.openDrawer = vi.fn();
+  state.setExploreMountPath = vi.fn();
 });
 
 describe('openLens', () => {
@@ -36,10 +44,27 @@ describe('openLens', () => {
     });
   });
 
-  it('clears the one-shot scripts scope on the way into scripts', () => {
+  it('opens the Scripts pane with no scope, without leaving the current session', () => {
+    state.currentSessionId = SESSION_ID;
     openLens({ sessionId: SESSION_ID, lens: 'scripts' });
     expect(state.setScriptsLensScope).toHaveBeenCalledWith({ scope: null });
-    expect(state.navigate).toHaveBeenCalledWith(toLens('scripts'));
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'scripts',
+      sessionId: SESSION_ID,
+      payload: null,
+    });
+    expect(state.navigate).not.toHaveBeenCalled();
+  });
+
+  it('goes to the session first when the Explore pane is asked from elsewhere', () => {
+    state.currentSessionId = null;
+    openLens({ sessionId: SESSION_ID, lens: 'explore' });
+    expect(state.navigate).toHaveBeenCalledWith(toLens(null));
+    expect(state.openDrawer).toHaveBeenCalledWith({
+      kind: 'explore',
+      sessionId: SESSION_ID,
+      payload: null,
+    });
   });
 
   it('leaves the scripts scope alone for every other destination', () => {

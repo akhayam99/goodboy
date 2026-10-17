@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 import type { AskButtonFacts } from '../../askButtons';
 import { askVerb } from '../../askVerb';
+import { AGENT_KIND_META, classifyAgent } from '../../../agent-kind';
 import { askDigestOf } from '../../collectAskPackInput';
 
 type Params = {
@@ -39,7 +40,13 @@ const askActionFactsOf = ({ state, sessionId }: FactsParams): AskButtonFacts => 
             actionId: 'agent.message',
           }) !== null,
       )
-      .map((agent) => ({ id: agent.id, name: agent.name })),
+      .map((agent) => ({
+        id: agent.id,
+        name: agent.name,
+        noun: AGENT_KIND_META[
+          classifyAgent({ agent, override: state.agentKindOverride[agent.id] ?? null })
+        ].noun,
+      })),
     readyCount,
   };
 };

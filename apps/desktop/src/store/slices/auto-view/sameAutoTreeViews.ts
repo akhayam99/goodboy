@@ -23,6 +23,7 @@ const signatureOf = (view: AutoTreeView): string =>
       row.status,
     ]),
     view.budget,
+    view.pendingRefusal,
   ]);
 
 export const sameAutoTreeViews = ({ first, second }: Params): boolean =>

@@ -29,7 +29,7 @@ import { RecordHeader } from '../../shared/components/StudioDetail/RecordHeader'
 import { ArtifactShellHeader } from '../../features/artifacts/components/ArtifactShell/ArtifactShellHeader';
 import { ArtifactShellActions } from '../../features/artifacts/components/ArtifactShell/ArtifactShellActions';
 import { bindTarget } from '../../features/actions/registry';
-import { WorkflowRunDetail } from '../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
+import { OrchestratedRunPage } from '../../features/session/components/OrchestratedRun';
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
 import type {
   ArtifactActionTarget,
@@ -39,7 +39,6 @@ import type {
 import { NextStepRow } from '../../features/suggestions/components/NextStepSlot/NextStepRow';
 import type { SessionSuggestion } from '../../features/suggestions/types';
 import { AutoReleaseContext } from '../../features/auto/autoReleaseContext';
-import { SETTING_AUTO_EXPERIMENT } from '../../features/settings/settings';
 import { HistoryCommitRow } from '../../features/history/components/CommitsHistory/HistoryCommitRow';
 import { NO_EXPLORE_CHANGES } from '../../features/explore/exploreChanges';
 import { ExploreTree } from '../../features/explore/components/ExplorePane/ExploreTree';
@@ -140,40 +139,36 @@ const NAV: BoardNavigation = {
 };
 
 describe('every ⋯ menu and its right click list the same actions in the same order', () => {
-  it('board card', async () => {
+  it('board card: no ⋯ on the card, the right click holds the session menu', async () => {
     seedActionState({
       useAppStore,
       seed: { mounts: [mountFixture()], branch: 'hl/payout-export' },
     });
     const { container } = withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);
-    const { fromOverflow, fromContext } = await overflowThenContext({
-      overflow: screen.getByRole('button', { name: 'Session actions' }),
-      context: container.querySelector('article') as HTMLElement,
-    });
-    expect(fromOverflow.length).toBeGreaterThan(5);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(screen.queryByRole('button', { name: 'Session actions' })).toBeNull();
+    fireEvent.contextMenu(container.querySelector('article') as HTMLElement);
+    expect(menuLabels().length).toBeGreaterThan(5);
   });
 
-  it('board card: the ⋯ and the right click offer Pin session, then Unpin session once pinned', async () => {
+  it('board card: the right click offers Pin session, then Unpin session once pinned', async () => {
     seedActionState({
       useAppStore,
       seed: { mounts: [mountFixture()], branch: 'hl/payout-export' },
     });
     const { container } = withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);
-    const overflow = screen.getByRole('button', { name: 'Session actions' });
     const context = container.querySelector('article') as HTMLElement;
 
-    const before = await overflowThenContext({ overflow, context });
-    expect(before.fromOverflow).toContain('Pin session');
-    expect(before.fromOverflow).not.toContain('Unpin session');
-    expect(before.fromContext).toEqual(before.fromOverflow);
+    fireEvent.contextMenu(context);
+    const before = menuLabels();
+    expect(before).toContain('Pin session');
+    expect(before).not.toContain('Unpin session');
     await closeMenus();
 
     act(() => useAppStore.setState({ sessionPins: { [WORKSPACE]: [{ id: SESSION, at: 1 }] } }));
-    const after = await overflowThenContext({ overflow, context });
-    expect(after.fromOverflow).toContain('Unpin session');
-    expect(after.fromOverflow).not.toContain('Pin session');
-    expect(after.fromContext).toEqual(after.fromOverflow);
+    fireEvent.contextMenu(context);
+    const after = menuLabels();
+    expect(after).toContain('Unpin session');
+    expect(after).not.toContain('Pin session');
   });
 
   it('diff file header', async () => {
@@ -225,10 +220,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         expectedPort={null}
         portHolder={null}
         facts={null}
-        onRestart={vi.fn()}
         blockedReason={null}
-        isPinned={false}
-        onTogglePin={vi.fn()}
         onOpen={vi.fn()}
         onRun={vi.fn()}
         onStop={vi.fn()}
@@ -246,16 +238,14 @@ describe('every ⋯ menu and its right click list the same actions in the same o
             onDuplicate: null,
             onSaveAs: vi.fn(),
             onDelete: null,
+            pin: { isPinned: false, onToggle: vi.fn() },
           },
         }}
       />,
     );
-    const { fromOverflow, fromContext } = await overflowThenContext({
-      overflow: screen.getByRole('button', { name: 'More for dev' }),
-      context: screen.getByRole('button', { name: 'Show dev output' }),
-    });
-    expect(fromOverflow).toEqual(['Show output', 'Run', 'Save as script', 'Copy command']);
-    expect(fromContext).toEqual(fromOverflow);
+    expect(screen.queryByRole('button', { name: 'More for dev' })).toBeNull();
+    fireEvent.contextMenu(screen.getByRole('button', { name: 'Show dev output' }));
+    expect(menuLabels()).toEqual(['Show output', 'Run', 'Pin', 'Save as script', 'Copy command']);
   });
 
   it('artifact viewer header: the ⋯ and the right click list every action, buttons included, in registry order', async () => {
@@ -315,7 +305,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).toEqual(fromOverflow);
   });
 
-  it('run page: the right click lists every action, and the ⋯ keeps what has no button of its own', async () => {
+  it('run page: the right click lists every action, the header shows Pause and Stop, and the ⋯ keeps the rest', async () => {
     const session = sessionFixture({ workflowRuns: [runFixture({ executionMode: 'dynamic' })] });
     seedActionState({
       useAppStore,
@@ -327,7 +317,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       },
     });
     withMenus(
-      <WorkflowRunDetail
+      <OrchestratedRunPage
         session={session}
         run={session.workflowRuns[0]!}
         workflow={workflowFixture()}
@@ -336,25 +326,36 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     const registry = (
       bindTarget({
         state: useAppStore.getState(),
-        target: { kind: 'workflowRun', sessionId: SESSION, runId: RUN },
+        target: {
+          kind: 'workflowRun',
+          sessionId: SESSION,
+          runId: RUN,
+          stepAgentId: JSON.parse('"agent-plan"'),
+        },
       })?.resolve({ viewing: { kind: 'workflowRun', id: RUN } }) ?? []
     ).map((action) => action.label);
     const { fromOverflow, fromContext } = await overflowThenContext({
       overflow: screen.getByRole('button', { name: /run actions$/ }),
-      context: screen.getByRole('heading', { name: 'Settlement export' }),
+      context: within(screen.getByRole('heading', { name: 'Settlement export' })).getByText(
+        'Settlement export',
+      ),
     });
 
     expect(fromContext).toEqual(registry);
     expect(fromContext).not.toContain('Open run');
     expect(fromOverflow).toEqual([
       'View diff',
-      'Pause run',
       'Step routing',
+      'Skip step 1',
       'Save as preset',
       'Copy run summary',
       'Archive run',
       'Delete run',
     ]);
+    const live = screen
+      .getAllByRole('button')
+      .filter((button) => button.hasAttribute('data-run-verb'));
+    expect(live.map((button) => button.textContent)).toEqual(['Pause run', 'Stop run']);
     expect(fromOverflow.filter((label) => !fromContext.includes(label))).toEqual([]);
   });
 
@@ -375,7 +376,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(menuLabels()).toEqual(registry);
   });
 
-  it('record header: the ⋯ plus its Open in tool button make the right click list', async () => {
+  it('record header: the ⋯ holds Open in tool, and the right click lists the same', async () => {
     withMenus(
       <RecordHeader
         provider="gitlab"
@@ -420,8 +421,8 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       overflow: screen.getByRole('button', { name: 'More actions for !87' }),
       context: screen.getByRole('heading', { level: 1 }),
     });
-    expect(fromContext.filter((label) => label !== 'Open in GitLab')).toEqual(fromOverflow);
-    expect(fromContext[0]).toBe('Open in GitLab');
+    expect(fromContext).toEqual(fromOverflow);
+    expect(fromOverflow[0]).toBe('Open in GitLab');
   });
 
   it('commit row: the ⋯, the right click and Cmd+K on the focused row list the same actions in the same order', async () => {
@@ -517,7 +518,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
 });
 
 describe('an Explore row lists the same verbs on its buttons, its right click and ⌘K', () => {
-  it('file row: the hover buttons are the right click without Copy path, and ⌘K on the focused row lists them all', async () => {
+  it('selected file row: its one menu is the right click, and ⌘K on the focused row lists them all', async () => {
     seedActionState({ useAppStore, seed: {} });
     withMenus(
       <ExploreTree
@@ -539,7 +540,7 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
           errorByPath: {},
         }}
         expanded={{}}
-        selectedRelPath={null}
+        selectedRelPath="src/rounding.ts"
         changes={NO_EXPLORE_CHANGES}
         now={Date.parse('2026-09-14T16:40:00Z')}
         onSetExpanded={vi.fn()}
@@ -554,6 +555,9 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
     const buttons = within(row)
       .getAllByRole('button')
       .map((button) => button.getAttribute('aria-label'));
+    fireEvent.click(within(row).getByRole('button', { name: 'Actions for rounding.ts' }));
+    const fromOverflow = menuLabels();
+    await closeMenus();
     act(() => row.focus());
     render(
       <ToastProvider>
@@ -571,11 +575,8 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
       'Ask an agent about this file',
       'Copy path',
     ]);
-    expect(buttons).toEqual([
-      'Ask an agent about rounding.ts',
-      'Open rounding.ts',
-      'Show rounding.ts in Finder',
-    ]);
+    expect(buttons).toEqual(['Actions for rounding.ts']);
+    expect(fromOverflow).toEqual(fromContext);
     expect(fromPalette).toEqual(fromContext);
     expect(screen.getByText('For this file')).toBeDefined();
   });
@@ -587,7 +588,6 @@ type NextCardParams = {
 };
 
 const nextCardMenu = ({ suggestion, startsRole }: NextCardParams) => {
-  useAppStore.setState({ settings: { [SETTING_AUTO_EXPERIMENT]: 'true' } });
   render(
     <ToastProvider>
       <AutoReleaseContext.Provider value>
@@ -671,7 +671,7 @@ describe('⌘K lists the same set as the registry, in the order of the state', (
       })?.resolve() ?? []
     )
       .filter((action) => action.blockedReason === null)
-      .map((action) => action.label.replace(/^Open /, ''));
+      .map((action) => action.label.replace(/^Open /, '').toLowerCase());
     render(
       <ToastProvider>
         <PaletteOverlay onClose={vi.fn()} />
@@ -679,12 +679,18 @@ describe('⌘K lists the same set as the registry, in the order of the state', (
     );
     const firstScreen = optionLabels().filter((label) => !GOTO_LABELS.has(label));
     fireEvent.mouseDown(screen.getByRole('option', { name: 'All actions for this session' }));
-    const level = optionLabels().map((label) => label.replace(/^Open /, '').replace(/…$/, ''));
+    const level = optionLabels().map((label) =>
+      label
+        .replace(/^Open /, '')
+        .replace(/…$/, '')
+        .toLowerCase(),
+    );
 
     expect([...level].sort()).toEqual([...registry].sort());
     expect(firstScreen.some((label) => label === 'Rename')).toBe(true);
     expect(
-      firstScreen.filter((label) => registry.includes(label.replace(/^Open /, ''))).length,
+      firstScreen.filter((label) => registry.includes(label.replace(/^Open /, '').toLowerCase()))
+        .length,
     ).toBeLessThanOrEqual(8);
   });
 

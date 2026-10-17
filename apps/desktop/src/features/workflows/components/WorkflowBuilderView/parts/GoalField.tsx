@@ -15,6 +15,7 @@ type Props = {
   readonly notice?: string | null;
   readonly onChange: (value: string) => void;
   readonly onBlur: () => void;
+  readonly onSubmit?: () => void;
   readonly onUseSessionGoal: () => void;
   readonly onUndo: () => void;
   readonly onPolish: () => void;
@@ -23,8 +24,7 @@ type Props = {
 const TOOL_CLASS =
   'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-chip text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50';
 
-const SESSION_PLACEHOLDER =
-  'what should this workflow accomplish? same as the session, or a specific sub-objective (e.g. just the auth module)…';
+const SESSION_PLACEHOLDER = 'What should this run get done? The session goal, or one part of it.';
 
 export const GoalField = ({
   value,
@@ -38,6 +38,7 @@ export const GoalField = ({
   notice = null,
   onChange,
   onBlur,
+  onSubmit,
   onUseSessionGoal,
   onUndo,
   onPolish,
@@ -49,6 +50,12 @@ export const GoalField = ({
     value={value}
     onChange={onChange}
     onBlur={onBlur}
+    {...(onSubmit !== undefined && {
+      onSubmit,
+      isSubmitBlocked: disabled || isPolishing,
+      hasChangedKeys: true,
+      keyLabels: { send: 'start' },
+    })}
     placeholder={placeholder}
     disabled={disabled || isPolishing}
     hasPreview
@@ -65,7 +72,7 @@ export const GoalField = ({
             disabled={disabled || isPolishing || isSessionGoal}
             className={TOOL_CLASS}
           >
-            <Target size={ICON_SIZE.row} aria-hidden /> Use session goal
+            <Target size={ICON_SIZE.row} aria-hidden /> Use the session goal
           </button>
         ) : null}
         {canUndo ? (

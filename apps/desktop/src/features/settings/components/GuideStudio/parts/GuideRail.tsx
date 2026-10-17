@@ -1,10 +1,6 @@
 import { Search } from 'lucide-react';
-import { EmptyLine, Eyebrow, SelectableRow, cn, tintClasses } from '@goodboy/ui';
-import {
-  CONCEPT_ICONS,
-  CONCEPT_TONE,
-  ICON_SIZE,
-} from '../../../../../shared/components/conceptIcons';
+import { EmptyLine, Eyebrow, SelectableRow } from '@goodboy/ui';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { GUIDE_GROUP_LABEL, type GuideChapter, type GuideGroup } from '../guideChapters';
 
 const GROUP_ORDER: ReadonlyArray<GuideGroup> = ['start', 'task', 'reference'];
@@ -55,11 +51,7 @@ export const GuideRail = ({ chapters, activeId, query, onQueryChange, onSelect }
                 onClick={() => onSelect(chapter.id)}
                 className="items-center gap-2 px-3 py-2 text-body"
               >
-                <Icon
-                  size={ICON_SIZE.row}
-                  aria-hidden
-                  className={cn('shrink-0', tintClasses(CONCEPT_TONE[chapter.concept]).text)}
-                />
+                <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
                 <span className="min-w-0 flex-1 truncate">{chapter.title}</span>
               </SelectableRow>
             );

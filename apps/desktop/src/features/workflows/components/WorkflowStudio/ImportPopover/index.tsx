@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Download, Search } from 'lucide-react';
 import { AnchoredPopover, Button, FormActions, Input, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
@@ -8,14 +8,33 @@ import { useWorkflowImport } from '../../WorkflowsPanel/useWorkflowImport';
 import { ImportGroupSection } from './ImportGroupSection';
 import { catalogCount, importedToast, selectionSummary } from './importCopy';
 
+export type ImportTriggerParams = {
+  readonly isOpen: boolean;
+  readonly onToggle: () => void;
+};
+
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly takenNames: ReadonlySet<string>;
+  readonly renderTrigger?: (params: ImportTriggerParams) => ReactNode;
 };
 
 const PANEL_WIDTH = 640;
 
-export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
+const importButton = ({ isOpen, onToggle }: ImportTriggerParams) => (
+  <Button
+    variant="ghost"
+    size="sm"
+    aria-haspopup="dialog"
+    aria-expanded={isOpen}
+    onClick={onToggle}
+  >
+    <Download size={ICON_SIZE.row} aria-hidden />
+    Import
+  </Button>
+);
+
+export const ImportPopover = ({ workspaceId, takenNames, renderTrigger = importButton }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     expectedHeight: 420,
@@ -74,18 +93,7 @@ export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
       role="dialog"
       ariaLabel="Import workflows"
       className="flex max-h-[min(32rem,70vh)] flex-col bg-elevated"
-      trigger={
-        <Button
-          variant="secondary"
-          size="sm"
-          aria-haspopup="dialog"
-          aria-expanded={dropdown.open}
-          onClick={onToggleOpen}
-        >
-          <Download size={ICON_SIZE.row} aria-hidden />
-          Import
-        </Button>
-      }
+      trigger={renderTrigger({ isOpen: dropdown.open, onToggle: onToggleOpen })}
     >
       <div className="flex shrink-0 items-center gap-3 p-2">
         <label className="relative flex min-w-0 flex-1 items-center">

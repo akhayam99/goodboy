@@ -125,7 +125,7 @@ export const BranchSwitchPanel = ({ sessionId, mountId, onDone }: Props) => {
             size="xs"
             variant="ghost"
             icon={copiedKey === null ? Copy : Check}
-            iconSize={11}
+            iconSize={ICON_SIZE.row}
             label="Copy branch name"
             tooltip={
               copiedKey !== null

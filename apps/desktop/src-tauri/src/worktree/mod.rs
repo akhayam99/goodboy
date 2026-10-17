@@ -1,4 +1,5 @@
 mod base;
+mod base_divergence;
 mod branch_name;
 mod branches;
 mod candidates;
@@ -24,8 +25,10 @@ mod slug;
 mod snapshot;
 mod status;
 mod types;
+mod update_base;
 
 pub(crate) use base::*;
+pub(crate) use base_divergence::*;
 pub(crate) use branch_name::branch_name_problem;
 pub(crate) use branches::*;
 pub(crate) use candidates::*;
@@ -51,3 +54,4 @@ pub(crate) use slug::*;
 pub(crate) use snapshot::*;
 pub(crate) use status::*;
 pub(crate) use types::*;
+pub(crate) use update_base::*;

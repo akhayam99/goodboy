@@ -73,6 +73,46 @@ describe('turn event queries', () => {
     await expect(countUserTextEvents({ db, agentId: otherAgentId })).resolves.toBe(1);
   });
 
+  it('keeps who delivered a user_text, and never counts the operator echo as a turn', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-delivered',
+      sessionId,
+      agentId,
+      event: {
+        kind: 'user_text',
+        runId,
+        text: 'STATE OF THIS CONVERSATION',
+        deliveredBy: 'auto',
+        at,
+      },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-echo',
+      sessionId,
+      agentId,
+      event: { kind: 'operator_text', runId, text: 'Also cover refunds.', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-huge',
+      sessionId,
+      agentId,
+      event: {
+        kind: 'user_text',
+        runId,
+        text: 'x'.repeat(2_000_000),
+        deliveredBy: 'auto',
+        at,
+      },
+    });
+
+    const events = await listTurnEventsForAgent(db, agentId);
+
+    expect(events.map((event) => event.kind)).toEqual(['user_text', 'operator_text', 'user_text']);
+    expect(events[0]).toMatchObject({ deliveredBy: 'auto' });
+    expect(events[2]).toMatchObject({ deliveredBy: 'auto' });
+    await expect(countUserTextEvents({ db, agentId })).resolves.toBe(2);
+  });
+
   it('round-trips the operator note stored on an orchestrator decision', async () => {
     await insertTurnEvent(db, {
       id: 'event-5',

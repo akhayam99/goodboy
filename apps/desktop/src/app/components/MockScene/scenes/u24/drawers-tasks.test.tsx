@@ -52,8 +52,8 @@ describe('the Tasks drawer split scene', () => {
     expect(Object.keys(U24_DRAWERS_TASKS_SCENES)).toEqual(['drawer-split-tasks']);
   });
 
-  it('stands the record drawer beside the page container inside the studio, band included', async () => {
-    stubColumnWidth(1200);
+  it('stands the record drawer beside the page container inside the studio, with no band', async () => {
+    stubColumnWidth(1600);
     const Scene = U24_DRAWERS_TASKS_SCENES['drawer-split-tasks'];
     const { container } = render(
       <ToastProvider>
@@ -70,7 +70,7 @@ describe('the Tasks drawer split scene', () => {
       screen.getByRole('complementary', { name: 'Task' }).getAttribute('data-drawer-mode'),
     ).toBe('push');
     expect(page?.getAttribute('data-sheet')).toBe('pushed');
-    expect(page?.querySelector('[data-studio-band]')).not.toBeNull();
+    expect(page?.querySelector('[data-studio-band]')).toBeNull();
     expect(page?.textContent).toContain('Tasks');
     expect(drawer?.textContent).toContain('CAS-231');
     expect(page?.contains(drawer ?? null)).toBe(false);

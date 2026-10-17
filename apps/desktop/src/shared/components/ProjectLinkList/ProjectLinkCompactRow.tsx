@@ -4,7 +4,6 @@ import type { Project, WorkspaceGitStatus } from '@goodboy/types';
 import { ROW_INTERACTIVE, cn, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
 import { NAMES } from '../../names';
-import { ProjectRowActions } from './ProjectRowActions';
 import { ProjectRowEditor } from './ProjectRowEditor';
 import { PROJECT_ROW_GRID } from './projectRowGrid';
 import { ProjectStarToggle } from './ProjectStarToggle';
@@ -95,11 +94,7 @@ export const ProjectLinkCompactRow = ({
         ) : (
           <span />
         )}
-        <ProjectRowActions
-          project={project}
-          busy={busy}
-          onUnlink={() => void onUnlink({ project })}
-        />
+        <span />
       </div>
       {isEditorOpen ? (
         <div className="col-span-6 col-start-4">

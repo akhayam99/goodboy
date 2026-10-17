@@ -11,7 +11,7 @@ import {
 } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { UndoToastBridge } from '../../../../app/components/UndoToastBridge';
-import { LinkedTaskChip } from '../../../../shared/components/LinkedTaskChip';
+import { LinkedTaskRow } from '../../../../app/components/SessionRail/SessionLevel/LinkedTaskRow';
 import { SessionDropPill } from '../SessionOverviewPane/SessionDropPill';
 import { TaskDragLayer } from '../SessionOverviewPane/TaskDragLayer';
 import {
@@ -107,11 +107,11 @@ const renderStage = ({ branch }: { readonly branch: string | null }) => {
         data-task-project={PAYMENTS.id}
         data-task-branch="hl/ledger-rounding"
       />
-      <LinkedTaskChip
+      <LinkedTaskRow
         sessionId={SESSION_ID}
         task={branch === null ? { ...TASK, scope: 'session', branch: undefined } : TASK}
-        branch={branch}
         branches={['hl/ledger-rounding']}
+        isShown={false}
       />
     </ToastProvider>,
   );
@@ -130,8 +130,8 @@ const dragTo = ({
   readonly isAlt?: boolean;
   readonly isReleased?: boolean;
 }) => {
-  const chip = screen.getByRole('button', { name: /^Open HL-204/ });
-  fireEvent.pointerDown(chip, { button: 0, clientX: 10, clientY: 10 });
+  const row = screen.getByRole('button', { name: /^Open HL-204/ });
+  fireEvent.pointerDown(row, { button: 0, clientX: 10, clientY: 10 });
   act(() => {
     window.dispatchEvent(new PointerEvent('pointermove', { clientX: 11, clientY: 11 }));
   });
@@ -154,7 +154,7 @@ const seedBranchTask = async () => {
   await useAppStore.getState().linkSessionExternalTask(SESSION_ID, TASK);
 };
 
-describe('dragging an issue chip', () => {
+describe('dragging a linked task row', () => {
   it('moves it from a branch to the session in one undoable write', async () => {
     await seedBranchTask();
     renderStage({ branch: 'hl/ledger-rounding' });
@@ -243,20 +243,20 @@ describe('dragging an issue chip', () => {
   it('keeps a click under 5px opening the issue', async () => {
     await seedBranchTask();
     renderStage({ branch: 'hl/ledger-rounding' });
-    const chip = screen.getByRole('button', { name: /^Open HL-204/ });
-    fireEvent.pointerDown(chip, { button: 0, clientX: 10, clientY: 10 });
+    const row = screen.getByRole('button', { name: /^Open HL-204/ });
+    fireEvent.pointerDown(row, { button: 0, clientX: 10, clientY: 10 });
     act(() => {
       window.dispatchEvent(new PointerEvent('pointerup', { clientX: 12, clientY: 11 }));
     });
     await act(async () => {
-      fireEvent.click(chip);
+      fireEvent.click(row);
     });
     expect(useAppStore.getState().focusedExternalTask[SESSION_ID]?.externalId).toBe(
       TASK.externalId,
     );
   });
 
-  it('does not open the issue when a drag is released over the chip itself', async () => {
+  it('does not open the issue when a drag is released over the row itself', async () => {
     await seedBranchTask();
     renderStage({ branch: 'hl/ledger-rounding' });
     dragTo({ element: null });
@@ -271,8 +271,8 @@ describe('dragging an issue chip', () => {
     renderStage({ branch: 'hl/ledger-rounding' });
     const status = screen.getByRole('status');
     expect(status.getAttribute('aria-live')).toBe('polite');
-    const chip = screen.getByRole('button', { name: /^Open HL-204/ });
-    fireEvent.pointerDown(chip, { button: 0, clientX: 10, clientY: 10 });
+    const row = screen.getByRole('button', { name: /^Open HL-204/ });
+    fireEvent.pointerDown(row, { button: 0, clientX: 10, clientY: 10 });
     act(() => {
       window.dispatchEvent(new PointerEvent('pointermove', { clientX: 40, clientY: 40 }));
     });
@@ -288,17 +288,15 @@ describe('dragging an issue chip', () => {
     expect(status.textContent).toBe('HL-204: Moved to payments-api / hl/notify-retry');
   });
 
-  it('does not start from the unlink button of the chip', async () => {
-    await useAppStore
-      .getState()
-      .linkSessionExternalTask(SESSION_ID, { ...TASK, branch: 'hl/notify-retry' });
+  it('does not start from a secondary button press, which opens the row menu', async () => {
     await seedBranchTask();
     renderStage({ branch: 'hl/ledger-rounding' });
-    const unlink = screen.getByRole('button', { name: /^Take off/ });
-    fireEvent.pointerDown(unlink, { button: 0, clientX: 10, clientY: 10 });
+    const row = screen.getByRole('button', { name: /^Open HL-204/ });
+    fireEvent.pointerDown(row, { button: 2, clientX: 10, clientY: 10 });
     act(() => {
       window.dispatchEvent(new PointerEvent('pointermove', { clientX: 90, clientY: 90 }));
     });
     expect(screen.queryByLabelText('Drop to put on the session')).toBeNull();
+    expect(screen.queryByTestId('task-drag-ghost')).toBeNull();
   });
 });

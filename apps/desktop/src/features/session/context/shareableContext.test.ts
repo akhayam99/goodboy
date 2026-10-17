@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { CONTEXT_ORDER, shareableContext } from './shareableContext';
-import { CONTEXT_TABS, CONTEXT_TAB_LABEL } from '../components/ContextDrawer/contextTabs';
+import { CONTEXT_TAB_LABEL } from '../components/ContextDrawer/contextTabs';
 
 describe('shareableContext', () => {
   it('writes Goal, Decisions, Summary and Open questions in that order', () => {
@@ -28,8 +28,8 @@ describe('shareableContext', () => {
     ).toBe('## Goal\n\nShip it');
   });
 
-  it('follows the order of the drawer tabs that agents read, leaving Learned out', () => {
-    const slotTabs = CONTEXT_TABS.filter((tab) => tab !== 'learned');
+  it('follows the order of the drawer sections that agents read, leaving Learned out', () => {
+    const slotTabs = ['goal', 'decisions', 'summary'] as const;
     expect(slotTabs.map((tab) => CONTEXT_TAB_LABEL[tab])).toEqual(
       CONTEXT_ORDER.slice(0, slotTabs.length),
     );

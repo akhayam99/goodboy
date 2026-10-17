@@ -132,15 +132,14 @@ describe('StageBoard selection bar', () => {
       const box = checkboxOf(goal);
       const title = screen.getByRole('button', { name: goal });
       const card = box.closest('article');
-      const titleRow = title.parentElement;
-      const column = titleRow?.parentElement;
       expect(card?.contains(title)).toBe(true);
       expect(inFlowBefore(title)).toEqual([]);
-      expect(titleRow?.contains(box)).toBe(false);
+      expect(title.contains(box)).toBe(false);
       expect(card === null ? false : isLaidOver(box, card)).toBe(true);
-      expect(column?.children.length).toBe(2);
-      expect(inFlowBefore(titleRow ?? title)).toEqual([]);
-      expect(inFlowBefore(column?.lastElementChild ?? title)).toEqual([titleRow]);
+      const signal = card?.querySelector<HTMLElement>('[data-slot="card-signal"]') ?? null;
+      expect(
+        signal === null ? null : within(signal).getByRole('img').getAttribute('aria-label'),
+      ).toBe('1 open question');
     }
   });
 

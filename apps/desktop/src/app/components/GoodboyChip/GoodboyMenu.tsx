@@ -1,5 +1,5 @@
 import { ExternalLink, Heart, Smartphone } from 'lucide-react';
-import { Button, Divider, Eyebrow, DogMascot, XIcon } from '@goodboy/ui';
+import { Button, Divider, Eyebrow, XIcon } from '@goodboy/ui';
 import { finish } from '../../../features/onboarding/onboarding-store';
 import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { ChecklistBody } from '../../../features/onboarding/SetupChecklist/ChecklistBody';
@@ -7,6 +7,7 @@ import { CompletedBody } from '../../../features/onboarding/SetupChecklist/Compl
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { NAMES } from '../../../shared/names';
+import { BrandLockup } from './BrandLockup';
 import { MenuRow } from './MenuRow';
 import { UpdateNotice } from './UpdateNotice';
 
@@ -23,8 +24,6 @@ type Props = {
   readonly onSponsor: () => void;
   readonly onFollowX: () => void;
 };
-
-const MARK_SIZE = 16;
 
 export const GoodboyMenu = ({
   version,
@@ -43,12 +42,8 @@ export const GoodboyMenu = ({
 
   return (
     <>
-      <header className="flex items-center gap-2 px-3 py-2">
-        <DogMascot size={MARK_SIZE} className="shrink-0 text-foreground" />
-        <span className="truncate text-label font-semibold text-foreground">
-          {version === null ? 'Goodboy' : `Goodboy ${version}`}
-        </span>
-        <Eyebrow label="Beta" muted />
+      <header className="flex items-center px-3 py-2 text-label">
+        <BrandLockup version={version} />
       </header>
       <Divider />
       <div className="flex flex-col gap-2 py-2">

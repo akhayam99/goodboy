@@ -10,7 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { ImageIcon, Paperclip } from 'lucide-react';
+import { Paperclip } from 'lucide-react';
 import { IconButton, SegmentedTabs, Textarea, cn, tintClasses } from '@goodboy/ui';
 import { ATTACHMENT_ACCEPT } from '../../../features/chat/attachment-kinds';
 import {
@@ -244,13 +244,6 @@ export const PromptField = ({
         value={tab}
         onChange={switchTab}
       />
-      <span className="flex-1" />
-      {files?.note !== undefined ? (
-        <span className="flex min-w-0 items-center gap-1 truncate text-meta text-faint-foreground">
-          <ImageIcon size={ICON_SIZE.row} aria-hidden />
-          {files.note}
-        </span>
-      ) : null}
     </div>
   ) : null;
 
@@ -316,6 +309,7 @@ export const PromptField = ({
               <IconButton
                 icon={Paperclip}
                 label={`Attach ${noun}`}
+                {...(files.note !== undefined && { tooltip: files.note })}
                 variant="ghost"
                 iconSize={ICON_SIZE.control}
                 disabled={disabled || attachments.length >= ATTACHMENT_LIMIT}

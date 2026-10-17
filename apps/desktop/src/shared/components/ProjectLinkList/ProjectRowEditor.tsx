@@ -6,14 +6,12 @@ import { useAppStore } from '../../../store';
 import { openInEditor } from '../../lib/editor';
 import { resolveEditorBinary } from '../../lib/editorSettings';
 import { revealInFileManager } from '../../lib/reveal';
-import { formatSpan } from '../../utils/time/formatSpan';
 import { ICON_SIZE } from '../conceptIcons';
 import { NAMES } from '../../names';
 import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
 import { ProjectAfterMergeField } from './ProjectAfterMergeField';
 import { ProjectDescriptionField } from './ProjectDescriptionField';
-import { useNow } from '../../hooks/useNow';
 
 type Props = {
   readonly project: Project;
@@ -24,12 +22,10 @@ type Props = {
 };
 
 export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scriptsField }: Props) => {
-  const now = useNow(30_000);
   const reportError = useAppStore((state) => state.reportError);
   const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
   const isRepo = project.kind === 'repo';
-  const linkedLabel = project.createdAt ? formatSpan({ from: project.createdAt, to: now }) : '';
 
   const openProject = async () => {
     try {
@@ -80,8 +76,8 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
       {isRepo ? <ProjectAfterMergeField project={project} busy={busy} /> : null}
       <div className="flex flex-col gap-1">
         <span className="text-label text-muted-foreground">Folder</span>
+        <span className="min-w-0 truncate text-code text-meta">{project.rootPath}</span>
         <div className="flex items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-code text-meta">{project.rootPath}</span>
           <Button variant="ghost" size="sm" onClick={() => void reveal()} disabled={busy}>
             <FolderOpen size={ICON_SIZE.row} aria-hidden />
             Show in Finder
@@ -91,10 +87,6 @@ export const ProjectRowEditor = ({ project, busy, onUnlink, ignoreField, scripts
         {ignoreField}
       </div>
       {scriptsField}
-      <span className="text-label text-faint-foreground">
-        {isRepo ? 'Repository' : 'Folder'}
-        {linkedLabel !== '' ? ` · linked ${linkedLabel}` : ''}
-      </span>
       <div className="flex items-center justify-between">
         <Button variant="secondary" size="sm" onClick={() => void openProject()} disabled={busy}>
           <ExternalLink size={ICON_SIZE.row} aria-hidden />

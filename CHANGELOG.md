@@ -12,6 +12,151 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.0
+
+Each session gets its own rail and tools column, every page shares one header, and comments, repositories and titles each take one click.
+
+This version updates your data in one direction. To go back to 0.26, restore the backup Goodboy made before updating.
+
+### New
+
+#### A session rail beside the page
+<!-- gb area=sessions -->
+
+The sidebar always shows the workspace: New session, the doors, Pinned and Sessions. An open session has its own rail with its pages, a Projects card and a Linked card, and it steps into a worktree, a run or Auto, with a back row to return. Folding, stepping in and opening a drawer each move in one motion.
+
+The Projects card is a tree: each project, then its branches, each starting with its pull request icon in its state color, then the branch's Pull request, Comments, Files and Checks. The foot shows what the session spent against its limit, with Archive and Delete under it.
+
+⌘B folds the sidebar, and ⌥⌘B folds the session rail or the inner column of any page, such as the chat list. In a narrow window the sidebar folds first, then the rail.
+
+#### Session tools in one column
+<!-- gb area=sessions -->
+
+Ask, Terminal, Explore, Context and Scripts sit as icons in a thin column at the right of the session, the same on every page and rail level. Each opens its pane beside the page, one at a time, also with ⌘L, ⌘⌥T, ⌘⌥X, ⌘⌥C and ⌘⌥S. The terminal pane switches its folder from one picker, the project then the branch.
+
+#### Repository status in the top bar
+<!-- gb area=app -->
+
+A Repositories entry beside the workspace switcher says which repos have something to pull, such as 3 behind or Diverged. Goodboy fetches every 5 minutes without moving a local branch, and Settings, General, Repositories sets 15 or 30 minutes or Off.
+
+Its list puts the repos that need you first, with Pull on each and Pull all once two can pull. The rest fold into one line, such as 18 up to date.
+
+#### Orchestrated runs on their own page
+<!-- gb area=workflows -->
+
+Orchestrated runs have their own page after Runs. A run reads as a checklist of steps, each with why it was chosen, and the line under it says what the orchestrator does next. The composer sends a hint for the next decision, or Send now to read it at once, and a step opens in a pane.
+
+#### Four ways to start a session
+<!-- gb area=sessions -->
+
+New session asks how you want to start: Pick up a task, Run a workflow, Orchestrate or Ask an agent. Projects is a search field with chips that opens on Suggested, then All projects. The New menu on the Overview opens the same forms beside the page.
+
+#### Auto agents page
+<!-- gb area=agents -->
+
+Auto has its own page beside Agents, marked Experimental, and no longer needs a switch in Settings. Each hand off shows its role and result, an agent Auto started opens in a pane with its brief and conversation, and Auto asks which project to use when it cannot open one. Images you attach reach the agents it starts.
+
+When Auto cannot decide its next step, it reads Blocked with the reason and Retry. Stop and Retry work from every Goodboy window.
+
+### Improved
+
+#### One header on every page
+<!-- gb area=app -->
+
+Every page starts on the same header row, at the same height and inset, so the rail, the page, the tools column and an open drawer share one title line. A page that loads shows its own skeleton, and an empty page says so under its title.
+
+#### Review comments open in a drawer
+<!-- gb area=review -->
+
+Comments is one full list. A row opens the comment in a drawer with the code around the line, its thread, and Fix, Reply and Skip with their keys F, R and S. J and K move to the next or previous comment, Fix comments sits in the Branch header, and Back returns from it to the comment.
+
+#### Rename a session from its title
+<!-- gb area=sessions -->
+
+The Overview is titled with the session name, and one click renames it in place. Enter saves, Escape cancels, and a ring at the end fills toward the new 120 character limit. A rename that fails keeps your text and offers Retry.
+
+#### Board and List on the Sessions page
+<!-- gb area=sessions -->
+
+The Sessions page switches between Board and List and remembers the choice. A Board card shows the title, the project and one signal, with a thin line at its edge in its stage color, blue and breathing while running.
+
+List puts each session on one row and groups the rows by the same stages as the board, each group with a dot in its lane color.
+
+#### Quiet sessions move to Inactive
+<!-- gb area=sessions -->
+
+A session with no activity for three days moves to an Inactive group at the bottom of the sidebar, and its row says how long, such as inactive 5d. Pinned, open, running and waiting sessions never move there, and touching one brings it back up.
+
+#### Agent pages read as a conversation
+<!-- gb area=agents -->
+
+An agent page shows each turn as your message, one line for its steps, the final answer and a footer with model, time and cost. View transcript opens the full record in a pane. The Agents page is one grid with fixed columns.
+
+#### Tasks grouped and filtered
+<!-- gb area=inbox -->
+
+Tasks shows For me or All, with a filter menu and Group by, in groups of five. Enter opens an issue in a pane, Enter again starts work on it, and Open full gives it the whole page.
+
+#### Preset runs step by step
+<!-- gb area=workflows -->
+
+A preset run opens in the session rail with its steps, Add step and its limit, and the line under the page names the next thing to do. Pause run and Stop run sit in the run header, and Resume run takes the place of Pause run once paused.
+
+The time on a step and on that line counts only the time agents worked, never a wait for you. The Runs list is one grid grouped In progress, Finished and Archived.
+
+#### Limit is the one word for spend
+<!-- gb area=workflows -->
+
+Spend cap reads Limit everywhere: runs, sessions, Auto and Run defaults. A run that stops at its limit says so with Raise limit, and the limit at the session rail foot opens its editor on every level.
+
+#### Workflow history and one terminal list
+<!-- gb area=workflows -->
+
+A workflow row shows its last run and opens the history of its runs in a drawer. The Terminal page lists every terminal in one grid, grouped by session.
+
+#### Changed files in a rail on the right
+<!-- gb area=review -->
+
+The changed files of a branch sit in a rail on the right of Files, with the lines added and removed in two aligned columns. Drag the rail wider or fold it, and Files in the toolbar, F or / opens it again.
+
+#### Context as cards, questions in a drawer
+<!-- gb area=sessions -->
+
+Context reads as one scroll of cards: goal, decisions, summary and Explanations, each with its count. Explanations is the new name for what agents explained about your topics, apart from the summary's Learned block. The Questions page lists Needs you and Answered, and a row opens its card in a drawer.
+
+#### Chat on one reading column
+<!-- gb area=agents -->
+
+The chat title, answers and message box share one column at every width. A session started from a chat leaves one quiet line under the answer that opens it. A chat row starts with its state, which turns into a checkbox to select it.
+
+#### Selects open under their trigger
+<!-- gb area=app -->
+
+Every select, picker and filter opens under its trigger, aligned to its start. Each preset in a start form shows the provider marks of its steps, and Report a bug opens beside its icon.
+
+#### Workspace switcher in one click
+<!-- gb area=app -->
+
+The workspace switcher puts the current workspace on top with Link a repository and Manage projects, then the others in one list: a click switches, and the window icon opens one in a new window. The sidebar foot shows one Goodboy lockup, and the window has a faint backdrop glow.
+
+#### Row actions in sight
+<!-- gb area=app -->
+
+Actions no longer wait for the pointer. Chat rows, notifications, files in Explore, scripts, artifacts, review comments and line comments show their actions or a menu at rest. A menu always holds two or more actions, and a lone action is a quiet button.
+
+### Fixed
+
+- A fix for a failed check stays on the worktree it started on after another worktree is added. <!-- gb area=review -->
+- A long chat keeps its place while new turns arrive. <!-- gb area=sessions -->
+- Retry on an agent that Auto started goes through Auto. <!-- gb area=agents -->
+- A worktree that git refuses to remove from Next keeps its card and its folder, shows the error, and Remove worktree tries again. <!-- gb area=sessions -->
+- After you answer Auto, it rests instead of reading that it is still deciding what to do next. <!-- gb area=agents -->
+- A message sent to Auto from another window reaches it once, even when the first try timed out. <!-- gb area=agents -->
+- A right click on a board card or a list row opens its menu instead of selecting a word. <!-- gb area=sessions -->
+- An orchestrated run shows its guidance once instead of twice. <!-- gb area=workflows -->
+- An icon in a filled button takes the color of its label. <!-- gb area=app -->
+- A drawer that closes over the page keeps its content while it fades out. <!-- gb area=app -->
+
 ## Goodboy v0.26.0
 
 One New drawer starts a run, an agent or a document, a failed check goes from Analyze to Push, and terminals follow your worktrees.

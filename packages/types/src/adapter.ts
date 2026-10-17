@@ -30,6 +30,14 @@ export type TurnEvent =
       model?: string;
       handoffId?: AgentId;
       sentVia?: UserTurnSentVia;
+      deliveredBy?: 'auto';
+      at: IsoDateTime;
+    }
+  | {
+      kind: 'operator_text';
+      runId: ProviderRunId;
+      text: string;
+      attachments?: ReadonlyArray<MessageAttachment>;
       at: IsoDateTime;
     }
   | { kind: 'assistant_text'; runId: ProviderRunId; delta: string; at: IsoDateTime }

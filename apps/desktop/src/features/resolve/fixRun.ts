@@ -21,31 +21,6 @@ export type FixRun = {
   readonly model: string;
 };
 
-export type FixRunChipKey =
-  'needs_you' | 'working' | 'ready_to_push' | 'push_failed' | 'couldnt_fix';
-
-type FixRunChip = {
-  readonly key: FixRunChipKey;
-  readonly phrase: string;
-  readonly countOf: (tally: ReviewTally) => number;
-};
-
-export const FIX_RUN_CHIPS: ReadonlyArray<FixRunChip> = [
-  { key: 'needs_you', phrase: 'need you', countOf: (tally) => tally.needsYou },
-  { key: 'working', phrase: 'working', countOf: (tally) => tally.working },
-  { key: 'ready_to_push', phrase: 'ready to push', countOf: (tally) => tally.readyToPush },
-  { key: 'push_failed', phrase: 'push failed', countOf: (tally) => tally.pushFailed },
-  { key: 'couldnt_fix', phrase: "couldn't fix", countOf: (tally) => tally.couldntFix },
-];
-
-export const FIX_RUN_CHIP_WORDS: Readonly<Record<FixRunChipKey, ReadonlyArray<ResolveWord>>> = {
-  needs_you: ['question', 'push_failed', 'to_review', 'couldnt_fix'],
-  working: ['working'],
-  ready_to_push: ['ready'],
-  push_failed: ['push_failed'],
-  couldnt_fix: ['couldnt_fix'],
-};
-
 const capitalized = ({ text }: { readonly text: string }): string =>
   `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
@@ -105,25 +80,6 @@ export const fixRunLabel = ({
   const comments = total === 1 ? '1 comment' : `${total} comments`;
   return prNumber === null ? `Fix run · ${comments}` : `Fix run · #${prNumber} · ${comments}`;
 };
-
-const WORD_PRECEDENCE: ReadonlyArray<ResolveWord> = [
-  'question',
-  'working',
-  'push_failed',
-  'to_review',
-  'couldnt_fix',
-  'ready',
-  'replied',
-  'done',
-  'left_open',
-  'open',
-];
-
-export const fixRunWordOf = ({
-  words,
-}: {
-  readonly words: ReadonlyArray<ResolveWord>;
-}): ResolveWord => WORD_PRECEDENCE.find((word) => words.includes(word)) ?? 'done';
 
 export const fixRunThreadIdsOf = ({
   attempts,

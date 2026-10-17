@@ -49,12 +49,23 @@ const show = ({ name }: Params) => {
   );
 };
 
+const openRow = () => {
+  const row = document.querySelector<HTMLElement>('[data-check-row] button');
+  if (row === null) {
+    throw new Error('The failing check row is missing');
+  }
+  fireEvent.click(row);
+};
+
+const rowWord = (): string | null =>
+  document.querySelector('[data-check-status]')?.textContent ?? null;
+
 describe('analyze fix scenes', () => {
-  it('offers Start fix on the proposal row and in the drawer beside Dismiss', () => {
+  it('opens the Debugger from the proposal row, Start fix beside Dismiss in the drawer only', () => {
     show({ name: 'checks-proposal' });
-    expect(screen.getByText('Debugger proposes a fix')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start fix' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    expect(rowWord()).toBe('Fix proposed');
+    expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
+    openRow();
     const drawer = screen.getByRole('region', { name: 'Debugger' });
     expect(within(drawer).getByRole('button', { name: 'Start fix' })).toBeDefined();
     expect(within(drawer).getByText(/^Implementer · /)).toBeDefined();
@@ -70,9 +81,9 @@ describe('analyze fix scenes', () => {
   });
   it('shows the Implementer fixing in the row and in the chain', () => {
     show({ name: 'checks-fixing' });
-    expect(screen.getByText('Implementer is fixing')).toBeDefined();
+    expect(rowWord()).toBe('Fixing');
     expect(screen.queryByRole('button', { name: 'Start fix' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    openRow();
     const drawer = screen.getByRole('region', { name: 'Debugger' });
     expect(within(drawer).getByText('Implementer is applying it on the branch.')).toBeDefined();
     const chain = within(drawer).getByRole('list', { name: 'Agent chain' });
@@ -88,6 +99,15 @@ describe('analyze fix scenes', () => {
     expect(within(next).getByRole('button', { name: 'Open' })).toBeDefined();
     expect(within(next).queryByRole('button', { name: 'Push' })).toBeNull();
     expect(screen.queryByText('Review the changes')).toBeNull();
+  });
+  it('opens the CI fix drawer from the Activity row while the pull request detail is unloaded', () => {
+    show({ name: 'activity-ci-fix-unloaded' });
+    const row = screen
+      .getAllByRole('button')
+      .find((button) => button.getAttribute('aria-description') === 'Open CI fix, Enter');
+    expect(row).toBeDefined();
+    fireEvent.click(row!);
+    expect(screen.getByRole('region', { name: 'Debugger' })).toBeDefined();
   });
   it.each(Object.keys(U24_ANALYZE_FIX_SCENES))(
     '%s has no accessibility violations',

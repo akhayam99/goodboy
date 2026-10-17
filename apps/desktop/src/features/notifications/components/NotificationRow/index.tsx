@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Check, Trash2 } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
-import { FOCUS_RING, StatusDot, Tooltip, cn, tintClasses, IconButton } from '@goodboy/ui';
+import { Button, FOCUS_RING, Tooltip, cn, tintClasses, IconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
@@ -90,11 +90,6 @@ export const NotificationRow = ({
       </button>
     </Tooltip>
   );
-  const unreadSlot = (
-    <span data-unread-slot className="pointer-events-none relative flex h-4 items-center">
-      {isUnread && <StatusDot tone="primary" size="sm" ariaLabel="Unread" />}
-    </span>
-  );
   const overlay = (
     <button
       type="button"
@@ -109,9 +104,8 @@ export const NotificationRow = ({
     const ActionIcon =
       latest.action != null ? notificationActionIcon({ kind: latest.action.kind }) : null;
     return (
-      <li className="group relative grid grid-cols-[0.375rem_0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-2 motion-safe:transition-colors hover:bg-hover">
+      <li className="group relative grid grid-cols-[0.875rem_minmax(0,1fr)_auto_3rem] items-center gap-2 rounded-md px-3 py-2 motion-safe:transition-colors hover:bg-hover">
         {overlay}
-        {unreadSlot}
         <SeverityIcon
           size={ICON_SIZE.control}
           className={cn('pointer-events-none relative shrink-0', tintClasses(severity.tone).icon)}
@@ -121,7 +115,7 @@ export const NotificationRow = ({
           <span
             className={cn(
               'truncate text-label',
-              isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground',
+              isUnread ? 'font-medium text-foreground' : 'text-muted-foreground',
             )}
           >
             {latest.title}
@@ -133,9 +127,7 @@ export const NotificationRow = ({
           {action != null && ActionIcon != null && (
             <IconButton icon={ActionIcon} label={action.label} size="xs" onClick={runAction} />
           )}
-          <span className="flex opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-            {deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}
-          </span>
+          <span className="flex">{deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}</span>
         </span>
       </li>
     );
@@ -150,9 +142,8 @@ export const NotificationRow = ({
         isSelected ? 'bg-subtle ring-1 ring-inset ring-border-soft' : 'hover:bg-hover',
       )}
     >
-      <div className="relative grid grid-cols-[0.375rem_1rem_minmax(0,1fr)_auto_4rem] items-start gap-x-3 px-3 py-2">
+      <div className="relative grid grid-cols-[1rem_minmax(0,1fr)_4rem] items-start gap-x-3 px-3 py-2">
         {overlay}
-        {unreadSlot}
         <SeverityIcon
           size={ICON_SIZE.control}
           className={cn('pointer-events-none relative mt-px', tintClasses(severity.tone).icon)}
@@ -161,9 +152,10 @@ export const NotificationRow = ({
         <div className="pointer-events-none relative flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 items-center gap-2">
             <h3
+              data-unread={isUnread ? '' : undefined}
               className={cn(
-                'truncate text-label',
-                isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground',
+                'truncate',
+                isUnread ? 'text-row text-foreground' : 'text-label text-muted-foreground',
               )}
             >
               {latest.title}
@@ -187,45 +179,32 @@ export const NotificationRow = ({
             </span>
           )}
         </div>
-        <div className="relative flex h-4 items-center justify-end">
-          {action != null && (
-            <button
-              type="button"
-              onClick={runAction}
-              className="inline-flex h-6 items-center whitespace-nowrap rounded-sm px-2 text-chip text-foreground ring-1 ring-inset ring-border-soft motion-safe:transition-colors hover:bg-hover"
-            >
-              {action.label}
-            </button>
-          )}
-        </div>
-        <div className="relative flex h-4 items-center justify-end">
-          <span
-            className={cn(
-              'flex motion-safe:transition-opacity group-hover:opacity-0 group-focus-within:opacity-0',
-              isSelected && 'opacity-0',
-            )}
-          >
-            {age}
-          </span>
-          <span
-            className={cn(
-              'pointer-events-none absolute inset-y-0 right-0 flex items-center gap-0.5 opacity-0 motion-safe:transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100',
-              isSelected && 'pointer-events-auto opacity-100',
-            )}
-          >
-            {isUnread && onMarkRead != null && (
-              <IconButton
-                icon={Check}
-                label={`Mark "${latest.title}" read`}
-                tooltip="Mark read"
-                size="xs"
-                onClick={onMarkRead}
-              />
-            )}
-            {deleteControl(<Trash2 size={ICON_SIZE.row} aria-hidden />)}
-          </span>
-        </div>
+        <div className="relative flex h-4 items-center justify-end">{age}</div>
       </div>
+      {isSelected ? (
+        <div data-notification-verbs="" className="flex items-center gap-1 pb-2 pl-10 pr-3">
+          {action != null ? (
+            <Button variant="secondary" size="xs" onClick={runAction}>
+              {action.label}
+            </Button>
+          ) : null}
+          {isUnread && onMarkRead != null ? (
+            <Button variant="ghost" size="xs" onClick={onMarkRead}>
+              <Check size={ICON_SIZE.row} aria-hidden />
+              Mark read
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost-danger"
+            size="xs"
+            aria-label={`Delete "${latest.title}"`}
+            onClick={onDismiss}
+          >
+            <Trash2 size={ICON_SIZE.row} aria-hidden />
+            Delete
+          </Button>
+        </div>
+      ) : null}
       {isSelected && <NotificationRowDetail notifications={notifications} />}
     </li>
   );

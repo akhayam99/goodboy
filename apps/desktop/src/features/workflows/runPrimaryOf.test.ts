@@ -75,7 +75,7 @@ describe('runPrimaryOf over every orchestrator phase', () => {
         'Resume',
         'Decide next step',
         'Answer',
-        'Raise spend cap',
+        'Raise limit',
         'Retry',
         'Review plan',
         'Continue the run',

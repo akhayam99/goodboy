@@ -52,11 +52,11 @@ Work on several branches of one repo in the same session, each in its own worktr
 
 ### Workspace switcher and Reconnect
 
-Jump between workspaces and projects from one search. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect**.
+Jump between workspaces and projects from one search. The current workspace sits on top with its projects, **Link a repository** (the folder picker, then an undo toast; a folder of another workspace points to its projects), **Manage projects** and its settings. The other workspaces follow in one list: a click switches, the window icon opens one in a new window, and a disconnected workspace keeps its place with **Reconnect**. **Start a new project** and **Open a folder** close the list. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect** too.
 
 ### Repo status across projects
 
-See which repos are behind, uncommitted or diverged from the **N repos** popover in the board header. **Update** brings the safe ones up to date together, fast-forward only, and leaves the rest to you.
+See which repos have something to pull right next to the workspace switcher. Every 5 minutes Goodboy fetches origin for each repo and compares the local base branch (the project's base branch, else the remote default branch) with its upstream. Fetching never moves a local branch. A repo that is behind puts a dot and **3 behind** on the **Repositories** entry; one whose base branch has commits of its own reads **Diverged**, and its tooltip explains that Goodboy only fast-forwards, so you merge or rebase it yourself. The entry opens one header row (the title, when origin was last checked, **Pull all** once two or more repos can pull, and the refresh icon), then the repos that need attention: behind with **Pull**, diverged with the reason in words, and a failed check with **Retry**. The repos with nothing to pull fold into one quiet line, **18 up to date**, that opens on click. Every row shows its folder in Finder and opens it in the editor in one click, keeps the action column put when it has no **Pull**, and opens its detail in place under the row. A checkout on a feature branch stays there while its base branch moves, a base branch checked out with uncommitted files says so instead of offering **Pull**, and a base branch that would not fast-forward or is checked out in another worktree is skipped. When origin cannot be reached the entry reads **Check failed**, with **Retry** on the row, and no toast. **Settings > General > Repositories** sets how often it checks (Off, 5, 15 or 30 minutes). Several windows on one workspace share one fetch. ⌘K **Pull main in all linked repos** and **Pull <branch> in <repo>** run the same pull, and a toast lists each repo with its branch and the title counts updated, skipped and failed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-repo-status-dark.webp">
@@ -86,7 +86,7 @@ Choose how new session branches are named: a **Branch prefix**, with or without 
 
 ### Monitoring
 
-See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Every group shares one column grid under one sticky header (Port, Label, Opened by, Process, Up, CPU, Memory), a process on many ports is one expandable row, and free ports fold into one quiet line after the ports in use. Expanded rows sit one step in. A terminal or script with no port shows "no port" and its process. Any row can be pinned, hidden with Undo, or stopped. It works on macOS and Linux.
+See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Every group shares one column grid under one sticky header (Port, Label, Opened by, Process, Up, CPU, Memory), a process on many ports is one expandable row, and free ports fold into one quiet line after the ports in use. Expanded rows sit one step in. A terminal or script with no port leaves the Port cell empty and shows its process. A port also open in another worktree shows the warning dot and "+2" after its owner, the worktrees in the tooltip. Leftovers sit on the same grid with their age under Up. Any row can be pinned, hidden with Undo, or stopped. It works on macOS and Linux.
 
 ### Copy settings from another workspace
 

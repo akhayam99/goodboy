@@ -43,6 +43,16 @@ const NO_FILTER = {
 
 const FILTER_REF = createRef<HTMLInputElement>();
 
+const NO_COLLAPSED: ReadonlySet<string> = new Set();
+
+const NO_STATE = () => 'none' as const;
+
+const NO_COUNT = () => 0;
+
+const NO_KINDS_OF = () => NO_KINDS;
+
+const NOTHING = () => undefined;
+
 const DiffTreeScene = () => {
   const [activePath, setActivePath] = useState<string | null>('src/ledger/export/csv/writer.ts');
   const tree = useMemo(() => buildChangeTree({ files: FILES }), []);
@@ -54,16 +64,17 @@ const DiffTreeScene = () => {
         filter={NO_FILTER}
         filterRef={FILTER_REF}
         activePath={activePath}
-        collapsed={new Set()}
-        onToggleFolder={() => undefined}
+        collapsed={NO_COLLAPSED}
+        onToggleFolder={NOTHING}
         onPick={setActivePath}
-        stateOf={() => 'none'}
-        commentCountOf={() => 0}
-        kindsOf={() => NO_KINDS}
+        stateOf={NO_STATE}
+        commentCountOf={NO_COUNT}
+        kindsOf={NO_KINDS_OF}
         isReadOnly={false}
-        onToggleViewed={() => undefined}
-        onNextUnviewed={() => undefined}
-        onLeave={() => undefined}
+        onToggleViewed={NOTHING}
+        onNextUnviewed={NOTHING}
+        onLeave={NOTHING}
+        onFold={NOTHING}
       />
     </div>
   );

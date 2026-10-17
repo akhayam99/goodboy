@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderGit2, FolderOpen, FolderPlus, Search } from 'lucide-react';
-import { Divider, EmptyState, Kbd, ScrollFade } from '@goodboy/ui';
+import { FolderOpen, FolderPlus, Search } from 'lucide-react';
+import { Button, Divider, EmptyState, Kbd, ScrollFade } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
   useAppStore,
@@ -14,7 +14,8 @@ import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/compo
 import { WORKSPACE_DIGIT_IDS, shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { CurrentWorkspaceRow } from './CurrentWorkspaceRow';
 import { OtherWorkspaceRow } from './OtherWorkspaceRow';
-import { DisconnectedWorkspaces } from './DisconnectedWorkspaces';
+import { DisconnectedWorkspaceRow } from './DisconnectedWorkspaceRow';
+import { useLinkRepoHere } from './useLinkRepoHere';
 import { WorkspaceOpenConfirm } from './WorkspaceOpenConfirm';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
 
@@ -28,8 +29,17 @@ type PendingConfirm = {
   readonly running: number;
 };
 
-const actionClass =
-  'flex w-full items-center gap-2 px-3 py-2 text-label text-muted-foreground transition-colors hover:bg-hover hover:text-foreground';
+type LeaveParams = {
+  readonly action: () => void;
+};
+
+type FireParams = {
+  readonly name: 'goodboy:add-workspace' | 'goodboy:start-new-project';
+};
+
+const fire = ({ name }: FireParams): void => {
+  window.dispatchEvent(new CustomEvent(name));
+};
 
 export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const workspaces = useWorkspaces();
@@ -44,6 +54,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+  const linkRepoHere = useLinkRepoHere({ workspace: currentWorkspace });
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -80,6 +91,13 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
   };
 
   const cancelConfirm = () => setPendingConfirm(null);
+
+  const leaveFor =
+    ({ action }: LeaveParams) =>
+    () => {
+      onClose();
+      action();
+    };
 
   const confirmOpenNewWindow = async () => {
     if (pendingConfirm === null) {
@@ -163,10 +181,11 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         {currentWorkspace !== null ? (
           <CurrentWorkspaceRow
             workspace={currentWorkspace}
-            onOpenSettings={() => {
-              openSettings({ scope: 'workspace' });
-              onClose();
-            }}
+            onLinkRepo={leaveFor({ action: () => void linkRepoHere() })}
+            onManageProjects={leaveFor({
+              action: () => openSettings({ scope: 'workspace', section: 'projects' }),
+            })}
+            onOpenSettings={leaveFor({ action: () => openSettings({ scope: 'workspace' }) })}
           />
         ) : null}
         {filtered.length === 0 && query.trim() !== '' ? (
@@ -178,7 +197,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
           />
         ) : (
           filtered.map((w, i) => (
-            <div key={w.id}>
+            <div key={w.id} className="flex flex-col gap-1">
               <OtherWorkspaceRow
                 workspace={w}
                 highlighted={i === activeIndex}
@@ -199,47 +218,35 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
             </div>
           ))
         )}
-        <DisconnectedWorkspaces
-          workspaces={disconnectedWorkspaces}
-          onReconnect={(id) => void reconnectWorkspaceById(id)}
-        />
+        {query.trim() === ''
+          ? disconnectedWorkspaces.map((workspace) => (
+              <DisconnectedWorkspaceRow
+                key={workspace.id}
+                workspace={workspace}
+                onReconnect={() => void reconnectWorkspaceById(workspace.id)}
+              />
+            ))
+          : null}
       </ScrollFade>
       <Divider />
-      <button
-        type="button"
-        onClick={() => {
-          window.dispatchEvent(new CustomEvent('goodboy:start-new-project'));
-          onClose();
-        }}
-        className={actionClass}
-      >
-        <FolderPlus size={ICON_SIZE.row} aria-hidden />
-        Start a new project
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
-          onClose();
-        }}
-        className={actionClass}
-      >
-        <FolderOpen size={ICON_SIZE.row} aria-hidden />
-        Open a folder
-      </button>
-      {currentWorkspace !== null ? (
-        <button
-          type="button"
-          onClick={() => {
-            openSettings({ scope: 'workspace', section: 'projects' });
-            onClose();
-          }}
-          className={actionClass}
+      <div className="flex items-center gap-1 p-1">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={leaveFor({ action: () => fire({ name: 'goodboy:start-new-project' }) })}
         >
-          <FolderGit2 size={ICON_SIZE.row} aria-hidden />
-          Manage projects
-        </button>
-      ) : null}
+          <FolderPlus size={ICON_SIZE.row} aria-hidden />
+          Start a new project
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={leaveFor({ action: () => fire({ name: 'goodboy:add-workspace' }) })}
+        >
+          <FolderOpen size={ICON_SIZE.row} aria-hidden />
+          Open a folder
+        </Button>
+      </div>
     </>
   );
 };

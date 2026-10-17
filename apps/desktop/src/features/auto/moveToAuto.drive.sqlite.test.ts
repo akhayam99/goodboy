@@ -12,7 +12,7 @@ vi.mock('../../shared/lib/db', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAutoTree, setSetting, type Database } from '@goodboy/db';
+import { getAutoTree, type Database } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import { AUTO_SEED_SESSION, seedAutoSession } from '@goodboy/db/test-helpers/auto-seeds';
 import {
@@ -29,7 +29,6 @@ import { createAutoScheduler } from '../../store/slices/auto/scheduler';
 import { makeFakePorts } from '../../store/slices/auto/testing/fakePorts';
 import type { AppStore } from '../../store/store';
 import { invokeAgentList } from '../workflows/workflows';
-import { SETTING_AUTO_EXPERIMENT } from '../settings/settings';
 import { registerAutoDrivePort } from './autoDrivePort';
 import { moveToAuto } from './moveToAuto';
 
@@ -46,7 +45,6 @@ beforeEach(async () => {
   await db.execute("UPDATE agents SET name = 'Implementer', kind = 'implementer' WHERE id = ?", [
     SOURCE,
   ]);
-  await setSetting(db, SETTING_AUTO_EXPERIMENT, 'true');
   useAppStore.setState({
     sessions: [
       aSession({

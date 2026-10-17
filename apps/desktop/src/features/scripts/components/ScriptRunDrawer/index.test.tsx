@@ -113,9 +113,9 @@ describe('ScriptRunDrawer', () => {
     renderDrawer();
 
     expect(screen.getByRole('heading', { name: 'test' })).toBeDefined();
-    expect(screen.getByText('Running')).toBeDefined();
-    expect(screen.getByText('· ledger-core')).toBeDefined();
-    expect(screen.getByText('· nw/settlement')).toBeDefined();
+    expect(screen.getByText('ledger-core')).toBeDefined();
+    expect(screen.getByLabelText('Running')).toBeDefined();
+    expect(screen.getByText('1m 12s · nw/settlement')).toBeDefined();
     expect(screen.getByText('✓ postings/rounding.test.ts')).toBeDefined();
     expect(screen.getByText('Following output')).toBeDefined();
     expect(screen.queryByRole('button', { name: /Run again/ })).toBeNull();
@@ -167,7 +167,8 @@ describe('ScriptRunDrawer', () => {
     expect(stderrLine?.getAttribute('data-stream')).toBe('stderr');
     expect(stderrLine?.textContent).toContain('err');
     expect(screen.getByText('Exit 1')).toBeDefined();
-    expect(screen.getAllByText('· 12s')).toHaveLength(2);
+    expect(screen.getAllByText('· 12s')).toHaveLength(1);
+    expect(screen.queryByText('Failed')).toBeNull();
     expect(screen.getByRole('button', { name: 'Copy output' })).toBeDefined();
   });
 

@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
 import type { Workflow, WorkflowRunId, WorkflowTriggerMode } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { ControlChip } from './ControlChip';
+import { ControlChip } from '../../../../../shared/components/ControlChip';
 
 export type ChainRun = {
   readonly run: { readonly id: WorkflowRunId; readonly title?: string };
@@ -71,7 +71,7 @@ export const StartsChip = ({ choice, runs, disabled, onChange }: Props) => {
           label="Starts"
           value={current?.label ?? 'Now'}
           isOpen={open}
-          disabled={disabled}
+          isDisabled={disabled}
           onToggle={toggle}
         />
       }

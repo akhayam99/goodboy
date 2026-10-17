@@ -19,6 +19,7 @@ import { currentPlatform } from '../../../../shared/platform';
 import { requestAskReset } from '../../../../features/session/ask/requestAskReset';
 import { SESSION } from './activityRunSeed';
 import { SessionAskScene } from './SessionAskScene';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 
 beforeAll(async () => {
   await importStore();
@@ -40,21 +41,20 @@ const renderState = async (state: string) => {
       <SessionAskScene />
     </ToastProvider>,
   );
-  return screen.findByTestId('ask-trail-button');
+  return screen.findByTestId('pane-toggle-ask');
 };
 
 const askDrawer = () => screen.getByRole('region', { name: 'Ask' });
 
 describe('the session Ask scene', () => {
-  it('opens from the trail band and shows Right now with no model call', async () => {
+  it('opens from the trail band with questions to try and no Right now strip', async () => {
     const trigger = await renderState('rightnow');
     expect(trigger.getAttribute('aria-pressed')).toBe('true');
-    const rightNow = within(screen.getByTestId('ask-right-now'));
-    expect(rightNow.queryByText('instant, no model')).toBeNull();
-    expect(rightNow.getByText(/in this session$/)).toBeDefined();
-    expect(rightNow.getByText('Try asking')).toBeDefined();
+    const suggestions = within(screen.getByRole('region', { name: 'Try asking' }));
+    expect(suggestions.getAllByRole('button').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('ask-right-now')).toBeNull();
     expect(screen.getByPlaceholderText('Ask about this session…')).toBeDefined();
-    expect(within(askDrawer()).getByText('Read-only')).toBeDefined();
+    expect(within(askDrawer()).getByText('Read only')).toBeDefined();
   });
 
   it('closes and reopens from the trail button', async () => {
@@ -71,13 +71,15 @@ describe('the session Ask scene', () => {
     expect(useAppStore.getState().drawer).toBeNull();
   });
 
-  it('asks a suggested question with the Right now lines', async () => {
+  it('asks a suggested question', async () => {
     const sendAskQuestion = vi.fn(async () => true);
     await renderState('rightnow');
     act(() => {
       useAppStore.setState({ sendAskQuestion });
     });
-    const suggestion = within(screen.getByTestId('ask-right-now')).getAllByRole('button')[0];
+    const suggestion = within(screen.getByRole('region', { name: 'Try asking' })).getAllByRole(
+      'button',
+    )[0];
     if (suggestion === undefined) {
       throw new Error('no suggested question');
     }
@@ -86,7 +88,6 @@ describe('the session Ask scene', () => {
       expect.objectContaining({
         sessionId: SESSION.id,
         question: suggestion.textContent,
-        rightNow: expect.arrayContaining([expect.stringMatching(/in this session$/)]),
       }),
     );
   });
@@ -96,23 +97,34 @@ describe('the session Ask scene', () => {
     const answer = await screen.findByTestId('ask-answer');
     expect(answer.querySelector('strong')?.textContent).toContain('One question is blocking');
     expect(within(answer).getAllByTestId('ask-chip').length).toBeGreaterThan(1);
-    expect(screen.getByTestId('ask-footer').textContent).toMatch(/· 6s · \$0\.04 · read 2 files$/);
+    expect(screen.getByTestId('ask-footer').textContent).toMatch(/· 6s$/);
+    expect(tooltipTextOf({ element: screen.getByTestId('ask-footer') })).toBe(
+      '$0.04 · read 2 files',
+    );
     expect(within(screen.getByTestId('ask-actions')).getByText('Answer question 1')).toBeDefined();
   });
 
-  it('moves the page beside it when a chip is clicked, and Ask stays open', async () => {
+  it('moves the page beside it when a chip is clicked, and the question keeps Back to Ask', async () => {
     await renderState('answer');
     const answer = await screen.findByTestId('ask-answer');
     const questionChip = answer.querySelector<HTMLElement>('[data-ask-kind="question"] button');
     if (questionChip === null) {
       throw new Error('no question chip');
     }
-    expect(screen.getByTestId('context-chip')).toBeDefined();
+    expect(screen.getByTestId('overview-title')).toBeDefined();
     act(() => {
       fireEvent.click(questionChip);
     });
     expect(useAppStore.getState().activeLens[SESSION.id]).toBe('questions');
-    expect(screen.queryByTestId('context-chip')).toBeNull();
+    expect(screen.queryByTestId('overview-title')).toBeNull();
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'question',
+      sessionId: SESSION.id,
+      payload: { from: 'ask' },
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to Ask' }));
+    });
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
     expect(askDrawer()).toBeDefined();
   });
@@ -138,7 +150,11 @@ describe('the session Ask scene', () => {
         'Stop after 5 attempts, then move the message to the dead-letter queue.',
       ),
     ).toBeDefined();
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask' });
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'question',
+      payload: { questionId, from: 'ask' },
+    });
+    expect(screen.getByRole('button', { name: 'Back to Ask' })).toBeDefined();
   });
 
   it('opens a plan inside Ask under Back to answer, and Esc goes back', async () => {
@@ -162,12 +178,11 @@ describe('the session Ask scene', () => {
     expect(screen.queryByTestId('ask-plan')).toBeNull();
   });
 
-  it('shows a follow-up as a second turn in the same thread and folds Right now', async () => {
+  it('shows a follow-up as a second turn in the same thread and hides the questions to try', async () => {
     await renderState('followup');
     await screen.findAllByTestId('ask-answer');
     expect(screen.getAllByTestId('ask-turn')).toHaveLength(2);
-    expect(screen.queryByTestId('ask-right-now')).toBeNull();
-    expect(within(askDrawer()).getByRole('button', { name: /Right now/ })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Try asking' })).toBeNull();
   });
 
   it('disables Reset chat while a reply streams and enables it once idle', async () => {
@@ -197,7 +212,7 @@ describe('the session Ask scene', () => {
 
     expect(useAppStore.getState().askThreadId[SESSION.id]).toBeNull();
     expect(screen.queryAllByTestId('ask-turn')).toHaveLength(0);
-    expect(screen.getByTestId('ask-right-now')).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Try asking' })).toBeDefined();
     expect(
       useAppStore.getState().askThreads[SESSION.id]?.some((thread) => thread.id === before),
     ).toBe(true);

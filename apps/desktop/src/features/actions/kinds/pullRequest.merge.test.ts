@@ -43,6 +43,7 @@ const facts = (overrides: Partial<PullRequestFacts> = {}): PullRequestFacts => (
   writeInFlight: null,
   isScribeWriting: false,
   commentsNeedYou: 0,
+  commentsUnresolved: 0,
   isFixRunLive: false,
   mergeMethods: ['squash', 'merge', 'rebase'],
   mergeMethodReasons: {},
@@ -73,9 +74,9 @@ describe('the merge action', () => {
     expect(merge?.blockedReason).toBeNull();
   });
 
-  it('turns secondary and counts the comments that need the owner, never disabled', () => {
-    const merge = mergeOf(facts({ commentsNeedYou: 3 }));
-    expect(merge?.shortLabel).toBe('Merge · 3 open');
+  it('turns secondary and counts the unresolved comments, never disabled', () => {
+    const merge = mergeOf(facts({ commentsNeedYou: 3, commentsUnresolved: 4 }));
+    expect(merge?.shortLabel).toBe('Merge · 4 unresolved');
     expect(merge?.slot).toBe('secondary');
     expect(merge?.blockedReason).toBeNull();
     expect(merge?.confirm?.confirmLabel).toBe('Merge anyway');
@@ -90,7 +91,8 @@ describe('the merge action', () => {
   it('is blocked with the readiness reason while a check fails', () => {
     const merge = mergeOf(facts({ checks: 'failing', failingChecks: ['unit tests'] }));
     expect(merge?.slot).toBe('secondary');
-    expect(merge?.blockedReason).toBe('1 check failing: unit tests.');
+    expect(merge?.shortLabel).toBe('Merge · 1 failing');
+    expect(merge?.blockedReason).toBe('Blocked by unit tests.');
   });
 });
 

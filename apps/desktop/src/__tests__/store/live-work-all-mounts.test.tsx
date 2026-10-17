@@ -395,7 +395,7 @@ describe('live work across every mount of a session', () => {
 
     expect(view.stage()).toMatchObject({ stage: 'running', reason: 'agent running' });
     expect(view.columnOf()).toBe('running');
-    expect(view.chipLabel()).toBe('1 running');
+    expect(view.chipLabel()).toBe('1 session running');
     expect(view.here()).toBe(1);
     expect(view.footer()).toBe(1);
   });
@@ -447,7 +447,7 @@ describe('live work across every mount of a session', () => {
 
     expect(view.stage()).toMatchObject({ stage: 'running', reason: 'deciding the next step' });
     expect(view.columnOf()).toBe('running');
-    expect(view.chipLabel()).toBe('1 running');
+    expect(view.chipLabel()).toBe('1 session running');
     expect(view.here()).toBe(1);
     expect(view.footer()).toBe(1);
   });

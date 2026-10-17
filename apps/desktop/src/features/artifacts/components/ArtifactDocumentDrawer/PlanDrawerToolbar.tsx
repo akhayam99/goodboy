@@ -1,15 +1,12 @@
 import { Tooltip } from '@goodboy/ui';
-import type { ArtifactState } from '../../artifactStateOf';
 import type { ResolvedAction } from '../../../actions/types';
 import type { PlanPrimaryAction } from '../../../plans/usePlanPrimaryAction';
 import { PlanEditorActions } from '../PlanEditor/PlanEditorActions';
 import type { PlanEditorModel } from '../PlanEditor/usePlanEditor';
-import { ArtifactStateChip } from '../ArtifactShell/ArtifactStateChip';
 import { PlanDrawerReadingActions } from './PlanDrawerReadingActions';
 
 type Props = {
   readonly version: number;
-  readonly state: ArtifactState | null;
   readonly isPast: boolean;
   readonly action: PlanPrimaryAction;
   readonly editor: PlanEditorModel;
@@ -19,7 +16,6 @@ type Props = {
 
 export const PlanDrawerToolbar = ({
   version,
-  state,
   isPast,
   action,
   editor,
@@ -27,7 +23,6 @@ export const PlanDrawerToolbar = ({
   onEdit,
 }: Props) => (
   <div data-testid="plan-drawer-toolbar" className="@container flex min-w-0 items-center gap-2">
-    {isPast ? null : <ArtifactStateChip state={state} isDetailCollapsible />}
     <Tooltip
       content={
         editor.conflict === null ? undefined : `Version ${editor.conflict.revision} is available`

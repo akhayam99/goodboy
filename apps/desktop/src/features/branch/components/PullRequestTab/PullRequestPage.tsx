@@ -15,6 +15,7 @@ import type {
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { usePullRequestPort } from '../../hooks/usePullRequestPort';
+import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { usePullRequestReadiness } from '../../hooks/usePullRequestReadiness';
 import { pullRequestActivityOf } from './activityOf';
 import { PullRequestActivity } from './PullRequestActivity';
@@ -34,9 +35,6 @@ export type PullRequestPageProps = {
   readonly viewErrorKind: PullRequestFailureKind | null;
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
-  readonly behind: number | null;
-  readonly distanceBase?: string | null;
-  readonly onRebase: (() => void) | null;
   readonly onMutated: () => void;
   readonly onReload: () => void;
   readonly onSelectTab: (tab: BranchTab) => void;
@@ -55,28 +53,43 @@ export const PullRequestPage = ({
   viewErrorKind,
   canEdit,
   request,
-  behind,
-  distanceBase = null,
-  onRebase,
   onMutated,
   onReload,
   onSelectTab,
 }: PullRequestPageProps) => {
   const sessionId = session.id;
   const port = usePullRequestPort({ sessionId });
-  const { commentsNeedYou } = usePullRequestReadiness({ sessionId });
+  const { readiness, commentsNeedYou } = usePullRequestReadiness({ sessionId });
   const items = useMemo(
     () =>
-      view === null ? [] : pullRequestActivityOf({ view, detail, needYou: commentsNeedYou, edits }),
-    [commentsNeedYou, detail, edits, view],
+      view === null
+        ? []
+        : pullRequestActivityOf({
+            view,
+            detail,
+            runs: pullRequestRunsOf({ pr, detail, view }),
+            needYou: commentsNeedYou,
+            edits,
+          }),
+    [commentsNeedYou, detail, edits, pr, view],
   );
   const nouns = port?.nouns ?? PULL_REQUEST_NOUNS[host];
 
   return (
-    <div
-      data-slot="overview-grid"
-      className="flex min-w-0 flex-col gap-6 @[800px]:grid @[800px]:grid-cols-[minmax(0,640px)_296px] @[800px]:items-start"
-    >
+    <div data-slot="overview-grid" className="flex min-w-0 flex-col gap-8">
+      <PullRequestProperties
+        sessionId={sessionId}
+        host={host}
+        pr={pr}
+        detail={detail}
+        view={view}
+        port={port}
+        request={request}
+        readiness={readiness}
+        canEdit={canEdit}
+        onOpenChecks={() => onSelectTab('checks')}
+        onMutated={onMutated}
+      />
       <div className="flex min-w-0 flex-col gap-8">
         <PullRequestDescription
           sessionId={sessionId}
@@ -100,20 +113,6 @@ export const PullRequestPage = ({
           />
         )}
       </div>
-      <PullRequestProperties
-        sessionId={sessionId}
-        pr={pr}
-        detail={detail}
-        view={view}
-        port={port}
-        request={request}
-        canEdit={canEdit}
-        behind={behind}
-        distanceBase={distanceBase}
-        onRebase={onRebase}
-        onOpenChecks={() => onSelectTab('checks')}
-        onMutated={onMutated}
-      />
     </div>
   );
 };

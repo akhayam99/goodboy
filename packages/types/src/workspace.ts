@@ -164,6 +164,8 @@ export type WorkflowRun = Readonly<{
   createdAt?: IsoDateTime;
 }>;
 
+export const SESSION_TITLE_MAX_LENGTH = 120;
+
 export type Session = Readonly<{
   id: SessionId;
   workspaceId: WorkspaceId;

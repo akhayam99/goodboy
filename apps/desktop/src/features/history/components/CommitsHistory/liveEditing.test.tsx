@@ -146,17 +146,13 @@ describe('live Commits page', () => {
     expect(screen.getByRole('list', { name: 'Commits' }).children.length).toBe(7);
     expect(screen.queryByRole('heading', { name: /After Apply|Planned changes/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Apply|Reset all/ })).toBeNull();
-    screen.getByText(`${LEDGER_GRAPH.behind} new commits on main`);
-    screen.getByRole('button', { name: 'Rebase onto latest' });
+    screen.getByText('Based on main');
+    expect(screen.queryByRole('button', { name: 'Rebase onto latest' })).toBeNull();
   });
-  it('starts with Undo and Redo visibly disabled', async () => {
+  it('hides Undo and Redo until there is an edit to take back', async () => {
     await mountPage();
-    expect(screen.getByRole('button', { name: 'Undo commit edit' }).hasAttribute('disabled')).toBe(
-      true,
-    );
-    expect(screen.getByRole('button', { name: 'Redo commit edit' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(screen.queryByRole('button', { name: 'Undo commit edit' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Redo commit edit' })).toBeNull();
   });
   it('renames immediately and updates the commit accessible name', async () => {
     await mountPage();
@@ -312,9 +308,7 @@ describe('live Commits page', () => {
     await mountPage();
     fireEvent.keyDown(topRow(), { key: 'Delete' });
     within(await screen.findByRole('alert')).getByText('Acme agent is writing here');
-    expect(screen.getByRole('button', { name: 'Undo commit edit' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(screen.queryByRole('button', { name: 'Undo commit edit' })).toBeNull();
     screen.getByRole('button', { name: 'Retry' });
   });
   it('offers stash consent without changing the displayed branch', async () => {
@@ -327,9 +321,7 @@ describe('live Commits page', () => {
     fireEvent.keyDown(topRow(), { key: 'Delete' });
     await screen.findByRole('button', { name: 'Stash and continue' });
     topRow();
-    expect(screen.getByRole('button', { name: 'Undo commit edit' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(screen.queryByRole('button', { name: 'Undo commit edit' })).toBeNull();
   });
   it('shows a conflicting edit with the Rewriter offer and Undo', async () => {
     outcome = {
@@ -465,9 +457,7 @@ describe('live Commits page', () => {
     expect(store.getState().historyLiveSessions[fixture.input.mountId]).toBeUndefined();
     await mountPage();
     screen.getByRole('listitem', { name: 'Acme export' });
-    expect(screen.getByRole('button', { name: 'Undo commit edit' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(screen.queryByRole('button', { name: 'Undo commit edit' })).toBeNull();
   });
   it('renders merged branches read-only', async () => {
     await mountPage({ isReadOnly: true });
@@ -488,7 +478,7 @@ describe('live Commits page', () => {
     ];
     await mountPage();
     expect(screen.queryByRole('button', { name: 'Backups' })).toBeNull();
-    fireEvent.click(await screen.findByRole('button', { name: 'Show previous versions (1)' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Previous versions 1' }));
     expect(store.getState().drawer).toMatchObject({ kind: 'history-versions' });
   });
 });

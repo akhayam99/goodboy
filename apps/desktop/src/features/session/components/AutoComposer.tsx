@@ -7,7 +7,6 @@ import { useAppStore } from '../../../store';
 import { usePromptFiles } from '../../../shared/hooks/usePromptFiles';
 import { useAgentRouting } from '../hooks/useAgentRouting';
 import { useAutoStart } from '../hooks/useAutoStart';
-import { useConfirmStartMode } from '../../auto/useConfirmStartMode';
 import { useAutoTreeLimit } from '../../auto/useAutoTreeLimit';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { AutoComposerView } from './AutoComposerView';
@@ -15,18 +14,11 @@ import { AutoComposerView } from './AutoComposerView';
 type Props = {
   readonly sessionId: SessionId;
   readonly actionsHost?: HTMLElement | null;
-  readonly action?: HTMLElement | null;
   readonly footerClassName?: string;
   readonly onDone: () => void;
 };
 
-export const AutoComposer = ({
-  sessionId,
-  actionsHost,
-  action,
-  footerClassName,
-  onDone,
-}: Props) => {
+export const AutoComposer = ({ sessionId, actionsHost, footerClassName, onDone }: Props) => {
   const goal = useAppStore((state) => state.newDrawerDrafts[sessionId]?.autoGoal ?? '');
   const setGoal = useAppStore((state) => state.setNewDrawerAutoGoal);
   const connected = useAppStore(
@@ -38,7 +30,6 @@ export const AutoComposer = ({
   );
   const routed = useAgentRouting({ sessionId, kind: 'auto' });
   const start = useAutoStart({ sessionId });
-  const confirmMode = useConfirmStartMode();
   const workspaceId = useAppStore(
     (state) => sessionById(state.sessions, sessionId)?.workspaceId ?? null,
   );
@@ -56,9 +47,6 @@ export const AutoComposer = ({
     setIsStarting(true);
     setError(null);
     try {
-      if (!(await confirmMode({ isShown: true }))) {
-        return;
-      }
       await limit.persist();
       await start({ goal, routing: routed.effective });
       setGoal({ sessionId, goal: '' });
@@ -83,7 +71,6 @@ export const AutoComposer = ({
       isStarting={isStarting}
       error={error}
       {...(actionsHost !== undefined && { actionsHost })}
-      {...(action !== undefined && { action })}
       {...(footerClassName !== undefined && { footerClassName })}
       onGoalChange={(next) => setGoal({ sessionId, goal: next })}
       onSubmit={() => void submit()}

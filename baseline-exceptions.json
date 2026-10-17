@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "rule": "dog-mascot-only-marks-the-brand",
+    "file": "app/components/GoodboyChip/BrandLockup.tsx",
+    "count": 1,
+    "reason": "moved, net 3 to 2 files",
+    "release": "0.27.0"
+  }
+]

@@ -20,11 +20,12 @@ const SRC = join(__dirname, '..', '..');
 const TRAIL = '[data-slot="trail"]';
 const BACK_GLYPH = '.lucide-chevron-left, .lucide-arrow-left';
 const BACK_CHARACTERS = /[‹←]/;
-const TRAIL_SCENES = ['trail-run', 'trail-artifact', 'trail-agent', 'shell'] as const;
+const SESSION_SCENE = 'shell';
+const SESSION_RAIL = '[data-session-rail]';
 
 const KEPT = [
   'SettingsColumnNav.tsx',
-  'ProjectGitSummaryPill.tsx',
+  'RepoEntryPanel.tsx',
   'QuestionPager.tsx',
   'HandoffPanel.tsx',
 ];
@@ -82,10 +83,10 @@ const paneShellActionsOf = ({ source }: ActionsParams): ReadonlyArray<string> =>
 };
 
 describe('no back glyph in a trail', () => {
-  it.each(TRAIL_SCENES)('draws no chevron or arrow to the left in the trail of %s', async (id) => {
-    const Scene = MOCK_SCENES[id];
+  it('draws no trail in a session: the session rail back row holds the back glyph', async () => {
+    const Scene = MOCK_SCENES[SESSION_SCENE];
     if (Scene === undefined) {
-      throw new Error(`no scene ${id}`);
+      throw new Error(`no scene ${SESSION_SCENE}`);
     }
     render(
       <ToastProvider>
@@ -93,9 +94,15 @@ describe('no back glyph in a trail', () => {
       </ToastProvider>,
     );
 
-    await waitFor(() => expect(document.querySelector(TRAIL)).not.toBeNull());
-    const trails = Array.from(document.querySelectorAll(TRAIL));
-    expect(trails.filter(hasBackGlyph)).toEqual([]);
+    await waitFor(() => expect(document.querySelector(SESSION_RAIL)).not.toBeNull(), {
+      timeout: 4_000,
+    });
+    expect(document.querySelector(TRAIL)).toBeNull();
+    const glyphs = Array.from(document.querySelectorAll(BACK_GLYPH));
+    expect(glyphs.some((glyph) => glyph.closest(SESSION_RAIL) !== null)).toBe(true);
+    for (const glyph of glyphs) {
+      expect(glyph.closest('button')?.getAttribute('aria-label') ?? '').toMatch(/^Back/);
+    }
   });
 
   it('fails on a fixture trail that carries a chevron-left before its segments', () => {

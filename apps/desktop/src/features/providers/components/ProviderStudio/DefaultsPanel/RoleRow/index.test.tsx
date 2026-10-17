@@ -109,15 +109,19 @@ describe('RoleRow', () => {
     expect(summary?.textContent).not.toContain('Opus');
     expect(trigger.textContent).toContain('Pinned');
     expect(
-      screen.getByText('Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.'),
+      screen.getByRole('img', { name: 'Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.' }),
     ).toBeDefined();
+    expect(
+      screen.queryByText('Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.'),
+    ).toBeNull();
   });
 
   it('shows the pinned model and no line while its provider is On', () => {
     const trigger = row({ preference: OPUS_PIN, policy: CLAUDE_ON });
 
     const summary = trigger.querySelector<HTMLElement>('[data-role-summary]');
-    expect(summary?.textContent).toBe('Opus 5.5·High');
+    expect(summary?.textContent).toBe('Opus 5.5');
+    expect(trigger.querySelector('[data-role-effort]')?.textContent).toBe('High');
     expect(trigger.textContent).toContain('Pinned');
     expect(screen.queryByText(/is skipped/)).toBeNull();
     expect(screen.getByText('Writes the plan.')).toBeDefined();

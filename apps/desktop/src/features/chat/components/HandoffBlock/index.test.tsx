@@ -25,7 +25,6 @@ import { useAppStore } from '../../../../store';
 
 import { OPERATOR_NOTES_GUIDANCE } from '../../utils/operatorNotesGuidance';
 import { HandoffBlock } from '.';
-import { requestHandoffOpen } from './handoffOpenRequest';
 
 const SESSION = 'session-1' as SessionId;
 const AGENT = 'agent-4' as AgentId;
@@ -200,15 +199,6 @@ describe('HandoffBlock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Implementer instructions' }));
     expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
     screen.getByTestId('handoff-section-role');
-  });
-
-  it('opens the Ask section when the Brief requests the handoff', () => {
-    requestHandoffOpen({ agentId: AGENT });
-    renderBlock();
-
-    screen.getByTestId('handoff-section-ask');
-    expect(screen.getByRole('button', { name: 'Ask' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
   });
 
   it('Escape closes the open section and returns focus to its chip', () => {
@@ -462,12 +452,12 @@ describe('HandoffBlock', () => {
     screen.getByRole('button', { name: 'Plan' });
   });
 
-  it('shows an agent spawned before handoffs were stored in the older format', () => {
+  it('shows the first message of an agent spawned before handoffs were stored as a user bubble', () => {
     renderBlock({ handoffId: null });
 
-    const row = screen.getByTestId('handoff-older-format');
-    expect(row.textContent).toContain('First message');
-    expect(row.textContent).toContain('Older format');
+    screen.getByText('Backfill the settled batches behind a flag.');
+    expect(screen.queryByText('First message')).toBeNull();
+    expect(screen.queryByText('Older format')).toBeNull();
     expect(loadAgentHandoff).not.toHaveBeenCalled();
   });
 

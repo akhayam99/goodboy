@@ -6,7 +6,14 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { cn, CountToggle, formatError, PaneShell, PaneActionsContext } from '@goodboy/ui';
+import {
+  cn,
+  CountToggle,
+  formatError,
+  PaneShell,
+  PaneActionsContext,
+  useInheritedPaneActions,
+} from '@goodboy/ui';
 import { EmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { selectSessionById } from '../../../../../../store/slices/sessions/selectSessionById';
@@ -22,7 +29,9 @@ import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';
 import { FocusedTaskBody } from './FocusedTaskBody';
 import { integrationTaskKey } from './integrationTaskKey';
-import { LinkedToRow } from './LinkedToRow';
+import { TaskPlacementMenu } from './TaskPlacementMenu';
+import { RecordFrameContext } from '../../../../../../shared/components/StudioDetail/RecordFrameContext';
+import type { RecordFrame } from '../../../../../../shared/components/StudioDetail/RecordActions/types';
 import { WorkItemList } from './WorkItemList';
 import { useSessionProjectScope } from '../../../../hooks/useSessionProjectScope';
 import { LinkIssueAction } from '../../../SessionOverviewPane/LinkIssueAction';
@@ -85,6 +94,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const inheritedActions = useInheritedPaneActions();
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY,
   );
@@ -157,6 +167,35 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   };
 
   if (focusedTask != null) {
+    const frame: RecordFrame = {
+      primary: null,
+      onRefresh: null,
+      onClose: null,
+      sessionVerbs: [
+        {
+          key: 'unlink-session',
+          label: 'Unlink from session',
+          icon: Unlink,
+          isBusy: isUnlinking,
+          blockedReason: null,
+          confirm: {
+            title: `Unlink ${focusedTask.identifier} from this session?`,
+            description: `The issue stays in ${meta.label}. Link it again from Link work.`,
+            confirmLabel: 'Unlink',
+          },
+          onRun: () => handleUnlink({ task: focusedTask }),
+        },
+      ],
+      linkFacts: [
+        {
+          slot: 'links',
+          key: 'placement',
+          label: 'Placed on',
+          icon: null,
+          node: <TaskPlacementMenu sessionId={sessionId} task={focusedTask} />,
+        },
+      ],
+    };
     return (
       <PaneActionsContext.Provider
         value={
@@ -166,33 +205,27 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
               label={`All ${meta.nounPlural}`}
               onClick={() => setFocusedTaskKey(null)}
             />
-            <GhostActionButton
-              icon={Unlink}
-              tone="danger"
-              label="Unlink"
-              ariaLabel={`Unlink ${focusedTask.identifier}`}
-              disabled={isUnlinking}
-              onClick={() => void handleUnlink({ task: focusedTask })}
-            />
+            {inheritedActions}
           </div>
         }
       >
-        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-          {unlinkError != null ? (
-            <p className={cn('shrink-0 pt-3 text-label text-danger', PANE_RHYTHM.inset)}>
-              {unlinkError}
-            </p>
-          ) : null}
-          <LinkedToRow sessionId={sessionId} task={focusedTask} />
-          <FocusedTaskBody
-            provider={provider}
-            sessionId={sessionId}
-            workspaceId={workspaceId}
-            task={focusedTask}
-            projectId={focusedTask.projectId ?? projectScope}
-            isConnected={connection.isConnected}
-          />
-        </div>
+        <RecordFrameContext.Provider value={frame}>
+          <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+            {unlinkError != null ? (
+              <p className={cn('shrink-0 pt-3 text-label text-danger', PANE_RHYTHM.inset)}>
+                {unlinkError}
+              </p>
+            ) : null}
+            <FocusedTaskBody
+              provider={provider}
+              sessionId={sessionId}
+              workspaceId={workspaceId}
+              task={focusedTask}
+              projectId={focusedTask.projectId ?? projectScope}
+              isConnected={connection.isConnected}
+            />
+          </div>
+        </RecordFrameContext.Provider>
       </PaneActionsContext.Provider>
     );
   }
@@ -200,7 +233,6 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   return (
     <PaneShell
       title={meta.label}
-      meta={hasTasks ? tasks.length : undefined}
       actions={connection.isConnected && hasTasks ? linkAction : undefined}
     >
       {!connection.isConnected ? (

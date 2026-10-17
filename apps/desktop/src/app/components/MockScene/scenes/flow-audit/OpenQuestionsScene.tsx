@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { OpenQuestionId } from '@goodboy/types';
 import { QuestionsPane } from '../../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
 import { useAppStore } from '../../../../../store';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
@@ -12,7 +13,11 @@ import {
 } from './fixtures';
 import { seedChatSurfaces } from './seeds';
 
-export const OpenQuestionsScene = () => {
+type Props = {
+  readonly drawerQuestionId?: OpenQuestionId | null;
+};
+
+export const OpenQuestionsScene = ({ drawerQuestionId = null }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -35,8 +40,15 @@ export const OpenQuestionsScene = () => {
       loadSessionAnsweredQuestions: async () => undefined,
       loadSessionDismissedQuestions: async () => undefined,
     });
+    if (drawerQuestionId !== null) {
+      useAppStore.getState().openDrawer({
+        kind: 'question',
+        sessionId: CHAT_SESSION_ID,
+        payload: { questionId: drawerQuestionId },
+      });
+    }
     setIsReady(true);
-  }, []);
+  }, [drawerQuestionId]);
 
   if (!isReady) {
     return null;

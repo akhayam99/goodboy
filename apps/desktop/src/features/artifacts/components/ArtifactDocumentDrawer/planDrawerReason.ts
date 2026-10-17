@@ -1,6 +1,7 @@
 import type { ArtifactComment } from '@goodboy/types';
 import type { PlanPrimary } from '../../../plans/planPrimaryOf';
 import type { ArtifactState } from '../../artifactStateOf';
+import { PLANNER_QUESTION_REASON } from '../../../plans/plannerQuestions';
 
 type Params = Readonly<{
   isEditing: boolean;
@@ -21,7 +22,7 @@ export const planDrawerReasonOf = ({
     return null;
   }
   if (primary.kind === 'disabled') {
-    return primary.reason;
+    return primary.reason === PLANNER_QUESTION_REASON ? null : primary.reason;
   }
   if (state?.key === 'approved') {
     return state.reason;

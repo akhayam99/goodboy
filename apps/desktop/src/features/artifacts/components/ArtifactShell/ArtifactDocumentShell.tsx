@@ -33,7 +33,6 @@ import { ARTIFACT_EDIT_EVENT } from '../../../actions/kinds/artifact';
 import type { ArtifactActionTarget, ArtifactPorts } from '../../../actions/types';
 import { ArtifactShellHeader } from './ArtifactShellHeader';
 import { ArtifactShellMeta } from './ArtifactShellMeta';
-import { ArtifactStateChip } from './ArtifactStateChip';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -226,22 +225,19 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   });
   const chip =
     subject.kind === 'wireframe' ? (
-      <>
-        <ArtifactStateChip state={state} />
-        <WireframeDivergenceChip artifact={subject.artifact} creatorName={creator?.name ?? null} />
-      </>
-    ) : (
-      <ArtifactStateChip state={state} />
-    );
+      <WireframeDivergenceChip artifact={subject.artifact} creatorName={creator?.name ?? null} />
+    ) : null;
 
   const alert = error ?? planRun.error ?? regenerate.error;
 
   return (
     <PaneShell
+      page={artifact.kind}
       header={
         <ArtifactShellHeader
           kind={artifact.kind}
           title={artifact.title}
+          isTitleInDocument={subject.kind === 'report' && draft === null}
           chip={chip}
           actions={actions}
           meta={
@@ -249,15 +245,9 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
               artifact={artifact}
               plan={plan}
               agents={agents}
+              state={state}
               onOpenAgent={(agent) =>
                 navigate({ to: agentPlace({ sessionId, agentId: agent.id }) })
-              }
-              onOpenDetails={() =>
-                openDrawer({
-                  kind: 'artifact',
-                  sessionId,
-                  payload: { artifactId: artifact.id, tab: 'details' },
-                })
               }
             />
           }

@@ -133,6 +133,8 @@ const renderDetail = (record: InboxRecord) =>
       onRefresh={onRefresh}
       onClose={vi.fn()}
       onDeselect={onDeselect}
+      onOpenFull={null}
+      star={null}
       launchFocusRequest={0}
     />,
   );

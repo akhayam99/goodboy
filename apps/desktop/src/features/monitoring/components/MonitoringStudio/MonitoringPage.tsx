@@ -30,10 +30,13 @@ export const MonitoringPage = () => {
 
   return (
     <PaneShell
+      page="monitoring"
       scroll="body"
       title="Monitoring"
       meta={
-        isReady ? summaryMeta({ summary: model.summary, takenAt: model.takenAt, now }) : undefined
+        isReady
+          ? (summaryMeta({ summary: model.summary, takenAt: model.takenAt, now }) ?? undefined)
+          : undefined
       }
       actions={
         <HeaderActions
@@ -48,7 +51,7 @@ export const MonitoringPage = () => {
               />
             ) : null
           }
-          primary={isReady && !isEmpty ? <PinPortPopover variant="primary" /> : null}
+          primary={isReady ? <PinPortPopover variant="primary" /> : null}
         />
       }
     >
@@ -62,11 +65,7 @@ export const MonitoringPage = () => {
           <ReadFailedNotice tone="warning" detail={model.error} />
         ) : null}
         {isEmpty ? (
-          <EmptyState
-            icon={Activity}
-            title="Goodboy found no ports in your projects"
-            action={<PinPortPopover variant="primary" />}
-          />
+          <EmptyState icon={Activity} title="Goodboy found no ports in your projects" />
         ) : null}
         {isReady && !isEmpty ? <ColumnHeader /> : null}
         {isReady && model.pinned.length > 0 ? (

@@ -1216,7 +1216,7 @@ describe('orchestrateNextStep', () => {
       decision: {
         action: 'done',
         reason: 'All required tests pass.',
-        runSummary: { kind: 'structured', done: ['shipped the gate'], left: [] },
+        runSummary: { kind: 'structured', done: ['shipped the gate'], left: [], leftRoles: {} },
       },
     });
     const state = baseState();
@@ -1806,7 +1806,7 @@ describe('orchestrateNextStep', () => {
         action: 'next',
         reason: 'Keep going.',
         step: { name: 'Implement', role: 'implementer', promptPrefix: 'Implement it.' },
-        runSummary: { kind: 'structured', done: ['mapped'], left: ['implement'] },
+        runSummary: { kind: 'structured', done: ['mapped'], left: ['implement'], leftRoles: {} },
       },
       usage: BILLED_USAGE,
       model: 'claude-haiku-4-5',
@@ -1997,7 +1997,7 @@ describe('orchestrateNextStep', () => {
     expect(decideSpy).not.toHaveBeenCalled();
     expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
       kind: 'budget',
-      message: expect.stringContaining('spend cap'),
+      message: expect.stringContaining('limit for this run'),
     });
   });
 
@@ -2017,8 +2017,8 @@ describe('orchestrateNextStep', () => {
       expect.objectContaining({
         kind: 'budget-cap',
         severity: 'warning',
-        title: expect.stringContaining('spend cap'),
-        body: expect.stringContaining('spend cap'),
+        title: 'Run is over its limit',
+        body: 'this run passed its $5.00 limit and keeps going',
         sessionId: SESSION_ID,
       }),
     );
@@ -2056,7 +2056,7 @@ describe('orchestrateNextStep', () => {
     expect(budgetCalls()).toBe(2);
   });
 
-  it('refuses to start a step while the spend cap is reached', async () => {
+  it('refuses to start a step while the session limit is reached', async () => {
     const state = baseState();
     state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID, capUsd: 10 }];
     const { set, get } = harness(state);
@@ -2066,7 +2066,7 @@ describe('orchestrateNextStep', () => {
     expect(decideSpy).not.toHaveBeenCalled();
     expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
       kind: 'budget',
-      message: 'Paused at the $10.00 spend cap for this session.',
+      message: 'Paused at the $10.00 limit for this session.',
     });
     const paused = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(paused.orchestrationStop?.kind).toBe('budget');

@@ -48,19 +48,20 @@ describe('the checks scenes', () => {
     ]);
   });
 
-  it('branch-checks reads one rollup line with everything passing', async () => {
+  it('branch-checks groups the passing runs with their count and draws no summary line', async () => {
     draw({ name: 'branch-checks' });
 
-    expect((await screen.findByTestId('checks-rollup')).textContent).toBe('7 passed · 1 skipped');
+    expect(await screen.findByRole('list', { name: 'Passed checks' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Passed 7' })).toBeDefined();
+    expect(screen.queryByTestId('checks-rollup')).toBeNull();
   });
 
   it('branch-checks-failing leads with the failures', async () => {
     draw({ name: 'branch-checks-failing' });
 
-    expect((await screen.findByTestId('checks-rollup')).textContent).toBe(
-      '2 failing · 1 running · 5 passed · 1 skipped',
-    );
-    expect(screen.getByRole('list', { name: 'Failing checks' })).toBeDefined();
+    expect(await screen.findByRole('heading', { name: 'Failing 2' })).toBeDefined();
+    const groups = [...document.querySelectorAll('ul[aria-label$=" checks"]')];
+    expect(groups.map((group) => group.getAttribute('aria-label'))[0]).toBe('Failing checks');
   });
 
   it('branch-checks-denied says what the access cannot read and keeps the command', async () => {
@@ -74,16 +75,14 @@ describe('the checks scenes', () => {
   it('branch-checks-empty says nothing has reported yet', async () => {
     draw({ name: 'branch-checks-empty' });
 
-    expect(
-      await screen.findByText('No checks have reported on this pull request yet'),
-    ).toBeDefined();
+    expect(await screen.findByText('No checks have reported on this pull request.')).toBeDefined();
   });
 
   it('branch-checks-no-pr lands on Overview and the rail has no Checks without a pull request', async () => {
     draw({ name: 'branch-checks-no-pr' });
 
-    const rail = within(await screen.findByRole('navigation', { name: 'Sections' }));
-    expect(rail.getByRole('button', { name: /^Overview/ }).getAttribute('aria-current')).toBe(
+    const rail = within(await screen.findByRole('navigation', { name: 'Worktree' }));
+    expect(rail.getByRole('button', { name: /^Pull request/ }).getAttribute('aria-current')).toBe(
       'page',
     );
     expect(rail.queryByRole('button', { name: /^Checks/ })).toBeNull();

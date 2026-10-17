@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
 import { portLabel } from '../../portLabel';
+import { shownRowCount } from '../../shownRowCount';
 import { PortRowMenu } from '../../../actions/PortRowMenu';
 import { PortGroupList } from './PortGroupList';
 import { PortRowItem } from './PortRowItem';
@@ -34,10 +35,12 @@ export const ListeningSection = ({ rows, processOf, now, isForcedOpen }: Props) 
           aria-hidden
           className={cn('shrink-0 motion-safe:transition-transform', isOpen && 'rotate-90')}
         />
-        <span className="min-w-0 flex-1 truncate text-foreground">Listening on this Mac</span>
-        <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
-          {isOpen ? rows.length : `${rows.length} more`}
-        </span>
+        <span className="min-w-0 truncate text-foreground">Listening on this Mac</span>
+        {shownRowCount({ rows }) > 1 ? (
+          <span className="shrink-0 text-meta tabular-nums text-faint-foreground">
+            {shownRowCount({ rows })}
+          </span>
+        ) : null}
       </button>
       {isOpen ? (
         <PortGroupList

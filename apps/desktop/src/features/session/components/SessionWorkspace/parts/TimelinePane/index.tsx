@@ -8,13 +8,11 @@ import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import {
   ACTIVITY_VIEWS,
   ACTIVITY_VIEW_LABEL,
-  entriesOfView,
   type ActivityView,
 } from '../../../../timeline/activityView';
 import { countRowIdOf } from '../../../../timeline/buildTimelineStream';
 import { useExplodeGroups, type ExplodeGroups } from '../../../../hooks/useExplodeGroups';
 import { useScrollAnchor } from '../../../../hooks/useScrollAnchor';
-import { SessionCostChip } from '../../../SessionOverviewPane/SessionCostChip';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import { NeedsYouBlock } from './NeedsYouBlock';
 import { TimelineEmpty } from './TimelineEmpty';
@@ -27,7 +25,7 @@ import { useTimelineRows } from './useTimelineRows';
 
 type Props = {
   readonly session: Session;
-  readonly actions: ReactNode;
+  readonly lead?: ReactNode;
   readonly onShownQuestionsChange?: (ids: ReadonlySet<string>) => void;
 };
 
@@ -36,7 +34,7 @@ const VIEW_OPTIONS = ACTIVITY_VIEWS.map((view) => ({
   label: ACTIVITY_VIEW_LABEL[view],
 }));
 
-export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props) => {
+export const TimelinePane = ({ session, lead = null, onShownQuestionsChange }: Props) => {
   const sessionId: SessionId = session.id;
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const [view, setView] = useState<ActivityView>('activity');
@@ -68,7 +66,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
     session,
     explode,
     rows,
-    isNeedsYouShown: view !== 'log',
+    isNeedsYouShown: true,
   });
   const { stream, entries, viewEntries, shownQuestions, owners } = rows;
   const shownQuestionsKey = [...shownQuestions].sort().join(' ');
@@ -86,19 +84,11 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const hasUnreadAgents = rows.unreadAgentIds.size > 0;
   const isLoading = !rows.isLoaded && entries.length === 0;
   const isSearching = view === 'log' && query.trim() !== '';
-  const hasLogEntries = useMemo(
-    () =>
-      entriesOfView({
-        entries,
-        events: rows.events,
-        view: 'log',
-        liveAgentIds: rows.liveAgentIds,
-      }).length > 0,
-    [entries, rows.events, rows.liveAgentIds],
-  );
 
   return (
     <ActionColumnContext.Provider value={hasActionColumn}>
+      <NeedsYouBlock owners={owners} onOpen={openNeedsYou} />
+      {lead}
       <section aria-label="Activity" className="@container/activity flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -109,7 +99,6 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
               value={view}
               onChange={setView}
             />
-            <SessionCostChip sessionId={sessionId} />
             {hasUnreadAgents ? (
               <Button variant="ghost" size="sm" onClick={() => void markAllAgentsSeen(sessionId)}>
                 <CheckCheck size={ICON_SIZE.row} aria-hidden />
@@ -117,7 +106,6 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
               </Button>
             ) : null}
           </div>
-          {actions}
         </div>
         {view === 'log' ? (
           <Input
@@ -127,19 +115,11 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-        ) : (
-          <NeedsYouBlock owners={owners} onOpen={openNeedsYou} />
-        )}
+        ) : null}
         {isLoading ? (
           <TimelineSkeleton />
         ) : viewEntries.length === 0 ? (
-          <TimelineEmpty
-            view={view}
-            isSearching={isSearching}
-            hasLogEntries={hasLogEntries}
-            onSeeLog={() => setView('log')}
-            onClearSearch={() => setQuery('')}
-          />
+          <TimelineEmpty view={view} isSearching={isSearching} onClearSearch={() => setQuery('')} />
         ) : (
           <div className="flex flex-col gap-1">
             <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>

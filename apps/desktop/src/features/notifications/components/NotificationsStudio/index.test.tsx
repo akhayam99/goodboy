@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
+import { innerColumnStore } from '@goodboy/ui';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 
 const { state } = vi.hoisted(() => ({
@@ -32,7 +33,7 @@ const { state } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => {
   const useAppStore = <T,>(selector: (store: typeof state) => T) => selector(state);
-  Object.assign(useAppStore, { getState: () => state });
+  Object.assign(useAppStore, { getState: () => state, subscribe: () => () => undefined });
   return { useAppStore };
 });
 
@@ -79,6 +80,10 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
 };
 
 const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
+
+const deleteAll = (): void => {
+  fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+};
 
 const openFilterRail = (): HTMLElement => {
   const shown = screen.queryByRole('navigation', { name: 'Filter notifications' });
@@ -174,7 +179,7 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     const rail = openFilterRail();
-    expect(within(rail).getByRole('button', { name: /errors 1/i })).toBeDefined();
+    expect(within(rail).getByRole('button', { name: 'Errors' })).toBeDefined();
     fireEvent.click(within(rail).getByRole('button', { name: /warnings/i }));
 
     expect(screen.getByText('Warning row')).toBeDefined();
@@ -232,8 +237,10 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Summarizer failed' }));
+    state.markNotificationRead.mockClear();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /mark "summarizer failed" read/i }));
+      fireEvent.click(screen.getByRole('button', { name: 'Mark read' }));
     });
 
     expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
@@ -250,6 +257,7 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Summarizer failed' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /delete "summarizer failed"/i }));
     });
@@ -284,7 +292,7 @@ describe('NotificationsStudio', () => {
     expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['bottom'] });
   });
 
-  it('reserves the unread slot on every row and fills it only on unread rows', () => {
+  it('leads every row with the severity glyph alone and marks unread by the title weight', () => {
     seedNotifications({
       notifications: [
         buildNotification({ id: 'n1', title: 'New one', coalesceKey: 'a' }),
@@ -293,17 +301,14 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    const slots = ['New one', 'Seen one'].map((title) =>
-      screen
-        .getByRole('heading', { name: title })
-        .closest('li')
-        ?.querySelector('[data-unread-slot]'),
+    expect(screen.getByRole('heading', { name: 'New one' }).hasAttribute('data-unread')).toBe(true);
+    expect(screen.getByRole('heading', { name: 'Seen one' }).hasAttribute('data-unread')).toBe(
+      false,
     );
-    expect(slots.map((slot) => slot?.childElementCount)).toEqual([1, 0]);
-    expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(1);
+    expect(screen.queryByRole('img', { name: 'Unread' })).toBeNull();
   });
 
-  it('keeps the primary action visible and reserves the hover slot for row actions', () => {
+  it('keeps the row verbs on the opened row, none at rest', () => {
     seedNotifications({
       notifications: [
         buildNotification({
@@ -319,12 +324,18 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    const slot = screen
-      .getByRole('button', { name: /delete "summarizer failed"/i })
-      .closest('span');
-    expect(slot?.className).toContain('group-hover:opacity-100');
-    expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
-    expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
+    expect(screen.queryByRole('button', { name: /delete "summarizer failed"/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Summarizer failed' }));
+
+    const verbs = document.querySelector<HTMLElement>('[data-notification-verbs]');
+    if (verbs === null) {
+      throw new Error('the opened row has no verbs');
+    }
+    expect(within(verbs).getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(
+      within(verbs).getByRole('button', { name: /delete "summarizer failed"/i }),
+    ).toBeDefined();
   });
 
   it('offers older notifications and says how many are loaded', () => {
@@ -356,13 +367,26 @@ describe('NotificationsStudio', () => {
     expect(screen.getByRole('button', { name: /^delete all$/i })).toBeDefined();
   });
 
+  it('draws Delete all as a quiet verb after Mark all read, with no page menu', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    const markAllRead = screen.getByRole('button', { name: /mark all read/i });
+    const deleteAllVerb = screen.getByRole('button', { name: /^delete all$/i });
+    expect(deleteAllVerb.getAttribute('data-variant')).toBe('quiet');
+    expect(
+      markAllRead.compareDocumentPosition(deleteAllVerb) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.queryByRole('button', { name: 'More notification actions' })).toBeNull();
+  });
+
   it('asks in a popover beside Delete all, not inside the title row', async () => {
     seedNotifications({
       notifications: [buildNotification({ id: 'a' }), buildNotification({ id: 'b', read: true })],
     });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+    deleteAll();
 
     const confirm = screen.getByRole('dialog', { name: 'Delete 2 notifications?' });
     expect(confirm.closest('[data-dropdown-portal]')).not.toBeNull();
@@ -386,7 +410,7 @@ describe('NotificationsStudio', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+    deleteAll();
 
     expect(screen.getByText(/Clears the log in every workspace/)).toBeDefined();
     state.notificationScope = 'workspace';
@@ -396,7 +420,7 @@ describe('NotificationsStudio', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+    deleteAll();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -502,7 +526,7 @@ describe('NotificationsStudio', () => {
     expect(screen.queryByText('Error row')).toBeNull();
   });
 
-  it('folds the rail from its first row and docks it again', () => {
+  it('folds the rail from its first row and docks it again from the rail edge, not the header', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
@@ -510,9 +534,28 @@ describe('NotificationsStudio', () => {
 
     expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
     expect(localStorage.getItem('goodboy:studio-rail-folded:notifications:v1')).toBe('1');
+    expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
+    const unfold = screen.getByRole('button', { name: 'Show the rail' });
+    expect(unfold.closest('[data-studio-rail-unfold]')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dock the filters' }));
+    fireEvent.click(unfold);
 
+    expect(screen.getByRole('complementary', { name: 'Notification filters' })).toBeDefined();
+  });
+
+  it('folds and docks the filters as the page inner column', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+    expect(innerColumnStore.current()?.id).toBe('notifications');
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+    expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
     expect(screen.getByRole('complementary', { name: 'Notification filters' })).toBeDefined();
   });
 });

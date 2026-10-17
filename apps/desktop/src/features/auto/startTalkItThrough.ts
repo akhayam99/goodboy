@@ -11,5 +11,5 @@ type Params = {
 
 export const startTalkItThrough = ({ state, sessionId, title, detail }: Params): void => {
   state.setNewDrawerAutoGoal({ sessionId, goal: talkItThroughGoal({ title, detail }) });
-  state.openDrawer({ kind: 'new', sessionId, payload: { tab: 'agent' } });
+  state.openDrawer({ kind: 'new', sessionId, payload: { form: 'auto' } });
 };

@@ -95,13 +95,12 @@ export const PermissionsGroup = ({ providerId }: Props) => {
           return (
             <li key={row.key} className={cn(BAND_ROW_CLASS, 'gap-3 text-label')}>
               <span className="w-28 shrink-0 truncate text-foreground">{row.label}</span>
-              <span
-                className={cn(
-                  'flex w-36 shrink-0 items-center gap-1',
-                  row.verdict.tone === 'neutral' ? 'text-muted-foreground' : tint.text,
-                )}
-              >
-                <Icon size={ICON_SIZE.row} aria-hidden />
+              <span className="flex w-36 shrink-0 items-center gap-1 text-muted-foreground">
+                <Icon
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className={row.verdict.tone === 'neutral' ? undefined : tint.text}
+                />
                 {row.verdict.word}
               </span>
               <span className="min-w-0 flex-1 truncate text-muted-foreground">{row.detail}</span>

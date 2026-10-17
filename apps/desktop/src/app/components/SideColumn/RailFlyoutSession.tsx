@@ -1,14 +1,11 @@
-import { Eyebrow, inlineMarkdownText } from '@goodboy/ui';
+import { inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { BranchRows } from '../../../features/workspace/components/SessionActivityBar/BranchRows';
 import { currentSignOf } from '../../../features/workspace/components/SessionActivityBar/currentSign';
 import { SessionPages } from '../../../features/workspace/components/SessionActivityBar/SessionPages';
 import { useCardPages } from '../../../features/workspace/hooks/useCardPages';
 import { useSessionSummary } from '../../../features/workspace/hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../features/session/sessionTitle';
-import { supportedLens } from '../../../features/session/supportedLens';
+import { useSessionPageLens } from '../../../features/session/hooks/useSessionPageLens';
 
 type Props = {
   readonly session: Session;
@@ -19,14 +16,10 @@ export const RailFlyoutSession = ({ session, hasStudioOver }: Props) => {
   const sessionId = session.id as SessionId;
   const summary = useSessionSummary({ session });
   const { title } = sessionRowTitle({ session, tasks: summary.tasks });
-  const { pages, summaries } = useCardPages({ session });
-  const storedLens = useAppStore((state) => state.activeLens[sessionId] ?? null);
-  const isBranchless = useAppStore((state) =>
-    isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
-  );
-  const mountCount = useAppStore((state) => state.sessionProjectMounts?.[sessionId]?.length ?? 0);
+  const { pages, facts } = useCardPages({ session });
+  const pageLens = useSessionPageLens({ session });
   const sign = currentSignOf({
-    activeLens: supportedLens({ lens: storedLens, isBranchless }),
+    activeLens: pageLens,
     pages,
     hasStudioOver,
   });
@@ -42,19 +35,7 @@ export const RailFlyoutSession = ({ session, hasStudioOver }: Props) => {
           <span className="truncate text-meta text-faint-foreground">{words}</span>
         )}
       </div>
-      <SessionPages
-        session={session}
-        pages={pages}
-        summaries={summaries}
-        sign={sign}
-        hasBranchRows={false}
-      />
-      {mountCount > 1 ? (
-        <>
-          <Eyebrow label="Branches" muted className="px-2 pt-1" />
-          <BranchRows sessionId={sessionId} />
-        </>
-      ) : null}
+      <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
     </div>
   );
 };

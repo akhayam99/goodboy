@@ -8,7 +8,6 @@ import {
   both,
   branchTab,
   click,
-  clickFirstButton,
   heading,
   openCrumb,
   settle,
@@ -79,7 +78,7 @@ const approveAndTurnGreen = ({ sessionId }: Ctx): void => {
 
 const openPrPage = async (ctx: Ctx): Promise<void> => {
   stopSyncs();
-  await clickFirstButton(/^Open PR #\d+ of /);
+  await openCrumb(/Branch/);
   await branchTab('pr')(ctx);
 };
 
@@ -89,16 +88,16 @@ const activity = (): Promise<HTMLElement> =>
 export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
   {
     name: 'pull request page: a branch with a pull request lands on the Overview, first of the five sections',
-    covers: ['openMountRequest', 'openReviewTarget', 'tab:pr'],
+    covers: ['tab:pr'],
     open: async () => {
       stopSyncs();
-      await clickFirstButton(/^Open PR #\d+ of /);
+      await openCrumb(/Branch/);
     },
     lands: both(
       branchTab('pr'),
       () => heading(/Stop retried webhooks/),
       async () => {
-        expect(sectionLabels()[0]).toBe('Overview');
+        expect(sectionLabels()[0]).toBe('Pull request');
         expect(sectionLabels()).toHaveLength(5);
       },
     ),
@@ -135,7 +134,7 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('files')(ctx);
-      await click(await findSection(/^Overview/));
+      await click(await findSection(/^Pull request/));
       await branchTab('pr')(ctx);
       expect(
         await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT),

@@ -127,11 +127,9 @@ describe('PlanCommentsProvider', () => {
       seed: { run: 'held', drafts: [aPlanDraft()], questions: [aPlannerQuestion()] },
     });
 
-    expect(screen.getByRole('button', { name: 'Send to planner' }).hasAttribute('disabled')).toBe(
-      true,
-    );
-    expect(screen.getByTestId('plan-comment-note').textContent).toBe(
-      'The planner asked a question. Answer it first.',
-    );
+    const send = screen.getByRole('button', { name: 'Send to planner' });
+    expect(send.hasAttribute('disabled')).toBe(true);
+    expect(send.getAttribute('title')).toBe('The planner asked a question. Answer it first.');
+    expect(screen.queryByTestId('plan-comment-note')).toBeNull();
   });
 });

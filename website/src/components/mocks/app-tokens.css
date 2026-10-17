@@ -87,7 +87,7 @@
   --g-merged: oklch(0.734 0.15 305);
   --g-draft: oklch(0.728 0.14 277);
   --g-faint-foreground: oklch(0.68 0.012 255);
-  --g-muted-foreground: oklch(0.77 0.015 255);
+  --g-muted-foreground: oklch(0.79 0.015 255);
   --g-border-soft: oklch(0.38 0.012 255);
   --g-fill: oklch(1 0 0 / 0.06);
   --g-identity-1: oklch(0.7 0.09 180);

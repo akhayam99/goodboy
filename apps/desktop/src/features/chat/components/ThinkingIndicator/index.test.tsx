@@ -31,16 +31,16 @@ afterEach(() => {
 describe('ThinkingIndicator', () => {
   it('shows a phrase from the active context bucket', () => {
     render(<ThinkingIndicator context="search" />);
-    screen.getByText('searching');
+    screen.getByText('Searching the code');
   });
 
   it('rotates the phrase on the tick interval', () => {
     render(<ThinkingIndicator context="run" />);
-    screen.getByText('running');
+    screen.getByText('Running the command');
     act(() => {
       vi.advanceTimersByTime(2600);
     });
-    screen.getByText('executing');
+    screen.getByText('Collecting the output');
   });
 
   it('settles into a reassurance phrase after a long wait', () => {
@@ -48,17 +48,17 @@ describe('ThinkingIndicator', () => {
     act(() => {
       vi.advanceTimersByTime(2600 * 8);
     });
-    screen.getByText('still working');
+    screen.getByText('Still working');
   });
 
   it('freezes on the first phrase under reduced motion', () => {
     mockMatchMedia(true);
     render(<ThinkingIndicator context="think" />);
-    screen.getByText('reasoning');
+    screen.getByText('Thinking it through');
     act(() => {
       vi.advanceTimersByTime(2600 * 4);
     });
-    screen.getByText('reasoning');
+    screen.getByText('Thinking it through');
   });
 
   it('shows the running node and a live duration instead of a pulsing border', () => {

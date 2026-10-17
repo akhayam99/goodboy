@@ -26,7 +26,8 @@ type WriteParams = {
 const writePreference = ({ next }: WriteParams): void => collapsedPref.write(next);
 
 export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
-  const [isCollapsed, setIsCollapsed] = useState(readPreference);
+  const [isFoldPicked, setIsFoldPicked] = useState(readPreference);
+  const isCollapsed = isFoldPicked;
   const [isPeeking, setIsPeeking] = useState(false);
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
@@ -109,10 +110,8 @@ export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
 
   const pin = useCallback(() => {
     closePeek();
-    setIsCollapsed(() => {
-      writePreference({ next: false });
-      return false;
-    });
+    writePreference({ next: false });
+    setIsFoldPicked(false);
   }, [closePeek]);
 
   const toggle = useCallback(() => {
@@ -120,12 +119,10 @@ export const useSessionSidebarVisibility = ({ hasSidebar }: Params) => {
       return;
     }
     closePeek();
-    setIsCollapsed((current) => {
-      const next = !current;
-      writePreference({ next });
-      return next;
-    });
-  }, [closePeek, hasSidebar]);
+    const next = !isFoldPicked;
+    writePreference({ next });
+    setIsFoldPicked(next);
+  }, [closePeek, hasSidebar, isFoldPicked]);
 
   useEffect(() => {
     if (hasSidebar && isCollapsed) {

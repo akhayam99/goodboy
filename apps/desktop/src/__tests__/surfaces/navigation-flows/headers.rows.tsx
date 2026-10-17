@@ -4,7 +4,13 @@ import userEvent from '@testing-library/user-event';
 import type { AgentId } from '@goodboy/types';
 import { agentPlace } from '../../../store';
 import { type Row, WAIT, click, settle, useAppStore } from './harness';
-import { PREVIEW, SEEDS, group, installComments, openComments } from './comments-words.rows';
+import {
+  PREVIEW,
+  SEEDS,
+  applyNeedsYou,
+  installComments,
+  openComments,
+} from './comments-words.rows';
 
 const OTHER_AGENT: AgentId = JSON.parse(JSON.stringify('headers-journey-other-agent'));
 
@@ -44,14 +50,14 @@ const headerPush = (): HTMLElement => {
 
 export const HEADERS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'headers: Delete session lives in the overflow and confirms in a popover beside it',
+    name: 'headers: Delete session lives at the session rail foot and confirms in a popover above it',
     covers: [],
     open: async () => {
       await settle();
       expect(screen.queryByRole('button', { name: 'Delete session' })).toBeNull();
       expect(screen.queryByRole('button', { name: 'Archive session' })).toBeNull();
-      await click(await screen.findByRole('button', { name: 'More session actions' }, WAIT));
-      await click(await screen.findByRole('menuitem', { name: /Delete session…/ }, WAIT));
+      expect(screen.queryByRole('button', { name: 'More session actions' })).toBeNull();
+      await click(await screen.findByRole('button', { name: 'Delete…' }, WAIT));
     },
     lands: async (ctx) => {
       const deleteTask = vi.fn(async () => {
@@ -68,12 +74,9 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       within(confirm).getByRole('button', { name: 'Cancel' }).focus();
       await userEvent.keyboard('{Escape}');
       expect(screen.queryByRole('dialog')).toBeNull();
-      expect(document.activeElement).toBe(
-        screen.getByRole('button', { name: 'More session actions' }),
-      );
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Delete…' }));
 
-      await click(screen.getByRole('button', { name: 'More session actions' }));
-      await click(await screen.findByRole('menuitem', { name: /Delete session…/ }, WAIT));
+      await click(screen.getByRole('button', { name: 'Delete…' }));
       const again = await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT);
       await click(within(again).getByRole('button', { name: 'Delete session' }));
 
@@ -99,7 +102,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
         preparePublication: async () => ({ ...PREVIEW, earlierCommits: [EARLIER_COMMIT] }),
       });
       await openComments(ctx);
-      await click(within(group('Needs you')).getByRole('button', { name: 'Apply 2 fixes' }));
+      await applyNeedsYou({ count: 2 });
       expect(headerPush().getAttribute('data-variant')).toBe('secondary');
       await click(headerPush());
     },
@@ -125,7 +128,7 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'agent page: opens on the Brief from a door when it has content, and the tab picked by hand is remembered for that agent only',
+    name: 'agent page: one conversation with no Brief or Transcript tabs, View transcript opens the transcript pane',
     covers: ['navigate'],
     open: async (ctx) => {
       const agents = (useAppStore.getState().sessionPhaseRuns[ctx.sessionId] ?? []).filter(
@@ -163,31 +166,21 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       if (first == null) {
         throw new Error('no agent opened');
       }
-      const tab = (name: string) => screen.findByRole('tab', { name }, WAIT);
-      expect((await tab('Brief')).getAttribute('aria-selected')).toBe('true');
+      const viewTranscript = await screen.findByRole('button', { name: 'View transcript' }, WAIT);
+      expect(screen.queryByRole('tab', { name: 'Brief' })).toBeNull();
+      expect(screen.queryByRole('tab', { name: 'Transcript' })).toBeNull();
 
-      await click(await tab('Transcript'));
-      expect(state().agentTab[first]).toBe('transcript');
-
-      state().navigate({
-        to: {
-          at: 'session',
-          sessionId: ctx.sessionId,
-          view: { lens: null, agentId: null, target: null },
-        },
-      });
-      await settle();
-      state().navigate({ to: agentPlace({ sessionId: ctx.sessionId, agentId: first }) });
-      await settle();
-      await waitFor(
-        async () => expect((await tab('Transcript')).getAttribute('aria-selected')).toBe('true'),
-        WAIT,
-      );
+      await click(viewTranscript);
+      await waitFor(() => {
+        const drawer = state().drawer;
+        expect(drawer?.kind).toBe('transcript');
+        expect(drawer?.kind === 'transcript' ? drawer.payload.agentId : null).toBe(first);
+      }, WAIT);
 
       state().navigate({ to: agentPlace({ sessionId: ctx.sessionId, agentId: OTHER_AGENT }) });
       await settle();
       await waitFor(
-        async () => expect((await tab('Brief')).getAttribute('aria-selected')).toBe('true'),
+        () => expect(screen.getByRole('heading', { name: /Review the retry cap/ })).toBeDefined(),
         WAIT,
       );
     },

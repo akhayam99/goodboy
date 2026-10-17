@@ -14,6 +14,8 @@ type Props = {
   readonly agent: Agent;
   readonly sessionId: SessionId;
   readonly allowInterrupt?: boolean;
+  readonly hasStateButton?: boolean;
+  readonly omit?: ReadonlyArray<string>;
   readonly onDeleted?: () => void;
 };
 
@@ -21,6 +23,8 @@ export const AgentHeaderActions = ({
   agent,
   sessionId,
   allowInterrupt = false,
+  hasStateButton = true,
+  omit,
   onDeleted,
 }: Props) => {
   const [armed, setArmed] = useState<ArmedAction | null>(null);
@@ -32,8 +36,9 @@ export const AgentHeaderActions = ({
   });
   const target = { kind: 'agent', sessionId, agentId: agent.id } as const;
   const { actions, run } = useObjectActions({ target, env });
+  const stateIds = hasStateButton ? STATE_BUTTONS : [];
   const stateAction =
-    STATE_BUTTONS.flatMap((id) => {
+    stateIds.flatMap((id) => {
       if (id === 'agent.interrupt' && !allowInterrupt) {
         return [];
       }
@@ -64,6 +69,7 @@ export const AgentHeaderActions = ({
               anchorKey={`agent-header:${agent.id}`}
               viewing={viewing}
               size="control"
+              {...(omit !== undefined && { omit })}
               hideWhenEmpty
               onArm={({ action, run: runAction }) =>
                 setArmed({

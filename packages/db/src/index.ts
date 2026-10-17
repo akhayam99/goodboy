@@ -171,6 +171,10 @@ export {
   updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './queries/session-workflow';
+export {
+  listWorkspaceWorkflowRuns,
+  type WorkflowRunHistoryRow,
+} from './queries/workflow-run-history';
 export { insertMessage, listMessagesForAgent, listMessagesForSession } from './queries/message';
 export {
   insertGoalAttachment,
@@ -739,6 +743,7 @@ export {
 export {
   AUTO_RESERVATION_OWNER_KINDS,
   AUTO_USD_EPSILON,
+  autoBudgetCoversSql,
   autoRemainingUsdSql,
   autoReservedUsdSql,
   autoSettledUsdSql,
@@ -773,6 +778,10 @@ export {
   recordAutoRefusal,
   releaseAutoTree,
   setAutoTreeCapIfUnchanged,
+  moveRestingAutoTree,
+  AUTO_RESTING_PHASES,
+  type AutoRestingPhase,
+  type SetAutoTreeCapOutcome,
   type AutoPhase,
   type AutoStopState,
   type AutoTree,

@@ -26,6 +26,13 @@ type Props = {
   readonly nav: BoardNavigation;
   readonly selection: BoardSelection;
   readonly onRestore: (session: Session) => void;
+  readonly onCardEnter: (target: CardHover) => void;
+  readonly onCardLeave: () => void;
+};
+
+type CardHover = {
+  readonly sessionId: SessionId;
+  readonly anchor: HTMLElement;
 };
 
 export const BoardLanes = ({
@@ -36,6 +43,8 @@ export const BoardLanes = ({
   nav,
   selection,
   onRestore,
+  onCardEnter,
+  onCardLeave,
 }: Props) => {
   const columnsRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -65,6 +74,8 @@ export const BoardLanes = ({
       onClearSelection={selection.clearAll}
       onRestore={onRestore}
       placement={placement}
+      onCardEnter={onCardEnter}
+      onCardLeave={onCardLeave}
     />
   );
   const archive = (
@@ -77,6 +88,8 @@ export const BoardLanes = ({
       onRestore={onRestore}
       placement={placement}
       isLoading={isArchivedLoading}
+      onCardEnter={onCardEnter}
+      onCardLeave={onCardLeave}
     />
   );
 
@@ -106,6 +119,8 @@ export const BoardLanes = ({
             selection={selection}
             onClearSelection={selection.clearAll}
             onRestore={onRestore}
+            onCardEnter={onCardEnter}
+            onCardLeave={onCardLeave}
           />
         ))}
         {layout.stacked ? (

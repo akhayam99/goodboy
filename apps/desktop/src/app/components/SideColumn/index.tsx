@@ -1,11 +1,11 @@
 import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { SessionNavSidebar } from '../../../features/session/components/SessionNavSidebar';
+import { NewSessionRow } from '../../../features/workspace/components/SessionActivityBar/NewSessionRow';
+import { SidebarSessionsFilter } from '../../../features/workspace/components/SessionActivityBar/SidebarSessionsFilter';
 import type { ShellColumnScope } from '../../shellArrangement';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
-import { ColumnToggleButton } from './ColumnToggleButton';
 import { COLUMN_DOORS, openColumnDoor, type ColumnActions } from './columnDoors';
 import { useDoorSignals } from './useDoorSignals';
 import { isStudioOverSession, type ColumnPlace } from './columnPlace';
@@ -15,9 +15,7 @@ type Props = {
   readonly workspaceId: WorkspaceId | null;
   readonly currentSessionId: SessionId | null;
   readonly place: ColumnPlace;
-  readonly isCollapsed: boolean;
   readonly actions: ColumnActions;
-  readonly onToggle: () => void;
   readonly onNavigate?: () => void;
   readonly settingsSlotRef?: (node: HTMLDivElement | null) => void;
   readonly isPeek?: boolean;
@@ -31,9 +29,7 @@ export const SideColumn = ({
   workspaceId,
   currentSessionId,
   place,
-  isCollapsed,
   actions,
-  onToggle,
   onNavigate,
   settingsSlotRef,
   isPeek = false,
@@ -44,7 +40,6 @@ export const SideColumn = ({
     open();
     onNavigate?.();
   };
-
   return (
     <div data-side-column="" className="relative flex h-full min-h-0 min-w-0 flex-col">
       <nav
@@ -56,21 +51,20 @@ export const SideColumn = ({
           isSettingsShown ? 'pointer-events-none -translate-x-1.5 opacity-0' : 'opacity-100',
         )}
       >
-        <div className="flex w-11 shrink-0 items-center justify-center">
-          <ColumnToggleButton isCollapsed={isCollapsed} onToggle={onToggle} />
-        </div>
         {scope === 'workspace' && workspaceId !== null ? (
-          <>
+          <div className="flex min-h-0 flex-1 flex-col gap-1">
             <div className={cn('flex shrink-0 flex-col px-2', PANE_RHYTHM.navRail.doorGap)}>
+              <NewSessionRow
+                workspaceId={workspaceId}
+                {...(onNavigate !== undefined && { onNavigate })}
+              />
               {COLUMN_DOORS.map((door) => (
                 <ColumnDoorRow
                   key={door.id}
                   id={door.id}
                   icon={door.icon}
                   label={door.label}
-                  {...(door.shortcutId !== undefined && {
-                    shortcut: shortcutGlyphs(door.shortcutId),
-                  })}
+                  {...(door.shortcutId !== undefined && { shortcut: door.shortcutId })}
                   isCurrent={place === door.id}
                   signal={signals[door.id]}
                   {...(door.id === 'chat' && {
@@ -80,15 +74,18 @@ export const SideColumn = ({
                       onCreate: go(actions.openNewChat),
                     },
                   })}
+                  {...(door.id === 'board' && {
+                    action: <SidebarSessionsFilter workspaceId={workspaceId} />,
+                  })}
                   {...(door.id === 'terminal' && {
-                    create: { label: 'New terminal', onCreate: go(actions.openNewTerminal) },
+                    create: {
+                      label: 'New terminal',
+                      onCreate: go(actions.openNewTerminal),
+                    },
                   })}
                   onSelect={go(() => openColumnDoor({ id: door.id, actions }))}
                 />
               ))}
-            </div>
-            <div className="shrink-0 px-2">
-              <div role="separator" className="h-px bg-border-soft" />
             </div>
             <div data-column-sessions="" className="flex min-h-0 flex-1 flex-col">
               <SessionNavSidebar
@@ -99,7 +96,7 @@ export const SideColumn = ({
                 {...(onNavigate !== undefined && { onNavigate })}
               />
             </div>
-          </>
+          </div>
         ) : (
           <div className="min-h-0 flex-1" />
         )}

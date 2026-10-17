@@ -690,4 +690,52 @@ describe('reduceTranscript handoff', () => {
     expect(items.map((item) => item.kind)).toEqual(['assistant_text', 'processes_stopped']);
     expect(items[1]).toMatchObject({ kind: 'processes_stopped', runId: RUN, stopped });
   });
+
+  it('never draws text Auto built for an agent as the user own words', () => {
+    const items = reduceTranscript([
+      {
+        kind: 'user_text',
+        runId: RUN,
+        text: 'STATE OF THIS CONVERSATION\nSpent 3.82 USD. Left 1.18 USD.',
+        deliveredBy: 'auto',
+        at: AT,
+      },
+      assistantText({ delta: 'Checking the dev server.' }),
+    ]);
+
+    expect(items.map((item) => item.kind)).toEqual(['auto_delivery', 'assistant_text']);
+  });
+
+  it('draws the operator words once, as a bubble, beside the hidden delivery', () => {
+    const items = reduceTranscript([
+      {
+        kind: 'operator_text',
+        runId: RUN,
+        text: 'The dev server still fails: next: command not found.',
+        at: AT,
+      },
+      {
+        kind: 'user_text',
+        runId: RUN,
+        text: 'MESSAGES FROM THE USER, OLDEST FIRST',
+        deliveredBy: 'auto',
+        at: AT,
+      },
+    ]);
+
+    expect(items.map((item) => item.kind)).toEqual(['user_text', 'auto_delivery']);
+    expect(items[0]).toMatchObject({
+      text: 'The dev server still fails: next: command not found.',
+      isOperatorEcho: true,
+    });
+  });
+
+  it('keeps the bubble of an older transcript that holds delivery text with no stored origin', () => {
+    const items = reduceTranscript([
+      userText({ text: 'STATE OF THIS CONVERSATION\nSpent 1.00 USD.' }),
+      assistantText({ delta: 'Ok.' }),
+    ]);
+
+    expect(items.map((item) => item.kind)).toEqual(['handoff', 'assistant_text']);
+  });
 });

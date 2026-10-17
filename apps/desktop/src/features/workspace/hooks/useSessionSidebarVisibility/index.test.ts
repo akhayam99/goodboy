@@ -36,6 +36,11 @@ describe('useSessionSidebarVisibility', () => {
     expect(localStorage.getItem(STORAGE_KEYS.sessionSidebarCollapsed)).toBe('0');
   });
 
+  it('never folds by itself: only the toggle folds the main sidebar', () => {
+    const { result } = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));
+    expect(result.current.isCollapsed).toBe(false);
+  });
+
   it('restores a persisted collapsed choice on remount', () => {
     localStorage.setItem(STORAGE_KEYS.sessionSidebarCollapsed, '1');
     const { result } = renderHook(() => useSessionSidebarVisibility({ hasSidebar: true }));

@@ -128,11 +128,11 @@ export const AppShell = ({
   } satisfies CSSProperties;
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-chrome">
+    <div data-app-backdrop="" className="flex h-screen w-screen flex-col bg-backdrop">
       {topBar != null ? <div className="shrink-0">{topBar}</div> : null}
       <div
         className={cn(
-          'grid min-h-0 w-full flex-1 overflow-hidden text-foreground motion-safe:transition-[grid-template-columns] duration-200 ease-out',
+          'grid min-h-0 w-full flex-1 overflow-hidden text-foreground motion-safe:transition-[grid-template-columns] duration-220 ease-out',
           className,
         )}
         ref={left.targetRef}
@@ -141,7 +141,7 @@ export const AppShell = ({
         {hasLeftSidebar ? (
           <aside
             className={cn(
-              'flex min-h-0 min-w-0 flex-col overflow-hidden bg-chrome motion-safe:transition-[opacity,transform] duration-200 ease-out',
+              'flex min-h-0 min-w-0 flex-col overflow-hidden motion-safe:transition-[opacity,transform] duration-200 ease-out',
               leftHidden
                 ? 'pointer-events-none -translate-x-2 opacity-0'
                 : 'translate-x-0 opacity-100',

@@ -34,12 +34,12 @@ vi.mock('../../../permissions/components/DiffViewSelector', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { useMemo, useState } from 'react';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 import type { SessionDiff } from '../../hooks/useSessionDiff';
-import { DiffRailHarness } from '../../../../__tests__/helpers/DiffRailHarness';
+import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { SessionDiffPane } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -73,10 +73,9 @@ const FILES: ReadonlyArray<FileDiff> = Array.from({ length: FILE_COUNT }, (_, in
 
 type HostProps = {
   readonly initialFocus?: string | null;
-  readonly isOverlay?: boolean;
 };
 
-const Host = ({ initialFocus = null, isOverlay = false }: HostProps) => {
+const Host = ({ initialFocus = null }: HostProps) => {
   const [focusPath, setFocusPath] = useState<string | null>(initialFocus);
   const [viewedPaths, setViewedPaths] = useState<ReadonlyArray<string>>([]);
   const diff = useMemo<SessionDiff>(
@@ -107,15 +106,25 @@ const Host = ({ initialFocus = null, isOverlay = false }: HostProps) => {
     [focusPath, viewedPaths],
   );
   return (
-    <DiffRailHarness isOverlay={isOverlay}>
-      <SessionDiffPane
-        sessionId={SESSION_ID}
-        workingDir={WORKTREE}
-        worktreePath={WORKTREE}
-        diff={diff}
-      />
-    </DiffRailHarness>
+    <SessionDiffPane
+      sessionId={SESSION_ID}
+      workingDir={WORKTREE}
+      worktreePath={WORKTREE}
+      diff={diff}
+    />
   );
+};
+
+const renderNarrow = (): void => {
+  const observers = installFakeResizeObserver();
+  const rectOf = HTMLElement.prototype.getBoundingClientRect;
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    return this.hasAttribute('data-diff-pane') ? new DOMRect(0, 0, 700, 800) : rectOf.call(this);
+  });
+  render(<Host />);
+  act(() => observers.resizeAll());
 };
 
 const scrolled: Array<string | null> = [];
@@ -135,6 +144,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 const sections = () => document.querySelectorAll('[data-file-path]');
@@ -185,7 +195,7 @@ describe('SessionDiffPane with the real DiffView', () => {
   });
 
   it('follows j and k with the rail hidden, and marks the file in the tree once it opens', async () => {
-    render(<Host isOverlay />);
+    renderNarrow();
     expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
 
     pressShortcut({ id: 'diff.fileDown' });
@@ -201,7 +211,7 @@ describe('SessionDiffPane with the real DiffView', () => {
   });
 
   it('keeps j and k moving after the hidden rail opens and a pick closes it', async () => {
-    render(<Host isOverlay />);
+    renderNarrow();
     pressShortcut({ id: 'diff.focusTree' });
     fireEvent.click(treeRow(10));
     await waitFor(() => expect(scrolled).toContain(fileAt(10).path));

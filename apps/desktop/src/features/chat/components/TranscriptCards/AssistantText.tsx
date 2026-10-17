@@ -26,15 +26,7 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
     anchorKey: null,
   });
   return (
-    <div
-      className="group relative flex flex-col gap-2 text-prose"
-      onContextMenu={menu.onContextMenu}
-    >
-      {hasCommentResolvedMarker ? null : (
-        <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          <CopyButton value={text} label="message" />
-        </div>
-      )}
+    <div className="flex flex-col gap-2 text-prose" onContextMenu={menu.onContextMenu}>
       {displayText.length > 0 ? <Markdown text={displayText} /> : null}
       {sessionId && agentId && hasScribeText ? (
         <ScribeTextCard assistantText={text} sessionId={sessionId} agentId={agentId} />
@@ -46,6 +38,16 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
           <ResolverThreadsCard assistantText={text} sessionId={sessionId} agentId={agentId} />
         </div>
       ) : null}
+      {hasCommentResolvedMarker || displayText.length === 0 ? null : (
+        <div data-message-meta="" className="flex items-center justify-end">
+          <CopyButton
+            presentation="icon"
+            value={text}
+            label="copy message"
+            className="rounded-md p-0.5 text-muted-foreground transition-opacity hover:opacity-80 hover:text-foreground"
+          />
+        </div>
+      )}
     </div>
   );
 };

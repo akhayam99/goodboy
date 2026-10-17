@@ -88,9 +88,9 @@ export const AttachmentChip = ({
       <IconButton
         icon={X}
         label={`Remove ${fileName}`}
-        iconSize={10}
+        iconSize={ICON_SIZE.mark}
         onClick={onRemove}
-        className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full border-0 bg-foreground p-0 text-background opacity-0 transition-opacity hover:bg-foreground hover:text-background focus-visible:opacity-100 group-hover:opacity-100"
+        className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full border-0 bg-foreground p-0 text-background hover:bg-foreground hover:text-background"
       />
     );
 

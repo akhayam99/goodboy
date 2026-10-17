@@ -26,7 +26,7 @@ const LINEAR_BINDING: IntegrationBinding = {
   config: {
     workspaceUrlKey: 'harborline',
     viewerUserId: 'user-nadia-p',
-    viewerName: 'Nadia Petrov',
+    viewerName: 'Harborline QA',
   },
   createdAt: NOW,
   updatedAt: NOW,
@@ -83,7 +83,7 @@ export const StartPasteScene = () => {
   return (
     <>
       <NewSessionBridge />
-      <WorkspaceFrame session={SESSION} main={<SessionStartMain />} />
+      <WorkspaceFrame session={SESSION} main={<SessionStartMain />} hasRail={false} />
     </>
   );
 };

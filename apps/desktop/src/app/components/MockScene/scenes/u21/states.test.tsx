@@ -63,11 +63,11 @@ describe('the u21 page-state scenes', () => {
     expect(screen.getByRole('button', { name: 'Start a run' })).toBeDefined();
   });
 
-  it('shows the Agents first-time state with its one primary', async () => {
+  it('shows the Agents first-time state as one line and the header Start agent', async () => {
     renderScene('agents-list-empty');
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'No agents yet' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start an agent' })).toBeDefined();
+    expect(await screen.findByText('No agents in this session yet.')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Start agent' })).toHaveLength(1);
   });
 
   it('shows the Artifacts first-time state', async () => {
@@ -76,7 +76,8 @@ describe('the u21 page-state scenes', () => {
     expect(
       await screen.findByRole('heading', { level: 2, name: 'No artifacts yet' }),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'New artifact' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'New artifact' })).toBeNull();
+    expect(screen.getByTestId('artifact-new')).toBeDefined();
   });
 
   it('shows Artifacts filtered to nothing and clears the filter', async () => {
@@ -95,7 +96,7 @@ describe('the u21 page-state scenes', () => {
   it('shows the Scripts first-time state with its one primary', async () => {
     renderScene('scripts-empty');
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'No scripts yet' })).toBeDefined();
+    expect(await screen.findByRole('heading', { level: 3, name: 'No scripts yet' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
@@ -110,13 +111,13 @@ describe('the u21 page-state scenes', () => {
   it('shows Activity with no runs or agents and points to the log that holds the branch facts', async () => {
     renderScene('activity-empty');
 
-    expect(await screen.findByText('No runs or agents yet')).toBeDefined();
+    expect(await screen.findByText('Nothing ran yet')).toBeDefined();
     expect(screen.queryByText('Nothing yet')).toBeNull();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+      fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
     });
 
-    expect(screen.queryByText('No runs or agents yet')).toBeNull();
+    expect(screen.queryByText('Nothing ran yet')).toBeNull();
     expect(screen.queryByText('No log entries yet')).toBeNull();
   });
 
@@ -139,12 +140,14 @@ describe('the u21 page-state scenes', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('shows the Tasks load failure as an alert with Retry and the reason behind Details', async () => {
+  it('shows the Tasks load failure as one gray line in its source group that retries', async () => {
     renderScene('inbox-error');
 
-    const alert = await screen.findByRole('alert');
-    expect(within(alert).getByText("Couldn't load Sentry")).toBeDefined();
-    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(
+      await screen.findByText("Sentry didn't load: The token was refused (401)."),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Sentry' })).toBeDefined();
     expect(screen.queryByRole('heading', { name: 'No items yet' })).toBeNull();
   });
 
@@ -153,6 +156,6 @@ describe('the u21 page-state scenes', () => {
 
     const card = await screen.findByRole('region', { name: 'Needs you' });
     expect(within(card).getAllByRole('button')).toHaveLength(2);
-    expect(within(card).getAllByTestId('tone-bar')).toHaveLength(1);
+    expect(within(card).queryByTestId('tone-bar')).toBeNull();
   });
 });

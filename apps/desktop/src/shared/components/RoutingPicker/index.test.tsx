@@ -271,7 +271,7 @@ describe('RoutingPicker', () => {
     expect(row.textContent).toBe('AutoNow: Claude · Sonnet 4.6 · Medium');
   });
 
-  it('shows the resolved model on the closed trigger when asked to', () => {
+  it('shows the resolved model after Auto on the closed trigger when asked to', () => {
     render(
       <RoutingPicker
         {...baseProps}
@@ -285,7 +285,7 @@ describe('RoutingPicker', () => {
       />,
     );
     const trigger = screen.getByRole('button', { name: /^New chats routing:/ });
-    expect(trigger.textContent).toBe('Sonnet 4.6·Medium');
+    expect(trigger.textContent).toBe('Auto·Sonnet 4.6·Medium');
     expect(trigger.getAttribute('aria-label')).toContain('Auto, now Claude · Sonnet 4.6 · Medium');
   });
 
@@ -343,7 +343,7 @@ describe('RoutingPicker', () => {
     });
   });
 
-  it('shows the pinned model with an x that goes back to Auto', () => {
+  it('says a pinned model in the trigger and resets it from the popover, with no bare x', () => {
     const onReset = vi.fn();
     render(
       <RoutingPicker
@@ -358,7 +358,11 @@ describe('RoutingPicker', () => {
         recommendation={{ provider: 'anthropic', model: 'claude-sonnet-4-6' }}
       />,
     );
-    expect(screen.getByRole('button', { name: /^Scout routing:/ }).textContent).toContain('Haiku');
+    const trigger = screen.getByRole('button', { name: /^Scout routing:/ });
+    expect(trigger.textContent).toContain('Haiku');
+    expect(trigger.textContent).toContain('· pinned');
+    expect(screen.queryByRole('button', { name: 'Back to Auto' })).toBeNull();
+    fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('button', { name: 'Back to Auto' }));
     expect(onReset).toHaveBeenCalled();
   });
@@ -1022,21 +1026,6 @@ describe('RoutingPicker', () => {
   it('omits the budget slot when the caller passes none', () => {
     render(<RoutingPicker {...baseProps} variant="pill" />);
     expect(screen.queryByTestId('budget-slot')).toBeNull();
-  });
-
-  it('puts a prefix before the model in the trigger', () => {
-    render(<RoutingPicker {...baseProps} variant="pill" triggerPrefix="Next turn" />);
-    const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.textContent).toContain('Next turn');
-    expect(trigger.textContent).toContain('Opus 5');
-  });
-
-  it('shows a quiet word instead of the model, and keeps the model in the name', () => {
-    render(<RoutingPicker {...baseProps} variant="pill" quietLabel="Model" />);
-    const trigger = screen.getByRole('button', { name: /routing/i });
-    expect(trigger.textContent).toContain('Model');
-    expect(trigger.textContent).not.toContain('Opus 5');
-    expect(trigger.getAttribute('aria-label')).toContain('Opus 5');
   });
 });
 

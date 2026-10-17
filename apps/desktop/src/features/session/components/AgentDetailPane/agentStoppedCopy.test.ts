@@ -12,6 +12,7 @@ describe('agentStoppedCopy', () => {
       agent: agentOf(),
       provider: 'anthropic',
       isProviderConnected: true,
+      isAutoChild: false,
     });
 
     expect(copy.title).toBe('You stopped this agent. What it wrote is kept.');
@@ -24,6 +25,7 @@ describe('agentStoppedCopy', () => {
       agent: agentOf(),
       provider: 'codex',
       isProviderConnected: true,
+      isAutoChild: false,
     });
 
     expect(copy.body).toBe(
@@ -37,6 +39,7 @@ describe('agentStoppedCopy', () => {
       agent: agentOf(),
       provider: 'codex',
       isProviderConnected: false,
+      isAutoChild: false,
     });
 
     expect(copy.body).toBe('Connect Codex to continue.');
@@ -48,6 +51,7 @@ describe('agentStoppedCopy', () => {
       agent: agentOf({ doneAt: '2026-09-25T10:00:00.000Z' as Agent['doneAt'] }),
       provider: 'anthropic',
       isProviderConnected: true,
+      isAutoChild: false,
     });
 
     expect(copy.canContinue).toBe(false);
@@ -58,10 +62,24 @@ describe('agentStoppedCopy', () => {
       agent: agentOf({ stoppedBy: 'app' }),
       provider: 'anthropic',
       isProviderConnected: true,
+      isAutoChild: false,
     });
 
     expect(copy.title).toBe('Stopped by restart. What it wrote is kept.');
     expect(copy.actionLabel).toBe('Resume');
+    expect(copy.canContinue).toBe(true);
+  });
+
+  it('offers only a retry through Auto for an agent Auto started', () => {
+    const copy = agentStoppedCopy({
+      agent: agentOf({ stoppedBy: 'app' }),
+      provider: 'anthropic',
+      isProviderConnected: true,
+      isAutoChild: true,
+    });
+
+    expect(copy.actionLabel).toBe('Retry through Auto');
+    expect(copy.body).toBe('Auto started this agent, so Auto runs the retry and reads its result.');
     expect(copy.canContinue).toBe(true);
   });
 });

@@ -4,7 +4,7 @@ Watch how much of each plan is left, keep work moving when a provider runs out, 
 
 ### Usage limits chip
 
-See how much of your Claude and Codex plans is left before a run stops. Each provider gets a chip in the top bar with two bars, the 5-hour window and the week. Hover it for the plan and reset time, or click it to open the providers menu.
+See how much of your Claude and Codex plans is left before a run stops. Each provider gets a chip in the top bar with one bar, the tighter of the 5-hour window and the week, and its percent once it passes 70%. Hover it for the plan and reset time, or click it to open the providers menu. When the bar has no room for every chip, the rest sit behind a count such as **+2** with each hidden provider's mark beside it.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-limits-chip-dark.webp">
@@ -30,7 +30,7 @@ Keep a task moving when a provider runs out. With another eligible provider conn
 
 ### Provider order and Auto
 
-Choose which providers a workspace uses and in what order. **When a provider is out** in Defaults lists them, and you set each one to **On**, **Backup only** or **Off**. Auto starts new work on the first On provider that can work, and each role shows what Auto picks for it.
+Choose which providers a workspace uses and in what order. **When a provider is out** in Defaults lists them, and you set each one to **On**, **Backup only** or **Off**. Auto starts new work on the first On provider that can work, and each role shows what Auto picks for it on fixed columns (model with its mark, effort, Auto or Pinned). A pin that cannot run shows a warning glyph whose tooltip says why, and one line above the roles offers **Back to Auto** for those.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-dark.webp">

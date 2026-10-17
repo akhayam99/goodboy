@@ -13,7 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { MountId, Session, SessionId } from '@goodboy/types';
+import type { Session, SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -23,8 +23,6 @@ import {
 import { EMPTY_SESSION_DRAFT } from '../../../store/slices/sessionDraft/state';
 import {
   harborline,
-  mountOf,
-  paymentsApi,
   seedColumn,
   sessionOf,
 } from '../../../features/workspace/testing/sessionColumn';
@@ -97,7 +95,6 @@ const railOf = ({
     workspaceId={scope === 'workspace' ? harborline.id : null}
     currentSessionId={currentSessionId}
     place={place}
-    onToggle={vi.fn()}
     actions={actions()}
   />
 );
@@ -202,16 +199,7 @@ describe('the open session on the rail', () => {
     const doors = Array.from(document.querySelectorAll('[data-column-door]')).map((door) =>
       door.getAttribute('data-column-door'),
     );
-    expect(doors).toEqual([
-      'new',
-      'board',
-      'inbox',
-      'chat',
-      'workflows',
-      'terminal',
-      'monitoring',
-      'settings',
-    ]);
+    expect(doors).toEqual(['new', 'board', 'inbox', 'chat', 'workflows', 'terminal', 'settings']);
   });
 
   it('shows nothing on the Board, where no session is open', () => {
@@ -245,10 +233,12 @@ describe('the open session on the rail', () => {
     const pages = within(card.getByRole('list', { name: 'Pages' }));
     expect(pages.getAllByRole('button').map((row) => row.textContent)).toEqual([
       'Overview',
-      'Branchgoodboy/webhook-retries',
       'Runs',
+      'Orchestrated',
       'Agents',
+      'Auto agentsExperimental',
       'Artifacts',
+      'Questions',
     ]);
     expect(pages.getByRole('button', { name: 'Overview' }).getAttribute('aria-current')).toBe(
       'page',
@@ -421,33 +411,5 @@ describe('the pinned sessions on the rail', () => {
     expect(card.getByText('Pinned')).toBeDefined();
     expect(card.getByRole('button', { name: 'Pinned work 1' })).toBeDefined();
     expect(card.getByRole('button', { name: 'Pinned work 2' })).toBeDefined();
-  });
-});
-
-describe('the branches in the flyout of the open session', () => {
-  const withBranches = (count: number) => {
-    const mounts = Array.from({ length: count }, (_, index) => ({
-      ...mountOf({ session: open, project: paymentsApi }),
-      mountId: `mount-rail-${index}` as MountId,
-      worktreePath: `/tmp/payments-api/worktrees/${index}`,
-      branch: `hl/branch-${index}`,
-      parallelIndex: index,
-    }));
-    useAppStore.setState({ sessionProjectMounts: { [open.id]: mounts } });
-  };
-
-  it('lists one row per branch when the session has several', () => {
-    mountRail();
-    withBranches(3);
-    hoverOpenSession();
-    const list = within(flyout() as HTMLElement).getByRole('list', { name: 'Branches' });
-    expect(within(list).getAllByRole('button')).toHaveLength(3);
-  });
-
-  it('lists none for a single branch', () => {
-    mountRail();
-    withBranches(1);
-    hoverOpenSession();
-    expect(within(flyout() as HTMLElement).queryByRole('list', { name: 'Branches' })).toBeNull();
   });
 });

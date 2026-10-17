@@ -32,16 +32,6 @@ type Props = {
   readonly onClose: () => void;
 };
 
-type SubtitleParams = {
-  readonly total: number;
-  readonly unread: number;
-};
-
-const subtitle = ({ total, unread }: SubtitleParams): string =>
-  total === 0
-    ? 'Nothing reported yet'
-    : `${total} ${total === 1 ? 'notification' : 'notifications'}, ${unread} unread`;
-
 export const NotificationsStudio = ({ onClose }: Props) => {
   const notifications = useAppStore((state) => state.notifications);
   const buckets = useAppStore((state) => state.notificationCounts);
@@ -174,12 +164,13 @@ export const NotificationsStudio = ({ onClose }: Props) => {
             railHeader={<Eyebrow label="Filters" muted />}
             isCollapsed={fold.isCollapsed}
             onCollapsedChange={fold.setFolded}
+            canUnfold={fold.canDock}
             detail={
               <StudioDetail>
                 <PaneShell
+                  page="notifications"
                   scroll="body"
                   title="Notifications"
-                  meta={subtitle({ total: counts.total, unread: counts.unread })}
                   actions={
                     <HeaderActions
                       secondary={
@@ -188,7 +179,6 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                             popoverLabel="Notification filters"
                             activeCount={activeCount}
                             facets={facets}
-                            onDock={fold.canDock ? () => fold.setFolded(false) : undefined}
                           />
                         ) : null
                       }
@@ -196,12 +186,14 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                         notifications.length > 0 ? (
                           <NotificationsToolbar
                             unreadCount={counts.unread}
-                            totalCount={counts.total}
-                            workspaceName={scope === 'workspace' ? workspaceName : null}
                             onMarkAllRead={() => void markNotificationsRead()}
-                            onDeleteAll={async () => {
-                              await clearNotifications();
-                              setSelectedKey(null);
+                            deleteAll={{
+                              totalCount: counts.total,
+                              workspaceName: scope === 'workspace' ? workspaceName : null,
+                              onDeleteAll: async () => {
+                                await clearNotifications();
+                                setSelectedKey(null);
+                              },
                             }}
                           />
                         ) : null
@@ -252,11 +244,8 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                           aria-label={entry.label}
                           className="flex flex-col gap-0.5"
                         >
-                          <div className="flex items-baseline gap-2 px-3 pb-1">
+                          <div className="flex items-baseline gap-2 px-3">
                             <Eyebrow label={entry.label} />
-                            <span className="text-meta tabular-nums text-faint-foreground">
-                              {entry.items.length}
-                            </span>
                           </div>
                           <ul className="flex flex-col gap-0.5">
                             {entry.items.map((group) => {

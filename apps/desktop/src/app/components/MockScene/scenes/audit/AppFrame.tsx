@@ -4,6 +4,7 @@ import { AppTopBar } from '../../../AppTopBar';
 import { NoWorkspaceScreen } from '../../../AppEmptyState';
 import { KeepAliveWorkSurface } from '../../../KeepAliveWorkSurface';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
+import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
@@ -15,6 +16,10 @@ import {
   useCurrentWorkspace,
   useSessions,
 } from '../../../../../store';
+import { DrawerHost } from '../../../DrawerHost';
+import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
+import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { triggerFrameView } from './frameViews';
 
 const noop = () => undefined;
@@ -22,9 +27,21 @@ const noop = () => undefined;
 type Props = {
   readonly view: string;
   readonly isRailCollapsed: boolean;
+  readonly hasPane?: boolean;
+  readonly hasLiveToggle?: boolean;
 };
 
-export const AppFrame = ({ view, isRailCollapsed }: Props) => {
+export const AppFrame = ({
+  view,
+  isRailCollapsed,
+  hasPane = false,
+  hasLiveToggle = false,
+}: Props) => {
+  const [isFoldPicked, setIsFoldPicked] = useState(isRailCollapsed);
+  const isMainCollapsed = hasLiveToggle ? isFoldPicked : isRailCollapsed;
+  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
+  const drawerSizing = useAppStore(selectDrawerSizing);
+  const drawerPlacement = useAppStore(selectDrawerPlacement);
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const sessions = useSessions();
@@ -34,7 +51,7 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
   const isLauncher = view === 'launcher';
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace !== null,
-    isSidebarCollapsed: isRailCollapsed,
+    isSidebarCollapsed: isMainCollapsed,
     isSettingsOpen,
   });
   const overlays = useAppOverlays({
@@ -76,7 +93,9 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
 
   const main =
     currentSession !== null ? (
-      <KeepAliveWorkSurface sessionId={currentSession.id} isActive />
+      <SessionFrame session={currentSession}>
+        <KeepAliveWorkSurface sessionId={currentSession.id} isActive />
+      </SessionFrame>
     ) : currentWorkspace !== null ? (
       <StageBoard workspaceId={currentWorkspace.id} sessions={sessions} />
     ) : (
@@ -86,7 +105,16 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
   return (
     <>
       <AppShell
-        topBar={<AppTopBar onOpenSpend={overlays.openSpend} onOpenScript={noop} />}
+        topBar={
+          <AppTopBar
+            sidebar={{
+              isCollapsed: isMainCollapsed,
+              onToggle: hasLiveToggle ? () => setIsFoldPicked((isPicked) => !isPicked) : noop,
+            }}
+            onOpenSpend={overlays.openSpend}
+            onOpenScript={noop}
+          />
+        }
         leftSidebarCollapsed={arrangement.isLeftRail}
         leftSidebar={
           <ShellLeft
@@ -95,13 +123,17 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
             currentSessionId={currentSession?.id ?? null}
             isDraftShown={false}
             actions={actions}
-            onToggle={noop}
             settingsSlotRef={setSettingsSlot}
           />
         }
         main={<div className="relative h-full w-full">{main}</div>}
         studio={overlays.studio}
         studioCoversLeft={arrangement.studioCoversLeft}
+        {...(hasPane && {
+          drawer: isDrawerOpen ? <DrawerHost /> : null,
+          drawerSizing,
+          drawerPlacement,
+        })}
       />
       {overlays.layers}
     </>

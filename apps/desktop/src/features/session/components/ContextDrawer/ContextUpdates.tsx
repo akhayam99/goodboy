@@ -74,12 +74,12 @@ export const ContextUpdates = ({ sessionId }: Props) => {
       open={isOpen}
       onOpenChange={setIsOpen}
       trigger={
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="flex-1 truncate text-label text-foreground">Context updates</span>
-          <span className="inline-flex items-center gap-1 text-meta text-muted-foreground">
-            <ContextUpdateGlyph phase={phase} placement="status" />
-            {headline}
-          </span>
+        <span
+          aria-label={`Context updates: ${headline}`}
+          className="inline-flex min-w-0 items-center gap-1 text-meta text-muted-foreground"
+        >
+          <ContextUpdateGlyph phase={phase} placement="status" />
+          <span className="truncate">{headline}</span>
         </span>
       }
     >

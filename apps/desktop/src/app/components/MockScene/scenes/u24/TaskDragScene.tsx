@@ -109,7 +109,7 @@ export const TaskDragScene = ({ target, isAlt = false }: Props) => {
       }
       if (phase === 'down') {
         const chip = document.querySelector<HTMLElement>(
-          `[aria-label="Tasks on ${source.branch}"] button[aria-label^="Open ${TASK_IDENTIFIER}"]`,
+          `[aria-label="Linked work"] [aria-label^="Open ${TASK_IDENTIFIER}"]`,
         );
         if (chip === null) {
           return;

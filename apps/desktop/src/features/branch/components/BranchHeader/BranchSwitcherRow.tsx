@@ -23,7 +23,7 @@ export const BranchSwitcherRow = ({ row, onChoose }: Props) => (
       ROW_INTERACTIVE,
     )}
   >
-    <CONCEPT_ICONS.projectRepo
+    <CONCEPT_ICONS.branch
       size={ICON_SIZE.row}
       aria-hidden
       className="shrink-0 text-faint-foreground"

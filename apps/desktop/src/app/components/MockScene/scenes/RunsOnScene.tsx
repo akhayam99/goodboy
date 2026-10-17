@@ -55,7 +55,7 @@ const CARDS: ReadonlyArray<CardSeed> = [
     id: 'resolve-threads:ledger-core',
     kind: 'resolve-threads',
     title: '3 review comments to resolve',
-    detail: 'Mara Quint left them on #418',
+    detail: 'Acme QA left them on #418',
     label: 'Fix 3',
     runsOnKind: 'resolver',
   },
@@ -82,7 +82,7 @@ const CARDS: ReadonlyArray<CardSeed> = [
     id: 'push-branch:ledger-core',
     kind: 'push-branch',
     title: '1 commit is ready to push',
-    detail: 'Mara Quint · fix: round half to even · ledger-core',
+    detail: 'Acme QA · fix: round half to even · ledger-core',
     label: 'Push',
   },
 ];

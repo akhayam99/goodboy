@@ -119,7 +119,7 @@ describe('ProjectGroups', () => {
     expect(screen.queryByText('All projects')).toBeNull();
   });
 
-  it('shows one Projects heading and the star hint when nothing is starred', () => {
+  it('draws no group label when nothing is starred, the one group needs none', () => {
     render(
       <ProjectGroups
         workspaceId={WORKSPACE_ID}
@@ -130,9 +130,7 @@ describe('ProjectGroups', () => {
       />,
     );
 
-    expect(screen.getAllByRole('heading')).toHaveLength(1);
-    expect(screen.getByRole('heading', { name: 'Projects' })).toBeDefined();
-    expect(screen.getByText('Star the ones you use most.')).toBeDefined();
+    expect(screen.queryAllByRole('heading')).toHaveLength(0);
     expect(screen.queryByText('Other projects')).toBeNull();
   });
 
@@ -181,8 +179,8 @@ describe('ProjectGroups', () => {
 
     const starred = screen.getByRole('button', { name: 'Starred: payments-api' });
     const other = screen.getByRole('button', { name: 'Starred: notify-relay' });
-    expect(starred.getAttribute('data-quiet-at-rest')).toBeNull();
-    expect(other.getAttribute('data-quiet-at-rest')).toBe('true');
+    expect(starred.getAttribute('aria-pressed')).toBe('true');
+    expect(other.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('puts the scripts slot in the open editor card, never on the row', () => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { mockIPC } from '@tauri-apps/api/mocks';
+import { mockSceneIpc } from '../mockSceneIpc';
 import { ExplorePane } from '../../../../../features/explore/components/ExplorePane';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
@@ -163,18 +163,9 @@ const listFolder = ({ sessionDir, relPath, variant, isBig }: ListParams) => {
 
 type HoverLabelParams = {
   readonly row: string;
-  readonly action: string;
 };
 
-const hoverLabel = ({ row, action }: HoverLabelParams): string => {
-  if (action === 'open') {
-    return `Open ${row}`;
-  }
-  if (action === 'show') {
-    return `Show ${row} in Finder`;
-  }
-  return `Ask an agent about ${row}`;
-};
+const hoverLabel = ({ row }: HoverLabelParams): string => `Actions for ${row}`;
 
 type RowHoverParams = {
   readonly isReady: boolean;
@@ -187,7 +178,7 @@ const useRowHover = ({ isReady, row, action }: RowHoverParams): void => {
     if (!isReady || row === null) {
       return;
     }
-    const label = hoverLabel({ row, action });
+    const label = hoverLabel({ row });
     const interval = window.setInterval(() => {
       const target = window.document.querySelector(`button[aria-label="${CSS.escape(label)}"]`);
       if (!(target instanceof HTMLElement)) {
@@ -259,7 +250,7 @@ export const ExploreScene = (props: Props) => {
 
   useEffect(() => {
     let changedCalls = 0;
-    mockIPC((cmd, payload) => {
+    mockSceneIpc((cmd, payload) => {
       if (cmd === 'worktree_changed_files') {
         changedCalls += 1;
         if (changes === 'none') {
@@ -316,7 +307,7 @@ export const ExploreScene = (props: Props) => {
     return null;
   }
 
-  const pane = <ExplorePane sessionId={SESSION_ID} />;
+  const pane = <ExplorePane sessionId={SESSION_ID} onClose={() => undefined} />;
 
   return (
     <ShellFrame

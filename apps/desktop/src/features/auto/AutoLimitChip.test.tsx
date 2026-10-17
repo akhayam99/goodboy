@@ -11,11 +11,11 @@ describe('AutoLimitChip', () => {
     const onChange = vi.fn();
     render(<AutoLimitChip usd={5} isFromSession={false} isDisabled={false} onChange={onChange} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Spend cap $5.00' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
     fireEvent.change(screen.getByRole('spinbutton'), {
       target: { value: '8' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Use this cap' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use this limit' }));
 
     expect(onChange).toHaveBeenCalledWith(8);
   });
@@ -24,20 +24,20 @@ describe('AutoLimitChip', () => {
     const onChange = vi.fn();
     render(<AutoLimitChip usd={5} isFromSession={false} isDisabled={false} onChange={onChange} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Spend cap $5.00' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Limit $5.00' }));
     fireEvent.change(screen.getByRole('spinbutton'), {
       target: { value: '0' },
     });
 
     expect(screen.getByText('Enter an amount more than zero.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Use this cap' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Use this limit' })).toHaveProperty('disabled', true);
     expect(onChange).not.toHaveBeenCalled();
   });
 
   it('is a plain chip when the budget of the session sets the limit', () => {
     render(<AutoLimitChip usd={25} isFromSession isDisabled={false} onChange={vi.fn()} />);
 
-    expect(screen.getByText('Spend cap $25.00')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Spend cap $25.00' })).toBeNull();
+    expect(screen.getByText('Limit $25.00')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Limit $25.00' })).toBeNull();
   });
 });

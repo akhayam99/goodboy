@@ -3,7 +3,6 @@ import { STRIPED_BLOCK_LIST, STRIPED_MIN_ROWS, cn } from '@goodboy/ui';
 import { ChevronRight, Unplug } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import type { StorageFolderGroup } from '../../groupStorageFolders';
 import { WorktreeRow } from './WorktreeRow';
@@ -44,7 +43,7 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
           </span>
         ) : null}
         <span className="ml-auto shrink-0 text-meta font-normal tabular-nums text-muted-foreground">
-          {pluralize(group.folders.length, 'folder')} · {formatBytes({ bytes: group.bytes })}
+          {pluralize(group.folders.length, 'folder')}
         </span>
       </div>
       <div
@@ -56,7 +55,6 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
             folder={folder}
             now={now}
             suggestAfterDays={suggestAfterDays}
-            isSelecting={selected.size > 0}
             isSelected={selected.has(folder.path)}
             isRemoving={removing[folder.path] === true}
             isMeasuring={measuringPath === folder.path}

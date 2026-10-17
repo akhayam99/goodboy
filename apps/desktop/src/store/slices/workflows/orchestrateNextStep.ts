@@ -190,7 +190,7 @@ const announceRunBudget = ({
   void get().emitNotification({
     kind: 'budget-cap',
     severity: 'warning',
-    title: 'Run is over its spend cap',
+    title: 'Run is over its limit',
     body: stop.message,
     sessionId,
     action: { kind: 'open-budget', sessionId },

@@ -3,14 +3,13 @@ import { PaneShell, ScrollFade } from '@goodboy/ui';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
 import { AgentsPane } from '../../../../../features/session/components/SessionWorkspace/parts/AgentsPane';
 import { QuestionsPane } from '../../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
-import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
+import { SceneRunsSurface } from '../SceneRunsSurface';
 import { NeedsYouBlock } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/NeedsYouBlock';
 import type { NeedsYouOwner } from '../../../../../features/session/timeline/needsYou';
 import { ArtifactStudio } from '../../../../../features/artifacts/components/ArtifactStudio';
-import {
-  InboxList,
-  type InboxLoadFailure,
-} from '../../../../../features/inbox/components/InboxStudio/InboxList';
+import { InboxList } from '../../../../../features/inbox/components/InboxStudio/InboxList';
+import { TaskGroupRows } from '../../../../../features/inbox/components/InboxStudio/TaskGroupRows';
+import { sourceFailureLine } from '../../../../../features/inbox/sourceFailureLine';
 import { ScriptsPanel } from '../../../../../features/scripts/components/ScriptsPanel';
 import { useAppStore, type LensKind } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -122,16 +121,29 @@ const StateScene = ({
   return <ShellFrame session={SESSION} main={children} />;
 };
 
-const INBOX_FAILURE: InboxLoadFailure = {
-  provider: 'sentry',
-  message: 'The token was refused (401).',
+const INBOX_FAILURE = {
+  key: 'failure:sentry',
+  text: sourceFailureLine({ name: 'Sentry', message: 'The token was refused (401).' }),
+  onRetry: noop,
+};
+
+const NO_GROUP_HANDLERS = {
+  selectedKey: null,
+  cursorKey: null,
+  onExpand: noop,
+  onCollapse: noop,
+  onSelect: noop,
+  onActivate: noop,
+  starOf: () => undefined,
+  onToggleStar: noop,
 };
 
 const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
   {
     id: 'mock-states-owner-pr',
     kind: 'fixRun',
-    text: '#318 · 1 question · 5 to review',
+    text: '#318 · 5 to review · 1 question',
+    where: null,
     at: null,
     item: null,
     question: null,
@@ -142,7 +154,8 @@ const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
   {
     id: 'mock-states-owner-rebase',
     kind: 'rebase',
-    text: 'Rebase of hl/fix-duplicate-credit stopped ×2',
+    text: 'Rebase of hl/fix-duplicate-credit stopped',
+    where: null,
     at: null,
     item: null,
     question: null,
@@ -155,12 +168,12 @@ const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
 export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   'runs-list-empty': () => (
     <StateScene lens="workflows">
-      <WorkflowsPane session={SESSION} />
+      <SceneRunsSurface session={SESSION} />
     </StateScene>
   ),
   'agents-list-empty': () => (
     <StateScene lens="agents">
-      <AgentsPane session={SESSION} meta={undefined} />
+      <AgentsPane session={SESSION} />
     </StateScene>
   ),
   'artifacts-empty': () => (
@@ -175,7 +188,11 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   ),
   'scripts-empty': () => (
     <StateScene lens="scripts" seed={seedNoMounts}>
-      <ScriptsPanel workspaceId={SESSION.workspaceId} sessionId={SESSION_ID} />
+      <ScriptsPanel
+        workspaceId={SESSION.workspaceId}
+        sessionId={SESSION_ID}
+        onClose={() => undefined}
+      />
     </StateScene>
   ),
   'questions-empty': () => (
@@ -190,25 +207,24 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   ),
   'notifications-empty': () => (
     <StateScene lens="workflows" afterMount={openNotificationsSoon}>
-      <WorkflowsPane session={SESSION} />
+      <SceneRunsSurface session={SESSION} />
     </StateScene>
   ),
   'inbox-empty': () => (
     <StateScene lens="plans">
       <PaneShell title="Tasks">
         <InboxList
-          days={[]}
           totalCount={0}
+          visibleCount={0}
           connectedCount={1}
+          failureCount={0}
           isLoading={false}
-          failures={[]}
           hasFiltersActive={false}
-          selectedKey={null}
-          onSelect={noop}
-          onRetry={noop}
           onOpenSettings={noop}
           onClearFilters={noop}
-        />
+        >
+          {null}
+        </InboxList>
       </PaneShell>
     </StateScene>
   ),
@@ -216,18 +232,24 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
     <StateScene lens="plans">
       <PaneShell title="Tasks">
         <InboxList
-          days={[]}
           totalCount={0}
+          visibleCount={0}
           connectedCount={1}
+          failureCount={1}
           isLoading={false}
-          failures={[INBOX_FAILURE]}
           hasFiltersActive={false}
-          selectedKey={null}
-          onSelect={noop}
-          onRetry={noop}
           onOpenSettings={noop}
           onClearFilters={noop}
-        />
+        >
+          <TaskGroupRows
+            label="Sentry"
+            records={[]}
+            isExpanded={false}
+            canCollapse={false}
+            lines={[INBOX_FAILURE]}
+            {...NO_GROUP_HANDLERS}
+          />
+        </InboxList>
       </PaneShell>
     </StateScene>
   ),

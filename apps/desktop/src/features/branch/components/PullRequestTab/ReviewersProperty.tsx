@@ -14,7 +14,7 @@ import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 import { ReviewerPicker } from '../../../../shared/components/ReviewerPicker';
 import { ReviewStateIcon } from './ReviewStateIcon';
-import { PropertyBlock } from '../../../../shared/components/PropertyBlock';
+import { PropertyField } from './PropertyField';
 
 export type ReviewerRequest =
   | { readonly kind: 'hidden' }
@@ -99,7 +99,7 @@ export const ReviewersProperty = ({
     ) : null;
 
   return (
-    <PropertyBlock label="Reviewers" action={action}>
+    <PropertyField label="Reviewers" labelAction={action}>
       {reviewers.length === 0 ? (
         <EmptyLine>None requested</EmptyLine>
       ) : (
@@ -113,9 +113,11 @@ export const ReviewersProperty = ({
               <span className="min-w-0 flex-1 truncate text-foreground">
                 {reviewer.person.login}
               </span>
-              <ReviewStateIcon state={reviewer.state} size={ICON_SIZE.row} />
-              <span className="shrink-0 text-meta text-muted-foreground">
-                {STATE_WORD[reviewer.state]}
+              <span className="flex w-36 shrink-0 items-center gap-2">
+                <ReviewStateIcon state={reviewer.state} size={ICON_SIZE.row} />
+                <span className="truncate text-meta text-muted-foreground">
+                  {STATE_WORD[reviewer.state]}
+                </span>
               </span>
             </li>
           ))}
@@ -124,6 +126,6 @@ export const ReviewersProperty = ({
       {request.kind === 'disabled' && (
         <p className="text-meta text-faint-foreground">{request.reason}</p>
       )}
-    </PropertyBlock>
+    </PropertyField>
   );
 };

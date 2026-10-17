@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Button, EmptyState, StudioRailLayout } from '@goodboy/ui';
+import {
+  Button,
+  EmptyState,
+  PAGE_MEASURE,
+  PageColumn,
+  StudioRailLayout,
+  useStudioRailFold,
+} from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../shared/components/StudioShell';
@@ -23,6 +30,7 @@ type Props = {
 const NO_CHATS: ReadonlyArray<ChatSummary> = [];
 
 export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
+  const fold = useStudioRailFold({ surface: 'chat' });
   const chats = useAppStore((state) => state.chatsByWorkspace[workspaceId] ?? NO_CHATS);
   const archivedChats = useAppStore(
     (state) => state.archivedChatsByWorkspace[workspaceId] ?? NO_CHATS,
@@ -94,6 +102,8 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
           railWidth="standard"
           surface="chat"
           placement="page"
+          isCollapsed={fold.isCollapsed}
+          onCollapsedChange={fold.setFolded}
           rail={
             isFirstRun ? null : (
               <ChatList
@@ -101,7 +111,6 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
                 chats={chats}
                 selectedId={activeChat?.id ?? null}
                 onSelect={select}
-                onNew={() => select(null)}
                 onArchived={(archivedIds) => leave({ removedIds: archivedIds })}
                 onDeleted={(deletedIds) => leave({ removedIds: deletedIds })}
               />
@@ -109,17 +118,19 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
           }
           detail={
             isFirstRun ? (
-              <EmptyState
-                size="page"
-                icon={CONCEPT_ICONS.chat}
-                title="No chats yet"
-                description="Start a chat to explore an idea with an agent."
-                action={
-                  <Button size="sm" onClick={() => setHasStarted(true)}>
-                    Start a chat
-                  </Button>
-                }
-              />
+              <PageColumn width={PAGE_MEASURE.chat}>
+                <EmptyState
+                  size="page"
+                  icon={CONCEPT_ICONS.chat}
+                  title="No chats yet"
+                  description="Start a chat to explore an idea with an agent."
+                  action={
+                    <Button size="sm" onClick={() => setHasStarted(true)}>
+                      Start a chat
+                    </Button>
+                  }
+                />
+              </PageColumn>
             ) : (
               <StudioDetail>
                 <ChatRoom

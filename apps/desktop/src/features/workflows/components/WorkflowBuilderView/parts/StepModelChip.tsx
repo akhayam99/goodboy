@@ -28,9 +28,8 @@ export const StepModelChip = ({
 }: Props) => {
   const dropdown = useDropdown({
     disabled: isDisabled,
-    align: 'end',
     width: 'w-96',
-    expectedHeight: 360,
+    expectedHeight: 560,
   });
   const { open: isOpen, toggle } = dropdown;
   const [isFlashing, setIsFlashing] = useState(false);
@@ -77,7 +76,7 @@ export const StepModelChip = ({
               effort={effort}
             />
             {isPinned ? (
-              <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" />
+              <span className="shrink-0 text-meta text-faint-foreground">· pinned</span>
             ) : null}
             <ChevronDown
               size={ICON_SIZE.row}

@@ -79,7 +79,12 @@ export const GuideContent = ({ chapters, onOpen, onVisible, registerScrollTo }: 
   };
 
   return (
-    <PaneShell scroll="body" title="Guide" meta="How Goodboy works, chapter by chapter">
+    <PaneShell
+      page="guide"
+      scroll="body"
+      title="Guide"
+      meta="How Goodboy works, chapter by chapter"
+    >
       <div className="flex flex-col gap-14 pb-24">
         {chapters.map((chapter) => (
           <div key={chapter.id} ref={anchor(chapter.id)}>

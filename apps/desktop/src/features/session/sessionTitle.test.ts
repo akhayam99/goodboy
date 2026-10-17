@@ -2,7 +2,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '@goodboy/types';
 import { goalFromIssue } from '../integrations/linear/goal-from-issue';
-import { sessionDisplayTitle, sessionRowTitle, sessionTitle } from './sessionTitle';
+import { sessionRowTitle, sessionTitle } from './sessionTitle';
+
+type DisplayParams = Parameters<typeof sessionRowTitle>[0];
+
+const sessionDisplayTitle = ({ session, tasks }: DisplayParams): string =>
+  sessionRowTitle({ session, tasks }).title;
 
 const sessionWith = (goal: unknown): Session => ({ goal }) as Session;
 

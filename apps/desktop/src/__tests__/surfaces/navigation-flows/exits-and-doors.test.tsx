@@ -28,14 +28,15 @@ installNavigationHooks();
 type Door = {
   readonly name: string;
   readonly kind: string;
+  readonly isSidebarPage: boolean;
 };
 
 const DOORS: ReadonlyArray<Door> = [
-  { name: 'Tasks', kind: 'inbox' },
-  { name: 'Workflows', kind: 'workflow' },
-  { name: 'Impact', kind: 'impact' },
-  { name: 'Settings', kind: 'settings' },
-  { name: 'Chat', kind: 'chat' },
+  { name: 'Tasks', kind: 'inbox', isSidebarPage: true },
+  { name: 'Workflows', kind: 'workflow', isSidebarPage: true },
+  { name: 'Impact', kind: 'impact', isSidebarPage: false },
+  { name: 'Settings', kind: 'settings', isSidebarPage: false },
+  { name: 'Chat', kind: 'chat', isSidebarPage: true },
 ];
 
 const COLUMN_DOORS: ReadonlyArray<Door> = DOORS.filter((door) => door.kind !== 'impact');
@@ -130,7 +131,9 @@ const fireOpenSettings = async (detail: Readonly<Record<string, unknown>>): Prom
 describe('every studio exits the same way', () => {
   it.each(
     DOORS.flatMap((door) =>
-      EXITS.map((exit) => [`${door.name} by ${exit.name}`, door, exit] as const),
+      EXITS.filter((exit) => exit.name !== 'Close' || !door.isSidebarPage).map(
+        (exit) => [`${door.name} by ${exit.name}`, door, exit] as const,
+      ),
     ),
   )(
     '%s lands where it started with the same forward',
@@ -165,7 +168,7 @@ describe('the Board door leaves an open studio for the board', () => {
       if (door.kind === 'settings') {
         await click(screen.getByRole('button', { name: /^Back to app/ }));
       }
-      await clickButton(/^Board/);
+      await clickButton(/^Sessions/);
 
       expect(appStudioKind()).toBeNull();
       expect(useAppStore.getState().currentSessionId).toBeNull();
@@ -178,11 +181,11 @@ describe('doors replace the open studio and content links stack', () => {
   it('replaces the open studio when another door is pressed', async () => {
     await boot({ seed: 'pr' });
 
-    await openDoor({ door: { name: 'Tasks', kind: 'inbox' } });
+    await openDoor({ door: { name: 'Tasks', kind: 'inbox', isSidebarPage: true } });
     const withOneStudio = stack()?.entries.length ?? 0;
-    await openDoor({ door: { name: 'Workflows', kind: 'workflow' } });
+    await openDoor({ door: { name: 'Workflows', kind: 'workflow', isSidebarPage: true } });
     await clickButton(/^Spend today/);
-    await openDoor({ door: { name: 'Chat', kind: 'chat' } });
+    await openDoor({ door: { name: 'Chat', kind: 'chat', isSidebarPage: true } });
 
     expect(appStudioKind()).toBe('chat');
     expect(stack()?.entries.length).toBe(withOneStudio);
@@ -253,9 +256,9 @@ describe('exactly one door in the frame is marked current', () => {
   it('marks Board once the board is shown', async () => {
     await boot({ seed: 'pr' });
 
-    await clickButton(/^Board/);
+    await clickButton(/^Sessions/);
 
-    expect(currentMarks()).toEqual(['Board']);
+    expect(currentMarks()).toEqual(['Sessions']);
   });
 });
 
@@ -263,7 +266,7 @@ const WAY_BACK = /^(Close\b(?! branch)|Back to )/i;
 
 const waysBack = (): ReadonlyArray<HTMLElement> =>
   Array.from(document.querySelectorAll<HTMLElement>('button'))
-    .filter((button) => button.closest('[data-nav-cluster], [inert]') === null)
+    .filter((button) => button.closest('[data-nav-cluster], [inert], [data-level-back]') === null)
     .filter((button) =>
       WAY_BACK.test(button.getAttribute('aria-label') ?? button.textContent?.trim() ?? ''),
     );
@@ -272,6 +275,7 @@ type Route = {
   readonly name: string;
   readonly open: () => Promise<void>;
   readonly isOpen: () => boolean;
+  readonly isSidebarPage?: boolean;
 };
 
 const drawerRoute = (kind: 'context' | 'ask'): Route => ({
@@ -297,6 +301,7 @@ const ROUTES: ReadonlyArray<Route> = [
     name: door.name,
     open: () => openDoor({ door }),
     isOpen: () => appStudioKind() === door.kind,
+    isSidebarPage: door.isSidebarPage,
   })),
   drawerRoute('context'),
   drawerRoute('ask'),
@@ -324,9 +329,10 @@ describe('every route has exactly one way back', () => {
       await route.open();
       expect(route.isOpen()).toBe(true);
       const ways = waysBack();
-      expect(ways).toHaveLength(1);
+      const isSidebarPage = route.isSidebarPage === true;
+      expect(ways).toHaveLength(isSidebarPage ? 0 : 1);
 
-      await click(ways[0] as HTMLElement);
+      await click(isSidebarPage ? historyButton('Back') : (ways[0] as HTMLElement));
       await settle(8);
 
       expect(route.isOpen()).toBe(false);

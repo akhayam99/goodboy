@@ -4,13 +4,10 @@ import {
   SegmentedTabs,
   type SegmentedTabOption,
   FacetRail,
-  FacetKeyHints,
   FacetRow,
   FacetSection,
 } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { keyHintsOf } from '../../../../shared/keyboard/keyHints';
-import type { ShortcutId } from '../../../../shared/keyboard/registry';
 import type { NotificationScope } from '../../../../store/slices/notifications/state';
 import {
   NOTIFICATION_SEVERITY_FACETS,
@@ -21,6 +18,7 @@ import {
   type NotificationView,
 } from '../../facets';
 import { NOTIFICATION_SEVERITY } from '../../severity';
+import { FacetCount } from './FacetCount';
 import {
   NOTIFICATION_SOURCES,
   NOTIFICATION_SOURCE_LABEL,
@@ -57,15 +55,6 @@ const SOURCE_ICON = {
   system: CONCEPT_ICONS.settings,
 } satisfies Record<NotificationSource, LucideIcon>;
 
-const KEY_SPECS: ReadonlyArray<{
-  readonly ids: ReadonlyArray<ShortcutId>;
-  readonly label: string;
-}> = [
-  { ids: ['list.next', 'list.previous'], label: 'Next or previous' },
-  { ids: ['list.open'], label: 'Run the action' },
-  { ids: ['list.dismiss'], label: 'Delete' },
-];
-
 export const NotificationFacetRail = ({
   filters,
   counts,
@@ -78,12 +67,16 @@ export const NotificationFacetRail = ({
     {
       value: 'workspace',
       label: workspaceName ?? 'This workspace',
-      badge: <span className="tabular-nums text-faint-foreground">{counts.workspace}</span>,
+      ...(counts.workspace > 1 && {
+        badge: <span className="tabular-nums text-faint-foreground">{counts.workspace}</span>,
+      }),
     },
     {
       value: 'all',
       label: 'All',
-      badge: <span className="tabular-nums text-faint-foreground">{counts.all}</span>,
+      ...(counts.all > 1 && {
+        badge: <span className="tabular-nums text-faint-foreground">{counts.all}</span>,
+      }),
     },
   ];
 
@@ -96,6 +89,7 @@ export const NotificationFacetRail = ({
             icon={VIEW_PRESENTATION[view].icon}
             label={VIEW_PRESENTATION[view].label}
             count={counts.view[view]}
+            trailing={<FacetCount count={counts.view[view]} />}
             isSelected={filters.view === view}
             onClick={() => onFiltersChange({ ...filters, view })}
           />
@@ -109,6 +103,7 @@ export const NotificationFacetRail = ({
             tone={NOTIFICATION_SEVERITY[severity].tone}
             label={SEVERITY_LABEL[severity]}
             count={counts.severity[severity]}
+            trailing={<FacetCount count={counts.severity[severity]} />}
             isSelected={filters.severity === severity}
             onClick={() =>
               onFiltersChange({
@@ -126,6 +121,7 @@ export const NotificationFacetRail = ({
             icon={SOURCE_ICON[source]}
             label={NOTIFICATION_SOURCE_LABEL[source]}
             count={counts.source[source]}
+            trailing={<FacetCount count={counts.source[source]} />}
             isSelected={filters.source === source}
             onClick={() =>
               onFiltersChange({ ...filters, source: filters.source === source ? null : source })
@@ -146,7 +142,6 @@ export const NotificationFacetRail = ({
           />
         </section>
       )}
-      <FacetKeyHints hints={keyHintsOf(KEY_SPECS)} />
     </FacetRail>
   );
 };

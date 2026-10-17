@@ -10,7 +10,6 @@ import {
   seedActivityRunScene,
   seedSiblingStages,
 } from './activityRunSeed';
-import { useHoveredMountRow, useShowFinishedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 
 const HOUR = 3_600_000;
@@ -87,6 +86,7 @@ type Props = {
   readonly isFinished?: boolean;
   readonly onSeeded?: () => void;
   readonly isPageFollowed?: boolean;
+  readonly isContextRead?: boolean;
 };
 
 const IDLE_SESSION: Session = {
@@ -99,6 +99,7 @@ export const ActivityRunScene = ({
   isFinished = false,
   onSeeded,
   isPageFollowed = false,
+  isContextRead = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -129,12 +130,17 @@ export const ActivityRunScene = ({
     if (contextTab !== undefined) {
       useAppStore.getState().openContextDrawer({ sessionId: SESSION.id, tab: contextTab });
     }
+    if (isContextRead) {
+      useAppStore.setState((state) => ({
+        sessionDecisionsBaseline: {
+          ...state.sessionDecisionsBaseline,
+          [SESSION.id]: new Date(Date.now() + HOUR).toISOString(),
+        },
+      }));
+    }
     onSeeded?.();
     setIsReady(true);
-  }, [contextTab, isFinished, onSeeded]);
-
-  useShowFinishedMounts({ isReady });
-  useHoveredMountRow({ isReady, rowLabel: 'nw/backfill-processed-events' });
+  }, [contextTab, isContextRead, isFinished, onSeeded]);
 
   if (!isReady) {
     return null;

@@ -98,7 +98,7 @@ describe('resolveOrchestratorState', () => {
     const state = resolve({ agents: [running] });
 
     expect(state.phase).toBe('waiting');
-    expect(state.sentence).toBe('Waiting on step 1 · step 0');
+    expect(state.sentence).toBe('Waiting on step 1 · Generalist');
     expect(state.waitingOnAgentId).toBe(running.id);
   });
 
@@ -159,7 +159,7 @@ describe('resolveOrchestratorState', () => {
     expect(state.phase).toBe('deciding');
   });
 
-  it('reports done with the step count and the run cost', () => {
+  it('reports done in two words, the rows and the facts line hold the count and the cost', () => {
     const state = resolve({
       run: makeRun({ orchestrationOutcome: 'done' }),
       agents: [makeAgent(0, 'completed'), makeAgent(1, 'completed')],
@@ -168,7 +168,7 @@ describe('resolveOrchestratorState', () => {
 
     expect(state.phase).toBe('done');
     expect(state.tone).toBe('success');
-    expect(state.sentence).toContain('2 steps');
+    expect(state.sentence).toBe('Run complete');
   });
 
   it('reads a run the user closed as closed, never as complete', () => {
@@ -183,7 +183,7 @@ describe('resolveOrchestratorState', () => {
 
     expect(state.phase).toBe('done');
     expect(state.tone).toBe('neutral');
-    expect(state.sentence).toMatch(/^Closed by you · 2 steps/);
+    expect(state.sentence).toBe('Closed by you');
   });
 
   it('reports blocked and leaves its reason to the decisions under the goal', () => {
@@ -217,17 +217,17 @@ describe('resolveOrchestratorState', () => {
     );
   });
 
-  it('reads a spend cap stop in its own words', () => {
+  it('reads a limit stop in its own words', () => {
     const state = resolve({
       run: makeRun({
         orchestrationStop: {
           kind: 'budget',
-          message: 'Paused at the $10.00 spend cap for this session.',
+          message: 'Paused at the $10.00 limit for this session.',
         },
       }),
     });
 
-    expect(state.sentence).toBe('Paused at the $10.00 spend cap for this session.');
+    expect(state.sentence).toBe('Paused at the $10.00 limit for this session.');
     expect(state.detail).toBeNull();
   });
 
@@ -250,7 +250,7 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('waiting');
-    expect(state.sentence).toBe('Waiting on step 2 · step 1');
+    expect(state.sentence).toBe('Waiting on step 2 · Generalist');
     expect(state.waitingOnAgentId).toBe(running.id);
   });
 
@@ -259,7 +259,7 @@ describe('resolveOrchestratorState', () => {
 
     expect(state.phase).toBe('needs-answer');
     expect(state.tone).toBe('warning');
-    expect(state.sentence).toBe('Paused for your answer');
+    expect(state.sentence).toBe('Waiting for your answer');
     expect(state.waitingOnAgentId).toBeNull();
   });
 
@@ -272,7 +272,7 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('needs-answer');
-    expect(state.sentence).toBe('Paused for your answer · step 2 · Scout the diaries area');
+    expect(state.sentence).toBe('Waiting for your answer on step 2');
     expect(state.waitingOnAgentId).toBe(asker.id);
   });
 
@@ -288,7 +288,7 @@ describe('resolveOrchestratorState', () => {
       question: { createdByAgentId: child.id },
     });
 
-    expect(state.sentence).toBe('Paused for your answer · step 1 · api clinical tests module');
+    expect(state.sentence).toBe('Waiting for your answer on step 1');
     expect(state.waitingOnAgentId).toBeNull();
   });
 
@@ -296,12 +296,12 @@ describe('resolveOrchestratorState', () => {
     const state = resolve({ agents: [makeAgent(0, 'running')] });
 
     expect(state.phase).toBe('waiting');
-    expect(state.sentence).toBe('Waiting on step 1 · step 0');
+    expect(state.sentence).toBe('Waiting on step 1 · Generalist');
   });
 
   it('still shows a spend pause over an open question', () => {
     const state = resolve({
-      run: makeRun({ orchestrationStop: { kind: 'budget', message: 'Paused at the spend cap' } }),
+      run: makeRun({ orchestrationStop: { kind: 'budget', message: 'Paused at the limit' } }),
       agents: [makeAgent(0, 'running')],
       hasOpenQuestions: true,
       question: { createdByAgentId: 'agent-0' as AgentId },
@@ -334,7 +334,7 @@ describe('resolveOrchestratorState', () => {
 
     expect(state.phase).toBe('waiting');
     expect(state.tone).toBe('neutral');
-    expect(state.sentence).toBe('Step 2 stopped by you · step 1');
+    expect(state.sentence).toBe('Step 2 stopped by you · Generalist');
   });
 
   it('says when Goodboy stopped a step on quit', () => {
@@ -342,14 +342,14 @@ describe('resolveOrchestratorState', () => {
       agents: [makeAgent(0, 'stopped', { stoppedBy: 'app' })],
     });
 
-    expect(state.sentence).toBe('Step 1 stopped by restart · step 0');
+    expect(state.sentence).toBe('Step 1 stopped by restart · Generalist');
   });
 
   it('waits on a pending step without a running agent', () => {
     const state = resolve({ agents: [makeAgent(0, 'completed'), makeAgent(1, 'pending')] });
 
     expect(state.phase).toBe('waiting');
-    expect(state.sentence).toBe('Waiting on step 2 · step 1');
+    expect(state.sentence).toBe('Waiting on step 2 · Generalist');
     expect(state.waitingOnAgentId).toBeNull();
   });
 
@@ -375,7 +375,7 @@ describe('resolveOrchestratorState', () => {
       agents: [makeAgent(2, 'pending'), makeAgent(0, 'completed'), makeAgent(1, 'completed')],
     });
 
-    expect(state.sentence).toBe('Waiting on step 3 · step 2');
+    expect(state.sentence).toBe('Waiting on step 3 · Generalist');
   });
 });
 

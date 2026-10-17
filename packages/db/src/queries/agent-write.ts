@@ -6,6 +6,7 @@ import type {
   AgentStatus,
   AgentStoppedBy,
   IsoDateTime,
+  MountId,
   ProviderId,
   ProviderRunId,
   SessionId,
@@ -48,6 +49,7 @@ export type AgentInsertInput = {
   readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl?: string;
   readonly sourceKind?: AgentSourceKind;
+  readonly mountId?: MountId;
   readonly domains?: ReadonlyArray<string>;
   readonly routingLock?: WorkflowRoutingLock | null;
   readonly routingDecision?: WorkflowRoutingDecision | null;
@@ -84,8 +86,9 @@ const AGENT_INSERT_SQL = `INSERT INTO agents
     provider_run_id, output_summary, started_at, last_finished_at, kind, verbosity,
     effort, model_override, provider_override,
     parent_agent_id, workflow_run_id, source_thread_id, source_thread_ids, source_comment_url, source_kind,
-    domains_json, routing_lock, routing_decision, task_profile)
- VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    domains_json, routing_lock, routing_decision, task_profile, mount_id)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+    (SELECT id FROM session_worktrees WHERE id = ?))`;
 
 const TERMINAL_STATUSES: ReadonlyArray<AgentStatus> = ['completed', 'failed', 'blocked', 'skipped'];
 const STARTED_LIST = `'starting', 'running', 'completed'`;
@@ -163,6 +166,7 @@ const insertStatement = ({ input, id, parentAgentId }: InsertStatementParams): P
       routing.lock,
       routing.decision,
       routing.profile,
+      input.mountId ?? null,
     ],
   };
 };

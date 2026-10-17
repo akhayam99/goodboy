@@ -123,14 +123,6 @@ describe('the job banner', () => {
       'Replaying 3 of 7',
     ],
     [
-      {
-        phase: 'rewriting',
-        stop: { reason: 'conflict', message: '', files: ['webhook.ts'], sha: null },
-      },
-      'Rebasing payments-api on main',
-      'History rewriter is merging webhook.ts in a copy',
-    ],
-    [
       { phase: 'rewriting', progress: { stage: 'check' } },
       'Rebasing payments-api on main',
       'Checking the result against your branch',
@@ -146,14 +138,13 @@ describe('the job banner', () => {
       'Updating the online copy with a safe force push',
     ],
   ] satisfies ReadonlyArray<readonly [Partial<HistoryRun>, string, string]>)(
-    'shows a run in its %j phase',
+    'leaves a run in its %j phase to the worktree status line, no card on the page',
     async (patch, title, line) => {
       await showRun(patch);
 
-      const region = screen.getByRole('region', { name: 'Rebase job' });
-      expect(region.textContent).toContain(title);
-      expect(region.textContent).toContain(line);
-      expect(screen.queryByRole('button')).toBeNull();
+      expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull();
+      expect(screen.queryByText(title)).toBeNull();
+      expect(screen.queryByText(line)).toBeNull();
     },
   );
 

@@ -1,57 +1,37 @@
 import { Folder, GitBranch } from 'lucide-react';
-import { cn } from '@goodboy/ui';
+import { Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { PickerRow } from '../../terminalPickerClusters';
-import { PathLine } from '../PathLine';
-import { WorktreeChip } from '../WorktreeChip';
 
 type Props = {
   readonly row: PickerRow;
+  readonly isActive: boolean;
   readonly onPick: () => void;
-  readonly onOpenProject: () => void;
 };
 
-export const PickerRowView = ({ row, onPick, onOpenProject }: Props) => {
+export const PickerRowView = ({ row, isActive, onPick }: Props) => {
   const Icon = row.kind === 'workspace' ? Folder : GitBranch;
   return (
-    <div className="group flex min-w-0 items-center gap-1 rounded-md hover:bg-hover focus-within:bg-hover">
+    <Tooltip content={row.path} anchorClassName="flex w-full min-w-0">
       <button
         type="button"
         role="menuitem"
         onClick={onPick}
-        className="flex min-w-0 flex-1 flex-col gap-0.5 rounded-md px-2 py-2 text-left focus-visible:outline-none"
+        className={cn(
+          'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover focus-visible:bg-hover focus-visible:outline-none',
+          isActive && 'bg-hover',
+        )}
       >
-        <span className="flex min-w-0 items-center gap-2">
-          <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-          <span className="min-w-0 shrink truncate text-label text-foreground">
-            {row.projectName}
-          </span>
-          {row.branch === null ? null : (
-            <span className="min-w-0 truncate font-mono text-meta text-faint-foreground">
-              {row.branch}
-            </span>
-          )}
-          <span className="flex-1" />
-          {row.kind === 'workspace' || row.folder === null ? null : (
-            <WorktreeChip folder={row.folder} />
-          )}
+        <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
+        <span className="min-w-0 max-w-[50%] shrink-0 truncate text-ui text-foreground">
+          {row.projectName}
         </span>
-        <PathLine path={row.path} />
+        {row.branch === null ? null : (
+          <span className="min-w-0 flex-1 truncate font-mono text-meta text-faint-foreground">
+            {row.branch}
+          </span>
+        )}
       </button>
-      {row.kind === 'workspace' ? null : (
-        <button
-          type="button"
-          role="menuitem"
-          aria-label={`Open project ${row.projectName}`}
-          onClick={onOpenProject}
-          className={cn(
-            'shrink-0 rounded-md px-2 py-1 text-meta text-muted-foreground',
-            'hover:bg-selected hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          )}
-        >
-          Open project
-        </button>
-      )}
-    </div>
+    </Tooltip>
   );
 };

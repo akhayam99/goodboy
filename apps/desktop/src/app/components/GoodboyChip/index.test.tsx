@@ -120,29 +120,27 @@ describe('GoodboyChip', () => {
     expect(chip.textContent).toBe(`GoodboyBetav${APP_VERSION}`);
   });
 
-  it('leaves the rest mark bare in dark mode', () => {
-    mocks.progress.finished = true;
-    renderChip();
+  it.each(['dark', 'light'] as const)(
+    'wraps only the mark and the name in the brand chip in %s mode',
+    (theme) => {
+      mocks.progress.finished = true;
+      applyDocumentTheme({ theme });
+      renderChip();
 
-    const chip = screen.getByRole('button', { name: REST_LABEL });
-    expect(chip.className).not.toContain('goodboy-brand-chip');
-  });
+      const chip = screen.getByRole('button', { name: REST_LABEL });
+      expect(chip.className).not.toContain('goodboy-brand-chip');
+      const brand = chip.querySelector('[data-brand-chip]');
+      expect(brand?.className).toContain('goodboy-brand-chip');
+      expect(brand?.textContent).toBe('Goodboy');
+    },
+  );
 
-  it('wraps the rest mark in a dark chip when the theme is light', () => {
-    mocks.progress.finished = true;
-    applyDocumentTheme({ theme: 'light' });
-    renderChip();
-
-    const chip = screen.getByRole('button', { name: REST_LABEL });
-    expect(chip.className).toContain('goodboy-brand-chip');
-  });
-
-  it('never puts the dark chip on the setup or update states', () => {
+  it('never draws the brand chip on the setup state', () => {
     applyDocumentTheme({ theme: 'light' });
     renderChip();
 
     const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
-    expect(chip.className).not.toContain('goodboy-brand-chip');
+    expect(chip.querySelector('[data-brand-chip]')).toBeNull();
   });
 
   it('says setup and its progress while setup is open', () => {
@@ -166,7 +164,9 @@ describe('GoodboyChip', () => {
 
     const menu = openMenu();
 
-    within(menu).getByText(`Goodboy ${APP_VERSION}`);
+    const header = menu.querySelector('header');
+    expect(header?.querySelector('[data-brand-chip]')?.textContent).toBe('Goodboy');
+    expect(header?.textContent).toBe(`GoodboyBetav${APP_VERSION}`);
     expect(within(menu).getByTestId('checklist')).toBeDefined();
     [
       'Report a bug',

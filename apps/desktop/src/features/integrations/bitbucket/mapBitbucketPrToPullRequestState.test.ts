@@ -7,7 +7,7 @@ const NADIA: BitbucketUser = {
   uuid: '{nadia-uuid}',
   accountId: null,
   nickname: 'nadia-p',
-  displayName: 'Nadia Petrova',
+  displayName: 'Harborline QA',
   avatarUrl: null,
 };
 

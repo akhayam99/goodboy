@@ -31,7 +31,7 @@ const GRAPH: HistoryGraph = {
   mergeBase: {
     sha: CTX_BASE_SHA,
     subject: 'Release 2.14',
-    author: 'Lena Arkwright',
+    author: 'Harborline Lead',
     timestamp: Math.floor(clock.ms({ at: '2026-10-07T09:12:00.000Z' }) / 1000),
   },
   mainHead: MAIN_HEAD,
@@ -39,7 +39,7 @@ const GRAPH: HistoryGraph = {
     {
       sha: MAIN_HEAD,
       subject: 'Merge #208: Cascadia rounding rules',
-      author: 'Lena Arkwright',
+      author: 'Harborline Lead',
       timestamp: Math.floor(clock.ms({ at: '2026-10-10T05:12:00.000Z' }) / 1000),
     },
   ],

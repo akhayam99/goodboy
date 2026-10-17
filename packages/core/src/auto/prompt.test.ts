@@ -9,9 +9,10 @@ import {
   AUTO_FINISH_EXAMPLE,
   AUTO_SYSTEM_PROMPT,
   autoRoleCatalog,
+  autoRoutingTable,
   buildAutoSystemPrompt,
 } from './prompt';
-import { AUTO_DELEGATION_ROLES, isAutoWriterRole } from './roles';
+import { AUTO_DELEGATION_ROLES, AUTO_ROLE_WHEN, isAutoWriterRole } from './roles';
 
 describe('autoRoleCatalog', () => {
   it('lists every delegable role once, in order, from the registry text', () => {
@@ -35,7 +36,7 @@ describe('autoRoleCatalog', () => {
   });
 
   it('names no role outside the closed list', () => {
-    for (const role of ['custom', 'report', 'wireframe', 'resolver', 'rewriter', 'scribe']) {
+    for (const role of ['custom', 'report', 'wireframe', 'resolver', 'ci-debugger']) {
       expect(autoRoleCatalog()).not.toContain(`- ${role} (`);
     }
   });
@@ -107,6 +108,37 @@ describe('buildAutoSystemPrompt', () => {
       expect(prompt).not.toContain(String.fromCharCode(0x2013));
       expect(prompt).not.toContain(String.fromCharCode(0x2014));
     }
+  });
+
+  it('routes each kind of work to one role, generated from the role list', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
+    const table = autoRoutingTable();
+
+    expect(prompt).toContain(table);
+    for (const role of AUTO_DELEGATION_ROLES) {
+      expect(table).toContain(`- To ${AUTO_ROLE_WHEN[role]}: ${role}.`);
+    }
+    expect(AUTO_ROLE_WHEN.investigator).toContain('diagnose a failure');
+    expect(AUTO_ROLE_WHEN.scribe).toContain('pull request');
+    expect(AUTO_ROLE_WHEN['ci-fixer']).toContain('failing check');
+    expect(AUTO_ROLE_WHEN.rewriter).toContain('commit history');
+  });
+
+  it('asks for hand overs that name the role, never for actions of its own', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
+
+    expect(prompt).toContain('describe it as a hand over and name the role');
+    expect(prompt).toContain(
+      'Never say that you will change, fix, run or install something yourself.',
+    );
+  });
+
+  it('teaches the MOUNTS line and the mount field, with the field in the example', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
+
+    expect(prompt).toContain('The MOUNTS line lists the folders agents can work in');
+    expect(prompt).toContain('`mount` field');
+    expect(AUTO_DELEGATE_EXAMPLE).toContain('"mount":');
   });
 
   it('ships the delegation prompt now the release gate is on', () => {

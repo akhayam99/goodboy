@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { AnchoredPopover, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { collapse } from '../../../features/onboarding/onboarding-store';
-import { useAppliedTheme } from '../../../shared/lib/theme';
 import { useOnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../features/changelog/hooks/useInstalledVersion';
 import { openReportSheet } from '../../../features/bug-report/openReportSheet';
@@ -40,11 +39,6 @@ const TRIGGER_SHAPE: Record<GoodboyChipVariant, string> = {
   rail: 'size-8 shrink-0 justify-center',
 };
 
-const DROPDOWN_ALIGN: Record<GoodboyChipVariant, 'start' | 'center'> = {
-  column: 'start',
-  rail: 'start',
-};
-
 export const GoodboyChip = ({
   onOpenChangelog,
   onOpenGuide,
@@ -57,7 +51,6 @@ export const GoodboyChip = ({
   const version = useInstalledVersion();
   const hasDraft = useHasBugReportDraft();
   const dropdown = useDropdown({
-    align: DROPDOWN_ALIGN[variant],
     width: 'w-80',
     expectedWidth: PANEL_WIDTH,
     expectedHeight: PANEL_MAX_HEIGHT,
@@ -72,8 +65,6 @@ export const GoodboyChip = ({
     isQueued;
   const isSetupOpen = !progress.finished && progress.hasProjects && !progress.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
-  const theme = useAppliedTheme();
-  const isBrandChip = state === 'rest' && theme === 'light' && variant !== 'rail';
   const shouldAutoOpen =
     isPrimary &&
     !progress.finished &&
@@ -109,8 +100,7 @@ export const GoodboyChip = ({
           'relative flex items-center rounded-md text-meta motion-safe:transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
           TRIGGER_SHAPE[variant],
-          isBrandChip && 'goodboy-brand-chip',
-          isOpen ? 'bg-muted' : isBrandChip ? 'bg-background hover:bg-hover' : 'hover:bg-hover',
+          isOpen ? 'bg-muted' : 'hover:bg-hover',
         )}
       >
         <GoodboyChipLabel

@@ -58,10 +58,7 @@ in its allowlist entry, never a waiver for a whole directory.
 
 `LENS_ICON` in `features/session/lens-labels.ts` reads straight from the
 registry, so a lens never picks its own glyph, and `LENS_LABEL` in the same
-file names it. `LENS_TONE` in the same file gives each lens its tone, and
-`lensIconClass` turns it into the icon color the page menu and the breadcrumb
-use; linked tools keep their brand color, and Questions is muted until
-something is open. Size is `control` in the lens switcher. `lensDestinations` in
+file names it. Size is `control` in the lens switcher. `lensDestinations` in
 `features/session/lens-destinations.ts` decides which lenses a session lists.
 
 | Lens (`LENS_LABEL`)         | Concept        | Glyph                   | Tone    | Listed                                     |
@@ -301,10 +298,11 @@ a suggested script offers `Pin`.
 
 Tasks rows lead with the tool's brand glyph, never a kind icon. The kind icons
 live on the Type facets in `InboxFacetRail.tsx`: `issue` `CircleDot`, pull
-requests `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. The state
-column draws `InboxStateLabel`: `open` `Circle`, `active` `Contrast`, `done`
-`CircleCheck`, `alert` `TriangleAlert`, each in the state tone, always next to
-the tool's own state word.
+requests `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. The 16px
+status column of a Tasks row draws the glyph of `INBOX_STATE_PRESENTATION`
+alone, named by the tool's own state word: `open` `Circle`, `active` `Contrast`,
+`done` `CircleCheck`, `alert` `TriangleAlert`, each in the state tone. The issue
+pane writes the word next to the same glyph.
 
 ## Search results
 

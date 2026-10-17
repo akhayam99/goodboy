@@ -33,6 +33,15 @@ vi.mock('../../../../store', () => ({
   useAppStore: (selector: (s: typeof state) => unknown) => selector(state),
   useStageGroupedSessions: () => groups.current,
   useProjectFilteredSessions: ({ sessions }: { sessions: ReadonlyArray<Session> }) => sessions,
+  useSessionListModel: () => ({ groups: [], stageBySession: {}, hiddenByFilters: 0 }),
+  useSessionViewPrefs: () => ({
+    pageView: 'board',
+    sort: 'needsYou',
+    group: 'none',
+    isArchivedShown: false,
+    isFoldOpen: false,
+    statusFilter: [],
+  }),
 }));
 
 vi.mock('../../../session/hooks/useSessionArchive', () => ({
@@ -55,26 +64,8 @@ vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
   ),
 }));
 
-vi.mock('../ProjectGitPill', () => ({
-  ProjectGitPills: ({
-    entries,
-  }: {
-    entries: ReadonlyArray<{ project: Project; status: WorkspaceGitStatus | null }>;
-  }) => (
-    <div data-testid="git-pills">
-      {(entries.length >= 3 ? entries.slice(0, 1) : entries).map(({ project, status }) => (
-        <span key={project.id} data-testid="git-pill">
-          {entries.length >= 3
-            ? `${entries.length} repos`
-            : `${project.name}:${status?.state ?? 'loading'}`}
-        </span>
-      ))}
-    </div>
-  ),
-}));
-
-vi.mock('../ProjectFilter', () => ({
-  ProjectFilter: () => <span data-testid="project-filter" />,
+vi.mock('../SessionActivityBar/SessionFilterPopover', () => ({
+  SessionFilterPopover: () => <span data-testid="session-filter" />,
 }));
 
 vi.mock('./useBoardNavigation', () => ({
@@ -210,14 +201,14 @@ describe('StageBoard loading gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.getByLabelText('Loading board')).toBeDefined();
     expect(screen.queryByTestId('stage-column')).toBeNull();
-    expect(screen.queryByText('Start your first session')).toBeNull();
+    expect(screen.queryByText('No sessions yet')).toBeNull();
   });
 
   it('renders the empty state once ready with no sessions', () => {
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
-    expect(screen.getByText('Start your first session')).toBeDefined();
-    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
+    expect(screen.getByText('No sessions yet')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(1);
   });
 
@@ -225,8 +216,8 @@ describe('StageBoard loading gate', () => {
     render(<StageBoard workspaceId={wsId} sessions={[session]} />);
     expect(screen.queryByLabelText('Loading board')).toBeNull();
     expect(screen.getAllByTestId('stage-column').length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
-    expect(screen.getByTestId('project-filter')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
+    expect(screen.getByTestId('session-filter')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
   });
 
@@ -242,8 +233,8 @@ describe('StageBoard loading gate', () => {
     const shelved = aSession({ id: 's-9' as SessionId });
     state.archivedSessions = { [wsId]: [shelved] };
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    expect(screen.queryByText('Start your first session')).toBeNull();
-    expect(screen.getByRole('heading', { level: 1, name: 'Board' })).toBeDefined();
+    expect(screen.queryByText('No sessions yet')).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
     const columns = screen.getAllByTestId('stage-column');
     expect(columns.some((column) => column.textContent?.includes('archived'))).toBe(true);
     expect(screen.getByRole('button', { name: 'card s-9' })).toBeDefined();
@@ -253,7 +244,7 @@ describe('StageBoard loading gate', () => {
     state.archivedSessions = {};
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.getByLabelText('Loading board')).toBeDefined();
-    expect(screen.queryByText('Start your first session')).toBeNull();
+    expect(screen.queryByText('No sessions yet')).toBeNull();
   });
 });
 
@@ -262,7 +253,7 @@ describe('StageBoard empty-projects gate', () => {
     state.projects = [];
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.getByTestId('projects-step').textContent).toBe('fresh-idea');
-    expect(screen.queryByText('Start your first session')).toBeNull();
+    expect(screen.queryByText('No sessions yet')).toBeNull();
     expect(screen.queryByRole('button', { name: 'New session' })).toBeNull();
   });
 
@@ -284,7 +275,7 @@ describe('StageBoard empty-projects gate', () => {
     gitStatuses.current = { 'proj-1': statusOf('ready') };
     rerender(<StageBoard workspaceId={wsId} sessions={[]} />);
     expect(screen.queryByTestId('projects-step')).toBeNull();
-    expect(screen.getByText('Start your first session')).toBeDefined();
+    expect(screen.getByText('No sessions yet')).toBeDefined();
   });
 });
 
@@ -306,39 +297,6 @@ describe('StageBoard git gate', () => {
     );
   });
 
-  it('renders one pill per repo project and no pill for a folder project', () => {
-    state.projects = [
-      projectOf({ id: 'repo-a', name: 'Alpha' }),
-      projectOf({ id: 'folder-a', kind: 'folder', name: 'Notes' }),
-      projectOf({ id: 'repo-b', name: 'Beta' }),
-    ];
-    gitStatuses.current = {
-      'repo-a': statusOf('ready'),
-      'repo-b': statusOf('absent'),
-    };
-    render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    expect(screen.getAllByTestId('git-pill')).toHaveLength(2);
-    expect(screen.getByText('Alpha:ready')).toBeDefined();
-    expect(screen.getByText('Beta:absent')).toBeDefined();
-    expect(screen.queryByText(/Notes:/)).toBeNull();
-  });
-
-  it('renders one aggregate pill for three repo projects', () => {
-    state.projects = [
-      projectOf({ id: 'repo-a' }),
-      projectOf({ id: 'repo-b' }),
-      projectOf({ id: 'repo-c' }),
-    ];
-    gitStatuses.current = {
-      'repo-a': statusOf('ready'),
-      'repo-b': statusOf('ready'),
-      'repo-c': statusOf('ready'),
-    };
-    render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    expect(screen.getAllByTestId('git-pill')).toHaveLength(1);
-    expect(screen.getByText('3 repos')).toBeDefined();
-  });
-
   it('explains an empty board whose only project is not usable yet', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:open-settings', listener);
@@ -350,7 +308,7 @@ describe('StageBoard git gate', () => {
         name: 'This project needs a git repository with one commit first',
       }),
     ).toBeDefined();
-    expect(screen.queryByText('Start your first session')).toBeNull();
+    expect(screen.queryByText('No sessions yet')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open workspace settings' }));
 
     expect(listener).toHaveBeenCalledOnce();

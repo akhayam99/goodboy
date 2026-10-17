@@ -50,6 +50,33 @@ export type FastForwardResult = {
   readonly commitsPulled: number;
 };
 
+export type BaseUpdateResult = {
+  readonly base: string;
+  readonly checkoutBranch: string | null;
+  readonly commitsPulled: number;
+};
+
+export type BaseDivergenceState =
+  | 'up-to-date'
+  | 'behind'
+  | 'ahead'
+  | 'diverged'
+  | 'no-upstream'
+  | 'no-base'
+  | 'fetch-failed'
+  | 'missing';
+
+export type BaseDivergence = {
+  readonly state: BaseDivergenceState;
+  readonly base: string | null;
+  readonly upstream: string | null;
+  readonly ahead: number;
+  readonly behind: number;
+  readonly checkoutBranch: string | null;
+  readonly uncommitted: number;
+  readonly message: string | null;
+};
+
 export type WorktreeDiffScope = 'unstaged' | 'staged' | 'all';
 
 export type WorktreeInspection =

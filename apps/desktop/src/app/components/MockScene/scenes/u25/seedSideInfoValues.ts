@@ -6,9 +6,11 @@ import type {
   Session,
   SessionId,
   StepId,
+  Workflow,
   WorkflowId,
   WorkflowRun,
   WorkflowRunId,
+  WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
@@ -20,9 +22,36 @@ const SESSION_ID = brandedId<SessionId>({ value: 'mock-sidebar-session-webhooks'
 const RUN_ID = brandedId<WorkflowRunId>({ value: 'mock-side-info-run' });
 const STEP_ID = brandedId<StepId>({ value: 'mock-side-info-step' });
 
+const WORKFLOW_ID = brandedId<WorkflowId>({ value: 'mock-side-info-workflow' });
+
+const WORKFLOW: Workflow = {
+  id: WORKFLOW_ID,
+  workspaceId: brandedId<WorkspaceId>({ value: 'mock-workspace-harborline' }),
+  name: 'Retry window',
+  description: '',
+  steps: [
+    {
+      id: STEP_ID,
+      workflowId: WORKFLOW_ID,
+      ordinal: 0,
+      name: 'Implement the retry window',
+      promptPrefix: '',
+    },
+    {
+      id: brandedId<StepId>({ value: 'mock-side-info-step-test' }),
+      workflowId: WORKFLOW_ID,
+      ordinal: 1,
+      name: 'Test the retry window',
+      promptPrefix: '',
+    },
+  ],
+  createdAt: clock.iso({ at: '2026-10-07T09:00:00.000Z' }),
+  updatedAt: clock.iso({ at: '2026-10-07T09:00:00.000Z' }),
+};
+
 const RUN: WorkflowRun = {
   id: RUN_ID,
-  workflowId: brandedId<WorkflowId>({ value: 'mock-side-info-workflow' }),
+  workflowId: WORKFLOW_ID,
   ordinal: 0,
   currentStep: 1,
   autoRun: false,
@@ -87,6 +116,7 @@ export const seedSideInfoValues = (): void => {
       session.id === SESSION_ID ? { ...session, workflowRuns: [RUN] } : session,
     ),
     sessionPhaseRuns: { ...state.sessionPhaseRuns, [SESSION_ID]: AGENTS },
+    sessionWorkflows: { ...state.sessionWorkflows, [SESSION_ID]: [WORKFLOW] },
     sessionArtifacts: {
       ...state.sessionArtifacts,
       [SESSION_ID]: [

@@ -137,11 +137,11 @@ describe('the policy and failure scenes', () => {
     });
   });
 
-  it('scribe-failed explains the failure in a notice and the header says Failed', async () => {
+  it('scribe-failed explains the failure in a notice and the card says Failed', async () => {
     await mount('scribe-failed');
 
     expectFailureNotice({
-      alert: screen.getByRole('alert'),
+      alert: within(screen.getByTestId('scribe-proposal')).getByRole('alert'),
       shape: {
         title: "Couldn't write the pull request text",
         body: 'The text is kept, so you can try again.',
@@ -149,7 +149,7 @@ describe('the policy and failure scenes', () => {
         retry: true,
       },
     });
-    expect(screen.getAllByText('Failed').length).toBeGreaterThanOrEqual(2);
+    expect(within(screen.getByTestId('scribe-proposal')).getByText('Failed')).toBeDefined();
     expect(screen.queryByText('Done')).toBeNull();
   });
 

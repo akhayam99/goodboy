@@ -2,7 +2,7 @@ import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from '@goodboy/typ
 import type { IssueCandidate } from '../../../features/integrations/fetchIssueCandidates';
 import type { AgentKind, AgentKindRouting } from '../../../features/session/agent-kind';
 
-export type StartChoice = 'task' | 'workflow' | 'scout';
+export type StartChoice = 'task' | 'workflow' | 'orchestrate' | 'scout';
 
 export type SessionDraft = {
   readonly choice: StartChoice | null;
@@ -13,11 +13,13 @@ export type SessionDraft = {
   readonly workflowGoal: string;
   readonly workflowId: WorkflowId | null;
   readonly agentPrompt: string;
-  readonly projectId: ProjectId | null;
+  readonly projectIds: ReadonlyArray<ProjectId>;
   readonly agentKind: AgentKind;
   readonly agentRouting: AgentKindRouting | null;
   readonly autoGoal: string;
   readonly autoRouting: AgentKindRouting | null;
+  readonly isStarting: boolean;
+  readonly startError: string | null;
 };
 
 export const EMPTY_SESSION_DRAFT: SessionDraft = {
@@ -29,11 +31,13 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   workflowGoal: '',
   workflowId: null,
   agentPrompt: '',
-  projectId: null,
+  projectIds: [],
   agentKind: 'scout',
   agentRouting: null,
   autoGoal: '',
   autoRouting: null,
+  isStarting: false,
+  startError: null,
 };
 
 export type SessionDraftState = {

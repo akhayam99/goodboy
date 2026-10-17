@@ -66,7 +66,6 @@ type RenderParams = {
   readonly onOpen?: () => void;
   readonly onRun?: () => void;
   readonly onStop?: () => void;
-  readonly onRestart?: () => void;
 };
 
 const renderRow = ({
@@ -80,7 +79,6 @@ const renderRow = ({
   onOpen = vi.fn(),
   onRun = vi.fn(),
   onStop = vi.fn(),
-  onRestart = vi.fn(),
 }: RenderParams) =>
   render(
     <ScriptRow
@@ -92,8 +90,6 @@ const renderRow = ({
       expectedPort={expectedPort}
       portHolder={portHolder}
       facts={facts}
-      isPinned={false}
-      onTogglePin={vi.fn()}
       target={{
         kind: 'script',
         facts: {
@@ -113,7 +109,6 @@ const renderRow = ({
       onOpen={onOpen}
       onRun={onRun}
       onStop={onStop}
-      onRestart={onRestart}
     />,
   );
 
@@ -138,9 +133,7 @@ describe('ScriptRow task', () => {
   it('keeps Run visible at rest and offers Stop in its place while it runs', () => {
     const onStop = vi.fn();
     renderRow({ script: REPLAY });
-    expect(
-      screen.getByRole('button', { name: `Run ${REPLAY.name}` }).closest('[data-reveal]'),
-    ).toBeNull();
+    expect(screen.getByRole('button', { name: `Run ${REPLAY.name}` })).toBeDefined();
     cleanup();
 
     renderRow({
@@ -153,7 +146,7 @@ describe('ScriptRow task', () => {
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
-  it('reads a passed run as its duration and age', () => {
+  it('reads a passed run as its duration and age in one precision', () => {
     renderRow({
       record: {
         status: 'ok',
@@ -164,7 +157,7 @@ describe('ScriptRow task', () => {
       },
     });
 
-    expect(screen.getByText('4.2s · 2m ago')).toBeDefined();
+    expect(screen.getByText('4s · 2m ago')).toBeDefined();
   });
 
   it('reads a failed run as its exit code and shows its last line', () => {
@@ -226,20 +219,26 @@ describe('ScriptRow task', () => {
     expect(screen.getByText('ledger-core is still preparing')).toBeDefined();
   });
 
-  it('keeps pin and the overflow behind hover and focus', () => {
+  it('draws one trailing control and no pin or overflow button on the row', () => {
     renderRow({});
 
-    for (const name of ['Pin test', 'More for test']) {
-      expect(screen.getByRole('button', { name }).closest('[data-reveal="hover"]')).not.toBeNull();
-    }
+    expect(screen.queryByRole('button', { name: 'Pin test' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More for test' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Run test' })).toBeDefined();
   });
 
-  it('opens the overflow from a horizontal glyph', () => {
-    renderRow({});
+  it('says a failure with the red glyph only, the words stay gray', () => {
+    const { container } = renderRow({
+      record: {
+        status: 'error',
+        result: { stdout: 'boom\n', stderr: '', exitCode: 1 },
+        runId: 'run-9',
+        startedAt: NOW - 60_000,
+        completedAt: NOW - 30_000,
+      },
+    });
 
-    const trigger = screen.getByRole('button', { name: 'More for test' });
-    expect(trigger.querySelector('svg.lucide-ellipsis')).not.toBeNull();
-    expect(trigger.querySelector('svg.lucide-ellipsis-vertical')).toBeNull();
+    expect(container.querySelectorAll('.text-danger')).toHaveLength(1);
   });
 });
 
@@ -251,7 +250,7 @@ describe('ScriptRow service', () => {
     expect(screen.getByRole('button', { name: 'Run dev' })).toBeDefined();
   });
 
-  it('shows the last line, uptime, cpu, memory and the port link while running', () => {
+  it('shows the last line, uptime and the port link while running, usage in the tooltip', () => {
     renderRow({
       script: DEV,
       expectedPort: 5005,
@@ -261,25 +260,19 @@ describe('ScriptRow service', () => {
 
     expect(screen.getByText('listening on 5005')).toBeDefined();
     expect(screen.getByText('1m 12s')).toBeDefined();
-    expect(screen.getByText('12%')).toBeDefined();
-    expect(screen.getByText('150 MB')).toBeDefined();
+    expect(screen.queryByText('Running')).toBeNull();
+    expect(screen.queryByText('150 MB')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open localhost:5005' }));
     expect(openUrl).toHaveBeenCalledWith('http://localhost:5005');
   });
 
-  it('keeps Stop and Restart visible at rest while running', () => {
+  it('keeps one Stop glyph while running, Restart moves to the menu', () => {
     const onStop = vi.fn();
-    const onRestart = vi.fn();
-    renderRow({ script: DEV, record: runningDev('ready'), onStop, onRestart });
+    renderRow({ script: DEV, record: runningDev('ready'), onStop });
 
-    const stop = screen.getByRole('button', { name: 'Stop dev' });
-    const restart = screen.getByRole('button', { name: 'Restart dev' });
-    expect(stop.closest('[data-reveal]')).toBeNull();
-    expect(restart.closest('[data-reveal]')).toBeNull();
-    fireEvent.click(stop);
-    fireEvent.click(restart);
+    fireEvent.click(screen.getByRole('button', { name: 'Stop dev' }));
     expect(onStop).toHaveBeenCalledTimes(1);
-    expect(onRestart).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Restart dev' })).toBeNull();
   });
 
   it('reads an exit by signal 9 as Exit 137 with the last line', () => {
@@ -294,7 +287,7 @@ describe('ScriptRow service', () => {
       },
     });
 
-    expect(screen.getByText('Exit 137')).toBeDefined();
+    expect(screen.getByText('Exit 137 · just now')).toBeDefined();
     expect(screen.getByText('killed')).toBeDefined();
   });
 

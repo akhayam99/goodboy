@@ -20,15 +20,17 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly sessionId: SessionId;
   readonly run: WorkflowRun;
-  readonly variant: 'primary' | 'meta';
+  readonly variant: 'primary' | 'meta' | 'foot';
 };
+
+const FOOT_TRIGGER =
+  'inline-flex h-6 items-center rounded-md text-ui text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
   const setWorkflowRunSpendLimit = useAppStore((state) => state.setWorkflowRunSpendLimit);
   const spentUsd = useRunSpendUsd(sessionId, run.id);
   const limitUsd = run.spendLimitUsd ?? null;
   const dropdown = useDropdown({
-    align: 'end',
     expectedHeight: 220,
     expectedWidth: 264,
     width: 'w-80',
@@ -57,7 +59,7 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
     }
   };
 
-  const metaLabel = limitUsd == null ? 'Set a spend cap' : `Spend cap ${formatUsd(limitUsd)}`;
+  const metaLabel = limitUsd == null ? 'Set a limit' : `Limit ${formatUsd(limitUsd)}`;
   const isBlank = amount.trim() === '';
   const isInvalid = !isBlank && parseSpendLimit(amount) == null;
 
@@ -65,11 +67,21 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Spend cap for this run"
+      ariaLabel="Limit for this run"
       className="flex flex-col bg-subtle"
       anchorClassName="inline-flex"
       trigger={
-        variant === 'meta' ? (
+        variant === 'foot' ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={open}
+            data-testid="run-spend-limit-trigger"
+            className={FOOT_TRIGGER}
+          >
+            {limitUsd == null ? 'Set a limit' : `Limit ${formatUsd(limitUsd)}`}
+          </button>
+        ) : variant === 'meta' ? (
           <button
             type="button"
             onClick={onToggle}
@@ -94,13 +106,13 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
             onClick={onToggle}
           >
             <CircleDollarSign size={ICON_SIZE.control} aria-hidden />
-            Raise spend cap
+            Raise limit
           </Button>
         )
       }
     >
       <PopoverBody>
-        <header className="px-3 pb-1 pt-3 text-row text-foreground">Spend cap for this run</header>
+        <header className="px-3 pb-1 pt-3 text-row text-foreground">Limit for this run</header>
         <div className="flex flex-col gap-2 px-3 py-2">
           <SpendLimitFields
             amount={amount}

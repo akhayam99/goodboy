@@ -1,5 +1,4 @@
 import type { WorkspaceLookup } from '../hooks/useWorkspaceIssueLookup';
-import type { InboxRecord } from '../../inbox/types';
 import type { LookupFailure } from './classifyLookupError';
 import type { LookupProvider, LookupTarget } from './routeIssueCode';
 
@@ -164,20 +163,3 @@ export const lookupStatuses = ({
 };
 
 export const ISSUE_SEARCH_PLACEHOLDER = 'Search or paste a link';
-
-const assigneeNameOf = (record: InboxRecord): string | null => {
-  const { payload } = record;
-  switch (payload.provider) {
-    case 'linear':
-      return payload.kind === 'issue' ? (payload.issue.assignee?.name ?? null) : null;
-    case 'jira':
-      return payload.issue.assignee?.displayName ?? null;
-    default:
-      return null;
-  }
-};
-
-export const lookupHitSecondLine = (record: InboxRecord): string => {
-  const assignee = assigneeNameOf(record);
-  return assignee === null ? record.context : `Assigned to ${assignee}`;
-};

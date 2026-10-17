@@ -1,20 +1,19 @@
 import { memo } from 'react';
-import { ArrowUpRight } from 'lucide-react';
-import { FOCUS_RING, StatusDot, Tooltip, cn, StarToggle } from '@goodboy/ui';
+import { ListGridRow, cn, tintClasses } from '@goodboy/ui';
 import {
   IntegrationGlyph,
   integrationLabel,
 } from '../../../integrations/components/IntegrationGlyph';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { openUrl } from '../../../../shared/lib/editor';
+import { INBOX_STATE_PRESENTATION } from '../../../../shared/components/StudioDetail/RecordState';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { recordSessionId } from '../../recordSessionId';
 import { startLabelOf } from '../../startFromRecord';
 import type { InboxRecord } from '../../types';
-import { InboxStateLabel } from '../InboxStateLabel';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { TaskPriorityMark } from './TaskPriorityMark';
+import { taskKeyOf } from '../../taskKeyOf';
 
 type Props = {
   readonly record: InboxRecord;
@@ -24,7 +23,6 @@ type Props = {
   readonly isStarred?: boolean;
   readonly onToggleStar?: (record: InboxRecord) => void;
   readonly onActivate?: (record: InboxRecord) => void;
-  readonly isStateShown?: boolean;
 };
 
 type OptionIdParams = {
@@ -42,18 +40,12 @@ const InboxRowView = ({
   isStarred,
   onToggleStar,
   onActivate,
-  isStateShown = true,
 }: Props) => {
   const now = useNow(30_000);
-  const relativeTime = formatAge({ from: record.updatedAt, now });
-  const sessionId = recordSessionId({ record }) ?? null;
-  const hasSession = sessionId != null;
+  const sessionId = recordSessionId({ record });
   const toolLabel = integrationLabel({ provider: record.provider });
-  const canOpen = record.url !== '';
-  const star =
-    isStarred === undefined || onToggleStar === undefined
-      ? undefined
-      : { isStarred, onToggle: () => onToggleStar(record) };
+  const state = INBOX_STATE_PRESENTATION[record.state];
+  const StateIcon = state.icon;
   const menu = useObjectMenuTrigger({
     target: {
       kind: 'record',
@@ -63,11 +55,12 @@ const InboxRowView = ({
         url: record.url,
         providerLabel: toolLabel,
         sessionId,
-        isStarred: star?.isStarred ?? null,
+        isStarred: isStarred ?? null,
         onOpen: () => onSelect(record),
         launchLabel: startLabelOf({ record }),
         onLaunch: onActivate === undefined ? null : () => onActivate(record),
-        onToggleStar: star?.onToggle ?? null,
+        onToggleStar:
+          isStarred === undefined || onToggleStar === undefined ? null : () => onToggleStar(record),
         onRefresh: null,
         verbs: [],
         sessionVerbs: [],
@@ -78,107 +71,40 @@ const InboxRowView = ({
   });
 
   return (
-    <div
-      data-inbox-key={record.key}
-      data-selected={selected}
-      data-cursor={isCursor ? true : undefined}
+    <ListGridRow
+      isOption
+      optionId={inboxOptionId({ key: record.key })}
+      rowKey={record.key}
+      isSelected={selected}
+      isCursor={isCursor}
+      ariaLabel={`${record.identifier} ${record.title}`}
+      tooltip={record.title}
+      onSelect={() => onSelect(record)}
       onContextMenu={menu.onContextMenu}
       onKeyDown={menu.onKeyDown}
-      className={cn(
-        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_56px] items-center gap-3 rounded-md px-3 text-muted-foreground motion-safe:transition-colors',
-        isStateShown
-          ? '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_56px]'
-          : '@2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_56px]',
-        selected && 'bg-selected text-foreground',
-        !selected && isCursor && 'bg-hover text-foreground',
-        !selected && !isCursor && 'hover:bg-hover hover:text-foreground',
-      )}
-    >
-      <Tooltip content={record.title}>
-        <button
-          type="button"
-          id={inboxOptionId({ key: record.key })}
-          role="option"
-          aria-selected={selected}
-          tabIndex={-1}
-          onClick={() => onSelect(record)}
-          className={cn('absolute inset-0 cursor-pointer rounded-md', FOCUS_RING)}
+      cells={[
+        <IntegrationGlyph key="source" provider={record.provider} size="xs" useBrandColor />,
+        <span key="key" className="truncate font-mono">
+          {taskKeyOf({ record })}
+        </span>,
+        <span
+          key="title"
+          className={cn('truncate', record.state === 'done' && 'text-muted-foreground')}
         >
-          <span className="sr-only">{`${record.identifier} ${record.title}`}</span>
-        </button>
-      </Tooltip>
-      <span className="pointer-events-none relative flex h-4 items-center">
-        {hasSession ? <StatusDot tone="primary" size="sm" ariaLabel="Has a session" /> : null}
-      </span>
-      <span aria-hidden className="pointer-events-none relative flex">
-        <IntegrationGlyph provider={record.provider} size="xs" useBrandColor />
-      </span>
-      <span className="pointer-events-none relative truncate font-mono text-meta tabular-nums text-faint-foreground">
-        {record.identifier}
-      </span>
-      <span
-        className={cn(
-          'pointer-events-none relative truncate text-label',
-          record.state === 'done' ? 'text-muted-foreground' : 'text-foreground',
-        )}
-      >
-        {record.title}
-      </span>
-      <span className="pointer-events-none relative hidden truncate text-meta text-faint-foreground @2xl:block">
-        {record.context}
-      </span>
-      {isStateShown ? (
-        <InboxStateLabel
-          state={record.state}
-          label={record.stateLabel}
-          className="pointer-events-none relative hidden text-meta text-muted-foreground @2xl:flex"
-        />
-      ) : null}
-      <span className="relative flex h-5 items-center justify-end">
-        {star === undefined ? null : (
-          <StarToggle
-            isStarred={star.isStarred}
-            label={`Star ${record.identifier}`}
-            tooltip={star.isStarred ? 'Unstar' : 'Star to keep it at the top'}
-            onToggle={star.onToggle}
-            className={cn(
-              'size-5',
-              !star.isStarred && !selected && 'hidden group-hover:inline-flex',
-            )}
+          {record.title}
+        </span>,
+        record.provider === 'slack' ? null : (
+          <StateIcon
+            key="status"
+            size={ICON_SIZE.row}
+            aria-label={record.stateLabel}
+            className={tintClasses(state.tone).icon}
           />
-        )}
-        <Tooltip content={formatDateTime({ at: record.updatedAt, hasYear: true })}>
-          <time
-            dateTime={record.updatedAt}
-            className={cn(
-              'pointer-events-none whitespace-nowrap text-meta text-faint-foreground',
-              canOpen && 'group-hover:hidden',
-              canOpen && selected && 'hidden',
-            )}
-          >
-            {relativeTime}
-          </time>
-        </Tooltip>
-        {canOpen ? (
-          <Tooltip content={`Open in ${toolLabel}`}>
-            <button
-              type="button"
-              aria-hidden
-              tabIndex={-1}
-              data-open-in-tool={record.key}
-              onClick={() => void openUrl(record.url)}
-              className={cn(
-                'size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-hover hover:text-foreground',
-                selected ? 'flex' : 'hidden group-hover:flex',
-                FOCUS_RING,
-              )}
-            >
-              <ArrowUpRight size={ICON_SIZE.row} aria-hidden />
-            </button>
-          </Tooltip>
-        ) : null}
-      </span>
-    </div>
+        ),
+        <TaskPriorityMark key="priority" record={record} />,
+        formatAge({ from: record.updatedAt, now }),
+      ]}
+    />
   );
 };
 

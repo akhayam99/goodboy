@@ -156,7 +156,7 @@ export const U24_DRAWERS_SCENES = {
     <DrawerSplitStage
       width={WIDE_WIDTH_PX}
       prepare={prepareExplore}
-      main={<ExplorePane sessionId={ARTIFACT_SESSION_ID} />}
+      main={<ExplorePane sessionId={ARTIFACT_SESSION_ID} onClose={() => undefined} />}
     />
   ),
 };

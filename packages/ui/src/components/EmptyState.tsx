@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
+import { ICON_SIZE } from '../iconSize';
 import type { Tone } from '../tint';
 
 type IllustrationProps =
@@ -20,8 +21,8 @@ type Size = Layout;
 const HEADING_TAG = { 2: 'h2', 3: 'h3' } as const;
 
 const PAGE_CLASSES = {
-  root: 'flex flex-col items-center gap-4 px-6 py-10 text-center',
-  content: 'flex flex-col items-center gap-1',
+  root: 'flex flex-col items-start gap-3 py-6 text-left',
+  content: 'flex flex-col items-start gap-1',
   title: 'text-heading text-foreground',
   description: 'max-w-sm text-prose text-muted-foreground',
 } as const;
@@ -32,9 +33,6 @@ const SECTION_CLASSES = {
   title: 'font-medium text-foreground',
   description: 'text-muted-foreground',
 } as const;
-
-const PAGE_ICON_SIZE = 18;
-const SECTION_ICON_SIZE = 14;
 
 export type EmptyStateProps = IllustrationProps & {
   readonly title: string;
@@ -80,7 +78,7 @@ export const EmptyState = ({
     return (
       <div className={cn(SECTION_CLASSES.root, className)}>
         {Icon !== undefined ? (
-          <Icon size={SECTION_ICON_SIZE} aria-hidden className="shrink-0 text-muted-foreground" />
+          <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0 text-muted-foreground" />
         ) : (
           illustration
         )}
@@ -103,7 +101,7 @@ export const EmptyState = ({
   return (
     <div className={cn(classes.root, className)}>
       {Icon !== undefined ? (
-        <Icon size={PAGE_ICON_SIZE} aria-hidden className="shrink-0 text-muted-foreground" />
+        <Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0 text-muted-foreground" />
       ) : (
         illustration
       )}

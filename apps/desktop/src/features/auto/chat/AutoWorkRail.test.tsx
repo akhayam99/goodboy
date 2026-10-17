@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { brandId, type IsoDateTime, type ProviderRunId, type TurnState } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { aDelegation, aPlanRow, aView, FIXTURE_ROOT } from '../testing/autoViewFixtures';
 import { AutoWorkRail } from './AutoWorkRail';
@@ -51,7 +52,7 @@ describe('railRowsOf', () => {
     });
 
     expect(rows.map((row) => [row.label, row.node, row.word])).toEqual([
-      ['Auto', 'running', 'Waiting'],
+      ['Auto', 'running', 'Running'],
       ['Planner', 'done', 'Done'],
       ['Implementer', 'running', 'Running'],
       ['Tester', 'queued', 'Queued'],
@@ -83,7 +84,7 @@ describe('railRowsOf', () => {
     expect(rows[1]?.word).toBe('Running');
   });
 
-  it('puts Needs your approval on Auto while a plan waits', () => {
+  it('puts Needs you on Auto while a plan waits, in gray beside a warning node', () => {
     const view = aView({
       phase: 'waiting',
       artifacts: [aPlanRow()],
@@ -94,58 +95,71 @@ describe('railRowsOf', () => {
 
     const [root] = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING });
 
-    expect(root).toMatchObject({ node: 'approval', word: 'Needs your approval', tone: 'warning' });
+    expect(root).toMatchObject({ node: 'approval', word: 'Needs you', tone: 'neutral' });
   });
 
-  it('says Ready for an Auto that only answers and Done when the tree is done', () => {
-    expect(railRowsOf({ view: aView(), agents: [], rootRouting: ROOT_ROUTING })[0]?.word).toBe(
-      'Ready',
-    );
+  it('says Running while Auto answers, Idle with a gray node when it rests and Done once closed', () => {
+    const answering = {
+      kind: 'running',
+      runId: brandId<ProviderRunId>({ value: 'run-answer' }),
+      startedAt: brandId<IsoDateTime>({ value: '2026-10-16T09:00:00.000Z' }),
+    } satisfies TurnState;
     expect(
-      railRowsOf({ view: aView({ phase: 'done' }), agents: [], rootRouting: ROOT_ROUTING })[0]
+      railRowsOf({ view: aView(), agents: [], rootRouting: ROOT_ROUTING, rootTurn: answering })[0]
         ?.word,
-    ).toBe('Done');
+    ).toBe('Running');
+    expect(railRowsOf({ view: aView(), agents: [], rootRouting: ROOT_ROUTING })[0]).toMatchObject({
+      word: 'Idle',
+      node: 'queued',
+    });
+    const idle = railRowsOf({
+      view: aView({ phase: 'done' }),
+      agents: [],
+      rootRouting: ROOT_ROUTING,
+    })[0];
+    expect(idle).toMatchObject({ word: 'Idle', node: 'queued' });
+    const finished = railRowsOf({
+      view: aView({ phase: 'finished' }),
+      agents: [],
+      rootRouting: ROOT_ROUTING,
+    })[0];
+    expect(finished).toMatchObject({ word: 'Done', node: 'done' });
   });
 });
 
 type RailParams = {
-  readonly isCollapsed?: boolean;
   readonly onOpen?: () => void;
-  readonly onToggle?: () => void;
 };
 
-const renderRail = ({
-  isCollapsed = false,
-  onOpen = vi.fn(),
-  onToggle = vi.fn(),
-}: RailParams = {}) =>
+const renderRail = ({ onOpen = vi.fn() }: RailParams = {}) =>
   render(
     <AutoWorkRail
       rows={railRowsOf({ view: WORKING, agents: [], rootRouting: ROOT_ROUTING })}
-      budget={WORKING.budget}
       selectedAgentId={FIXTURE_ROOT}
-      isCollapsed={isCollapsed}
-      onToggleCollapsed={onToggle}
       onOpen={onOpen}
     />,
   );
 
 describe('AutoWorkRail', () => {
-  it('draws every row expanded with no group row, one spine layer and the tree budget', () => {
+  it('draws every row expanded with no group row and one spine layer', () => {
     renderRail();
 
-    const rail = screen.getByRole('complementary', { name: 'Work' });
-    expect(within(rail).getByRole('heading', { name: /Work/ }).textContent).toContain('4');
+    const rail = screen.getByRole('list', { name: 'Work' });
     expect(within(rail).getAllByRole('listitem')).toHaveLength(4);
     expect(within(rail).queryByText(/subagents/i)).toBeNull();
     expect(
-      rail.querySelectorAll('svg[aria-hidden] [data-testid="auto-rail-segment"]'),
+      document.querySelectorAll('svg[aria-hidden] [data-testid="auto-rail-segment"]'),
     ).toHaveLength(3);
-    const budget = within(rail).getByRole('region', { name: 'Tree budget' });
-    expect(within(budget).getByText('Limit $10.00')).toBeDefined();
-    expect(within(budget).getByText('Spent $0.27')).toBeDefined();
-    expect(within(budget).getByText('Reserved $4.50')).toBeDefined();
-    expect(within(budget).getByText('Left $5.23')).toBeDefined();
+  });
+
+  it('marks the row of the agent on screen as current', () => {
+    renderRail();
+
+    const current = screen
+      .getAllByRole('listitem')
+      .filter((item) => item.getAttribute('aria-current') === 'true');
+    expect(current).toHaveLength(1);
+    expect(current[0]?.textContent).toContain('Auto');
   });
 
   it('draws the spine in the tone of the ring it reaches, dashed for the queued one', () => {
@@ -168,17 +182,5 @@ describe('AutoWorkRail', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show Implementer' }));
 
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ label: 'Implementer' }));
-  });
-
-  it('collapses to a strip of rings and drops the budget', () => {
-    const onToggle = vi.fn();
-    renderRail({ isCollapsed: true, onToggle });
-
-    const rail = screen.getByRole('complementary', { name: 'Work' });
-    expect(rail.getAttribute('data-mode')).toBe('strip');
-    expect(within(rail).getAllByRole('button', { name: /^Show / })).toHaveLength(4);
-    expect(within(rail).queryByRole('region', { name: 'Tree budget' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Expand the work list' }));
-    expect(onToggle).toHaveBeenCalledOnce();
   });
 });

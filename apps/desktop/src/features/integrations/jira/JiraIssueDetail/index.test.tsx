@@ -155,7 +155,7 @@ describe('JiraIssueDetail', () => {
     });
     mount();
 
-    fireEvent.change(await screen.findByRole('textbox', { name: 'Write a comment' }), {
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Reply on Jira' }), {
       target: { value: 'Moving this to review' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -187,7 +187,7 @@ describe('JiraIssueDetail', () => {
     });
     mount();
 
-    fireEvent.change(await screen.findByRole('textbox', { name: 'Write a comment' }), {
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Reply on Jira' }), {
       target: { value: 'Moving this to review' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));

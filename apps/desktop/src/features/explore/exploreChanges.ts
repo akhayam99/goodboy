@@ -73,7 +73,7 @@ export const changedListingOf = ({ changes, listing }: ListingParams): ExploreLi
         name: nameOf(relPath),
         relPath,
         isDir,
-        sizeBytes: 0,
+        sizeBytes: null,
         modifiedAt: null,
       },
     );

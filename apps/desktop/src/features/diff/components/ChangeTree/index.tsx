@@ -7,7 +7,8 @@ import {
   type KeyboardEvent,
   type RefObject,
 } from 'react';
-import { EmptyLine, Button, ScrollFade, useEscapeLayer } from '@goodboy/ui';
+import { PanelRightClose } from 'lucide-react';
+import { EmptyLine, Button, IconButton, ScrollFade, useEscapeLayer } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import {
@@ -61,14 +62,15 @@ type Props = {
   readonly onToggleViewed: (file: FileDiff) => void;
   readonly onNextUnviewed: () => void;
   readonly onLeave: () => void;
+  readonly onFold: () => void;
 };
 
-const DELTA_MIN_RAIL_PX = 340;
+const DELTA_MIN_RAIL_PX = 300;
 const CHAR_PX = 6.8;
 const TOGGLE_SLOT_PX = 22;
 const STATUS_PX = 20;
 const CHIP_PX = 36;
-const DELTA_PX = 72;
+const DELTA_PX = 88;
 const GUTTER_PX = 24;
 
 type RowIdParams = {
@@ -98,6 +100,7 @@ export const ChangeTree = ({
   onToggleViewed,
   onNextUnviewed,
   onLeave,
+  onFold,
 }: Props) => {
   const rows = useMemo(() => visibleRows({ rows: tree.rows, collapsed }), [tree.rows, collapsed]);
   const markedId = useMemo(
@@ -275,6 +278,23 @@ export const ChangeTree = ({
       aria-label="Changed files"
       className="flex min-h-0 w-full min-w-0 flex-col"
     >
+      <div className="flex shrink-0 items-center justify-between gap-1 px-2 pb-2">
+        <Button size="xs" variant="quiet" disabled={unviewedCount === 0} onClick={onNextUnviewed}>
+          Next unviewed
+          {unviewedCount === 0 ? null : (
+            <span className="tabular-nums text-faint-foreground">{unviewedCount}</span>
+          )}
+        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <KeyHints />
+          <IconButton
+            icon={PanelRightClose}
+            size="xs"
+            label="Fold the file list"
+            onClick={onFold}
+          />
+        </div>
+      </div>
       <TreeHead
         total={allFiles.length}
         unviewed={unviewedCount}
@@ -331,6 +351,7 @@ export const ChangeTree = ({
                   isCursor={isCursor}
                   isTreeFocused={isTreeFocused}
                   viewedCount={row.paths.filter((path) => states.get(path) === 'viewed').length}
+                  hasDelta={hasDelta}
                   onToggle={() => {
                     setCursorId(row.id);
                     onToggleFolder(row.id);
@@ -365,15 +386,6 @@ export const ChangeTree = ({
           })}
         </ul>
       </ScrollFade>
-      <div className="flex shrink-0 items-center px-2 pb-1">
-        <Button size="xs" variant="quiet" disabled={unviewedCount === 0} onClick={onNextUnviewed}>
-          Next unviewed
-          {unviewedCount === 0 ? null : (
-            <span className="tabular-nums text-faint-foreground">{unviewedCount}</span>
-          )}
-        </Button>
-      </div>
-      <KeyHints />
     </nav>
   );
 };

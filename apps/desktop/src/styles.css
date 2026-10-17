@@ -35,7 +35,7 @@
   --color-floating: oklch(0.3 0.011 255);
   --color-fill: oklch(1 0 0 / 0.06);
   --color-idle: oklch(0.58 0.01 255);
-  --color-muted-foreground: oklch(0.77 0.015 255);
+  --color-muted-foreground: oklch(0.79 0.015 255);
   --color-faint-foreground: oklch(0.68 0.012 255);
   --color-disabled-foreground: oklch(0.58 0.01 255);
   --color-border-strong: oklch(0.7 0.012 255);
@@ -170,6 +170,13 @@
   --text-chip: 11px;
   --text-chip--line-height: 16px;
   --text-chip--font-weight: 500;
+  --text-ui: 13px;
+  --text-ui--line-height: 20px;
+  --text-read: 15px;
+  --text-read--line-height: 24px;
+  --text-lead: 15px;
+  --text-lead--line-height: 24px;
+  --text-lead--font-weight: 500;
 
   --shadow-xl: 0 16px 36px -8px oklch(0 0 0 / 0.22), 0 6px 12px -4px oklch(0 0 0 / 0.16);
 
@@ -185,8 +192,6 @@
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-frame: 10px;
-
-  --tracking-eyebrow: 0.08em;
 
   --animate-soft-pulse: soft-pulse 2.8s ease-in-out infinite;
 
@@ -248,8 +253,6 @@
 
   --animate-studio-body-in: studio-body-in 160ms cubic-bezier(0.2, 0, 0, 1);
 
-  --animate-drawer-card-in: drawer-card-in 220ms cubic-bezier(0.2, 0, 0, 1);
-
   --animate-drawer-overlay-in: drawer-overlay-in 200ms cubic-bezier(0.2, 0, 0, 1);
 
   --animate-drawer-swap: drawer-swap 120ms ease-out;
@@ -265,6 +268,22 @@
       opacity: 0;
     }
   }
+
+  --animate-drawer-content-in: fold-fade-in 140ms cubic-bezier(0, 0, 0.2, 1) 80ms both;
+
+  --animate-drawer-content-out: fold-fade-out 120ms cubic-bezier(0, 0, 0.2, 1) forwards;
+
+  --animate-fold-label-in: fold-fade-in 140ms cubic-bezier(0, 0, 0.2, 1) 60ms both;
+
+  --animate-fold-label-out: fold-fade-out 140ms cubic-bezier(0, 0, 0.2, 1) forwards;
+
+  --animate-level-in-forward: level-in-forward 200ms cubic-bezier(0.2, 0, 0, 1) 60ms both;
+
+  --animate-level-in-back: level-in-back 200ms cubic-bezier(0.2, 0, 0, 1) 60ms both;
+
+  --animate-level-out-forward: level-out-forward 120ms cubic-bezier(0, 0, 0.2, 1) forwards;
+
+  --animate-level-out-back: level-out-back 120ms cubic-bezier(0, 0, 0.2, 1) forwards;
 
   --animate-layer-in: layer-in 150ms cubic-bezier(0.2, 0, 0, 1);
 
@@ -336,7 +355,8 @@
 
 .goodboy-brand-chip {
   background-color: oklch(0.205 0.006 255);
-  --color-foreground: oklch(0.93 0.006 90);
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.12);
+  --color-foreground: oklch(0.97 0.004 90);
   --color-faint-foreground: oklch(0.68 0.012 255);
   --color-muted: oklch(0.25 0.009 255);
   --color-overlay-hover: oklch(1 0 0 / 0.085);
@@ -347,6 +367,68 @@
    so reduced-motion users get no fade/rise — the animation resolves to a no-op
    (unknown animation name) instead of a movement neutralized after the fact. */
 @media (prefers-reduced-motion: no-preference) {
+  @keyframes fold-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fold-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes level-in-forward {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes level-in-back {
+    from {
+      opacity: 0;
+      transform: translateX(-24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes level-out-forward {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-24px);
+    }
+  }
+
+  @keyframes level-out-back {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+  }
+
   @keyframes crumb-menu-in {
     from {
       opacity: 0;
@@ -377,17 +459,6 @@
     to {
       opacity: 1;
       transform: translateY(0);
-    }
-  }
-
-  @keyframes drawer-card-in {
-    from {
-      opacity: 0;
-      transform: translateX(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
     }
   }
 
@@ -581,6 +652,21 @@ html[data-theme='light'] {
 :root {
   --titlebar-inset: 0px;
   --dropdown-bottom-inset: 36px;
+  --app-backdrop-strength: 3;
+  --app-backdrop-scale: 1;
+  --app-backdrop: radial-gradient(
+    ellipse 70% 90% at 0% 0%,
+    color-mix(
+      in oklab,
+      var(--color-primary) calc(var(--app-backdrop-strength) * var(--app-backdrop-scale) * 1%),
+      transparent
+    ),
+    transparent
+  );
+}
+
+html[data-theme='light'] {
+  --app-backdrop-scale: 1;
 }
 
 html {
@@ -650,6 +736,11 @@ body {
   color: var(--color-foreground);
 }
 
+@utility bg-backdrop {
+  background-color: var(--color-chrome);
+  background-image: var(--app-backdrop);
+}
+
 @utility bg-selected {
   background-image: linear-gradient(var(--color-overlay-selected), var(--color-overlay-selected));
 }
@@ -658,12 +749,16 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+@layer utilities {
+  [data-selected='true'] .text-faint-foreground {
+    color: var(--color-muted-foreground);
+  }
+}
+
 @utility text-eyebrow {
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   line-height: 16px;
-  font-weight: 600;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+  font-weight: 500;
 }
 
 @layer utilities {

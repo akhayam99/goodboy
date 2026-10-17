@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -19,6 +19,14 @@ import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { MOCK_SCENES } from '../..';
 import { U24_P_NAV_SCENES } from './p-nav';
+
+const mainPane = (): HTMLElement => {
+  const main = document.querySelector<HTMLElement>('[data-drawer-main]');
+  if (main === null) {
+    throw new Error('no main pane');
+  }
+  return main;
+};
 
 const SETTLE_MS = 2_000;
 
@@ -76,12 +84,13 @@ describe('the navigation scenes', () => {
     expect(MOCK_SCENES.railorder).toBe(U24_P_NAV_SCENES.railorder);
   });
 
-  it('integration-issue-focused holds All issues and Unlink, and no link action', async () => {
+  it('integration-issue-focused holds All issues, keeps Unlink in the menu, and no link action', async () => {
     await mount('integration-issue-focused');
 
     expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Unlink NW-142' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Link/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Unlink NW-142' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'More actions for NW-142' })).toBeDefined();
+    expect(within(mainPane()).queryByRole('button', { name: /^Link/ })).toBeNull();
   });
 
   it('railorder moves only the frame when another pin is opened', async () => {

@@ -91,6 +91,9 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
       openMountDiff: vi.fn(),
       closeWorkflowRun: vi.fn(async () => undefined),
       requestOpenQuestionScroll: vi.fn(),
+      settings: {},
+      loadSetting: vi.fn(async () => undefined),
+      reportError: vi.fn(async () => undefined),
     },
   }));
 
@@ -113,9 +116,6 @@ vi.mock('../../../../../../store', async () => {
 });
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => null,
-}));
-vi.mock('../../../SessionOverviewPane/SessionCostChip', () => ({
-  SessionCostChip: () => <span>$3.47</span>,
 }));
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
@@ -141,7 +141,6 @@ import { openReview } from '../../../../../review/openReview';
 import { TimelinePane } from './index';
 import { visibleTextAt } from '../../../../../../test/containerView';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
-import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
 
 const SESSION: Session = aSession({
   id: 'session-1' as SessionId,
@@ -228,7 +227,7 @@ describe('TimelinePane mount rows', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     diffStats.current = new Map([['/worktrees/api', { additions: 7, deletions: 1 }]]);
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
 
     const action = screen.getByRole('button', { name: 'View diff' });
@@ -242,7 +241,7 @@ describe('TimelinePane mount rows', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
     diffStats.current = new Map([['/worktrees/api', { additions: 0, deletions: 0 }]]);
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
 
     expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
@@ -252,12 +251,12 @@ describe('TimelinePane mount rows', () => {
   it('keeps the mount out of Activity, where only launches live', () => {
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
     expect(screen.queryByText('Nothing yet')).toBeNull();
-    expect(screen.getByText('No runs or agents yet')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+    expect(screen.getByText('Nothing ran yet')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
     expect(screen.getByRole('button', { name: 'Copy path' })).toBeDefined();
   });
 });
@@ -274,7 +273,7 @@ describe('TimelinePane Activity and Log', () => {
   };
 
   it('opens on Activity with the two views as one segmented control', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     const tabs = screen.getAllByRole('tab');
 
@@ -288,7 +287,7 @@ describe('TimelinePane Activity and Log', () => {
     storeState.sessionPhaseRuns = { 'session-1': [SCOUT] };
     storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.getByText('Scout payments-api')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Copy path' })).toBeNull();
@@ -319,7 +318,7 @@ describe('TimelinePane Activity and Log', () => {
       ],
     };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
     expect(screen.getByText('hl/fix-duplicate-credit')).toBeDefined();
 
@@ -377,7 +376,7 @@ describe('TimelinePane Activity and Log', () => {
       ],
     };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     screen.getByText(/fix\/ledger-postings/);
     screen.getByText(/feat\/export/);
@@ -411,7 +410,7 @@ describe('TimelinePane Activity and Log', () => {
       ],
     };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
     fireEvent.click(screen.getByRole('button', { name: 'Re-link' }));
     act(() => {
@@ -429,7 +428,7 @@ describe('TimelinePane Activity and Log', () => {
   it('has no filter, no hidden count and no row tag left', () => {
     storeState.sessionPhaseRuns = { 'session-1': [SCOUT] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByRole('button', { name: /filter/i })).toBeNull();
     expect(screen.queryByText(/hidden/i)).toBeNull();
@@ -440,21 +439,18 @@ describe('TimelinePane Activity and Log', () => {
 describe('TimelinePane on an empty session', () => {
   const renderEmptySession = () => {
     storeState.sessionEvents = { 'session-1': [] };
-    return render(
-      <TimelinePane session={SESSION} actions={<OverviewActions session={SESSION} />} />,
-    );
+    return render(<TimelinePane session={SESSION} />);
   };
 
-  it('keeps the actions and the empty hint, with no kickoff', () => {
+  it('keeps the empty hint, with no kickoff', () => {
     renderEmptySession();
 
-    expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
-    expect(screen.getByText('No runs or agents yet')).toBeDefined();
+    expect(screen.getByText('Nothing ran yet')).toBeDefined();
     expect(screen.queryByText(/Nothing yet/)).toBeNull();
     expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
   });
 
-  it('hides See Log while the log has nothing in it', () => {
+  it('offers no second way to the log beside the Log tab', () => {
     renderEmptySession();
 
     expect(screen.queryByRole('button', { name: 'See Log' })).toBeNull();
@@ -472,14 +468,14 @@ describe('TimelinePane on an empty session', () => {
         },
       ],
     };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
-    expect(screen.getByText('No runs or agents yet')).toBeDefined();
+    expect(screen.getByText('Nothing ran yet')).toBeDefined();
     expect(screen.queryByText(/Nothing yet/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'See Log' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
 
     expect(screen.getByText(/Webhook redelivery/)).toBeDefined();
-    expect(screen.queryByText('No runs or agents yet')).toBeNull();
+    expect(screen.queryByText('Nothing ran yet')).toBeNull();
   });
 
   it('says the log is empty once Log is open', () => {
@@ -493,26 +489,26 @@ describe('TimelinePane on an empty session', () => {
 
 describe('TimelinePane loading', () => {
   it('holds a timeline skeleton until the session events resolve', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
-    expect(screen.queryByText('No runs or agents yet')).toBeNull();
+    expect(screen.queryByText('Nothing ran yet')).toBeNull();
     expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
   });
 
   it('drops the skeleton once the events land', () => {
     storeState.sessionEvents = { 'session-1': [] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByRole('status', { name: 'Loading the timeline' })).toBeNull();
-    expect(screen.getByText('No runs or agents yet')).toBeDefined();
+    expect(screen.getByText('Nothing ran yet')).toBeDefined();
   });
 
   it('holds a timeline skeleton until the agents collection loads', () => {
     storeState.sessionEvents = { 'session-1': [] };
     agentsLoaded.current = false;
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
   });
@@ -528,19 +524,17 @@ describe('TimelinePane unread affordance', () => {
     startedAt: '2026-08-20T10:00:00.000Z',
   };
 
-  it('keeps the session cost in the Activity header, next to the tabs', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+  it('leaves the session spend to the rail foot, none in the Activity header', () => {
+    render(<TimelinePane session={SESSION} />);
 
     const activity = screen.getByRole('region', { name: 'Activity' });
-    const views = within(activity).getByRole('tablist', { name: 'Activity view' });
-    expect(within(activity).getByText('$3.47')).toBeDefined();
-    expect(views.parentElement?.contains(within(activity).getByText('$3.47'))).toBe(true);
+    expect(within(activity).queryByRole('button', { name: /^Spend |spend limit/ })).toBeNull();
   });
 
   it('shows Mark all seen as a button while an agent is unseen', () => {
     storeState.sessionPhaseRuns = { 'session-1': [COMPLETED_AGENT] };
     unread.current = true;
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const activity = screen.getByRole('region', { name: 'Activity' });
 
     expect(screen.queryByRole('button', { name: 'Activity actions' })).toBeNull();
@@ -552,7 +546,7 @@ describe('TimelinePane unread affordance', () => {
 
   it('draws no Activity menu and no Mark all seen when nothing is unseen', () => {
     storeState.sessionPhaseRuns = { 'session-1': [COMPLETED_AGENT] };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByRole('button', { name: 'Activity actions' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
@@ -571,7 +565,7 @@ describe('TimelinePane unread affordance', () => {
         },
       ],
     };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
   });
@@ -596,7 +590,7 @@ describe('TimelinePane questions', () => {
   });
 
   it('loads the answered and dismissed caches on mount, alongside the open one', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(storeState.loadSessionAnsweredQuestions).toHaveBeenCalledWith('session-1');
     expect(storeState.loadSessionDismissedQuestions).toHaveBeenCalledWith('session-1');
@@ -606,23 +600,24 @@ describe('TimelinePane questions', () => {
     questions.open = [OPEN_QUESTION];
     questions.answered = [ANSWERED_QUESTION];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     const block = screen.getByRole('region', { name: 'Needs you' });
-    expect(within(block).getByText(/Question · Which database should we use\?/)).toBeDefined();
+    expect(within(block).getByText('Which database should we use?')).toBeDefined();
     expect(screen.queryByText('1 question answered')).toBeNull();
 
     openLog();
 
-    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
-    expect(screen.getByText('1 question answered')).toBeDefined();
-    expect(screen.queryByText(/Which database should we use/)).toBeNull();
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    expect(screen.getByRole('region', { name: 'Needs you' })).toBeDefined();
+    expect(within(activity).getByText('1 question answered')).toBeDefined();
+    expect(within(activity).queryByText(/Which database should we use/)).toBeNull();
   });
 
   it('opens the exact question from Open, with no Push or Answer beside it', () => {
     questions.open = [OPEN_QUESTION];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const block = screen.getByRole('region', { name: 'Needs you' });
 
     expect(within(block).queryByRole('button', { name: /^(Push|Answer)/ })).toBeNull();
@@ -634,23 +629,23 @@ describe('TimelinePane questions', () => {
     expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-open');
   });
 
-  it('tells Next steps which questions Needs you already shows, while Activity is open', () => {
+  it('tells Next steps which questions Needs you already shows, in either view', () => {
     questions.open = [OPEN_QUESTION];
     const onShown = vi.fn();
 
-    render(<TimelinePane session={SESSION} actions={null} onShownQuestionsChange={onShown} />);
+    render(<TimelinePane session={SESSION} onShownQuestionsChange={onShown} />);
 
     expect(onShown).toHaveBeenLastCalledWith(new Set(['question-open']));
 
     openLog();
 
-    expect(onShown).toHaveBeenLastCalledWith(new Set());
+    expect(onShown).toHaveBeenLastCalledWith(new Set(['question-open']));
   });
 
   it('shows no Needs you block while nothing needs you', () => {
     questions.answered = [ANSWERED_QUESTION];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
@@ -704,7 +699,7 @@ describe('TimelinePane run waiting on an answer', () => {
   it('keeps the raw goal off the run row', () => {
     attachedRuns.list = [RUN];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByText(/Ecco il prompt/)).toBeNull();
   });
@@ -714,11 +709,12 @@ describe('TimelinePane run waiting on an answer', () => {
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const block = screen.getByRole('region', { name: 'Needs you' });
 
     expect(within(block).getAllByTestId('needs-you-owner')).toHaveLength(1);
-    expect(within(block).getByText('Retry failed checkout payments · 1 question')).toBeDefined();
+    expect(within(block).getByText('Retry on 5xx only?')).toBeDefined();
+    expect(within(block).getByText('Retry failed checkout payments')).toBeDefined();
     expect(screen.queryByText(/Question: Retry on 5xx only\?/)).toBeNull();
   });
 
@@ -727,7 +723,7 @@ describe('TimelinePane run waiting on an answer', () => {
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const block = screen.getByRole('region', { name: 'Needs you' });
     fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
@@ -756,12 +752,12 @@ describe('TimelinePane run waiting on an answer', () => {
       (element.getAttribute('class') ?? '').includes('warning'),
     );
 
-  it('marks one waiting agent once, on its own row, and keeps its two questions quiet', () => {
+  it('says the wait once in Needs you: the agent row keeps its marker, no word and no tint', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION, SECOND_STEP_QUESTION];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const activity = screen.getByRole('region', { name: 'Activity' });
     const agentRow = activity.querySelector<HTMLElement>('[data-row-id="agent:agent-step"]');
     if (agentRow === null) {
@@ -770,10 +766,10 @@ describe('TimelinePane run waiting on an answer', () => {
     const block = screen.getByRole('region', { name: 'Needs you' });
     const amber = amberElementsOf({ root: activity }).filter((element) => !block.contains(element));
 
-    expect(within(block).getByText('Retry failed checkout payments · 2 questions')).toBeDefined();
-    expect(within(agentRow).getByText('Needs you')).toBeDefined();
-    expect(amber.length).toBeGreaterThan(0);
+    expect(within(block).getByText('Retry on 5xx only?')).toBeDefined();
+    expect(within(agentRow).queryByText('Needs you')).toBeNull();
     expect(amber.every((element) => agentRow.contains(element))).toBe(true);
+    expect(agentRow.querySelector('[class*="bg-warning"]')).toBeNull();
   });
 
   it('answers from the Needs you card only: the agent row has no second Answer', () => {
@@ -781,7 +777,7 @@ describe('TimelinePane run waiting on an answer', () => {
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const activity = screen.getByRole('region', { name: 'Activity' });
     const block = screen.getByRole('region', { name: 'Needs you' });
 
@@ -801,7 +797,7 @@ describe('TimelinePane run waiting on an answer', () => {
     storeState.sessionPhaseRuns = { 'session-1': [STEP, child] };
     questions.open = [{ ...STEP_QUESTION, createdByAgentId: 'agent-child' } as OpenQuestion];
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const block = screen.getByRole('region', { name: 'Needs you' });
     fireEvent.click(within(block).getByRole('button', { name: /^Open/ }));
 
@@ -866,7 +862,7 @@ describe('TimelinePane run row menu', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(
       within(runRow()).queryByRole('button', { name: 'Add rate limiting run actions' }),
@@ -886,7 +882,7 @@ describe('TimelinePane run row menu', () => {
     ];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(runRow().querySelector('[data-state-icon="Closed by you"]')).not.toBeNull();
   });
@@ -904,7 +900,7 @@ describe('TimelinePane run row menu', () => {
       ],
     };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
 
     const row = screen.getByText('Add rate limiting').closest('.group');
@@ -944,7 +940,7 @@ describe('TimelinePane artifact rows', () => {
   it('seats a report and a wireframe made outside a launch in the Log, not in Activity', () => {
     storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(storeState.loadSessionArtifacts).toHaveBeenCalledWith('session-1');
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
@@ -971,7 +967,7 @@ describe('TimelinePane artifact rows', () => {
     };
     storeState.sessionArtifacts = { 'session-1': [REPORT, WIREFRAME] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /2 outputs/ }));
@@ -985,7 +981,7 @@ describe('TimelinePane artifact rows', () => {
     storeState.navigate.mockClear();
     storeState.openDrawer.mockClear();
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
     fireEvent.click(screen.getByRole('button', { name: /Rounding drift in ledger-core postings/ }));
 
@@ -1055,7 +1051,7 @@ describe('TimelinePane artifacts inside a workflow run', () => {
     storeState.sessionArtifacts = { 'session-1': [RUN_REPORT] };
     storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.getByText('Rounding drift in ledger-core postings')).toBeDefined();
     expect(screen.getByText('Round once per batch')).toBeDefined();
@@ -1066,7 +1062,7 @@ describe('TimelinePane artifacts inside a workflow run', () => {
     storeState.sessionArtifacts = { 'session-1': [RUN_REPORT] };
     storeState.sessionPlans = { 'session-1': [RUN_PLAN] };
 
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
 
     expect(screen.queryByText('Rounding drift in ledger-core postings')).toBeNull();
@@ -1111,7 +1107,7 @@ describe('TimelinePane log rows and the state slot', () => {
 
   it('reads a context row as words, with no diff colours', () => {
     seed();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
     const row = rowById('event:event-context');
 
@@ -1122,7 +1118,7 @@ describe('TimelinePane log rows and the state slot', () => {
 
   it('turns a quiet final state into an icon that still says its word', () => {
     seed();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const row = rowById('agent:resolver-1');
     const state = within(row ?? document.body).getByTestId('timeline-row-state');
 
@@ -1134,7 +1130,7 @@ describe('TimelinePane log rows and the state slot', () => {
 
   it('puts the state after the title and right before the model', () => {
     seed();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const row = rowById('agent:resolver-1');
     const title = within(row ?? document.body).getByText('Resolve: tvarga on retry.ts');
     const state = within(row ?? document.body).getByTestId('timeline-row-state');
@@ -1150,7 +1146,6 @@ describe('TimelinePane log rows and the state slot', () => {
     render(
       <TimelinePane
         session={{ ...SESSION, archivedAt: '2026-08-21T09:00:00.000Z' as IsoDateTime }}
-        actions={null}
       />,
     );
 
@@ -1159,7 +1154,7 @@ describe('TimelinePane log rows and the state slot', () => {
 
   it('reserves no action slot on an open session for a row that cannot ask', () => {
     seed();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(rowById('agent:resolver-1')?.querySelectorAll('[data-action-slot]')).toHaveLength(0);
   });
@@ -1260,22 +1255,21 @@ describe('TimelinePane row meta', () => {
     ]);
   });
 
-  it('shows the model that ran on the right of a finished step, with its cost under the time', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+  it('shows the model that ran on the right of a finished step, with its cost in the time tooltip only', () => {
+    render(<TimelinePane session={SESSION} />);
     const row = rowOf('Plan the fix');
     const meta = within(row).getByTestId('work-meta');
     const model = meta.querySelector('[data-meta-column="model"]');
 
     expect(model?.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
     expect(model?.querySelector('[data-provider="anthropic"]')).not.toBeNull();
-    expect(
-      meta.querySelector('[data-meta-column="stack"] [data-meta-column="cost"]')?.textContent,
-    ).toBe('$0.62');
+    expect(meta.querySelector('[data-meta-column="cost"]')).toBeNull();
+    expect(meta.textContent).not.toContain('$0.62');
     expect(meta.querySelector('[data-meta-column="routing"]')).toBeNull();
   });
 
   it('keeps the provider glyph out of the label, ahead of the title', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const label = within(rowOf('Plan the fix')).getByText('Plan the fix').parentElement
       ?.parentElement;
 
@@ -1283,7 +1277,7 @@ describe('TimelinePane row meta', () => {
   });
 
   it('shows a queued step with its planned model in faint, and no cost', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const meta = within(rowOf('Build the fix')).getByTestId('work-meta');
     const model = meta.querySelector('[data-meta-column="model"]');
 
@@ -1293,11 +1287,10 @@ describe('TimelinePane row meta', () => {
   });
 
   it('puts the model and the effort of a step on the shared meta columns', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
     const model = meta.querySelector('[data-meta-column="model"]');
 
-    expect(carriesSpec({ element: model ?? null, spec: WORK_META_COLUMN.model })).toBe(true);
     expect(
       carriesSpec({
         element: meta.querySelector('[data-meta-column="stack"]'),
@@ -1311,7 +1304,7 @@ describe('TimelinePane row meta', () => {
   it('opens the identity card of a step on the role glyph after the pointer rests', () => {
     vi.useFakeTimers();
     try {
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
       const glyph = within(rowOf('Plan the fix')).getByTestId('role-glyph');
 
       fireEvent.mouseEnter(glyph);
@@ -1366,7 +1359,7 @@ describe('TimelinePane row meta', () => {
     };
     vi.useFakeTimers();
     try {
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
       const cell = within(rowOf('Plan the fix'))
         .getByTestId('work-meta')
         .querySelector('[data-meta-column="model"]');
@@ -1390,17 +1383,17 @@ describe('TimelinePane row meta', () => {
   });
 
   it('names the run, its role and its model on the row for assistive tech', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.getByRole('button', { name: /Planner.*Opus 4\.5, High/ })).toBeDefined();
   });
 
-  it('puts the run row on the same columns, with the total spend and no step counter', () => {
-    render(<TimelinePane session={SESSION} actions={null} />);
+  it('puts the run row on the same columns, with no spend and no step counter', () => {
+    render(<TimelinePane session={SESSION} />);
     const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
 
     expect(meta.querySelector('[data-meta-column="model"]')).not.toBeNull();
-    expect(within(meta).getByText('$0.62')).toBeDefined();
+    expect(within(meta).queryByText('$0.62')).toBeNull();
     expect(meta.textContent).not.toContain('Step 1 of 2');
   });
 
@@ -1439,7 +1432,7 @@ describe('TimelinePane row meta', () => {
         },
       ],
     };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const meta = within(rowOf('Ship the checkout fix')).getByTestId('work-meta');
 
     expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
@@ -1465,7 +1458,7 @@ describe('TimelinePane row meta', () => {
     storeState.sessionTurnSpans = {
       'session-1': [turn('claude-opus-4-5', 9_000, 'succeeded'), turn('kimi-k3', 1_000, 'failed')],
     };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const meta = within(rowOf('Plan the fix')).getByTestId('work-meta');
 
     expect(meta.querySelector('[data-routing-part="name"]')?.textContent).toBe('Opus 4.5');
@@ -1507,13 +1500,13 @@ describe('TimelinePane row meta', () => {
           orchestratedRuns: [],
         },
       };
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
 
       const time = within(rowOf('Plan the fix')).getByTestId('work-time');
       expect(time.textContent).toBe('6m 40s');
     });
 
-    it('lets the cost, then the time go before the title', () => {
+    it('lets the time go before the title, and never draws the cost', () => {
       storeState.sessionTurnSpans = { 'session-1': [span('agent-plan', 0, 6 * MINUTE + 40_000)] };
       storeState.workspaceDurationHistory = {
         'ws-1': {
@@ -1523,7 +1516,7 @@ describe('TimelinePane row meta', () => {
           orchestratedRuns: [],
         },
       };
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
       const row = rowOf('Plan the fix');
       const seen = (width: number) => visibleTextAt({ root: row, width });
 
@@ -1531,16 +1524,14 @@ describe('TimelinePane row meta', () => {
       expect(wide).toContain('Plan the fix');
       expect(wide).toContain('Opus 4.5');
       expect(wide).toContain('6m 40s');
-      expect(wide).toContain('$0.62');
+      expect(wide).not.toContain('$0.62');
 
-      const glyphsOnly = seen(630);
-      expect(glyphsOnly).not.toContain('Opus 4.5');
-      expect(glyphsOnly).toContain('6m 40s');
-      expect(glyphsOnly).toContain('$0.62');
+      const measure = seen(630);
+      expect(measure).toContain('Opus 4.5');
+      expect(measure).toContain('6m 40s');
 
-      const noCost = seen(560);
-      expect(noCost).not.toContain('$0.62');
-      expect(noCost).toContain('6m 40s');
+      const timeOnly = seen(560);
+      expect(timeOnly).toContain('6m 40s');
 
       const narrow = seen(460);
       expect(narrow).not.toContain('6m 40s');
@@ -1573,7 +1564,7 @@ describe('TimelinePane row meta', () => {
           orchestratedRuns: [],
         },
       };
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
 
       const row = rowOf('Build the fix');
       expect(within(row).getByTestId('work-time').textContent).toBe('~5-7m left');
@@ -1607,7 +1598,7 @@ describe('TimelinePane row meta', () => {
           orchestratedRuns: [],
         },
       };
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
 
       const row = rowOf('Build the fix');
       expect(within(row).getByTestId('work-time').textContent).toBe('11m');
@@ -1635,7 +1626,7 @@ describe('TimelinePane row meta', () => {
           orchestratedRuns: [],
         },
       };
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
 
       const row = rowOf('Plan the fix');
       expect(within(row).getByTestId('work-time').textContent).toBe('6m 40s');
@@ -1694,7 +1685,7 @@ describe('TimelinePane row meta', () => {
       storeState.sessionTurnSpans = {
         'session-1': [touchedSpan(['mount-api']), touchedSpan(['mount-web'])],
       };
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
 
       const worktrees = within(rowOf('Plan the fix')).getByTestId('timeline-row-worktrees');
       expect(worktrees.textContent).toBe('2');
@@ -1705,7 +1696,7 @@ describe('TimelinePane row meta', () => {
     it('stays quiet in a session with a single worktree', () => {
       storeState.sessionProjectMounts = { 'session-1': [WEB] };
       storeState.sessionTurnSpans = { 'session-1': [touchedSpan(['mount-web'])] };
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
 
       expect(within(rowOf('Plan the fix')).queryByTestId('timeline-row-worktrees')).toBeNull();
     });
@@ -1713,7 +1704,7 @@ describe('TimelinePane row meta', () => {
     it('names the one worktree a step changed on hover in a session with two', () => {
       storeState.sessionProjectMounts = { 'session-1': [WEB, API] };
       storeState.sessionTurnSpans = { 'session-1': [touchedSpan(['mount-api'])] };
-      render(<TimelinePane session={SESSION} actions={null} />);
+      render(<TimelinePane session={SESSION} />);
 
       const worktrees = within(rowOf('Plan the fix')).getByTestId('timeline-row-worktrees');
       expect(worktrees.textContent).toBe('1');
@@ -1761,7 +1752,7 @@ describe('TimelinePane fix run', () => {
 
   it('draws one row for the run, named by the pull request and the comment count', () => {
     seedRun();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.getAllByText('Fix run · #318 · 3 comments').length).toBeGreaterThan(0);
     expect(screen.queryByRole('button', { name: /\d+ files/ })).toBeNull();
@@ -1771,11 +1762,12 @@ describe('TimelinePane fix run', () => {
 
   it('asks once in Needs you with the actions you owe', () => {
     seedRun();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     const owners = screen.getAllByTestId('needs-you-owner');
     expect(owners).toHaveLength(1);
-    expect(owners[0]?.textContent).toContain('#318 · 2 need you · 1 to review · 1 question');
+    expect(owners[0]?.textContent).toContain('#318 · 1 to review · 1 question');
+    expect(owners[0]?.textContent).not.toContain('need you');
   });
 });
 
@@ -1826,7 +1818,7 @@ describe('TimelinePane subagents on a step', () => {
 
   it('folds a finished step into one count row above it: no chip, no group row, no child rows', () => {
     seedSubagents();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(countRow().getAttribute('aria-expanded')).toBe('false');
     expect(within(countRow()).getByTestId('fold-summary').textContent).toBe('4 subagents');
@@ -1838,7 +1830,7 @@ describe('TimelinePane subagents on a step', () => {
 
   it('gives a single subagent the same count row', () => {
     seedSubagents({ count: 1 });
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(within(countRow(/1 subagent/)).getByTestId('fold-summary').textContent).toBe(
       '1 subagent',
@@ -1848,7 +1840,7 @@ describe('TimelinePane subagents on a step', () => {
 
   it('shows the subagents of a step that is still working, with no way to fold them', () => {
     seedSubagents({ isFinished: false });
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     screen.getByText('Scout thresholds');
     screen.getByText('Test the banner');
@@ -1858,7 +1850,7 @@ describe('TimelinePane subagents on a step', () => {
 
   it('keeps a branch with a failed subagent open', () => {
     seedSubagents({ failedIndex: 1 });
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     screen.getByText('Scout retry paths');
     expect(screen.queryByTestId('timeline-count-row')).toBeNull();
@@ -1868,7 +1860,7 @@ describe('TimelinePane subagents on a step', () => {
     vi.useFakeTimers();
     const transitions = withRevealTransitions();
     seedSubagents();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     fireEvent.click(countRow());
 
@@ -1892,7 +1884,7 @@ describe('TimelinePane subagents on a step', () => {
 
   it('opens with Right on the step row and folds from a child with Left, back onto the count row', () => {
     seedSubagents();
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const stepRow = () => {
       const row = document.querySelector<HTMLElement>('[data-row-id="agent:lead"] button');
       if (row === null) {
@@ -2017,13 +2009,13 @@ describe('TimelinePane finished run', () => {
 
   it('shows a finished run as its own row with its totals and a count row above it', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     expect(screen.queryByText('Step plan')).toBeNull();
     expect(countRow().getAttribute('aria-expanded')).toBe('false');
     const meta = within(runRow()).getByTestId('work-meta');
     expect(meta.textContent).not.toContain('models');
-    expect(within(meta).getByText('$1.50')).toBeDefined();
+    expect(within(meta).queryByText('$1.50')).toBeNull();
     expect(within(meta).getByText('2m')).toBeDefined();
 
     fireEvent.click(countRow());
@@ -2034,7 +2026,7 @@ describe('TimelinePane finished run', () => {
 
   it('opens the run page from the run row and leaves its steps folded', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     const row = runRow().querySelector('button');
     if (row === null) {
@@ -2048,7 +2040,7 @@ describe('TimelinePane finished run', () => {
 
   it('draws the run as a state node and its count row as a hollow lane node', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
-    const { container } = render(<TimelinePane session={SESSION} actions={null} />);
+    const { container } = render(<TimelinePane session={SESSION} />);
 
     expect(
       container.querySelector('[data-row-id="run:run-fold"] [data-node-state="done"]'),
@@ -2075,7 +2067,7 @@ describe('TimelinePane finished run', () => {
         createdByAgentId: 'agent-plan' as AgentId,
       }),
     ];
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
 
     const summary = within(countRow()).getByTestId('fold-summary');
     expect(summary.textContent).toBe('3 steps · 1 question answered');
@@ -2083,14 +2075,13 @@ describe('TimelinePane finished run', () => {
     expect(within(runRow()).getByText('Refund keys').textContent).toBe('Refund keys');
   });
 
-  it('lets the cost and the time of a finished run go before its title gives way', () => {
+  it('lets the time of a finished run go before its title gives way, with no cost on the row', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const row = runRow();
 
     expect(visibleTextAt({ root: row, width: 900 })).not.toContain('2 models');
-    expect(visibleTextAt({ root: row, width: 700 })).toContain('$1.50');
-    expect(visibleTextAt({ root: row, width: 560 })).not.toContain('$1.50');
+    expect(visibleTextAt({ root: row, width: 900 })).not.toContain('$1.50');
     const narrow = visibleTextAt({ root: row, width: 460 });
     expect(narrow).not.toContain('2m');
     expect(narrow).toContain('Refund keys');
@@ -2098,12 +2089,12 @@ describe('TimelinePane finished run', () => {
 
   it('keeps a run open when it finishes while on screen', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'running' }) };
-    const view = render(<TimelinePane session={SESSION} actions={null} />);
+    const view = render(<TimelinePane session={SESSION} />);
     expect(screen.getByText('Step build')).toBeDefined();
     expect(screen.queryByTestId('timeline-count-row')).toBeNull();
 
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
-    view.rerender(<TimelinePane session={SESSION} actions={null} />);
+    view.rerender(<TimelinePane session={SESSION} />);
 
     expect(screen.getByText('Step build')).toBeDefined();
     expect(countRow().getAttribute('aria-expanded')).toBe('true');
@@ -2111,7 +2102,7 @@ describe('TimelinePane finished run', () => {
 
   it('folds the run on the Right and Left keys of its own row', () => {
     storeState.sessionPhaseRuns = { 'session-1': agentsWith({ last: 'completed' }) };
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     const button = runRow().querySelector('button');
     if (button === null) {
       throw new Error('run row has no button');
@@ -2165,7 +2156,7 @@ describe('TimelinePane an opened Context row', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
       () => new DOMRect(0, 0, 300, measured),
     );
-    render(<TimelinePane session={SESSION} actions={null} />);
+    render(<TimelinePane session={SESSION} />);
     openLog();
     const closed = Number.parseFloat(rowHeight() ?? '0');
 

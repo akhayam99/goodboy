@@ -138,7 +138,7 @@ describe('WorkflowRulesPanel', () => {
     expect(screen.getAllByRole('radio').map((radio) => radio.getAttribute('aria-checked'))).toEqual(
       ['true', 'false', 'false'],
     );
-    expect(screen.getByRole('switch', { name: 'Spend cap' }).getAttribute('aria-checked')).toBe(
+    expect(screen.getByRole('switch', { name: 'Limit' }).getAttribute('aria-checked')).toBe(
       'false',
     );
     expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
@@ -149,7 +149,7 @@ describe('WorkflowRulesPanel', () => {
 
     expect(
       screen.getAllByRole('region').map((region) => region.getAttribute('aria-label')),
-    ).toEqual(['Autonomy', 'Spend cap', 'Providers', 'Guidance']);
+    ).toEqual(['Autonomy', 'Limit', 'Providers', 'Guidance']);
   });
 
   it('shows the same autonomy hints the builder shows', () => {
@@ -177,7 +177,7 @@ describe('WorkflowRulesPanel', () => {
   it('turns the spend cap on, keeps a typed amount and the behaviour at the limit', async () => {
     panel();
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Spend cap' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Limit' }));
     const amount = await screen.findByRole('textbox', { name: 'Amount per run' });
     fireEvent.change(amount, { target: { value: '40' } });
     fireEvent.blur(amount);

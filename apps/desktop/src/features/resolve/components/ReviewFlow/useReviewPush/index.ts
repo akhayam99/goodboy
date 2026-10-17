@@ -16,6 +16,7 @@ import { SYNC_COPY } from '../../../failedRunCopy';
 import { useActiveReviewSource } from '../../../hooks/useActiveReviewSource';
 import { driftSentence, type BlockerCopy } from '../../../resolvePublishCopy';
 import { previewNeedsDecision } from '../../../previewNeedsDecision';
+import { openReviewComment } from '../../../openReviewComment';
 import {
   PUSH_BUSY,
   PUSH_MISSING,
@@ -317,7 +318,7 @@ export const useReviewPush = ({ sessionId }: PushParams): ReviewPush => {
           )?.[0] ?? null;
         cancel();
         if (threadId !== null) {
-          state.openDrawer({ kind: 'conversation', sessionId, payload: { threadId } });
+          openReviewComment({ navigate: state.navigate, sessionId, threadId });
         }
         return;
       }

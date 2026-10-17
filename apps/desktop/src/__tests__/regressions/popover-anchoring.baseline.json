@@ -1,0 +1,107 @@
+{
+  "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsOverflowPopover.tsx": {
+    "top bar right cluster: the end edge stays on the trigger": 1
+  },
+  "apps/desktop/src/app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu.tsx": {
+    "top bar right cluster: the end edge stays on the trigger": 1
+  },
+  "apps/desktop/src/app/components/AppTopBar/NavCluster/HistoryArrow.tsx": {
+    "the forward history list centres under its arrow": 1
+  },
+  "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": {
+    "top bar right cluster: the end edge stays on the trigger": 1
+  },
+  "apps/desktop/src/app/components/SessionRail/SessionLevel/LevelAddMenu.tsx": {
+    "+ at the end of a rail card header row: the end edge stays on the trigger": 1
+  },
+  "apps/desktop/src/features/actions/components/ObjectOverflowMenu/ObjectOverflowTrigger.tsx": {
+    "a more menu sits at the end of its row: align right maps to end": 1,
+    "a more menu defaults to the end edge of its trigger": 1
+  },
+  "apps/desktop/src/features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx": {
+    "header primary at the end of the header row": 1
+  },
+  "apps/desktop/src/features/branch/components/BranchHeader/BranchOverflow.tsx": {
+    "more menu at the end of the branch header": 1
+  },
+  "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": {
+    "trailing action of a property row": 1
+  },
+  "apps/desktop/src/features/bug-report/components/ReportSheetHost.tsx": {
+    "f76: the report opens to the right of the sidebar bug icon": 1,
+    "f76: its bottom sits on the icon's bottom, growing up": 1
+  },
+  "apps/desktop/src/features/chat/components/TurnFooter/index.tsx": {
+    "detail button at the end of the turn footer": 1
+  },
+  "apps/desktop/src/features/diff/components/ChangeTree/KeyHints.tsx": {
+    "keys hint at the end of the change tree toolbar": 1
+  },
+  "apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.tsx": {
+    "trailing action of an Explore row": 1
+  },
+  "apps/desktop/src/features/history/JobBanner/JobBannerDetails.tsx": {
+    "details action at the end of the job banner": 1
+  },
+  "apps/desktop/src/features/history/components/CommitsHistory/HistoryKeysHint.tsx": {
+    "keys hint at the end of the history toolbar": 1
+  },
+  "apps/desktop/src/features/monitoring/components/MonitoringStudio/PinPortPopover.tsx": {
+    "header action at the end of the Monitoring header": 1
+  },
+  "apps/desktop/src/features/notifications/components/NotificationCenter/index.tsx": {
+    "the notification list centres under the bell": 1
+  },
+  "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": {
+    "more actions at the end of the permission card actions": 1
+  },
+  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx": {
+    "trailing action of an account row": 1
+  },
+  "apps/desktop/src/features/review/components/ReviewPane/WriteReview/ReviewPanelButton.tsx": {
+    "submit review at the end of the review pane header": 1
+  },
+  "apps/desktop/src/features/session/components/AgentDetailPane/AgentUsageFooter.tsx": {
+    "detail button at the end of the usage footer": 1
+  },
+  "apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx": {
+    "the create agent card centres under its plus": 1
+  },
+  "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.tsx": {
+    "trailing action of the Linked label row": 1
+  },
+  "apps/desktop/src/features/session/components/SessionOverviewPane/OverviewActions/index.tsx": {
+    "more menu at the end of the Overview header": 1
+  },
+  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction.tsx": {
+    "trailing add of a label row; the anchor presentation starts": 1
+  },
+  "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/NewBranchMountAction.tsx": {
+    "trailing add of a label row; the anchor presentation starts": 1
+  },
+  "apps/desktop/src/features/terminal/components/TerminalStudio/NewTerminalMenu.tsx": {
+    "the terminal picker opens to the right of the split chevron": 1
+  },
+  "apps/desktop/src/features/updater/components/UpdateConfirm/index.tsx": {
+    "a confirm keeps its end edge on its trigger, like ConfirmPopover": 1
+  },
+  "apps/desktop/src/features/updater/components/UpdatePill/QueuedRestartPopover.tsx": {
+    "top bar right cluster: the end edge stays on the trigger": 1
+  },
+  "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/index.tsx": {
+    "header action at the end of the Workflows header": 1
+  },
+  "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionFilterPopover/index.tsx": {
+    "filter at the end of the Sessions door row: the end edge stays on the trigger": 1
+  },
+  "apps/desktop/src/shared/components/ProjectLinkList/ProjectAddPopover.tsx": {
+    "+ Add at the end of a label row": 1
+  },
+  "packages/ui/src/components/ConfirmPopover.tsx": {
+    "a confirm keeps its end edge on its trigger": 1
+  },
+  "packages/ui/src/components/OverflowMenu.tsx": {
+    "a more menu sits at the end of its row: align right maps to end": 1,
+    "a more menu defaults to the end edge of its trigger": 1
+  }
+}

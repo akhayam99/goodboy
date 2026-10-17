@@ -82,7 +82,12 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <FixRunStatusLine attempt={brief.attempt} status={status} shared={shared} />
+      <FixRunStatusLine
+        attempt={brief.attempt}
+        status={status}
+        shared={shared}
+        isAsking={asking.length > 0}
+      />
       {asking.map((entry) => (
         <div key={entry.threadId} className="flex min-w-0 flex-col gap-2">
           <button type="button" className={ROW_CLASS} onClick={() => openThread(entry.threadId)}>

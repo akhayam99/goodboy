@@ -34,8 +34,7 @@ export type ShortcutScope =
   | 'activityRow'
   | 'scripts'
   | 'workspace'
-  | 'codeSession'
-  | 'exploreSession';
+  | 'codeSession';
 
 export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   list: 'In the Tasks and Notifications lists',
@@ -48,7 +47,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   composer: 'Where a chat composer is open',
   ask: 'In the Ask panel',
   chatPage: 'On the Chat page',
-  terminalPage: 'On the Terminal page',
+  terminalPage: 'On the Terminal page and the terminal drawer',
   find: 'After a search in the view',
   overview: 'On a session overview',
   row: 'On a focused row',
@@ -56,7 +55,6 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   scripts: 'On the Scripts page',
   workspace: 'With a workspace open',
   codeSession: 'In a session with a branch',
-  exploreSession: 'In an explore session',
 };
 
 export type ShortcutFamily = 'workspace-digit';
@@ -208,6 +206,12 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'navigate',
   },
+  'innerColumn.toggle': {
+    combo: 'cmd+alt+KeyB',
+    label: 'Show or hide the inner column',
+    plane: 'lens',
+    group: 'navigate',
+  },
   'session.board': {
     combo: 'cmd+shift+KeyH',
     label: 'Board',
@@ -315,7 +319,6 @@ export const SHORTCUTS = {
     label: 'Session terminal',
     plane: 'lens',
     group: 'session',
-    scope: 'codeSession',
   },
   'session.archive': {
     combo: 'cmd+shift+KeyA',
@@ -393,7 +396,6 @@ export const SHORTCUTS = {
     label: 'Explore',
     plane: 'lens',
     group: 'views',
-    scope: 'exploreSession',
   },
   'lens.plans': { combo: 'cmd+alt+KeyP', label: NAMES.artifacts, plane: 'lens', group: 'views' },
   'lens.scripts': { combo: 'cmd+alt+KeyS', label: NAMES.scripts, plane: 'lens', group: 'views' },
@@ -531,6 +533,20 @@ export const SHORTCUTS = {
   'review.previous': {
     combo: 'KeyK',
     label: 'Previous comment',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
+  'review.down': {
+    combo: 'ArrowDown',
+    label: 'Next comment in the drawer',
+    plane: 'app',
+    group: 'review',
+    scope: 'review',
+  },
+  'review.up': {
+    combo: 'ArrowUp',
+    label: 'Previous comment in the drawer',
     plane: 'app',
     group: 'review',
     scope: 'review',
@@ -675,6 +691,21 @@ export const SHORTCUTS = {
     scope: 'terminalPage',
   },
   'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'session', group: 'general' },
+  'app.close': {
+    combo: 'cmd+KeyW',
+    offMacCombo: 'ctrl+shift+KeyW',
+    label: 'Close the nearest thing',
+    plane: 'app',
+    group: 'window',
+  },
+  'terminal.closeTab': {
+    combo: 'cmd+KeyW',
+    offMacCombo: 'ctrl+shift+KeyW',
+    label: 'Close terminal tab',
+    plane: 'app',
+    group: 'window',
+    scope: 'terminalPage',
+  },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },

@@ -1,6 +1,4 @@
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import {
-  Button,
   Chip,
   ROW_INTERACTIVE,
   SelectionCheckbox,
@@ -10,13 +8,12 @@ import {
   TruncatedText,
 } from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { useNow } from '../../../../shared/hooks/useNow';
-import type { ResolveConversationSource } from '../../buildResolveQueueRows';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
 import { entryBodyOf, entryTitleOf } from './entryTitle';
 import { rowQualifierOf } from './rowQualifier';
-import { STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
 type RowSelection = {
@@ -28,42 +25,41 @@ type RowSelection = {
 type Props = {
   readonly entry: ReviewEntry;
   readonly isSelected: boolean;
+  readonly isSourceShown: boolean;
   readonly onSelect: () => void;
-  readonly onFix: (() => void) | null;
   readonly selection: RowSelection | null;
 };
 
-const fileOf = ({ path }: { readonly path: string | null }): string | null =>
-  path === null ? null : (path.split('/').at(-1) ?? path);
+const GROUP_WORDS: ReadonlySet<string> = new Set([
+  'Open',
+  'Working',
+  'Applied',
+  'Replied',
+  'Done',
+  'Left open',
+]);
 
-type KindParams = {
-  readonly source: ResolveConversationSource;
-};
-
-const kindLabelOf = ({ source }: KindParams): string =>
-  source === 'note' ? 'Note' : `On ${REVIEW_SOURCE_LABEL[source]}`;
-
-export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }: Props) => {
+export const ReviewListRow = ({ entry, isSelected, isSourceShown, onSelect, selection }: Props) => {
   const now = useNow(60_000);
   const note = entry.row.reviewerNote;
   const body = entryBodyOf({ entry });
   const title = entryTitleOf({ entry });
-  const file = fileOf({ path: note?.path ?? null });
   const qualifier = rowQualifierOf({ entry });
   const selectLabel = `${REVIEW_LAUNCH_LABEL.selectRow} ${note?.author ?? ''}`.trim();
-  const stateWord = (
-    <span
-      data-row-state
-      className={cn(
-        'ml-auto shrink-0 whitespace-nowrap motion-safe:transition-opacity',
-        STATE_WORD_TONE[entry.toneKey],
-        onFix !== null &&
-          'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',
-      )}
-    >
+  const isWordShown = !GROUP_WORDS.has(entry.word);
+  const stateWord = isWordShown ? (
+    <span data-row-state className="shrink-0 whitespace-nowrap text-muted-foreground">
       {entry.word}
     </span>
-  );
+  ) : null;
+  const meta =
+    note === null
+      ? ''
+      : joinFacts({ facts: [note.author, formatAge({ from: note.createdAtMs, now })] });
+  const place =
+    note === null || note.path === null
+      ? null
+      : `${note.path}${note.line == null ? '' : `:${note.line}`}`;
   return (
     <div className="group/review-row group/select-row relative min-w-0">
       <button
@@ -94,36 +90,27 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-meta">
-            {note !== null && (
-              <span data-row-author className="shrink-0 whitespace-nowrap text-muted-foreground">
-                {note.author}
-              </span>
+          <span className="flex h-5 min-w-0 items-center gap-2 text-meta">
+            <span data-row-author className="min-w-0 flex-1 truncate text-muted-foreground">
+              {meta}
+            </span>
+            {isSourceShown && note !== null && note.source === 'note' ? (
+              <Chip tone="neutral" kind="state" bordered={false} label="Note" />
+            ) : null}
+            {stateWord === null ? null : qualifier === null ? (
+              stateWord
+            ) : (
+              <Tooltip content={qualifier}>{stateWord}</Tooltip>
             )}
-            {note !== null && (
-              <Chip
-                tone="neutral"
-                kind="state"
-                bordered={false}
-                label={kindLabelOf({ source: note.source })}
-              />
-            )}
-            {note !== null && (
-              <span data-row-age className="shrink-0 whitespace-nowrap text-faint-foreground">
-                {formatAge({ from: note.createdAtMs, now })}
-              </span>
-            )}
-            {file !== null && (
-              <span
-                data-row-file
-                className="min-w-0 flex-1 basis-[8ch] truncate font-mono text-faint-foreground"
-              >
-                {file}
-                {note?.line == null ? '' : `:${note.line}`}
-              </span>
-            )}
-            {qualifier === null ? stateWord : <Tooltip content={qualifier}>{stateWord}</Tooltip>}
           </span>
+          {place === null ? null : (
+            <TruncatedText
+              data-row-file
+              className="min-w-0 truncate font-mono text-meta text-faint-foreground"
+            >
+              {place}
+            </TruncatedText>
+          )}
           <TruncatedText
             tooltip={body ?? undefined}
             className="min-w-0 truncate text-body text-foreground"
@@ -139,21 +126,6 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           onToggle={selection.onToggle}
           className="absolute left-2.5 top-2"
         />
-      )}
-      {onFix !== null && (
-        <Button
-          size="xs"
-          variant="secondary"
-          data-fix-row={entry.threadId}
-          onClick={onFix}
-          className={cn(
-            'absolute right-2 top-1 bg-elevated',
-            'opacity-0 group-focus-within/review-row:opacity-100 group-hover/review-row:opacity-100',
-            'motion-safe:transition-opacity',
-          )}
-        >
-          {REVIEW_LAUNCH_LABEL.fix}
-        </Button>
       )}
     </div>
   );

@@ -37,21 +37,21 @@ const MEMBERS = [
     uuid: '{kenji-w-uuid}',
     accountId: null,
     nickname: 'kenji-w',
-    displayName: 'Kenji Watanabe',
+    displayName: 'Acme Lead',
     avatarUrl: null,
   },
   {
     uuid: '{omar-t-uuid}',
     accountId: null,
     nickname: 'omar-t',
-    displayName: 'Omar Tran',
+    displayName: 'Northwind QA',
     avatarUrl: null,
   },
   {
     uuid: '{rio-k-uuid}',
     accountId: null,
     nickname: 'rio-k',
-    displayName: 'Rio Kato',
+    displayName: 'Cascadia Lead',
     avatarUrl: null,
   },
 ];
@@ -95,13 +95,13 @@ const show = async (variant: BitbucketPageVariant = 'pr') => {
       <BitbucketPageScene variant={variant} />
     </ToastProvider>,
   );
-  await findSectionRow(/^Overview/);
+  await findSectionRow(/^Pull request/);
   act(() => {
     useAppStore.setState(stubs);
   });
 };
 
-const properties = (): HTMLElement => screen.getByRole('complementary', { name: 'Properties' });
+const properties = (): HTMLElement => screen.getByRole('group', { name: 'Properties' });
 
 const openOverflow = async (): Promise<void> => {
   fireEvent.click(await screen.findByRole('button', { name: 'Branch actions' }));
@@ -121,17 +121,17 @@ describe('the Bitbucket scenes', () => {
   it('leads with the Pull request tab and the title as the one heading', async () => {
     await show();
 
-    expect(sectionRow(/^Overview/).getAttribute('aria-current')).toBe('page');
+    expect(sectionRow(/^Pull request/).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Stop retried webhooks posting a second credit',
     );
   });
 
-  it('reads the reviewers, checks and base in the properties and the block in the meta line', async () => {
+  it('reads the readiness, reviewers, checks and base in the property block', async () => {
     await show();
     const side = within(properties());
 
-    expect(screen.getByTestId('branch-blocked-reason').textContent).toMatch(/1 check failing/);
+    expect(screen.getByTestId('pr-readiness').textContent).toMatch(/check/);
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.getByText('Approved')).toBeDefined();
     expect(side.getByText('Changes requested')).toBeDefined();

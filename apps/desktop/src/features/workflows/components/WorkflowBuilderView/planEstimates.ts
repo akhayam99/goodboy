@@ -78,7 +78,7 @@ const orchestratedTotal = ({ history, nowMs }: TotalParams): PlanTotal | null =>
     estimate: workEstimateOf({ estimate, basis: '' }),
   }).replace(/^≈ /, '');
   return {
-    label: `≈ ${range} machine time · ${estimate.sampleCount} past runs`,
+    label: `~${range} machine time · ${estimate.sampleCount} past runs`,
     detail: `Based on ${estimate.sampleCount} past orchestrated runs in this workspace, last 90 days. Machine time only: waiting on you is not counted.`,
   };
 };
@@ -141,7 +141,7 @@ export const planEstimates = ({
     },
   }).replace(/^≈ /, '');
   const parts = [
-    `≈ ${range}`,
+    `~${range}`,
     sum.cost === null ? null : formatCostRange(sum.cost).replace(/^≈ /, ''),
     isReviewed ? REVIEWS_NOTE : null,
   ].filter((part) => part !== null);

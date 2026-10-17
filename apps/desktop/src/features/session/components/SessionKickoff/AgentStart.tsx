@@ -4,19 +4,19 @@ import { Button } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { useWorkspaceRepoProjects } from '../../hooks/useWorkspaceRepoProjects';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AGENT_KIND_META, visibleAgentKinds } from '../../agent-kind';
 import { AgentStartFields, type AgentStartRouting } from '../AgentStartFields';
 import { StartFooter } from './StartFooter';
+import { KickoffProjects } from './KickoffProjects';
 import { useDraftStart } from './useDraftStart';
 import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { usePromptFiles } from '../../../../shared/hooks/usePromptFiles';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
-import { useConfirmStartMode } from '../../../auto/useConfirmStartMode';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -40,9 +40,6 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const kinds = visibleAgentKinds();
   const kind = kinds.includes(draft.agentKind) ? draft.agentKind : (kinds[0] ?? 'scout');
   const kindLabel = AGENT_KIND_META[kind].noun;
-  const defaultProvider = useAppStore(
-    (state) => selectWorkspaceResolvedSettings({ state, workspaceId }).defaultProviderId,
-  );
   const connectedProviders = useAppStore(
     useShallow((state) =>
       state.providers.filter((provider) => provider.connection === 'connected').map((p) => p.id),
@@ -51,10 +48,10 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const projects = useWorkspaceRepoProjects({ workspaceId });
   useEffect(() => {
     const firstProjectId = projects[0]?.id ?? null;
-    if (draft.projectId === null && firstProjectId !== null) {
-      patchSessionDraft({ workspaceId, patch: { projectId: firstProjectId } });
+    if (draft.projectIds.length === 0 && firstProjectId !== null) {
+      patchSessionDraft({ workspaceId, patch: { projectIds: [firstProjectId] } });
     }
-  }, [draft.projectId, projects, patchSessionDraft, workspaceId]);
+  }, [draft.projectIds.length, projects, patchSessionDraft, workspaceId]);
   useEffect(() => {
     if (draft.autoGoal.trim() !== '' && draft.agentPrompt.trim() === '') {
       patchSessionDraft({ workspaceId, patch: { agentPrompt: draft.autoGoal, autoGoal: '' } });
@@ -63,8 +60,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
   const roleDefault = useWorkspaceKindRouting({ workspaceId, kind });
   const suggestion = resolveSpawnRouting({ kind, roleDefault, session: null });
   const { start, isStarting, error } = useDraftStart({ workspaceId });
-  const confirmMode = useConfirmStartMode();
-  const hasProject = draft.projectId !== null;
+  const hasProject = draft.projectIds.length > 0;
   const promptFiles = usePromptFiles({
     note: 'Files go to the agent you start',
     isEnabled: hasProject,
@@ -80,9 +76,6 @@ export const AgentStart = ({ workspaceId }: Props) => {
 
   const startAgent = async () => {
     if (!canStart) {
-      return;
-    }
-    if (!(await confirmMode({ isShown: false }))) {
       return;
     }
     const prompt = isScout
@@ -112,9 +105,9 @@ export const AgentStart = ({ workspaceId }: Props) => {
     isScout && !hasPrompt ? 'Start Scout on the whole project' : `Start ${kindLabel}`;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-6">
       <PromptField
-        kind="message"
+        kind="document"
         value={draft.agentPrompt}
         onChange={(agentPrompt) => patchSessionDraft({ workspaceId, patch: { agentPrompt } })}
         onSubmit={() => void startAgent()}
@@ -129,32 +122,36 @@ export const AgentStart = ({ workspaceId }: Props) => {
         notice={promptFiles.notice}
         {...(hasProject && { files: promptFiles.files })}
       />
-      <div className="flex items-center justify-between gap-2">
-        <AgentStartFields
-          kinds={kinds}
-          kind={kind}
-          onKindChange={(next) => patchSessionDraft({ workspaceId, patch: { agentKind: next } })}
-          routing={draft.agentRouting as AgentStartRouting}
-          suggestion={suggestion}
-          connectedProviders={connectedProviders}
-          onRoutingChange={(next) =>
-            patchSessionDraft({ workspaceId, patch: { agentRouting: next } })
-          }
-          projects={projects}
-          projectId={draft.projectId}
-          onProjectChange={(next) => patchSessionDraft({ workspaceId, patch: { projectId: next } })}
-        />
-      </div>
-      <StartFooter note="Scout only reads. It changes nothing." error={error}>
+      <KickoffProjects workspaceId={workspaceId} isDisabled={isStarting} />
+      <StartFooter
+        workspaceId={workspaceId}
+        leading={
+          <AgentStartFields
+            kinds={kinds}
+            kind={kind}
+            onKindChange={(next) => patchSessionDraft({ workspaceId, patch: { agentKind: next } })}
+            routing={draft.agentRouting as AgentStartRouting}
+            suggestion={suggestion}
+            connectedProviders={connectedProviders}
+            isDisabled={isStarting}
+            onRoutingChange={(next) =>
+              patchSessionDraft({ workspaceId, patch: { agentRouting: next } })
+            }
+          />
+        }
+        note={isScout ? 'Scout only reads. It changes nothing.' : null}
+        error={error}
+        isStarting={isStarting}
+      >
         <Button
-          size="sm"
+          size="md"
           disabled={!canStart || isStarting}
           isBusy={isStarting}
           busyLabel={`Starting ${kindLabel}`}
           onClick={() => void startAgent()}
           title={!canStart ? `Write what ${kindLabel} should do` : undefined}
         >
-          {startLabel}
+          {error === null ? startLabel : NAMES.retry}
         </Button>
       </StartFooter>
     </div>

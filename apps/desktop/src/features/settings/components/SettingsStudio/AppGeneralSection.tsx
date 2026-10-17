@@ -1,35 +1,31 @@
 import { Band } from '@goodboy/ui';
-import { useIsAutoReleased } from '../../../auto/useIsAutoReleased';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { UpdatesSection } from './UpdatesSection';
 import { ThemePreferenceField } from './ThemePreferenceField';
 import { OpenWithBand } from './OpenWithBand';
 import { SearchIndexBand } from './SearchIndexBand';
-import { ExperimentsBand } from './ExperimentsBand';
+import { RepoCheckBand } from './RepoCheckBand';
 
-export const AppGeneralSection = () => {
-  const isAutoReleased = useIsAutoReleased();
-  return (
-    <div className="flex flex-col gap-4">
-      <UpdatesSection />
+export const AppGeneralSection = () => (
+  <div className="flex flex-col gap-4">
+    <UpdatesSection />
 
-      <Band
-        inset="content"
-        label="Appearance"
-        hint="How the app looks on this computer."
-        icon={<CONCEPT_ICONS.appearance size={ICON_SIZE.row} aria-hidden />}
-        headingLevel={2}
-      >
-        <div className="flex flex-col">
-          <ThemePreferenceField />
-        </div>
-      </Band>
+    <Band
+      inset="content"
+      label="Appearance"
+      hint="How the app looks on this computer."
+      icon={<CONCEPT_ICONS.appearance size={ICON_SIZE.row} aria-hidden />}
+      headingLevel={2}
+    >
+      <div className="flex flex-col">
+        <ThemePreferenceField />
+      </div>
+    </Band>
 
-      <OpenWithBand />
+    <OpenWithBand />
 
-      <SearchIndexBand />
+    <RepoCheckBand />
 
-      {isAutoReleased ? <ExperimentsBand /> : null}
-    </div>
-  );
-};
+    <SearchIndexBand />
+  </div>
+);

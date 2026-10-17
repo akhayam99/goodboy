@@ -81,7 +81,7 @@ one-line **description**. Both live on the project row in workspace settings.
 - Every agent's project list puts starred projects first, marks them, shows each
   description next to the name, and says to look in starred projects first when
   a request names no project. The planner and the orchestrator get the same list
-- Project pickers and the Activity project filter put starred projects on top
+- Project pickers and the Activity project filter put starred projects on top; the New session picker lists them in its Suggested group after the issue's project and the most recently used
 - A star never changes what an agent may mount or write
 
 A repo project needs a working git setup before a session can make a worktree
@@ -537,10 +537,11 @@ no instruction. `isAgentFinished` and `isAgentClosable` in
 do alone to agents of the right role, with a model it picks for each, then
 reads their results and goes on. Its children are agents of the roles Scout,
 Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
-time and one level deep. It is an experiment: off by default, switched on in
-Settings, General, **Experiments**, and while it is off the roles you pick
-today are the only start. A person sees an Auto tree as one row in the
-Overview and as one chat with a Work rail and a card for each delegation
+time and one level deep. It is always available and labelled **Experimental** on its
+session entry; there is no switch in Settings. **Start Auto** starts it, and
+**Start agent** keeps the role start. A person sees an Auto tree as one row in the
+Overview, under **Auto agents** in the session, and as one chat with one
+line for each delegation, its Work rail being the sidebar's Auto level
 ([auto.md](auto.md)).
 
 ### Agent kinds
@@ -691,8 +692,8 @@ the PDF. Goodboy also keeps a copy of every artifact on disk, under the
 workspace folder described in
 [architecture.md](architecture.md#on-disk-data-layout): the Details panel
 shows its path under **File**, with **Open in browser** and **Show in
-Finder** next to it. The lens header also has **Show in Finder**, a button, for
-the whole workspace folder at once. Every write to a plan, report or
+Finder** next to it. The **New** menu of the lens header ends with **Show in
+Finder** for the whole workspace folder at once. Every write to a plan, report or
 wireframe keeps its own row in `artifact_revisions`
 ([architecture.md](architecture.md#on-disk-data-layout)): the Details panel
 lists them newest first once there is more than one, names who wrote each
@@ -889,9 +890,9 @@ too. When GitHub denies it they ask again without it and the pull request
 carries `checksUnknown`, so the Checks tab and the merge gates say Checks
 unknown and never read it as no checks.
 
-Review is one flow: the list on the left, the focused comment on the right.
+Review is one flow: the list across the page, and the open comment in the drawer beside it.
 Every comment in a fix run shows one of five words, the same word in the list,
-the thread, Activity, Needs you, the transcript card and the breadcrumb menus.
+the thread, Activity, Needs you and the transcript card.
 A comment not yet in a fix run reads Open, which is not a sixth word. One pure
 projection (`features/resolve/commentProjection.ts`) owns the words, and every
 count is a count of comments, never of agents:
@@ -962,18 +963,19 @@ fix can be answered without undoing its accepted decision. The git facts live in
 `store/slices/resolve/threadGitState.ts`, the git side in
 `src-tauri/src/thread_git.rs`.
 
-Each comment has four verbs, with single keys while the list has focus:
+Each comment has four verbs, with single keys while its drawer is open:
 `Apply fix` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply only` (R, drops the change and sends a reply; `Reply`, which opens the text box, where there is no change to drop) and `Skip` (S), plus `Undo` (U, `Undo skip` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the Fix comments drawer. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
+the Fix comments drawer in its place, with **Back to the comment** at its top
+(the launch request carries `fromThreadId`). They sit at the end of the comment drawer (`CommentDrawerActions` in `FormActions`), the primary last on the right, each with its key; a verb that fails says why there and its button reads Retry. `Retry push` shows on a comment whose push failed. J and K, or the arrow keys while the drawer is open, move; Escape closes the drawer. A checkbox appears on hover on the comments you
 can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
-`…` also offers Stop drafting, Resolve, Open in Files, Agent
-transcript, Open on GitHub and Copy link. Apply fix and Skip move focus to the
+`…` in the drawer header also offers Stop drafting, Resolve, Open in Files, Agent
+transcript, Open on GitHub and Copy link, and shows only with two or more of them. Apply fix and Skip move the drawer to the
 next open comment. Apply fix never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the
 `review` and `reviewComment` kinds of the action registry
@@ -1065,7 +1067,7 @@ N`, the `apply` mode of today. The choice is `ResolveLaunchChoice.mode`
   Needs you, and `Continue with N answers` calls `answerQuestions` once for the
   launch (the same agent, no new one); `Retry N that couldn't fix` calls
   `retryCouldntFix` with every could-not-fix comment of the launch. `Apply N fixes`
-  on the group header of the ready comments and in the selection bar calls
+  in the selection bar (group labels carry no verbs) calls
   `acceptReviewComments` (`review-bulk` slice): it walks the comments in order
   through the same accept as the single `Accept` (`acceptReviewItem`), skips
   one that is no longer ready, keeps going when one throws and names the ones
@@ -1360,14 +1362,24 @@ token on Sentry. A key saved for another workspace can be picked instead.
 
 Tasks is the workspace's queue of incoming work from every connected
 source: issues, pull and merge requests, Slack threads and Sentry errors, one
-record each, one line per record. Records are grouped by day (today,
-yesterday, this week, older) and ordered by time only, newest first. A facet
-rail filters them by view (all, in progress, has a session, closed), by type
-and by source, one pick per section, with counts; only the types a connected
-tool can produce show. A tool that did not load says so in its source row and
-in one notice above the list. The state column uses the tool's own word, the
-same one the record shows. A record opens in a drawer beside the list, with the
-same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
+record each, one line per record on the shared task grid (`taskColumns`:
+source, key, title, status glyph, priority, age). It opens on For me
+(`isForMeRecord`: tracker issues with an assignee, pull requests, starred
+records, records linked to a session) and switches to All in the header. The
+page title is the open count, since the studio bar already names Tasks. The
+choice and the
+grouping are kept per workspace (`taskListViewStorage`). Records are grouped
+(`taskGroupsOf`) by source, by source and status word, by project or not at
+all, largest group first and newest first inside a group. A group shows five
+rows and Show all; an expanded group of 60 rows or more draws only a window
+(`useVirtualRows`, 32px rows) and names the cursor position. One Filter menu in
+the header holds the facets: source, show (assigned, starred, in progress, has a
+session, closed), type and project, one pick per section, with counts; only the
+types a connected tool can produce show. A tool that did not load says so in its
+source row of the menu and in one gray line inside its group that retries. A
+record opens in the reader pane beside the list, and Open full shows it at the
+720 measure in place of the list, with the same header, grouped properties and
+sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
 the workspace with Link to a session, or open the session already linked to it.
 A record shows its session whichever way the link was made: launched from the
 Tasks, picked there, or linked from the session's own link button, by search or
@@ -1454,7 +1466,7 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
 - **Session events**: when a session starts, resets, hits a limit, changes
   provider or ends
 - **Budgets**: a monthly budget per provider, counted across all workspaces on a
-  UTC calendar month, and a spend cap per session that pauses workflows or
+  UTC calendar month, and a limit per session that pauses workflows or
   only warns, with an alert before you reach them
 - **Ask**: every answer is recorded as telemetry kind `ask` on its session
   (m227). It counts in the session cost, today's spend, provider budgets and
@@ -1542,8 +1554,8 @@ task up again in Goodboy.
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - **Models** is the Providers page that sets what each role runs on (it was
-  Defaults). **Spend cap** is the limit on a run, **Spend caps** the backup
-  group that holds them, **Copy context** the drawer button, **Context window**
+  Defaults). **Limit** is the most a run or a session may spend (it was Spend
+  cap), **Limits** the backup group that holds them (it was Spend caps), **Copy context** the drawer button, **Context window**
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
 - **Add a plain folder** and **Add existing** put a folder or a repository
@@ -1552,7 +1564,8 @@ task up again in Goodboy.
 - **Autonomy** is the setting that decides how often a run stops for you.
   Its top choice is **Autopilot** (it was Autorun, Run on its own and When to ask).
 - **Needs you** is the one name for anything that waits on you: the top bar
-  group, the board column, the questions list and an agent in a mount row.
+  group, the board column, the questions list and the Overview section above
+  Next.
   The reason follows it ("Needs your answer in step 2"). "Waiting on you" is
   retired.
 - **Your job** is the About you field that lists what you do (it was Your
@@ -1596,7 +1609,7 @@ before a change adds a word.
 
 - **Fix**: start fixing comments. The count is the comments a fix can start now
   (`Fix 3`), the same on the Board card, in Next steps, on the Branch bar and as
-  the **Fix comments** button (**Fix comments 3**). The drawer's own button, **Start fix for 3**, stays.
+  the **Fix comments** button (**Fix 3 comments**). The drawer's own button, **Start fix for 3**, stays.
 - **Reply**: answer a thread yourself. **Reply only** drops the code change and
   keeps the reply. **Publish reply** sends a decided reply that did not go out.
   **Resolve** ends a thread without a reply (a note says **Close**).
@@ -1642,7 +1655,7 @@ the Needs you row waits.
 
 A pull request has one state word, from `pullRequestKindOf` in
 `shared/pullRequestKind.ts`, and every surface that names it reads that
-function: the Overview mount rows, the Branch header and menus, the pull
+function: the Branch header and menus, the pull
 request pane and strip, the detail facts and the ask pack. The order is merged,
 closed, queued, approved, in review, draft. GitHub keeps `isDraft` true on a
 closed or merged draft, so the flag alone never makes a word: a closed or merged

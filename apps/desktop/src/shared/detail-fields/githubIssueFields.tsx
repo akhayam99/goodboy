@@ -39,7 +39,7 @@ export const githubIssueFields: FactRegistry<GithubIssue> = {
   labels: ({ entity }) =>
     entity.labels.map((label) => ({
       key: `label-${label}`,
-      label: 'Label',
+      label: 'Labels',
       icon: Tag,
       node: label,
     })),

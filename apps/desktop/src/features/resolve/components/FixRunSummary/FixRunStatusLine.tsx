@@ -1,6 +1,7 @@
 import { StatusDot, WorkNode } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { fixRunModelLabel } from '../../fixRun';
 import type { FixRunStatus } from '../../fixRunStatus';
@@ -10,6 +11,7 @@ type Props = {
   readonly attempt: ResolveAttempt;
   readonly status: FixRunStatus;
   readonly shared: SharedState | null;
+  readonly isAsking?: boolean;
 };
 
 export type SharedState = {
@@ -24,10 +26,16 @@ const WORD: Readonly<Record<FixRunStatus, string>> = {
   ended: FIX_RUN_COPY.statusDone,
 };
 
-export const FixRunStatusLine = ({ attempt, status, shared }: Props) => {
+export const FixRunStatusLine = ({
+  attempt,
+  status: runStatus,
+  shared,
+  isAsking = false,
+}: Props) => {
   const now = useNow(1_000);
+  const status: FixRunStatus = isAsking && runStatus === 'ended' ? 'waiting' : runStatus;
   const since = attempt.startedAt ?? attempt.createdAt;
-  const until = status === 'ended' ? (attempt.endedAt ?? now) : now;
+  const until = runStatus === 'ended' ? (attempt.endedAt ?? now) : now;
   const parts = [
     WORD[status],
     ...(status === 'queued' ? [] : [formatDuration({ durationMs: Math.max(0, until - since) })]),
@@ -45,7 +53,7 @@ export const FixRunStatusLine = ({ attempt, status, shared }: Props) => {
       ) : (
         <WorkNode state="running" label={WORD[status]} mark={{ kind: 'dot' }} />
       )}
-      <span className="min-w-0 truncate">{parts.join(' · ')}</span>
+      <span className="min-w-0 truncate">{joinFacts({ facts: parts })}</span>
     </p>
   );
 };

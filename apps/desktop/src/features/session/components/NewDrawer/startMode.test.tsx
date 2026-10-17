@@ -39,7 +39,6 @@ import {
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
-import { SETTING_AUTO_EXPERIMENT } from '../../../settings/settings';
 
 let useAppStore: StoryStore;
 let NewDrawer: typeof import('./index').NewDrawer;
@@ -102,13 +101,17 @@ afterEach(() => {
   localStorage.clear();
 });
 
-const openAgentTab = (): void => {
+type OpenParams = {
+  readonly form: 'agent' | 'auto';
+};
+
+const openForm = ({ form }: OpenParams): void => {
   render(
     <AutoReleaseContext.Provider value>
       <ToastProvider>
         <NewDrawer
           sessionId={SESSION_ID}
-          payload={{ tab: 'agent' }}
+          payload={{ form }}
           writePanel={WritePanel}
           onClose={vi.fn()}
         />
@@ -123,19 +126,22 @@ const typeGoal = (): void => {
   });
 };
 
-describe('the Agent start decides on the stored setting at the click', () => {
-  it('repaints the legacy form as Auto when another window turned it on, and starts on the second click', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'false');
-    openAgentTab();
-    await screen.findByRole('button', { name: 'Open Generalist' });
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
+describe('Start agent and Start Auto with Auto always available', () => {
+  it('keeps the role grid on the Agent form, so Start agent opens one role', async () => {
+    openForm({ form: 'agent' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Generalist' }));
+    expect(await screen.findByRole('button', { name: 'Start Generalist' })).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start Auto' })).toBeNull();
+  });
 
+  it('opens the Auto composer on the Start Auto form and starts at once', async () => {
+    openForm({ form: 'auto' });
     await screen.findByRole('textbox', { name: 'Describe the work' });
-    expect(spawnAgent).not.toHaveBeenCalled();
     typeGoal();
+
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
       kindOverride: 'auto',
@@ -143,41 +149,15 @@ describe('the Agent start decides on the stored setting at the click', () => {
     });
   });
 
-  it('repaints Auto as the legacy form when another window turned it off, and keeps the goal', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
-    openAgentTab();
-    await screen.findByRole('textbox', { name: 'Describe the work' });
-    typeGoal();
-    stored.set(SETTING_AUTO_EXPERIMENT, 'false');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
-
-    await screen.findByRole('button', { name: 'Open Generalist' });
-    expect(spawnAgent).not.toHaveBeenCalled();
-    expect(useAppStore.getState().newDrawerDrafts[SESSION_ID]?.autoGoal).toBe(GOAL);
-  });
-
-  it('starts at once when the form already shows the stored mode', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
-    openAgentTab();
+  it('starts Auto even when an old experiment row still says false', async () => {
+    stored.set('agents.autoExperiment', 'false');
+    openForm({ form: 'auto' });
     await screen.findByRole('textbox', { name: 'Describe the work' });
     typeGoal();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-  });
-
-  it('starts nothing and reports it when the setting cannot be read', async () => {
-    stored.set(SETTING_AUTO_EXPERIMENT, 'true');
-    openAgentTab();
-    await screen.findByRole('textbox', { name: 'Describe the work' });
-    typeGoal();
-    storySpies.getSetting.mockRejectedValue(new Error('database is locked'));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
-
-    await waitFor(() => expect(reportError).toHaveBeenCalled());
-    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(reportError).not.toHaveBeenCalled();
   });
 });

@@ -12,13 +12,13 @@ import type {
   RoleModelPreference,
   WorkspaceId,
 } from '@goodboy/types';
-import { Chip, Collapsible, cn, TruncatedText } from '@goodboy/ui';
+import { Collapsible, cn, TruncatedText } from '@goodboy/ui';
 import { useHiddenModels } from '../../../../hooks/useHiddenModels';
 import { useResolution } from '../../../../hooks/useResolution';
 import { hiddenModelNote } from '../hiddenModelNote';
 import { RoleHowItRuns } from './RoleHowItRuns';
 import { RoleModelSet } from './RoleModelSet';
-import { RoleModelSummary } from './RoleModelSummary';
+import { RoleModelCells } from './RoleModelCells';
 import { roleRunFacts } from './roleRunFacts';
 import { resolutionNote } from '../resolutionNote';
 import { roleSetEntries } from '../../../../roleSetEntries';
@@ -75,8 +75,8 @@ export const RoleRow = ({
           model: firstLive.choice.model,
         })
       : help;
-  const summary = skippedLine ?? hiddenNote;
-  const isSummaryNoted = isFirstHidden || skippedLine !== null;
+  const summary = hiddenNote;
+  const isSummaryNoted = isFirstHidden;
   const availableProviderIds = connectedProviderIds.filter(
     (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
   );
@@ -87,15 +87,14 @@ export const RoleRow = ({
   const choices = entries.map((entry) => entry.choice);
 
   const trailing = (
-    <span className="flex min-w-0 items-center gap-2">
-      <RoleModelSummary
-        provider={resolution.provider}
-        model={resolution.model}
-        effort={resolution.effort}
-        moreCount={Math.max(entries.length - 1, 0)}
-      />
-      <Chip kind="state" tone="neutral" label={preference === null ? 'Auto' : 'Pinned'} />
-    </span>
+    <RoleModelCells
+      provider={resolution.provider}
+      model={resolution.model}
+      effort={resolution.effort}
+      moreCount={Math.max(entries.length - 1, 0)}
+      isPinned={preference !== null}
+      skippedReason={skippedLine}
+    />
   );
 
   return (
@@ -113,7 +112,7 @@ export const RoleRow = ({
           >
             {summary}
           </TruncatedText>
-          <span className="flex max-w-[45%] shrink-0 justify-end">{trailing}</span>
+          {trailing}
         </span>
       }
     >

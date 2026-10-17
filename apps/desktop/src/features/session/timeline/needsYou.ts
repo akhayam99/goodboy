@@ -33,6 +33,7 @@ export type NeedsYouOwner = {
   readonly id: string;
   readonly kind: NeedsYouOwnerKind;
   readonly text: string;
+  readonly where: string | null;
   readonly at: string | null;
   readonly item: TimelineRowItem | null;
   readonly question: OpenQuestion | null;
@@ -116,7 +117,6 @@ const owedText = ({
 }): string =>
   [
     prNumber === null ? 'Fix run' : `#${prNumber}`,
-    `${owed.questions + owed.toReview + owed.pushFailed + owed.couldntFix} need you`,
     ...(owed.toReview === 0 ? [] : [`${owed.toReview} to review`]),
     ...(owed.questions === 0
       ? []
@@ -196,30 +196,35 @@ const oldest = ({
     null,
   );
 
-const askText = ({
+type AskLine = {
+  readonly text: string;
+  readonly where: string | null;
+};
+
+const askLine = ({
   title,
   item,
-  questions,
+  question,
 }: {
   readonly title: string;
   readonly item: TimelineRowItem;
-  readonly questions: number;
-}): string => {
+  readonly question: OpenQuestion | null;
+}): AskLine => {
   const ask = item.rowState.ask;
-  if (questions > 0 && (ask == null || ask.kind === 'answer')) {
-    return `${title} · ${plural({ count: questions, one: 'question', many: 'questions' })}`;
+  if (question !== null && (ask == null || ask.kind === 'answer')) {
+    return { text: question.text, where: title };
   }
   if (ask?.kind === 'restartStep') {
-    return `${title} · a step failed`;
+    return { text: 'A step failed', where: title };
   }
   if (ask?.kind === 'runStep') {
-    return `${title} · ${ask.step.name} is ready`;
+    return { text: `${ask.step.name} is ready`, where: title };
   }
   if (ask?.kind === 'reviewComment') {
     const word = item.rowState.reason?.kind === 'review' ? item.rowState.reason.word : null;
-    return word === null ? title : `${title} · ${word}`;
+    return word === null ? { text: title, where: null } : { text: word, where: title };
   }
-  return title;
+  return { text: title, where: null };
 };
 
 const isAskingRow = ({ item }: { readonly item: TimelineRowItem }): boolean =>
@@ -237,17 +242,14 @@ const runOwnerOf = ({
     return null;
   }
   const questions = openQuestionsOfRun({ entry });
+  const question = runOpenQuestion({ entry })?.question ?? oldest({ questions });
   return {
     id: runItem.id,
     kind: 'run',
-    text: askText({
-      title: entry.run.title ?? entry.workflow.name,
-      item: askItem,
-      questions: questions.length,
-    }),
+    ...askLine({ title: entry.run.title ?? entry.workflow.name, item: askItem, question }),
     at: runItem.at,
     item: runItem,
-    question: runOpenQuestion({ entry })?.question ?? oldest({ questions }),
+    question,
     questionIds: questions.map((question) => question.id),
     prNumber: null,
     owed: null,
@@ -270,6 +272,7 @@ const ownerOfRow = ({
   const { entry } = item;
   const base = {
     id: item.id,
+    where: null,
     at: item.at,
     item,
     question: null,
@@ -288,7 +291,7 @@ const ownerOfRow = ({
       ...base,
       kind: 'rebase',
       text: segmentsToText({
-        segments: sessionEventLabel({ event: entry.event, repeatCount: entry.repeatCount }),
+        segments: sessionEventLabel({ event: entry.event }),
       }),
     };
   }
@@ -311,15 +314,16 @@ const ownerOfRow = ({
     return runOwnerOf({ runItem, askItem: item });
   }
   const questions = openQuestionsOfAgent({ entry });
+  const question = oldest({ questions });
   return {
     ...base,
     kind: 'agent',
-    text: askText({
+    ...askLine({
       title: agentDisplayName({ name: entry.agent.name, kind: entry.agentKind }),
       item,
-      questions: questions.length,
+      question,
     }),
-    question: oldest({ questions }),
+    question,
     questionIds: questions.map((question) => question.id),
   };
 };
@@ -336,9 +340,10 @@ const ownerOfQuestion = ({ entry }: { readonly entry: TimelineQuestionEntry }): 
     id: entry.id,
     kind: 'question',
     text:
-      entry.questions.length === 1 && first !== undefined
-        ? `Question · ${first.text}`
-        : plural({ count: entry.questions.length, one: 'question', many: 'questions' }),
+      first === undefined
+        ? plural({ count: entry.questions.length, one: 'question', many: 'questions' })
+        : first.text,
+    where: null,
     at: entry.at,
     item: null,
     question: first ?? null,

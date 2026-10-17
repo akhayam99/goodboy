@@ -38,6 +38,14 @@ export const RunPrimaryButton = ({ session, view, kind, label }: Props) => {
   const orchestrateNextStep = useAppStore((state) => state.orchestrateNextStep);
   const restoreWorkflow = useAppStore((state) => state.restoreWorkflow);
   const question = view.answerQuestion;
+  const planId = view.plan?.id ?? null;
+  const isPlanOpen = useAppStore(
+    (state) =>
+      planId !== null &&
+      state.drawer?.kind === 'artifact-document' &&
+      state.drawer.payload.artifactId === planId,
+  );
+  const isQuiet = kind === 'review-plan' && isPlanOpen;
 
   const specs: Record<RunButtonKind, Spec> = {
     'review-plan': {
@@ -117,7 +125,12 @@ export const RunPrimaryButton = ({ session, view, kind, label }: Props) => {
   return (
     <Tooltip content={spec.hint} anchorClassName="shrink-0">
       <span className="inline-flex">
-        <Button size="sm" variant="primary" isBusy={isBusy} onClick={() => void press()}>
+        <Button
+          size="sm"
+          variant={isQuiet ? 'quiet' : 'primary'}
+          isBusy={isBusy}
+          onClick={() => void press()}
+        >
           <Icon size={ICON_SIZE.control} aria-hidden />
           {label}
         </Button>

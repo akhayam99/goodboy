@@ -7,12 +7,13 @@ export type StartBlankSessionParams = {
 
 export const startBlankSession = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId }: StartBlankSessionParams): Promise<Session> => {
-    const projectId = get().sessionDrafts[workspaceId]?.projectId ?? null;
+    const [projectId, ...additionalProjectIds] = get().sessionDrafts[workspaceId]?.projectIds ?? [];
     const { session } = await get().createSession({
       workspaceId,
       goal: '',
       omitGoalSlot: true,
-      ...(projectId !== null && { projectId }),
+      ...(projectId !== undefined && { projectId }),
+      ...(additionalProjectIds.length > 0 && { additionalProjectIds }),
     });
     set({ openSessionDraftWorkspaceId: null });
     return session;

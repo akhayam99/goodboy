@@ -11,7 +11,7 @@ import { useAppStore } from '../../../../../store';
 import { projectById } from '../../../../../store/slices/projects/projectIndex';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
-import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from '../audit/workspaceChrome';
+import { seedWorkspaceChrome } from '../audit/workspaceChrome';
 import { seedLoadedSession } from './seedLoadedSession';
 import { sessionPinsKey } from '../../../../../store/slices/session-pins/sessionPinsKey';
 import { serializeSessionPins } from '../../../../../store/slices/session-pins/parseSessionPins';
@@ -181,6 +181,7 @@ export const seedPinnedSessions = (): Session => {
     sessionGroupExpanded: { [RELAY_ID]: false },
     sessionViewPrefs: {
       [WORKSPACE_ID]: {
+        pageView: 'board',
         sort: 'updatedAt',
         group: 'project',
         isArchivedShown: false,
@@ -191,11 +192,4 @@ export const seedPinnedSessions = (): Session => {
   });
   installPinsDatabase();
   return open;
-};
-
-export const seedSessionCard = (): Session => {
-  seedWorkflowScene();
-  seedWorkspaceChrome({ session: SESSION, siblings: WORKSPACE_SIBLINGS });
-  installPinsDatabase();
-  return SESSION;
 };

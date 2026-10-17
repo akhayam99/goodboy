@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
+import { SceneRunsSurface } from '../SceneRunsSurface';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { FLOW_SESSION, FLOW_SESSION_ID, NOW, SESSIONS } from './fixtures';
 import { FINISHED_SESSION } from './finishedRun';
@@ -75,7 +75,7 @@ export const WorkflowRunScene = () => {
       session={session}
       main={
         <div className="flex h-full min-h-0 flex-col">
-          <WorkflowsPane session={session} />
+          <SceneRunsSurface session={session} />
         </div>
       }
     />

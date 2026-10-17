@@ -8,6 +8,7 @@ import { CommentComposer } from './CommentComposer';
 type Props = {
   readonly comment: ArtifactComment;
   readonly revision: number;
+  readonly isQuoteShown?: boolean;
   readonly onEdit: (params: { readonly commentId: string; readonly body: string }) => Promise<void>;
   readonly onRemove: (params: { readonly commentId: string }) => Promise<void>;
 };
@@ -46,7 +47,13 @@ const tagOf = ({
   );
 };
 
-export const CommentCard = ({ comment, revision, onEdit, onRemove }: Props) => {
+export const CommentCard = ({
+  comment,
+  revision,
+  isQuoteShown = true,
+  onEdit,
+  onRemove,
+}: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const { anchor } = comment;
   const quote = anchor.kind === 'quote' ? anchor.text : null;
@@ -97,7 +104,7 @@ export const CommentCard = ({ comment, revision, onEdit, onRemove }: Props) => {
         />
       ) : (
         <>
-          {quote === null ? null : (
+          {quote === null || !isQuoteShown ? null : (
             <q className="block text-meta italic text-muted-foreground">{quote}</q>
           )}
           <p className="whitespace-pre-wrap text-body text-foreground wrap-anywhere">

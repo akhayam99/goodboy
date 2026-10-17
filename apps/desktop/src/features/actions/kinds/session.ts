@@ -13,6 +13,7 @@ import {
   Pencil,
   Pin,
   PinOff,
+  Rocket,
 } from 'lucide-react';
 import type { Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
@@ -24,6 +25,7 @@ import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { createAgentEventName } from '../../session/createAgentEventName';
+import { refreshSession } from '../../session/refreshSession';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
 import { ALL_CHOICES_ID } from '../types';
@@ -39,6 +41,7 @@ import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { linkedIssueSources } from '../../../store/slices/issue-briefs/linkedIssueSources';
 import { writeGoalFromWorkEvent } from '../../../store/slices/issue-briefs/writeGoalFromWorkEvent';
 import { NAMES } from '../../../shared/names';
+import { SHORTCUTS } from '../../../shared/keyboard/registry';
 
 export type SessionFacts = {
   readonly session: Session;
@@ -46,6 +49,7 @@ export type SessionFacts = {
   readonly title: string;
   readonly isArchived: boolean;
   readonly isPinned: boolean;
+  readonly isRefreshing: boolean;
   readonly canMovePinUp: boolean;
   readonly canMovePinDown: boolean;
   readonly isBranchless: boolean;
@@ -78,6 +82,8 @@ export const SESSION_HEADER_ANCHOR = 'session-header';
 const NO_MOUNT_REASON = 'Add a project to this session first';
 
 const NO_WORKTREE_REASON = 'This session has no worktree yet';
+
+const REFRESHING_REASON = 'Already refreshing';
 
 const deleteDescription = ({ isBranchless }: { readonly isBranchless: boolean }): string =>
   `${DELETE_REMOVED_LINE} ${deleteKeptLine({ isBranchless })} ${DELETE_CANNOT_UNDO}`;
@@ -303,6 +309,39 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     run: ({ facts, env }) => env.getState().unpinSession(facts.sessionId),
   },
   {
+    id: 'session.refresh',
+    label: SHORTCUTS['session.refresh'].label,
+    icon: CONCEPT_ICONS.refresh,
+    group: 'act',
+    shortcut: 'session.refresh',
+    when: isLive,
+    blockedReason: ({ facts }) => (facts.isRefreshing ? REFRESHING_REASON : null),
+    run: ({ facts, env }) => {
+      const state = env.getState();
+      return refreshSession({
+        sessionId: facts.sessionId,
+        resyncSession: state.resyncSession,
+        reportError: state.reportError,
+      });
+    },
+  },
+  {
+    id: 'session.autopilotOn',
+    label: `Turn on ${NAMES.autopilot}`,
+    icon: Rocket,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && !facts.session.autoRun,
+    run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, true),
+  },
+  {
+    id: 'session.autopilotOff',
+    label: `Turn off ${NAMES.autopilot}`,
+    icon: Rocket,
+    group: 'act',
+    when: ({ facts }) => isLive({ facts }) && facts.session.autoRun,
+    run: ({ facts, env }) => env.getState().setSessionAutoRun(facts.sessionId, false),
+  },
+  {
     id: 'session.pinnedUp',
     label: 'Move up',
     icon: ArrowUp,
@@ -484,6 +523,7 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       title: sessionTitle({ session }),
       isArchived: session.archivedAt != null,
       isPinned: pinIndex !== -1,
+      isRefreshing: state.sessionSyncing[target.sessionId] === true,
       canMovePinUp: pinIndex > 0,
       canMovePinDown: pinIndex !== -1 && pinIndex < pins.length - 1,
       isBranchless: isBranchlessSession({ branch: rawBranch }),

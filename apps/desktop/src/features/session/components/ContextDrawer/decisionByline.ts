@@ -1,5 +1,5 @@
 import type { AgentId, SessionDecision, SessionDecisionAuthor } from '@goodboy/types';
-import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 
 type AgentNames = ReadonlyMap<AgentId, string>;
 
@@ -32,9 +32,9 @@ type AgeParams = {
 export const decisionAge = ({ iso, nowMs }: AgeParams): string => {
   const fromMs = Date.parse(iso);
   if (Number.isNaN(fromMs) || nowMs - fromMs < 60_000) {
-    return 'now';
+    return 'just now';
   }
-  return formatSpan({ from: iso, to: nowMs });
+  return formatAge({ from: iso, now: nowMs });
 };
 
 type BylineParams = {

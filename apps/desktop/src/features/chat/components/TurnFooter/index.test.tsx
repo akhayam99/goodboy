@@ -1,42 +1,69 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type {
-  AgentId,
-  IsoDateTime,
-  ProviderRunId,
-  SessionId,
-  TelemetryRecord,
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+  type TelemetryRecord,
+  type TelemetryRecordId,
 } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+} from '../../../../store/storyHarness';
 import type { TranscriptItem } from '../../utils/transcript-items';
-
-type ExecutedAgentRouting = { provider: string; model: string; effort: string | null };
-
-type Store = {
-  runRouting: Record<string, Record<string, ExecutedAgentRouting>>;
-  sessionTelemetry: Record<string, ReadonlyArray<TelemetryRecord>>;
-};
-
-const { store } = vi.hoisted(() => ({
-  store: { runRouting: {}, sessionTelemetry: {} } as Store,
-}));
-
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Store) => T) => selector(store),
-}));
-
+import { NAMES } from '../../../../shared/names';
 import { TurnFooter } from './index';
 
-afterEach(() => {
-  cleanup();
-  store.runRouting = {};
-  store.sessionTelemetry = {};
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const AGENT_ID = brandId<AgentId>({ value: 'agent-1' });
+const RUN_ID = brandId<ProviderRunId>({ value: 'run-1' });
+const ENDED_AT = brandId<IsoDateTime>({ value: '2026-06-08T10:00:42.000Z' });
+const STARTED_AT = brandId<IsoDateTime>({ value: '2026-06-08T10:00:00.000Z' });
+
+const RECORD: TelemetryRecord = {
+  id: brandId<TelemetryRecordId>({ value: 'rec-1' }),
+  runId: RUN_ID,
+  sessionId: SESSION_ID,
+  kind: 'turn',
+  provider: 'anthropic',
+  model: 'claude-opus-5',
+  inputTokens: 100000,
+  outputTokens: 1400,
+  cachedInputTokens: 90000,
+  cacheCreationInputTokens: 2000,
+  contextTokens: 76000,
+  estimatedCostUsd: 0.12,
+  recordedAt: ENDED_AT,
+};
+
+let useAppStore: Awaited<ReturnType<typeof importStore>>;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
 });
 
-const SESSION_ID = 'session-1' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
-const RUN_ID = 'run-1' as ProviderRunId;
+afterEach(cleanup);
 
 const usageItem = (): Extract<TranscriptItem, { kind: 'usage' }> => ({
   kind: 'usage',
@@ -50,47 +77,30 @@ const usageItem = (): Extract<TranscriptItem, { kind: 'usage' }> => ({
     estimatedCostUsd: 0.12,
   },
   runId: RUN_ID,
-  at: '2026-06-08T10:00:42.000Z' as IsoDateTime,
+  at: ENDED_AT,
 });
 
 describe('TurnFooter', () => {
-  it('shows tokens, cached percentage and cost for a done turn', () => {
-    store.sessionTelemetry = {
-      [SESSION_ID]: [
-        {
-          id: 'rec-1',
-          runId: RUN_ID,
-          sessionId: SESSION_ID,
-          kind: 'turn',
-          provider: 'anthropic',
-          model: 'claude-opus-5',
-          inputTokens: 100000,
-          outputTokens: 1400,
-          cachedInputTokens: 90000,
-          cacheCreationInputTokens: 2000,
-          contextTokens: 76000,
-          estimatedCostUsd: 0.12,
-          recordedAt: '2026-06-08T10:00:42.000Z' as IsoDateTime,
-        } as TelemetryRecord,
-      ],
-    };
+  it('shows model and time on the line, cost, tokens, cache and context in the detail', () => {
+    useAppStore.setState({ sessionTelemetry: { [SESSION_ID]: [RECORD] } });
     render(
       <TurnFooter
         item={usageItem()}
         sessionId={SESSION_ID}
         agentId={AGENT_ID}
-        startedAt={'2026-06-08T10:00:00.000Z' as IsoDateTime}
+        startedAt={STARTED_AT}
       />,
     );
     screen.getByText('42s');
-    screen.getByText(/in ·/);
-    screen.getByText('~$0.12');
-    screen.getByText('47% cached');
-  });
-
-  it('never shows $0.00: hides the cost entry when it is unknown', () => {
-    render(<TurnFooter item={usageItem()} sessionId={null} agentId={null} />);
-    expect(screen.queryByText('~$0.00')).toBeNull();
+    screen.getByText('Opus 5');
+    expect(screen.queryByText('~$0.12')).toBeNull();
+    expect(screen.queryByText(/in ·/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn detail' }));
+    screen.getByText('Input');
+    screen.getByText('from cache');
+    screen.getByText('Output');
+    screen.getByText(NAMES.contextWindow);
+    screen.getByText(/~\$0\.12/);
   });
 
   it('opens the detail popover on click', () => {
@@ -101,22 +111,30 @@ describe('TurnFooter', () => {
     screen.getByText('Output');
   });
 
-  it('renders a stopped row with the stopped node instead of the full stats line', () => {
+  it('keeps the same model and time shape on a stopped turn, with a stopped glyph', () => {
+    useAppStore.setState({ sessionTelemetry: { [SESSION_ID]: [RECORD] } });
     render(
       <TurnFooter
         item={usageItem()}
-        sessionId={null}
-        agentId={null}
+        sessionId={SESSION_ID}
+        agentId={AGENT_ID}
         outcome="stopped"
-        startedAt={'2026-06-08T10:00:00.000Z' as IsoDateTime}
+        startedAt={STARTED_AT}
       />,
     );
-    screen.getByText('Stopped after 42s');
-    expect(screen.queryByRole('button', { name: 'Turn detail' })).toBeNull();
+    screen.getByText('Opus 5');
+    screen.getByText('42s');
+    expect(screen.queryByText(/after/)).toBeNull();
+    expect(screen.queryByText(/in ·/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn detail' }));
+    screen.getByText('Ended');
+    expect(screen.getAllByText('Stopped').length).toBeGreaterThan(0);
   });
 
-  it('renders a failed row with the failed node', () => {
+  it('marks a failed turn in the detail and keeps the line shape', () => {
     render(<TurnFooter item={usageItem()} sessionId={null} agentId={null} outcome="failed" />);
+    expect(screen.queryByText(/in ·/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn detail' }));
     screen.getByText('Failed');
   });
 });

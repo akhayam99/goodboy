@@ -8,13 +8,14 @@ type Params = {
   readonly agent: Agent;
   readonly provider: ProviderId;
   readonly isProviderConnected: boolean;
+  readonly isAutoChild: boolean;
 };
 
 export type AgentStoppedCopy = {
   readonly title: string;
   readonly body: string | null;
   readonly canContinue: boolean;
-  readonly actionLabel: 'Resume' | 'Continue';
+  readonly actionLabel: 'Resume' | 'Continue' | 'Retry through Auto';
 };
 
 const stoppedTitle = ({ agent }: { readonly agent: Agent }): string => {
@@ -29,9 +30,18 @@ export const agentStoppedCopy = ({
   agent,
   provider,
   isProviderConnected,
+  isAutoChild,
 }: Params): AgentStoppedCopy => {
   const label = PROVIDER_LABEL[provider];
   const title = stoppedTitle({ agent });
+  if (isAutoChild) {
+    return {
+      title,
+      body: 'Auto started this agent, so Auto runs the retry and reads its result.',
+      canContinue: agent.doneAt == null,
+      actionLabel: 'Retry through Auto',
+    };
+  }
   const actionLabel = agent.stoppedBy === 'app' ? 'Resume' : 'Continue';
   if (agent.doneAt != null) {
     return { title, body: null, canContinue: false, actionLabel };

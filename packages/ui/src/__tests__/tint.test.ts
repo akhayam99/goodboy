@@ -19,9 +19,10 @@ describe('tintClasses', () => {
     expect(tint.bg).toMatch(/\/10$/);
     expect(tint.bgSoft).toMatch(/\/5$/);
     expect(tint.hoverBorder).toMatch(/^hover:border-\S+\/40$/);
-    expect(tint.hoverBg).toMatch(/^hover:bg-\S+\/20$/);
+    expect(tint.hoverBg).toBe('hover:bg-hover');
+    expect(tint.hoverRing).toMatch(/^hover:ring-\S+\/60$/);
     expect(tint.hoverBgSoft).toMatch(/^hover:bg-\S+\/5$/);
-    expect(tint.solid).toMatch(/^bg-\S+ text-on-tone$/);
+    expect(tint.solid).toMatch(/^bg-\S+ text-on-tone \[&_svg\]:text-current$/);
     expect(tint.rail).toBe(`border-l-${tone}`);
   });
 
@@ -45,13 +46,14 @@ describe('tintClasses', () => {
       border: 'border-draft/40',
       borderSoft: 'border-draft/20',
       hoverBorder: 'hover:border-draft/40',
-      hoverBg: 'hover:bg-draft/20',
+      hoverRing: 'hover:ring-draft/60',
+      hoverBg: 'hover:bg-hover',
       hoverBgSoft: 'hover:bg-draft/5',
       hoverText: 'hover:text-draft',
       text: 'text-draft',
       icon: 'text-draft',
       dot: 'bg-draft',
-      solid: 'bg-draft text-on-tone',
+      solid: 'bg-draft text-on-tone [&_svg]:text-current',
     });
   });
 });

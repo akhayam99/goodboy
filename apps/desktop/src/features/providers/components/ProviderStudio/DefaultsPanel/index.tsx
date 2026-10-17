@@ -29,7 +29,6 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { pluralize } from '../../../../../shared/utils/pluralize';
 import { SETTINGS_PANE_ENTRY } from '../../../../settings/components/SettingsStudio/settingsPaneEntry';
 import { useModelScope } from '../../../hooks/useModelScope';
 import { resolutionOf } from '../../../../../store/slices/models/selectResolution';
@@ -116,7 +115,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
       title={NAMES.models}
       meta={scopeLabel ?? undefined}
       actions={
-        pinnedCount === 0 ? undefined : (
+        pinnedCount === 0 || unrunnableRoles.length > 0 ? undefined : (
           <ConfirmPopover
             role="danger"
             icon={<RotateCcw size={ICON_SIZE.control} aria-hidden />}
@@ -124,7 +123,6 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
             description="New chats, every agent role and background task go back to Auto."
             confirmLabel="Reset all"
             isBusy={busy}
-            align="end"
             onConfirm={onResetAll}
             trigger={({ arm }) => (
               <Button size="sm" variant="ghost" disabled={busy} onClick={arm}>
@@ -180,10 +178,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         <BandStack>
           {DEFAULT_GROUPS.agents.map((group) => (
             <div key={group.id} role="group" aria-label={group.label}>
-              <Band
-                groupLabel={group.members.length > 1 ? group.label : undefined}
-                groupMeta={pluralize(group.members.length, 'role')}
-              >
+              <Band groupLabel={group.members.length > 1 ? group.label : undefined}>
                 {group.members.map((role) => (
                   <RoleRow
                     key={role}
@@ -209,10 +204,7 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         <BandStack>
           {DEFAULT_GROUPS.tasks.map((group) => (
             <div key={group.id} role="group" aria-label={group.label}>
-              <Band
-                groupLabel={group.members.length > 1 ? group.label : undefined}
-                groupMeta={pluralize(group.members.length, 'task')}
-              >
+              <Band groupLabel={group.members.length > 1 ? group.label : undefined}>
                 {group.members.map((taskId) => {
                   const task = TASK_BY_ID.get(taskId);
                   if (task == null) {

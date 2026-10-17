@@ -66,25 +66,25 @@ describe('the Now chip counts sessions by their stage', () => {
     render(<NowChip onOpenScript={vi.fn()} />);
 
     expect(trigger().getAttribute('aria-label')).toBe('1 session needs you');
-    expect(wordOf('needs you')).not.toBeNull();
-    expect(wordOf('need you')).toBeNull();
+    expect(wordOf('session needs you')).not.toBeNull();
+    expect(wordOf('sessions need you')).toBeNull();
     expect(screen.queryByText('running')).toBeNull();
   });
 
-  it('says need you from two on, and counts a held plan', () => {
+  it('says sessions need you from two on, and counts a held plan', () => {
     seed([asking, planHeld], [asking]);
     render(<NowChip onOpenScript={vi.fn()} />);
 
     expect(trigger().getAttribute('aria-label')).toBe('2 sessions need you');
-    expect(wordOf('need you')).not.toBeNull();
-    expect(wordOf('needs you')).toBeNull();
+    expect(wordOf('sessions need you')).not.toBeNull();
+    expect(wordOf('session needs you')).toBeNull();
   });
 
   it('keeps a running session with nothing waiting on you under running', () => {
     seed([asking, working], [asking]);
     render(<NowChip onOpenScript={vi.fn()} />);
 
-    expect(trigger().getAttribute('aria-label')).toBe('1 session needs you, 1 running');
+    expect(trigger().getAttribute('aria-label')).toBe('1 session needs you, 1 session running');
   });
 
   it('lists the running session with a question under needs you, in the words of its reason', async () => {

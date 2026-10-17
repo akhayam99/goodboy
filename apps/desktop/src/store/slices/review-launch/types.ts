@@ -4,6 +4,7 @@ import type { ReviewLaunchState } from './state';
 export type RequestReviewLaunchParams = {
   readonly sessionId: SessionId;
   readonly threadIds: ReadonlyArray<string>;
+  readonly fromThreadId?: string | null;
 };
 
 export type ConsumeReviewLaunchParams = {

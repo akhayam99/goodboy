@@ -19,7 +19,7 @@ type Props = {
 export const ProcessRowView = ({ row, idleCounts, now }: Props) => (
   <li data-started-row={row.spawnId} className={cn(PORT_GRID, 'min-h-8 text-label')}>
     <StatusDot tone="neutral" size="md" className="opacity-40" />
-    <span className="text-faint-foreground">no port</span>
+    <span />
     <span className="min-w-0 truncate text-muted-foreground">{row.kindWord}</span>
     <span className="flex min-w-0 text-muted-foreground">
       <MiddleText value={row.where} tail={MIDDLE_TAIL} />

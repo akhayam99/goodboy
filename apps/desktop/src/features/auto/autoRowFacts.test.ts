@@ -10,9 +10,17 @@ import { withoutAutoChildren } from './withoutAutoChildren';
 const factsOf = (phase: AutoPhase) => autoRowFacts({ view: aView({ phase }) });
 
 describe('autoRowFacts', () => {
-  it('leaves an answering or finished tree to the agent row', () => {
+  it('leaves an answering tree to the agent row', () => {
     expect(factsOf('answering')).toBeNull();
-    expect(factsOf('done')).toBeNull();
+  });
+
+  it('says Idle when the work rests and Finished only for a tree the user closed', () => {
+    expect(factsOf('done')).toEqual({ phase: 'done', word: 'Idle', short: 'Idle' });
+    expect(factsOf('finished')).toEqual({
+      phase: 'closed',
+      word: 'Finished by you',
+      short: 'Finished',
+    });
   });
 
   it('names the roles it waits for, each once, and drops the settled ones', () => {
@@ -35,13 +43,13 @@ describe('autoRowFacts', () => {
     });
   });
 
-  it('says Needs your approval while a plan waits for it and nothing revises it', () => {
+  it('says Needs you while a plan waits for it and nothing revises it', () => {
     const asked = (artifacts: ReturnType<typeof aPlanRow>[]) =>
       autoRowFacts({ view: aView({ phase: 'waiting', artifacts }) });
 
     expect(asked([aPlanRow()])).toEqual({
       phase: 'waiting',
-      word: 'Needs your approval',
+      word: 'Needs you',
       short: 'Needs you',
     });
     expect(asked([aPlanRow({ openRevise: 'delegation-revise' })])?.word).toBe('Waiting');
@@ -60,7 +68,7 @@ describe('autoRowFacts', () => {
     expect(factsOf('merging')).toEqual({
       phase: 'running',
       word: 'Reading the results',
-      short: 'Merging',
+      short: 'Reading',
     });
     expect(factsOf('blocked')).toEqual({
       phase: 'waiting',

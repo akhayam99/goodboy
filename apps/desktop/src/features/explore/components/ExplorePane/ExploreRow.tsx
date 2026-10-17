@@ -8,11 +8,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { MiddleText } from '../../../../shared/components/MiddleText';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
-import type {
-  RunRowActionParams,
-  SelectFileParams,
-  SetExpandedParams,
-} from '../../exploreHandlers';
+import type { SelectFileParams, SetExpandedParams } from '../../exploreHandlers';
 import type { ExploreEntryRow } from '../../exploreRows';
 import { fileGlyphOf } from '../../fileGlyph';
 import type { ChangedEntry } from '../../../worktree/worktree';
@@ -32,14 +28,10 @@ type Props = {
   readonly folderChangeCount: number;
   readonly onToggle: (params: SetExpandedParams) => void;
   readonly onSelectFile: (params: SelectFileParams) => void;
-  readonly onRun: (params: RunRowActionParams) => void;
   readonly onAskClosed: () => void;
 };
 
 const EXTENSION = /\.[^./]*$/;
-
-const FADE_ON_ACTIONS =
-  'group-hover/explore-row:opacity-0 group-focus-within/explore-row:opacity-0 motion-safe:transition-opacity';
 
 export const ExploreRow = ({
   sessionId,
@@ -53,7 +45,6 @@ export const ExploreRow = ({
   folderChangeCount,
   onToggle,
   onSelectFile,
-  onRun,
   onAskClosed,
 }: Props) => {
   const { entry } = row;
@@ -65,9 +56,11 @@ export const ExploreRow = ({
       : Folder
     : fileGlyphOf({ name: entry.name });
   const age = entry.modifiedAt === null ? '' : formatAge({ from: entry.modifiedAt, now });
-  const fade = cn(FADE_ON_ACTIONS, isAskOpen && 'opacity-0');
 
   const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.target instanceof Node && !event.currentTarget.contains(event.target)) {
+      return;
+    }
     if (
       event.target instanceof Element &&
       event.target.closest('[data-slot="explore-row-actions"]') !== null
@@ -135,32 +128,23 @@ export const ExploreRow = ({
       />
       <span
         data-slot="explore-size"
-        className={cn(
-          'w-14 shrink-0 text-right text-meta tabular-nums text-faint-foreground @max-[520px]:hidden',
-          fade,
-        )}
+        className="w-14 shrink-0 text-right text-meta tabular-nums text-faint-foreground @max-[520px]:hidden"
       >
-        {entry.isDir ? '' : formatBytes({ bytes: entry.sizeBytes })}
+        {entry.isDir || entry.sizeBytes === null ? '' : formatBytes({ bytes: entry.sizeBytes })}
       </span>
       <span
         data-slot="explore-age"
-        className={cn(
-          'w-16 shrink-0 text-right text-meta tabular-nums text-faint-foreground @max-[440px]:hidden',
-          fade,
-        )}
+        className="w-16 shrink-0 text-right text-meta tabular-nums text-faint-foreground @max-[440px]:hidden"
       >
         {age}
       </span>
-      <span aria-hidden className="hidden w-20 shrink-0 @max-[440px]:block" />
-      {isDeleted ? null : (
-        <ExploreRowActions
-          sessionId={sessionId}
-          target={target}
-          isAskOpen={isAskOpen}
-          onRun={onRun}
-          onAskClosed={onAskClosed}
-        />
-      )}
+      <ExploreRowActions
+        sessionId={sessionId}
+        target={target}
+        isMenuShown={isSelected && !isDeleted}
+        isAskOpen={isAskOpen && !isDeleted}
+        onAskClosed={onAskClosed}
+      />
     </div>
   );
 };

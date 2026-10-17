@@ -1,21 +1,27 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import {
-  COUNTED_PAGE_IDS,
-  isRunningWord,
-  pageCountWordOf,
-  type CountedPageId,
-  type PageCountFacts,
-} from './pageCountWord';
+import { pageCountWordOf, type CountedPageId, type PageCountFacts } from './pageCountWord';
+
+const COUNTED_PAGE_IDS = [
+  'runs',
+  'orchestrated',
+  'agents',
+  'auto',
+  'artifacts',
+  'questions',
+] as const satisfies ReadonlyArray<CountedPageId>;
 
 const QUIET: PageCountFacts = {
-  waiting: 0,
-  mounts: 1,
-  branchName: null,
   runs: 0,
   runningRuns: 0,
+  waitingRuns: 0,
+  orchestratedRuns: 0,
+  runningOrchestratedRuns: 0,
+  waitingOrchestratedRuns: 0,
   agents: 0,
   runningAgents: 0,
+  autoAgents: 0,
+  workingAutoAgents: 0,
   artifacts: 0,
   openQuestions: 0,
 };
@@ -29,21 +35,6 @@ describe('pageCountWordOf', () => {
   });
 
   it.each([
-    [{ waiting: 5 }, '5 need you'],
-    [{ waiting: 1 }, '1 need you'],
-    [{ waiting: 5, mounts: 3 }, '3 branches'],
-    [{ mounts: 3 }, '3 branches'],
-    [{ mounts: 2 }, '2 branches'],
-    [{ mounts: 1 }, null],
-    [{ mounts: 1, branchName: 'ak/fix-ledger-sync' }, 'ak/fix-ledger-sync'],
-    [{ mounts: 3, branchName: null }, '3 branches'],
-    [{ mounts: 4, branchName: 'ak/fix-ledger-sync' }, '4 branches'],
-    [{ waiting: 2, mounts: 1, branchName: 'ak/fix-ledger-sync' }, '2 need you'],
-  ])('reads Branch for %j as %s', (facts, expected) => {
-    expect(wordOf('branch', facts)).toBe(expected);
-  });
-
-  it.each([
     [{ runs: 4 }, '4 runs'],
     [{ runs: 1 }, '1 run'],
     [{ runs: 4, runningRuns: 2 }, '2 running'],
@@ -51,6 +42,14 @@ describe('pageCountWordOf', () => {
     [{ runs: 0, runningRuns: 0 }, null],
   ])('reads Runs for %j as %s', (facts, expected) => {
     expect(wordOf('runs', facts)).toBe(expected);
+  });
+
+  it.each([
+    [{ orchestratedRuns: 2 }, '2 runs'],
+    [{ orchestratedRuns: 2, runningOrchestratedRuns: 1 }, '1 running'],
+    [{ runs: 3 }, null],
+  ])('reads Orchestrated for %j as %s', (facts, expected) => {
+    expect(wordOf('orchestrated', facts)).toBe(expected);
   });
 
   it.each([
@@ -62,10 +61,25 @@ describe('pageCountWordOf', () => {
   });
 
   it.each([
+    [{ autoAgents: 2 }, '2 conversations'],
+    [{ autoAgents: 1 }, '1 conversation'],
+    [{ autoAgents: 2, workingAutoAgents: 1 }, '1 working'],
+  ])('reads Auto agents for %j as %s', (facts, expected) => {
+    expect(wordOf('auto', facts)).toBe(expected);
+  });
+
+  it.each([
     [{ artifacts: 4 }, '4 artifacts'],
     [{ artifacts: 1 }, '1 artifact'],
   ])('reads Artifacts for %j as %s', (facts, expected) => {
     expect(wordOf('artifacts', facts)).toBe(expected);
+  });
+
+  it('names a run that waits on you before a running one', () => {
+    expect(wordOf('runs', { runs: 3, runningRuns: 1, waitingRuns: 2 })).toBe('2 need you');
+    expect(wordOf('orchestrated', { orchestratedRuns: 1, waitingOrchestratedRuns: 1 })).toBe(
+      '1 needs you',
+    );
   });
 
   it('reads Questions as the number open', () => {
@@ -74,25 +88,21 @@ describe('pageCountWordOf', () => {
 
   it('puts the noun last and never a bare number', () => {
     const everything: PageCountFacts = {
-      waiting: 0,
-      mounts: 4,
-      branchName: null,
       runs: 4,
       runningRuns: 0,
+      waitingRuns: 0,
+      orchestratedRuns: 1,
+      runningOrchestratedRuns: 0,
+      waitingOrchestratedRuns: 0,
       agents: 3,
       runningAgents: 0,
+      autoAgents: 2,
+      workingAutoAgents: 0,
       artifacts: 4,
       openQuestions: 2,
     };
     for (const page of COUNTED_PAGE_IDS) {
       expect(pageCountWordOf({ page, facts: everything })).toMatch(/^\d+ [a-z]+$/);
     }
-  });
-});
-
-describe('isRunningWord', () => {
-  it('tells a running word from a count', () => {
-    expect(isRunningWord({ word: '2 running' })).toBe(true);
-    expect(isRunningWord({ word: '4 runs' })).toBe(false);
   });
 });

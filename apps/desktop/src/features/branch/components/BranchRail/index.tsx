@@ -1,52 +1,34 @@
 import { useRef, type KeyboardEvent } from 'react';
 import { SelectableRow, Tooltip } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
-import { ViewedRing } from '../../../../shared/components/ViewedRing';
 import type { BranchTabEntry } from '../../branchTabs';
-import { RailCount } from './RailCount';
-
-type BranchViewed = {
-  readonly viewed: number;
-  readonly total: number;
-};
+import type { WorktreeEntryFacts } from '../../worktreeEntryFacts';
+import { WORKTREE_ENTRY_ICONS } from '../../worktreeEntryIcons';
+import { entryAriaLabel } from '../../entryAriaLabel';
+import { WorktreeEntrySlot } from '../WorktreeEntrySlot';
 
 type Props = {
   readonly tabs: ReadonlyArray<BranchTabEntry>;
   readonly current: BranchTab;
-  readonly counts: Readonly<Partial<Record<BranchTab, number | null>>>;
-  readonly viewed: BranchViewed | null;
-  readonly hasFailingChecks: boolean;
-  readonly hostRef: (node: HTMLDivElement | null) => void;
+  readonly facts: WorktreeEntryFacts;
   readonly onSelect: (tab: BranchTab) => void;
 };
 
-const SECTION_ICON: Readonly<Record<BranchTab, LucideIcon>> = {
-  pr: CONCEPT_ICONS.pr,
-  comments: CONCEPT_ICONS.comments,
-  files: CONCEPT_ICONS.diff,
-  commits: CONCEPT_ICONS.commits,
-  checks: CONCEPT_ICONS.checks,
-};
+const ENTRY_ID_PREFIX = 'worktree-entry-';
 
-export const BranchRail = ({
-  tabs,
-  current,
-  counts,
-  viewed,
-  hasFailingChecks,
-  hostRef,
-  onSelect,
-}: Props) => {
+export const BranchRail = ({ tabs, current, facts, onSelect }: Props) => {
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
       return;
     }
-    const rows = [...(listRef.current?.querySelectorAll<HTMLElement>('button') ?? [])];
+    const rows = [
+      ...(listRef.current?.querySelectorAll<HTMLElement>(`[id^="${ENTRY_ID_PREFIX}"]`) ?? []),
+    ];
     const from = rows.findIndex((row) => row === event.target);
     if (from === -1) {
       return;
@@ -62,72 +44,55 @@ export const BranchRail = ({
   };
 
   return (
-    <nav aria-label="Sections" className="flex min-h-0 flex-1 flex-col gap-4">
-      <div
-        ref={listRef}
-        role="presentation"
-        onKeyDown={onKeyDown}
-        className="flex shrink-0 flex-col gap-0.5 px-2"
-      >
+    <nav aria-label="Worktree" className="flex min-h-0 flex-col px-2">
+      <div ref={listRef} role="presentation" onKeyDown={onKeyDown} className="flex flex-col">
         {tabs.map((entry) => {
-          const Icon = SECTION_ICON[entry.id];
+          const Icon = WORKTREE_ENTRY_ICONS[entry.id];
           const isCurrent = entry.id === current;
-          const count = counts[entry.id];
-          const isViewedShown = entry.id === 'files' && viewed !== null && viewed.total > 0;
+          const fact = facts[entry.id];
           const row = (
             <SelectableRow
               selected={isCurrent}
+              selectedIconTone={navEntryToneOf({ icon: Icon })}
               ariaCurrent={isCurrent ? 'page' : undefined}
+              ariaLabel={entryAriaLabel({ label: entry.label, fact })}
+              id={`${ENTRY_ID_PREFIX}${entry.id}`}
               onClick={() => onSelect(entry.id)}
-              className="min-h-8 items-center gap-2 px-2 text-label"
+              className="h-7 items-center gap-2 px-2 text-ui"
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-              <span className="min-w-0 flex-1 truncate">{entry.label}</span>
-              {isViewedShown ? (
-                <span className="flex shrink-0 items-center gap-1 text-chip tabular-nums text-faint-foreground">
-                  <ViewedRing viewed={viewed.viewed} total={viewed.total} />
-                  {viewed.viewed}/{viewed.total}
-                </span>
-              ) : null}
-              {entry.id === 'checks' && hasFailingChecks ? (
-                <span
-                  role="img"
-                  aria-label="Failing checks"
-                  className="size-1.5 shrink-0 rounded-full bg-danger"
-                />
-              ) : null}
-              {!isViewedShown && count !== undefined ? (
-                <span className="shrink-0 text-chip">
-                  <RailCount count={count} />
-                </span>
-              ) : null}
+              <span data-entry-label="" className="min-w-0 flex-1 truncate">
+                {entry.label}
+              </span>
+              <WorktreeEntrySlot fact={fact} />
             </SelectableRow>
           );
-          return entry.shortcut === null ? (
-            <div key={entry.id}>{row}</div>
-          ) : (
-            <Tooltip
-              key={entry.id}
-              side="right"
-              content={
-                <span className="inline-flex items-center gap-2">
-                  {entry.label}
-                  <kbd className="font-sans text-faint-foreground">
-                    {shortcutGlyphs(entry.shortcut)}
-                  </kbd>
-                </span>
-              }
-            >
-              {row}
-            </Tooltip>
+          const hasTip = entry.shortcut !== null || fact.tooltip !== null;
+          return (
+            <div key={entry.id} className="flex flex-col">
+              {!hasTip ? (
+                row
+              ) : (
+                <Tooltip
+                  side="right"
+                  content={
+                    <span className="inline-flex items-center gap-2">
+                      {fact.tooltip === null ? entry.label : `${entry.label}, ${fact.tooltip}`}
+                      {entry.shortcut === null ? null : (
+                        <kbd className="font-sans text-faint-foreground">
+                          {shortcutGlyphs(entry.shortcut)}
+                        </kbd>
+                      )}
+                    </span>
+                  }
+                >
+                  {row}
+                </Tooltip>
+              )}
+            </div>
           );
         })}
       </div>
-      <div
-        ref={hostRef}
-        data-slot="branch-rail-files"
-        className="flex min-h-0 flex-1 flex-col empty:hidden"
-      />
     </nav>
   );
 };

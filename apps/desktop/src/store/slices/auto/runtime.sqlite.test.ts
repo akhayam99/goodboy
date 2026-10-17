@@ -15,6 +15,8 @@ import {
   userSays,
   type RuntimeWorld,
 } from './testing/runtimeWorld';
+import { addOutboxRow } from './testing/deliveryWorld';
+import { EMPTY_USER_FACTS } from '@goodboy/core';
 
 const TWO_WRITERS = {
   children: [
@@ -46,6 +48,39 @@ const started = async (): Promise<RuntimeWorld> => {
 
 const phaseOf = async (world: RuntimeWorld) =>
   (await getAutoTree({ db: world.state.world.db, treeId: world.treeId }))?.phase;
+
+const BANNER = {
+  id: 'attachment-banner',
+  kind: 'image',
+  fileName: 'banner-wide.png',
+  mimeType: 'image/png',
+  relPath: 'attachments/banner-wide.png',
+  dir: '/scratch/session-harborline',
+};
+
+describe('images the user gave Auto', () => {
+  it('reach Auto and every child it starts from that message, never dropped', async () => {
+    const world = await makeRuntimeWorld();
+    await addOutboxRow({
+      world: world.state.world,
+      id: 'outbox-user-images',
+      kind: 'user',
+      payload: {
+        kind: 'user',
+        text: 'The banner overlaps the totals on narrow screens, see both shots.',
+        facts: EMPTY_USER_FACTS,
+        images: [BANNER],
+      },
+    });
+    await world.runtime.drive(world.treeId);
+    await world.runtime.settled();
+    await autoDelegates({ world, spec: TWO_WRITERS });
+    await autoTurnEnds({ world });
+
+    expect(world.state.ports.autoTurns[0]?.images).toEqual([BANNER]);
+    expect(world.state.ports.childTurns.map((turn) => turn.images)).toEqual([[BANNER], [BANNER]]);
+  });
+});
 
 describe('the whole round trip of a delegation', () => {
   it('starts the children only after the Auto turn ended, each with its role, mount and kickoff', async () => {

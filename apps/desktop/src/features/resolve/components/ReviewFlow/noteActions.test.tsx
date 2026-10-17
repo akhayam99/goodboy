@@ -23,6 +23,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import type { AddReviewDraftInput } from '../../../../store/slices/review-drafts/addReviewDraft';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -66,6 +67,7 @@ const mount = async (): Promise<void> => {
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -127,11 +129,12 @@ describe('a note in Comments', () => {
     );
   });
 
-  it('puts the kind and the age on each row, and Fix comments in the section header', async () => {
+  it('puts the age on each row, no kind chip when every row is a note, and one Fix button', async () => {
     await mount();
 
     const list = screen.getByRole('navigation', { name: 'Comments' });
-    expect(within(list).getAllByText('Note').length).toBe(NOTES.length);
-    expect(screen.getAllByRole('button', { name: /^Fix comments/ })).toHaveLength(1);
+    expect(within(list).queryAllByText('Note')).toHaveLength(0);
+    expect(list.querySelectorAll('[data-row-author]')).toHaveLength(NOTES.length);
+    expect(screen.getAllByRole('button', { name: /^Fix \d+ comments?$/ })).toHaveLength(1);
   });
 });

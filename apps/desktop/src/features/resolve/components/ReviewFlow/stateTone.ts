@@ -2,20 +2,22 @@ import { tintClasses, type Tone } from '@goodboy/ui';
 import type { RemoteTone } from '../../reviewRemote';
 import type { ReviewCommentTone } from '../../reviewCommentState';
 
+const MUTED = 'text-muted-foreground';
+
 export const STATE_WORD_TONE: Record<ReviewCommentTone, string> = {
-  new: 'text-muted-foreground',
-  drafting: tintClasses('info').text,
-  needs: tintClasses('warning').text,
-  ready: tintClasses('warning').text,
-  edited: tintClasses('warning').text,
-  outdated: tintClasses('warning').text,
-  failed: tintClasses('warning').text,
-  push_failed: tintClasses('danger').text,
-  accepted: tintClasses('success').text,
-  replied: tintClasses('success').text,
+  new: MUTED,
+  drafting: MUTED,
+  needs: MUTED,
+  ready: MUTED,
+  edited: MUTED,
+  outdated: MUTED,
+  failed: MUTED,
+  push_failed: MUTED,
+  accepted: MUTED,
+  replied: MUTED,
   skipped: 'text-faint-foreground',
-  pushed: 'text-muted-foreground',
-  resolved: 'text-muted-foreground',
+  pushed: MUTED,
+  resolved: MUTED,
 };
 
 export const STATE_CHIP_TONE: Record<ReviewCommentTone, Tone> = {

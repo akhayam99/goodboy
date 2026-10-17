@@ -48,10 +48,10 @@ describe('the session close scenes', () => {
     expect(MOCK_SCENES['session-close-ask']).toBe(U24_SESSION_CLOSE_SCENES['session-close-ask']);
   });
 
-  it('session-close-written shows Discard draft and no Esc label', async () => {
+  it('session-close-written shows Discard and no Esc label', async () => {
     mount({ id: 'session-close-written' });
 
-    expect(await screen.findByRole('button', { name: 'Discard draft' }, WAIT)).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Discard' }, WAIT)).toBeDefined();
     expect(screen.queryByText('Esc')).toBeNull();
     expect(screen.queryByText('Keep this draft?')).toBeNull();
   });
@@ -61,7 +61,6 @@ describe('the session close scenes', () => {
 
     expect(await screen.findByText('Keep this draft?', {}, WAIT)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Keep draft' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Discard draft' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Discard' })).toHaveLength(1);
   });
 });

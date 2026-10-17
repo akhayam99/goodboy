@@ -8,9 +8,10 @@ import {
   branchTab,
   click,
   clickButton,
-  clickFirstButton,
+  openWorktreeMenu,
   heading,
   lens,
+  pane,
   openBranchFiles,
   useAppStore,
   visible,
@@ -85,18 +86,18 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'mount row menu: scripts',
-    covers: ['navigate', 'lens:scripts'],
+    covers: ['openDrawer', 'lens:scripts'],
     open: async () => {
-      await clickFirstButton(/ on .+ actions$/);
+      await openWorktreeMenu();
       await click(await screen.findByRole('menuitem', { name: /^Open scripts/ }));
     },
-    lands: both(lens('scripts'), () => heading('Scripts')),
+    lands: pane('Scripts'),
   },
   {
     name: 'mount row menu: terminal',
     covers: ['openMountTerminal'],
     open: async () => {
-      await clickFirstButton(/ on .+ actions$/);
+      await openWorktreeMenu();
       await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
     },
     lands: async () => {
@@ -116,7 +117,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     covers: ['back'],
     open: async () => {
       await openBranchFiles();
-      await clickButton(/^Back/);
+      await clickButton(/^Back(?! to Sessions$| to session )/);
     },
     lands: lens(null),
   },
@@ -125,7 +126,7 @@ export const SETTINGS_AND_MOUNT_ROWS: ReadonlyArray<Row> = [
     covers: ['back', 'forward'],
     open: async () => {
       await openBranchFiles();
-      await clickButton(/^Back/);
+      await clickButton(/^Back(?! to Sessions$| to session )/);
       await clickButton(/^Forward/);
     },
     lands: branchTab('files'),

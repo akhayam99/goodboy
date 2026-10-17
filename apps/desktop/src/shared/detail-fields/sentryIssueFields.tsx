@@ -1,6 +1,5 @@
 import { Activity, Code2, Tag } from 'lucide-react';
 import type { SentryTag } from '../../features/integrations/sentry/client';
-import { SentryLevelBadge } from '../../features/integrations/sentry/SentryLevelBadge';
 import { stateWord } from '../../features/inbox/stateWord';
 import type { InboxState } from '../../features/inbox/types';
 import { RecordState } from '../components/StudioDetail/RecordState';
@@ -57,7 +56,7 @@ export const sentryIssueFields: FactRegistry<SentryIssueProperties> = {
           key: 'level',
           label: 'Level',
           icon: null,
-          node: <SentryLevelBadge level={entity.level} density="compact" />,
+          node: entity.level,
         },
   place: ({ entity }) => ({
     key: 'culprit',
@@ -74,7 +73,7 @@ export const sentryIssueFields: FactRegistry<SentryIssueProperties> = {
     })),
   measure: ({ entity }) => ({
     key: 'events',
-    label: 'Events and users',
+    label: 'Events',
     icon: Activity,
     node: measureOf({ count: entity.count, userCount: entity.userCount }),
   }),

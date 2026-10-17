@@ -11,6 +11,7 @@ import { SlackThreadDetail } from '../../../integrations/slack/SlackThreadDetail
 import { PrDetailPanel } from '../../../integrations/bitbucket/BitbucketStudio/PrDetailPanel';
 import type { InboxProvider, InboxRecord } from '../../types';
 import { useRecordFrame } from '../../hooks/useRecordFrame';
+import type { RecordStar } from '../../../../shared/components/StudioDetail/RecordActions/types';
 
 type Props = {
   readonly record: InboxRecord;
@@ -19,7 +20,9 @@ type Props = {
   readonly errors: Readonly<Record<InboxProvider, string | null>>;
   readonly onRefresh: () => void;
   readonly onClose: () => void;
-  readonly onDeselect: () => void;
+  readonly onDeselect: (() => void) | null;
+  readonly onOpenFull: (() => void) | null;
+  readonly star: RecordStar | null;
   readonly launchFocusRequest: number;
 };
 
@@ -31,19 +34,25 @@ export const InboxDetail = ({
   onRefresh,
   onClose,
   onDeselect,
+  onOpenFull,
+  star,
   launchFocusRequest,
 }: Props) => {
   const sentryIssueId = record.payload.provider === 'sentry' ? record.payload.issue.id : null;
   const sentryDetail = useSentryIssueDetail({ workspaceId, issueId: sentryIssueId });
 
-  const frame = useRecordFrame({
-    record,
-    workspaceId,
-    launchRequest: launchFocusRequest,
-    onLaunched: onClose,
-    onRefresh,
-    onClose: onDeselect,
-  });
+  const frame = {
+    ...useRecordFrame({
+      record,
+      workspaceId,
+      launchRequest: launchFocusRequest,
+      onLaunched: onClose,
+      onRefresh,
+      onClose: onDeselect,
+    }),
+    onOpenFull,
+    star,
+  };
   const payload = record.payload;
 
   switch (payload.provider) {

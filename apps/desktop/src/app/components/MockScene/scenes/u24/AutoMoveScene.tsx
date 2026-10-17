@@ -12,7 +12,6 @@ import { MOVE_TO_AUTO_EVENT } from '../../../../../features/auto/adopt/moveToAut
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { aDelegation, aTree } from '../../../../../features/auto/testing/autoViewFixtures';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
-import { SETTING_AUTO_EXPERIMENT } from '../../../../../features/settings/settings';
 import { useAppStore } from '../../../../../store';
 import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
@@ -86,6 +85,7 @@ const movedViewOf = (): AutoTreeView => ({
   ],
   artifacts: [],
   budget: null,
+  pendingRefusal: null,
 });
 
 export const AutoMoveScene = ({ state }: Props) => {
@@ -95,7 +95,6 @@ export const AutoMoveScene = ({ state }: Props) => {
   useEffect(() => {
     seedActivityRunScene();
     useAppStore.setState({
-      settings: { [SETTING_AUTO_EXPERIMENT]: 'true' },
       sessionPhaseRuns: {
         [AUTO_SESSION.id]: state === 'moved' ? [SOURCE_AGENT, AUTO_AGENT] : [SOURCE_AGENT],
       },

@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Search } from 'lucide-react';
+import { RotateCcw, Search } from 'lucide-react';
 import {
   AnchoredPopover,
   LISTBOX_SEARCH_THRESHOLD,
@@ -11,20 +11,35 @@ import {
 } from '@goodboy/ui';
 import type { Workflow, WorkflowId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { ControlChip } from './ControlChip';
+import { ControlChip } from '../../../../../shared/components/ControlChip';
+import type { PresetStepMark } from '../../../presetStepMarksOf';
 import { PresetPickerOption } from './PresetPickerOption';
+
+const NO_MARKS: ReadonlyArray<PresetStepMark> = [];
 
 type Props = {
   readonly presets: ReadonlyArray<Workflow>;
   readonly selectedId: WorkflowId | null;
+  readonly marks: ReadonlyMap<WorkflowId, ReadonlyArray<PresetStepMark>>;
+  readonly isEdited: boolean;
   readonly disabled: boolean;
   readonly onSelect: (preset: Workflow) => void;
+  readonly onReset: () => void;
   readonly onDelete: (preset: Workflow) => Promise<void>;
 };
 
-export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete }: Props) => {
+export const PresetPicker = ({
+  presets,
+  selectedId,
+  marks,
+  isEdited,
+  disabled,
+  onSelect,
+  onReset,
+  onDelete,
+}: Props) => {
   const listId = useId();
-  const dropdown = useDropdown({ disabled, align: 'end', width: 'w-96', expectedHeight: 320 });
+  const dropdown = useDropdown({ disabled, width: 'w-96', expectedHeight: 320 });
   const { open, close, toggle } = dropdown;
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -92,8 +107,9 @@ export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete
         <ControlChip
           label="Preset"
           value={selected?.name ?? 'Pick a preset'}
+          suffix={isEdited ? 'edited' : null}
           isOpen={open}
-          disabled={disabled}
+          isDisabled={disabled}
           onToggle={toggle}
         />
       }
@@ -145,6 +161,7 @@ export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete
                 key={preset.id}
                 id={listboxOptionId({ id: listId, index })}
                 preset={preset}
+                marks={marks.get(preset.id) ?? NO_MARKS}
                 match={match}
                 isActive={index === activeIndex}
                 isSelected={preset.id === selectedId}
@@ -160,6 +177,23 @@ export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete
             ) : null}
           </div>
         </ScrollFade>
+        {isEdited ? (
+          <button
+            type="button"
+            onClick={() => {
+              onReset();
+              close();
+            }}
+            className="flex min-h-8 shrink-0 items-center gap-2 rounded-md px-2 text-left text-label text-foreground hover:bg-hover"
+          >
+            <RotateCcw
+              size={ICON_SIZE.row}
+              aria-hidden
+              className="shrink-0 text-muted-foreground"
+            />
+            <span className="min-w-0 flex-1 truncate">Reset to the preset</span>
+          </button>
+        ) : null}
       </div>
     </AnchoredPopover>
   );

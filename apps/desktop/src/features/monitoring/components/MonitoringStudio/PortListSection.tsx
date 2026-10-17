@@ -12,7 +12,9 @@ export const PortListSection = ({ label, count, children }: Props) => (
     <SectionHeader
       label={label}
       headingLevel={2}
-      meta={<span className="text-meta tabular-nums text-faint-foreground">{count}</span>}
+      {...(count > 1 && {
+        meta: <span className="text-meta tabular-nums text-faint-foreground">{count}</span>,
+      })}
     />
     {children}
   </section>

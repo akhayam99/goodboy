@@ -13,7 +13,7 @@ export const LearnedTab = ({ list }: Props) => {
   if (list.visible.length === 0) {
     return (
       <EmptyLine className="text-body text-muted-foreground">
-        Nothing learned in this session yet.
+        No explanations yet. An agent adds one when it explains a topic you follow.
       </EmptyLine>
     );
   }

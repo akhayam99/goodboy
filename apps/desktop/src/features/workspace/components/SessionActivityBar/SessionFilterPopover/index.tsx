@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ListFilter } from 'lucide-react';
-import { AnchoredPopover, IconButton, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, IconButton, StatusDot, useDropdown } from '@goodboy/ui';
 import type {
   Session,
   SessionGroupKey,
@@ -18,7 +18,6 @@ import { useProjectFilterOptions } from '../../../hooks/useProjectFilterOptions'
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
 import { useClearSessionFilters } from '../useClearSessionFilters';
 import { FilterChoice } from './FilterChoice';
-import { FilterCount } from './FilterCount';
 import { FilterSection } from './FilterSection';
 
 type SortOption = {
@@ -67,6 +66,8 @@ type Props = {
   readonly sessions: ReadonlyArray<Session>;
   readonly archivedCount: number;
   readonly onArchivedShownChange: (isShown: boolean) => void;
+  readonly isBoard?: boolean;
+  readonly canGroup?: boolean;
 };
 
 export const SessionFilterPopover = ({
@@ -74,6 +75,8 @@ export const SessionFilterPopover = ({
   sessions,
   archivedCount,
   onArchivedShownChange,
+  isBoard = false,
+  canGroup = true,
 }: Props) => {
   const prefs = useSessionViewPrefs(workspaceId);
   const setSessionViewPrefs = useAppStore((state) => state.setSessionViewPrefs);
@@ -108,7 +111,7 @@ export const SessionFilterPopover = ({
     }
   }
 
-  const activeCount = prefs.statusFilter.length + selectedProjectIds.length;
+  const activeCount = (isBoard ? 0 : prefs.statusFilter.length) + selectedProjectIds.length;
 
   const toggleStatus = (stage: SessionStage) => {
     const next = prefs.statusFilter.includes(stage)
@@ -143,25 +146,30 @@ export const SessionFilterPopover = ({
             className={isOpen ? 'bg-selected text-foreground' : undefined}
           />
           {activeCount > 0 ? (
-            <span className="pointer-events-none absolute -right-0.5 -top-0.5 flex min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-meta tabular-nums text-on-tone">
-              {activeCount}
+            <span
+              data-filter-dot="active"
+              className="pointer-events-none absolute right-0.5 top-0.5 flex"
+            >
+              <StatusDot tone="neutral" size="sm" />
             </span>
           ) : null}
         </>
       }
     >
-      <FilterSection title="Status">
-        {STATUS_OPTIONS.map((option) => (
-          <FilterChoice
-            key={option.stage}
-            kind="multiple"
-            label={option.label}
-            isChecked={prefs.statusFilter.includes(option.stage)}
-            onSelect={() => toggleStatus(option.stage)}
-            trailing={<FilterCount count={stageCounts.get(option.stage) ?? 0} />}
-          />
-        ))}
-      </FilterSection>
+      {isBoard ? null : (
+        <FilterSection title="Status">
+          {STATUS_OPTIONS.map((option) => (
+            <FilterChoice
+              key={option.stage}
+              kind="multiple"
+              label={option.label}
+              isChecked={prefs.statusFilter.includes(option.stage)}
+              onSelect={() => toggleStatus(option.stage)}
+              count={stageCounts.get(option.stage) ?? 0}
+            />
+          ))}
+        </FilterSection>
+      )}
       {projectOptions.length >= MIN_PROJECTS_FOR_FACET ? (
         <FilterSection title="Project">
           {projectOptions.map((option) => (
@@ -171,19 +179,22 @@ export const SessionFilterPopover = ({
               label={option.label}
               isChecked={selectedProjectIds.includes(option.id)}
               onSelect={() => toggleProject(option.id)}
-              trailing={<FilterCount count={option.count} />}
+              count={option.count}
             />
           ))}
         </FilterSection>
       ) : null}
-      <FilterSection title="Archive">
-        <FilterChoice
-          kind="multiple"
-          label={`Show archived (${archivedCount})`}
-          isChecked={prefs.isArchivedShown}
-          onSelect={() => onArchivedShownChange(!prefs.isArchivedShown)}
-        />
-      </FilterSection>
+      {isBoard ? null : (
+        <FilterSection title="Archive">
+          <FilterChoice
+            kind="multiple"
+            label="Show archived"
+            count={archivedCount}
+            isChecked={prefs.isArchivedShown}
+            onSelect={() => onArchivedShownChange(!prefs.isArchivedShown)}
+          />
+        </FilterSection>
+      )}
       <FilterSection title="Sort">
         {SORT_OPTIONS.map((option) => (
           <FilterChoice
@@ -195,17 +206,19 @@ export const SessionFilterPopover = ({
           />
         ))}
       </FilterSection>
-      <FilterSection title="Group">
-        {GROUP_OPTIONS.map((option) => (
-          <FilterChoice
-            key={option.key}
-            kind="single"
-            label={option.label}
-            isChecked={prefs.group === option.key}
-            onSelect={() => setSessionViewPrefs({ workspaceId, patch: { group: option.key } })}
-          />
-        ))}
-      </FilterSection>
+      {isBoard || !canGroup ? null : (
+        <FilterSection title="Group">
+          {GROUP_OPTIONS.map((option) => (
+            <FilterChoice
+              key={option.key}
+              kind="single"
+              label={option.label}
+              isChecked={prefs.group === option.key}
+              onSelect={() => setSessionViewPrefs({ workspaceId, patch: { group: option.key } })}
+            />
+          ))}
+        </FilterSection>
+      )}
       {activeCount > 0 ? (
         <div className="flex px-1 py-1">
           <button

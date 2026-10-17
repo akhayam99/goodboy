@@ -1,14 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { AgentId, OpenQuestion, SessionId, WorkflowRunId } from '@goodboy/types';
 import { useSessionPlans } from '../../../../store';
 import type { RunTreeRouting } from './RunTreeRow';
 import { RunTreeRows } from './RunTreeRows';
+import type { RunTreeInsert } from '../../runTreeInsert';
 import type { RunStepSkipAction } from './RunStepSkip';
 import { plansByAgentId } from './plansByAgentId';
 import { useFoldedRunTree } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
+import type { RunTreeDensity } from './runTreeDensity';
 
 type Props = {
+  readonly density?: RunTreeDensity;
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
   readonly tree: RunTreeModel | null;
@@ -16,12 +19,15 @@ type Props = {
   readonly selectedAgentId: AgentId | null;
   readonly highlightedStepId: string | null;
   readonly skip?: RunStepSkipAction | null;
+  readonly beforeRow?: (insert: RunTreeInsert) => ReactNode;
+  readonly trailing?: (insert: RunTreeInsert) => ReactNode;
   readonly onHighlight: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
 };
 
 export const RunTree = ({
+  density = 'page',
   sessionId,
   runId,
   tree,
@@ -29,6 +35,8 @@ export const RunTree = ({
   selectedAgentId,
   highlightedStepId,
   skip = null,
+  beforeRow,
+  trailing,
   onHighlight,
   onSelect,
   onAnswer,
@@ -41,6 +49,7 @@ export const RunTree = ({
   }
   return (
     <RunTreeRows
+      density={density}
       sessionId={sessionId}
       tree={folded.tree}
       scrollKey={runId}
@@ -52,6 +61,8 @@ export const RunTree = ({
       skip={skip}
       folds={folded.folds}
       plans={plans}
+      {...(beforeRow !== undefined && { beforeRow })}
+      {...(trailing !== undefined && { trailing })}
       onHighlight={onHighlight}
       onSelect={onSelect}
       onAnswer={onAnswer}

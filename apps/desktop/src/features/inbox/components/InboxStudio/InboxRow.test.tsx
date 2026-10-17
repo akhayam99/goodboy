@@ -1,116 +1,127 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@goodboy/types';
-import type { LinearIssue } from '../../../integrations/linear/client';
+import { ListGrid } from '@goodboy/ui';
 import type { InboxRecord } from '../../types';
-import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { InboxRow } from './InboxRow';
+import { TASK_COLUMNS } from './taskColumns';
 
-const h = vi.hoisted(() => ({ openUrl: vi.fn(async () => undefined) }));
-
-vi.mock('../../../../shared/lib/editor', () => ({ openUrl: h.openUrl }));
-
-const { InboxRow } = await import('./InboxRow');
-
-const ISSUE: LinearIssue = {
-  id: '1',
-  identifier: 'ENG-42',
-  title: 'Ship the inbox',
-  description: null,
-  url: '',
-  state: { name: 'In Progress', type: 'started' },
-  team: { key: 'ENG' },
-  updatedAt: '',
-};
-
-const record: InboxRecord = {
-  key: 'linear:issue:1',
+const issue: InboxRecord = {
+  key: 'linear:issue:412',
   provider: 'linear',
   kind: 'issue',
-  identifier: 'ENG-42',
-  title: 'Ship the inbox',
+  identifier: 'HBL-412',
+  title: 'Ledger export times out over 10k rows',
   state: 'active',
-  updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-  url: 'https://example.invalid/linear/ENG-42',
-  stateLabel: 'In Progress',
-  context: 'Cascadia',
-  payload: { provider: 'linear', kind: 'issue', issue: ISSUE, sessionId: null },
+  stateLabel: 'In progress',
+  updatedAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
+  url: 'https://example.invalid/linear/HBL-412',
+  context: 'Ledger',
+  payload: {
+    provider: 'linear',
+    kind: 'issue',
+    issue: {
+      id: '412',
+      identifier: 'HBL-412',
+      title: 'Ledger export times out over 10k rows',
+      description: null,
+      url: 'https://example.invalid/linear/HBL-412',
+      state: { name: 'In progress', type: 'started' },
+      team: { key: 'HBL' },
+      priority: 2,
+      priorityLabel: 'High',
+      updatedAt: '',
+    },
+    sessionId: null,
+  },
 };
 
-afterEach(() => cleanup());
+type RenderParams = {
+  readonly record?: InboxRecord;
+  readonly isSelected?: boolean;
+  readonly isCursor?: boolean;
+  readonly onSelect?: (record: InboxRecord) => void;
+};
+
+const renderRow = ({
+  record = issue,
+  isSelected = false,
+  isCursor = false,
+  onSelect = vi.fn(),
+}: RenderParams = {}) =>
+  render(
+    <ListGrid label="Task items" columns={TASK_COLUMNS}>
+      <InboxRow record={record} selected={isSelected} isCursor={isCursor} onSelect={onSelect} />
+    </ListGrid>,
+  );
+
+afterEach(cleanup);
+
+const cell = (key: string): HTMLElement => {
+  const found = document.querySelector<HTMLElement>(`[data-list-grid-cell="${key}"]`);
+  if (found === null) {
+    throw new Error(`no ${key} cell`);
+  }
+  return found;
+};
 
 describe('InboxRow', () => {
-  it('reads as one line: identifier, title, context, native state and age', () => {
-    render(<InboxRow record={record} selected={false} onSelect={vi.fn()} />);
+  it('fills every column of the shared grid: source, key, title, status, priority, age', () => {
+    renderRow();
 
-    expect(screen.getByText('ENG-42')).toBeDefined();
-    expect(screen.getByText('Ship the inbox')).toBeDefined();
-    expect(screen.getByText('Cascadia')).toBeDefined();
-    expect(screen.getByText('In Progress')).toBeDefined();
-    expect(screen.getByText('3h ago')).toBeDefined();
-    expect(screen.queryByText('Linear')).toBeNull();
-  });
-
-  it('exposes the row as a selectable option', () => {
-    render(<InboxRow record={record} selected onSelect={vi.fn()} />);
-
-    expect(screen.getByRole('option').getAttribute('aria-selected')).toBe('true');
-  });
-
-  it('draws a cursor row quietly: not selected, with the hover fill', () => {
-    const { container } = render(
-      <InboxRow record={record} selected={false} isCursor onSelect={vi.fn()} />,
+    const option = screen.getByRole('option', {
+      name: 'HBL-412 Ledger export times out over 10k rows',
+    });
+    const cells = Array.from(option.querySelectorAll('[data-list-grid-cell]')).map((node) =>
+      node.getAttribute('data-list-grid-cell'),
     );
-
-    expect(screen.getByRole('option').getAttribute('aria-selected')).toBe('false');
-    const row = container.querySelector('[data-inbox-key]');
-    expect(row?.getAttribute('data-cursor')).toBe('true');
-    expect(row?.getAttribute('data-selected')).toBe('false');
+    expect(cells).toEqual(['source', 'key', 'title', 'status', 'priority', 'updated']);
+    expect(cell('key').textContent).toBe('HBL-412');
+    expect(within(cell('status')).getByLabelText('In progress')).toBeDefined();
+    expect(within(cell('priority')).getByLabelText('Priority: High')).toBeDefined();
+    expect(cell('updated').textContent).toBe('2h ago');
   });
 
-  it('reports the record when clicked', () => {
-    const onSelect = vi.fn();
-    render(<InboxRow record={record} selected={false} onSelect={onSelect} />);
-
-    fireEvent.click(screen.getByRole('option'));
-
-    expect(onSelect).toHaveBeenCalledWith(record);
-  });
-
-  it('marks a record that already has a session with a leading dot', () => {
-    const { unmount } = render(<InboxRow record={record} selected={false} onSelect={vi.fn()} />);
-    expect(screen.queryByLabelText('Has a session')).toBeNull();
-    unmount();
-
-    render(
-      <InboxRow
-        record={{
-          ...record,
-          payload: {
-            provider: 'linear',
-            kind: 'issue',
-            issue: ISSUE,
-            sessionId: 'session-1' as SessionId,
+  it('keeps an empty priority cell for a source without priorities, so columns stay aligned', () => {
+    renderRow({
+      record: {
+        ...issue,
+        provider: 'github',
+        payload: {
+          provider: 'github',
+          kind: 'issue',
+          issue: {
+            number: 512,
+            title: 'Export button stays disabled',
+            body: '',
+            url: '',
+            state: 'OPEN',
+            labels: [],
+            updatedAt: '',
           },
-        }}
-        selected={false}
-        onSelect={vi.fn()}
-      />,
-    );
-    expect(screen.getByLabelText('Has a session')).toBeDefined();
+          sessionId: null,
+        },
+      },
+    });
+
+    expect(cell('priority').childElementCount).toBe(0);
   });
 
-  it('opens the record in its tool without selecting it', () => {
+  it('marks a cursor row quietly: not selected, only the cursor mark', () => {
+    renderRow({ isCursor: true });
+
+    const option = screen.getByRole('option');
+    expect(option.getAttribute('aria-selected')).toBe('false');
+    expect(option.getAttribute('data-cursor')).toBe('true');
+  });
+
+  it('is one button: a click selects it, and it holds no buttons of its own', () => {
     const onSelect = vi.fn();
-    const { container } = render(<InboxRow record={record} selected={false} onSelect={onSelect} />);
+    renderRow({ onSelect, isSelected: true });
 
-    const open = container.querySelector('[data-open-in-tool]');
-    if (!(open instanceof HTMLElement)) {
-      throw new Error('the open in tool button is missing');
-    }
-    expect(tooltipTextOf({ element: open })).toBe('Open in Linear');
-    fireEvent.click(open);
-
-    expect(h.openUrl).toHaveBeenCalledWith('https://example.invalid/linear/ENG-42');
-    expect(onSelect).not.toHaveBeenCalled();
+    const option = screen.getByRole('option');
+    expect(option.getAttribute('aria-selected')).toBe('true');
+    expect(within(option).queryAllByRole('button')).toHaveLength(0);
+    fireEvent.click(option);
+    expect(onSelect).toHaveBeenCalledWith(issue);
   });
 });

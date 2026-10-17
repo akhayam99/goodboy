@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { Textarea } from '@goodboy/ui';
+import { Button, Textarea } from '@goodboy/ui';
 import {
   REPLY_TEMPLATE_VARIABLES,
   replyTemplateProblems,
@@ -45,19 +45,20 @@ export const ReplyTemplateField = ({ label, value, isDisabled, onSave }: Props) 
       />
       <div className="flex flex-wrap gap-1">
         {REPLY_TEMPLATE_VARIABLES.map((name) => (
-          <button
+          <Button
             key={name}
-            type="button"
+            variant="secondary"
+            size="xs"
             disabled={isDisabled}
             onClick={() => {
               const next = `${draft.trimEnd()} {${name}}`;
               setDraft(next);
               save(next);
             }}
-            className="rounded-sm bg-subtle px-2 font-mono text-chip leading-5 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50"
+            className="font-mono"
           >
             {`{${name}}`}
-          </button>
+          </Button>
         ))}
       </div>
       {problems.map((problem) => (

@@ -17,8 +17,6 @@ type AttemptParams = {
   readonly action: () => Promise<void>;
 };
 
-const REVEAL_ON_HOVER = 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100';
-
 export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props) => {
   const openStorageArtifact = useAppStore((state) => state.openStorageArtifact);
   const keepStorageArtifact = useAppStore((state) => state.keepStorageArtifact);
@@ -53,7 +51,7 @@ export const ArtifactRowActions = ({ artifact, isKept, isBusy, onDelete }: Props
   ];
 
   return (
-    <span className={cn(REVEAL_ON_HOVER, 'flex items-center justify-end gap-1')}>
+    <span className="flex items-center justify-end gap-1">
       <Button
         variant="ghost"
         size="sm"

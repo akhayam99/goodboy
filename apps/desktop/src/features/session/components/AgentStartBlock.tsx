@@ -1,28 +1,19 @@
 import { useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { ROW_INTERACTIVE, Button, cn, FormActions, formatError } from '@goodboy/ui';
+import { Button, FormActions, formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { useAgentRouting } from '../hooks/useAgentRouting';
-import { PickerSection } from '../../../shared/components/RoutingPicker/PickerSection';
 import { Docked } from '../../../shared/components/Docked';
+import { PromptField } from '../../../shared/components/PromptField';
+import { startRoleLabel } from '../../../shared/lib/startCopy';
 import { AGENT_KIND_META, visibleAgentKinds, type AgentKind } from '../agent-kind';
-import { AGENT_FORM_GRAMMAR } from '../agent-form-grammar';
 import { isSameRouting } from '../isSameRouting';
-import { SUGGESTED_LABEL } from '../../../shared/components/RoutingPicker/autoRecommendationCopy';
-import { AgentRoleField } from './AgentRoleField';
-import { AgentKindGrid } from './CreateAgentPopover/AgentKindGrid';
+import { AgentStartFields } from './AgentStartFields';
 import { LaunchEstimateNote } from './CreateAgentPopover/LaunchEstimateNote';
-import { RoutingPickerBody } from '../../../shared/components/RoutingPicker/RoutingPickerBody';
-import { recommendationSummary } from '../../../shared/components/RoutingPicker/recommendationSummary';
-import { RoutingLabel } from '../../../shared/components/RoutingLabel';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
-import { useConfirmStartMode } from '../../auto/useConfirmStartMode';
-
-const ROUTING_PANEL_ID = 'create-agent-routing';
+import { NAMES } from '../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -37,17 +28,16 @@ export const AgentStartBlock = ({
   sessionId,
   isShown,
   actionsHost,
-  footerClassName = 'px-3 pb-2 pt-3',
+  footerClassName,
   onDone,
   onSpawned,
 }: Props) => {
   const [kind, setKind] = useState<AgentKind>('generic');
-  const [isRoutingOpen, setIsRoutingOpen] = useState(false);
+  const [goal, setGoal] = useState('');
   const [isSpawning, setIsSpawning] = useState(false);
   const [spawnError, setSpawnError] = useState<string | null>(null);
   const isSpawningRef = useRef(false);
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  const confirmMode = useConfirmStartMode();
   const agentKinds = visibleAgentKinds();
   const selectedKind = agentKinds.includes(kind) ? kind : (agentKinds[0] ?? 'generic');
   const connectedProviders = useAppStore(
@@ -65,18 +55,19 @@ export const AgentStartBlock = ({
   });
   const kindLabel = AGENT_KIND_META[selectedKind].noun;
   const planToStart = selectedKind === 'implementer' ? activePlan : null;
-  const actionLabel = planToStart == null ? `Open ${kindLabel}` : `Start ${kindLabel} on the plan`;
+  const prompt = goal.trim();
+  const actionLabel =
+    planToStart == null
+      ? startRoleLabel({ noun: kindLabel })
+      : `${startRoleLabel({ noun: kindLabel })} on the plan`;
   const actionNote =
     planToStart == null
-      ? 'You write the first message in its chat.'
+      ? prompt === ''
+        ? 'With no goal you write the first message in its chat.'
+        : null
       : `Starts now from plan: ${planToStart.title}`;
   const choice = useAgentRouting({ sessionId, kind: selectedKind });
   const { routing, effective, suggestion, suggestionReason, lastUsed } = choice;
-  const routingSummary = recommendationSummary({
-    provider: effective.provider,
-    model: effective.model,
-    effort: effective.effort,
-  });
 
   const onCreate = async () => {
     if (isSpawningRef.current) {
@@ -86,19 +77,17 @@ export const AgentStartBlock = ({
     setIsSpawning(true);
     setSpawnError(null);
     try {
-      if (!(await confirmMode({ isShown: false }))) {
-        return;
-      }
       await spawnAgent(sessionId, {
         kindOverride: selectedKind,
         provider: effective.provider,
         model: effective.model,
         effort: effective.effort,
         focus: 'agent',
+        ...(prompt !== '' && { initialPrompt: prompt }),
       });
       setKind('generic');
+      setGoal('');
       choice.reset();
-      setIsRoutingOpen(false);
       onDone();
       if (onSpawned != null) {
         onSpawned();
@@ -113,96 +102,48 @@ export const AgentStartBlock = ({
   };
 
   return (
-    <>
-      {agentKinds.length > 1 ? (
-        <PickerSection label={AGENT_FORM_GRAMMAR.role.label}>
-          <AgentKindGrid kinds={agentKinds} value={selectedKind} onChange={setKind} />
-        </PickerSection>
-      ) : (
-        <AgentRoleField
-          role={{
-            label: AGENT_KIND_META[selectedKind].label,
-            hint: AGENT_KIND_META[selectedKind].hint,
-          }}
-          className="px-3 py-2"
-        />
-      )}
-      <PickerSection label={AGENT_FORM_GRAMMAR.routing.label}>
-        <div className="px-3">
-          <button
-            type="button"
-            onClick={() => setIsRoutingOpen((isOpen) => !isOpen)}
-            aria-expanded={isRoutingOpen}
-            aria-controls={ROUTING_PANEL_ID}
-            aria-label={`${AGENT_FORM_GRAMMAR.routing.ariaLabel}: ${routingSummary}`}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-md border border-border-soft bg-subtle px-2 py-2 text-left text-label text-foreground hover:border-border',
-              ROW_INTERACTIVE,
-            )}
-          >
-            <span className="flex min-w-0 flex-1">
-              {effective.model == null ? (
-                <span className="truncate">{routingSummary}</span>
-              ) : (
-                <RoutingLabel
-                  provider={effective.provider}
-                  model={effective.model}
-                  effort={effective.effort ?? null}
-                />
-              )}
-            </span>
-            <ChevronDown
-              size={ICON_SIZE.row}
-              aria-hidden
-              className={cn(
-                'shrink-0 text-muted-foreground motion-safe:transition-transform',
-                isRoutingOpen && 'rotate-180',
-              )}
-            />
-          </button>
-        </div>
-      </PickerSection>
-      {isRoutingOpen && (
-        <div id={ROUTING_PANEL_ID} className="flex flex-col pt-2">
-          <RoutingPickerBody
-            connectedProviders={connectedProviders}
-            provider={effective.provider}
-            model={effective.model}
-            effort={{ editable: true, value: effective.effort }}
-            onClose={onDone}
-            recommendation={{ ...suggestion, label: SUGGESTED_LABEL, reason: suggestionReason }}
-            overridden={routing !== null}
-            {...(lastUsed != null && {
-              lastUsed: {
-                routing: lastUsed,
-                active: routing !== null && isSameRouting({ left: routing, right: lastUsed }),
-                onSelect: choice.pickLastUsed,
-              },
-            })}
-            onChange={choice.pick}
-          />
-        </div>
-      )}
+    <div className="flex min-w-0 flex-col gap-6">
+      <PromptField
+        kind="document"
+        label="Agent instructions"
+        value={goal}
+        onChange={setGoal}
+        onSubmit={() => void onCreate()}
+        isSubmitBlocked={isSpawning}
+        placeholder={`What should ${kindLabel} do?`}
+        minRows={3}
+        maxRows={10}
+        keyLabels={{ send: 'start' }}
+        disabled={isSpawning}
+      />
       <Docked node={actionsHost}>
         <FormActions
-          className={footerClassName}
+          {...(footerClassName !== undefined && { className: footerClassName })}
           leading={
-            spawnError === null ? (
-              <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-meta text-faint-foreground">{actionNote}</span>
-                <LaunchEstimateNote
-                  workspaceId={session?.workspaceId ?? null}
-                  kind={selectedKind}
-                  routing={effective}
-                  isShown={isShown && planToStart != null}
-                />
-              </span>
-            ) : (
-              <span role="alert" className="min-w-0 text-meta text-danger">
-                {spawnError}
-              </span>
-            )
+            <AgentStartFields
+              kinds={agentKinds}
+              kind={selectedKind}
+              onKindChange={setKind}
+              routing={routing}
+              suggestion={suggestion}
+              suggestionReason={suggestionReason}
+              lastUsed={
+                lastUsed == null
+                  ? null
+                  : {
+                      routing: lastUsed,
+                      isActive:
+                        routing !== null && isSameRouting({ left: routing, right: lastUsed }),
+                      onSelect: choice.pickLastUsed,
+                    }
+              }
+              connectedProviders={connectedProviders}
+              isDisabled={isSpawning}
+              onRoutingChange={(next) => (next === null ? choice.reset() : choice.pick(next))}
+            />
           }
+          reason={spawnError === null ? actionNote : null}
+          error={spawnError}
         >
           <Button
             size="sm"
@@ -211,10 +152,16 @@ export const AgentStartBlock = ({
             isBusy={isSpawning}
             busyLabel={`Starting ${kindLabel}`}
           >
-            {actionLabel}
+            {spawnError === null ? actionLabel : NAMES.retry}
           </Button>
         </FormActions>
+        <LaunchEstimateNote
+          workspaceId={session?.workspaceId ?? null}
+          kind={selectedKind}
+          routing={effective}
+          isShown={isShown && planToStart != null}
+        />
       </Docked>
-    </>
+    </div>
   );
 };

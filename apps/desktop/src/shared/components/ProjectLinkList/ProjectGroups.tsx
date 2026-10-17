@@ -99,13 +99,14 @@ export const ProjectGroups = ({
           aria-label={hasStarred ? 'Other projects' : 'Projects'}
           className="col-span-full grid grid-cols-subgrid gap-y-1"
         >
-          <SectionHeader
-            label={hasStarred ? 'Other projects' : 'Projects'}
-            headingLevel={2}
-            meta={<GroupCount count={groups.all.length} />}
-            hint={hasStarred ? undefined : 'Star the ones you use most.'}
-            className="col-span-full px-2"
-          />
+          {hasStarred ? (
+            <SectionHeader
+              label="Other projects"
+              headingLevel={2}
+              meta={<GroupCount count={groups.all.length} />}
+              className="col-span-full px-2"
+            />
+          ) : null}
           <ul className="col-span-full grid grid-cols-subgrid gap-y-1">{visibleAll.map(row)}</ul>
           {hiddenCount > 0 ? (
             <button

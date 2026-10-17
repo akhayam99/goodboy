@@ -20,6 +20,13 @@ import type { ScriptFacts } from './kinds/script';
 import type { ChatFacts } from './kinds/chat';
 import type { ChatsFacts } from './kinds/chats';
 import type { PortFacts } from './kinds/port';
+import type { TerminalTabFacts } from './kinds/terminalTab';
+import type { NewFormFacts } from './kinds/newForm';
+import type { TaskListFacts } from './kinds/taskList';
+import type { RunStepFacts } from './kinds/runStep';
+import type { WorkflowListFacts } from './kinds/workflowList';
+import type { NotificationsFacts } from './kinds/notifications';
+import type { ProjectAskFacts } from './kinds/projectAsk';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -217,6 +224,7 @@ export type WorkflowRunActionTarget = {
   readonly kind: 'workflowRun';
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
+  readonly stepAgentId?: AgentId | null;
 };
 
 export type PlanPartActionTarget = {
@@ -350,6 +358,41 @@ export type PortActionTarget = {
   readonly facts: PortFacts;
 };
 
+export type TerminalTabActionTarget = {
+  readonly kind: 'terminalTab';
+  readonly facts: TerminalTabFacts;
+};
+
+export type NewFormActionTarget = {
+  readonly kind: 'newForm';
+  readonly facts: NewFormFacts;
+};
+
+export type TaskListActionTarget = {
+  readonly kind: 'taskList';
+  readonly facts: TaskListFacts;
+};
+
+export type RunStepActionTarget = {
+  readonly kind: 'runStep';
+  readonly facts: RunStepFacts;
+};
+
+export type WorkflowListActionTarget = {
+  readonly kind: 'workflowList';
+  readonly facts: WorkflowListFacts;
+};
+
+export type NotificationsActionTarget = {
+  readonly kind: 'notifications';
+  readonly facts: NotificationsFacts;
+};
+
+export type ProjectAskActionTarget = {
+  readonly kind: 'projectAsk';
+  readonly facts: ProjectAskFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -410,6 +453,13 @@ export type ObjectTarget =
   | ChatActionTarget
   | ChatsActionTarget
   | PortActionTarget
+  | TerminalTabActionTarget
+  | NewFormActionTarget
+  | TaskListActionTarget
+  | RunStepActionTarget
+  | WorkflowListActionTarget
+  | NotificationsActionTarget
+  | ProjectAskActionTarget
   | LinkActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget

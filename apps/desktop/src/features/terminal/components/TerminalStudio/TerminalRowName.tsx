@@ -76,6 +76,7 @@ export const TerminalRowName = ({
       tabIndex={isTab && !isSelected ? -1 : undefined}
       onClick={onSelect}
       onDoubleClick={() => setDraft(name)}
+      style={isTab ? { minWidth: 48 } : undefined}
       className="min-w-0 flex-1 truncate text-left text-label focus-visible:outline-none"
     >
       {name}

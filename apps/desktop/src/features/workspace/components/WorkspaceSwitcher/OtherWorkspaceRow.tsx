@@ -1,14 +1,14 @@
 import { AppWindow } from 'lucide-react';
-import { Chip, Kbd, cn, IconButton } from '@goodboy/ui';
+import { IconButton, Kbd, ROW_INTERACTIVE, StatusDot, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
-import { workspaceAccent } from '../../color';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs, type ShortcutId } from '../../../../shared/keyboard/registry';
 import { useWorkspaceWindowState } from './useWorkspaceWindowState';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { WorkspaceTile } from './WorkspaceTile';
 
 type Props = {
   readonly workspace: Workspace;
@@ -31,62 +31,52 @@ export const OtherWorkspaceRow = ({
   const projectsLabel = useAppStore((state) =>
     linkedProjectsLabel({ projects: state.projects, workspaceId: workspace.id }),
   );
-  const accent = workspaceAccent(workspace.id);
   const lastSeen = workspace.lastAccessedAt
     ? formatSpan({ from: workspace.lastAccessedAt, to: now })
     : '';
+  const subtitle =
+    windowState === 'other-window'
+      ? 'In another window'
+      : `${projectsLabel} · ${lastSeen === '' ? 'never opened' : lastSeen}`;
 
   return (
     <div
+      data-workspace-row={workspace.name}
       className={cn(
-        'group flex w-full items-center gap-3 rounded-md border px-3 py-2 text-left transition-colors',
-        highlighted
-          ? 'border-border bg-muted'
-          : 'border-transparent hover:border-border-soft hover:bg-hover',
+        'flex min-w-0 items-center gap-1 rounded-md pr-1',
+        highlighted ? 'bg-hover' : 'hover:bg-hover',
       )}
     >
-      <span
-        aria-hidden
-        className="h-7 w-[3px] shrink-0 rounded-full"
-        style={{ backgroundColor: accent }}
-      />
-      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left">
-        <span className="truncate text-row text-foreground">{workspace.name}</span>
-        <span className="flex items-center gap-2 truncate text-label text-muted-foreground">
-          {windowState === 'other-window' ? (
-            <>
-              <AppWindow size={ICON_SIZE.control} aria-hidden />
-              In another window
-            </>
-          ) : (
-            <>
-              {projectsLabel} · {lastSeen || 'never opened'}
-            </>
-          )}
-          {hasUnread ? <Chip tone="warning" kind="state" bordered={false} label="unread" /> : null}
-        </span>
-      </button>
-      {digitShortcut === null ? null : (
-        <span className="shrink-0 group-hover:hidden group-focus-within:hidden">
-          <Kbd>{shortcutGlyphs(digitShortcut)}</Kbd>
-        </span>
-      )}
       <button
         type="button"
         onClick={onOpen}
-        className="hidden shrink-0 items-center gap-2 rounded-md px-2 py-1 text-label text-foreground hover:bg-hover focus-visible:flex group-hover:flex group-focus-within:flex"
+        aria-label={`Switch to ${workspace.name}`}
+        className={cn(
+          'flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1 text-left',
+          ROW_INTERACTIVE,
+        )}
       >
-        Open
-        <Kbd look="cap">↵</Kbd>
+        <WorkspaceTile workspace={workspace} />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-row text-foreground">{workspace.name}</span>
+          <span className="flex min-w-0 items-center gap-1 text-meta text-muted-foreground">
+            {windowState === 'other-window' ? (
+              <AppWindow size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
+            ) : null}
+            <span className="truncate">{subtitle}</span>
+          </span>
+        </span>
+        {hasUnread ? <StatusDot tone="warning" size="sm" title="Unread activity" /> : null}
+        {digitShortcut === null ? null : <Kbd>{shortcutGlyphs(digitShortcut)}</Kbd>}
       </button>
       <IconButton
         icon={AppWindow}
-        label="Open in new window"
+        label={`Open ${workspace.name} in a new window`}
+        tooltip="Open in new window"
         shortcut="composer.submit"
-        size="sm"
+        size="xs"
         iconSize={ICON_SIZE.row}
         onClick={onOpenNewWindow}
-        className="hidden focus-visible:inline-flex group-hover:inline-flex"
       />
     </div>
   );

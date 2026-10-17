@@ -1,18 +1,19 @@
-export type CountedPageId = 'branch' | 'runs' | 'agents' | 'artifacts' | 'questions';
+export type CountedPageId = 'runs' | 'orchestrated' | 'agents' | 'auto' | 'artifacts' | 'questions';
 
 export type PageCountFacts = {
-  readonly waiting: number;
-  readonly mounts: number;
-  readonly branchName: string | null;
   readonly runs: number;
   readonly runningRuns: number;
+  readonly waitingRuns: number;
+  readonly orchestratedRuns: number;
+  readonly runningOrchestratedRuns: number;
+  readonly waitingOrchestratedRuns: number;
   readonly agents: number;
   readonly runningAgents: number;
+  readonly autoAgents: number;
+  readonly workingAutoAgents: number;
   readonly artifacts: number;
   readonly openQuestions: number;
 };
-
-export type PageSummaries = Partial<Record<CountedPageId, string>>;
 
 const RUNNING_SUFFIX = ' running';
 
@@ -27,9 +28,13 @@ type RunningParams = {
   readonly running: number;
   readonly total: number;
   readonly noun: string;
+  readonly waiting?: number;
 };
 
-const runningOr = ({ running, total, noun }: RunningParams): string | null => {
+const runningOr = ({ running, total, noun, waiting = 0 }: RunningParams): string | null => {
+  if (waiting > 0) {
+    return `${waiting} ${waiting === 1 ? 'needs' : 'need'} you`;
+  }
   if (running > 0) {
     return `${running}${RUNNING_SUFFIX}`;
   }
@@ -37,24 +42,32 @@ const runningOr = ({ running, total, noun }: RunningParams): string | null => {
 };
 
 const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => string | null>> = {
-  branch: (facts) => {
-    if (facts.mounts > 1) {
-      return `${facts.mounts} branches`;
-    }
-    if (facts.waiting > 0) {
-      return `${facts.waiting} need you`;
-    }
-    return facts.branchName;
-  },
-  runs: (facts) => runningOr({ running: facts.runningRuns, total: facts.runs, noun: 'run' }),
+  runs: (facts) =>
+    runningOr({
+      running: facts.runningRuns,
+      total: facts.runs,
+      noun: 'run',
+      waiting: facts.waitingRuns,
+    }),
+  orchestrated: (facts) =>
+    runningOr({
+      running: facts.runningOrchestratedRuns,
+      total: facts.orchestratedRuns,
+      noun: 'run',
+      waiting: facts.waitingOrchestratedRuns,
+    }),
   agents: (facts) =>
     runningOr({ running: facts.runningAgents, total: facts.agents, noun: 'agent' }),
+  auto: (facts) => {
+    if (facts.workingAutoAgents > 0) {
+      return `${facts.workingAutoAgents} working`;
+    }
+    return facts.autoAgents > 0 ? nounOf({ count: facts.autoAgents, noun: 'conversation' }) : null;
+  },
   artifacts: (facts) =>
     facts.artifacts > 0 ? nounOf({ count: facts.artifacts, noun: 'artifact' }) : null,
   questions: (facts) => (facts.openQuestions > 0 ? `${facts.openQuestions} open` : null),
 };
-
-export const COUNTED_PAGE_IDS = Object.keys(COUNT_WORD) as ReadonlyArray<CountedPageId>;
 
 type WordParams = {
   readonly page: CountedPageId;
@@ -63,10 +76,3 @@ type WordParams = {
 
 export const pageCountWordOf = ({ page, facts }: WordParams): string | null =>
   COUNT_WORD[page](facts);
-
-type RunningWordParams = {
-  readonly word: string;
-};
-
-export const isRunningWord = ({ word }: RunningWordParams): boolean =>
-  word.endsWith(RUNNING_SUFFIX);

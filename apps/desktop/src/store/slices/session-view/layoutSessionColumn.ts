@@ -1,7 +1,12 @@
 import type { Session, SessionId, SessionStage, SessionViewPrefs } from '@goodboy/types';
 import { foldSessions } from './foldSessions';
 import { isSessionGroupCollapsed } from './isSessionGroupCollapsed';
-import { PINNED_GROUP_KEY, type GroupedSessions } from './types';
+import {
+  INACTIVE_GROUP_KEY,
+  INACTIVE_GROUP_LABEL,
+  PINNED_GROUP_KEY,
+  type GroupedSessions,
+} from './types';
 
 type ColumnGroup = {
   readonly key: string;
@@ -18,7 +23,7 @@ export type SessionColumnLayout = {
   readonly order: ReadonlyArray<SessionId>;
 };
 
-const OTHER_SESSIONS_LABEL = 'Other sessions';
+const OTHER_SESSIONS_LABEL = 'Sessions';
 
 type Params = {
   readonly groups: ReadonlyArray<GroupedSessions>;
@@ -78,6 +83,7 @@ export const layoutSessionColumn = ({
 }: Params): SessionColumnLayout => {
   const isGrouped = prefs.group !== 'none';
   const { pinned, rest } = splitPinned({ groups, pinnedIds });
+  const totalByKey = new Map(groups.map((group) => [group.key, group.sessions.length]));
   const listedGroups = rest
     .filter((group) => group.sessions.length > 0)
     .map((group): ColumnGroup => {
@@ -86,6 +92,15 @@ export const layoutSessionColumn = ({
           key: group.key,
           label: group.label ?? null,
           isCollapsed: isSessionGroupCollapsed({ key: group.key, overrides: groupExpanded }),
+          total: totalByKey.get(group.key) ?? group.sessions.length,
+          sessions: group.sessions,
+        };
+      }
+      if (group.key === INACTIVE_GROUP_KEY) {
+        return {
+          key: group.key,
+          label: INACTIVE_GROUP_LABEL,
+          isCollapsed: false,
           total: group.sessions.length,
           sessions: group.sessions,
         };
@@ -105,10 +120,9 @@ export const layoutSessionColumn = ({
         sessions: folded.visible,
       };
     });
-  const hiddenCount = listedGroups.reduce(
-    (sum, group) => sum + group.total - group.sessions.length,
-    0,
-  );
+  const hiddenCount = isGrouped
+    ? 0
+    : listedGroups.reduce((sum, group) => sum + group.total - group.sessions.length, 0);
   const columnGroups: ReadonlyArray<ColumnGroup> =
     pinned.length === 0
       ? listedGroups

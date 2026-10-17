@@ -52,13 +52,17 @@ const PANEL_MAX_HEIGHT = 480;
 const SEGMENT = 'flex items-center gap-1';
 const SEGMENT_WORD = 'hidden text-muted-foreground @min-chrome-labels/topbar:inline';
 
-const needsYouWord = ({ count }: { readonly count: number }): string =>
-  count === 1 ? NAMES.needsYou.toLowerCase() : 'need you';
+type WordParams = {
+  readonly count: number;
+};
+
+const needsYouWord = ({ count }: WordParams): string =>
+  count === 1 ? 'session needs you' : 'sessions need you';
 
 const chipLabel = ({ attention, running, scripts }: CountLabelParams): string =>
   [
-    attention > 0 ? `${attention} ${attention === 1 ? 'session needs' : 'sessions need'} you` : '',
-    running > 0 ? `${running} running` : '',
+    attention > 0 ? `${attention} ${needsYouWord({ count: attention })}` : '',
+    running > 0 ? `${running} ${running === 1 ? 'session' : 'sessions'} running` : '',
     scripts > 0 ? `${scripts} ${scripts === 1 ? 'script' : 'scripts'} running` : '',
   ]
     .filter((part) => part !== '')
@@ -150,14 +154,14 @@ export const NowChip = ({ onOpenScript }: Props) => {
           >
             {needsYou.length > 0 ? (
               <span className={SEGMENT}>
-                <StatusDot tone="warning" size="sm" pulsing />
+                <StatusDot tone="warning" size="sm" />
                 <span className="font-medium tabular-nums text-foreground">{needsYou.length}</span>
                 <span className={SEGMENT_WORD}>{needsYouWord({ count: needsYou.length })}</span>
               </span>
             ) : null}
             {running.length > 0 ? (
               <span className={SEGMENT}>
-                <StatusDot tone="info" size="sm" pulsing />
+                <StatusDot tone="info" size="sm" />
                 <span className="font-medium tabular-nums text-foreground">{running.length}</span>
                 <span className={SEGMENT_WORD}>running</span>
               </span>

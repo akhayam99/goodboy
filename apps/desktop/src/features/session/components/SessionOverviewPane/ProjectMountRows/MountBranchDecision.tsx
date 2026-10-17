@@ -9,7 +9,8 @@ import type {
 import { worktreeBranchHolder } from '../../../../worktree/worktree';
 import { useAppStore } from '../../../../../store';
 import type { MountBranchHolder } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { buildBranchDecision, splitOnBranches } from './branchDecision';
+import { buildBranchDecision } from './branchDecision';
+import { BranchExpectedLine } from './BranchExpectedLine';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -103,20 +104,11 @@ export const MountBranchDecision = ({
       role="alert"
       title={decision.title}
       body={
-        <span className="break-words">
-          {splitOnBranches({
-            text: decision.description,
-            branches: [observation.recordedBranch, observation.observedBranch],
-          }).map((segment, index) =>
-            segment.isBranch ? (
-              <span key={`${index}:${segment.text}`} className="break-all text-code">
-                {segment.text}
-              </span>
-            ) : (
-              segment.text
-            ),
-          )}
-        </span>
+        <BranchExpectedLine
+          expected={decision.expected}
+          found={decision.found}
+          note={decision.note}
+        />
       }
       actions={
         <>

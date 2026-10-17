@@ -1,13 +1,15 @@
 import { Trash2 } from 'lucide-react';
-import { IconButton, ListboxOptionRow, cn } from '@goodboy/ui';
+import { IconButton, ListboxOptionRow } from '@goodboy/ui';
 import type { ListboxMatch } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
-import { agentKindPalette, classifyStep } from '../../../../session/agent-kind';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import type { PresetStepMark } from '../../../presetStepMarksOf';
+import { PresetStepMarks } from './PresetStepMarks';
 
 type Props = {
   readonly id: string;
   readonly preset: Workflow;
+  readonly marks: ReadonlyArray<PresetStepMark>;
   readonly match: ListboxMatch;
   readonly isActive: boolean;
   readonly isSelected: boolean;
@@ -16,11 +18,10 @@ type Props = {
   readonly onDelete: () => void;
 };
 
-const MAX_DOTS = 6;
-
 export const PresetPickerOption = ({
   id,
   preset,
+  marks,
   match,
   isActive,
   isSelected,
@@ -28,8 +29,6 @@ export const PresetPickerOption = ({
   onSelect,
   onDelete,
 }: Props) => {
-  const steps = [...preset.steps].sort((first, second) => first.ordinal - second.ordinal);
-  const kinds = steps.map((step) => classifyStep({ step }));
   const description = preset.description !== '' ? preset.description : (preset.goal ?? '');
   return (
     <div className="group/preset flex min-w-0 items-center gap-1">
@@ -43,16 +42,7 @@ export const PresetPickerOption = ({
         isSelected={isSelected}
         onActivate={onActivate}
         onSelect={onSelect}
-        meta={
-          <span aria-hidden className="flex items-center gap-1">
-            {kinds.slice(0, MAX_DOTS).map((kind, index) => (
-              <span
-                key={`${kind}-${index}`}
-                className={cn('size-2 rounded-full', agentKindPalette({ kind }).bg)}
-              />
-            ))}
-          </span>
-        }
+        meta={marks.length === 0 ? undefined : <PresetStepMarks marks={marks} />}
       />
       <IconButton
         icon={Trash2}
@@ -60,7 +50,7 @@ export const PresetPickerOption = ({
         variant="ghost"
         iconSize={ICON_SIZE.row}
         onClick={onDelete}
-        className="shrink-0 opacity-0 focus-visible:opacity-100 group-hover/preset:opacity-100"
+        className="shrink-0"
       />
     </div>
   );

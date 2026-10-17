@@ -18,7 +18,7 @@ describe('sessionGroupPresentation', () => {
   it('gives every stage group a reason a tooltip can show', () => {
     const running = sessionGroupPresentation({ key: 'running', groupMode: 'stage' });
 
-    expect(running?.label).toBe('running');
+    expect(running?.label).toBe('Running');
     expect(running?.reason).toBe('An agent is working right now');
   });
 

@@ -5,11 +5,9 @@ type Props = {
 };
 
 export const AutoChildNotice = ({ onOpenAuto }: Props) => (
-  <div className="flex min-w-0 items-center gap-3 text-label text-muted-foreground">
-    <p className="min-w-0 flex-1">
-      Started by Auto. You can read and stop it here. To change what it does, tell Auto.
-    </p>
-    <Button variant="secondary" size="sm" onClick={onOpenAuto}>
+  <div className="flex min-w-0 items-center gap-3 text-ui text-muted-foreground">
+    <p className="min-w-0 flex-1">Started by Auto. Auto sees what you tell it.</p>
+    <Button variant="quiet" size="xs" onClick={onOpenAuto}>
       Open Auto
     </Button>
   </div>

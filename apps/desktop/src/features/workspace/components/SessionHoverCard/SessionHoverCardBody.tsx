@@ -3,16 +3,18 @@ import { ArrowRight, Folder } from 'lucide-react';
 import { Chip, GhostActionButton, StatusDot, formatUsd } from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/names';
+import { useReviewDraftCount } from './useReviewDraftCount';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
-import { SessionStateNode } from '../SessionActivityBar/SessionStateNode';
-import { sessionNodeOf } from '../SessionActivityBar/sessionNode';
+import { StateNode } from '../../../../shared/components/StateNode';
+import { sessionNodeOf } from '../../../session/sessionNode';
 import { getLinkedRequest } from '../StageBoard/StageBoardCard/getLinkedRequest';
 import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskChip';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
+import { pullRequestStateToneOf } from '../../../branch/pullRequestStateToneOf';
 import { requestChipLabel } from './requestChipLabel';
 import { stageWord } from './stageWord';
 
@@ -26,6 +28,7 @@ type Props = {
   readonly isArchived: boolean;
   readonly onOpenAttention: (params: OpenAttention) => void;
   readonly onOpenLegend: () => void;
+  readonly isFactsOnly?: boolean;
 };
 
 export const SessionHoverCardBody = ({
@@ -33,20 +36,36 @@ export const SessionHoverCardBody = ({
   isArchived,
   onOpenAttention,
   onOpenLegend,
+  isFactsOnly = false,
 }: Props) => {
   const sessionId = session.id as SessionId;
   const summary = useSessionSummary({ session });
   const pullRequest = useAppStore((state) => state.sessionGithub[sessionId]?.pr ?? null);
   const mergeRequest = useAppStore((state) => state.sessionGitlabMr[sessionId]?.mr ?? null);
   const mounts = useAppStore((state) => state.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY);
+  const isPinned = useAppStore((state) =>
+    (state.sessionPins?.[session.workspaceId] ?? EMPTY_ARRAY).some((pin) => pin.id === sessionId),
+  );
+  const isNamedByGoodboy = useAppStore(
+    (state) => state.goodboyNamedSessionId === sessionId && session.titleUserEdited !== true,
+  );
+  const draftCount = useReviewDraftCount({ sessionId });
+  const projectMounts = mounts.filter(
+    (mount, index) => mounts.findIndex((other) => other.projectId === mount.projectId) === index,
+  );
   const node = sessionNodeOf({ info: summary.info, isArchived });
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const linked = getLinkedRequest({ pullRequest, mergeRequest });
-  const request = linked.state === 'none' ? null : PULL_REQUEST_PRESENTATION[linked.state];
+  const request = linked.state === 'none' ? null : pullRequestStateToneOf({ state: linked.state });
   const RequestIcon = request?.icon;
   const agentWord = summary.agentCount === 1 ? 'agent' : 'agents';
+  const draftWord = draftCount === 1 ? 'draft comment' : 'draft comments';
   const facts = [
+    isPinned && !isArchived ? 'Pinned' : null,
+    isNamedByGoodboy ? 'Named by Goodboy' : null,
+    summary.isAutorun ? NAMES.autopilot : null,
     `${summary.agentCount} ${agentWord}`,
+    draftCount > 0 ? `${draftCount} ${draftWord}` : null,
     summary.cost > 0 ? formatUsd(summary.cost) : null,
     summary.age === '' ? null : summary.age,
   ].filter((fact): fact is string => fact !== null);
@@ -64,7 +83,7 @@ export const SessionHoverCardBody = ({
     <div className="flex flex-col gap-3">
       <SessionRowTitle keys={keys} title={title} titleClassName="text-heading text-foreground" />
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
-        <SessionStateNode node={node} />
+        <StateNode node={node} />
         <span className="min-w-0">{stateText}</span>
         {isWorking ? (
           <>
@@ -84,7 +103,7 @@ export const SessionHoverCardBody = ({
       {summary.progress === null ? null : (
         <SessionProgress progress={summary.progress} tone={summary.tone} />
       )}
-      {request !== null || summary.tasks.length > 0 || mounts.length > 0 ? (
+      {request !== null || summary.tasks.length > 0 || projectMounts.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {request !== null && RequestIcon !== undefined ? (
             <Chip
@@ -101,7 +120,7 @@ export const SessionHoverCardBody = ({
               variant="compact"
             />
           ))}
-          {mounts.map((mount) => (
+          {projectMounts.map((mount) => (
             <Chip
               key={mount.mountId}
               tone="neutral"
@@ -113,18 +132,20 @@ export const SessionHoverCardBody = ({
         </div>
       ) : null}
       <span className="text-meta text-faint-foreground">{facts.join(' · ')}</span>
-      {needsYou ? (
+      {needsYou && !isFactsOnly ? (
         <GhostActionButton
           icon={ArrowRight}
           label="Open what needs you"
           onClick={() => onOpenAttention({ sessionId, reason: summary.attention })}
         />
       ) : null}
-      <GhostActionButton
-        icon={CONCEPT_ICONS.help}
-        label="What do these marks mean?"
-        onClick={onOpenLegend}
-      />
+      {isFactsOnly ? null : (
+        <GhostActionButton
+          icon={CONCEPT_ICONS.help}
+          label="What do these marks mean?"
+          onClick={onOpenLegend}
+        />
+      )}
     </div>
   );
 };

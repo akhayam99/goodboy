@@ -5,7 +5,6 @@ import type { RecordSection } from '../../../../shared/components/StudioDetail/R
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { ErrorStrip, Skeleton, PaneShell } from '@goodboy/ui';
 import type { SentryIssueDetail as Detail } from '../client';
-import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import {
   relativeTimeNode,
   resolveFacts,
@@ -59,13 +58,6 @@ type Props = {
   readonly frame?: RecordFrame | null;
 };
 
-type DescriptionParams = {
-  readonly culprit: string | null;
-};
-
-const descriptionOf = ({ culprit }: DescriptionParams): string =>
-  culprit == null || culprit.trim() === '' ? '' : `Raised in \`${culprit}\`.`;
-
 export const SentryIssueDetail = ({
   identifier,
   title,
@@ -102,14 +94,6 @@ export const SentryIssueDetail = ({
   });
 
   const sections: ReadonlyArray<RecordSection> = [
-    {
-      key: 'description',
-      kind: 'description',
-      label: 'Description',
-      isCollapsible: false,
-      defaultOpen: true,
-      content: <DescriptionSection text={descriptionOf({ culprit: view.culprit })} />,
-    },
     {
       key: 'stack',
       kind: 'tool',

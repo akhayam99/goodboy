@@ -4,7 +4,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ### Workflow builder
 
-Set up a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top. **Starts** and **Spend cap** sit under the plan.
+Set up a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top. **Starts** and **Limit** sit under the plan.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-dark.webp">
@@ -19,7 +19,7 @@ Give a goal and let a model pick each next step, with its role, model, effort an
 
 ### Preset and Custom
 
-Write the steps yourself with **Add step** and **Generate plan**, or let **Draft with planner** propose them. In **Pick a workflow** mode, start from a saved sequence and edit any step before starting. **Save as preset** keeps what you changed.
+Write the steps yourself with **Add step** and **Generate plan**, or let **Draft with planner** propose them. In **Pick a workflow** mode, start from a saved sequence and edit any step before starting. Each preset in the **Preset** list shows the provider mark of every step in run order, the same routing the run rail reads (`resolveStepRouting`); a step whose provider the start still picks shows the Auto glyph, and the tooltip names each step and its model ("Step 1 Scout · Sonnet 5.5"). The step lane under the picked preset reads the same function through `draftStepRoutingOf`, so a lane step and its mark never name two providers; a provider you pin in the lane wins over the decided one. **Save as preset** keeps what you changed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-dark.webp">
@@ -38,6 +38,10 @@ Write the steps yourself with **Add step** and **Generate plan**, or let **Draft
 ### Built-in workflows
 
 Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you delete stays deleted until you press **Restore built-in workflows**, which keeps your existing workflows as they are.
+
+### Runs of a workflow
+
+The Workflows list is one grid: name, **Built in** or **Edited** in gray, the roles of its steps in gray ("Scout, Implementer +1"), the step count, when it last ran, and a link with its run count ("3 runs", "No runs"). The row opens the workflow. The run count link opens the runs of that workflow beside the list, newest first, each a state dot, its session, its spend and its age; a row opens that run in its session. **Import workflows…** and **Restore built-in workflows…** sit in the page menu. A workflow that never ran offers **Start a run with this workflow**. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
 
 ### Saved steps
 
@@ -71,9 +75,9 @@ Choose how often a run stops for you: **Ask me**, **Balanced** to approve once a
 
 ### Run defaults
 
-Set what every new run starts with in the **Run defaults** tab: how it asks, the spend cap and shared **Guidance** for the agents that write code. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers & models**.
+Set what every new run starts with in the **Run defaults** tab: how it asks, the limit and shared **Guidance** for the agents that write code. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers & models**.
 
-### Spend cap
+### Limit
 
 Cap what a run or a session can spend, and choose **Pause workflows** or **Warn only**. A paused run offers **Raise limit**.
 
@@ -97,7 +101,7 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
 
 ### Workflow run
 
-Follow a run from the top: the status with **Pause** and **Stop run**, the steps below with sub-agents nested under their agent, and the composer at the bottom. **Review plan** opens the plan while the run waits for it, and you can add steps to a live or finished run. After a restart, **Resume all** restarts every stopped agent.
+Open a preset run and the session rail steps into it: **Overview**, every step in order with its sub-agents, **Add step** at the end, and the run's limit and spend at the foot. The center shows the step you pick as its conversation. The line at the end says what the run waits for, with the one button that moves it on: **Start step 3**, **Review plan**, **Raise limit**, **Continue step**. **Pause run** and **Stop run** sit as buttons in the run header while the run lives (once paused, **Resume run** takes the place of Pause run), and **Autonomy**, **Skip step** and the rest sit in the run's **⋯**. An orchestrated run lives under **Orchestrated** in the session and reads as one document: the goal with its autonomy, providers and limit, one checklist of the steps it decided, the hints it read and what is left, the line that says what the orchestrator does now with the reason for its last choice, the result once done, and the hint box at the bottom. A step opens beside it. The time on a step row and on the line at the end counts only the time the agents worked, never the time a step waited for you. After a restart, **Resume all** restarts every stopped agent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">
@@ -108,7 +112,7 @@ Follow a run from the top: the status with **Pause** and **Stop run**, the steps
 
 ### Hints to the orchestrator
 
-Steer a run while it goes with a markdown hint, images included. **Queue** keeps it for the next decision; on a finished run, **Read 2 queued** reads them all in one new turn. **Read now** stops the step in flight, keeps what it wrote and decides again.
+Steer a run while it goes with a markdown hint, images included. **Queue** keeps it for the next decision; on a finished run, **Read 2 queued** reads them all in one new turn. **Send now** stops the step in flight, keeps what it wrote and decides again.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-dark.webp">
@@ -134,7 +138,7 @@ Each step starts from a short brief instead of the whole previous chat. If the s
 
 ### Open questions
 
-Each question arrives as one card with who asks, whether it is **Blocking**, and numbered answers with the recommended one tagged. Pick with a number key and press **Enter**, or write your own. A blocking question holds its step until you answer or choose **Send as message**.
+Each question arrives as one card with who asks, whether it is **Blocking**, and numbered answers with the recommended one tagged. Pick with a number key and press **Enter**, or write your own. A blocking question holds its step until you answer or choose **Send as message**. The session's **Questions** page lists them under **Needs you** and **Answered**, with the answer in gray; a row opens its card in the drawer, and answering moves to the next one.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-dark.webp">

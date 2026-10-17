@@ -110,6 +110,24 @@ describe('WriteDestinationControl', () => {
     );
   });
 
+  it('reads Writes to on a run document', () => {
+    store.sessionProjectMounts = {
+      [SESSION_ID]: [mount({ mountId: MOUNT_MAIN, mountName: 'main', branch: 'ak/feat-thing' })],
+    };
+    store.sessionActiveMount = { [SESSION_ID]: MOUNT_MAIN };
+
+    render(
+      <WriteDestinationControl
+        sessionId={SESSION_ID}
+        agentId={null}
+        fallback="automatic"
+        verb="Writes to"
+      />,
+    );
+
+    expect(trigger().textContent).toBe('Writes to web / main / ak/feat-thing');
+  });
+
   it('falls back to the session scratch folder when there are no mounted projects', async () => {
     render(<WriteDestinationControl sessionId={SESSION_ID} agentId={AGENT_ID} />);
 

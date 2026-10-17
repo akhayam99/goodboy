@@ -1,6 +1,7 @@
 import type { AgentId, Session, SessionId, WorkflowRunId } from '@goodboy/types';
 import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import type { AppState } from '../../types';
+import { runningAgentCountOf } from './runningAgentCountOf';
 
 export type LiveWorkState = Pick<
   AppState,
@@ -49,10 +50,7 @@ export const liveWorkOfSession = ({ state, session }: SessionParams): SessionLiv
     isRunning:
       session.state.kind === 'running' ||
       session.state.kind === 'starting' ||
-      runs.some(
-        (run) =>
-          run.status === 'running' || isTurnStateLive({ turnState: state.agentTurnState[run.id] }),
-      ),
+      runningAgentCountOf({ state, sessionId: session.id }) > 0,
     isBlocked: runs.some((run) => state.agentTurnState[run.id]?.kind === 'blocked'),
     isDeciding: decidingRunIdsOf({ state, session }).length > 0,
   };

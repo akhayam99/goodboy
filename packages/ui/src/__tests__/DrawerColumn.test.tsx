@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
-import { createElement, type ReactNode } from 'react';
+import { createElement, useContext, useSyncExternalStore, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
@@ -26,6 +27,8 @@ import {
   type DrawerSizing,
 } from '../drawerGeometry';
 import { registerEscapeLayer } from '../escape';
+import { DrawerEdgeContext } from '../drawerEdgeContext';
+import { FOLD_MS } from '../motionTimings';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
 
@@ -87,6 +90,7 @@ const renderSized = (sizing: DrawerSizing, frame: DrawerColumnFrame = 'none') =>
 
 const panel = () => screen.getByRole('complementary', { name: 'Side panel' });
 const card = () => panel().querySelector<HTMLElement>('[data-drawer-card]');
+const content = () => panel().querySelector<HTMLElement>('[data-drawer-content]');
 const scrim = () => document.querySelector<HTMLElement>('[data-drawer-scrim]');
 const pageOf = (container: HTMLElement) =>
   container.querySelector<HTMLElement>('[data-container="page"]') as HTMLElement;
@@ -230,7 +234,8 @@ describe('DrawerColumn over the page', () => {
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('overlay');
     expect(panel().className).toContain('absolute');
-    expect(panel().className).toContain('inset-y-0');
+    expect(panel().className).toContain('top-0');
+    expect(panel().className).toContain('bottom-0');
     expect(panel().className).toContain('right-0');
     expect(panel().style.width).toBe(`${RIGHT_DRAWER_DEFAULT + DRAWER_INSET}px`);
   });
@@ -595,13 +600,17 @@ describe('DrawerColumn sizes', () => {
       expect(aside).toBeLessThanOrEqual(columnWidth);
       expect(panel().getAttribute('data-drawer-mode')).toBe(mode);
       expect(panel().style.width).toBe(`${aside}px`);
-      expect(inner?.style.minWidth).toBe(`${aside}px`);
       expect(gutter?.className).toContain('w-2');
       expect(gutter?.className).toContain('shrink-0');
       expect(card()?.className).toContain('min-w-0');
       expect(card()?.className).toContain('overflow-hidden');
+      if (mode === 'overlay') {
+        expect(inner?.style.minWidth).toBe(`${aside}px`);
+      }
       if (mode === 'push') {
-        expect(panel().className).toContain('overflow-hidden');
+        expect(inner?.style.minWidth).toBe('0');
+        expect(panel().style.getPropertyValue('--goodboy-drawer-track')).toBe(`${aside}px`);
+        expect(panel().className).toContain('overflow-clip');
         expect(card()?.parentElement?.className).toContain('pr-2');
       }
     },
@@ -921,7 +930,7 @@ describe('DrawerColumn closing', () => {
     expect(panel().style.width).toBe('0px');
   });
 
-  it('closes from pushing as before: in the flow, the width eases to 0, no scrim, no exit', () => {
+  it('closes from pushing at once when the card has no layout to animate: no scrim, no exit', () => {
     openThenClose(1094);
 
     expect(panel().className).toMatch(/(^|\s)relative(\s|$)/);
@@ -932,6 +941,100 @@ describe('DrawerColumn closing', () => {
     expect(scrim()).toBeNull();
   });
 
+  describe('with a laid out card', () => {
+    const layOut = () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ x: 0, y: 0, width: 400, height: 600 }),
+      );
+    };
+    const reduceMotion = (isReduced: boolean) => {
+      vi.stubGlobal(
+        'matchMedia',
+        vi.fn((query: string) => ({
+          matches: isReduced && query === '(prefers-reduced-motion: reduce)',
+          media: query,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+        })),
+      );
+    };
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('keeps the pushing card in the flow while its width eases to 0 and its content fades', () => {
+      layOut();
+      reduceMotion(false);
+      openThenClose(1094);
+
+      expect(panel().getAttribute('data-drawer-exit')).toBe('');
+      expect(panel().getAttribute('data-drawer-mode')).toBe('closed');
+      expect(panel().className).toMatch(/(^|\s)relative(\s|$)/);
+      expect(panel().className).not.toContain('absolute');
+      expect(panel().style.width).toBe('0px');
+      expect(scrim()).toBeNull();
+      expect(card()?.textContent).toBe('drafts');
+      expect(card()?.className).not.toContain('animate-drawer-overlay-out');
+      expect(content()?.className).toContain('motion-safe:animate-drawer-content-out');
+      expect(page().hasAttribute('inert')).toBe(false);
+
+      advance(FOLD_MS - 1);
+      expect(card()).not.toBeNull();
+
+      advance(1);
+      expect(card()).toBeNull();
+      expect(panel().getAttribute('data-drawer-exit')).toBeNull();
+    });
+
+    it('closes a pushing drawer at once under reduced motion', () => {
+      layOut();
+      reduceMotion(true);
+      openThenClose(1094);
+
+      expect(card()).toBeNull();
+      expect(panel().getAttribute('data-drawer-exit')).toBeNull();
+      expect(panel().style.width).toBe('0px');
+    });
+
+    it('copies the content as it was when the host empties it in the same commit', () => {
+      layOut();
+      reduceMotion(false);
+      stubColumnWidth(678);
+      let panelText: string | null = 'drafts';
+      const listeners = new Set<() => void>();
+      const subscribe = (listener: () => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      };
+      const read = () => panelText;
+      const Host = () => {
+        const text = useSyncExternalStore(subscribe, read);
+        return text === null ? null : <div>{text}</div>;
+      };
+      const Column = () => {
+        const text = useSyncExternalStore(subscribe, read);
+        return (
+          <DrawerColumn
+            main={<button type="button">page action</button>}
+            drawer={text === null ? null : <Host />}
+            ariaLabel="Side panel"
+            resizeLabel="Resize side panel"
+          />
+        );
+      };
+      render(<Column />);
+
+      act(() => {
+        panelText = null;
+        listeners.forEach((listener) => listener());
+      });
+
+      expect(panel().getAttribute('data-drawer-exit')).toBe('');
+      expect(card()?.textContent).toBe('drafts');
+    });
+  });
+
   it('opens from a drawer closed from pushing with the push transition intact', () => {
     stubColumnWidth(1094);
     const view = render(column('drafts'));
@@ -940,7 +1043,7 @@ describe('DrawerColumn closing', () => {
 
     expect(panel().getAttribute('data-drawer-mode')).toBe('push');
     expect(panel().className).toContain('transition-[width]');
-    expect(card()?.className).toContain('animate-drawer-card-in');
+    expect(content()?.className).toContain('motion-safe:animate-drawer-content-in');
   });
 
   it('drops the exit when the column widens into pushing during it', () => {
@@ -1034,5 +1137,82 @@ describe('DrawerColumn closing', () => {
 
     expect(clone).not.toHaveBeenCalled();
     clone.mockRestore();
+  });
+});
+
+const EDGE_WIDTH = 44;
+
+type EdgeWidthsParams = {
+  readonly column: number;
+};
+
+const stubEdgeWidths = ({ column }: EdgeWidthsParams) => {
+  class EdgeObserver {
+    private readonly callback: ObserverCallback;
+    constructor(callback: ObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      const isEdge = target.hasAttribute('data-drawer-edge');
+      this.callback([{ contentRect: { width: isEdge ? EDGE_WIDTH : column } }]);
+    }
+    disconnect() {}
+  }
+  vi.stubGlobal('ResizeObserver', EdgeObserver);
+};
+
+const ToolColumn = () => {
+  const host = useContext(DrawerEdgeContext);
+  const tools = (
+    <div role="toolbar" aria-label="Session tools">
+      <button type="button">Scripts</button>
+    </div>
+  );
+  return (
+    <>
+      {tools}
+      {host === null ? null : createPortal(tools, host)}
+    </>
+  );
+};
+
+const renderWithTools = (drawer: string | null) =>
+  render(
+    <DrawerColumn
+      main={<ToolColumn />}
+      drawer={drawer === null ? null : <div>{drawer}</div>}
+      frame="sheet"
+      ariaLabel="Side panel"
+      resizeLabel="Resize side panel"
+    />,
+  );
+
+describe('DrawerColumn edge', () => {
+  it('keeps the tools column clickable above the scrim while a drawer lies over the page at 1100', () => {
+    stubEdgeWidths({ column: 852 });
+    const { container } = renderWithTools('Scripts');
+    const edge = container.querySelector<HTMLElement>('[data-drawer-edge]');
+    const live = edge?.querySelector('[role="toolbar"]') ?? null;
+
+    expect(pageOf(container).hasAttribute('inert')).toBe(true);
+    expect(live).not.toBeNull();
+    expect(live?.closest('[inert]')).toBeNull();
+    expect(edge?.className).toContain('z-30');
+    expect(scrim()?.className).toContain('z-10');
+    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
+  });
+
+  it('draws no edge copy while the drawer pushes the page or is closed', () => {
+    stubEdgeWidths({ column: 1300 });
+    const pushed = renderWithTools('Scripts');
+
+    expect(pushed.container.querySelector('[data-drawer-edge]')).toBeNull();
+    expect(screen.getAllByRole('toolbar', { name: 'Session tools' })).toHaveLength(1);
+    pushed.unmount();
+
+    stubEdgeWidths({ column: 852 });
+    const closed = renderWithTools(null);
+
+    expect(closed.container.querySelector('[data-drawer-edge]')).toBeNull();
   });
 });

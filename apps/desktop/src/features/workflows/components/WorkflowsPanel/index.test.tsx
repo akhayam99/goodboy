@@ -34,6 +34,11 @@ const { invokeMock, state } = vi.hoisted(() => ({
       async (_args: unknown, _workspaceId: unknown): Promise<unknown> => undefined,
     ),
     deleteStepDef: vi.fn(async (_id: unknown, _workspaceId: unknown) => undefined),
+    workflowRunHistory: Object.fromEntries<unknown>([]),
+    loadWorkflowRunHistory: vi.fn(async (_input: unknown) => undefined),
+    navigate: vi.fn(),
+    patchSessionDraft: vi.fn(),
+    openSessionDraft: vi.fn(),
   },
 }));
 
@@ -52,7 +57,10 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    getState: () => state,
+    subscribe: () => () => undefined,
+  }),
 }));
 
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -186,7 +194,7 @@ describe('WorkflowsPanel home', () => {
   it('keeps the restore button off in a workspace that never had the built-ins', () => {
     removed.ids = new Set();
     renderPanel();
-    expect(screen.queryByRole('button', { name: 'Restore built-in workflows' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More workflow actions' })).toBeNull();
   });
 });
 
@@ -195,7 +203,8 @@ describe('WorkflowsPanel restore and discard popovers', () => {
     removed.ids = new Set(['wf_seed_refactor-example_ws-1']);
     renderPanel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Restore built-in workflows' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More workflow actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Restore built-in workflows\u2026' }));
 
     const dialog = screen.getByRole('dialog', {
       name: 'Restore built-in workflows in this workspace?',
@@ -562,7 +571,8 @@ describe('WorkflowsPanel import', () => {
       return rows;
     });
     renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More workflow actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Import workflows\u2026' }));
     return screen.getByRole('dialog', { name: 'Import workflows' });
   };
 

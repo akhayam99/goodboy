@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { StoreApi, UseBoundStore } from 'zustand';
@@ -32,13 +33,6 @@ const { holder, hooks, spies } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../auto/useConfirmStartMode', () => ({
-  useConfirmStartMode:
-    () =>
-    async ({ isShown }: { readonly isShown: boolean }) =>
-      !isShown,
-}));
-
 vi.mock('../../../../store', async () => {
   const { create } = await vi.importActual<typeof import('zustand')>('zustand');
   const store = create<TestState>(() => ({}));
@@ -48,6 +42,8 @@ vi.mock('../../../../store', async () => {
 
 type BuilderKickoffStub = {
   readonly primaryLabel?: string;
+  readonly leading?: ReactNode;
+  readonly projects?: ReactNode;
   readonly goal: string;
   readonly goalPlaceholder: string;
   readonly onGoalChange: (goal: string) => void;
@@ -63,6 +59,8 @@ vi.mock('../../../workflows/components/WorkflowBuilderView', () => ({
         value={kickoff.goal}
         onChange={(event) => kickoff.onGoalChange(event.target.value)}
       />
+      {kickoff.projects}
+      {kickoff.leading}
       <button
         type="button"
         onClick={() => void kickoff.start(spies.runBuilder).catch(() => undefined)}
@@ -117,6 +115,7 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
 }));
 
 import { SessionKickoff } from './index';
+import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { patchSessionDraft } from '../../../../store/slices/sessionDraft/patchSessionDraft';
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
@@ -203,7 +202,12 @@ const resetStore = () => {
   );
 };
 
-const renderKickoff = () => render(<SessionKickoff workspaceId={WORKSPACE_ID} />);
+const renderKickoff = () =>
+  render(
+    <AutoReleaseContext.Provider value={false}>
+      <SessionKickoff workspaceId={WORKSPACE_ID} />
+    </AutoReleaseContext.Provider>,
+  );
 
 const isSessionDraft = (value: unknown): value is SessionDraft =>
   typeof value === 'object' && value !== null && 'pickedIssues' in value;
@@ -222,8 +226,12 @@ const tab = (name: string) =>
     name: new RegExp(name),
   });
 
-const howTab = (name: string) =>
-  within(screen.getByRole('tablist', { name: 'How to work on it' })).getByRole('tab', { name });
+const howChip = () => screen.getByRole('button', { name: /^Runs as:/ });
+
+const chooseHow = (name: string) => {
+  fireEvent.click(howChip());
+  fireEvent.click(screen.getByRole('menuitemradio', { name }));
+};
 
 beforeEach(() => {
   localStorage.clear();
@@ -242,7 +250,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionKickoff', () => {
-  it('shows three choices on one row as tabs, no example tree or tiles', () => {
+  it('shows four choices on one row as tabs, no example tree or tiles', () => {
     renderKickoff();
 
     expect(screen.getByRole('tablist', { name: 'How do you want to start?' })).toBeDefined();
@@ -251,7 +259,7 @@ describe('SessionKickoff', () => {
       within(kinds)
         .getAllByRole('tab')
         .map((node) => node.textContent),
-    ).toEqual(['Pick up a task', 'Run a workflow', 'Ask an agent']);
+    ).toEqual(['Pick up a task', 'Run a workflow', 'Orchestrate', 'Ask an agent']);
     expect(screen.queryByRole('button', { name: 'More ways to start' })).toBeNull();
   });
 
@@ -321,6 +329,8 @@ describe('SessionKickoff', () => {
     workflow.focus();
 
     fireEvent.keyDown(workflow, { key: 'ArrowRight' });
+    expect(tab('Orchestrate').getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(tab('Orchestrate'), { key: 'ArrowRight' });
     expect(tab('Ask an agent').getAttribute('aria-selected')).toBe('true');
     expect(document.activeElement).toBe(tab('Ask an agent'));
 
@@ -329,7 +339,7 @@ describe('SessionKickoff', () => {
     );
 
     fireEvent.keyDown(tab('Ask an agent'), { key: 'ArrowLeft' });
-    expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
+    expect(tab('Orchestrate').getAttribute('aria-selected')).toBe('true');
   });
 
   it('feeds one goal field into the builder and starts the session with the run', async () => {
@@ -396,7 +406,7 @@ describe('SessionKickoff', () => {
     renderKickoff();
     fireEvent.click(tab('Ask an agent'));
     fireEvent.click(screen.getByRole('button', { name: 'Role: Scout' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Implementer' }));
 
     const start = screen.getByRole('button', { name: 'Start Implementer' });
     expect(start.hasAttribute('disabled')).toBe(true);
@@ -414,9 +424,9 @@ describe('SessionKickoff', () => {
     renderKickoff();
     fireEvent.click(tab('Ask an agent'));
     fireEvent.click(screen.getByRole('button', { name: 'Role: Scout' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Implement' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Implementer' }));
 
-    expect(screen.getByRole('button', { name: 'Auto' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Model:/ })).toBeDefined();
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
       target: { value: 'Build the login page' },
     });
@@ -458,24 +468,24 @@ describe('SessionKickoff', () => {
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(store().getState().sessionDrafts).toMatchObject({
-      [WORKSPACE_ID]: { projectId: 'project-ledger-core' },
+      [WORKSPACE_ID]: { projectIds: ['project-ledger-core'] },
     });
   });
 
-  it('shows a project chip and lets you pick when the workspace has more than one', () => {
+  it('shows the project picker and lets you add a project when the workspace has more than one', async () => {
     store().setState({
       projects: [project({}), project({ id: 'project-northwind' as ProjectId, name: 'northwind' })],
     });
     renderKickoff();
     fireEvent.click(tab('Ask an agent'));
 
-    expect(screen.getByRole('button', { name: 'Project: ledger-core' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Project: ledger-core' }));
+    expect(await screen.findByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
+    fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
     fireEvent.click(screen.getByRole('option', { name: 'northwind' }));
 
-    expect(screen.getByRole('button', { name: 'Project: northwind' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Remove northwind' })).toBeDefined();
     expect(store().getState().sessionDrafts).toMatchObject({
-      [WORKSPACE_ID]: { projectId: 'project-northwind' },
+      [WORKSPACE_ID]: { projectIds: ['project-ledger-core', 'project-northwind'] },
     });
   });
 
@@ -508,7 +518,7 @@ describe('SessionKickoff', () => {
       'value',
       'Fix the login redirect',
     );
-    expect(howTab('Run a workflow').getAttribute('aria-selected')).toBe('true');
+    expect(howChip().getAttribute('aria-label')).toBe('Runs as: Orchestrate');
     const builder = screen.getByTestId('workflow-builder');
     const goalField = within(builder).getByRole('textbox', { name: 'Goal' });
     expect((goalField as HTMLTextAreaElement).value).toBe(
@@ -611,7 +621,6 @@ describe('SessionKickoff', () => {
 
       await user.tab();
       await user.tab();
-      await user.tab();
       expect(document.activeElement).toBe(screen.getByRole('checkbox', { name: /ENG-1/ }));
       await user.keyboard(' ');
       await user.tab();
@@ -630,7 +639,7 @@ describe('SessionKickoff', () => {
           ],
         }),
       );
-      expect(screen.getByRole('region', { name: 'Brief from ENG-1 and 1 more' })).toBeDefined();
+      expect(screen.getByRole('region', { name: 'Brief' })).toBeDefined();
     });
 
     it('refuses a sixth issue with one line and keeps the five', async () => {
@@ -705,7 +714,10 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /#7/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick #7' }));
 
-    expect(screen.getByText('In ledger-core, from GitHub repo acme/ledger-core.')).toBeDefined();
+    expect(
+      await screen.findByText('In ledger-core, from GitHub repo acme/ledger-core.'),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start from #7' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
@@ -742,7 +754,10 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /LEDGER-API-4/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick LEDGER-API-4' }));
 
-    expect(screen.getByText('In ledger-core, from Sentry project ledger-api.')).toBeDefined();
+    expect(
+      await screen.findByText('In ledger-core, from Sentry project ledger-api.'),
+    ).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start from LEDGER-API-4' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
@@ -763,7 +778,7 @@ describe('SessionKickoff', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: /ENG-1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick ENG-1' }));
-    fireEvent.click(howTab('Ask an agent'));
+    chooseHow('Ask an agent');
     fireEvent.click(screen.getByRole('button', { name: 'Start from ENG-1' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());

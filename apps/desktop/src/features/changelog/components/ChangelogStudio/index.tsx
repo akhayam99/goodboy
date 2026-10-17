@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, ScrollFade } from '@goodboy/ui';
+import { Button, ScrollFade, useStudioRailFold } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -51,6 +51,7 @@ type Props = {
 };
 
 export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
+  const fold = useStudioRailFold({ surface: 'changelog' });
   const bundledReleases = useAppStore((state) => state.changelogReleases);
   const upcoming = useAppStore((state) => state.changelogUpcoming);
   const updateTarget = useAppStore((state) => state.updateVersion);
@@ -163,6 +164,8 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
           railWidth="standard"
           surface="changelog"
           placement="page"
+          isCollapsed={fold.isCollapsed}
+          onCollapsedChange={fold.setFolded}
           rail={
             <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
               <ChangelogRail

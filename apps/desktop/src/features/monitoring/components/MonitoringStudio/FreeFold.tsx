@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import type { PortRow } from '@goodboy/core';
 import { portListText } from '../../portListText';
+import type { PortRow } from '@goodboy/core';
 
 type RenderParams = {
   readonly row: PortRow;
@@ -18,13 +18,15 @@ const PORTS_SHOWN = 6;
 
 export const FreeFold = ({ rows, renderRow }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const text = `${rows.length} free: ${portListText({ ports: rows.map((row) => row.port), max: PORTS_SHOWN })}`;
+  const text = `${rows.length} free`;
+  const label = `${text}: ${portListText({ ports: rows.map((row) => row.port), max: PORTS_SHOWN })}`;
 
   return (
     <li className="flex flex-col">
       <button
         type="button"
         aria-expanded={isOpen}
+        aria-label={label}
         onClick={() => setIsOpen((wasOpen) => !wasOpen)}
         className={cn(
           'flex min-h-8 items-center gap-3 rounded-md px-2 text-left text-label text-faint-foreground',

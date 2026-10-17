@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ChevronRight, Search, ShieldCheck } from 'lucide-react';
 import { cn } from '../../cn';
+import { FLOATING_SURFACE } from '../../floatingSurface';
 import { FOCUS_RING } from '../../focusRing';
 import { useEscapeLayer } from '../../useEscapeLayer';
 import { Button } from '../Button';
@@ -8,6 +9,7 @@ import { CopyButton } from '../CopyButton';
 import { FormActions } from '../FormActions';
 import { Kbd } from '../Kbd';
 import { KeyHint } from '../KeyHint';
+import { Notice } from '../Notice';
 import { ScrollFade } from '../ScrollFade';
 import { Textarea } from '../Textarea';
 import { AttachmentChip, type ReportSheetAttachment } from './AttachmentChip';
@@ -56,8 +58,13 @@ export type ReportSheetProps = {
 };
 
 const VARIANT_CLASSES: Readonly<Record<ReportSheetVariant, string>> = {
-  floating: 'bg-floating shadow-lg',
-  inline: 'bg-subtle',
+  floating: FLOATING_SURFACE,
+  inline: 'rounded-lg border border-border bg-subtle',
+};
+
+const VARIANT_FADE: Readonly<Record<ReportSheetVariant, 'floating' | 'subtle'>> = {
+  floating: 'floating',
+  inline: 'subtle',
 };
 
 const isSubmitCombo = (event: KeyboardEvent<HTMLElement>): boolean =>
@@ -146,12 +153,12 @@ export const ReportSheet = ({
       data-testid="report-sheet"
       onKeyDown={onKeyDown}
       className={cn(
-        'flex w-full flex-col rounded-lg border border-border text-foreground',
+        'flex min-h-0 w-full flex-col text-foreground',
         VARIANT_CLASSES[variant],
         className,
       )}
     >
-      <header className="flex items-center gap-2 px-3 pb-1 pt-3">
+      <header className="flex shrink-0 items-center gap-2 px-3 pb-1 pt-3">
         {icon != null ? (
           <span className="inline-flex shrink-0 text-muted-foreground" aria-hidden>
             {icon}
@@ -173,121 +180,121 @@ export const ReportSheet = ({
           </button>
         ) : null}
       </header>
-      <div className="flex flex-col gap-2 px-3 pb-3">
-        <input
-          ref={lineRef}
-          aria-label="What went wrong, in one line"
-          value={line}
-          onChange={(event) => onLineChange(event.target.value)}
-          onKeyDown={onLineKeyDown}
-          placeholder={linePlaceholder}
-          className="h-9 w-full bg-transparent text-body text-foreground placeholder:text-faint-foreground focus-visible:outline-none"
-        />
-        {isDetailOpen ? (
-          <Textarea
-            autoFocus={shouldFocusDetail}
-            autoGrow
-            minRows={3}
-            maxRows={8}
-            aria-label="Detail"
-            value={detail}
-            onChange={(event) => onDetailChange(event.target.value)}
-            placeholder={detailPlaceholder}
+      <ScrollFade
+        className="flex min-h-0 flex-col"
+        viewportClassName="h-auto min-h-0 flex-1"
+        fadeFrom={VARIANT_FADE[variant]}
+        fadeSize={12}
+      >
+        <div className="flex flex-col gap-2 px-3 pb-3">
+          <input
+            ref={lineRef}
+            aria-label="What went wrong, in one line"
+            value={line}
+            onChange={(event) => onLineChange(event.target.value)}
+            onKeyDown={onLineKeyDown}
+            placeholder={linePlaceholder}
+            className="h-9 w-full bg-transparent text-body text-foreground placeholder:text-faint-foreground focus-visible:outline-none"
           />
-        ) : null}
-        {duplicate != null ? (
-          <div className="flex items-center gap-2 rounded-md bg-fill px-2 py-1 text-chip">
-            <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-info" />
-            <span className="min-w-0 flex-1 truncate text-muted-foreground">
-              Looks like{' '}
-              <span className="text-foreground">
-                #{duplicate.number} {duplicate.title}
-              </span>{' '}
-              · {duplicate.meta}
-            </span>
-            {onAddToDuplicate != null ? (
-              <Button
-                variant="secondary"
-                size="sm"
-                isBusy={isAddingToDuplicate}
-                disabled={isSubmitting}
-                onClick={onAddToDuplicate}
-              >
-                Add mine there
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-        {attachments.length > 0 ? (
-          <ul aria-label="Attached" className="flex flex-wrap gap-2">
-            {attachments.map((attachment) => (
-              <li key={attachment.id}>
-                <AttachmentChip attachment={attachment} onToggle={onToggleAttachment} />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              aria-expanded={isPreviewOpen}
-              aria-controls={previewId}
-              onClick={() => setIsPreviewOpen((open) => !open)}
-              className={cn(
-                'inline-flex min-w-0 items-center gap-1 rounded-sm py-0.5 text-meta text-muted-foreground hover:text-foreground',
-                FOCUS_RING,
-              )}
-            >
-              <ChevronRight
-                size={ICON_SIZE.row}
-                aria-hidden
-                className={cn(
-                  'shrink-0 motion-safe:transition-transform motion-safe:duration-120',
-                  isPreviewOpen ? 'rotate-90' : '',
-                )}
-              />
-              <ShieldCheck size={ICON_SIZE.row} aria-hidden className="shrink-0 text-success" />
-              <span className="text-foreground">What gets sent</span>
-              <span className="truncate text-faint-foreground">· {previewSummary}</span>
-            </button>
-            <span className="flex-1" />
-            {isPreviewOpen ? (
-              <CopyButton value={preview} label="Copy what gets sent" size={ICON_SIZE.row} />
-            ) : null}
-          </div>
-          {isPreviewOpen ? (
-            <div id={previewId} className="mt-2 flex flex-col gap-2">
-              <ScrollFade
-                className="max-h-60 rounded-md bg-muted"
-                viewportClassName="px-3 py-2"
-                fadeFrom="muted"
-              >
-                <pre
-                  aria-label="What gets sent"
-                  className="whitespace-pre-wrap break-words font-mono text-code text-foreground"
+          {isDetailOpen ? (
+            <Textarea
+              autoFocus={shouldFocusDetail}
+              autoGrow
+              minRows={3}
+              maxRows={8}
+              aria-label="Detail"
+              value={detail}
+              onChange={(event) => onDetailChange(event.target.value)}
+              placeholder={detailPlaceholder}
+            />
+          ) : null}
+          {duplicate != null ? (
+            <div className="flex items-center gap-2 rounded-md bg-fill px-2 py-1 text-chip">
+              <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-info" />
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                Looks like{' '}
+                <span className="text-foreground">
+                  #{duplicate.number} {duplicate.title}
+                </span>{' '}
+                · {duplicate.meta}
+              </span>
+              {onAddToDuplicate != null ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  isBusy={isAddingToDuplicate}
+                  disabled={isSubmitting}
+                  onClick={onAddToDuplicate}
                 >
-                  {preview}
-                </pre>
-              </ScrollFade>
-              <p className="text-meta text-faint-foreground">{neverSent}</p>
+                  Add mine there
+                </Button>
+              ) : null}
             </div>
           ) : null}
-        </div>
-      </div>
-      <FormActions
-        className="px-3 pb-3"
-        leading={
-          <div className="min-w-0 text-meta text-muted-foreground">
-            {error != null ? (
-              <span role="alert" className="text-danger">
-                {error}
-              </span>
-            ) : (
-              destination
-            )}
+          {attachments.length > 0 ? (
+            <ul aria-label="Attached" className="flex flex-wrap gap-2">
+              {attachments.map((attachment) => (
+                <li key={attachment.id}>
+                  <AttachmentChip attachment={attachment} onToggle={onToggleAttachment} />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-expanded={isPreviewOpen}
+                aria-controls={previewId}
+                onClick={() => setIsPreviewOpen((open) => !open)}
+                className={cn(
+                  'inline-flex min-w-0 items-center gap-1 rounded-sm py-0.5 text-meta text-muted-foreground hover:text-foreground',
+                  FOCUS_RING,
+                )}
+              >
+                <ChevronRight
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className={cn(
+                    'shrink-0 motion-safe:transition-transform motion-safe:duration-120',
+                    isPreviewOpen ? 'rotate-90' : '',
+                  )}
+                />
+                <ShieldCheck size={ICON_SIZE.row} aria-hidden className="shrink-0 text-success" />
+                <span className="text-foreground">What gets sent</span>
+                <span className="truncate text-faint-foreground">· {previewSummary}</span>
+              </button>
+              <span className="flex-1" />
+              {isPreviewOpen ? (
+                <CopyButton value={preview} label="Copy what gets sent" size={ICON_SIZE.row} />
+              ) : null}
+            </div>
+            {isPreviewOpen ? (
+              <div id={previewId} className="flex flex-col gap-2">
+                <ScrollFade
+                  className="max-h-60 rounded-md bg-muted"
+                  viewportClassName="px-3 py-2"
+                  fadeFrom="muted"
+                >
+                  <pre
+                    aria-label="What gets sent"
+                    className="whitespace-pre-wrap break-words font-mono text-code text-foreground"
+                  >
+                    {preview}
+                  </pre>
+                </ScrollFade>
+                <p className="text-meta text-faint-foreground">{neverSent}</p>
+              </div>
+            ) : null}
           </div>
-        }
+          {error != null ? (
+            <Notice tone="danger" placement="inline" role="alert" title={error} />
+          ) : null}
+        </div>
+      </ScrollFade>
+      <FormActions
+        className="shrink-0 px-3 pb-3"
+        leading={<div className="min-w-0 text-meta text-muted-foreground">{destination}</div>}
       >
         {isDetailOpen ? null : (
           <Button variant="ghost" size="sm" onClick={openDetail}>

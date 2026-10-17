@@ -17,7 +17,6 @@ type Props = {
 
 export const DisplayMenu = ({ layout, onLayout, wrap, onWrap }: Props) => {
   const dropdown = useDropdown({
-    align: 'end',
     width: 'w-[240px]',
     expectedHeight: 140,
     expectedWidth: 240,

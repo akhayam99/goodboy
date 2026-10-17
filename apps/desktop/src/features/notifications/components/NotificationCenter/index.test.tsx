@@ -180,7 +180,7 @@ describe('NotificationCenter', () => {
     expect(screen.queryByText('middle title')).toBeNull();
   });
 
-  it('reserves the unread slot on every row and fills it only on unread rows', async () => {
+  it('draws no unread dot on the rows: the title weight carries unread', async () => {
     state.notifications = [
       buildNotification({ id: 'n1', title: 'new one', coalesceKey: 'a' }),
       buildNotification({ id: 'n2', title: 'seen one', coalesceKey: 'b', read: true }),
@@ -190,10 +190,8 @@ describe('NotificationCenter', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'All' }));
 
     const rows = screen.getAllByRole('listitem');
-    expect(rows.map((row) => row.querySelectorAll('[data-unread-slot]').length)).toEqual([1, 1]);
-    expect(screen.getAllByRole('img', { name: 'Unread' })).toHaveLength(1);
-    expect(rows[0]?.querySelector('[data-unread-slot]')?.childElementCount).toBe(1);
-    expect(rows[1]?.querySelector('[data-unread-slot]')?.childElementCount).toBe(0);
+    expect(rows.map((row) => row.querySelectorAll('[data-unread-slot]').length)).toEqual([0, 0]);
+    expect(screen.queryByRole('img', { name: 'Unread' })).toBeNull();
   });
 
   it('opens on the unread tab with the rows that were new, and shows eight at most', async () => {
@@ -296,7 +294,7 @@ describe('NotificationCenter', () => {
     expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['n2', 'n1'] });
   });
 
-  it('keeps retry visible and reserves the hover slot for delete', async () => {
+  it('keeps retry and delete visible at rest in their own slots', async () => {
     state.notifications = [
       {
         ...buildNotification({ id: 'n1', title: 'step summary failed', coalesceKey: 'retry' }),
@@ -313,7 +311,7 @@ describe('NotificationCenter', () => {
     const slot = screen
       .getByRole('button', { name: 'Delete "step summary failed"' })
       .closest('span');
-    expect(slot?.className).toContain('group-hover:opacity-100');
+    expect(slot?.className).not.toContain('opacity-0');
     expect(slot?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
     expect(slot?.contains(screen.getByRole('button', { name: 'Retry' }))).toBe(false);
   });

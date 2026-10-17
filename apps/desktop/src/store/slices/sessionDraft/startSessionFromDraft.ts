@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import type { AttachmentInput, ProjectId, Session, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../features/integrations/fetchIssueCandidates';
 import {
@@ -165,13 +166,14 @@ const launch = async ({ get, session, start }: LaunchParams): Promise<void> => {
   }
 };
 
-export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
+const runStart = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, start }: StartSessionFromDraftParams): Promise<Session> => {
     const { title, goal } = seedOf({ start });
     const candidates = start.kind === 'task' ? start.candidates : [];
     const mount = start.kind === 'task' ? (start.mount ?? null) : null;
-    const projectId =
-      mount === null ? (get().sessionDrafts[workspaceId]?.projectId ?? null) : mount.projectId;
+    const picked = get().sessionDrafts[workspaceId]?.projectIds ?? [];
+    const projectId = mount === null ? (picked[0] ?? null) : mount.projectId;
+    const additionalProjectIds = picked.filter((id) => id !== projectId);
     const checkout = start.kind === 'task' ? (start.checkout ?? null) : null;
     const attachmentInputs = start.kind === 'workflow-run' ? [] : (start.attachmentInputs ?? []);
     const { session } = await get().createSession({
@@ -182,6 +184,7 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
       omitGoalSlot: goal === '',
       ...(projectId !== null && { projectId }),
       ...(projectId !== null && mount !== null && { projectReason: mount.reason }),
+      ...(projectId !== null && additionalProjectIds.length > 0 && { additionalProjectIds }),
       ...(checkout !== null && {
         existingBranch: checkout.existingBranch,
         fallbackRef: checkout.fallbackRef,
@@ -208,5 +211,31 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
     get().discardSessionDraft({ workspaceId });
     set({ goodboyNamedSessionId: session.id });
     return session;
+  };
+};
+
+export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
+  const run = runStart(set, get);
+  const inflight = new Map<WorkspaceId, Promise<Session>>();
+  return (params: StartSessionFromDraftParams): Promise<Session> => {
+    const { workspaceId } = params;
+    const running = inflight.get(workspaceId);
+    if (running !== undefined) {
+      return running;
+    }
+    get().patchSessionDraft({ workspaceId, patch: { isStarting: true, startError: null } });
+    const started = run(params)
+      .catch((error: unknown) => {
+        get().patchSessionDraft({
+          workspaceId,
+          patch: { isStarting: false, startError: formatError(error) },
+        });
+        throw error;
+      })
+      .finally(() => {
+        inflight.delete(workspaceId);
+      });
+    inflight.set(workspaceId, started);
+    return started;
   };
 };

@@ -1,7 +1,6 @@
 import type { Agent } from '@goodboy/types';
-import { Chip, StatusDot } from '@goodboy/ui';
+import { StatusDot } from '@goodboy/ui';
 import type { CiFixOutcome } from '../../checks/ciFixOutcomeOf';
-import { modelLabel } from '../../../chat/utils/chat-constants';
 
 type Props = {
   readonly agent: Agent;
@@ -28,12 +27,7 @@ export const AnalysisHeader = ({ agent, isRunning, activity, outcome }: Props) =
         </div>
       )}
       <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="min-w-0 truncate text-row text-foreground">{agent.name}</span>
-          {agent.modelOverride === undefined ? null : (
-            <Chip tone="neutral" label={modelLabel(agent.modelOverride, agent.providerOverride)} />
-          )}
-        </div>
+        <span className="min-w-0 truncate text-row text-foreground">{agent.name}</span>
         {isRunning || isFailed ? (
           <p role="status" className="truncate text-meta text-muted-foreground">
             {isRunning ? `Running · ${activity}` : 'Failed'}

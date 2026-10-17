@@ -1,17 +1,26 @@
 import { AUTO_GATES } from '@goodboy/core';
 import { listAutoTreesToRecover, type Database } from '@goodboy/db';
 import { brandId, type AutoDelegationId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
-import {
-  SETTING_AUTO_EXPERIMENT,
-  SETTING_AUTO_PLAN_APPROVAL,
-} from '../../../features/settings/settings';
-import { autoExperimentSettings } from '../../../features/auto/autoExperimentSettings';
-import { isAutoStartEnabled } from '../../../features/auto/isAutoStartEnabled';
+import { SETTING_AUTO_PLAN_APPROVAL } from '../../../features/settings/settings';
 import { registerAutoDrivePort } from '../../../features/auto/autoDrivePort';
-import { registerAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
+import {
+  currentAutoUserTurnPort,
+  registerAutoUserTurnPort,
+} from '../../../features/auto/autoUserTurnPort';
 import { readAutoTreeLimit } from '../../../features/auto/autoTreeLimit';
-import { registerDelegationDecisionPort } from '../../../features/auto/delegationDecisionPort';
-import { registerTreeStopPort } from '../../../features/auto/treeStopPort';
+import {
+  currentDelegationDecisionPort,
+  registerDelegationDecisionPort,
+} from '../../../features/auto/delegationDecisionPort';
+import { currentTreeRetryPort, registerTreeRetryPort } from '../../../features/auto/treeRetryPort';
+import { currentTreeStopPort, registerTreeStopPort } from '../../../features/auto/treeStopPort';
+import type {
+  AutoBridgeBus,
+  AutoBridgePorts,
+} from '../../../features/auto/bridge/autoBridgeProtocol';
+import { createAutoBridgeClient } from '../../../features/auto/bridge/createAutoBridgeClient';
+import { serveAutoBridge } from '../../../features/auto/bridge/serveAutoBridge';
+import { tauriAutoBridgeBus } from '../../../features/auto/bridge/tauriAutoBridgeBus';
 import { isMainWindow } from '../../../features/workspace/window';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { useAppStore } from '../../store';
@@ -27,6 +36,45 @@ import {
 
 const AUTO_TICK_MS = 15_000;
 
+const NO_RUNTIME = 'Auto is not running in the main window.';
+
+type PortParams<Port> = {
+  readonly port: Port | null;
+};
+
+const requirePort = <Port>({ port }: PortParams<Port>): Port => {
+  if (port === null) {
+    throw new Error(NO_RUNTIME);
+  }
+  return port;
+};
+
+const REGISTERED_PORTS: AutoBridgePorts = {
+  stop: (params) => requirePort({ port: currentTreeStopPort() })(params),
+  retry: (params) => requirePort({ port: currentTreeRetryPort() })(params),
+  userTurn: (params) => requirePort({ port: currentAutoUserTurnPort() })(params),
+  decision: (params) => requirePort({ port: currentDelegationDecisionPort() })(params),
+};
+
+type ForwardParams = {
+  readonly bus: AutoBridgeBus;
+};
+
+const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
+  const client = await createAutoBridgeClient({ bus, newId: () => crypto.randomUUID() });
+  registerTreeStopPort({ port: client.ports.stop });
+  registerTreeRetryPort({ port: client.ports.retry });
+  registerDelegationDecisionPort({ port: client.ports.decision });
+  registerAutoUserTurnPort({ port: client.ports.userTurn });
+  return () => {
+    client.close();
+    registerTreeStopPort({ port: null });
+    registerTreeRetryPort({ port: null });
+    registerDelegationDecisionPort({ port: null });
+    registerAutoUserTurnPort({ port: null });
+  };
+};
+
 const sleep = ({ ms }: SleepParams): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -36,15 +84,19 @@ export type StartAutoRuntimeParams = Readonly<{
   db?: Database;
   isEnabled?: boolean;
   tickMs?: number;
+  bus?: AutoBridgeBus;
+  isMain?: boolean;
 }>;
 
 export const startAutoRuntime = async ({
   db = tauriDatabase,
   isEnabled = AUTO_GATES.isDelegationEnabled,
   tickMs = AUTO_TICK_MS,
+  bus = tauriAutoBridgeBus,
+  isMain = isMainWindow(),
 }: StartAutoRuntimeParams = {}): Promise<() => void> => {
-  if (!isMainWindow()) {
-    return () => undefined;
+  if (!isMain) {
+    return forwardToMain({ bus });
   }
   const getState = useAppStore.getState;
   const holder: { runtime: AutoRuntime | null } = { runtime: null };
@@ -68,7 +120,28 @@ export const startAutoRuntime = async ({
       return outcome.kind === 'idle' && outcome.reason === 'not_owner' ? 'not_owner' : 'stopped';
     },
   });
+  registerTreeRetryPort({
+    port: async ({ treeId }) => {
+      const outcome = await runtimeOf().retry(brandId<AutoTreeId>({ value: treeId }));
+      if (outcome.kind === 'refused') {
+        return { kind: 'refused', message: outcome.message };
+      }
+      if (outcome.kind === 'idle' && outcome.reason === 'not_owner') {
+        return { kind: 'refused', message: 'Another window runs this conversation. Retry there.' };
+      }
+      return { kind: 'retried' };
+    },
+  });
+  const unserve = await serveAutoBridge({
+    bus,
+    ports: REGISTERED_PORTS,
+    onError: (error) => {
+      void getState().reportError({ title: 'Auto could not answer another window', error });
+    },
+  });
   const unregister = (): void => {
+    unserve();
+    registerTreeRetryPort({ port: null });
     registerAutoUserTurnPort({ port: null });
     registerAutoDrivePort({ port: null });
     registerDelegationDecisionPort({ port: null });
@@ -87,13 +160,17 @@ export const startAutoRuntime = async ({
   };
   registerAutoDrivePort({ port: ({ treeId }) => runtime.drive(treeId) });
   registerAutoUserTurnPort({
-    port: async ({ agentId, sessionId, workspaceId, text }) => {
+    port: async ({ agentId, sessionId, workspaceId, text, images }) => {
       const started = await startAutoTree({
         ctx: runtime.ctx,
         agent: { agentId, sessionId, workspaceId },
         ...treeCaps,
       });
-      const outcome = await runtime.say({ treeId: started.tree.id, text });
+      const outcome = await runtime.say({
+        treeId: started.tree.id,
+        text,
+        ...(images !== undefined && { images }),
+      });
       return outcome.kind === 'queued' ? 'queued' : 'lost';
     },
   });
@@ -107,27 +184,11 @@ export const startAutoRuntime = async ({
       recovered.add(treeId);
     }
   };
-  const isExperimentOn = (): boolean =>
-    isAutoStartEnabled({
-      settings: autoExperimentSettings({ raw: getState().settings[SETTING_AUTO_EXPERIMENT] }),
-      isReleased: true,
-    });
-  const timerHolder: { timer: ReturnType<typeof setInterval> | null } = { timer: null };
-  const disarm = (): void => {
-    if (timerHolder.timer === null) {
-      return;
-    }
-    clearInterval(timerHolder.timer);
-    timerHolder.timer = null;
-  };
   const tick = async (): Promise<void> => {
     await getState().loadSetting(SETTING_AUTO_PLAN_APPROVAL);
     await startAutoTrees({ ctx: runtime.ctx, ...treeCaps });
     const trees = await listAutoTreesToRecover({ db });
     await Promise.all(trees.map((tree) => tickTree(tree.id)));
-    if (trees.length === 0 && !isExperimentOn()) {
-      disarm();
-    }
   };
   let isTicking = false;
   const run = (): void => {
@@ -143,39 +204,10 @@ export const startAutoRuntime = async ({
         isTicking = false;
       });
   };
-  let isStopped = false;
-  const arm = (): void => {
-    if (isStopped || timerHolder.timer !== null) {
-      return;
-    }
-    run();
-    timerHolder.timer = setInterval(run, tickMs);
-  };
-  const hasLiveTrees = async (): Promise<boolean> =>
-    (await listAutoTreesToRecover({ db })).length > 0;
-  const start = async (): Promise<void> => {
-    await getState().loadSetting(SETTING_AUTO_EXPERIMENT);
-    if (isExperimentOn() || (await hasLiveTrees())) {
-      arm();
-    }
-  };
-  const unsubscribe = useAppStore.subscribe((state, previous) => {
-    if (
-      state.settings[SETTING_AUTO_EXPERIMENT] !== previous.settings[SETTING_AUTO_EXPERIMENT] &&
-      isExperimentOn()
-    ) {
-      arm();
-    }
-  });
-  try {
-    await start();
-  } catch (error: unknown) {
-    void getState().reportError({ title: 'Auto hit a problem', error });
-  }
+  run();
+  const timer = setInterval(run, tickMs);
   return () => {
-    isStopped = true;
-    unsubscribe();
-    disarm();
+    clearInterval(timer);
     unregister();
   };
 };

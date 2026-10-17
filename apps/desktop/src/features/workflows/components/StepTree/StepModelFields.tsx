@@ -1,4 +1,4 @@
-import { Eyebrow, SegmentedTabs } from '@goodboy/ui';
+import { SegmentedTabs } from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
@@ -55,9 +55,6 @@ export const StepModelFields = ({
 
   return (
     <>
-      <div className="px-3">
-        <Eyebrow label="Model" muted />
-      </div>
       <div className="px-3">
         <SegmentedTabs
           ariaLabel="Model source"

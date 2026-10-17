@@ -16,7 +16,6 @@ import {
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { SessionCardScene } from './SessionCardScene';
 import { SessionPinnedScene } from './SessionPinnedScene';
 
 beforeAll(async () => {
@@ -46,7 +45,7 @@ const rowTitles = (root: HTMLElement): ReadonlyArray<string> =>
   );
 
 const groupOf = (name: RegExp): HTMLElement => {
-  const header = screen.getByRole('button', { name });
+  const header = within(sessionList()).getByRole('button', { name });
   return header.parentElement as HTMLElement;
 };
 
@@ -65,12 +64,7 @@ describe('the pinned sessions scene', () => {
   it('opens the session on its Overview, not on the loading skeleton', async () => {
     await mount();
 
-    expect(
-      await screen.findByRole('heading', {
-        level: 1,
-        name: 'Add idempotency keys to payments-api',
-      }),
-    ).toBeDefined();
+    expect((await screen.findByTestId('overview-title')).closest('h1')).not.toBeNull();
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
   });
 
@@ -80,14 +74,14 @@ describe('the pinned sessions scene', () => {
     const headers = Array.from(sessionList().querySelectorAll('button[aria-expanded]'))
       .map((button) => button.textContent)
       .filter((text) => text !== '');
-    expect(headers).toEqual(['Pinned2', 'ledger-core2', 'notify-relay2', 'payments-api2']);
+    expect(headers).toEqual(['Pinned', 'ledger-core3', 'notify-relay2', 'payments-api3']);
     expect(rowTitles(groupOf(/^Pinned/))).toEqual([
       'Reconcile the ledger export',
       'Paginate the payments list',
     ]);
   });
 
-  it('shows each pinned session once and leaves it out of its project group and its count', async () => {
+  it('shows each pinned session once, out of its project group rows but in its count', async () => {
     await mount();
 
     const all = rowTitles(sessionList());
@@ -97,8 +91,8 @@ describe('the pinned sessions scene', () => {
       'Backfill the settlement dates',
       'Move the ledger export to a queue',
     ]);
-    expect(within(groupOf(/^ledger-core/)).getByText('2')).toBeDefined();
-    expect(within(groupOf(/^payments-api/)).getByText('2')).toBeDefined();
+    expect(within(groupOf(/^ledger-core/)).getByText('3')).toBeDefined();
+    expect(within(groupOf(/^payments-api/)).getByText('3')).toBeDefined();
   });
 
   const rowOf = (title: string): HTMLElement => {
@@ -124,7 +118,7 @@ describe('the pinned sessions scene', () => {
         'Backfill the settlement dates',
       ]),
     );
-    expect(within(groupOf(/^Pinned/)).getByText('3')).toBeDefined();
+    expect(rowTitles(groupOf(/^Pinned/))).toHaveLength(3);
     expect(rowTitles(groupOf(/^ledger-core/))).toEqual(['Move the ledger export to a queue']);
     expect(screen.queryByText("Couldn't pin the session")).toBeNull();
 
@@ -149,51 +143,25 @@ describe('the pinned sessions scene', () => {
     fireEvent.contextMenu(rowOf('Tune the payments rate limiter'));
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Pin session' }));
 
-    await waitFor(() => expect(within(groupOf(/^Pinned/)).getByText('3')).toBeDefined());
+    await waitFor(() => expect(rowTitles(groupOf(/^Pinned/))).toHaveLength(3));
     expect(rowTitles(groupOf(/^Pinned/)).slice(0, 2)).toEqual([
       'Reconcile the ledger export',
       'Paginate the payments list',
     ]);
   });
 
-  it('folds one project group away and keeps the open session in its card', async () => {
+  it('folds one project group away and keeps the open session row selected in its group', async () => {
     await mount();
 
     expect(
-      screen.getByRole('button', { name: /^notify-relay/ }).getAttribute('aria-expanded'),
+      within(sessionList())
+        .getByRole('button', { name: /^notify-relay/ })
+        .getAttribute('aria-expanded'),
     ).toBe('false');
     expect(rowTitles(groupOf(/^notify-relay/))).toEqual([]);
-    const cards = sessionList().querySelectorAll('[data-session-card]');
-    expect(cards).toHaveLength(1);
-    expect(groupOf(/^payments-api/).contains(cards[0] ?? null)).toBe(true);
-  });
-});
-
-describe('the session card scene', () => {
-  it('wraps the open session and its five pages in one card and leaves the others flat', async () => {
-    render(
-      <ToastProvider>
-        <SessionCardScene />
-      </ToastProvider>,
-    );
-    await waitFor(() => expect(document.querySelector('[data-session-card]')).not.toBeNull());
-
-    const cards = sessionList().querySelectorAll<HTMLElement>('[data-session-card]');
-    expect(cards).toHaveLength(1);
-    const card = within(cards[0] as HTMLElement);
-    expect(card.getByRole('button', { name: /^Add POST \/orders[^,]*$/ })).toBeDefined();
-    const pages = card
-      .getAllByRole('button')
-      .filter((button) => button.closest('ul[aria-label="Pages"]'));
-    expect(pages.map((page) => page.textContent?.replace(/\d.*$/, '').trim())).toEqual([
-      'Overview',
-      'Branch',
-      'Runs',
-      'Agents',
-      'Artifacts',
-    ]);
-    expect(pages.filter((page) => page.getAttribute('aria-current') === 'page')).toHaveLength(1);
-    const flat = rowTitles(sessionList()).length - 1;
-    expect(flat).toBeGreaterThan(0);
+    expect(sessionList().querySelectorAll('[data-session-card]')).toHaveLength(0);
+    const current = sessionList().querySelectorAll('[aria-current="page"]');
+    expect(current).toHaveLength(1);
+    expect(groupOf(/^payments-api/).contains(current[0] ?? null)).toBe(true);
   });
 });

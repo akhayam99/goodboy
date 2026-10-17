@@ -18,6 +18,7 @@ export { useMountDiffStats, type MountDiffStat } from './slices/project-mounts/u
 export { useProjectMountsForSessions } from './slices/project-mounts/useProjectMountsForSessions';
 export {
   useSessionColumn,
+  useSessionListModel,
   useSessionStageInfo,
   useSessionStages,
   useSessionViewPrefs,

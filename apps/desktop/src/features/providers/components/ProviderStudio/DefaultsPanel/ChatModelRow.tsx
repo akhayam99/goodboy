@@ -52,7 +52,6 @@ export const ChatModelRow = ({ workspaceId, connectedProviderIds, disabled }: Pr
         overridden={saved !== null}
         onReset={clear}
         resetLabel="Back to Auto"
-        align="end"
         disabled={disabled}
         onChange={(route) => {
           if (route.provider === '') {

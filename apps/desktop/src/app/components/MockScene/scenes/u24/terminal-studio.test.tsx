@@ -51,23 +51,29 @@ const PAYMENTS_TREE = '/mock/harborline/payments-api/.goodboy/worktrees/gb-7k2q9
 const LEDGER_TREE = '/mock/harborline/ledger-core/.goodboy/worktrees/gb-4m8d1c';
 const NOTIFY_TREE = '/mock/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z';
 
-const groupNamed = (name: string): HTMLElement => screen.getByRole('region', { name });
+const terminalsGrid = (): HTMLElement => screen.getByRole('list', { name: 'Terminals' });
+
+const groupNamed = (name: string): HTMLElement =>
+  within(terminalsGrid()).getByRole('list', { name });
+
+const BRANCH_OF: Readonly<Record<string, string>> = {
+  'payments-api': 'hl/fix-duplicate-credit',
+  'ledger-core': 'hl/ledger-rounding',
+  'notify-relay': 'hl/retry-backoff',
+};
 
 type RowParams = {
   readonly session: string;
   readonly project: string;
 };
 
-const worktreeRow = ({ session, project }: RowParams): HTMLElement => {
-  const row = within(groupNamed(session)).getByText(project).closest('li');
-  if (row === null) {
-    throw new Error(`no row for ${project}`);
-  }
-  return row;
-};
+const worktreeRow = ({ session, project }: RowParams): HTMLElement =>
+  within(groupNamed(session)).getByRole('button', {
+    name: `${project} · ${BRANCH_OF[project] ?? ''}`,
+  });
 
 const selectWorktree = async ({ session, project }: RowParams): Promise<void> => {
-  fireEvent.click(within(worktreeRow({ session, project })).getByRole('button'));
+  fireEvent.click(worktreeRow({ session, project }));
   await settle();
 };
 
@@ -86,45 +92,56 @@ describe('the terminal studio scenes', () => {
     renderScene('terminal-studio');
     await settle();
 
-    const groups = screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'));
+    const groups = within(terminalsGrid())
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent);
     expect(groups).toEqual([PAYMENTS_SESSION, NOTIFY_SESSION, 'Workspace folder']);
   });
 
-  it('draws one row per worktree with its terminal count', async () => {
+  it('draws one row per worktree and counts the rows of a group from two', async () => {
     renderScene('terminal-studio');
     await settle();
 
     expect(within(groupNamed(PAYMENTS_SESSION)).getAllByRole('listitem')).toHaveLength(2);
-    const payments = worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' });
-    expect(within(payments).getByLabelText('2 terminals')).toBeDefined();
-    const ledger = worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' });
-    expect(within(ledger).getByLabelText('1 terminal')).toBeDefined();
-    const notify = worktreeRow({ session: NOTIFY_SESSION, project: 'notify-relay' });
-    expect(within(notify).getByLabelText('1 terminal')).toBeDefined();
+    const counts = within(terminalsGrid())
+      .getAllByRole('heading', { level: 2 })
+      .map(
+        (heading) => heading.closest('li')?.querySelector('[data-list-grid-count]')?.textContent,
+      );
+    expect(counts).toEqual(['2', undefined, undefined]);
   });
 
-  it('shows the dev server port as a chip on its worktree row and on its tab', async () => {
+  it('shows the first port as quiet text on a row that is not selected, and the ports at the right of the tab strip', async () => {
     renderScene('terminal-studio');
     await settle();
 
     const payments = worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' });
-    expect(within(payments).getByRole('button', { name: 'Open localhost:5173' })).toBeDefined();
-    const ledger = worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' });
-    expect(within(ledger).queryByRole('button', { name: /^Open localhost:/ })).toBeNull();
+    expect(payments.textContent).not.toContain(':5173');
     const [devTab, shellTab] = tabsOf('payments-api').map(
       (tab) => tab.closest<HTMLElement>('[data-terminal-tab]')?.textContent ?? '',
     );
     expect(devTab).toContain('dev server');
-    expect(devTab).toContain(':5173');
+    expect(devTab).not.toMatch(/:\d+/);
     expect(shellTab).not.toMatch(/:\d+/);
+    expect(screen.getByRole('button', { name: 'Open localhost:5173' })).toBeDefined();
+
+    await selectWorktree({ session: PAYMENTS_SESSION, project: 'ledger-core' });
+
+    expect(
+      worktreeRow({ session: PAYMENTS_SESSION, project: 'payments-api' }).textContent,
+    ).toContain(':5173');
+    expect(
+      worktreeRow({ session: PAYMENTS_SESSION, project: 'ledger-core' }).textContent,
+    ).not.toMatch(/:\d+/);
   });
 
-  it('shows the linked task of the session in its group head', async () => {
+  it('keeps issue chips and the diff stat off the terminal list (cut C3)', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    const facts = within(groupNamed(PAYMENTS_SESSION)).getByLabelText('Linked work and changes');
-    expect(facts.textContent).toContain('HBL-412');
+    expect(within(terminalsGrid()).queryByText('HBL-412')).toBeNull();
+    expect(within(terminalsGrid()).queryByText('+47')).toBeNull();
+    expect(screen.queryByTestId('worktree-chip')).toBeNull();
   });
 
   it('shows the terminals of the selected worktree as tabs, never as rail rows', async () => {
@@ -198,10 +215,11 @@ describe('the terminal studio scenes', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close dev server' }));
 
-    expect(await screen.findByText('pnpm dev is running. Close it?')).toBeDefined();
+    expect(await screen.findByText('dev server is running. Close it?')).toBeDefined();
+    expect(screen.getByText('pnpm dev')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Keep' }));
     await settle();
-    expect(screen.queryByText('pnpm dev is running. Close it?')).toBeNull();
+    expect(screen.queryByText('dev server is running. Close it?')).toBeNull();
     expect(store.getState().terminalTabs['mock-u24-session-ledger']).toHaveLength(3);
   });
 
@@ -254,18 +272,24 @@ describe('the terminal studio scenes', () => {
     expect(ledger.map((tab) => tab.status)).toEqual(['running']);
   });
 
-  it('shows the cwd of the selected terminal in the location row', async () => {
+  it('shows no path line on a worktree scope, only on a plain folder', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(screen.getAllByText(/gb-7k2q9x/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/gb-7k2q9x/)).toHaveLength(0);
+    fireEvent.click(within(groupNamed('Workspace folder')).getByRole('button'));
+    await settle();
+    expect(screen.getAllByText('harborline').length).toBeGreaterThan(1);
   });
 
-  it('offers Open session in the header of a session worktree', async () => {
+  it('offers Open session once, in the tab strip menu, never on the group label', async () => {
     renderScene('terminal-studio');
     await settle();
 
-    expect(screen.getAllByRole('button', { name: /^Open session/ }).length).toBeGreaterThan(0);
+    expect(within(terminalsGrid()).queryByRole('button', { name: /^Open session / })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'More on payments-api' }));
+    expect(screen.getByRole('menuitem', { name: 'Open session' })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: 'Copy worktree path' })).toBeDefined();
   });
 
   it('groups the picker by session, with the workspace folder first', async () => {
@@ -278,7 +302,8 @@ describe('the terminal studio scenes', () => {
       .getAllByRole('group')
       .map((group) => group.getAttribute('aria-label'));
     expect(clusters).toEqual(['Workspace folder', PAYMENTS_SESSION, NOTIFY_SESSION]);
-    expect(within(menu).getAllByRole('menuitem', { name: /^Open project/ })).toHaveLength(3);
+    expect(within(menu).queryAllByRole('menuitem', { name: /^Open project/ })).toHaveLength(0);
+    expect(within(menu).queryByTestId('worktree-chip')).toBeNull();
     expect(within(menu).queryByText('Main checkout')).toBeNull();
   });
 
@@ -302,12 +327,14 @@ describe('the terminal studio scenes', () => {
     });
   });
 
-  it('offers cd only while the shell is idle', async () => {
+  it('offers Change folder in the strip, disabled while the shell runs a command', async () => {
     renderScene('terminal-studio');
     await settle();
-    expect(
-      screen.queryByRole('combobox', { name: 'Change directory in this terminal' }),
-    ).toBeNull();
+    const busy = screen.getByRole('combobox', { name: 'Change directory in this terminal' });
+    expect(busy.textContent).toContain('Change folder');
+    expect(busy.hasAttribute('disabled') || busy.getAttribute('aria-disabled') === 'true').toBe(
+      true,
+    );
 
     fireEvent.click(within(groupNamed('Workspace folder')).getByRole('button'));
     await settle();

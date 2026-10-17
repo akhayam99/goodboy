@@ -59,7 +59,7 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 ### Backups
 
-Under the graph, **Show previous versions** opens the older histories of the branch with when and why each was saved. **Reset branch to this version** puts one back, keeps the history you leave and offers Undo.
+Under the graph, **Previous versions N** opens the older histories of the branch with when and why each was saved. **Reset branch to this version** puts one back, keeps the history you leave and offers Undo.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-backups-dark.webp">
@@ -78,7 +78,7 @@ If someone pushed after you applied, Goodboy lists their new commits and offers 
 
 ### Rebase on main
 
-**Rebase on main** moves the branch onto the latest main and calls an agent only on a conflict. If your uncommitted files are in the way, Goodboy asks once to set them aside and brings them back after the move. A banner under the Branch header follows the rebase, says in one line why a push failed with **Fix with agent** or **Open terminal here** beside it, and **Force push** replaces the online copy only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions. **Add a hint** under **Fix with agent** and under **Rewrite with an agent** passes your words to the agent, and a failed start keeps them (`apps/desktop/src/features/history/JobBanner/index.tsx`, `apps/desktop/src/features/history/components/CommitsHistory/HistoryLiveNotice.tsx`). While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks; when it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**) until you dismiss it or start the next action.
+**Rebase** on the worktree status line (`6 behind main`) moves the branch onto the latest main and calls an agent only on a conflict; the Commits base row reads `Based on main 9d4b1f7` and offers a rebase only onto another base. If your uncommitted files are in the way, Goodboy asks once to set them aside and brings them back after the move. While the rebase runs, the status line reads it (`Rebasing · 3 of 7 · 1 conflict`, with **Abort**, `features/history/rebaseJob.ts` `progress`); once it settles, a line under the Branch header says in one line what happened or why a push failed with **Fix with agent** or **Open terminal here** beside it, and **Force push** replaces the online copy only if nobody pushed since you last looked. A failed Push or Force push in the Branch header offers the same two actions. **Add a hint** under **Fix with agent** and under **Rewrite with an agent** passes your words to the agent, and a failed start keeps them (`apps/desktop/src/features/history/JobBanner/index.tsx`, `apps/desktop/src/features/history/components/CommitsHistory/HistoryLiveNotice.tsx`). While Push, Rebase, Merge or another Branch header action runs, its button shows the pending word (**Pushing…**) and ignores more clicks; when it finishes, a line under the header says what happened (**Pushed 1 commit to origin.**) until you dismiss it or start the next action.
 
 ### After a pull request merges
 

@@ -8,6 +8,7 @@ import {
   Divider,
   SegmentedTabs,
   Skeleton,
+  StatusDot,
   FOCUS_RING,
   TOP_BAR_CONTROL,
   EmptyState,
@@ -103,6 +104,9 @@ export const NotificationCenter = () => {
 
   const groups = sortNotificationGroupsNewestFirst({ notifications });
   const unread = groups.filter((group) => group.some((notification) => !notification.read)).length;
+  const hasUnreadAction = notifications.some(
+    (notification) => !notification.read && notification.action !== null,
+  );
   const shownGroups = (
     view === 'unread'
       ? groups.filter((group) => unreadKeys.has(notificationGroupKey({ group })))
@@ -141,12 +145,11 @@ export const NotificationCenter = () => {
               <Bell size={ICON_SIZE.control} aria-hidden />
               {unread > 0 && (
                 <span
-                  className={cn(
-                    'absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1 font-semibold leading-none text-on-tone tabular-nums',
-                    unread > 9 ? 'text-chip' : 'text-meta',
-                  )}
+                  aria-hidden
+                  data-bell-dot={hasUnreadAction ? 'warning' : 'unread'}
+                  className="absolute right-1 top-1 flex"
                 >
-                  {unread > 99 ? '99+' : unread}
+                  <StatusDot tone={hasUnreadAction ? 'warning' : 'primary'} size="sm" />
                 </span>
               )}
             </button>

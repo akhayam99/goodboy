@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { DrawerFrame } from '../components/DrawerFrame';
 import { dismissTopEscapeLayer } from '../escape';
-import { FRAME_BAND_PX, FRAME_DRAWER_ROW_PX } from '../frameGeometry';
+import { PANE_RHYTHM } from '../paneRhythm';
 
 afterEach(cleanup);
 
@@ -37,6 +37,31 @@ describe('DrawerFrame', () => {
     expect(screen.getByRole('heading', { name: 'Drafts' })).toBeDefined();
     expect(screen.getByText('3')).toBeDefined();
     expect(screen.getByText('payout.ts:13')).toBeDefined();
+  });
+
+  it('draws one header with no divider under it, a meta line and the verb, menu, close order', () => {
+    const { container } = render(
+      <DrawerFrame
+        title="ledger-export.ts"
+        meta="src/exports · 4 KB"
+        action={<button type="button">Open in editor</button>}
+        menu={<button type="button">More</button>}
+        onClose={vi.fn()}
+      >
+        <p>export const run = () =&gt; undefined;</p>
+      </DrawerFrame>,
+    );
+
+    expect(container.querySelector('[role="separator"], hr')).toBeNull();
+    expect(screen.getByText('src/exports · 4 KB').hasAttribute('data-drawer-meta')).toBe(true);
+    expect(screen.getByRole('heading', { name: 'ledger-export.ts' }).className).toContain(
+      'min-w-24',
+    );
+    const verb = screen.getByRole('button', { name: 'Open in editor' });
+    const menu = screen.getByRole('button', { name: 'More' });
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(verb.compareDocumentPosition(menu)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(menu.compareDocumentPosition(close)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('closes with Escape and with its close button', () => {
@@ -295,7 +320,7 @@ describe('DrawerFrame Escape order', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('draws one close control in a 28px header row centred on the band', () => {
+  it('draws one close control in the page title row geometry', () => {
     const { container } = render(
       <DrawerFrame title="Drafts" count={3} onClose={vi.fn()}>
         <p>payout.ts:13</p>
@@ -305,11 +330,8 @@ describe('DrawerFrame Escape order', () => {
     expect(screen.getAllByRole('button', { name: 'Close' })).toHaveLength(1);
     const header = container.querySelector<HTMLElement>('[data-drawer-header]');
     const row = container.querySelector<HTMLElement>('[data-drawer-header-row]');
-    const rowHeight = Number.parseFloat(row?.style.minHeight ?? '');
-    const inset = Number.parseFloat(header?.style.paddingTop ?? '');
-    expect(rowHeight).toBe(FRAME_DRAWER_ROW_PX);
-    expect(rowHeight).toBe(28);
-    expect(inset + rowHeight / 2).toBe(FRAME_BAND_PX / 2);
-    expect(header?.style.paddingBottom).toBe(header?.style.paddingTop);
+    expect(header?.className.split(' ')).toContain(PANE_RHYTHM.headerInset);
+    expect(row?.className.split(' ')).toContain(PANE_RHYTHM.headerRow);
+    expect(header?.getAttribute('style')).toBeNull();
   });
 });

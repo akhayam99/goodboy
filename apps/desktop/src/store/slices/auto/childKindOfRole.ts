@@ -9,6 +9,9 @@ const AGENT_KIND_OF_ROLE = {
   implementer: 'implementer',
   tester: 'tester',
   docs: 'docs',
+  scribe: 'scribe',
+  'ci-fixer': 'ci-fixer',
+  rewriter: 'rewriter',
 } as const satisfies Readonly<Record<AutoDelegationRole, AgentKind>>;
 
 export type ChildKindOfRoleParams = Readonly<{

@@ -158,7 +158,7 @@ export const SessionStartScene = () => {
   return (
     <>
       <NewSessionBridge />
-      <WorkspaceFrame session={SESSION} main={<SessionStartMain />} />
+      <WorkspaceFrame session={SESSION} main={<SessionStartMain />} hasRail={false} />
     </>
   );
 };

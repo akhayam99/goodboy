@@ -1,6 +1,6 @@
 import { GitBranch, MessageSquare, Workflow } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Button, Eyebrow, ToneBar, TruncatedText } from '@goodboy/ui';
+import { Eyebrow, ROW_INTERACTIVE, TruncatedText, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import type { NeedsYouOwner, NeedsYouOwnerKind } from '../../../../timeline/needsYou';
 
@@ -25,32 +25,33 @@ export const NeedsYouBlock = ({ owners, onOpen }: Props) => {
     <section
       aria-label="Needs you"
       data-testid="needs-you-block"
-      className="relative flex flex-col rounded-lg bg-subtle p-1"
+      className="flex flex-col gap-1 rounded-md bg-subtle p-1"
     >
-      <ToneBar tone="warning" density="card" />
-      <Eyebrow label="Needs you" className="flex items-center px-3 pb-1 pt-2" />
+      <Eyebrow label="Needs you" className="flex h-7 items-center px-3" />
       <ul className="flex flex-col">
         {owners.map((owner) => {
           const Icon = OWNER_ICON[owner.kind];
           return (
-            <li
-              key={owner.id}
-              data-testid="needs-you-owner"
-              className="flex h-9 items-center gap-2 rounded-md px-3 text-row"
-            >
-              <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-              <TruncatedText className="min-w-0 flex-1 truncate text-foreground">
-                {owner.text}
-              </TruncatedText>
-              <Button
-                variant="ghost"
-                size="xs"
-                className="shrink-0"
-                aria-label={`Open: ${owner.text}`}
+            <li key={owner.id} data-testid="needs-you-owner" className="flex">
+              <button
+                type="button"
+                aria-label={`Open: ${owner.where === null ? owner.text : `${owner.text}, ${owner.where}`}`}
                 onClick={() => onOpen({ owner })}
+                className={cn(
+                  'flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md px-3 text-left text-row',
+                  ROW_INTERACTIVE,
+                )}
               >
-                Open
-              </Button>
+                <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
+                <TruncatedText className="min-w-0 truncate text-foreground">
+                  {owner.text}
+                </TruncatedText>
+                {owner.where === null ? null : (
+                  <TruncatedText className="min-w-0 max-w-[40%] shrink-[2] truncate text-muted-foreground">
+                    {owner.where}
+                  </TruncatedText>
+                )}
+              </button>
             </li>
           );
         })}

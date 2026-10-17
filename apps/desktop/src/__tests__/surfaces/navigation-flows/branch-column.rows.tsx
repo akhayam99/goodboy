@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import type { MountId, SessionMountView, SessionProjectMount } from '@goodboy/types';
 import { STORY_NOW } from '../../../store/storyHarness';
 import { branchLandingTabOf } from '../../../features/branch/branchLandingTab';
@@ -9,9 +9,9 @@ import {
   WAIT,
   branchTab,
   click,
-  clickFirstButton,
   findSection,
   getSection,
+  openCrumb,
   settle,
   useAppStore,
 } from './harness';
@@ -20,10 +20,11 @@ const SECOND_MOUNT_ID = 'navigation-mount-second-branch' as MountId;
 const SECOND_BRANCH = 'cs/second-branch';
 const SECOND_PATH = '/work/cascade-second-branch';
 
-const trailColumn = (): string | null =>
-  document
-    .querySelector('main [data-slot="trail-bar"] [data-page-column]')
-    ?.getAttribute('data-width') ?? null;
+const trailBands = (): number => document.querySelectorAll('main [data-slot="trail-bar"]').length;
+
+const currentWorktree = (): string =>
+  document.querySelector('[data-level-layer="worktree"]:not([inert]) [data-worktree-identity]')
+    ?.textContent ?? '';
 
 const headerColumn = (): string | null =>
   document
@@ -90,23 +91,21 @@ const addSecondBranch = ({ sessionId }: Ctx): void => {
 const paneHeading = (): string | null =>
   document.querySelector('[data-slot="pane-header"] h1')?.textContent ?? null;
 
-const trailNav = (): HTMLElement => screen.getByRole('navigation', { name: 'Breadcrumb' });
-
-const openBranchPage = (): Promise<void> => clickFirstButton(/^Open PR #\d+ of /);
+const openBranchPage = (): Promise<void> => openCrumb(/Branch/);
 
 export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'branch column: the trail, header and body stay on the column from tab to tab',
-    covers: ['navigate', 'trail:branch-column'],
+    name: 'branch column: no trail band, the header and body stay on the column from tab to tab',
+    covers: ['navigate', 'branch:column'],
     open: async (ctx) => {
       await openBranchPage();
       await branchTab('pr')(ctx);
-      for (const name of [/^Overview/, /^Comments/, /^Files/, /^Commits/, /^Checks/]) {
+      for (const name of [/^Pull request/, /^Comments/, /^Files/, /^Commits/, /^Checks/]) {
         await visitTab(name);
-        expect(trailColumn()).toBe('column');
+        expect(trailBands()).toBe(0);
         expect(headerColumn()).toBe('column');
       }
-      for (const name of [/^Overview/, /^Comments/, /^Files/, /^Commits/]) {
+      for (const name of [/^Pull request/, /^Comments/, /^Files/, /^Commits/]) {
         await visitTab(name);
         expect(bodyColumns().length).toBeGreaterThan(0);
         expect(bodyColumns().every((width) => width === 'column')).toBe(true);
@@ -114,12 +113,12 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('commits')(ctx);
-      expect(trailColumn()).toBe('column');
+      expect(trailBands()).toBe(0);
     },
   },
   {
-    name: 'branch switcher: the chip moves the page to a second branch on its landing tab, and the crumb and header follow',
-    covers: ['navigate', 'trail:branch-switcher'],
+    name: 'branch switcher: the chip moves the page to a second branch on its landing tab, and the sidebar and header follow',
+    covers: ['navigate', 'branch:switcher'],
     open: async (ctx) => {
       addSecondBranch(ctx);
       await openBranchPage();
@@ -151,16 +150,13 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
           ),
         WAIT,
       );
-      await waitFor(() => expect(paneHeading()).toBe(SECOND_BRANCH), WAIT);
-      await screen.findByRole('button', { name: `Branch ${SECOND_BRANCH}` }, WAIT);
-      expect(trailNav().textContent ?? '').toMatch(/Session.*Branch/);
-      await click(within(trailNav()).getByRole('button', { name: /Branch/ }));
-      const current = (await screen.findAllByRole('menuitemradio', undefined, WAIT)).filter(
-        (row) => row.getAttribute('aria-checked') === 'true',
+      await waitFor(
+        () => expect(paneHeading()).toMatch(/^(Files|Commits|New pull request)$/),
+        WAIT,
       );
-      expect(current).toHaveLength(1);
-      expect(current[0]?.textContent ?? '').toContain(SECOND_BRANCH);
-      expect(trailColumn()).toBe('column');
+      await screen.findByRole('button', { name: `Branch ${SECOND_BRANCH}` }, WAIT);
+      await waitFor(() => expect(currentWorktree()).toContain(SECOND_BRANCH), WAIT);
+      expect(trailBands()).toBe(0);
     },
   },
 ];

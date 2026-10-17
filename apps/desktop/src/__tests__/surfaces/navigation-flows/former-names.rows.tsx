@@ -1,4 +1,4 @@
-import { band, both, heading, lens, openPalette, type Row } from './harness';
+import { both, heading, lens, openPalette, studio, type Row } from './harness';
 
 export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
   {
@@ -7,7 +7,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'Rules'),
     lands: both(
-      () => band('Workflows'),
+      () => studio('Workflows'),
       () => heading('Run defaults'),
     ),
   },
@@ -17,7 +17,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Run defaults/, 'Workflow rules'),
     lands: both(
-      () => band('Workflows'),
+      () => studio('Workflows'),
       () => heading('Run defaults'),
     ),
   },
@@ -39,7 +39,7 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^What's new/, 'Changelog'),
     lands: both(
-      () => band("What's new"),
+      () => studio("What's new"),
       () => heading(/^Goodboy \d/),
     ),
   },
@@ -49,8 +49,8 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     door: 'palette',
     open: () => openPalette(/^Tasks$/, 'Inbox'),
     lands: both(
-      () => band('Tasks'),
-      () => heading('Tasks'),
+      () => studio('Tasks'),
+      () => heading(/^Tasks$/),
     ),
   },
 ];

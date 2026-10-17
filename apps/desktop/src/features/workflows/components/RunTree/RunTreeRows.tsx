@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import type { Agent, AgentId, OpenQuestion, PlanWithCount, SessionId } from '@goodboy/types';
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../session/timeline/buildTimelineStream';
@@ -9,8 +9,12 @@ import { RunTreeRow, type RunTreeRouting } from './RunTreeRow';
 import type { RunStepSkipAction } from './RunStepSkip';
 import type { RunTreeFolds } from './useFoldedRunTree';
 import type { RunTreeModel } from './useRunTree';
+import type { RunTreeDensity } from './runTreeDensity';
+import type { RunTreeInsert } from '../../runTreeInsert';
+import { RUN_TREE_SLOT_WIDTH } from './runTreeSlotWidth';
 
 type Props = {
+  readonly density?: RunTreeDensity;
   readonly sessionId: SessionId;
   readonly tree: RunTreeModel;
   readonly scrollKey: string;
@@ -22,6 +26,8 @@ type Props = {
   readonly skip?: RunStepSkipAction | null;
   readonly folds?: RunTreeFolds;
   readonly plans?: ReadonlyMap<string, PlanWithCount>;
+  readonly beforeRow?: (insert: RunTreeInsert) => ReactNode;
+  readonly trailing?: (insert: RunTreeInsert) => ReactNode;
   readonly onHighlight?: (stepId: string | null) => void;
   readonly onSelect: (id: AgentId) => void;
   readonly onAnswer: (question: OpenQuestion | null) => void;
@@ -30,8 +36,6 @@ type Props = {
 const LIVE_PHASES: ReadonlySet<RowPhase> = new Set<RowPhase>(['queued', 'running', 'waiting']);
 
 const NO_PLANS: ReadonlyMap<string, PlanWithCount> = new Map();
-
-const NO_CHILD_IDS: ReadonlyArray<AgentId> = [];
 
 type AgentRowItem = TimelineRowItem & { readonly entry: TimelineAgentEntry };
 
@@ -43,6 +47,7 @@ const isActive = ({ item }: { readonly item: TimelineRowItem }): boolean =>
   item.rowState.phase === 'failed';
 
 export const RunTreeRows = ({
+  density = 'page',
   sessionId,
   tree,
   scrollKey,
@@ -54,6 +59,8 @@ export const RunTreeRows = ({
   skip = null,
   folds,
   plans = NO_PLANS,
+  beforeRow,
+  trailing,
   onHighlight,
   onSelect,
   onAnswer,
@@ -77,12 +84,16 @@ export const RunTreeRows = ({
     }
   }, [activeRowId, scrollKey]);
 
-  const hasActionColumn = stream.items.some(
-    (item) =>
-      item.kind === 'row' &&
-      (LIVE_PHASES.has(item.rowState.phase) ||
-        (isAgentRow(item) && plans.has(item.entry.agent.id))),
-  );
+  const isFixed = density !== 'rail';
+  const insertSlot = isFixed ? RUN_TREE_SLOT_WIDTH : rail.width;
+  const hasActionColumn =
+    density === 'page' &&
+    stream.items.some(
+      (item) =>
+        item.kind === 'row' &&
+        (LIVE_PHASES.has(item.rowState.phase) ||
+          (isAgentRow(item) && plans.has(item.entry.agent.id))),
+    );
   const agentById = new Map<string, Agent>();
   for (const item of stream.items) {
     if (item.kind === 'row' && isAgentRow(item)) {
@@ -113,15 +124,13 @@ export const RunTreeRows = ({
           if (folds === undefined) {
             return null;
           }
-          const childIds = folds.childIdsBySetId.get(item.expandId) ?? NO_CHILD_IDS;
           return (
             <RunTreeFoldRow
               key={item.id}
               item={item}
               rail={railRow}
               railWidth={rail.width}
-              childIds={childIds}
-              costUsd={childIds.reduce((total, id) => total + (spendByAgentId.get(id) ?? 0), 0)}
+              isFixed={isFixed}
               onSet={folds.onSet}
             />
           );
@@ -133,7 +142,11 @@ export const RunTreeRows = ({
         const stepId = isNested ? null : (item.entry.agent.stepId ?? null);
         return (
           <div key={item.id} ref={item.id === activeRowId ? activeRowRef : undefined}>
+            {isNested || beforeRow === undefined
+              ? null
+              : beforeRow({ agentId: item.entry.agent.id, slotWidth: insertSlot })}
             <RunTreeRow
+              density={density}
               item={item}
               entry={item.entry}
               rail={railRow}
@@ -158,6 +171,7 @@ export const RunTreeRows = ({
           </div>
         );
       })}
+      {trailing === undefined ? null : trailing({ agentId: null, slotWidth: insertSlot })}
     </div>
   );
 };

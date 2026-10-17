@@ -15,6 +15,7 @@ import {
 import { layoutTimelineRail, type RailLayout } from '../../../workTreeModel/railGeometry';
 import { useAttachedWorkflowRuns } from '../../useAttachedWorkflowRuns';
 import { useWorkflowRunAdvance } from '../../hooks/useWorkflowRunAdvance';
+import { runTreeStreamOf } from './runTreeStreamOf';
 
 const UNDATED_RUN_AT = new Date(0).toISOString() as IsoDateTime;
 
@@ -23,6 +24,7 @@ type Params = {
   readonly run: WorkflowRun;
   readonly workflow: Workflow;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
+  readonly rowHeight?: number | null;
 };
 
 export type RunTreeModel = {
@@ -35,6 +37,7 @@ export const useRunTree = ({
   run,
   workflow,
   agentKindOverride,
+  rowHeight = null,
 }: Params): RunTreeModel | null => {
   const sessionId = session.id;
   const agents = useAppStore(
@@ -84,15 +87,19 @@ export const useRunTree = ({
     if (entry === null) {
       return null;
     }
-    const stream = buildRunTreeStream({
-      entry,
-      unreadAgentIds,
-      advance: advance.state,
-      isDeciding,
+    const stream = runTreeStreamOf({
+      stream: buildRunTreeStream({
+        entry,
+        unreadAgentIds,
+        advance: advance.state,
+        isDeciding,
+      }),
+      run,
+      rowHeight,
     });
     return {
       stream,
       rail: layoutTimelineRail({ rows: stream.items, groups: stream.groups, hasSpine: false }),
     };
-  }, [advance.state, entry, isDeciding, unreadAgentIds]);
+  }, [advance.state, entry, isDeciding, rowHeight, run, unreadAgentIds]);
 };

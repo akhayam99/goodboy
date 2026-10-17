@@ -1,5 +1,4 @@
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { GoodboyChip } from '../GoodboyChip';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ReportBugButton } from './ReportBugButton';
@@ -19,7 +18,7 @@ export const ColumnFoot = ({ place, isPrimary, actions, onNavigate }: Props) => 
       id="settings"
       icon={CONCEPT_ICONS.settings}
       label="Settings"
-      shortcut={shortcutGlyphs('settings.open')}
+      shortcut="settings.open"
       isCurrent={place === 'settings'}
       onSelect={() => {
         actions.openSettings();

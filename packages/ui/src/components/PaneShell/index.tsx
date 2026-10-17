@@ -1,12 +1,13 @@
 import { useContext, type ReactElement, type ReactNode } from 'react';
 import { cn } from '../../cn';
+import type { FramePage } from '../../frameGeometry';
 import { PANE_RHYTHM } from '../../paneRhythm';
 import { Divider } from '../Divider';
 import { PageColumn, type PageColumnWidth } from '../PageColumn';
 import { ScrollFade } from '../ScrollFade';
-import { PaneTitleRow } from './PaneTitleRow';
-import { UnderTrailContext } from './underTrailContext';
-import { PaneActionsContext, useInheritedPaneActions } from './paneActionsContext';
+import { PageHeader } from './PageHeader';
+import { pageWidthOf } from './pageWidthOf';
+import { PaneActionsContext } from './paneActionsContext';
 import { PaneBannerContext } from './paneBannerContext';
 
 type BaseProps = {
@@ -14,14 +15,16 @@ type BaseProps = {
   readonly scroll?: 'pane' | 'body' | 'self';
   readonly tabs?: ReactNode;
   readonly dock?: ReactNode;
+  readonly dockEdge?: 'line' | 'space';
   readonly lead?: ReactNode;
   readonly headerRhythm?: 'title' | 'section';
+  readonly page?: FramePage;
   readonly width?: PageColumnWidth;
   readonly children: ReactNode;
 };
 
 type TitleHeaderProps = {
-  readonly title: string;
+  readonly title: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
   readonly subheader?: ReactNode;
@@ -44,13 +47,14 @@ export const PaneShell = (props: Props) => {
     scroll = 'pane',
     tabs,
     dock,
+    dockEdge = 'line',
     lead,
     headerRhythm = 'title',
-    width = 'column',
+    page,
+    width: widthOverride,
     children: content,
   } = props;
-  const isUnderTrail = useContext(UnderTrailContext);
-  const inheritedActions = useInheritedPaneActions();
+  const width = pageWidthOf({ page, width: widthOverride });
   const inheritedBanner = useContext(PaneBannerContext);
   const banner =
     inheritedBanner == null ? null : (
@@ -63,40 +67,29 @@ export const PaneShell = (props: Props) => {
       <PaneBannerContext.Provider value={null}>{content}</PaneBannerContext.Provider>
     </PaneActionsContext.Provider>
   );
-  const titleActions =
-    inheritedActions == null ? (
-      props.actions
+  const header =
+    props.header !== undefined ? (
+      <PageHeader
+        isOnColumn
+        rhythm={headerRhythm}
+        tabs={tabs}
+        animationClassName={animationClassName}
+        row={props.header}
+        {...(page !== undefined && { page })}
+      />
     ) : (
-      <>
-        {props.actions}
-        {inheritedActions}
-      </>
+      <PageHeader
+        isOnColumn
+        rhythm={headerRhythm}
+        tabs={tabs}
+        animationClassName={animationClassName}
+        title={props.title}
+        meta={props.meta}
+        actions={props.actions}
+        subheader={props.subheader}
+        {...(page !== undefined && { page })}
+      />
     );
-
-  const header = (
-    <div
-      data-slot="pane-header"
-      data-rhythm={headerRhythm}
-      data-under-trail={isUnderTrail ? '' : undefined}
-      className={cn(
-        'flex min-w-0 shrink-0 flex-col',
-        PANE_RHYTHM.below[headerRhythm],
-        !isUnderTrail && 'pt-3',
-      )}
-    >
-      <div className={cn('flex min-w-0 flex-col gap-2', animationClassName)}>
-        {props.header !== undefined ? (
-          props.header
-        ) : (
-          <>
-            <PaneTitleRow title={props.title} meta={props.meta} actions={titleActions} />
-            {props.subheader ?? null}
-          </>
-        )}
-        {tabs != null ? <div className="flex min-w-0 items-center">{tabs}</div> : null}
-      </div>
-    </div>
-  );
 
   const leadBlock =
     lead == null ? null : (
@@ -110,8 +103,8 @@ export const PaneShell = (props: Props) => {
   const dockBlock =
     dock != null ? (
       <>
-        <Divider />
-        <div data-slot="pane-dock" className="shrink-0">
+        {dockEdge === 'line' ? <Divider /> : null}
+        <div data-slot="pane-dock" data-dock-edge={dockEdge} className="shrink-0">
           <PageColumn width={width} className="flex flex-col py-4">
             {dock}
           </PageColumn>

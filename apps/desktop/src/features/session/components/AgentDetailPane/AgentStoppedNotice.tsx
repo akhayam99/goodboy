@@ -1,7 +1,6 @@
-import { Button, cn, tintClasses } from '@goodboy/ui';
+import { Button, Notice } from '@goodboy/ui';
 import type { Agent, ProviderId, ProviderName, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { agentStoppedCopy } from './agentStoppedCopy';
 
@@ -10,9 +9,10 @@ type Props = {
   readonly agent: Agent;
   readonly executedProvider: ProviderName | null;
   readonly providerOverride: ProviderId | null;
+  readonly isAutoChild: boolean;
 };
 
-type ProviderParams = Omit<Props, 'agent'>;
+type ProviderParams = Omit<Props, 'agent' | 'isAutoChild'>;
 
 const stoppedProvider = ({
   session,
@@ -28,6 +28,7 @@ export const AgentStoppedNotice = ({
   agent,
   executedProvider,
   providerOverride,
+  isAutoChild,
 }: Props) => {
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const authResults = useAppStore((state) => state.authResults);
@@ -37,37 +38,34 @@ export const AgentStoppedNotice = ({
   }
   const provider = stoppedProvider({ session, executedProvider, providerOverride });
   const isProviderConnected = authResults?.[provider]?.state !== 'disconnected';
-  const copy = agentStoppedCopy({ agent, provider, isProviderConnected });
-  const tint = tintClasses('neutral');
-  const Icon = CONCEPT_ICONS.runStopped;
+  const copy = agentStoppedCopy({ agent, provider, isProviderConnected, isAutoChild });
   return (
-    <div
-      role="status"
-      data-agent-stopped
-      className="relative flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-lg border border-border-soft bg-subtle py-3 pl-4 pr-3"
-    >
-      <span aria-hidden className={cn('absolute inset-y-0 left-0 w-0.5', tint.dot)} />
-      <Icon size={ICON_SIZE.control} aria-hidden className={cn('mt-px shrink-0', tint.icon)} />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-label font-semibold text-foreground">{copy.title}</p>
-        {copy.body == null ? null : <p className="text-label text-muted-foreground">{copy.body}</p>}
-      </div>
-      {copy.canContinue ? (
-        <Button
-          variant="secondary"
-          size="sm"
-          isBusy={pending.pendingKeys.has(agent.id)}
-          onClick={() =>
-            void pending.run({
-              key: agent.id,
-              failureTitle: "Couldn't continue the agent",
-              task: () => continueStoppedAgent({ sessionId: session.id, agentId: agent.id }),
-            })
-          }
-        >
-          {copy.actionLabel}
-        </Button>
-      ) : null}
+    <div data-agent-stopped="">
+      <Notice
+        tone="info"
+        placement="inline"
+        role="status"
+        title={copy.title}
+        body={copy.body ?? undefined}
+        actions={
+          copy.canContinue ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              isBusy={pending.pendingKeys.has(agent.id)}
+              onClick={() =>
+                void pending.run({
+                  key: agent.id,
+                  failureTitle: "Couldn't continue the agent",
+                  task: () => continueStoppedAgent({ sessionId: session.id, agentId: agent.id }),
+                })
+              }
+            >
+              {copy.actionLabel}
+            </Button>
+          ) : undefined
+        }
+      />
     </div>
   );
 };

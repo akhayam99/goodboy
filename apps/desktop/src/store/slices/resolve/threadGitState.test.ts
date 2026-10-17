@@ -73,7 +73,7 @@ const base = {
 
 const theo = {
   sha: '5d21a0e0000000000000000000000000000000ab',
-  author: 'Theo Varga',
+  author: 'Northwind Ops',
   email: 'tvarga@harborline.test',
   subject: 'Emit the retry metric',
   committedAt: Math.floor(COMMENT_AT / 1000) + 3000,
@@ -248,7 +248,7 @@ describe('computeThreadGitFacts', () => {
       expect(facts.gitState).toBe('fixed_elsewhere');
       expect(facts.elsewhere).toMatchObject({
         sha: theo.sha,
-        author: 'Theo Varga',
+        author: 'Northwind Ops',
         handle: 'tvarga',
         path: 'src/metrics.ts',
         line: 18,

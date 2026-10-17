@@ -7,7 +7,7 @@ import { TranscriptShell } from '../TranscriptShell';
 type Props = {
   readonly tone: Tone;
   readonly icon?: ReactNode;
-  readonly eyebrow: string;
+  readonly eyebrow?: string;
   readonly preview?: ReactNode;
   readonly meta?: ReactNode;
   readonly open?: boolean;
@@ -38,7 +38,9 @@ export const TranscriptRowHeader = ({
     <>
       {onToggle ? <TranscriptChevron open={open} /> : <span aria-hidden className="w-3 shrink-0" />}
       {icon != null && <span className={cn('flex shrink-0 items-center', tint.icon)}>{icon}</span>}
-      <span className={cn('shrink-0 text-eyebrow', tint.text)}>{eyebrow}</span>
+      {eyebrow === undefined ? null : (
+        <span className={cn('shrink-0 text-eyebrow', tint.text)}>{eyebrow}</span>
+      )}
       {badge}
       <span className="min-w-0 flex-1 truncate text-label text-muted-foreground">{preview}</span>
       {meta != null && <span className="shrink-0 text-meta text-muted-foreground">{meta}</span>}

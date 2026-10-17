@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrCheckRun, PrDetail, PullRequestState } from '@goodboy/types';
-import { checksGroupsOf, checksRollup, checksWordOf } from './checksRollup';
+import { checksCountsOf, checksGroupsOf, checksRunsOf, checksWordOf } from './checksRollup';
 
 const run = (conclusion: PrCheckRun['conclusion'], name = 'check'): PrCheckRun => ({
   name,
@@ -35,41 +35,21 @@ const detail = (patch: Partial<PrDetail> = {}): PrDetail => ({
   ...patch,
 });
 
-describe('checksRollup', () => {
-  it('says nothing when there is nothing to say', () => {
-    expect(checksRollup({ checks: [] })).toBe('');
-  });
-
-  it('leads with the failures, then what is still running, then what passed', () => {
+describe('checksCountsOf', () => {
+  it('counts failures, runs still going and passes, folding the conclusions with no name', () => {
     expect(
-      checksRollup({
+      checksCountsOf({
         checks: [
           run('success'),
           run('failure'),
           run('pending'),
-          run('failure'),
-          ...Array.from({ length: 8 }, () => run('success')),
+          run('cancelled'),
+          run('timed_out'),
+          run('neutral'),
+          run('unknown'),
         ],
       }),
-    ).toBe('2 failing · 1 running · 9 passed');
-  });
-
-  it('folds the conclusions with no plain-language name of their own', () => {
-    expect(
-      checksRollup({
-        checks: [run('timed_out'), run('neutral'), run('stale'), run('action_required')],
-      }),
-    ).toBe('2 failing · 2 skipped');
-  });
-
-  it('counts a cancelled run as failing, the way the pull request rollup does', () => {
-    expect(checksRollup({ checks: [run('cancelled'), run('success')] })).toBe(
-      '1 failing · 1 passed',
-    );
-  });
-
-  it('counts a run with no verdict as still running', () => {
-    expect(checksRollup({ checks: [run('unknown')] })).toBe('1 running');
+    ).toEqual({ failing: 3, running: 2, passed: 2 });
   });
 });
 
@@ -95,55 +75,36 @@ describe('checksGroupsOf', () => {
   });
 });
 
+describe('checksRunsOf', () => {
+  it('reads nothing without a pull request or before its detail is loaded', () => {
+    expect(checksRunsOf({ pr: null, detail: null })).toBeNull();
+    expect(checksRunsOf({ pr: pr({ checks: 'failure' }), detail: null })).toBeNull();
+    expect(checksRunsOf({ pr: pr(), detail: detail({ prNumber: 9 }) })).toBeNull();
+  });
+
+  it('reads nothing when the checks are unknown, denied or failed', () => {
+    expect(checksRunsOf({ pr: pr({ checksUnknown: true }), detail: detail() })).toBeNull();
+    expect(checksRunsOf({ pr: pr(), detail: detail({ checksRead: 'denied' }) })).toBeNull();
+    expect(checksRunsOf({ pr: pr(), detail: detail({ checksRead: 'failed' }) })).toBeNull();
+  });
+
+  it('reads the runs of the matching detail', () => {
+    const checks = [run('success')];
+    expect(checksRunsOf({ pr: pr(), detail: detail({ checks }) })).toBe(checks);
+  });
+});
+
 describe('checksWordOf', () => {
-  it('is none without a pull request', () => {
-    expect(checksWordOf({ pr: null, detail: null })).toBe('none');
+  it('says nothing when the runs are unread or none reported', () => {
+    expect(checksWordOf({ runs: null })).toBeNull();
+    expect(checksWordOf({ runs: [] })).toBeNull();
   });
 
-  it('is unknown when the list read could not see the checks', () => {
-    expect(checksWordOf({ pr: pr({ checksUnknown: true }), detail: null })).toBe('unknown');
-  });
-
-  it.each(['denied', 'failed'] as const)(
-    'is unknown when the detail read of the checks is %s',
-    (checksRead) => {
-      expect(checksWordOf({ pr: pr({ checks: 'success' }), detail: detail({ checksRead }) })).toBe(
-        'unknown',
-      );
-    },
-  );
-
-  it('is none, never unknown, when the read worked and nothing has reported', () => {
-    expect(
-      checksWordOf({ pr: pr(), detail: detail({ checksRead: 'ok', checksError: null }) }),
-    ).toBe('none');
-  });
-
-  it('reads the runs of the detail when it has them', () => {
-    expect(
-      checksWordOf({ pr: pr(), detail: detail({ checks: [run('success'), run('failure')] }) }),
-    ).toBe('failing');
-    expect(
-      checksWordOf({ pr: pr(), detail: detail({ checks: [run('success'), run('pending')] }) }),
-    ).toBe('pending');
-    expect(checksWordOf({ pr: pr(), detail: detail({ checks: [run('success')] }) })).toBe(
-      'passing',
+  it('names the failures first, then what still runs, then what passed, never a zero', () => {
+    expect(checksWordOf({ runs: [run('success'), run('failure'), run('failure')] })).toBe(
+      '2 failing',
     );
-  });
-
-  it('falls back to the rollup of the list while no detail is loaded', () => {
-    expect(checksWordOf({ pr: pr({ checks: 'failure' }), detail: null })).toBe('failing');
-    expect(checksWordOf({ pr: pr({ checks: 'pending' }), detail: null })).toBe('pending');
-    expect(checksWordOf({ pr: pr({ checks: 'success' }), detail: null })).toBe('passing');
-    expect(checksWordOf({ pr: pr({ checks: null }), detail: null })).toBe('none');
-  });
-
-  it('ignores the detail of another pull request', () => {
-    expect(
-      checksWordOf({
-        pr: pr({ checks: 'success' }),
-        detail: detail({ prNumber: 12, checksRead: 'denied' }),
-      }),
-    ).toBe('passing');
+    expect(checksWordOf({ runs: [run('success'), run('pending')] })).toBe('1 running');
+    expect(checksWordOf({ runs: [run('success'), run('skipped')] })).toBe('2 passed');
   });
 });

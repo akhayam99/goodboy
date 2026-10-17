@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { IconButton, cn } from '@goodboy/ui';
+import { ICON_SIZE, IconButton, cn } from '@goodboy/ui';
 
 type Props = {
   readonly label: string;
@@ -43,8 +43,7 @@ export const BriefItems = ({
               label={removeLabel(item)}
               tooltip="Remove"
               variant="ghost"
-              iconSize={11}
-              className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              iconSize={ICON_SIZE.row}
               onClick={() => onRemove(item)}
             />
           </li>

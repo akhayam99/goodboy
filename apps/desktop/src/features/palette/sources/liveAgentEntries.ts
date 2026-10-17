@@ -5,6 +5,7 @@ import type { PaletteEntry, PaletteScope } from '../types';
 type Params = {
   readonly verbs: ReadonlyArray<PaletteEntry>;
   readonly name: string;
+  readonly title?: string;
 };
 
 type LiveAgentParams = {
@@ -29,7 +30,7 @@ const LIVE_VERBS: Readonly<Record<string, string>> = {
   'agent.interrupt': 'Interrupt',
 };
 
-export const liveAgentVerbs = ({ verbs, name }: Params): ReadonlyArray<PaletteEntry> =>
+export const liveAgentVerbs = ({ verbs, name, title }: Params): ReadonlyArray<PaletteEntry> =>
   verbs.flatMap((entry): ReadonlyArray<PaletteEntry> => {
     const actionId = entry.action?.id ?? '';
     const verb = LIVE_VERBS[actionId];
@@ -41,7 +42,12 @@ export const liveAgentVerbs = ({ verbs, name }: Params): ReadonlyArray<PaletteEn
         ...entry,
         key: `${entry.key}${LIVE_KEY_SUFFIX}`,
         label: `${verb} ${name}`,
-        secondary: [...(entry.secondary ?? []), entry.label],
+        ...(title === undefined || title === name ? {} : { detail: title }),
+        secondary: [
+          ...(entry.secondary ?? []),
+          entry.label,
+          ...(title === undefined ? [] : [title]),
+        ],
         isScopeVerb: true,
       },
     ];

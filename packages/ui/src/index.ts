@@ -2,6 +2,7 @@ export { cn } from './cn';
 export { TYPE_ROLES } from './typeRoles';
 export { SHEET_CLASSES } from './sheet';
 export { StudioSlotContext } from './studioSlotContext';
+export { DrawerEdgeContext } from './drawerEdgeContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { FOCUS_RING } from './focusRing';
 export { dismissTopEscapeLayer, registerEscapeLayer } from './escape';
@@ -62,7 +63,7 @@ export type {
   CrumbMenuRow,
   CrumbState,
 } from './components/Trail/crumbMenuTypes';
-export type { DrawerFrameProps } from './components/DrawerFrame';
+export type { DrawerBack, DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';
 export { Avatar } from './components/Avatar';
@@ -121,8 +122,12 @@ export {
   readStudioRailWidth,
   studioRailStorageKey,
 } from './components/StudioRailLayout';
-export { useResizableWidth } from './useResizableWidth';
+export { readStoredWidth, useResizableWidth } from './useResizableWidth';
 export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
+export { INNER_COLUMN_SHORTCUT, innerColumnStore } from './innerColumnStore';
+export type { InnerColumn } from './innerColumnStore';
+export { useInnerColumn } from './useInnerColumn';
+export { useCurrentInnerColumn } from './useCurrentInnerColumn';
 export type { StudioRailFold } from './useStudioRailFold';
 export { StudioWidget } from './components/StudioWidget';
 export {
@@ -228,10 +233,20 @@ export type {
 } from './components/RemoteImage/loaderContext';
 export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
+export { FoldLayers } from './components/FoldLayers';
+export type { FoldLayersProps } from './components/FoldLayers';
+export { FOLD_MS, LEVEL_MS } from './motionTimings';
+export { canAnimate } from './canAnimate';
+export { useFoldPhase } from './useFoldPhase';
+export { exitSnapshotOf, mountExitSnapshot } from './exitSnapshot';
+export type { ExitSnapshot } from './exitSnapshot';
 export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
 export { PaneShell } from './components/PaneShell';
 export { PaneTitleRow } from './components/PaneShell/PaneTitleRow';
+export { PageHeader } from './components/PaneShell/PageHeader';
+export type { PageHeaderProps } from './components/PaneShell/PageHeader';
+export { PageSkeleton } from './components/PaneShell/PageSkeleton';
 export {
   PaneActionsContext,
   useInheritedPaneActions,
@@ -289,6 +304,17 @@ export { StatusRailItem } from './components/StatusRailItem';
 export type { StatusRailItemProps } from './components/StatusRailItem';
 export { StatusDot } from './components/StatusDot';
 export type { StatusDotProps } from './components/StatusDot';
+export { StateDot } from './components/StateDot';
+export type { DotState, StateDotProps } from './components/StateDot';
+export { ListGrid } from './components/ListGrid/ListGrid';
+export type { ListGridProps } from './components/ListGrid/ListGrid';
+export { ListGridRow } from './components/ListGrid/ListGridRow';
+export type { ListGridRowProps } from './components/ListGrid/ListGridRow';
+export { ListGridGroup } from './components/ListGrid/ListGridGroup';
+export type { ListGridGroupProps } from './components/ListGrid/ListGridGroup';
+export { ListGridLine } from './components/ListGrid/ListGridLine';
+export type { ListGridLineProps } from './components/ListGrid/ListGridLine';
+export type { ListGridColumn } from './components/ListGrid/listGridTemplate';
 export { Switch } from './components/Switch';
 export type { SwitchProps } from './components/Switch';
 export { Textarea } from './components/Textarea';
@@ -303,6 +329,7 @@ export { registerShortcutGlyphs } from './shortcutGlyphs';
 export type { ShortcutGlyphLookup } from './shortcutGlyphs';
 export type { TooltipProps, TooltipSide, TooltipVariant } from './components/Tooltip';
 export { tintClasses } from './tint';
+export { selectedIconClass } from './selectedIcon';
 export type { TintClasses, Tone } from './tint';
 export { ModelBlock } from './components/WorkTree/ModelBlock';
 export { WorkMeta } from './components/WorkTree/WorkMeta';
@@ -332,13 +359,13 @@ export { FLOATING_SURFACE } from './floatingSurface';
 
 export {
   FRAME_BAND_PX,
-  FRAME_DRAWER_INSET_PX,
-  FRAME_DRAWER_ROW_PX,
   FRAME_PAGES,
+  FRAME_PAGE_HEADER_INSET_PX,
   FRAME_TITLE_CENTRE_PX,
   FRAME_TITLE_ROW_PX,
   FRAME_TYPES,
   PAGE_FRAME,
+  PAGE_MEASURE,
   frameGeometryOf,
   frameTierOf,
 } from './frameGeometry';

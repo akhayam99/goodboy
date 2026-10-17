@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PANE_RHYTHM } from '../paneRhythm';
+import { COLLAPSED_RAIL_WIDTH } from '../components/AppShell';
 
 describe('PANE_RHYTHM', () => {
   it('keeps shared pane insets aligned', () => {
@@ -51,6 +52,16 @@ describe('PANE_RHYTHM', () => {
       expect(eyebrow).toBe(16);
       expect(rowIcon).toBe(eyebrow);
       expect(doorIcon).toBe(eyebrow);
+    });
+
+    it('centers the sidebar icon column on the folded rail axis', () => {
+      const slot = pxOf({ classes: PANE_RHYTHM.navRail.icon, prefix: 'w' });
+      const doorIcon =
+        pxOf({ classes: PANE_RHYTHM.navRail.inset, prefix: 'px' }) +
+        pxOf({ classes: PANE_RHYTHM.navRail.door, prefix: 'px' });
+
+      expect(PANE_RHYTHM.navRail.icon).toContain('justify-center');
+      expect(doorIcon + slot / 2).toBe(COLLAPSED_RAIL_WIDTH / 2);
     });
 
     it('uses one vertical gap for the doors and the session rows', () => {

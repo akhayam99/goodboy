@@ -2,13 +2,13 @@ import {
   AUTO_BLOCK_TEXT,
   AUTO_OUTBOX_CLAIM_MS,
   AUTO_TURN_CEILING_USD,
+  autoRemainingForGates,
   storedDeliveryOf,
   turnGate,
 } from '@goodboy/core';
 import {
-  AUTO_USD_EPSILON,
   acceptAutoOutboxStatement,
-  autoRemainingUsdSql,
+  autoBudgetCoversSql,
   autoTreePhaseStatement,
   claimAutoOutboxStatement,
   getAutoTree,
@@ -27,6 +27,7 @@ import { formatError } from '@goodboy/ui';
 import { buildDeliveryMessage } from './buildDeliveryMessage';
 import { chooseDeliveryRows } from './deliveryRows';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
+import { userImagesOf } from './userImagesOf';
 import type { AgentVerbContext } from './verbContext';
 
 export type DeliverParams = Readonly<{
@@ -40,7 +41,7 @@ export type DeliverOutcome =
   | Readonly<{ kind: 'accept_pending'; deliveryId: string; runId: string }>
   | Readonly<{
       kind: 'idle';
-      reason: 'not_owner' | 'no_tree' | 'stopped' | 'no_rows' | 'lost_race';
+      reason: 'not_owner' | 'no_tree' | 'stopped' | 'no_rows' | 'lost_race' | 'blocked';
     }>
   | Readonly<{ kind: 'blocked'; reason: string }>;
 
@@ -58,6 +59,9 @@ type BlockParams = {
 };
 
 const blockTree = async ({ ctx, tree, reason }: BlockParams): Promise<DeliverOutcome> => {
+  if (tree.phase === 'blocked') {
+    return { kind: 'idle', reason: 'blocked' };
+  }
   await ctx.scheduler.transition({
     treeId: tree.id,
     expect: { phaseRev: tree.phaseRev, generation: tree.generation, from: [tree.phase] },
@@ -122,7 +126,7 @@ const claimStatements = ({
     }),
     {
       sql: `SELECT 1 FROM auto_trees
-        WHERE id = ? AND ${autoRemainingUsdSql({ treeRef: 'auto_trees.id' })} + ${AUTO_USD_EPSILON} >= ?`,
+        WHERE id = ? AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
       params: [tree.id, AUTO_TURN_CEILING_USD],
       abortWhen: 'noRows',
       abortCode: ABORT_BUDGET,
@@ -246,16 +250,25 @@ export const deliverNext = async ({
     noProgressStreak: tree.noProgressStreak,
     hardDeadlineAt: tree.hardDeadlineAt,
     nowMs: ctx.now(),
-    remainingUsd: spend?.remainingUsd ?? 0,
+    remainingUsd: autoRemainingForGates({ spend }),
   });
   if (gate !== null) {
     return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT[gate] });
+  }
+  if (tree.phase === 'blocked' && tree.blockedReason !== AUTO_BLOCK_TEXT.budget) {
+    return { kind: 'idle', reason: 'blocked' };
   }
   const stored = storedDeliveryOf({ value: primary.payload });
   const text =
     stored !== null && stored.rowIds.length === rows.length
       ? stored.text
-      : await buildDeliveryMessage({ db: ctx.db, tree, rows, nowMs: ctx.now() });
+      : await buildDeliveryMessage({
+          db: ctx.db,
+          tree,
+          rows,
+          mounts: await ctx.ports.loadMounts({ sessionId: tree.sessionId }),
+          nowMs: ctx.now(),
+        });
   const runId = ctx.ports.newId();
   const claimed = await ctx.db.transaction({
     statements: claimStatements({ ctx, tree, rows, runId, text }),
@@ -275,6 +288,7 @@ export const deliverNext = async ({
       runId,
       deliveryId: primary.id,
       text,
+      images: userImagesOf({ rows }),
       onEnded,
     })
     .catch((error: unknown): TurnStartOutcome => ({

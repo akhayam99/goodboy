@@ -80,7 +80,7 @@ export const LineComment = ({ sessionId, draft }: Props) => {
         </span>
         {draft.stale && <Chip tone="warning" size="3xs" label="Stale" title={STALE_HINT} />}
         {!isEditing && (
-          <span className="ml-auto flex shrink-0 items-center gap-0.5 opacity-0 group-focus-within/line-comment:opacity-100 group-hover/line-comment:opacity-100 motion-safe:transition-opacity">
+          <span className="ml-auto flex shrink-0 items-center gap-0.5">
             {hover.map((action) => (
               <IconButton
                 key={action.id}

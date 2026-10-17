@@ -113,7 +113,8 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.resolve)).toContain('Resolve without a reply');
     expect(formerNamesOf(NAMES.publishReply)).toContain('Post reply now');
     expect(formerNamesOf(NAMES.newBranch)).toContain('New worktree');
-    expect(formerNamesOf(NAMES.closeBranch)).toEqual(['Remove worktree', 'Close worktree']);
+    expect(formerNamesOf(NAMES.closeBranch)).toEqual(['Close worktree']);
+    expect(NAMES.removeWorktree).toBe('Remove worktree');
     expect(formerNamesOf(NAMES.rebaseOn)).toContain("Start from today's main");
     expect(formerNamesOf(NAMES.tasks)).toContain('Inbox');
   });
@@ -141,7 +142,6 @@ describe('names', () => {
     ["Start from today's main", 'start-from-todays-main'],
     ['New worktree', 'new-worktree'],
     ['New worktree in ledger-core', 'new-worktree'],
-    ['Remove worktree', 'remove-worktree'],
     ['Close worktree', 'close-worktree'],
     ['Waiting for your approval', 'waiting-for-approval'],
     ['notifications', 'lowercase-notifications'],

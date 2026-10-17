@@ -52,7 +52,7 @@ export const mockAskAnswer = ({ question, pack }: AnswerParams): string => {
   const plan = handle({ pack, key: 'D1', fallback: 'the plan' });
   const text = question.toLowerCase();
   if (/ready|review/.test(text)) {
-    return `**5 comments are ready to review, on webhook.ts and queue.ts.** Mara Quint and Theo Varga asked for 2 each, Ines Okafor for 1. None is blocked. They are on ${pr}, and ${run} has already handled them.`;
+    return `**5 comments are ready to review, on webhook.ts and queue.ts.** Acme QA and Northwind Ops asked for 2 each, Cascadia Docs for 1. None is blocked. They are on ${pr}, and ${run} has already handled them.`;
   }
   if (/cost|spend|much|\$/.test(text)) {
     return `**$3.42 so far in this session, $0.08 of it from Ask.** ${worker} accounts for $2.10 and ${asker} for $0.74.`;

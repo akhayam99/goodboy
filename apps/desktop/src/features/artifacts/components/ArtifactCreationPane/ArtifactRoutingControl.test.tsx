@@ -34,13 +34,13 @@ const Host = ({ onValue }: HostProps) => {
   );
 };
 
-const dialog = () => within(screen.getByRole('dialog', { name: 'Artifact routing' }));
+const dialog = () => within(screen.getByRole('dialog', { name: 'Model' }));
 
 describe('ArtifactRoutingControl', () => {
   it('keeps Cursor, Opus 5.5 and Medium, then goes back to the recommendation', () => {
     let routing: ArtifactCreationRouting | null = null;
     render(<Host onValue={(next) => (routing = next)} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Artifact routing:/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Model:/ }));
 
     fireEvent.click(dialog().getByRole('button', { name: 'Cursor' }));
     fireEvent.click(within(dialog().getByRole('group', { name: 'Model' })).getByText('Opus'));

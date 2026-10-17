@@ -79,7 +79,7 @@ const limit = (softCapUsd: number, onExceed: 'pause' | 'warn' = 'pause'): Sessio
   onExceed,
 });
 
-const spendChip = () => screen.getByRole('button', { name: /^Spend / });
+const spendChip = () => screen.getByRole('button', { name: /^(Spend |Set a limit$)/ });
 
 beforeEach(() => {
   store.sessionTelemetry = {};
@@ -91,10 +91,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('SessionCostChip', () => {
-  it('shows the spend from the start, before anything is spent', () => {
+  it('reads Set a limit, never $0, before anything is spent', () => {
     render(<SessionCostChip sessionId={SID} />);
 
-    expect(spendChip().textContent).toBe('$0');
+    expect(spendChip().textContent).toBe('Set a limit');
+    expect(spendChip().textContent).not.toContain('$0');
     expect(spendChip().getAttribute('data-level')).toBe('free');
     expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
   });
@@ -104,9 +105,19 @@ describe('SessionCostChip', () => {
     store.sessionBudgets = { [SID]: limit(10) };
     render(<SessionCostChip sessionId={SID} />);
 
-    expect(spendChip().textContent).toBe('$2.77 of $10.00');
+    expect(spendChip().textContent).toBe('$2.77 of $10.00 limit');
     expect(spendChip().getAttribute('data-level')).toBe('clear');
+    expect(spendChip().getAttribute('data-tone')).toBe('neutral');
     expect(document.querySelector('[data-slot="spend-bar"]')).not.toBeNull();
+  });
+
+  it('reads the spend alone while no limit is set', () => {
+    store.sessionTelemetry = { [SID]: [record({ estimatedCostUsd: 3.47 })] };
+    render(<SessionCostChip sessionId={SID} />);
+
+    expect(spendChip().textContent).toBe('$3.47');
+    expect(spendChip().getAttribute('aria-label')).toBe('Spend $3.47');
+    expect(document.querySelector('[data-slot="spend-bar"]')).toBeNull();
   });
 
   it('turns to a warning from 80 percent', () => {
@@ -115,19 +126,21 @@ describe('SessionCostChip', () => {
     render(<SessionCostChip sessionId={SID} />);
 
     expect(spendChip().getAttribute('data-level')).toBe('near');
+    expect(spendChip().getAttribute('data-tone')).toBe('warning');
   });
 
   it('says paused once a pausing limit is passed, and not when it only warns', () => {
     store.sessionTelemetry = { [SID]: [record({ estimatedCostUsd: 10.2 })] };
     store.sessionBudgets = { [SID]: limit(10) };
     const { unmount } = render(<SessionCostChip sessionId={SID} />);
-    expect(spendChip().textContent).toBe('Paused · $10.20 of $10.00');
+    expect(spendChip().textContent).toBe('Paused · $10.20 of $10.00 limit');
     unmount();
 
     store.sessionBudgets = { [SID]: limit(10, 'warn') };
     render(<SessionCostChip sessionId={SID} />);
-    expect(spendChip().textContent).toBe('$10.20 of $10.00');
+    expect(spendChip().textContent).toBe('$10.20 of $10.00 limit');
     expect(spendChip().getAttribute('data-level')).toBe('over');
+    expect(spendChip().getAttribute('data-tone')).toBe('danger');
   });
 
   it('opens a spend popover with the limit, the agents and the context cost', () => {
@@ -167,7 +180,7 @@ describe('SessionCostChip', () => {
     render(<SessionCostChip sessionId={SID} />);
     fireEvent.click(spendChip());
     fireEvent.click(screen.getByRole('button', { name: 'Set limit' }));
-    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Limit in dollars'), { target: { value: '10' } });
     fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -191,8 +204,32 @@ describe('SessionCostChip', () => {
 
     requestSessionSpendLimitEdit({ sessionId: SID });
 
-    await waitFor(() => expect(screen.getByLabelText('Spend cap in dollars')).toBeDefined());
-    expect(screen.getByLabelText('Spend cap in dollars')).toHaveProperty('value', '10');
+    await waitFor(() => expect(screen.getByLabelText('Limit in dollars')).toBeDefined());
+    expect(screen.getByLabelText('Limit in dollars')).toHaveProperty('value', '10');
+  });
+
+  it('leaves a raise request to the visible spend line, so one editor opens', async () => {
+    store.sessionBudgets = { [SID]: limit(10) };
+    render(
+      <>
+        <SessionCostChip sessionId={SID} />
+        <SessionCostChip sessionId={SID} placement="editHost" />
+      </>,
+    );
+
+    requestSessionSpendLimitEdit({ sessionId: SID });
+
+    await waitFor(() => expect(screen.getByLabelText('Limit in dollars')).toBeDefined());
+    expect(screen.getAllByRole('dialog', { name: 'Session spend' })).toHaveLength(1);
+  });
+
+  it('opens the editor from the frame host when no spend line is shown', async () => {
+    store.sessionBudgets = { [SID]: limit(10) };
+    render(<SessionCostChip sessionId={SID} placement="editHost" />);
+
+    requestSessionSpendLimitEdit({ sessionId: SID });
+
+    await waitFor(() => expect(screen.getByLabelText('Limit in dollars')).toBeDefined());
   });
 
   it('ignores a raise request for another session', () => {

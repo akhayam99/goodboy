@@ -64,14 +64,14 @@ describe('buildAskPack', () => {
           {
             threadId: 'thread-88',
             word: 'couldnt_fix',
-            author: 'Theo Varga',
+            author: 'Northwind Ops',
             location: 'webhook.ts:88',
             body: 'Handle Retry-After as an HTTP date',
           },
           {
             threadId: 'thread-41',
             word: 'ready',
-            author: 'Mara Quint',
+            author: 'Acme QA',
             location: 'webhook.ts:41',
             body: 'Cap at 30s',
           },

@@ -83,10 +83,18 @@ vi.mock('../../../features/notifications/components/NotificationCenter', () => (
   NotificationCenter: () => <span data-testid="notification-center" />,
 }));
 
+vi.mock('../../../features/workspace/components/RepoEntry', () => ({
+  RepoEntry: () => <span data-testid="repo-entry" />,
+}));
+
+vi.mock('./MonitoringSignal', () => ({
+  MonitoringSignal: () => <span data-testid="monitoring-signal" />,
+}));
+
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
-  hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 0 };
+  hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 1.25 };
   store.setCurrentSession.mockClear();
 });
 
@@ -209,6 +217,13 @@ describe('AppTopBar', () => {
     expect(screen.getByRole('button', { name: SPEND_LABEL })).toBeDefined();
   });
 
+  it('hides spend until the first cent today', () => {
+    hooks.rollup = { attentionCount: 0, runningCount: 0, todaySpend: 0 };
+    renderBar();
+
+    expect(screen.queryByRole('button', { name: SPEND_LABEL })).toBeNull();
+  });
+
   it('opens spend only from the spend figure, never from the now chip', () => {
     hooks.groups = [
       { key: 'attention', sessions: [ATTENTION_SESSION] },
@@ -218,7 +233,7 @@ describe('AppTopBar', () => {
     const onOpenSpend = vi.fn();
     renderBar({ onOpenSpend });
 
-    fireEvent.click(screen.getByRole('button', { name: '1 session needs you, 1 running' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 session needs you, 1 session running' }));
     expect(onOpenSpend).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog', { name: 'Now' })).toBeDefined();
     fireEvent.keyDown(window, { key: 'Escape' });

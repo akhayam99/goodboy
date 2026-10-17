@@ -19,18 +19,18 @@ export const removeProject = (set: SetFn, get: GetFn) => {
     set((state) => {
       const projectGitStatus = { ...state.projectGitStatus };
       const projectCheckoutPulling = { ...state.projectCheckoutPulling };
-      const projectFetchedAt = { ...state.projectFetchedAt };
-      const projectCheckoutResult = { ...state.projectCheckoutResult };
+      const repoDivergence = { ...state.repoDivergence };
+      const repoPull = { ...state.repoPull };
       delete projectGitStatus[projectId];
       delete projectCheckoutPulling[projectId];
-      delete projectFetchedAt[projectId];
-      delete projectCheckoutResult[projectId];
+      delete repoDivergence[projectId];
+      delete repoPull[projectId];
       return {
         projects: state.projects.filter((candidate) => candidate.id !== projectId),
         projectGitStatus,
         projectCheckoutPulling,
-        projectFetchedAt,
-        projectCheckoutResult,
+        repoDivergence,
+        repoPull,
       };
     });
   };

@@ -67,12 +67,14 @@ describe('the resolver scenes', () => {
   it('models-codex-only says why each Claude pin is skipped', async () => {
     await mount('models-codex-only');
 
-    expect(screen.getAllByText(/^Pinned Opus 5\.5 is skipped: Claude is Off\. Using /).length).toBe(
-      4,
-    );
-    expect(screen.getAllByText(/^Pinned Sonnet 5 is skipped: Claude is Off\. Using /).length).toBe(
-      1,
-    );
+    expect(
+      screen.getAllByRole('img', { name: /^Pinned Opus 5\.5 is skipped: Claude is Off\. Using / })
+        .length,
+    ).toBe(4);
+    expect(
+      screen.getAllByRole('img', { name: /^Pinned Sonnet 5 is skipped: Claude is Off\. Using / })
+        .length,
+    ).toBe(1);
     expect(screen.queryByText(/A project setting/)).toBeNull();
   });
 
@@ -83,7 +85,7 @@ describe('the resolver scenes', () => {
     expect(screen.queryByText(/A project setting/)).toBeNull();
     const summaries = Array.from(
       document.querySelectorAll<HTMLElement>('[data-role-summary]'),
-    ).filter((summary) => summary.textContent === 'Opus 5.5·High');
+    ).filter((summary) => summary.textContent === 'Opus 5.5');
     expect(summaries.length).toBe(4);
   });
 

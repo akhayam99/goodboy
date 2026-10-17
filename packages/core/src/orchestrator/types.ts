@@ -25,6 +25,7 @@ export type RunSummary =
       readonly kind: 'structured';
       readonly done: ReadonlyArray<string>;
       readonly left: ReadonlyArray<string>;
+      readonly leftRoles: Readonly<Partial<Record<string, AgentRole>>>;
     }
   | {
       readonly kind: 'text';

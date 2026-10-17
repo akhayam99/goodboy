@@ -1,4 +1,9 @@
-import { MODEL_CATALOGS } from '@goodboy/core';
+import {
+  AUTO_STALE_DECIDE_TEXT,
+  MODEL_CATALOGS,
+  autoBudgetOf,
+  autoTreeSpendOf,
+} from '@goodboy/core';
 import type { AutoArtifactLedgerRow, AutoDelegation, AutoPhase } from '@goodboy/db';
 import {
   brandId,
@@ -16,11 +21,11 @@ import {
   type TurnState,
 } from '@goodboy/types';
 import { aPlanRow, aTree } from '../../../../../features/auto/testing/autoViewFixtures';
-import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
+import type { AutoPendingRefusal, AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { sceneClock } from '../../sceneClock';
 import { SESSION } from '../activityRunSeed';
 
-const clock = sceneClock({ anchor: '2026-10-13T12:10:00.000Z' });
+const clock = sceneClock({ anchor: '2026-10-13T12:21:00.000Z' });
 
 type AtParams = {
   readonly time: string;
@@ -33,8 +38,8 @@ export const AUTO_SESSION = SESSION;
 
 export const AUTO_ROOT_ID = brandId<AgentId>({ value: 'mock-auto-root' });
 export const PLANNER_ID = brandId<AgentId>({ value: 'mock-auto-planner' });
-const IMPLEMENTER_ID = brandId<AgentId>({ value: 'mock-auto-implementer' });
-const TESTER_ID = brandId<AgentId>({ value: 'mock-auto-tester' });
+export const IMPLEMENTER_ID = brandId<AgentId>({ value: 'mock-auto-implementer' });
+export const TESTER_ID = brandId<AgentId>({ value: 'mock-auto-tester' });
 const REVIEWER_ID = brandId<AgentId>({ value: 'mock-auto-reviewer' });
 export const AUTO_PLAN_ID = brandId<ArtifactId>({ value: 'mock-auto-plan-retries' });
 
@@ -54,7 +59,17 @@ const OPUS = modelKeyOf({ label: 'Opus 5.5' });
 const SONNET = modelKeyOf({ label: 'Sonnet 5.5' });
 
 export type AutoSceneState =
-  'answering' | 'delegating' | 'plan' | 'working' | 'revising' | 'confirm' | 'done';
+  | 'answering'
+  | 'delegating'
+  | 'plan'
+  | 'working'
+  | 'revising'
+  | 'confirm'
+  | 'refused'
+  | 'done'
+  | 'finished'
+  | 'nocap'
+  | 'blocked';
 
 const GOAL_TEXT =
   'Why does the ledger retry post a second credit? Fix it and add a test for the retry path.';
@@ -73,6 +88,7 @@ type DelegationParams = {
   readonly role: string;
   readonly state: AutoDelegation['state'];
   readonly batch: string;
+  readonly task: string;
   readonly reason: string;
   readonly model: string;
   readonly effort: string;
@@ -89,6 +105,7 @@ const delegationOf = ({
   role,
   state,
   batch,
+  task,
   reason,
   model,
   effort,
@@ -108,7 +125,7 @@ const delegationOf = ({
   childAgentId: childId,
   firstAttemptId: brandId({ value: `mock-auto-attempt-${key}` }),
   role,
-  request: { task: `work for ${role}`, reason },
+  request: { task, reason },
   target: { mountName: 'payments-api' },
   routing: {
     provider: 'anthropic',
@@ -174,6 +191,7 @@ const REVIEWER_RESULT = {
 const plannerDone = (): AutoDelegation =>
   delegationOf({
     key: 'planner',
+    task: 'Plan the fix for the second credit on a ledger retry.',
     childId: PLANNER_ID,
     role: 'planner',
     state: 'settled',
@@ -194,6 +212,7 @@ type BatchTwoParams = {
 const batchTwo = ({ implementerState }: BatchTwoParams): ReadonlyArray<AutoDelegation> => [
   delegationOf({
     key: 'implementer',
+    task: 'Post one credit per retry in postCredit and applyCredit.',
     childId: IMPLEMENTER_ID,
     role: 'implementer',
     state: implementerState,
@@ -207,6 +226,7 @@ const batchTwo = ({ implementerState }: BatchTwoParams): ReadonlyArray<AutoDeleg
   }),
   delegationOf({
     key: 'tester',
+    task: 'Test the retry path with a timeout on the first attempt.',
     childId: TESTER_ID,
     role: 'tester',
     state: implementerState === 'settled' ? 'settled' : 'accepted',
@@ -223,6 +243,7 @@ const batchTwo = ({ implementerState }: BatchTwoParams): ReadonlyArray<AutoDeleg
 const reviewerDone = (): AutoDelegation =>
   delegationOf({
     key: 'reviewer',
+    task: 'Review the retry fix before you push.',
     childId: REVIEWER_ID,
     role: 'reviewer',
     state: 'settled',
@@ -243,6 +264,7 @@ type ReviseParams = {
 const revise = ({ state }: ReviseParams): AutoDelegation =>
   delegationOf({
     key: 'planner-revise',
+    task: 'Revise the plan for two simultaneous webhooks.',
     childId: PLANNER_ID,
     role: 'planner',
     state,
@@ -349,6 +371,7 @@ const THIRD_REPLY =
   'Plan approved. The Implementer starts now on Sonnet 5.5, since the plan is mechanical. The Tester is queued behind it: only one agent writes to payments-api at a time.';
 const FINAL_REPLY =
   'Fixed. The retry loop built a new idempotency key on every attempt, so a credit that timed out after the ledger wrote it could post twice. The key is now built once per credit, before the loop, and applyCredit returns the first result for a key it has seen.';
+const REFUSED_REPLY = 'I asked an implementer to commit the fix and open a draft PR.';
 const ANSWER_REPLY =
   'Retries are posted by postCredit, which builds the idempotency key inside the retry loop. A new key on every attempt is why a credit that timed out after the ledger wrote it can post twice. Say the word and I fix it.';
 
@@ -358,6 +381,7 @@ type ViewParams = {
   readonly artifacts: ReadonlyArray<AutoArtifactLedgerRow>;
   readonly spentUsd: number;
   readonly reservedUsd: number;
+  readonly pendingRefusal?: AutoPendingRefusal | null;
 };
 
 const viewOf = ({
@@ -366,7 +390,9 @@ const viewOf = ({
   artifacts,
   spentUsd,
   reservedUsd,
+  pendingRefusal = null,
 }: ViewParams): AutoTreeView => ({
+  pendingRefusal,
   tree: {
     ...aTree({ phase, capUsd: 10 }),
     id: TREE_ID,
@@ -375,13 +401,9 @@ const viewOf = ({
   },
   delegations,
   artifacts,
-  budget: {
-    capUsd: 10,
-    spentUsd,
-    reservedUsd,
-    remainingUsd: 10 - spentUsd - reservedUsd,
-    hasEstimate: false,
-  },
+  budget: autoBudgetOf({
+    spend: autoTreeSpendOf({ capUsd: 10, settledUsd: spentUsd, reservedUsd, estimatedUsd: 0 }),
+  }),
 });
 
 const IDLE: TurnState = { kind: 'idle', lastActivityAt: at({ time: '12:10:00' }) };
@@ -467,7 +489,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         }),
         agents: [root('running'), planner('running')],
         events: first,
-        rootTurn: { kind: 'running', runId: RUN_ONE, startedAt: at({ time: '12:04:00' }) },
+        rootTurn: IDLE,
         hasPlanArtifact: false,
       };
     case 'plan':
@@ -514,7 +536,7 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
           }),
         ],
         events: [...first, ...second, ...approved],
-        rootTurn: { kind: 'running', runId: RUN_THREE, startedAt: at({ time: '12:09:00' }) },
+        rootTurn: IDLE,
         hasPlanArtifact: true,
       };
     case 'revising':
@@ -567,6 +589,28 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         ],
         rootTurn: { kind: 'running', runId: RUN_THREE, startedAt: at({ time: '12:07:00' }) },
         hasPlanArtifact: true,
+      };
+    case 'refused':
+      return {
+        view: viewOf({
+          phase: 'merging',
+          delegations: [],
+          artifacts: [],
+          spentUsd: 0.06,
+          reservedUsd: 0,
+          pendingRefusal: { action: 'delegate', code: 'mount_ambiguous', roles: ['implementer'] },
+        }),
+        agents: [root('completed', '12:04:30')],
+        events: [
+          userText({
+            time: '12:04:00',
+            text: 'Commit the retry fix and open a draft PR.',
+            run: RUN_ONE,
+          }),
+          reply({ time: '12:04:20', text: REFUSED_REPLY, run: RUN_ONE }),
+        ],
+        rootTurn: IDLE,
+        hasPlanArtifact: false,
       };
     case 'done':
       return {
@@ -621,6 +665,38 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
         rootTurn: IDLE,
         hasPlanArtifact: true,
       };
+    case 'finished': {
+      const resting = autoSceneOf({ state: 'done' });
+      return {
+        ...resting,
+        view: { ...resting.view, tree: { ...resting.view.tree, phase: 'finished' } },
+      };
+    }
+    case 'blocked': {
+      const asked = autoSceneOf({ state: 'answering' });
+      return {
+        ...asked,
+        view: {
+          ...asked.view,
+          tree: { ...asked.view.tree, phase: 'blocked', blockedReason: AUTO_STALE_DECIDE_TEXT },
+        },
+        events: asked.events.slice(0, 1),
+      };
+    }
+    case 'nocap': {
+      const working = autoSceneOf({ state: 'working' });
+      return {
+        ...working,
+        view: {
+          ...working.view,
+          tree: { ...working.view.tree, capUsd: null },
+          budget:
+            working.view.budget === null
+              ? null
+              : { ...working.view.budget, capUsd: null, remainingUsd: null },
+        },
+      };
+    }
     default: {
       const exhaustive: never = state;
       return exhaustive;

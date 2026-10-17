@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { innerColumnStore } from '@goodboy/ui';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { isTerminalFocused } from '../../../shared/keyboard/isTerminalFocused';
 import { WORKSPACE_DIGIT_IDS } from '../../../shared/keyboard/registry';
@@ -16,15 +17,21 @@ import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { toggleSessionTerminal } from '../../../features/terminal/toggleSessionTerminal';
 import { openLens } from '../../../features/session/openLens';
+import { togglePane } from '../../../features/session/panes/togglePane';
+import type { ClusterPane } from '../../../features/session/panes/clusterPane';
 import { isLensReachable } from '../../../features/session/isLensReachable';
 import { isBranchTabAvailable } from '../../../features/branch/branchTabs';
 import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
 import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
 import type { BranchTab } from '../../../store/slices/navigation/types';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
+import { useCloseMenuEvent } from '../useCloseMenuEvent';
+import { closeCurrentLevel } from './closeCurrentLevel';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { isAutoAgentsShown } from '../../../features/auto/isAutoAgentsShown';
+import { openAutoAgents } from '../../../features/auto/openAutoAgents';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -46,6 +53,10 @@ type LensParams = {
 
 type ContextParams = {
   readonly tab?: ContextDrawerTab;
+};
+
+type PaneParams = {
+  readonly pane: ClusterPane;
 };
 
 const doorTabOf = ({ kind }: { readonly kind: LensKind | null }): BranchTab => {
@@ -96,6 +107,14 @@ export const useAppShortcuts = ({
     state.toggleContextDrawer({ sessionId, ...(tab !== undefined && { tab }) });
   }, []);
 
+  const toggleCurrentPane = useCallback(({ pane }: PaneParams) => {
+    const sessionId = useAppStore.getState().currentSessionId;
+    if (sessionId == null) {
+      return;
+    }
+    togglePane({ sessionId, pane });
+  }, []);
+
   const goToLens = useCallback(({ kind }: LensParams) => {
     const state = useAppStore.getState();
     const sessionId = state.currentSessionId;
@@ -107,7 +126,13 @@ export const useAppShortcuts = ({
       active === 'branch' &&
       (kind === 'review' || kind === 'pr' || kind === 'files') &&
       branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
-    const isLeaving = kind != null && (active === kind || isBranchDoor);
+    if (kind === 'workflows' && active === 'workflows') {
+      openLens({ sessionId, lens: 'orchestrated' });
+      return;
+    }
+    const isLeaving =
+      kind != null &&
+      (active === kind || isBranchDoor || (kind === 'workflows' && active === 'orchestrated'));
     if (kind === 'review' && !isLeaving) {
       state.navigate({
         to: branchPlace({
@@ -120,6 +145,17 @@ export const useAppShortcuts = ({
     }
     openLens({ sessionId, lens: isLeaving ? null : kind });
   }, []);
+
+  const goToAgents = useCallback(() => {
+    const state = useAppStore.getState();
+    const sessionId = state.currentSessionId;
+    const active = sessionId === null ? null : (state.activeLens[sessionId] ?? null);
+    if (sessionId === null || active !== 'agents' || !isAutoAgentsShown({ state, sessionId })) {
+      goToLens({ kind: active === 'auto' ? null : 'agents' });
+      return;
+    }
+    openAutoAgents({ sessionId });
+  }, [goToLens]);
 
   const isExploreSession = useAppStore((state) => {
     const sessionId = state.currentSessionId;
@@ -174,6 +210,9 @@ export const useAppShortcuts = ({
   const goToBoard = useGoToBoard();
 
   useShortcut('column.toggle', toggleVisibleSidebar);
+  useShortcut('innerColumn.toggle', () => {
+    innerColumnStore.toggleCurrent();
+  });
   useShortcut('nav.back', back);
   useShortcut('nav.forward', forward);
   useMouseHistoryButtons({ back, forward });
@@ -194,6 +233,8 @@ export const useAppShortcuts = ({
   useShortcut('session.next', () => navigateSession({ delta: 1 }));
   useShortcut('session.board', goToBoard);
   useShortcut('terminal.studio', openTerminalStudio);
+  useShortcut('app.close', () => closeCurrentLevel({}));
+  useCloseMenuEvent();
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
   useShortcut('lens.context', () => toggleContext({}));
@@ -201,13 +242,13 @@ export const useAppShortcuts = ({
   useShortcut('lens.decisions', () => toggleContext({ tab: 'decisions' }));
   useShortcut('lens.summary', () => toggleContext({ tab: 'summary' }));
   useShortcut('lens.workflows', () => goToLens({ kind: 'workflows' }));
-  useShortcut('lens.agents', () => goToLens({ kind: 'agents' }));
+  useShortcut('lens.agents', goToAgents);
   useShortcut('lens.review', () => goToLens({ kind: 'review' }));
   useShortcut('lens.questions', () => goToLens({ kind: 'questions' }));
   useShortcut('lens.files', () => goToLens({ kind: 'files' }), !isExploreSession);
-  useShortcut('lens.explore', () => goToLens({ kind: 'explore' }), isExploreSession);
+  useShortcut('lens.explore', () => toggleCurrentPane({ pane: 'explore' }));
   useShortcut('lens.plans', () => goToLens({ kind: 'plans' }));
-  useShortcut('lens.scripts', () => goToLens({ kind: 'scripts' }));
+  useShortcut('lens.scripts', () => toggleCurrentPane({ pane: 'scripts' }));
   useShortcut('session.terminal', () => toggleSessionTerminal({}));
   useShortcut('lens.pr', () => goToLens({ kind: 'pr' }));
   useShortcut('lens.linear', () => goToLens({ kind: 'linear' }));

@@ -44,8 +44,11 @@ const toTruncatedEvent = ({ event }: SerializeTurnEventParams): TurnEvent => {
         ...(event.model !== undefined ? { model: markTruncated(event.model) } : {}),
         ...(event.handoffId !== undefined ? { handoffId: event.handoffId } : {}),
         ...(event.sentVia !== undefined ? { sentVia: event.sentVia } : {}),
+        ...(event.deliveredBy !== undefined ? { deliveredBy: event.deliveredBy } : {}),
         at: event.at,
       };
+    case 'operator_text':
+      return { ...event, text: markTruncated(event.text) };
     case 'assistant_text':
       return { ...event, delta: markTruncated(event.delta) };
     case 'tool_call_start':

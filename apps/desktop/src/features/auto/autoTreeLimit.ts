@@ -46,7 +46,7 @@ const MAX_ATTEMPTS = 2;
 
 export const writeAutoTreeLimit = async ({ db, workspaceId, usd }: WriteParams): Promise<void> => {
   if (!Number.isFinite(usd) || usd <= 0) {
-    throw new Error('The Auto spend cap must be more than zero');
+    throw new Error('The Auto limit must be more than zero');
   }
   const key = autoTreeLimitKey({ workspaceId });
   const value = String(usd);
@@ -63,5 +63,5 @@ export const writeAutoTreeLimit = async ({ db, workspaceId, usd }: WriteParams):
       return;
     }
   }
-  throw new Error('The Auto spend cap changed in another window, try again');
+  throw new Error('The Auto limit changed in another window, try again');
 };

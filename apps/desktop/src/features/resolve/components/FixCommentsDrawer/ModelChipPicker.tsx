@@ -28,7 +28,6 @@ export const ModelChipPicker = ({
   onChange,
 }: Props) => {
   const dropdown = useDropdown({
-    align: 'end',
     expectedHeight: 420,
     expectedWidth: 360,
     width: 'w-[22.5rem] max-w-[calc(100vw-2rem)]',

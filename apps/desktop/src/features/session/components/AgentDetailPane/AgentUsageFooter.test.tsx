@@ -18,7 +18,7 @@ const contextUsage = [
 ];
 
 describe('AgentUsageFooter', () => {
-  it('shows the model, tokens, cached share and cost for the agent', () => {
+  it('shows the model and cost on one line, and tokens, cache and turns in the detail', () => {
     render(
       <AgentUsageFooter
         aggregate={{ inputTokens: 100000, outputTokens: 1400, estimatedCostUsd: 0.12, turns: 3 }}
@@ -27,14 +27,15 @@ describe('AgentUsageFooter', () => {
       />,
     );
 
-    screen.getByText('Opus 5');
-    screen.getByText(/in ·/);
-    screen.getByText('47% cached');
-    screen.getByText('~$0.12');
-    screen.getByText('3 turns');
+    screen.getByText('Opus 5 · $0.12');
+    expect(screen.queryByText(/in ·/)).toBeNull();
+    expect(screen.queryByText(/cached/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Usage detail' }));
+    screen.getByText('Turns');
+    screen.getByText('from cache');
   });
 
-  it('drops the turn count when it is unknown or zero instead of reading 0 turns', () => {
+  it('drops the turn count from the detail when it is unknown or zero', () => {
     for (const turns of [null, 0]) {
       render(
         <AgentUsageFooter
@@ -49,8 +50,9 @@ describe('AgentUsageFooter', () => {
         />,
       );
 
-      screen.getByText(/in ·/);
-      expect(screen.queryByText(/turns?$/u)).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Usage detail' }));
+      screen.getByText('Input');
+      expect(screen.queryByText('Turns')).toBeNull();
       cleanup();
     }
   });

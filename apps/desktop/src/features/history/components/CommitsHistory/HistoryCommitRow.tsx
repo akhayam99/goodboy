@@ -237,9 +237,7 @@ const HistoryCommitRowView = ({
                 <span className="truncate">{commit.author}</span>
                 <span className="shrink-0">{age}</span>
                 {!commit.pushed && canShowUnpushed && view !== 'done' ? (
-                  <span className="shrink-0 rounded-sm border border-border-soft px-1 text-chip text-faint-foreground">
-                    Not pushed
-                  </span>
+                  <span className="shrink-0 text-faint-foreground">Not pushed</span>
                 ) : null}
               </span>
               <HistoryRowPlanLine parts={parts} conflictFiles={conflictFiles} />

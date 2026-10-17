@@ -1,29 +1,41 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Plus, RotateCcw } from 'lucide-react';
-import { Button, ConfirmPopover, EmptyState } from '@goodboy/ui';
+import type { WorkflowRunHistoryRow } from '@goodboy/db';
+import { Button, ConfirmPopover, EmptyState, ListGrid } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import {
   CONCEPT_ICONS,
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
+import { WorkflowListMenu } from '../../../../actions/WorkflowListMenu';
 import {
   builtinWorkflowState,
   restorableBuiltins,
   type RestorableBuiltin,
 } from '../../../builtinWorkflowState';
+import { workflowRunsOf } from '../../../workflowRunsOf';
+import type { ImportTriggerParams } from '../ImportPopover';
 import { WorkflowListRow } from './WorkflowListRow';
+import { WORKFLOW_LIST_COLUMNS } from './workflowListColumns';
 
 type Props = {
   readonly workflows: ReadonlyArray<Workflow>;
   readonly removedBuiltinIds: ReadonlySet<string>;
   readonly workspaceName: string | null;
   readonly isRestoring: boolean;
+  readonly runs: ReadonlyArray<WorkflowRunHistoryRow> | null;
+  readonly isHistoryFailed?: boolean;
   readonly tabs: ReactNode;
-  readonly importControl: ReactNode;
+  readonly renderImport: (params: ImportParams) => ReactNode;
   readonly onOpen: (workflow: Workflow) => void;
+  readonly onShowRuns: (workflow: Workflow) => void;
   readonly onNew: () => void;
   readonly onRestore: (slugs: ReadonlyArray<string>) => Promise<void>;
+};
+
+type ImportParams = {
+  readonly renderTrigger: ((params: ImportTriggerParams) => ReactNode) | null;
 };
 
 const restoreDescription = (restorable: ReadonlyArray<RestorableBuiltin>): string => {
@@ -39,9 +51,12 @@ export const WorkflowList = ({
   removedBuiltinIds,
   workspaceName,
   isRestoring,
+  runs,
+  isHistoryFailed = false,
   tabs,
-  importControl,
+  renderImport,
   onOpen,
+  onShowRuns,
   onNew,
   onRestore,
 }: Props) => {
@@ -56,7 +71,6 @@ export const WorkflowList = ({
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex min-w-0 items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center">{tabs}</div>
-        {importControl}
         <Button size="sm" onClick={onNew}>
           <Plus size={ICON_SIZE.row} aria-hidden />
           New workflow
@@ -75,14 +89,23 @@ export const WorkflowList = ({
               setIsConfirmingRestore(false);
             }}
             onCancel={() => setIsConfirmingRestore(false)}
-            trigger={() => (
-              <Button size="sm" variant="ghost" onClick={() => setIsConfirmingRestore(true)}>
-                <RotateCcw size={ICON_SIZE.row} aria-hidden />
-                Restore built-in workflows
-              </Button>
-            )}
+            trigger={() =>
+              renderImport({
+                renderTrigger: ({ onToggle }) => (
+                  <WorkflowListMenu
+                    facts={{
+                      canRestore: hasRestorable,
+                      onImport: onToggle,
+                      onRestore: () => setIsConfirmingRestore(true),
+                    }}
+                  />
+                ),
+              })
+            }
           />
-        ) : null}
+        ) : (
+          renderImport({ renderTrigger: null })
+        )}
       </div>
       {workflows.length === 0 ? (
         <EmptyState
@@ -93,16 +116,19 @@ export const WorkflowList = ({
           description="Create one to chain several agents in a single session, or restore the built-in workflows."
         />
       ) : (
-        <ul aria-label="Workflows" className="flex flex-col">
+        <ListGrid label="Workflows" columns={WORKFLOW_LIST_COLUMNS}>
           {workflows.map((workflow) => (
             <WorkflowListRow
               key={workflow.id}
               workflow={workflow}
               builtin={builtinWorkflowState({ workflow })}
+              runs={runs === null ? null : workflowRunsOf({ runs, workflowId: workflow.id })}
+              isHistoryFailed={isHistoryFailed}
               onOpen={() => onOpen(workflow)}
+              onShowRuns={() => onShowRuns(workflow)}
             />
           ))}
-        </ul>
+        </ListGrid>
       )}
     </div>
   );

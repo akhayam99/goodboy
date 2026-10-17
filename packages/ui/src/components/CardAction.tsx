@@ -9,8 +9,6 @@ export type CardActionProps = {
   readonly tooltip?: string;
   readonly tone?: Tone;
   readonly size?: 'compact' | 'default';
-  readonly reveal?: boolean;
-  readonly revealGroup?: string;
   readonly highlighted?: boolean;
   readonly pressed?: boolean;
   readonly expanded?: boolean;
@@ -24,15 +22,12 @@ export const CardAction = ({
   tooltip,
   tone = 'neutral',
   size = 'compact',
-  reveal = false,
-  revealGroup = 'group-hover/agent-card:opacity-100 group-focus-within/agent-card:opacity-100',
   highlighted = false,
   pressed,
   expanded,
   disabled = false,
   onClick,
 }: CardActionProps) => {
-  const isDimmedInPlace = reveal && disabled;
   return (
     <Tooltip
       content={tooltip ?? label}
@@ -55,15 +50,11 @@ export const CardAction = ({
           size === 'compact' ? 'text-chip' : 'text-label',
           tintClasses(tone).hoverBgSoft,
           tintClasses(tone).hoverText,
-          reveal ? cn('opacity-0', revealGroup) : disabled && 'opacity-40',
+          disabled && 'opacity-40',
           highlighted && cn(tintClasses(tone).bgSoft, tintClasses(tone).text),
         )}
       >
-        <Icon
-          size={size === 'compact' ? 12 : 14}
-          aria-hidden
-          className={cn(isDimmedInPlace && 'opacity-40')}
-        />
+        <Icon size={size === 'compact' ? 12 : 14} aria-hidden />
       </button>
     </Tooltip>
   );

@@ -3,7 +3,7 @@ import type { ProviderId } from '@goodboy/types';
 import { ProviderChip } from '../../../../providers/components/ProviderChip';
 import { PROVIDER_LABEL } from '../../../../providers/providerLabel';
 import { toggledProviderPool } from '../providerPool';
-import { ControlChip } from './ControlChip';
+import { ControlChip } from '../../../../../shared/components/ControlChip';
 
 type Props = {
   readonly providers: ReadonlyArray<ProviderId>;
@@ -40,7 +40,7 @@ export const ProviderPoolChip = ({ providers, pool, disabled, onChange }: Props)
           label="Can use"
           value={chipValueOf({ providers, pool })}
           isOpen={open}
-          disabled={disabled}
+          isDisabled={disabled}
           onToggle={toggle}
         />
       }

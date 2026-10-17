@@ -3,7 +3,7 @@
 > **Read this when** you change what ⌘F finds, how the local search index is
 > kept, or how a hit lands in its view. **Not for** the ⌘K palette (see
 > [navigation.md](navigation.md)) or code search inside a repository (the
-> editor and the Explore lens).
+> editor and the Explore pane).
 
 Search reads one local index in the app's own database. Nothing leaves the
 machine: the index holds only text the database already holds, lives in the

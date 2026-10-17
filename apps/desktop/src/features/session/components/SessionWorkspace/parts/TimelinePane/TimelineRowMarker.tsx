@@ -96,7 +96,12 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
     return conceptNode({ ...eventGlyph, isEmphasized: false });
   }
   if (entry.kind === 'learning') {
-    return conceptNode({ icon: BookOpen, tone: 'neutral', label: 'Learned', isEmphasized: false });
+    return conceptNode({
+      icon: BookOpen,
+      tone: 'neutral',
+      label: 'Explained',
+      isEmphasized: false,
+    });
   }
   if (entry.kind === 'plan') {
     return conceptNode({

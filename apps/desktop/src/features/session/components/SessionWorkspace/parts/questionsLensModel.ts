@@ -1,5 +1,6 @@
 import type { Agent, OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { partitionDelegatedQuestions } from '../../../../context/questionDelegate';
+import { questionParts } from '../../../../context/components/QuestionsTab/questionParts';
 
 type QuestionRowKind = 'waiting' | 'delegated' | 'staged' | 'dismissed' | 'answered';
 
@@ -56,20 +57,31 @@ export const buildQuestionsLens = ({
   };
 };
 
-type VisibleParams = {
-  readonly model: QuestionsLensModel;
-  readonly isAnsweredOpen: boolean;
+type RowParams = {
+  readonly row: QuestionRow;
 };
 
-export const visibleQuestionRows = ({
-  model,
-  isAnsweredOpen,
-}: VisibleParams): ReadonlyArray<QuestionRow> => [
-  ...model.waiting,
-  ...model.delegated,
-  ...model.recent,
-  ...(isAnsweredOpen ? model.answered : []),
-];
+export const questionRowTitle = ({ row }: RowParams): string =>
+  questionParts({ text: row.question.text }).title;
+
+type ModelParams = {
+  readonly model: QuestionsLensModel;
+};
+
+export type QuestionGroups = {
+  readonly waiting: ReadonlyArray<QuestionRow>;
+  readonly answered: ReadonlyArray<QuestionRow>;
+};
+
+export const questionGroupsOf = ({ model }: ModelParams): QuestionGroups => ({
+  waiting: [...model.waiting, ...model.delegated],
+  answered: [...model.recent, ...model.answered],
+});
+
+export const questionRowsOf = ({ model }: ModelParams): ReadonlyArray<QuestionRow> => {
+  const groups = questionGroupsOf({ model });
+  return [...groups.waiting, ...groups.answered];
+};
 
 type NextParams = {
   readonly model: QuestionsLensModel;

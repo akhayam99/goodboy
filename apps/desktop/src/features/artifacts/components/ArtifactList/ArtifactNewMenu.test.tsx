@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
-  state: { openArtifactCreation: vi.fn() },
+  state: { openArtifactCreation: vi.fn(), sessions: [], workspaces: [] },
 }));
 
 vi.mock('../../../../store', () => ({

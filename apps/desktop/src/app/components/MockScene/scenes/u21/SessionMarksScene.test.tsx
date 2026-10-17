@@ -153,11 +153,8 @@ describe('the session marks scene', () => {
       </ToastProvider>,
     );
 
-    const title = await screen.findByRole('heading', {
-      level: 1,
-      name: 'Refactor the CSV mapper',
-    });
-    expect(title).toBeDefined();
+    const title = await screen.findByTestId('overview-title');
+    expect(title.closest('h1')).not.toBeNull();
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
   });
 

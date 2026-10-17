@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn, IconButton } from '@goodboy/ui';
+import { cn, ICON_SIZE, IconButton } from '@goodboy/ui';
 
 export type QuestionPagerModel = {
   readonly index: number;
@@ -52,7 +52,7 @@ export const QuestionPager = ({ pager }: Props) => {
           icon={ChevronLeft}
           label="Previous question"
           variant="ghost"
-          iconSize={14}
+          iconSize={ICON_SIZE.control}
           disabled={pager.index === 0}
           onClick={pager.onPrevious}
         />
@@ -60,7 +60,7 @@ export const QuestionPager = ({ pager }: Props) => {
           icon={ChevronRight}
           label="Next question"
           variant="ghost"
-          iconSize={14}
+          iconSize={ICON_SIZE.control}
           disabled={pager.index >= total - 1}
           onClick={pager.onNext}
         />

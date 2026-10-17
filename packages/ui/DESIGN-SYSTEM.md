@@ -53,6 +53,15 @@ in front) chrome < content < raised = floating: nothing is brighter than white,
 so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
 (what sits inside) content > panel > inset: the deeper, the darker.
 
+The window backdrop is step 0 plus one glow: `bg-backdrop` paints `chrome`
+under `--app-backdrop`, a radial of `primary` from the top-left corner (the
+website accent hue). `--app-backdrop-strength` is its alpha in percent, 3 by
+default, a faint glow over chrome (0 turns it off); light mode keeps the
+same strength (`--app-backdrop-scale: 1`). Only `AppShell` (and the c02 levels scene that stands in for it) paints it,
+under the top bar and
+the left column; the sheet, the session rail and every drawer stay opaque and
+flat. Mock scenes preview a strength with `?backdrop=<n>`.
+
 `drawer` sits beside the page surface, not on the ladder: a right drawer is its
 own container next to the sheet and is painted one step quieter than
 `background`, between `chrome` and `background` in both themes (dark
@@ -100,11 +109,37 @@ selected is 13% and 12%, so a selected row always reads above a hovered one.
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
-hairline track, `bg-selected` on the active segment, no raised pill. It has
-three sizes: `xs` (28px strip, for a header row that also holds the title and
+hairline track, `bg-selected` on the active segment, no raised pill. A
+selected nav entry also lights its icon in its own kind color, never the
+label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
+doors, `RailButton` and the pressed session tool) over one function,
+`navEntryToneOf`, which takes the nav kind colors first (Agents and Auto
+agents info blue, Artifacts merged violet, the owner's call for the nav only),
+then the icon's `CONCEPT_TONE` (questions warning, files and comments info,
+checks success) and falls back to
+`primary` for an entry with no kind color (Overview, Terminal, Settings).
+
+A selected row adds no hover wash on top of `bg-selected`
+(`data-[selected=true]:hover:bg-selected`), and faint text inside it reads as
+muted (`[data-selected='true'] .text-faint-foreground` in `styles.css`), so
+every line of a selected row clears 4.5:1 on every surface step in both themes.
+A tinted chip keeps its rest fill at hover and draws its ring stronger
+(`hoverRing`); a tone's `hoverBg` is the neutral `bg-hover` overlay, never a
+stronger tint, because a 20% tint under tone text fell under 4.5:1. Text never
+takes an `opacity-*` step: a quiet model label is the muted variant of
+`RoutingLabel` (name in `muted-foreground`, provider mark in its color). The
+composed cases (tint, selected row) live in `token-contrast-floor.test.ts`,
+Composed contrast.
+
+`SegmentedTabs` has three sizes: `xs` (28px strip, for a header row that also holds the title and
 actions), `sm` (36px) and `md`; the tablist carries `data-size` so a test can
-check it against its neighbours. No ring and no primary tint mark a
-selection; the focus ring stays the only ring, so focus and selection read
+check it against its neighbours. The track hugs its tabs (`w-fit`) unless it
+`fill`s the row. A count badge (a string or a number) never reads 0 and never sits on the
+selected tab, where the list under it already shows the rows; a node badge (a
+changed dot) stays; a
+caller shows the switch only when two or more options have content (one option
+is a disabled select, not a switch), and never inside a pane. No ring and no
+primary tint mark a selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
 A row that holds its own links or buttons is `InteractiveRow`: one overlay
@@ -120,6 +155,96 @@ icons line up under the parent label and every nested list indents by one
 step. The Settings navigation does not use it: its rows are one 28px line of
 icon and word (`SettingsNavRow` in the desktop app), a 6px `StatusDot` at the
 end names a row that needs attention, and the sentence lives on the page.
+
+## List grid
+
+Every list of records (agents, runs, tasks, checks, worktrees, sessions in the
+List view) is one `ListGrid`: a single CSS grid whose rows are `subgrid` rows,
+so every cell of a column starts and ends on the same x on every row. The
+caller declares its columns once (`ListGridColumn`: a fixed width in px, or
+`fill` for the one title column), and the grid adds a zero edge track on each
+side so the column gap is also the row's inner inset. Rows hold no flex of their
+own and no pill whose width varies: a role is a plain word in a fixed column, a
+state is a `StateDot` or a glyph in a 16px column.
+
+- `align: 'end'` with `isNumeric` right aligns a number in tabular figures, so
+  "1m 12s" and "12m 40s" end on one edge.
+- `isTitle` marks the `fill` column: foreground, `text-row`. Other columns read
+  muted, or `tone: 'hint'` for ids and ages.
+- A row with `onSelect` is one button: the row is the action, it carries no
+  buttons of its own and nothing appears on hover. `isSelected` sets
+  `data-selected` and `aria-current`. Up and Down move focus between rows.
+- `rowHeight` is 32 by default and 28 in the sidebar.
+- `shouldHideWhenEmpty` on a column drops it from the template, its cells and its
+  gap, while no mounted row fills it (a cell of `null`, `undefined`, `false` or
+  `''` is empty). As soon as one row fills it, every row keeps the cell, empty
+  where it has nothing, so the column stays on one x. Unknown is an empty cell,
+  never "0 B", "-" or "no port".
+- `ListGridGroup` takes an optional `mark` drawn right before its name, over
+  the rows' leading glyph column: the Sessions List puts one
+  6px `StatusDot` in the stage tone there (`stageTrackOf`), so rows keep only
+  their state node and no row carries a track.
+- `ListGridGroup` names a group in sentence case with its count right after
+  the name, like a Board lane and a sidebar group (a count alone in the last
+  column read as a value of the row below). The count shows from 2 rows (a
+  group of one says nothing a row does not), and a capped group passes `fold`
+  (`{ label: 'Show all', onToggle }`), the quiet fold word right after the
+  count, so the total is said once on the label and the foot carries no number;
+  an `action` (one visible control,
+  such as the `Open session` arrow on a Terminal page group) sits at the end of
+  the heading row; a
+  grouped grid (`isGrouped`) spaces its groups 16px apart, never with a divider.
+  `headingLevel` is 3 by default and 2 on a page whose title is the only heading
+  above the groups. A group with no `label` draws its rows alone, with no heading
+  and no count, for a lead group that needs no name above a named one.
+- A list with a keyboard cursor (Tasks) makes each group its own listbox
+  (`isListbox`, `activeDescendant`) and its rows options (`isOption`,
+  `isCursor` marks the cursor with `data-cursor` and the hover fill). What is not
+  a row stays outside the listbox: `lead` holds the lines above the rows, `foot`
+  the lines under them, and `isSticky` keeps the group label on top while a long
+  group scrolls.
+- `ListGridLine` is a one-line gray note across the grid, a button when it has
+  `onClick` ("Show all 38", "Linear is rate limited. Retry").
+
+`StateDot` is the one state mark of a list or a sidebar slot: a 6px
+`StatusDot` named by its state word (the tooltip and the accessible name),
+`running` (info), `needsYou` (warning), `failed` (danger), `unread` (primary),
+`done` (success), and `idle` and `stopped`, a neutral ring with a transparent
+fill on every background. A running dot pulses (under `motion-safe`) only when
+the caller passes `isLive`, on the item that runs (a list row, a tail glyph);
+chrome (top bar chips, doors, rail slots) stays static. A count next to a door
+lives in the dot's tooltip, never as colored text.
+
+Scenes `c01-grid-list`, `c01-grid-groups`, `c01-grid-dots` and `c01-grid-type`
+show the grid, its groups, every dot and the two size specimen.
+
+### Counts, fact lines and durations
+
+Three helpers in `apps/desktop/src/shared/utils/` own how a number, a fact line
+and a duration read, so no surface writes its own rule.
+
+- `countSlotText({ count, isBesideGlyph })` is the text of every sidebar slot
+  and tab badge. It returns the grouped number ("12", "1,024") from 1, or from 2
+  when `isBesideGlyph` says a glyph beside it already means one (a session
+  signal "?", a running node, an unread dot). It returns `null` at 0, while
+  loading and when the read is unknown or denied: the slot draws nothing, never
+  "-", "0", "None" or a skeleton glyph, and the reason lives in the tooltip.
+- `joinFacts({ facts })` joins a fact line with the one " · " separator. It
+  trims each part and skips `null`, `undefined`, `false` and empty parts, so a
+  line never shows a doubled or dangling separator ("Limit $3.00 · $1.12
+  spent"). It returns `''` when nothing is left.
+- `formatDuration({ durationMs })` (`time/formatDuration.ts`) is the one
+  duration, live and done: "42s", "2m 37s", "1h 12m". It returns `null` under
+  one second, so nothing shows before the first second and "ms" never shows. The
+  clock form "2:37" is gone. A run step clock counts execution only, never the
+  time spent waiting on you: a tail that names `stepAgentId` reads the same
+  active time as the step row (`agentActiveClock` over `agentActiveTime` in
+  `features/workTreeModel`, from the `WorkTimeContext` source), so the row and
+  the tail always show one value, and it draws no clock without that source. A
+  tail that waits for your answer draws no clock. Only an operation with no
+  wait in it (a cleanup, a history rewrite, a fix run) keeps `useTailClock`
+  ticking once a second over its own `startedAt`. Both format through
+  `formatDuration`, returning `null` in the first second.
 
 ## Type scale
 
@@ -147,20 +272,23 @@ only, so emphasis gets a synthetic slant. The boot shell in
 `apps/desktop/index.html` stays on `system-ui`, because it paints before the
 stylesheet loads, and the exported report embeds the same file as a data URI.
 
-| role           | measure                       | used for                                                                               |
-| -------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
-| `text-display` | 24/32, 600, -0.01em           | onboarding titles and the Impact title                                                 |
-| `text-title`   | 16/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
-| `text-heading` | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
-| `text-row`     | 13/20, 500                    | a top-level row label, a card title                                                    |
-| `text-body`    | 14/20                         | running text; text with no class inherits it from the body                             |
-| `text-prose`   | 14/22                         | messages, markdown, artifacts                                                          |
-| `text-label`   | 12/16                         | controls, a nested row, a status label                                                 |
-| `text-eyebrow` | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
-| `text-meta`    | 12/16, tabular                | time, ordinal, cost, count, a row's second line                                        |
-| `text-chip`    | 11/16, 500, tabular           | the label inside a chip, a badge, a key cap, a count pill                              |
-| `text-code`    | mono 12/18                    | branch, path, command, inline code                                                     |
-| `document`     | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
+| role           | measure                   | used for                                                                               |
+| -------------- | ------------------------- | -------------------------------------------------------------------------------------- |
+| `text-display` | 24/32, 600, -0.01em       | onboarding titles and the Impact title                                                 |
+| `text-title`   | 16/24, 600, -0.005em      | the one pane title (h1) of a surface                                                   |
+| `text-heading` | 14/20, 600                | a page-grade section, a popover title, a kickoff question                              |
+| `text-row`     | 13/20, 500                | a top-level row label, a card title                                                    |
+| `text-body`    | 14/20                     | running text; text with no class inherits it from the body                             |
+| `text-prose`   | 14/22                     | messages, markdown, artifacts                                                          |
+| `text-label`   | 12/16                     | controls, a nested row, a status label                                                 |
+| `text-eyebrow` | 12/16, 500, sentence case | a section label, only through `Eyebrow`                                                |
+| `text-meta`    | 12/16, tabular            | time, ordinal, cost, count, a row's second line                                        |
+| `text-chip`    | 11/16, 500, tabular       | the label inside a chip, a badge, a key cap, a count pill                              |
+| `text-code`    | mono 12/18                | branch, path, command, inline code                                                     |
+| `text-ui`      | 13/20                     | every line of a two size surface that is not its title or prose                        |
+| `text-read`    | 15/24                     | the prose of a two size surface                                                        |
+| `text-lead`    | 15/24, 500                | the title of a two size surface                                                        |
+| `document`     | 15/25                     | the report document body (screen and file); a reading exception, not a `--text-*` role |
 
 Mono is for code: a branch, a path, a command, a sha and code. Money, counts,
 durations, percentages, ages and key letters are the sans stack with
@@ -175,10 +303,28 @@ the report reads the same way in the app, on disk and on paper, and the paper
 medium shrinks every one of its tokens under `@media print`. It never appears
 outside `ArtifactDocument`.
 
+### Two sizes per region
+
+A surface rebuilt for 0.27.0 reads in two sizes and two weights. The sidebar
+is 13 throughout: a door, a session row and a rail entry are one 28px row in
+`text-ui` (13, 400) whatever the glyph, with `ICON_SIZE.row` icons in hint gray
+at rest (only the selected entry's icon takes its kind color), `bg-selected`
+plus foreground for the selected row, and
+a trailing slot drawn by `countSlotText`. Nothing appears on hover; a shortcut
+lives in the tooltip. The page is 15 for its title (`text-lead`) and its prose
+(`text-read`) and 13 for everything else: list cells, labels, times, counts,
+state words (`text-ui`, or `text-row` for a row's name and a group label).
+Weight is 400 or 500 and comes with the role, never a `font-*` utility. Hierarchy comes from the three grays of the text hierarchy, never
+from a third size. A branch or a path in such a surface is `text-ui font-mono`,
+listed in `scale-rules.mono-code.json` like any other code. Every list built on
+`ListGrid` is a two size surface, and `two-size-type.test.ts` fails when a file
+that renders `ListGrid` reaches for another role. The older roles stay for the
+surfaces that have not moved yet; a surface moves whole, never half.
+
 A role with no weight inherits one: `text-label font-medium` is a control label
 at 500, `text-chip` a chip. Weights are 400, 500 and 600, and
-600 belongs to display, title, heading and eyebrow. `text-row` and `text-chip`
-carry 500 themselves, so a weight utility next to a role is redundant, and
+600 belongs to display, title and heading. `text-row`, `text-lead`, `text-chip`
+and `text-eyebrow` carry 500 themselves, so a weight utility next to a role is redundant, and
 `forbidden-patterns.test.ts` counts it (`role-weight-override`). Tracking lives only inside
 the roles. A leading utility still composes with a role
 (`text-chip leading-none` for a one-line badge), because the role reads
@@ -201,7 +347,14 @@ no baseline lists it. `spacing-grid.test.ts`
 reads `paneRhythm.ts`, `timelineRhythm.ts` and `workMetaSpec.ts` and fails on a
 half step, or on a row height outside 24, 28, 32, 36, 40 and 48. A one-line rail
 row is `navRail.row` (32px), a two-line one `navRail.rowTwo` (48px). A session
-row in the left column is 28px, and so are the pages nested under it.
+row in the left column is 28px, and so are the pages nested under it. A tree
+row (the Auto work rail, a run's step tree) is two lines in 48px:
+`PANE_RHYTHM.tree.line` (28, the node sits on its centre) then
+`PANE_RHYTHM.tree.meta` (20); the work rail reads them from `railSpec.ts`. A
+property list is `PANE_RHYTHM.property`: an 88px label column and a value
+column, the label and the value's first line both 28px so their centres match,
+a wrapping value flowing below, groups 24px apart. `spacing-grid.test.ts`
+holds the work rail, the tree row and the property grid on the scale.
 
 The Sessions block shares one left edge and one gap. The `Sessions` eyebrow
 (`sessionList.headerInset`, 16px), the door icons (`navRail.inset` plus
@@ -214,6 +367,14 @@ top margin of its own. One separator sits between the doors and the Sessions
 header, with the doors' gap above and below it, and the first row under the
 header is New session, shaped like a session row. `paneRhythm.test.ts` holds the
 three edges and the gaps.
+
+The main sidebar has one icon column. Every leading glyph (New session, the
+doors, the session state nodes, Settings, and the same buttons on the folded
+rail) sits in `navRail.icon`, a 12px slot that centers a glyph of any size at
+22px, the folded rail's axis and the workspace tile's center in the top bar
+while `--titlebar-inset` is 0. `sidebar-icon-column.test.tsx` reads the centers
+in the `r4-column-dark` and `r4-column-light` scenes and on the folded rail,
+within 1px.
 
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
@@ -385,6 +546,13 @@ Eight tones (`success`, `info`, `warning`, `danger`, `primary`, `merged`,
 `tintClasses(tone)`. Components take a `Tone` and call it. They never
 hand-write `bg-warning/10`. Every solid semantic fill uses the shared `on-tone`
 text colour.
+
+An icon inside a solid fill, a `primary` or `danger` button or a `ghost-danger`
+button takes the label colour (`[&_svg]:text-current` in `tintClasses(tone).solid`
+and `BUTTON_VARIANT_CLASSES`), so a toned icon passed in never draws a dim tint
+on the fill. `ButtonIconColor.test.tsx` pins it per variant and per tone; the
+`on-tone` contrast on every tone in both themes is pinned by
+`token-contrast-floor.test.ts`.
 
 ### Identity palettes
 
@@ -816,7 +984,11 @@ while it is still on the row.
 
 A session in the left column is one 28px line: a 14px `WorkNode` (`size="sm"`)
 and the title, with a `gap-2` between them and `px-2` inside the pill. It has
-no second line, no `ToneBar`, no marks, no age and no cost. `sessionNodeOf`
+no second line, no `ToneBar`, no marks, no age and no cost. A `WorkNode`
+fills its disc with `bg-background` to mask a rail line behind it; on a
+selected or current row it takes `isTransparent` (`StateNode`
+`isOnSelectedRow`), so an idle node stays a ring on `bg-selected` and never
+reads as a solid dot. `sessionNodeOf`
 picks the node from the stage and, under needs you, from the winning reason,
 and every surface that says why a session waits reads the same table,
 `ATTENTION_REASON_META` in `features/session/session-stage.ts`: one mark, one
@@ -925,7 +1097,7 @@ sessions`; the first `Tab` still selects the previous session wherever it sits.
 
 The 44px rail (`ColumnRail`) keeps its 32px door buttons and adds 28px node
 buttons (`RAIL_NODE_BUTTON` in `RailButton.tsx`) under the doors, in the
-workspace scope only: the open session (the row's `SessionStateNode`, current
+workspace scope only: the open session (the row's `StateNode`, current
 fill on its page, no fill and `text-foreground` while a studio sits over it),
 then up to seven pinned sessions with the title and the stage words in a
 tooltip, then `+N` in `text-meta`. The open session and `+N` open a flyout
@@ -1053,7 +1225,13 @@ its one tooltip names the plan ("Planned Opus 5 High, routing picked Sonnet 5
 Medium", "Planned High, ran Medium"). Nothing is struck through. The activity
 feed, the workflow run tree and the Subagents tree of a Brief all end their
 rows with this meta, so a step and its sub-agents read the same wherever they
-appear. Headers, cards, tables and the queue use the inline `RoutingLabel`.
+appear. Headers, cards, tables and the queue use the inline `RoutingLabel`. `RoutingLabel` says
+the effort only when it is not the default Medium ("Sonnet 5.5 · High", plain
+"Sonnet 5.5" at Medium), unless the effort diverged from the plan; its
+tooltip always reads the whole route. The picker trigger draws the provider mark in its brand color, reads "Auto ·
+Sonnet 5.5" while Auto resolves the route (`autoTrigger="resolved"`), and says
+a verbosity only when it is not
+Normal ("Verbose", "Terse"), and a pinned route as "· pinned" in gray.
 
 ### The plan in the workflow builder
 
@@ -1167,10 +1345,13 @@ A selected card is a fill plus a check: never a ring, a border and a wash
 together. A focus ring appears on keyboard focus (`focus-visible`) only.
 
 Rules for new and changed code (the migration of old code is the sweep's):
-icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18); mono is for
+icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18), on the icon and
+on an `iconSize` override alike, and a file never keeps its own alias of a step
+(`const KIND_ICON_SIZE = 10`): `scale-rules.test.ts` counts all three; mono is for
 branch, path, command, sha and code; money, counts and durations are sans with
 `tabular-nums`; rows sit on 24, 28, 32, 36, 40 and 48; gaps sit on 4, 8, 12, 16,
-24 and 32 (no `gap-5`, `gap-7`, `gap-10`); uppercase goes through `Eyebrow`.
+24 and 32 (no `gap-5`, `gap-7`, `gap-10`); labels are sentence case, and a
+section label goes through `Eyebrow`.
 `control-heights.test.ts`, `kbd-overrides.test.ts`,
 `hand-rolled-radio-groups.test.ts`, `switch-labels-name-the-setting.test.ts`,
 `row-heights-on-the-scale.test.ts` and `scale-rules.test.ts` hold the line.
@@ -1194,7 +1375,14 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 - **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
   padding 4, at least the trigger's width and at most 360 by 320, scrolling in
   a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
-  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). It keeps 12px from
+  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). Every select,
+  picker and filter opens under its trigger, start aligned (`side` `bottom`,
+  `align` `start`, the hook's defaults), and clamps inside the window. The hook
+  measures the trigger itself when the anchor wrapper holds one element, so a
+  wrapper stretched by a column never pushes the popover to the far edge.
+  `side: 'right'` opens beside the trigger (the terminal picker, the bug report)
+  and flips left when the right is short. An override of either needs a reason
+  in `regressions/popover-anchoring.baseline.json`, which only falls. It keeps 12px from
   the viewport edge. `popupWidth="trigger"` fixes the width to the trigger's
   (160px at least) so a long title truncates instead of widening the popover;
   use it with an `isBlock` trigger in a drawer or a form. The 360 cap is a
@@ -1218,10 +1406,12 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   (`branchPickerOption`).
 - **Search** appears on its own above 8 options (or with `searchable`): a flush
   row (search icon, no box, a hairline divider below, no focus ring of its own),
-  a fuzzy filter, the match underlined, a count ("3 of 41"), and an empty state in one
+  a fuzzy filter, the match underlined (the list itself shows the matches, so no
+  "3 of 41" count), and an empty state in one
   sentence plus the `create` row when the caller can make the value.
 - **Multiple**: a checkbox in the leading slot with the row icon beside it,
-  Enter toggles and stays open, a footer with the count and Clear.
+  Enter toggles and stays open, a footer reading "2 selected" (nothing at 0)
+  and Clear.
 - **Empty copy**: `emptyLabel` and `noMatchLabel` replace the default "No
   {noun}s yet" and "No {noun} matches" sentences when the list has its own
   words ("No sessions match").
@@ -1299,26 +1489,26 @@ without reading a class.
 ## Notices
 
 `Notice` is the one shape for an error, a warning, an info line or a success
-that sits in the page. Its tone lives only in one inner line and in the icon.
-The surface stays neutral, the title is `foreground` and the body is
-`muted-foreground`. Tone never colors the text or fills the surface.
+that sits in the page. Its tone lives only in the 16px icon. The surface stays
+neutral, the title is `foreground` and the body is `muted-foreground`. Tone
+never colors the text, fills the surface or draws a line.
 
 - **Tone**: `danger` (`CircleAlert`), `warning` (`TriangleAlert`), `info`
-  (`Info`), `success` (`CircleCheck`).
-- **The tone line is inner.** `inline`, `banner` and `floating` draw a
-  `ToneBar` at `card` density inside the padding: 3px wide, 6px from the left
-  edge, spanning the content box (top and bottom equal to the padding) with a
-  minimum height of 16px, so a title-only notice gets a line as tall as its
-  title. The icon stays beside it: a tone line and a tone icon on a neutral
-  surface. No outer edge, ring or tinted fill, on any card. `transcript` is
-  the one exception: it keeps a 2px edge at the left of its transparent
-  surface, because there it is a quote rail, not a card.
+  (`Info`), `success` (`CircleCheck`), always at 16px.
+- **No tone line, no border.** `inline` and `banner` sit on `bg-subtle`,
+  `rounded-md`, 12px padding, with no border, no ring, no `ToneBar` and no
+  side rail: a side line on a rounded box is the debt the design system
+  retires, and the icon already says the tone. `transcript` is the one
+  exception: it keeps a 2px edge at the left of its transparent surface,
+  because there it is a quote rail, not a box. `floating` (toasts) takes the
+  one floating surface, `FLOATING_SURFACE`, like every other level 4 layer.
   `tone-edges-are-inner-lines.test.ts` counts `border-l-2` next to a tone
   class per file, and its allowance only shrinks.
 - **Placement** changes the surface and padding, never the anatomy.
   `transcript` is transparent with no border, `inline` and `banner` sit on
-  `bg-subtle` with `border-border-soft`, `floating` sits on `bg-floating` with
-  a shadow.
+  `bg-subtle`, `floating` sits on `FLOATING_SURFACE`.
+- **One notice per state, one primary.** A state that already has a notice on
+  the screen never gets a second box saying it again.
 - **Title names the action** that failed ("Couldn't load pull requests"). The
   body states the cause in plain words. Raw output (stderr, exit codes, paths,
   URLs) goes in `detail`, which renders behind a Details disclosure in
@@ -1358,9 +1548,12 @@ detail.
 props and reads no store, so it also renders inside `ErrorBoundary` after the
 app below it has crashed.
 
-- **Variants**: `floating` is level 4 (`floating`, `shadow-lg`, `border`,
-  `rounded-lg`), placed by the host at the bottom of the window with no overlay.
-  `inline` drops the shadow onto `subtle`, for the crash and startup screens.
+- **Variants**: `floating` is level 4 (`FLOATING_SURFACE`), placed by the host
+  to the right of the sidebar bug icon (`side: 'right'`, `align: 'end'`, inside
+  the window) with no overlay, or at the bottom centre when the icon is not on
+  screen. `inline` drops the shadow onto `subtle`, for the crash and startup
+  screens. The body scrolls in a `ScrollFade` between the head and the action
+  row, so a short window never pushes the sheet off screen.
 - **Head**: the bug glyph, a `text-heading` title, an optional type control (a
   `chip` Listbox) and an Esc `KbdPill` when the sheet can close.
 - **Line**: one borderless `text-body` input that takes focus on mount, and
@@ -1375,8 +1568,10 @@ app below it has crashed.
   summary in `faint-foreground`) that opens the exact text in a `muted`
   `ScrollFade` of `text-code`, a copy button, and the line that says what never
   leaves.
-- **Action row**: `FormActions`, with the destination or the error in
-  `text-meta` on the left, Add detail while the detail is closed, and the
+- **Error**: a danger `Notice` (`inline`) at the end of the body, above the
+  action row.
+- **Action row**: `FormActions`, with the destination in `text-meta` on the
+  left, Add detail while the detail is closed, and the
   primary button whose label names the destination, with its shortcut in an
   on-tone pill.
 
@@ -1388,14 +1583,14 @@ content sheet. The column is 240px by default, resizable from 200 to 400
 (`COLLAPSED_RAIL_WIDTH`). The desktop fills it with `SideColumn`; the rules for
 what it holds live in [docs/navigation.md](../../docs/navigation.md) → Surfaces.
 
-| part        | shape                                                                                                  |
-| ----------- | ------------------------------------------------------------------------------------------------------ |
-| toggle      | a size-8 icon button centred in a 44px box, on the same axis as the workspace tile and the rail        |
-| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary |
-| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover      |
-| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame               |
-| foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                       |
-| rail button | a size-8 icon button with the word and shortcut in a right-side `Tooltip`                              |
+| part        | shape                                                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------- |
+| toggle      | none in the column: the one sidebar toggle is `ColumnToggleButton` in the top bar, left of Back (⌘B)     |
+| New session | a 28px row, `text-row`, the primary tint (`bg` and `ring` of `tintClasses('primary')`), `+` in primary   |
+| door        | a 28px row: 14px concept icon, the word in `text-row` muted, the shortcut in `text-chip` on hover        |
+| current     | `bg-selected`, `text-foreground`, `cursor-default`, `aria-current="page"`, one per frame                 |
+| foot        | Settings as a door, then the Goodboy row (`flex-1`) and a size-7 bug icon button                         |
+| rail button | its open row without the word: `h-7 w-full px-2`, the icon at the row's x, the word in a right `Tooltip` |
 
 Rows sit 4px apart (`gap-1`); the doors start 4px under New session. The
 column swaps its content only for Settings, as two layers in place that
@@ -1410,24 +1605,21 @@ page (Settings in the default shell) draws no band (`hasBand={false}`) and gives
 its page the band's 40px as top padding, so the title row lands where a session
 page's does under its trail.
 
-**The open session is a card.** In the sessions list the open session and its
-page rows sit in one card (`data-session-card`, `SESSION_CARD_CLASS`):
-`rounded-lg`, `bg-elevated`, a `border-soft` hairline and `p-0.75` inside it, so
-the rows sit 4px from the list edge as they did without the border. The card
-must read against the chrome in both themes: the surface or the hairline clears
-1.25:1 (`sessionCard.test.ts` measures it). In light the white surface alone is
-1.15:1, so the hairline carries it. It is not `bg-fill`: that is white at 6%
-and the hover layer is 8.5%, so a card on it would read as a stuck
-hover. The rows inside are `rounded-md`, concentric with the card, and the
-current page keeps `bg-selected`. The card stays around the session row when
-`←` folds the pages, it follows the open session, and every other session is a
-flat row. The selection checkbox sits relative to its row, so it moves with the
-card's padding.
+**A session has its own rail, not a card.** The workspace list keeps every
+session a flat row and never changes level; the open one is set in medium
+weight and takes `bg-selected` while its page is on screen. Its pages, projects
+and linked work live on the session level of the session rail
+(`SessionRail/SessionLevel`; Projects and Linked as `LevelCard`s, a level 2
+`bg-subtle` panel with its header row inside), at the left of the page on the page background
+with the column's row recipe, and its deeper levels slide in there over 180ms,
+so no card nests inside the list. A page
+entry ends in one fixed 40px right-aligned slot: the count in tabular gray and
+a 6px dot for running (info) or open questions (warning).
 
 **Pinned sessions are a group.** A **Pinned** group sits first in the sessions
 list, above every other group, in pin order. Its header is an `Eyebrow` with the
 count, the same header as a group's: a toggle in a grouped list, a plain label
-in a flat one (the rest of the flat list then reads Other sessions, so the
+in a flat one (the rest of the flat list then reads Sessions, so the
 boundary is named, with no divider). A pinned row is the same row as any other,
 with no glyph at rest.
 
@@ -1440,12 +1632,16 @@ draws the only line between it and the detail. Every page rail is 288 wide
 adds the fold control to the first row; `isCollapsed` hides the rail, and
 `rail={null}` draws no rail at all, for a page with nothing to list (Chat before
 its first chat, Terminal before its first terminal). Chat and Terminal rails
-never fold, and their first child is the full-width secondary New chat / New
-terminal button. The page
+fold like every page rail (⌥⌘B, `useInnerColumn`), and their first child is
+the full-width secondary New chat / New terminal button. A folded rail keeps a
+44px strip with Show the rail at the fold control's height. The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
 forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
-title row: a 28px secondary button with the funnel and the count of active
-filters, opening the same facets in a popover.
+title row: a 28px secondary button with the lines icon (`ListFilter`) and the count of active
+filters, opening the same facets in a popover. Every filter trigger renders
+through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only
+the two icon-only `xs` triggers (the Sessions header and the file tree), and
+that list only falls.
 
 ## Pane anatomy
 
@@ -1460,20 +1656,35 @@ owns the gap below the header, and children add no top margins. The root is
 `@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
 `StudioShell` it fills the pane and `PageColumn` centres the column inside it.
 
-**One header grid.** Every page, sub-page, studio and the Board uses the same
-three rows. A 40px band (the `Trail` or the studio band: the crumb at the column's
-left, Ask or Close at its right edge), a 32px title row directly under it with the
-page's `h1` at `text-title` and the actions at its right, and an optional 12px muted
-meta line 4px under the row. The title's centre is therefore 56px under the pane top
-and its left edge is the column's content edge on every page; `frameGeometryOf`
+**One header grid.** Every page, sub-page, studio and the Board draws its header
+through `PageHeader` (`packages/ui/src/components/PaneShell/PageHeader.tsx`): the
+12px header inset (`PANE_RHYTHM.headerInset`), or a 40px studio band where the band
+still holds Close, a 32px title row with the page's `h1` at `text-title` and the
+actions at its right, and an optional 12px muted meta line 4px under the row. The
+title's centre is therefore 28px under the pane top (56px under a band) and its left
+edge is the column's content edge on every page; a page names its kind
+(`page="overview"`) and `PAGE_MEASURE` gives its column; `frameGeometryOf`
 (`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Every
 page has one of four frame types in `PAGE_FRAME` (column 1008, reader 768, stage, split
 `[rail 288][detail]`), see [the frame map](../../docs/styling.md#the-frame-map); in a split page the
 band is the first child of the detail, never over the rail. Inside
 a session the band is the `TrailBar`, and in a studio `StudioFrame` draws it inside a
 `PageColumn` of the studio's tier and hands its body `UnderTrailContext`, so the header
-adds no top padding; outside both, a bare page keeps 12px above. The Board has an
-empty 40px band above its title row to land on the same 56px. Optional `tabs` sit on
+adds no top padding; outside both, a bare page keeps 12px above.
+
+**One title per page, no studio title band.** The studio band never draws a
+title, a crumb of its own, an icon or a subtitle: the page `h1` is the one
+title. `STUDIO_META[kind].close` says where Close lives. A sidebar door page
+(`none`: Tasks, Chat, Workflows, Terminal) has no band and no Close; the top bar
+Back and Escape leave it. A closable overlay (`header`: Monitoring,
+Notifications, Guide) has no band either: `StudioFrame` hands its Close button
+to the page through `PaneActionsContext`, so `PaneShell` draws it as the last
+action of the title row. The other overlays (`band`: Settings over the window,
+Impact, What's new, Pair device, Add workspace) keep a 40px band that holds only
+Close. A band also appears when the body hands it a trail (`StudioTrail`, the
+workflow editor and the Settings crumbs) or a header accessory, and only then is
+the body `UnderTrailContext`. The bandless pages, the Board and Settings included,
+sit on the 12px header inset in `frameGeometryOf`, like a session page. Optional `tabs` sit on
 their own row under the meta line, at the column's left. A glyph never indents the
 title: `PaneShell` has no `icon`, `glyph` or `tone`, the concept lives in the crumb. The
 crumb names the structure and the `h1` the object, and a report's document title is an
@@ -1482,11 +1693,11 @@ There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
 fixed `h-8` row) through the custom `header` slot. The agent detail passes
-`AgentHeader` instead: the 32px title row with the one-line title (full name on hover)
-and the actions (lifecycle button, Delete as an icon with an anchored `ConfirmPopover`,
-the overflow menu), then one meta line with role, status, time and model, then the Brief
-and Transcript tabs (`SegmentedTabs` `xs`, 28px) on their own row, and the transcript
-under it starts 8px down (`ChatView` `topInset="tight"`). A page that must show a banner
+`AgentHeader` instead: one 32px title row with the role chip, the one-line title (full
+name on hover) and the provider mark, then the actions, **View transcript** and the
+overflow menu. No meta line, no state, no model and no tabs (the state is the
+conversation tail, the model sits in each turn footer), and the conversation under it
+starts 8px down (`ChatView` `topInset="tight"`, `mode="conversation"`). A page that must show a banner
 under its title (the first lap) receives it through `PaneBannerContext` and `PaneShell`
 draws it as the first body block on the column, once, so the title never moves. The session overview passes `headerRhythm="section"`, so the gap under its header is `PANE_RHYTHM.stack`, the same as between its body sections. Its `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
@@ -1518,8 +1729,8 @@ the right drawer opens. `PANE_RHYTHM.hero` (640px) is only for the content of an
 **The drawer slides the column left.** A drawer (context, plan or artifact,
 file diff, script output, a fix run transcript, an agent conversation) takes
 its track from the main area and the centred column re-centres in the space
-left of it, at its full width while that space is wide enough, in one 180ms
-ease-out move (none under reduced motion). A full tier work surface keeps its
+left of it, at its full width while that space is wide enough, in one 220ms
+ease-out move (`FOLD_MS`, none under reduced motion). A full tier work surface keeps its
 left edge and only gives up its right. One rule decides the mode: with
 `room = main - 16 - 48 - 560`, the drawer pushes while `room` covers its saved
 width (side tier 400 by default, reader tier 720) and otherwise lies over the
@@ -1534,11 +1745,12 @@ page under it is `inert`, a click on the scrim dismisses the top escape layer
 like Esc, and focus moves into the card on open and back to the trigger on
 close.
 
-**The drawer container.** `DrawerFrame` is its one frame: a header whose 28px row is centred on the
-band's centre line (`FRAME_DRAWER_ROW_PX`), a
+**The drawer container.** `DrawerFrame` is its one frame: a header whose 32px row sits on the
+page title line (`PANE_RHYTHM.headerInset`, `PANE_RHYTHM.headerRow`), a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
-then Close. Close always reads `Close` and is a 28px target (`size-7`, 14px
+then Close. A pane whose title is a control (the terminal scope picker) passes it as
+`titleContent`: it replaces the visible heading, the region keeps `title` as its name. Close always reads `Close` and is a 28px target (`size-7`, 14px
 glyph); every utility in the header (copy, open on its page) is a 28px
 icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
 composer, a transcript reply field and a script run's status line. The first
@@ -1574,12 +1786,9 @@ the `PageColumn` of its tabs. It keeps the 24px gutter (16px under 720px) and
 drops the 960px cap, so the header and the body share one left edge on any
 pane, from the pane's own edge. The Branch page is not one of them: every tab
 sits on the 960px column, the trail and the Ask button included, so nothing
-moves from one tab to the next. Its Comments tab reads the width of its own
-pane, not the window's (`branchLayoutOf`): under 900px one column, the list,
-then the thread with a `‹ Comments` back that keeps the selected row; from
-900px a 300px list and the thread, wide, with the properties inline under it at
-every width. A drawer or a wide sidebar narrows the pane, so the layout follows
-them.
+moves from one tab to the next. Its Comments tab is one full-width list at
+every width; a comment opens in a side tier `DrawerFrame` with its actions at
+the end of the content through `FormActions`.
 
 **Trail separator.** Each segment except the last ends with one 24px chevron
 slot in `faint-foreground`: a button that opens the segment's menu, or a static
@@ -1612,9 +1821,17 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
 - The session overview's actions are one secondary `New` button that opens a menu of every start: Start a run (Open run once one is active), Start agent, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
-- An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Run on its own uses it everywhere (`WorkflowAutorunToggle`).
+- An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". A page header holds no switch: the session's autorun is a menu verb, Turn on Autopilot or Turn off Autopilot, in the session `⋯`.
 
-**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete asks in a `ConfirmPopover` anchored to the overflow trigger (focus lands on Cancel, Escape and Cancel close it and give focus back to the trigger). A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
+**Header actions.** Every page header and drawer header draws its actions through `HeaderActions` (`packages/ui/src/components/HeaderActions.tsx`), one slot in one order, left to right: secondary controls (a segmented control, a filter, the Details toggle), at most one secondary button, at most one filled primary, the overflow. An empty slot draws nothing, and an overflow with fewer than two drawn items draws nothing and, outside production, logs `OverflowMenu needs two items`, so a page with no actions shows no lone `...` and a lone action is a visible quiet control (`GuardedObjectOverflowMenu` and `BranchOverflow` count what is left after `omit`; `handBuiltMenus.test.ts` bans a literal `items={[` with one item). Every child is 28 tall (`Button` `sm`, `MenuTriggerButton size="control"`), and the last child ends on the column edge. The overflow glyph is `Ellipsis` (`CONCEPT_ICONS.more`) everywhere and the vertical dots glyph is imported nowhere (`moreVertical-banned.test.ts`). The trigger is one `size` prop: `control` is a 28 square in a page header or a drawer header, `compact` is a 24 square in a list row, and a trigger never takes padding classes to find its size. Delete and Archive are never icons at rest in a header: they are overflow items, and Delete asks in a `ConfirmPopover` anchored to the overflow trigger (focus lands on Cancel, Escape and Cancel close it and give focus back to the trigger). When a page has no second rare verb, so its overflow would hold one item, the verb stays a quiet text button instead (`ObjectActionVerb` over its registry kind, which keeps the confirm, now anchored to the word): Notifications' **Delete all** after **Mark all read**, and **Discard request** in the Auto project ask. A row or strip whose registry kind may resolve to one action wraps its `⋯` in `ObjectMenuOrVerb`, which draws the menu from two actions and the lone action as a quiet word: the diff file header and the terminal tab strip. A header button keeps its word at every width; below 560px the one secondary button folds into the overflow instead of turning into an icon with no word.
+
+**Run headers and Close.** A run page (a preset step, the preset overview, the
+orchestrated document) shows Pause run or Resume run and Stop run (which
+confirms) as visible header buttons while the run lives, and Restore alone once
+it is archived. The tail never repeats them: it carries a step verb ("Stop step
+2", "Start step 3", "Approve plan", "Raise limit") or none ("Paused by you"). An
+overlay page (Monitoring, Notifications, the guide) ends its header with Close,
+which `StudioFrame` hands it; a sidebar door page has no Close.
 
 **One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` has no card of its own: a host that wants a surface (the push banner) gives it `bg-subtle`, never a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
 
@@ -1696,7 +1913,7 @@ is `bg-fill` and `rounded-lg`, with 4px of padding (`inset="rows"`) or 12px
 for prose (`inset="content"`). `fill` and not `subtle`: `subtle` on the sheet
 is 1.06:1 and does not read, `fill` is 1.17:1 in dark and 1.12:1 in light, and
 because it is relative to its parent it steps down on its own inside a drawer.
-The section keeps its uppercase eyebrow **outside** the band (`label`, with the
+The section keeps its eyebrow **outside** the band (`label`, with the
 same `icon`, `hint`, `action` and `headingLevel` slots `SectionHeader` gives).
 A group inside a section names itself on the band's first row (`groupLabel`),
 in sentence case on `text-label` medium muted, with a faint count on the right
@@ -1722,7 +1939,7 @@ usage windows and Models in the picker stripe this way.
 
 A metadata line is not a section and does not get a band.
 
-`Eyebrow` is a label primitive for metadata, statistics and small internal groups. It is also the only uppercase label. A standalone label with `uppercase` renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. Its `marker` slot sits right after the label (the Reset button of workspace settings, shown only while the value differs from the default) and its `menu` slot right after the control, or at the end of the label line when the row is `stacked` and the control spans the width. Inside a `Band` its rows sit on an 8px rhythm, so a marker, a menu or a wider control never makes one row look taller than its neighbour. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
+`Eyebrow` is a label primitive for metadata, statistics and small internal groups. Every label is sentence case, the eyebrow included: no label is uppercase or tracked. A section label renders `Eyebrow` (inside a heading element when it titles a region), never a hand-made `uppercase tracking-*` span. Chips and badges use sentence case: `Chip` has no uppercase option, and a status or kind chip has a sentence-case label. Arbitrary `tracking-[…]` values are rejected (`uppercase-label-uses-eyebrow.test.ts`). `Eyebrow` does not replace `SectionHeader` when a section also needs an action or description. `FieldRow` owns a form field's label, help copy and control alignment. It does not title a section. Its `marker` slot sits right after the label (the Reset button of workspace settings, shown only while the value differs from the default) and its `menu` slot right after the control, or at the end of the label line when the row is `stacked` and the control spans the width. Inside a `Band` its rows sit on an 8px rhythm, so a marker, a menu or a wider control never makes one row look taller than its neighbour. When these roles overlap, `SectionHeader` wins for the section, and then `FieldRow` labels the controls inside it. `Divider` is a sibling between chrome and content, never decoration after every heading or field, and never a separator between two pieces of content: use `gap`, a `Band`, or a labeled rule like `Eyebrow` instead.
 
 ## Prose disclosure
 
@@ -1745,26 +1962,27 @@ The desktop app has no wrapper for it now: a word that stays gets a
 ## Card action grammar and creation grammar
 
 **One card action grammar.** Two fixed slots. Navigation sits top right and is
-always visible. Lifecycle and destructive actions sit bottom right. Hover may
-show lifecycle actions without moving either slot, and keyboard focus shows the
-same. A card says its state once, with its `ToneBar`: the quick action stays
+always visible. Lifecycle and destructive actions sit bottom right, visible at
+rest. A card says its state once, with its `ToneBar`: the quick action stays
 `muted-foreground` at rest and takes its tone only on hover, and a closed pull
 request glyph on a Done card is quiet too. `CardAction` has no resting tint unless
 a caller passes `highlighted` for a state of its own (an inspected or armed row). The
 warning line paints with `warning-mark` (the same amber as `warning` in dark, a
-lighter amber in light), because the text amber reads brick red as a line. Icon actions use the shared `Tooltip`, never the native `title`. A
-hover slot keeps its width at rest: it fades with `opacity-0
-group-hover:opacity-100 group-focus-within:opacity-100`, never `hidden
-group-hover:flex`, and the row's primary action stays outside it, visible.
+lighter amber in light), because the text amber reads brick red as a line. Icon actions use the shared `Tooltip`, never the native `title`. No action
+shows only on hover: hover may add a tooltip, a fill or a hover card, never the
+only way to do something. `no-hover-only-actions.test.ts` fails on an
+`opacity-0`, `invisible` or `hidden` element that a `hover:` or `group-hover:`
+class reveals, outside its short list of decorative marks (an aria-hidden hint
+inside a button that is itself the action) and second ways (the multi select
+tick, entered by Cmd or Shift click).
 
-**A list row shows one action at rest.** A row in a list (the Artifacts list, the
-Scripts list) keeps its state-driven primary visible, plus the open control, and
-nothing else: no trash column, no second text button. Secondary actions
-(Edit, Copy, Pin, Run) appear on hover and focus inside one element marked
-`data-reveal="hover"`, which hides itself with `invisible` as well as `opacity-0`
-so it is out of the accessibility tree at rest and a test counts visible buttons
-by what sits outside it. Destructive and rare actions (Delete, Rename) live in
-the row's overflow menu, drawn as a horizontal `Ellipsis`. A running Stop is the
+**A list row leads with one action.** A row in a list (the Artifacts list, the
+Scripts list) leads with its state-driven primary and the open control: no
+trash column, no second text button. Secondary actions (Edit, Copy, Pin, Run)
+sit after them, visible at rest, inside one element marked
+`data-row-secondary` so a test can tell the primary from the rest. Destructive
+and rare actions (Delete, Rename) live in the row's overflow menu, drawn as a
+horizontal `Ellipsis` and visible at rest. A running Stop is the
 exception: it stays visible. Every control of a list, row actions and group
 header refresh alike, sits in a 28px slot on the same right edge.
 
@@ -1810,7 +2028,9 @@ enters, and shows its text (or `tooltip`) only when `scrollWidth` is wider than
 `clientWidth` or `scrollHeight` is taller than `clientHeight`. A control with a
 `title` prop (`Chip`, `StatusDot`, `GhostActionButton`, `SelectableRow`,
 `ValueToken`, a `SegmentedTabs` option, a `SelectionBar` verb) shows it in a
-`Tooltip`, never as an attribute. An empty tooltip shows nothing, so a
+`Tooltip`, never as an attribute; `SelectableRow` also takes the tooltip's
+`shortcut` and `tooltipSide`, and `isPressed` for a row that toggles a pane
+(the session tools). An empty tooltip shows nothing, so a
 conditional reason is `content={reason}` with `reason` possibly `undefined`.
 A long label wraps at 28rem and keeps a line break it is given. `Button` still
 forwards a `title` as the native attribute, so a `Button` that needs a reason
@@ -1892,7 +2112,7 @@ it:
 - **`FormPage`** is the scrolling body of a page-sized form: a `ScrollFade`
   holding a centred `PageColumn` with `gap-8` between the blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
 - **`FormActions`** is the action row. `leading` holds the quiet options or the
-  status line on the left (Starts, Run on its own, Spend cap, routing, an error
+  status line on the left (Starts, Run on its own, Limit, routing, an error
   with `role="alert"`). A job that runs longer than a few seconds shows its
   status inside the input card, never in this row: the create form's card holds
   Scribe's running dot, seconds and `Stop` in its bottom row, and the actions
@@ -1901,7 +2121,11 @@ it:
   `text-muted-foreground`), alternates as `secondary`, and the one primary
   last. `reason` puts the disabled primary's explanation under the buttons and
   pairs with the primary's `aria-describedby` through `reasonId`; `error` does
-  the same for a failure.
+  the same for a failure: the cause in default text after a 14px danger glyph
+  (never a red sentence), and the caller relabels the primary "Retry" while the
+  draft stays. Leading holds the options (Model, Limit, Autonomy, Starts);
+  trailing is "Discard" (ghost) then the primary, and an empty estimate slot
+  collapses so Discard always touches the primary.
 
 Buttons are `md` on a page and `sm` inside a popover, a drawer or a card. The
 row sits right after the last block: inside a popover it is the end of
@@ -1989,7 +2213,10 @@ drawn as an empty list.
 
 `EmptyState` takes `size: 'page' | 'section'`. Retired sizes are removed. A
 `bordered` state with no size still maps to `page` without a border. The glyph
-is muted, without a tinted circle. A `page` state is an `h2` unless
+is muted, without a tinted circle. A `page` state sits at the top left of the
+content column (18px glyph, title, one sentence, then its one action), never
+centred in the pane; the empty chat stage (`ChatEmpty`) is the one centred
+stage. A `page` state is an `h2` unless
 `headingLevel` chooses another level; a `section` state has no heading.
 `FilledEmptyState` remains a thin section wrapper only for host callers awaiting
 integration. Owned callers name the section size directly. A caller passes only
@@ -2040,8 +2267,7 @@ are `section` states. `inline-empty-states-use-the-wrappers.test.ts` fails on an
 **Loading keeps the page in place.** A part that reloads shows a skeleton of
 its own height: `SkeletonRow` (a row, with a `status` label naming what loads)
 or `SkeletonChip` (a chip). Only the parts that reload turn to skeleton; the
-title, the goal, the timeline and the cost stay. A session refresh shows them
-only after 250 ms (`useSessionSkeleton`), so a fast refresh never flashes.
+title, the goal, the timeline and the cost stay.
 
 **Bare beats the circle and the hero.** The pane already has a title and a
 rhythm. A tinted circle, a border and a bigger title repeat the title and
@@ -2144,14 +2370,48 @@ conversation is the wrapped sheet, and "Start work from chat" is the
 
 Eight animations, one meaning each. Transition keyframes (`fade-in`,
 `nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
-`layer-out`, `trail-crumb-in`, `crumb-menu-in`, `history-arrive`) move content between states and sit outside the
-registry. The `Trail` closes a crumb label with `grid-template-columns` from
+`layer-out`, `trail-crumb-in`, `crumb-menu-in`, `history-arrive`, `fold-fade-in`,
+`fold-fade-out`, `level-in-forward`, `level-in-back`, `level-out-forward`,
+`level-out-back`) move content between states and sit outside the
+registry.
+
+**Motion tokens.** A width that opens or folds (the main sidebar grid column,
+the session rail, the drawer track, the diff file rail) eases in 220ms `ease-out` (`FOLD_MS` in
+`packages/ui/src/motionTimings.ts`); words fade in 140ms (`fold-label-out`, and
+`fold-label-in` after 60ms, so they arrive once there is room); a level drill
+takes 200ms in, after 60ms, and 120ms out (`LEVEL_MS`); drawer content fades in
+140ms after 80ms (`drawer-content-in`) and out in 120ms (`drawer-content-out`).
+Width moves only on the one element that owns it; what moves inside it is
+opacity and `transform`, and the content keeps its final width, so nothing
+reflows or wraps mid move. Every new keyframe lives under
+`prefers-reduced-motion: no-preference`, and the hooks that stage a move
+(`useFoldPhase`, `useLevelSwap`, `useDrawerExit`) check `canAnimate` first: under
+reduced motion, or with nothing laid out, the state changes in place.
+
+**A fold keeps every icon where it is.** `FoldLayers` holds a rail's two
+states as two layers pinned to its left edge and clipped (`overflow-clip`): the
+open layer at its full width and the 44px icon layer under it. Folding, the
+width eases to 44px while the open layer, on the rail's own surface
+(`bg-inherit`), fades out over the icons and is removed at the end; unfolding is
+the reverse, and the icon layer leaves once the words are in. The icon layer
+draws each icon at the x and y of its open row: a `RailButton` is the open row
+without its word, the session rail's icon level starts with the session node on
+the identity row's line and its pages on 28px rows, and the main rail's New
+and doors sit on the column's rows. Neither layer carries a toggle: the one
+sidebar toggle sits in the top bar, so it never moves when the column folds.
+
+**A drill crosses levels in one move.** `LevelStack` keeps its layers
+absolute, so no height changes. On a level change `useLevelSwap` copies the
+leaving layer (`exitSnapshotOf`, the drawer's exit copy) during the render that
+changes it, slides the copy 24px toward the back and fades it, and slides the
+new layer in 24px from the drill side (forward from the right, back from the
+left). The folded icon levels drill the same way. The `Trail` closes a crumb label with `grid-template-columns` from
 `1fr` to `0fr` (220ms, `cubic-bezier(0.2, 0, 0, 1)`, 40ms cascade), the same
 trick as `Reveal` on the other axis.
 
 `Reveal` is the one height transition for disclosed content: `grid-template-rows`
-from `0fr` to `1fr`, 200ms `ease-out`, the same curve as the `AppShell`
-columns, behind `motion-safe`. It keeps its children mounted through the
+from `0fr` to `1fr`, 200ms `ease-out`, the curve of the `AppShell` columns,
+behind `motion-safe`. It keeps its children mounted through the
 collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
@@ -2237,10 +2497,10 @@ label loses characters before a count disappears.
 `COLLAPSED_RAIL_WIDTH` (44px, exported by `AppShell`) and its buttons center on
 22px. The top bar starts at `--titlebar-inset`, which clears the macOS traffic
 lights, so it no longer shares an axis with the rail:
-`collapsed-rail-width.test.tsx` pins both. The sidebar toggle is therefore not
-in the top bar: it is the first `size-8` button of the collapsed rail and of
-the open sidebar's first row, on the same axis in both states
-(`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
+`collapsed-rail-width.test.tsx` pins both. The main sidebar has one toggle,
+`ColumnToggleButton` in the top bar left of Back and Forward (⌘B), the same
+button whether the column is open or folded, and neither the column nor its
+44px rail draws a toggle row (`sidebar-toggle-axis.test.tsx`). Widening the rail to fix a padding is
 the wrong trade, because chrome pays rent.
 
 **An inline trigger inside `AnchoredPopover` passes `anchorClassName="flex"`.**

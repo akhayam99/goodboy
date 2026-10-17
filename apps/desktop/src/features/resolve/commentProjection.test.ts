@@ -6,7 +6,6 @@ import {
   RESOLVE_GROUP_OF_WORD,
   RESOLVE_LIST_GROUPS,
   RESOLVE_WORD_LABEL,
-  RESOLVE_WORD_TONE,
   leftOpenGroupLabel,
   projectResolveComment,
   resolveLabelOfState,
@@ -43,27 +42,26 @@ const facts = (over: Partial<ResolveCommentFacts> & Pick<ResolveCommentFacts, 's
   }) satisfies ResolveCommentFacts;
 
 describe('projectResolveComment', () => {
-  it.each<[ReviewCommentState, boolean, string, string, string, string]>([
-    ['needs', false, 'question', 'Question for you', 'warning', 'needs_you'],
-    ['ready', false, 'to_review', 'Fix ready', 'warning', 'needs_you'],
-    ['edited', false, 'to_review', 'Fix ready', 'warning', 'needs_you'],
-    ['outdated', false, 'to_review', 'Fix ready', 'warning', 'needs_you'],
-    ['failed', true, 'push_failed', 'Push failed', 'danger', 'needs_you'],
-    ['failed', false, 'couldnt_fix', 'Failed', 'warning', 'needs_you'],
-    ['drafting', false, 'working', 'Working', 'info', 'working'],
-    ['accepted', false, 'ready', 'Applied', 'success', 'ready_to_push'],
-    ['replied', false, 'ready', 'Applied', 'success', 'ready_to_push'],
-    ['pushed', false, 'replied', 'Replied', 'neutral', 'done'],
-    ['resolved', false, 'done', 'Done', 'neutral', 'done'],
-    ['skipped', false, 'left_open', 'Left open', 'neutral', 'left_open'],
-    ['new', false, 'open', 'Open', 'neutral', 'open'],
+  it.each<[ReviewCommentState, boolean, string, string, string]>([
+    ['needs', false, 'question', 'Question for you', 'needs_you'],
+    ['ready', false, 'to_review', 'Fix ready', 'needs_you'],
+    ['edited', false, 'to_review', 'Fix ready', 'needs_you'],
+    ['outdated', false, 'to_review', 'Fix ready', 'needs_you'],
+    ['failed', true, 'push_failed', 'Push failed', 'needs_you'],
+    ['failed', false, 'couldnt_fix', 'Failed', 'needs_you'],
+    ['drafting', false, 'working', 'Working', 'working'],
+    ['accepted', false, 'ready', 'Applied', 'ready_to_push'],
+    ['replied', false, 'ready', 'Applied', 'ready_to_push'],
+    ['pushed', false, 'replied', 'Replied', 'done'],
+    ['resolved', false, 'done', 'Done', 'done'],
+    ['skipped', false, 'left_open', 'Left open', 'left_open'],
+    ['new', false, 'open', 'Open', 'open'],
   ])(
-    'puts %s (push failure %s) under %s, reads %s in %s and groups it under %s',
-    (state, isPushFailure, word, label, tone, group) => {
+    'puts %s (push failure %s) under %s, reads %s and groups it under %s',
+    (state, isPushFailure, word, label, group) => {
       const projection = projectResolveComment(facts({ state, isPushFailure }));
       expect(projection.word).toBe(word);
       expect(RESOLVE_WORD_LABEL[projection.word]).toBe(label);
-      expect(RESOLVE_WORD_TONE[projection.word]).toBe(tone);
       expect(RESOLVE_GROUP_OF_WORD[projection.word]).toBe(group);
     },
   );
@@ -162,7 +160,7 @@ describe('projectResolveComment', () => {
     const expected: Record<ResolveFailureCause, string> = {
       start_failed: "The fix didn't start",
       provider_error: 'The model provider stopped the run',
-      spend_cap: 'Every provider is over its spend cap',
+      spend_cap: 'Every provider is over its limit',
       stopped: 'You stopped it',
       app_closed: 'The app closed while it was working',
       accept_conflict: 'It conflicts with a fix you accepted before',

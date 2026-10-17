@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { WORK_ROW } from '@goodboy/ui';
+import { TimelineRowMeta } from './TimelineRowMeta';
 import type { EffortLevel, ProviderId, RoleModelPreferences, Step } from '@goodboy/types';
 import { useAgentRowWork, type AgentRowWork } from '../../../../hooks/useAgentRowWork';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
@@ -16,6 +17,7 @@ type AgentStepRowSlots = {
   readonly glyph: ReactNode;
   readonly state: ReactNode;
   readonly meta: ReactNode;
+  readonly time: ReactNode;
   readonly cardHandlers: RowCard['handlers'];
 };
 
@@ -82,6 +84,13 @@ export const AgentStepRow = ({
           isRunning={phase === 'running'}
         />
       </span>
+    ),
+    time: (
+      <TimelineRowMeta
+        time={work.time ?? null}
+        note={phase === 'running' ? (work.time?.note ?? null) : null}
+        isModelShown={false}
+      />
     ),
     cardHandlers: card.handlers,
   });

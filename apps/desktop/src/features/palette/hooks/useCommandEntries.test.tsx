@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { aSession, aWorkspace } from '@goodboy/types/testing';
+import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import type {
   ChatId,
   ChatMessageId,
@@ -20,6 +20,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { innerColumnStore } from '@goodboy/ui';
 import { brandedId } from '../../history/testing/brandedId';
 import { ToastProvider } from '../../../shared/components/Toast';
 import {
@@ -63,6 +64,25 @@ const entryKeys = (): ReadonlyArray<string> => {
   const { result } = renderHook(() => useCommandEntries(), { wrapper });
   return result.current.map((entry) => entry.key);
 };
+
+describe('the palette entry for the inner column', () => {
+  it('leaves it out on a page with no inner column and names the column once one shows', () => {
+    expect(entryKeys()).not.toContain('action:inner-column');
+
+    const toggle = vi.fn();
+    const key = innerColumnStore.add({
+      column: { id: 'chat', label: 'Fold the chat list', toggle },
+    });
+    const { result } = renderHook(() => useCommandEntries(), { wrapper });
+    const entry = result.current.find((candidate) => candidate.key === 'action:inner-column');
+    innerColumnStore.remove({ key });
+
+    expect(entry?.label).toBe('Fold the chat list');
+    expect(entry?.shortcut).toBe('innerColumn.toggle');
+    entry?.run();
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('the palette entries for new things', () => {
   it('lists New session, New chat and New terminal so Cmd+K reaches every new', () => {
@@ -131,5 +151,69 @@ describe('the palette entries for new things', () => {
     window.removeEventListener(ASK_RESET_EVENT, listener);
 
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the palette pull entries', () => {
+  it('lists a pull row per linked repo and one for all of them', () => {
+    useAppStore.setState({
+      projects: [
+        aProject({ workspaceId: WORKSPACE_ID, name: 'ledger-core', baseBranch: 'main' }),
+        aProject({ workspaceId: WORKSPACE_ID, name: 'notify-relay', baseBranch: 'main' }),
+      ],
+    });
+    const { result } = renderHook(() => useCommandEntries(), { wrapper });
+
+    const labels = result.current.map((entry) => entry.label);
+
+    expect(labels).toContain('Pull main in all linked repos');
+    expect(labels).toContain('Pull main in ledger-core');
+    expect(labels).toContain('Pull main in notify-relay');
+  });
+});
+
+describe('the palette New terminal entry', () => {
+  const newTerminal = () => {
+    const { result } = renderHook(() => useCommandEntries(), { wrapper });
+    return result.current.find((entry) => entry.key === 'action:new-terminal');
+  };
+
+  it('opens a fresh tab in the session drawer on the workspace folder of a branchless session', async () => {
+    useAppStore.setState({
+      sessionBranches: { [SESSION_ID]: '' },
+      terminalFolderOverrides: { [WORKSPACE_ID]: '/work/harborline' },
+    });
+    const entry = newTerminal();
+
+    expect(entry?.label).toBe('New terminal in this session');
+    act(() => entry?.run());
+    await vi.waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('terminal'));
+
+    const tabs = useAppStore.getState().terminalTabs[SESSION_ID] ?? [];
+    expect(tabs).toHaveLength(1);
+    expect(tabs[0]?.cwd).toBe('/work/harborline');
+    expect(useAppStore.getState().appStudio).toBeNull();
+  });
+
+  it('adds a second tab instead of reusing the one on the same folder', async () => {
+    useAppStore.setState({
+      sessionBranches: { [SESSION_ID]: '' },
+      terminalFolderOverrides: { [WORKSPACE_ID]: '/work/harborline' },
+    });
+
+    const entry = newTerminal();
+
+    act(() => entry?.run());
+    await vi.waitFor(() => expect(useAppStore.getState().drawer?.kind).toBe('terminal'));
+    act(() => entry?.run());
+    await vi.waitFor(() => expect(useAppStore.getState().terminalTabs[SESSION_ID]).toHaveLength(2));
+  });
+
+  it('keeps the plain label and the Terminal page when a studio covers the session', () => {
+    act(() => {
+      useAppStore.getState().openStudio({ studio: { kind: 'monitoring' } });
+    });
+
+    expect(newTerminal()?.label).toBe('New terminal');
   });
 });

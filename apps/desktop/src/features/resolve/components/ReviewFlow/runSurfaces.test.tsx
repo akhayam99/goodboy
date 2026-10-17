@@ -23,6 +23,7 @@ import {
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -68,6 +69,7 @@ const mount = async ({ threadId }: { readonly threadId: string | null }): Promis
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -78,17 +80,14 @@ const list = (): HTMLElement => screen.getByRole('navigation', { name: 'Comments
 const comment = (): HTMLElement => screen.getByRole('article', { name: 'Comment' });
 
 describe('Fix run status line', () => {
-  it('shows one line for the run with the tally, the model and the run controls', async () => {
+  it('shows one tail line for the run with its controls, the counts left to the groups', async () => {
     await mount({ threadId: null });
 
     const status = within(screen.getByTestId('resolve-run-status'));
     expect(status.getByText('Fixing 4 comments')).toBeDefined();
-    expect(status.getByRole('button', { name: '3 need you' })).toBeDefined();
-    expect(status.getByRole('button', { name: '1 working' })).toBeDefined();
-    expect(status.queryByRole('button', { name: /ready to push/ })).toBeNull();
-    expect(status.queryByRole('button', { name: /couldn't fix/ })).toBeNull();
-    expect(status.getByText('Sonnet 5 · Medium')).toBeDefined();
-    expect(status.getByRole('button', { name: 'Open transcript' })).toBeDefined();
+    expect(status.queryByRole('button', { name: /need you|working|ready to push/ })).toBeNull();
+    expect(status.queryByText('Sonnet 5 · Medium')).toBeNull();
+    expect(status.getByRole('button', { name: 'View transcript' })).toBeDefined();
     expect(status.getByRole('button', { name: 'Stop' })).toBeDefined();
   });
 
@@ -102,19 +101,6 @@ describe('Fix run status line', () => {
     );
 
     expect(models.size).toBe(1);
-  });
-
-  it('filters the list by a tally chip and clears the filter on a second click', async () => {
-    await mount({ threadId: null });
-    const status = within(screen.getByTestId('resolve-run-status'));
-
-    fireEvent.click(status.getByRole('button', { name: '3 need you' }));
-    expect(within(list()).getByRole('region', { name: 'Needs you' })).toBeDefined();
-    expect(within(list()).queryByRole('region', { name: 'Ready to push' })).toBeNull();
-    expect(within(list()).queryByRole('region', { name: 'Working' })).toBeNull();
-
-    fireEvent.click(status.getByRole('button', { name: '3 need you' }));
-    expect(within(list()).getByRole('region', { name: 'Ready to push' })).toBeDefined();
   });
 
   it('stops the run from the status line', async () => {
@@ -222,6 +208,7 @@ describe('Question from the fix run', () => {
     render(
       <ToastProvider>
         <BranchPage session={SESSION} workingDir={null} />
+        <DrawerHost />
       </ToastProvider>,
     );
     await settle();

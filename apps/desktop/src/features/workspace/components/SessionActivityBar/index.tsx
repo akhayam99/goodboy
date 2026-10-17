@@ -17,7 +17,12 @@ import {
   useSessionViewPrefs,
 } from '../../../../store';
 import { sortAndGroupSessions } from '../../../../store/slices/session-view/sortAndGroupSessions';
-import { FOLD_LIMIT, PINNED_GROUP_KEY } from '../../../../store/slices/session-view/types';
+import type { SessionColumnLayout } from '../../../../store/slices/session-view/layoutSessionColumn';
+import {
+  FOLD_LIMIT,
+  INACTIVE_GROUP_KEY,
+  PINNED_GROUP_KEY,
+} from '../../../../store/slices/session-view/types';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
@@ -31,12 +36,9 @@ import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { sessionGroupPresentation } from './groupPresentation';
-import { SessionFilterPopover } from './SessionFilterPopover';
 import { useClearSessionFilters } from './useClearSessionFilters';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
-import { OpenSessionCard } from './OpenSessionCard';
-import { NewSessionRow } from './NewSessionRow';
 
 const SUB_ROW_INSET = 'pl-7';
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
@@ -51,7 +53,10 @@ type Props = {
   isStudioOver?: boolean;
   onSelectSession: (id: SessionId) => void;
   onArchivedTabOpen?: () => void;
-  onNavigate?: () => void;
+};
+
+type GroupParams = {
+  readonly group: SessionColumnLayout['groups'][number];
 };
 
 type OpenAttention = {
@@ -67,7 +72,6 @@ export const SessionActivityBar = ({
   isStudioOver = false,
   onSelectSession,
   onArchivedTabOpen,
-  onNavigate,
 }: Props) => {
   const toggleSessionGroup = useAppStore((s) => s.toggleSessionGroup);
   const setSessionViewPrefs = useAppStore((s) => s.setSessionViewPrefs);
@@ -78,10 +82,6 @@ export const SessionActivityBar = ({
   const hover = useHoverCardTarget();
   const { close: closeHover } = hover;
 
-  const filterSessions = useMemo(
-    () => (prefs.isArchivedShown ? [...sessions, ...archivedSessions] : sessions),
-    [archivedSessions, prefs.isArchivedShown, sessions],
-  );
   const filteredArchived = useProjectFilteredSessions({
     workspaceId,
     sessions: archivedSessions,
@@ -192,11 +192,6 @@ export const SessionActivityBar = ({
     setSessionViewPrefs({ workspaceId, patch: { isFoldOpen: !prefs.isFoldOpen } });
   }, [closeHover, prefs.isFoldOpen, setSessionViewPrefs, workspaceId]);
 
-  const setArchivedShown = useCallback(
-    (isShown: boolean) => setSessionViewPrefs({ workspaceId, patch: { isArchivedShown: isShown } }),
-    [setSessionViewPrefs, workspaceId],
-  );
-
   const openAttention = useCallback(
     ({ sessionId, reason }: OpenAttention) => {
       closeHover();
@@ -224,7 +219,7 @@ export const SessionActivityBar = ({
 
   const total = column.groups.reduce((count, group) => count + group.total, 0);
   const foldableTotal = column.groups
-    .filter((group) => group.key !== PINNED_GROUP_KEY)
+    .filter((group) => group.key !== PINNED_GROUP_KEY && group.key !== INACTIVE_GROUP_KEY)
     .reduce((count, group) => count + group.total, 0);
   const isFoldShown =
     !column.isGrouped &&
@@ -247,43 +242,55 @@ export const SessionActivityBar = ({
     };
     return (
       <li key={session.id} className="flex flex-col">
-        {isActive && !isArchived ? (
-          <OpenSessionCard {...rowProps} hasStudioOver={isStudioOver} />
-        ) : (
-          <SessionActivityItem
-            {...rowProps}
-            isActive={isActive}
-            sign={isActive ? 'session' : null}
-          />
-        )}
+        <SessionActivityItem
+          {...rowProps}
+          isActive={isActive}
+          isCurrent={isActive && !isStudioOver}
+        />
       </li>
+    );
+  };
+
+  const isHeaderedOf = ({ group }: GroupParams): boolean =>
+    column.isGrouped || group.label !== null;
+  const countOf = ({ group }: GroupParams): number | null => {
+    const isFolded =
+      group.key === PINNED_GROUP_KEY || (!column.isGrouped && group.key !== INACTIVE_GROUP_KEY);
+    if (isFolded || group.total < 2) {
+      return null;
+    }
+    return group.total;
+  };
+
+  const renderGroup = ({ group }: GroupParams) => {
+    const presentation = sessionGroupPresentation({
+      key: group.key,
+      groupMode: prefs.group,
+    });
+    const isHeadered = isHeaderedOf({ group });
+    return (
+      <div key={group.key} className="flex flex-col gap-0.5">
+        {isHeadered ? (
+          <SessionGroupHeader
+            label={presentation?.label ?? group.label ?? group.key}
+            tone="neutral"
+            total={countOf({ group })}
+            title={presentation === null ? undefined : stateDescription({ presentation })}
+            isCollapsed={group.isCollapsed}
+            onToggle={column.isGrouped ? () => toggleSessionGroup({ key: group.key }) : undefined}
+          />
+        ) : null}
+        {group.isCollapsed ? null : (
+          <ul role="list" className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}>
+            {group.sessions.map((session) => renderRow(session, false))}
+          </ul>
+        )}
+      </div>
     );
   };
 
   return (
     <div ref={barRef} className="relative flex h-full min-h-0 w-full shrink-0 flex-col gap-1">
-      <div
-        className={cn(
-          'flex h-7 shrink-0 items-center justify-between',
-          PANE_RHYTHM.sessionList.headerInset,
-        )}
-      >
-        <Eyebrow label="Sessions" muted />
-        <SessionFilterPopover
-          workspaceId={workspaceId}
-          sessions={filterSessions}
-          archivedCount={archivedSessions.length}
-          onArchivedShownChange={setArchivedShown}
-        />
-      </div>
-
-      <div className={cn('shrink-0', PANE_RHYTHM.navRail.inset)}>
-        <NewSessionRow
-          workspaceId={workspaceId}
-          {...(onNavigate !== undefined && { onNavigate })}
-        />
-      </div>
-
       <ScrollFade className="min-h-0 flex-1">
         <div
           ref={listRef}
@@ -301,34 +308,9 @@ export const SessionActivityBar = ({
             PANE_RHYTHM.sessionList.pad,
           )}
         >
-          {column.groups.map((group) => {
-            const presentation = sessionGroupPresentation({
-              key: group.key,
-              groupMode: prefs.group,
-            });
-            const isHeadered = column.isGrouped || group.label !== null;
-            return (
-              <div key={group.key} className="flex flex-col gap-0.5">
-                {isHeadered ? (
-                  <SessionGroupHeader
-                    label={presentation?.label ?? group.label ?? group.key}
-                    tone={presentation?.tone ?? 'neutral'}
-                    total={group.total}
-                    title={presentation === null ? undefined : stateDescription({ presentation })}
-                    isCollapsed={group.isCollapsed}
-                    onToggle={
-                      column.isGrouped ? () => toggleSessionGroup({ key: group.key }) : undefined
-                    }
-                  />
-                ) : null}
-                {group.isCollapsed ? null : (
-                  <ul role="list" className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}>
-                    {group.sessions.map((session) => renderRow(session, false))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
+          {column.groups
+            .filter((group) => group.key !== INACTIVE_GROUP_KEY)
+            .map((group) => renderGroup({ group }))}
 
           {isFoldShown ? (
             <button
@@ -346,6 +328,10 @@ export const SessionActivityBar = ({
             </button>
           ) : null}
 
+          {column.groups
+            .filter((group) => group.key === INACTIVE_GROUP_KEY)
+            .map((group) => renderGroup({ group }))}
+
           {column.hiddenByFilters > 0 ? (
             <div
               className={cn(
@@ -353,7 +339,7 @@ export const SessionActivityBar = ({
                 SUB_ROW_INSET,
               )}
             >
-              <span>{column.hiddenByFilters} hidden by filters</span>
+              <span>{column.hiddenByFilters} hidden</span>
               <Button variant="ghost" size="xs" onClick={clearFilters}>
                 Clear
               </Button>

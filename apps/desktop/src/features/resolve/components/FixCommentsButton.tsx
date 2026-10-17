@@ -2,7 +2,7 @@ import { Button } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { openFixComments } from '../../../store/slices/resolve/openFixComments';
-import { FIX_COMMENTS_LABEL } from './FixCommentsDrawer/fixCommentsCopy';
+import { commentsCountOf } from '../commentsCountOf';
 import { useReviewEntries } from './ReviewFlow/useReviewEntries';
 
 type Props = {
@@ -14,7 +14,7 @@ type Props = {
 export const FixCommentsButton = ({ sessionId, mountId, focusThreadId = null }: Props) => {
   const openDrawer = useAppStore((s) => s.openDrawer);
   const { all } = useReviewEntries({ sessionId, scope: 'all' });
-  const count = all.filter((entry) => entry.isFixable).length;
+  const count = commentsCountOf({ threads: all.map((entry) => entry.row.thread) }).fixable;
   if (count === 0) {
     return null;
   }
@@ -24,7 +24,7 @@ export const FixCommentsButton = ({ sessionId, mountId, focusThreadId = null }: 
       variant="secondary"
       onClick={() => openFixComments({ openDrawer, sessionId, mountId, focusThreadId })}
     >
-      {FIX_COMMENTS_LABEL.title} {count}
+      {`Fix ${count} ${count === 1 ? 'comment' : 'comments'}`}
     </Button>
   );
 };

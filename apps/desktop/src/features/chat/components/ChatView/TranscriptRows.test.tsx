@@ -25,6 +25,7 @@ vi.mock('./OpenQuestionCluster', () => ({
   ),
 }));
 
+import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
 import { TranscriptRows } from './TranscriptRows';
 
 const retryErrorSpy = vi.fn();
@@ -174,14 +175,16 @@ describe('TranscriptRows', () => {
     expect(screen.getByTestId('transcript-day').getAttribute('data-align')).toBe('start');
   });
 
-  it('marks the move into today after an earlier day', () => {
+  it('marks the move into today after an earlier day with a plain month and day', () => {
+    const now = new Date();
     renderRows([
       itemRow(userText('u1', new Date(Date.now() - 86_400_000))),
-      itemRow(userText('u2', new Date())),
+      itemRow(userText('u2', now)),
     ]);
     const days = screen.getAllByTestId('transcript-day');
     expect(days).toHaveLength(2);
-    expect(days[1]?.textContent?.toLowerCase()).toBe('today');
+    expect(days[1]?.textContent).toBe(formatDayMonth({ at: now.toISOString() }));
+    expect(days[1]?.querySelector('.rounded-full')).toBeNull();
   });
 
   it('renders future and null ordinal question buckets at the transcript tail', () => {
@@ -237,5 +240,18 @@ describe('TranscriptRows', () => {
       new Map([[RUN_ID, <div data-testid="mount-suggestion">web</div>]]),
     );
     expect(screen.getAllByTestId('mount-suggestion')).toHaveLength(1);
+  });
+
+  it('gives each row kind its own intrinsic size estimate', () => {
+    const { container } = renderRows([
+      itemRow(userText('u1', new Date())),
+      itemRow({ kind: 'assistant_text', key: 'a1', text: 'word '.repeat(300) }),
+    ]);
+    const sizes = [...container.querySelectorAll<HTMLElement>('li')].map(
+      (li) => li.style.containIntrinsicSize,
+    );
+    expect(sizes).toHaveLength(2);
+    expect(sizes[0]).not.toBe(sizes[1]);
+    expect(sizes.every((size) => size.startsWith('auto '))).toBe(true);
   });
 });

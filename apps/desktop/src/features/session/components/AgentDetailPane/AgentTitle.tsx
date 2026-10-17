@@ -1,23 +1,32 @@
-import { Tooltip, cn, TruncatedText, IconButton } from '@goodboy/ui';
+import { Tooltip, cn, TruncatedText } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useInlineRename } from '../../../../shared/hooks/useInlineRename';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { agentDisplayName, isAutoResolverName } from '../../../../shared/utils/agentDisplayName';
+import { agentObjectKey } from '../../../actions/agentObjectKey';
+import { useRenameRequest } from '../../../actions/useRenameRequest';
 import { useFixRunName } from '../../../resolve/hooks/useFixRunName';
 import { classifyAgent } from '../../agent-kind';
+import { agentHeadingOf } from './agentHeadingOf';
 
 type Props = {
   readonly agent: Agent;
   readonly sessionId: SessionId;
+  readonly brief?: string | null;
 };
 
-export const AgentTitle = ({ agent, sessionId }: Props) => {
+export const AgentTitle = ({ agent, sessionId, brief = null }: Props) => {
   const renameAgent = useAppStore((state) => state.renameAgent);
+  const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const fixRunName = useFixRunName({ sessionId, agentId: agent.id });
   const rename = useInlineRename({
     value: agent.name,
     onCommit: (next) => renameAgent(sessionId, agent.id, next),
+  });
+  useRenameRequest({
+    objectKey: agentObjectKey({ agentId: agent.id }),
+    anchorKeys: [`agent-header:${agent.id}`],
+    onRename: rename.start,
   });
 
   if (rename.editing) {
@@ -40,24 +49,14 @@ export const AgentTitle = ({ agent, sessionId }: Props) => {
     );
   }
 
-  const kind = classifyAgent({ agent, override: null });
+  const kind = classifyAgent({ agent, override: kindOverride });
   const displayName =
     (kind === 'resolver' && isAutoResolverName({ name: agent.name }) ? fixRunName : null) ??
-    agentDisplayName({ name: agent.name, kind });
+    agentHeadingOf({ name: agentDisplayName({ name: agent.name, kind }), kind, brief });
 
   return (
-    <span className="group/title flex min-w-0 items-center gap-2">
-      <TruncatedText className="min-w-0 truncate" onDoubleClick={rename.start}>
-        {displayName}
-      </TruncatedText>
-      <IconButton
-        icon={CONCEPT_ICONS.rename}
-        label="Rename agent"
-        tooltipSide="top"
-        size="xs"
-        onClick={rename.start}
-        className="size-5 opacity-0 focus-visible:opacity-100 group-hover/title:opacity-100 motion-reduce:opacity-60"
-      />
-    </span>
+    <TruncatedText className="min-w-0 truncate" onDoubleClick={rename.start}>
+      {displayName}
+    </TruncatedText>
   );
 };

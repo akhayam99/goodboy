@@ -55,6 +55,7 @@ const targetPhaseOf = ({
     case 'answering':
     case 'deciding':
     case 'done':
+    case 'finished':
     case 'blocked':
     case 'stopping':
     case 'stopped':

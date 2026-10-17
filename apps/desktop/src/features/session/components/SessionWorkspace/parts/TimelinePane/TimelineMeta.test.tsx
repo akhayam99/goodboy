@@ -37,21 +37,19 @@ describe('TimelineProviderGlyph', () => {
 });
 
 describe('TimelineRowMeta', () => {
-  it('stacks the duration over the cost in one column', () => {
+  it('draws the duration alone in its column, never the cost on the row', () => {
     const { container } = render(
       <TimelineRowMeta time={timeOf({ label: '6m 40s' })} cost="$0.62" />,
     );
     const stack = container.querySelector('[data-meta-column="stack"]');
 
-    expect(stack?.children).toHaveLength(2);
+    expect(stack?.children).toHaveLength(1);
     expect(stack?.children[0]?.getAttribute('data-meta-column')).toBe('time');
     expect(stack?.children[0]?.textContent).toBe('6m 40s');
-    expect(stack?.children[1]?.getAttribute('data-meta-column')).toBe('cost');
-    expect(stack?.children[1]?.textContent).toBe('$0.62');
-    expect(container.querySelectorAll('[data-meta-column="cost"]')).toHaveLength(1);
+    expect(container.querySelector('[data-meta-column="cost"]')).toBeNull();
   });
 
-  it('keeps the cost in the tooltip of the duration for the widths where it leaves the row', () => {
+  it('keeps the cost in the tooltip of the duration', () => {
     const { container } = render(
       <TimelineRowMeta time={timeOf({ label: '6m 40s' })} cost="$0.62" />,
     );
@@ -61,14 +59,13 @@ describe('TimelineRowMeta', () => {
     );
   });
 
-  it('draws the duration without a cost, and the cost without a duration', () => {
+  it('draws the duration without a cost, and nothing for a cost without a duration', () => {
     const { container } = render(<TimelineRowMeta time={timeOf({ label: '6m 40s' })} />);
     const bare = render(<TimelineRowMeta cost="$0.62" />);
 
-    expect(container.querySelector('[data-meta-column="cost"]')).toBeNull();
     expect(container.querySelector('[data-meta-column="time"]')?.textContent).toBe('6m 40s');
     expect(bare.container.querySelector('[data-meta-column="time"]')).toBeNull();
-    expect(bare.container.querySelector('[data-meta-column="cost"]')?.textContent).toBe('$0.62');
+    expect(bare.container.textContent).toBe('');
   });
 
   it('puts the model cell before the stacked column, on the same slots for every row', () => {
@@ -96,7 +93,7 @@ describe('TimelineRowMeta', () => {
     ).toEqual(['model', 'stack']);
   });
 
-  it('hides the cost under 620px and the whole column under 500px', () => {
+  it('keeps the duration over 500px and hides the whole column under it', () => {
     const { container } = render(
       <TimelineRowMeta time={timeOf({ label: '6m 40s' })} cost="$0.62" />,
     );
@@ -105,7 +102,7 @@ describe('TimelineRowMeta', () => {
       throw new Error('no meta rendered');
     }
 
-    expect(visibleTextAt({ root, width: 700 })).toBe('6m 40s$0.62');
+    expect(visibleTextAt({ root, width: 700 })).toBe('6m 40s');
     expect(visibleTextAt({ root, width: 560 })).toBe('6m 40s');
     expect(visibleTextAt({ root, width: 460 })).toBe('');
   });
@@ -141,7 +138,7 @@ describe('TimelineModelCell', () => {
     ).toEqual(['moonshot', 'anthropic']);
   });
 
-  it('keeps only the glyphs under 640px and hands the name to assistive tech', () => {
+  it('keeps the model name on a 720 column and leaves the cell under 500px', () => {
     const { container } = render(
       <TimelineModelCell
         summary={{ name: 'Sonnet 5.5', detail: null, providers: ['anthropic'] }}
@@ -152,12 +149,12 @@ describe('TimelineModelCell', () => {
       throw new Error('no cell rendered');
     }
 
-    expect(visibleTextAt({ root: cell, width: 700 })).toBe('Sonnet 5.5');
-    expect(visibleTextAt({ root: cell, width: 600 })).toBe('');
+    expect(visibleTextAt({ root: cell, width: 600 })).toBe('Sonnet 5.5');
+    expect(visibleTextAt({ root: cell, width: 460 })).toBe('');
     expect(screen.getByText('Sonnet 5.5')).toBeDefined();
   });
 
-  it('stacks the effort under the model name and hides both under 640px', () => {
+  it('puts the effort on the model line and hides both under 500px', () => {
     const { container } = render(
       <TimelineModelCell
         summary={{ name: 'Opus 5.5', detail: 'High', providers: ['anthropic'] }}
@@ -172,8 +169,8 @@ describe('TimelineModelCell', () => {
     );
 
     expect(lines).toEqual(['Opus 5.5', 'High']);
-    expect(visibleTextAt({ root: cell, width: 700 })).toBe('Opus 5.5High');
-    expect(visibleTextAt({ root: cell, width: 600 })).toBe('');
+    expect(visibleTextAt({ root: cell, width: 600 })).toBe('Opus 5.5·High');
+    expect(visibleTextAt({ root: cell, width: 460 })).toBe('');
   });
 
   it('names where a fallback chain started on the second line', () => {

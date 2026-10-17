@@ -20,7 +20,7 @@ private `goodboy-atlas` repository. Ask the owner if you need access.
 - [providers.md](./providers.md): how to install, connect or manage a
   provider CLI
 - [auto.md](./auto.md): how the Auto agent starts, hands work to other roles
-  and shows it, and its experiment switch
+  and shows it, and its release gate
 - [query-bridge.md](./query-bridge.md): what agents can ask your connected
   tools
 - [SECURITY.md](../SECURITY.md): how to report a vulnerability, and what
@@ -88,6 +88,7 @@ The recipe column links the steps for the change you are about to make: [recipes
 | explore        | `apps/desktop/src/features/explore/**`                         | [navigation.md](navigation.md)                                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
 | impact         | `apps/desktop/src/features/impact/**`                          | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
 | integrations   | `apps/desktop/src/features/integrations/**`                    | [hosts.md](hosts.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
+| live-state     | `apps/desktop/src/features/live-state/**`                      | [turns.md](turns.md)                                               | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
 | monitoring     | `apps/desktop/src/features/monitoring/**`                      | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
 | palette        | `apps/desktop/src/features/palette/**`                         | [navigation.md](navigation.md)                                     | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |
 | permissions    | `apps/desktop/src/features/permissions/**`                     | [concepts.md](concepts.md)                                         | [store-slice-action](recipes/store-slice-action.md), [mock-scene](recipes/mock-scene.md) | rules, doc-refs, scenes          |

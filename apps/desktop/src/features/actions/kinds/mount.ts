@@ -18,8 +18,8 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { dirtyTreeSentence } from '../../../shared/lib/dirtyTreeCopy';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { NAMES } from '../../../shared/names';
-import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
-import { sessionPlace } from '../../../store/slices/navigation/place';
+import { openExplorePane } from '../../explore/openExplorePane';
+import { openScriptsPane } from '../../scripts/openScriptsPane';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
   mountRequestOf,
@@ -79,18 +79,6 @@ const statusParams = ({ facts }: FactsOnly) => ({
   worktreePath: facts.worktreePath ?? '',
   baseBranch: facts.mountBaseBranch,
 });
-
-const openLens = ({
-  facts,
-  env,
-  lens,
-}: FactsOnly & {
-  readonly env: Parameters<ActionDefinition<MountFacts>['run']>[0]['env'];
-  readonly lens: 'review' | 'scripts';
-}): void => {
-  const state = env.getState();
-  state.navigate({ to: lensPlace({ state, sessionId: facts.sessionId, lens }) });
-};
 
 const closeConfirm = ({ facts }: FactsOnly): ActionConfirm => {
   if (facts.pr === 'merged') {
@@ -217,8 +205,11 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     group: 'open',
     when: isOpen,
     run: ({ facts, env }) => {
-      env.getState().setScriptsLensScope({ scope: { projectId: facts.projectId } });
-      openLens({ facts, env, lens: 'scripts' });
+      openScriptsPane({
+        state: env.getState(),
+        sessionId: facts.sessionId,
+        projectId: facts.projectId,
+      });
     },
   },
   {
@@ -343,7 +334,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   {
     id: 'mount.putTaskOnBranch',
     slot: () => 'chip',
-    label: 'Put on a branch',
+    label: 'Link work to this branch',
     icon: ListPlus,
     group: 'act',
     when: ({ facts }) => facts.branch !== '' && !facts.isClosed,
@@ -489,12 +480,10 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
       if (facts.worktreePath === null) {
         return;
       }
-      env.getState().navigate({
-        to: sessionPlace({
-          sessionId: facts.sessionId,
-          lens: 'explore',
-          target: { kind: 'explore', mountPath: facts.worktreePath },
-        }),
+      openExplorePane({
+        state: env.getState(),
+        sessionId: facts.sessionId,
+        mountPath: facts.worktreePath,
       });
     },
   },

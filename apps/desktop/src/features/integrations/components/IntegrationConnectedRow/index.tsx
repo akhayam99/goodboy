@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Chip, ConfirmPopover, formatError, IconButton } from '@goodboy/ui';
+import { Chip, ConfirmPopover, formatError, IconButton, StatusDot } from '@goodboy/ui';
 import { TriangleAlert, Unplug } from 'lucide-react';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { useCredentialSecret } from '../../useCredentialSecret';
@@ -58,6 +58,12 @@ export const IntegrationConnectedRow = ({
             <span className="truncate font-mono text-meta text-muted-foreground">{secondary}</span>
           ) : null}
         </div>
+        {secret === 'missing' ? (
+          <span className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
+            <StatusDot tone="danger" size="sm" />
+            Key missing
+          </span>
+        ) : null}
         {badge != null ? <Chip tone="neutral" size="xs" bordered label={badge} /> : null}
         <ConfirmPopover
           role="danger"
@@ -80,8 +86,12 @@ export const IntegrationConnectedRow = ({
         />
       </div>
       {secret === 'missing' ? (
-        <p className="flex items-start gap-1 text-meta text-warning">
-          <TriangleAlert size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0" />
+        <p className="flex items-start gap-1 text-meta text-muted-foreground">
+          <TriangleAlert
+            size={ICON_SIZE.row}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-warning"
+          />
           <span>
             The key is missing from this Mac's keychain, so every request with it fails. Disconnect
             and connect again to paste a new one.

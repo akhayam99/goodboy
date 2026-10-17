@@ -1,4 +1,3 @@
-import type { ExploreFileActionTarget } from '../actions/types';
 import type { ExploreEntry } from './explore';
 import type { ExploreOpenFailure } from './openFailure';
 
@@ -13,11 +12,6 @@ export type SelectFileParams = {
 
 export type LoadFolderParams = {
   readonly relPath: string;
-};
-
-export type RunRowActionParams = {
-  readonly target: ExploreFileActionTarget;
-  readonly actionId: string;
 };
 
 export type OpenEntryParams = {

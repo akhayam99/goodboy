@@ -45,6 +45,7 @@ import { SessionDraftPane } from '../../features/session/components/SessionDraft
 import { WorkspaceSwitcher } from '../../features/workspace/components/WorkspaceSwitcher';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { BranchPage } from '../../features/branch/components/BranchPage';
+import { WorktreeEntriesSlot } from '../../app/components/MockScene/scenes/WorktreeEntriesSlot';
 import { CONTEXT_TAB_LABEL } from '../../features/session/components/ContextDrawer/contextTabs';
 import type { SettingsFocus } from '../../features/settings/settingsFocus';
 
@@ -265,6 +266,8 @@ describe('primary surfaces mount on real store selectors', () => {
           onRefresh={() => undefined}
           onClose={() => undefined}
           onDeselect={() => undefined}
+          onOpenFull={null}
+          star={null}
           launchFocusRequest={0}
         />
       ),
@@ -287,6 +290,8 @@ describe('primary surfaces mount on real store selectors', () => {
           onRefresh={() => undefined}
           onClose={() => undefined}
           onDeselect={() => undefined}
+          onOpenFull={null}
+          star={null}
           launchFocusRequest={0}
         />
       ),
@@ -300,25 +305,39 @@ describe('primary surfaces mount on real store selectors', () => {
   it('opens the session overview', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
-    await mountSurface({ ui: <KeepAliveWorkSurface sessionId={sessionId} isActive /> });
+    await mountSurface({
+      ui: (
+        <>
+          <WorktreeEntriesSlot />
+          <KeepAliveWorkSurface sessionId={sessionId} isActive />
+        </>
+      ),
+    });
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
     expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
-    expect(screen.getByTestId('context-chip')).toBeDefined();
+    expect(screen.getByTestId('overview-title').closest('h1')).not.toBeNull();
     expectNoRenderLoop();
   });
 
   it('opens the session diff', async () => {
     const sessionId = seedSessionWithMounts({ useAppStore });
 
-    await mountSurface({ ui: <KeepAliveWorkSurface sessionId={sessionId} isActive /> });
+    await mountSurface({
+      ui: (
+        <>
+          <WorktreeEntriesSlot />
+          <KeepAliveWorkSurface sessionId={sessionId} isActive />
+        </>
+      ),
+    });
     await act(async () => {
       useAppStore.getState().navigate({ to: sessionPlace({ sessionId, lens: 'files' }) });
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
 
     expect(
-      within(screen.getByRole('navigation', { name: 'Sections' }))
+      within(screen.getByRole('navigation', { name: 'Worktree' }))
         .getByRole('button', { name: /^Files/ })
         .getAttribute('aria-current'),
     ).toBe('page');
@@ -351,7 +370,7 @@ describe('primary surfaces mount on real store selectors', () => {
   });
 
   it.each(['goal', 'decisions', 'summary'] as const)(
-    'opens the %s tab of the context drawer',
+    'opens the context drawer at its %s section',
     async (tab) => {
       const sessionId = seedSessionWithMounts({ useAppStore });
 
@@ -362,8 +381,10 @@ describe('primary surfaces mount on real store selectors', () => {
       });
 
       expect(
-        screen.getByRole('tab', { name: CONTEXT_TAB_LABEL[tab] }).getAttribute('aria-selected'),
-      ).toBe('true');
+        screen
+          .getByRole('region', { name: CONTEXT_TAB_LABEL[tab] })
+          .getAttribute('data-context-section'),
+      ).toBe(tab);
       expectNoRenderLoop();
     },
   );

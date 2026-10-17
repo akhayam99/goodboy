@@ -1,27 +1,34 @@
 import { expect } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { waitFor, within } from '@testing-library/react';
 import { branchPlace } from '../../../store';
 import {
   type Row,
   WAIT,
   both,
   branchTab,
-  click,
-  clickButton,
   lens,
+  openCrumb,
   openPalette,
   settle,
   useAppStore,
   sectionLabels,
 } from './harness';
 
-const PAGES = ['Overview', 'Branch', 'Runs', 'Agents', 'Artifacts'];
+const PAGES = ['Overview', 'Runs', 'Agents', 'Artifacts'];
 
-const TOOLS = ['Explore', 'Scripts'];
-
-const menuLabels = async (): Promise<ReadonlyArray<string>> => {
-  const rows = await screen.findAllByRole('menuitemradio', undefined, WAIT);
-  return rows.map((row) => row.textContent ?? '');
+const pageLabels = async (): Promise<ReadonlyArray<string>> => {
+  const list = await waitFor(() => {
+    const found = document.querySelector<HTMLElement>(
+      '[data-level-layer="session"]:not([inert]) [data-testid="session-pages"]',
+    );
+    if (found === null) {
+      throw new Error('the sidebar is not on a session level');
+    }
+    return found;
+  }, WAIT);
+  return within(list)
+    .getAllByRole('button')
+    .map((row) => row.textContent ?? '');
 };
 
 const startsWithInOrder = (texts: ReadonlyArray<string>, labels: ReadonlyArray<string>): void => {
@@ -35,13 +42,13 @@ const startsWithInOrder = (texts: ReadonlyArray<string>, labels: ReadonlyArray<s
 
 export const REGISTRY_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'pages menu: the first rows are the five pages of the column, then the tools',
-    covers: ['trail:pages-menu'],
-    open: () => clickButton(/^Session/),
+    name: 'session level: the pages read Overview, Runs, Agents, Artifacts, with no branch entry',
+    covers: ['sidebar:session-pages'],
+    open: () => settle(),
     lands: async () => {
-      const texts = await menuLabels();
-      startsWithInOrder(texts, [...PAGES, ...TOOLS]);
-      for (const retired of ['Review', 'Diff', 'Pull request', 'Session']) {
+      const texts = await pageLabels();
+      startsWithInOrder(texts, PAGES);
+      for (const retired of ['Branch', 'Review', 'Diff', 'Pull request', 'Explore', 'Scripts']) {
         expect(
           texts.some((text) => text.startsWith(retired)),
           retired,
@@ -50,30 +57,27 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'pages menu: choosing Branch lands on the Pull request tab',
+    name: 'session level: a worktree row lands on the Pull request tab',
     covers: ['navigate', 'lens:branch'],
-    open: async () => {
-      await clickButton(/^Session/);
-      await click(await screen.findByRole('menuitemradio', { name: /^Branch/ }));
-    },
+    open: () => openCrumb(/^Branch/),
     lands: both(lens('branch'), branchTab('pr')),
   },
   {
-    name: 'palette: Open Comments finds the Comments tab',
-    covers: ['navigate', 'palette:Open Comments'],
-    open: () => openPalette(/^Open Comments/, 'Open Comments'),
+    name: 'palette: Open comments finds the Comments tab',
+    covers: ['navigate', 'palette:Open comments'],
+    open: () => openPalette(/^Open comments/, 'Open comments'),
     lands: branchTab('comments'),
   },
   {
-    name: 'palette: Open Files finds the Files tab',
-    covers: ['navigate', 'palette:Open Files'],
-    open: () => openPalette(/^Open Files/, 'Open Files'),
+    name: 'palette: Open files finds the Files tab',
+    covers: ['navigate', 'palette:Open files'],
+    open: () => openPalette(/^Open files/, 'Open files'),
     lands: branchTab('files'),
   },
   {
     name: 'palette: the former names still find the tabs',
-    covers: ['navigate', 'palette:Open Comments'],
-    open: () => openPalette(/^Open Comments/, 'Review'),
+    covers: ['navigate', 'palette:Open comments'],
+    open: () => openPalette(/^Open comments/, 'Review'),
     lands: branchTab('comments'),
   },
   {
@@ -85,7 +89,7 @@ export const REGISTRY_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await branchTab('pr')(ctx);
-      await waitFor(() => expect(sectionLabels()[0]).toBe('Overview'), WAIT);
+      await waitFor(() => expect(sectionLabels()[0]).toBe('Pull request'), WAIT);
     },
   },
 ];

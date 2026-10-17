@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode, type Ref } from 'react';
-import type { Tone } from '@goodboy/ui';
+import type { DrawerSizing, Tone } from '@goodboy/ui';
 import type { LucideIcon } from 'lucide-react';
 
 export type StudioChrome = {
@@ -19,6 +19,7 @@ export type StudioDrawerSpec = {
   readonly ariaLabel: string;
   readonly resizeLabel: string;
   readonly drawerRef?: Ref<HTMLElement>;
+  readonly sizing?: DrawerSizing;
 };
 
 export type StudioFrameHandle = {

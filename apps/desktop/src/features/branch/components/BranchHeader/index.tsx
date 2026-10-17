@@ -1,9 +1,7 @@
-import { ArrowRight, ChevronUp } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { ChevronUp } from 'lucide-react';
 import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
-import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
-import { useNow } from '../../../../shared/hooks/useNow';
-import { formatAge } from '../../../../shared/utils/time/formatAge';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { usePullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
 import { PullRequestTitle } from '../PullRequestTab/PullRequestTitle';
@@ -13,26 +11,18 @@ import { ActionConfirmPanel } from '../../../actions/components/ActionControls/A
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
 import type { BranchControls } from '../../hooks/useBranchControls';
 import type { BranchPrimary } from '../../branchPrimary';
-import { queueLineOf } from '../../queueLineOf';
-import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
-import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
 import { pushFailureOf } from '../../../actions/kinds/pushFailureOf';
 import { PushFailureActions } from './PushFailureActions';
 import { StartHint } from '../../../../shared/components/StartHint';
 import { START_HINT_COPY } from '../../../../shared/components/startHintCopy';
 import { START_HINT_SCOPES } from '../../../../store/slices/startHints/startHintScopes';
-import { BranchStateChip } from './BranchStateChip';
+import { requestNounLabel } from '../../requestNounLabel';
 import { BranchOverflow } from './BranchOverflow';
-import { BranchSwitcher } from './BranchSwitcher';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly host?: PullRequestHost;
-  readonly mountPath: string | null;
   readonly pr: PullRequestState | null;
-  readonly projectName: string | null;
-  readonly branch: string | null;
-  readonly baseBranch: string | null;
   readonly fallbackTitle: string;
   readonly controls: BranchControls;
   readonly isPushBusy: boolean;
@@ -40,8 +30,7 @@ type Props = {
   readonly tab: BranchTab;
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
-  readonly createdAt: string | null;
-  readonly commitCount: number | null;
+  readonly pageAction?: ReactNode;
   readonly onMutated: () => void;
 };
 
@@ -51,19 +40,10 @@ type ButtonParams = {
   readonly variant: 'primary' | 'secondary';
 };
 
-const capitalized = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
-
-const stateOf = (pr: PullRequestState | null): PullRequestPresentationState =>
-  pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });
-
 export const BranchHeader = ({
   sessionId,
   host = 'github',
-  mountPath,
   pr,
-  projectName,
-  branch,
-  baseBranch,
   fallbackTitle,
   controls,
   isPushBusy,
@@ -71,8 +51,7 @@ export const BranchHeader = ({
   tab,
   isActive = true,
   canEditTitle,
-  createdAt,
-  commitCount,
+  pageAction = null,
   onMutated,
 }: Props) => {
   const { primary, secondary } = controls;
@@ -83,22 +62,6 @@ export const BranchHeader = ({
     isKeyActive: isActive && tab === 'pr',
     onSaved: onMutated,
   });
-  const now = useNow(60_000);
-  const age = createdAt === null ? '' : formatAge({ from: createdAt, now });
-  const head = pr?.headBranch ?? branch;
-  const base = pr?.baseBranch ?? baseBranch;
-  const abort =
-    controls.diffControls.actions.find((action) => action.id === 'diff.abortRebase') ?? null;
-  const isQuiet = primary === null || primary.isBusy || isPushBusy;
-  const blockedReason = isQuiet ? null : primary.blockedReason;
-  const note = isQuiet ? null : primary.note;
-  const queueLine = pr === null ? null : queueLineOf({ pr });
-  const numberLabel =
-    pr === null
-      ? null
-      : host === 'github'
-        ? `#${pr.number}`
-        : `${PULL_REQUEST_NOUNS[host].short} ${PULL_REQUEST_NOUNS[host].numberPrefix}${pr.number}`;
 
   const failedError = controls.diffControls.failure?.error;
   const pushFailure = pushFailureOf({ error: failedError });
@@ -110,6 +73,7 @@ export const BranchHeader = ({
       pendingLabel: action.pendingLabel,
       isBusy: action.isBusy || isPushBusy,
     });
+    const tip = action.blockedReason ?? action.note;
     const button = (
       <Button
         size="sm"
@@ -127,10 +91,10 @@ export const BranchHeader = ({
         {action.isExpanded === true && <ChevronUp size={ICON_SIZE.control} aria-hidden />}
       </Button>
     );
-    return action.blockedReason === null ? (
+    return tip === null ? (
       button
     ) : (
-      <Tooltip content={action.blockedReason} anchorClassName="shrink-0">
+      <Tooltip content={tip} anchorClassName="shrink-0">
         <span className="inline-flex">{button}</span>
       </Tooltip>
     );
@@ -138,7 +102,6 @@ export const BranchHeader = ({
 
   const primaryVariant =
     primary === null || primary.isSecondary || isPrimaryYielding ? 'secondary' : 'primary';
-  const separator = <span aria-hidden>·</span>;
   return (
     <div className="relative flex min-w-0 flex-col gap-2">
       <HeaderBand
@@ -146,114 +109,36 @@ export const BranchHeader = ({
           <PullRequestTitle
             title={pr?.title ?? fallbackTitle}
             edit={titleEdit}
-            noun={capitalized(PULL_REQUEST_NOUNS[host].long)}
+            noun={requestNounLabel({ host })}
           />
-        }
-        afterTitle={
-          titleEdit.isEditing ? null : <BranchStateChip state={stateOf(pr)} host={host} />
         }
         meta={
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
-            {titleEdit.isEditing ? <span>Enter saves, Esc cancels</span> : null}
-            {!titleEdit.isEditing && head !== null && (
-              <>
-                <BranchSwitcher
-                  sessionId={sessionId}
-                  currentPath={mountPath}
-                  repoName={projectName}
-                  branch={head}
-                />
-                {base !== null && (
-                  <span className="inline-flex min-w-0 items-center gap-1">
-                    <ArrowRight size={ICON_SIZE.row} aria-hidden />
-                    <span className="text-code">{base}</span>
-                  </span>
-                )}
-              </>
-            )}
-            {!titleEdit.isEditing && head === null && projectName !== null && (
-              <span className="text-code">{projectName}</span>
-            )}
-            {!titleEdit.isEditing && numberLabel !== null && (
-              <>
-                {separator}
-                <span>
-                  {numberLabel}
-                  {pr?.author != null && ` by ${pr.author}`}
-                </span>
-              </>
-            )}
-            {!titleEdit.isEditing && commitCount !== null && (
-              <>
-                {separator}
-                <span>
-                  {commitCount} {commitCount === 1 ? 'commit' : 'commits'}
-                </span>
-              </>
-            )}
-            {!titleEdit.isEditing && age !== '' && (
-              <>
-                {separator}
-                <span>{age}</span>
-              </>
-            )}
-            {!titleEdit.isEditing && blockedReason !== null && (
-              <>
-                {separator}
-                <span data-testid="branch-blocked-reason" className="min-w-0">
-                  {blockedReason}
-                </span>
-              </>
-            )}
-            {!titleEdit.isEditing && blockedReason === null && note !== null && (
-              <>
-                {separator}
-                <span data-testid="branch-merge-note" className="min-w-0">
-                  {note}
-                </span>
-              </>
-            )}
-            {!titleEdit.isEditing && queueLine !== null && (
-              <>
-                {separator}
-                <span data-testid="branch-queue-line" className="min-w-0 text-foreground">
-                  {queueLine}
-                </span>
-              </>
-            )}
-          </div>
+          titleEdit.isEditing ? (
+            <span className="text-meta text-muted-foreground">Enter saves, Esc cancels</span>
+          ) : null
         }
         actions={
-          <HeaderActions
-            secondary={
-              secondary === null
-                ? null
-                : buttonOf({ action: secondary, slot: 'secondary', variant: 'secondary' })
-            }
-            button={
-              abort === null ? null : (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={abort.blockedReason !== null}
-                  onClick={() => controls.diffControls.trigger({ actionId: abort.id })}
-                >
-                  {abort.shortLabel}
-                </Button>
-              )
-            }
-            primary={
-              primary === null
-                ? null
-                : buttonOf({ action: primary, slot: 'primary', variant: primaryVariant })
-            }
-            overflow={
-              <BranchOverflow
-                diffControls={controls.diffControls}
-                pullRequestControls={controls.pullRequestControls}
-              />
-            }
-          />
+          <div className="flex min-w-0 items-center gap-2">
+            {pageAction}
+            <HeaderActions
+              secondary={
+                secondary === null
+                  ? null
+                  : buttonOf({ action: secondary, slot: 'secondary', variant: 'secondary' })
+              }
+              primary={
+                primary === null
+                  ? null
+                  : buttonOf({ action: primary, slot: 'primary', variant: primaryVariant })
+              }
+              overflow={
+                <BranchOverflow
+                  diffControls={controls.diffControls}
+                  pullRequestControls={controls.pullRequestControls}
+                />
+              }
+            />
+          </div>
         }
       />
       {titleEdit.error !== null && (

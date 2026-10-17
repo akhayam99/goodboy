@@ -12,7 +12,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { APP_SECTIONS } from '../../../features/settings/components/SettingsStudio/appSections';
 import { ALL_ROWS, ROW_FILES, ROW_SUFFIX, STUDIO_KINDS } from './allRows';
 import {
@@ -64,6 +64,8 @@ const EXEMPT: Readonly<Record<string, string>> = {
   openStorageArtifact:
     'storage rows list artifacts read from disk, which the bridge mock has none of',
   openScribePullRequest: 'the engine pushing and opening the pull request, not a page',
+  openMountRequest:
+    'the registry verb behind the pull request link of the retired Overview mount rows; the worktree level entry opens the page through navigate',
 };
 
 const CHROME_TARGET_CEILING = 24;
@@ -83,7 +85,9 @@ const chromeTargets = (): ReadonlyArray<string> =>
       return [];
     }
     return Array.from(root.querySelectorAll<HTMLElement>(INTERACTIVE))
+      .filter((element) => element.closest('[inert]') === null)
       .filter((element) => element.closest('[data-column-sessions]') === null)
+      .filter((element) => element.closest('[data-session-level]') === null)
       .map((element) => element.getAttribute('aria-label') ?? element.textContent ?? '');
   });
 
@@ -141,14 +145,17 @@ describe('navigation flow table ratchet', () => {
   it('has a row for every crumb menu entry and palette destination', async () => {
     const declared = declaredTokens();
     await boot({ seed: 'pr' });
-    await clickButton(/^Session/);
-    const crumbs = screen.getAllByRole('menuitemradio').map((item) => {
-      const text = (item.textContent ?? '').trim();
-      const known = CRUMB_ROWS.find((row) => text.startsWith(row.label));
-      return `crumb:${known?.label ?? text}`;
-    });
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
-    await settle();
+    const pages = document.querySelector<HTMLElement>(
+      '[data-level-layer="session"] [data-testid="session-pages"]',
+    );
+    expect(pages).not.toBeNull();
+    const crumbs = within(pages ?? document.body)
+      .getAllByRole('button')
+      .map((item) => {
+        const text = (item.textContent ?? '').trim();
+        const known = CRUMB_ROWS.find((row) => text.startsWith(row.label));
+        return `crumb:${known?.label ?? text}`;
+      });
     await clickButton(/^Search \(/);
     const sessionGoals = new Set(useAppStore.getState().sessions.map((session) => session.goal));
     const workspaceNames = new Set(useAppStore.getState().workspaces.map((ws) => ws.name));

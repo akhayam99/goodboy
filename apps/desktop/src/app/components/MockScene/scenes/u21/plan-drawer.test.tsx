@@ -91,11 +91,11 @@ describe('the plan drawer scenes', () => {
     ).toEqual(['Send to planner']);
   });
 
-  it('revising: the body dims, the chip says so once and the primary says why it waits', async () => {
+  it('revising: the body dims, the reason says so once and the primary says why it waits', async () => {
     renderScene('plan-drawer-revising');
 
-    const chip = await screen.findByTestId('artifact-state-chip');
-    expect(chip.textContent).toContain('Revising to v3');
+    await screen.findByTestId('plan-drawer-body');
+    expect(screen.queryByTestId('artifact-state-chip')).toBeNull();
     expect(screen.queryByTestId('plan-drawer-state-line')).toBeNull();
     expect(screen.getByTestId('plan-drawer-body').getAttribute('data-revising')).toBe('true');
     const drawer = screen.getByRole('region', { name: 'Reconcile the settlement export' });
@@ -120,7 +120,7 @@ describe('the plan drawer scenes', () => {
     );
   });
 
-  it('question: the planner question is at the top, the state says waiting, never revising', async () => {
+  it('question: the planner question is at the top and is the one ask, never revising', async () => {
     renderScene('plan-drawer-question');
 
     const question = await screen.findByTestId('plan-drawer-question');
@@ -129,12 +129,11 @@ describe('the plan drawer scenes', () => {
     expect(screen.getByRole('button', { name: 'Send to planner' }).hasAttribute('disabled')).toBe(
       true,
     );
-    expect(screen.getByTestId('artifact-state-detail').textContent).toBe('waiting for your answer');
+    expect(screen.queryByTestId('artifact-state-detail')).toBeNull();
     expect(screen.queryByText(/Revising/)).toBeNull();
     expect(screen.getByTestId('plan-primary').hasAttribute('disabled')).toBe(true);
-    expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
-      'The planner asked a question. Answer it first.',
-    );
+    expect(screen.queryByTestId('plan-drawer-reason')).toBeNull();
+    expect(screen.queryByText('The planner asked a question. Answer it first.')).toBeNull();
   });
 
   it('editing: the editor replaces the plan, with Save as the one filled button', async () => {
@@ -229,14 +228,16 @@ describe('the plan drawer scenes', () => {
       expect(screen.getByRole('button', { name: 'Send to planner' })).toBeDefined();
     });
 
-    it('send: the planner revises, the chip says so, then v3 lands and the comments are addressed', async () => {
+    it('send: the planner revises, the reason says so, then v3 lands and the comments are addressed', async () => {
       renderScene('plan-drawer-drafts');
 
       fireEvent.click(await screen.findByRole('button', { name: 'Send to planner' }));
 
       await waitFor(
         () =>
-          expect(screen.getByTestId('artifact-state-chip').textContent).toContain('Revising to v3'),
+          expect(screen.getByTestId('plan-drawer-reason').textContent).toBe(
+            'The planner is revising this plan',
+          ),
         WAIT,
       );
       await waitFor(

@@ -22,6 +22,7 @@ import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './ne
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
 import { fixChecksSuggestionOf, isFixInProgress } from './fixChecksSuggestionOf';
+import { cleanupSuggestionOf } from './cleanupSuggestionOf';
 import type {
   FixChecksProgress,
   RebaseSuggestionTarget,
@@ -79,6 +80,8 @@ export type SuggestionCleanupProposal = {
   readonly projectName: string;
   readonly branch: string;
   readonly prNumber: number | null;
+  readonly sizeBytes: number | null;
+  readonly isArchived: boolean;
 };
 
 type SuggestionPlan = {
@@ -571,24 +574,9 @@ export const deriveNextSteps = ({
       }
     }
   }
-  for (const proposal of cleanupProposals) {
-    suggestions.push({
-      id: `close-worktree:${proposal.mountId}`,
-      kind: 'close-worktree',
-      priority: 51,
-      band: 3,
-      title: `Close the ${proposal.projectName} worktree`,
-      detail: proposal.prNumber == null ? 'Ready to remove' : `#${proposal.prNumber} merged`,
-      sessionId,
-      targetKey: `worktree:${proposal.mountId}`,
-      fingerprint: `close-worktree:${proposal.requestId}`,
-      payload: {
-        mountId: proposal.mountId,
-        requestId: proposal.requestId,
-        branch: proposal.branch,
-        prNumber: proposal.prNumber,
-      },
-    });
+  const cleanup = cleanupSuggestionOf({ sessionId, proposals: cleanupProposals });
+  if (cleanup !== null) {
+    suggestions.push(cleanup);
   }
   const rebaseTargets: RebaseSuggestionTarget[] = [];
   const rebaseTargetIds = new Set<string>();

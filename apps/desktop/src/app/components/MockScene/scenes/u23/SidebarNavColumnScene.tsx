@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useAppStore } from '../../../../../store';
+import { useAppStore, useCurrentSession } from '../../../../../store';
+import { SessionRail } from '../../../SessionRail';
 import { SideColumn } from '../../../SideColumn';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import type { ColumnPlace } from '../../../SideColumn/columnPlace';
@@ -32,6 +33,7 @@ type Props = {
   readonly place?: ColumnPlace;
   readonly isFramed?: boolean;
   readonly onSeeded?: () => void;
+  readonly isSessionLevel?: boolean;
 };
 
 export const SidebarNavColumnScene = ({
@@ -39,8 +41,10 @@ export const SidebarNavColumnScene = ({
   place = null,
   isFramed = false,
   onSeeded,
+  isSessionLevel = false,
 }: Props) => {
   const [seed, setSeed] = useState<SidebarNavSeed | null>(null);
+  const current = useCurrentSession();
   useEffect(() => {
     const next = seedSidebarNav({ ...SIDEBAR_NAV_DEFAULTS, ...config });
     if (place === 'new') {
@@ -57,16 +61,17 @@ export const SidebarNavColumnScene = ({
   }
   if (isFramed) {
     return (
-      <div data-shot className="h-[600px] w-72 bg-background">
-        <SideColumn
-          scope="workspace"
-          workspaceId={seed.workspaceId}
-          currentSessionId={seed.session.id}
-          place={place}
-          isCollapsed={false}
-          actions={ACTIONS}
-          onToggle={noop}
-        />
+      <div data-shot className="flex h-[600px] bg-background">
+        <div className="h-full w-72 shrink-0">
+          <SideColumn
+            scope="workspace"
+            workspaceId={seed.workspaceId}
+            currentSessionId={seed.session.id}
+            place={place}
+            actions={ACTIONS}
+          />
+        </div>
+        {isSessionLevel ? <SessionRail session={current ?? seed.session} /> : null}
       </div>
     );
   }
@@ -78,9 +83,7 @@ export const SidebarNavColumnScene = ({
           workspaceId={seed.workspaceId}
           currentSessionId={seed.session.id}
           place={place}
-          isCollapsed={false}
           actions={ACTIONS}
-          onToggle={noop}
         />
       </div>
     </div>

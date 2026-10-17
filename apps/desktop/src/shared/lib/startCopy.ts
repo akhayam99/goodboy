@@ -9,8 +9,23 @@ export const startFromLabel = ({ identifier }: IdentifierParams): string =>
 
 const pickLabel = ({ identifier }: IdentifierParams): string => `Pick ${identifier}`;
 
+export const TASK_CHOICE = 'Pick up a task';
+export const RUN_WORKFLOW_CHOICE = 'Run a workflow';
+export const ORCHESTRATE_CHOICE = 'Orchestrate';
+export const ASK_AGENT_CHOICE = 'Ask an agent';
+export const START_AUTO_CHOICE = 'Start Auto';
+export const WRITE_REPORT_CHOICE = 'Write a report';
+export const DRAW_WIREFRAME_CHOICE = 'Draw a wireframe';
+
+type RoleParams = {
+  readonly noun: string;
+};
+
+export const startRoleLabel = ({ noun }: RoleParams): string => `${NAMES.start} ${noun}`;
+
 export const TASK_LINE = 'Start from an issue in your tracker.';
 export const RUN_LINE = 'Several agents work through your goal, step by step.';
+export const ORCHESTRATE_LINE = 'The orchestrator picks each next step until the goal is done.';
 export const AGENT_LINE = 'One agent in the role you pick.';
 export const AUTO_AGENT_LINE = 'Auto answers, or hands the work to the roles it picks.';
 
@@ -35,9 +50,6 @@ export const pickIssuesLabel = ({ identifiers }: IdentifiersParams): string =>
   identifiers.length === 1
     ? pickLabel({ identifier: identifiers[0] ?? '' })
     : `Pick ${identifiers.length} issues`;
-
-export const briefFromIssuesLabel = ({ identifiers }: IdentifiersParams): string =>
-  `Brief from ${namedWithMore({ identifiers })}`;
 
 export const willCloseLine = ({ identifiers }: IdentifiersParams): string | null =>
   identifiers.length === 0 ? null : `Will close ${identifiers.join(', ')} when merged`;

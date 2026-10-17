@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { ProviderId, Workflow, WorkspaceId } from '@goodboy/types';
-import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
+import type { ProviderId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
+import { DrawerColumn, PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
+import { useStudioDrawer } from '../../../../shared/hooks/useStudioDrawer';
+import { useWorkflowRunHistory } from '../../hooks/useWorkflowRunHistory';
+import { WorkflowHistoryPane } from '../WorkflowHistoryPane';
 import { primaryProjectRoot } from '../../../workspace/primaryProjectRoot';
 import { WorkflowEditor } from '../WorkflowStudio/WorkflowEditor';
 import { ImportPopover } from '../WorkflowStudio/ImportPopover';
@@ -16,6 +20,9 @@ import { isPresetWorkflow } from '../../isPresetWorkflow';
 import { useWorkflowEditor } from './useWorkflowEditor';
 
 type Props = { readonly workspaceId: WorkspaceId };
+
+const HISTORY_PANE_LABEL = 'Runs';
+const HISTORY_RESIZE_LABEL = 'Resize the runs panel';
 
 export const WorkflowsPanel = ({ workspaceId }: Props) => {
   const templates = useAppStore(
@@ -80,6 +87,51 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
     void loadStepLibrary(workspaceId);
   }, [loadPhaseTemplates, loadStepLibrary, workspaceId]);
 
+  const navigate = useAppStore((state) => state.navigate);
+  const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
+  const openSessionDraft = useAppStore((state) => state.openSessionDraft);
+  const history = useWorkflowRunHistory({ workspaceId });
+  const [historyWorkflowId, setHistoryWorkflowId] = useState<WorkflowId | null>(null);
+  const historyWorkflow = presets.find((preset) => preset.id === historyWorkflowId) ?? null;
+  const showRuns = (workflow: Workflow) => {
+    setHistoryWorkflowId(workflow.id);
+    history.reload();
+  };
+  const historyPane =
+    historyWorkflow === null ? null : (
+      <WorkflowHistoryPane
+        workflow={historyWorkflow}
+        load={history.load}
+        onRetry={history.reload}
+        onClose={() => setHistoryWorkflowId(null)}
+        onOpenWorkflow={() => {
+          setHistoryWorkflowId(null);
+          openEditor(historyWorkflow);
+        }}
+        onOpenRun={(run) =>
+          navigate({
+            to: sessionPlace({
+              sessionId: run.sessionId,
+              lens: 'workflows',
+              target: { kind: 'run', runId: run.workflowRunId },
+            }),
+          })
+        }
+        onStartRun={() => {
+          patchSessionDraft({
+            workspaceId,
+            patch: { choice: 'workflow', workflowId: historyWorkflow.id },
+          });
+          openSessionDraft();
+        }}
+      />
+    );
+  const isPaneHosted = useStudioDrawer({
+    node: historyPane,
+    ariaLabel: HISTORY_PANE_LABEL,
+    resizeLabel: HISTORY_RESIZE_LABEL,
+  });
+
   const restore = async (slugs: ReadonlyArray<string>) => {
     setIsRestoring(true);
     try {
@@ -116,32 +168,52 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
         removedBuiltinIds={removedBuiltinIds}
         workspaceName={workspaceName}
         isRestoring={isRestoring}
+        runs={history.load?.runs ?? null}
+        isHistoryFailed={history.load?.status === 'failed'}
         tabs={tabs}
-        importControl={<ImportPopover workspaceId={workspaceId} takenNames={takenNames} />}
+        renderImport={({ renderTrigger }) => (
+          <ImportPopover
+            workspaceId={workspaceId}
+            takenNames={takenNames}
+            {...(renderTrigger !== null && { renderTrigger })}
+          />
+        )}
         onOpen={editor.open}
+        onShowRuns={showRuns}
         onNew={editor.openNew}
         onRestore={restore}
       />
     );
 
-  if (editor.editing === null) {
-    return (
-      <PaneShell scroll="body" title="Workflows">
+  const main =
+    editor.editing === null ? (
+      <PaneShell page="workflows" scroll="body" title="Workflows">
         {list}
       </PaneShell>
+    ) : (
+      <ScrollFade className="min-h-0 w-full flex-1">
+        <PageColumn className="flex flex-col py-5">
+          <WorkflowEditor
+            workspaceId={workspaceId}
+            workingDir={workingDir}
+            connectedProviders={connectedProviders}
+            editor={editor}
+          />
+        </PageColumn>
+      </ScrollFade>
     );
+
+  if (isPaneHosted) {
+    return main;
   }
 
   return (
-    <ScrollFade className="min-h-0 w-full flex-1">
-      <PageColumn className="flex flex-col py-5">
-        <WorkflowEditor
-          workspaceId={workspaceId}
-          workingDir={workingDir}
-          connectedProviders={connectedProviders}
-          editor={editor}
-        />
-      </PageColumn>
-    </ScrollFade>
+    <DrawerColumn
+      className="min-h-0 flex-1"
+      main={main}
+      drawer={historyPane}
+      ariaLabel={HISTORY_PANE_LABEL}
+      resizeLabel={HISTORY_RESIZE_LABEL}
+    />
   );
 };

@@ -74,14 +74,15 @@ beforeEach(() => {
 });
 
 describe('mount.browseFiles', () => {
-  it('opens Explore on that mount and never moves where agents write', async () => {
+  it('opens the Explore pane on that mount and never moves where agents write', async () => {
     const setSessionActiveMount = vi.fn(async () => undefined);
     useAppStore.setState({ setSessionActiveMount });
 
     await definition().run({ facts: facts(), env, choice: null });
 
     const state = useAppStore.getState();
-    expect(state.activeLens[SESSION_ID]).toBe('explore');
+    expect(state.activeLens[SESSION_ID]).toBeNull();
+    expect(state.drawer).toEqual({ kind: 'explore', sessionId: SESSION_ID, payload: null });
     expect(state.exploreMountPath[SESSION_ID]).toBe(MOUNT.worktreePath);
     expect(state.sessionActiveMount).toEqual({});
     expect(setSessionActiveMount).not.toHaveBeenCalled();

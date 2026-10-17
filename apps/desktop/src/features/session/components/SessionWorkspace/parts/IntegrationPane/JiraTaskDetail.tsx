@@ -1,3 +1,4 @@
+import { RecordProperties } from '../../../../../../shared/components/StudioDetail/RecordProperties';
 import { Skeleton, PaneShell } from '@goodboy/ui';
 import type { ProjectId, SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip } from '@goodboy/ui';
@@ -34,6 +35,7 @@ export const JiraTaskDetail = ({ workspaceId, projectId, task }: Props) => {
           <Skeleton className="h-3 w-3/4 rounded-sm" />
         </div>
       ) : null}
+      <RecordProperties facts={[]} />
       {error != null ? (
         <ErrorStrip label="the Jira issue" error={new Error(error)} onRetry={refetch} />
       ) : null}

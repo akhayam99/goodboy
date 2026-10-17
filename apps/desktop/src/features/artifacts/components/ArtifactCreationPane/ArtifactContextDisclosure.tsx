@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Collapsible, Eyebrow } from '@goodboy/ui';
 import { countCutRows, type ArtifactContextInventoryRow } from '../../artifactContextInventory';
 import { ArtifactContextRow } from './ArtifactContextRow';
@@ -9,6 +10,7 @@ type Props = {
   readonly isCollecting: boolean;
   readonly isOpen: boolean;
   readonly onOpenChange: (open: boolean) => void;
+  readonly children?: ReactNode;
 };
 
 const triggerSummary = ({
@@ -33,20 +35,22 @@ export const ArtifactContextDisclosure = ({
   isCollecting,
   isOpen,
   onOpenChange,
+  children = null,
 }: Props) => (
   <Collapsible
     open={isOpen}
     onOpenChange={onOpenChange}
     trigger={
       <span className="flex min-w-0 items-baseline gap-2">
-        <Eyebrow label="Included context" />
+        <Eyebrow label="Context" />
         <span className="text-meta text-faint-foreground" data-testid="artifact-context-summary">
           {triggerSummary({ rows, isCollecting })}
         </span>
       </span>
     }
   >
-    <div className="flex min-w-0 flex-col gap-3 px-2 pb-2">
+    <div className="flex min-w-0 flex-col gap-4 pb-2">
+      {children}
       <span className="text-meta text-muted-foreground">{repoLine}</span>
       <ul className="flex min-w-0 flex-col gap-2">
         {rows.map((row) => (

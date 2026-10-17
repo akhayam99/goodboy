@@ -9,6 +9,19 @@ afterEach(cleanup);
 const nodeOf = (label: string): HTMLElement => screen.getByRole('img', { name: label });
 
 describe('WorkNode', () => {
+  it('masks the rail behind it, and draws no disc on a selected row', () => {
+    render(
+      <>
+        <WorkNode state="queued" mark={{ kind: 'dot' }} label="On the rail" />
+        <WorkNode state="queued" mark={{ kind: 'dot' }} label="On a selected row" isTransparent />
+      </>,
+    );
+
+    expect(nodeOf('On the rail').className).toContain('bg-background');
+    expect(nodeOf('On a selected row').className).not.toContain('bg-background');
+    expect(nodeOf('On a selected row').className).toContain('bg-transparent');
+  });
+
   it('draws every state at the same 20px size', () => {
     const states: ReadonlyArray<WorkNodeState> = [
       'queued',

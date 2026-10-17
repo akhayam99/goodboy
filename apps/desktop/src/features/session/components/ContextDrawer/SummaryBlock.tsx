@@ -6,9 +6,6 @@ import { ContextBlock } from './ContextBlock';
 import { KeyLineList } from './KeyLineList';
 import { summaryItems } from './summaryItems';
 
-const REVEAL_GROUP =
-  'group-hover/context-block:opacity-100 group-focus-within/context-block:opacity-100';
-
 type Props = {
   readonly title: string;
   readonly body: string;
@@ -47,8 +44,6 @@ export const SummaryBlock = ({ title, body, icon, isLocked, onCommit }: Props) =
             <CardAction
               icon={hasBody ? Pencil : Plus}
               label={`${hasBody ? 'Edit' : 'Add'} ${title.toLowerCase()}`}
-              reveal={hasBody}
-              revealGroup={REVEAL_GROUP}
               disabled={isLocked}
               onClick={startEditing}
             />

@@ -20,7 +20,6 @@ import { brandId, type Agent, type AgentId, type WorkspaceId } from '@goodboy/ty
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../../store';
 import { invokeAgentList } from '../../workflows/workflows';
-import { SETTING_AUTO_EXPERIMENT } from '../../settings/settings';
 import { AutoReleaseContext } from '../autoReleaseContext';
 import { MoveToAutoPanel } from './MoveToAutoPanel';
 
@@ -36,7 +35,6 @@ beforeEach(async () => {
   await db.execute("UPDATE agents SET name = 'Implementer', kind = 'implementer' WHERE id = ?", [
     SOURCE,
   ]);
-  await setSetting(db, SETTING_AUTO_EXPERIMENT, 'true');
   const agents = await invokeAgentList(AUTO_SEED_SESSION);
   const found = agents.find((agent) => agent.id === SOURCE);
   if (found === undefined) {
@@ -121,23 +119,35 @@ describe('the Move to Auto panel', () => {
     expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).toBeNull();
   });
 
-  it('says Auto is off when the setting turned off in another window, and moves nothing', async () => {
-    mount();
-    await setSetting(db, SETTING_AUTO_EXPERIMENT, 'false');
+  it('moves the agent even when an old experiment row still says false', async () => {
+    const onClose = vi.fn();
+    await setSetting(db, 'agents.autoExperiment', 'false');
+    mount({ onClose });
 
     fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
 
-    expect(await screen.findByText('Auto is turned off in Settings, Experiments.')).toBeDefined();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).not.toBeNull();
+  });
+
+  it('says Auto is not in this build when the release gate is closed, and moves nothing', async () => {
+    mount({ isReleased: false });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+
+    expect(await screen.findByText('Auto is not available in this build.')).toBeDefined();
     expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).toBeNull();
   });
 
   it('lets the person try again after a failure and cancel at any time', async () => {
     const onClose = vi.fn();
+    await db.exec('PRAGMA foreign_keys = OFF');
+    await db.execute("UPDATE agents SET workflow_run_id = 'run-harborline' WHERE id = ?", [SOURCE]);
+    await db.exec('PRAGMA foreign_keys = ON');
     mount({ onClose });
-    await setSetting(db, SETTING_AUTO_EXPERIMENT, 'false');
     fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
-    await screen.findByText('Auto is turned off in Settings, Experiments.');
-    await setSetting(db, SETTING_AUTO_EXPERIMENT, 'true');
+    await screen.findByText('Pause or finish the run first.');
+    await db.execute('UPDATE agents SET workflow_run_id = NULL WHERE id = ?', [SOURCE]);
 
     fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
 

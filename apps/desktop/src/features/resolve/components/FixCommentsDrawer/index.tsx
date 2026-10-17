@@ -14,6 +14,7 @@ import { outcomeSummaryLine } from '../../commentOutcomeCopy';
 import { useDraftRouting } from '../ReviewFlow/useDraftRouting';
 import { useReviewEntries } from '../ReviewFlow/useReviewEntries';
 import { groupConversationsByFile } from '../../groupConversationsByFile';
+import { openReviewComment } from '../../openReviewComment';
 import { COMMENT_FILTERS, filteredEntries, isNoteEntry, type CommentFilter } from './commentFilter';
 import { FIX_COMMENTS_LABEL, filterLabelOf } from './fixCommentsCopy';
 import { BatchActions, type BatchReply } from './BatchActions';
@@ -28,13 +29,21 @@ type Props = {
   readonly sessionId: SessionId;
   readonly focusThreadId: string | null;
   readonly threadIds: ReadonlyArray<string> | null;
+  readonly fromThreadId?: string | null;
   readonly onClose: () => void;
 };
 
 const NO_QUESTIONS: ReadonlyArray<OpenQuestion> = [];
 const NO_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
-export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose }: Props) => {
+export const FixCommentsDrawer = ({
+  sessionId,
+  focusThreadId,
+  threadIds,
+  fromThreadId = null,
+  onClose,
+}: Props) => {
+  const navigate = useAppStore((state) => state.navigate);
   const { all } = useReviewEntries({ sessionId, scope: 'all' });
   const draft = useDraftRouting({ sessionId });
   const steps = useFixChain({ sessionId });
@@ -91,7 +100,12 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
     () => explicit ?? new Set(open.map((entry) => entry.threadId)),
     [explicit, open],
   );
-  const shown = useMemo(() => filteredEntries({ entries: listed, filter }), [filter, listed]);
+  const noteCount = listed.filter((entry) => isNoteEntry({ entry })).length;
+  const isSourceMixed = noteCount > 0 && noteCount < listed.length;
+  const shown = useMemo(
+    () => filteredEntries({ entries: listed, filter: isSourceMixed ? filter : 'all' }),
+    [filter, isSourceMixed, listed],
+  );
   const shownFixable = useMemo(() => shown.filter((entry) => entry.isFixable), [shown]);
   const entryById = useMemo(
     () => new Map(listed.map((entry) => [entry.threadId, entry] as const)),
@@ -155,6 +169,12 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
     <DrawerFrame
       title={FIX_COMMENTS_LABEL.title}
       icon={Wrench}
+      {...(fromThreadId !== null && {
+        back: {
+          label: FIX_COMMENTS_LABEL.backToComment,
+          onBack: () => openReviewComment({ navigate, sessionId, threadId: fromThreadId }),
+        },
+      })}
       count={
         <ModelChipPicker
           suggested={draft.suggested}
@@ -187,13 +207,15 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
               ) : undefined
             }
           />
-          <SegmentedTabs
-            ariaLabel={FIX_COMMENTS_LABEL.filters}
-            size="xs"
-            options={filterOptions}
-            value={filter}
-            onChange={setFilter}
-          />
+          {isSourceMixed ? (
+            <SegmentedTabs
+              ariaLabel={FIX_COMMENTS_LABEL.filters}
+              size="xs"
+              options={filterOptions}
+              value={filter}
+              onChange={setFilter}
+            />
+          ) : null}
           {groups.length === 0 ? (
             <p className="text-body text-muted-foreground">{FIX_COMMENTS_LABEL.empty}</p>
           ) : (
@@ -221,6 +243,7 @@ export const FixCommentsDrawer = ({ sessionId, focusThreadId, threadIds, onClose
                               <FixCommentRow
                                 entry={entry}
                                 isIncluded={picked.has(entry.threadId)}
+                                isSourceShown={isSourceMixed}
                                 onToggle={() => toggle(entry.threadId)}
                               />
                             )}

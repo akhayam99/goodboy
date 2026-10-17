@@ -249,7 +249,7 @@ describe('WorkspaceProjectsSection', () => {
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
     expect(screen.queryByText('/repos/ledger-core')).toBeNull();
-    expect(screen.getByRole('heading', { name: 'Projects' })).toBeDefined();
+    expect(screen.queryByRole('heading', { name: 'Projects' })).toBeNull();
     expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();
     expect(screen.queryByLabelText('Project path')).toBeNull();
     expect(screen.queryByRole('button', { name: /plain folder/i })).toBeNull();
@@ -317,7 +317,7 @@ describe('WorkspaceProjectsSection', () => {
     );
   });
 
-  it('unlinks a project from its row at once and Undo links the same folder again', async () => {
+  it('unlinks a project from its opened row at once and Undo links the same folder again', async () => {
     state.projects = [
       {
         id: 'proj-docs',
@@ -329,7 +329,9 @@ describe('WorkspaceProjectsSection', () => {
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Remove link to notify-relay' }));
+    expect(screen.queryByRole('button', { name: 'Remove link to notify-relay' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit notify-relay' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove link' }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() =>

@@ -3,20 +3,18 @@ import type { ComponentType } from 'react';
 import { useAppStore } from '../../../../store';
 import type { NewDrawerPayload } from '../../../../store/slices/drawer/state';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { NewDrawerBody } from './NewDrawerBody';
 import type { WritePanelProps } from '../../../artifacts/writePanelProps';
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly payload: NewDrawerPayload | null;
+  readonly payload: NewDrawerPayload;
   readonly writePanel: ComponentType<WritePanelProps>;
   readonly onClose: () => void;
 };
 
 export const NewDrawer = ({ sessionId, payload, writePanel, onClose }: Props) => {
   const session = useAppStore((state) => sessionById(state.sessions, sessionId) ?? null);
-  const isAuto = useIsAutoOn();
   if (session === null) {
     return null;
   }
@@ -25,7 +23,6 @@ export const NewDrawer = ({ sessionId, payload, writePanel, onClose }: Props) =>
       key={sessionId}
       session={session}
       payload={payload}
-      isAuto={isAuto}
       writePanel={writePanel}
       onClose={onClose}
     />

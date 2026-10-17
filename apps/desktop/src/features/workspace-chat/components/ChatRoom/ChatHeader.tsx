@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { PageColumn, TruncatedText } from '@goodboy/ui';
+import { PageHeader, TruncatedText } from '@goodboy/ui';
 
 type Props = {
   readonly title: string;
@@ -8,14 +8,20 @@ type Props = {
 };
 
 export const ChatHeader = ({ title, sessions = null, action = null }: Props) => (
-  <header className="shrink-0 pb-3">
-    <PageColumn className="flex h-8 min-w-0 items-center gap-2">
-      <TruncatedText as="h1" className="min-w-0 text-title text-foreground">
-        {title}
-      </TruncatedText>
-      {sessions}
-      <span className="flex-1" />
-      {action}
-    </PageColumn>
+  <header className="shrink-0">
+    <PageHeader
+      page="chat"
+      animationClassName=""
+      row={
+        <div data-slot="pane-title-row" className="flex h-8 min-w-0 items-center gap-2">
+          <TruncatedText as="h1" className="min-w-0 text-title text-foreground">
+            {title}
+          </TruncatedText>
+          {sessions}
+          <span className="flex-1" />
+          {action}
+        </div>
+      }
+    />
   </header>
 );

@@ -18,7 +18,14 @@ describe('buildBranchDecision', () => {
     const decision = buildBranchDecision({ observation, projectName: 'ledger-core', holder: null });
 
     expect(decision).not.toBeNull();
-    expect(Object.keys(decision ?? {})).toEqual(['title', 'description', 'confirm', 'alt']);
+    expect(Object.keys(decision ?? {})).toEqual([
+      'title',
+      'expected',
+      'found',
+      'note',
+      'confirm',
+      'alt',
+    ]);
   });
 
   it('drops the adopt action when the branch is held elsewhere', () => {
@@ -47,13 +54,14 @@ describe('buildBranchDecision', () => {
     expect(decision?.confirm.isDisabled).toBe(true);
   });
 
-  it('explains keep both in one sentence after the cause', () => {
+  it('says which branch is expected and which is found, with no prose for the buttons', () => {
     const decision = buildBranchDecision({ observation, projectName: 'ledger-core', holder: null });
 
     expect(decision?.alt?.resolution).toBe('keep-both');
-    expect(decision?.description).toBe(
-      'Expected ak/part-one, found ak/part-two. Keep both branches keeps ak/part-two here and opens ak/part-one again in a worktree of its own.',
-    );
+    expect(decision?.title).toBe('ledger-core is on another branch');
+    expect(decision?.expected).toBe('ak/part-one');
+    expect(decision?.found).toEqual({ text: 'ak/part-two', isBranch: true });
+    expect(decision?.note).toBeNull();
   });
 
   it('offers check again first for a detached mount whose branch is held', () => {

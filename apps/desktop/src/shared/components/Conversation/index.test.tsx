@@ -57,7 +57,7 @@ describe('Conversation', () => {
     const onPost = vi.fn(async () => undefined);
     render(<Harness source={fixtureSource({ threads: [THREAD], onPost })} />);
 
-    screen.getByPlaceholderText('Start a new thread');
+    screen.getByPlaceholderText(/^Reply on /);
     type('Can we get a test for the rollback?');
     sendWithShortcut();
 
@@ -108,7 +108,7 @@ describe('Conversation', () => {
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
 
     expect(screen.queryByText('Replying to')).toBeNull();
-    screen.getByPlaceholderText('Start a new thread');
+    screen.getByPlaceholderText(/^Reply on /);
   });
 
   it('keeps a refused message in place with its text and a retry', async () => {

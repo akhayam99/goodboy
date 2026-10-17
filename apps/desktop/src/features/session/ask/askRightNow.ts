@@ -1,7 +1,7 @@
 import { RESOLVE_WORD_LABEL, type ResolveWord } from '../../resolve/commentProjection';
 import { pluralize } from '../../../shared/utils/pluralize';
 
-export type AskRightNowTone = 'running' | 'needs' | 'failed' | 'done' | 'idle' | 'cost';
+type AskRightNowTone = 'running' | 'needs' | 'failed' | 'done' | 'idle' | 'cost';
 
 export type AskRightNowLine = {
   readonly key: string;

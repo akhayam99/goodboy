@@ -3,6 +3,8 @@ import { useAppStore } from '../../store';
 import { selectDrawerPanel } from '../../store/slices/drawer/selectDrawerPanel';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { ExploreFileDrawer } from '../../features/explore/components/ExploreFileDrawer';
+import { ExplorePane } from '../../features/explore/components/ExplorePane';
+import { SessionScriptsDrawer } from '../../features/scripts/components/SessionScriptsDrawer';
 import { ArtifactShellDrawer } from '../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
 import { ArtifactDocumentDrawer } from '../../features/artifacts/components/ArtifactDocumentDrawer';
 import { PlanPartDrawer } from '../../features/plans/components/PlanParts/PlanPartDrawer';
@@ -11,11 +13,15 @@ import { TerminalDrawer } from '../../features/terminal/components/TerminalDrawe
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
+import { QuestionDrawer } from '../../features/session/components/QuestionDrawer';
 import { WritePanel } from '../../features/artifacts/components/WritePanel';
 import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
 import { FixCommentsDrawer } from '../../features/resolve/components/FixCommentsDrawer';
+import { ReviewCommentDrawerHost } from '../../features/resolve/components/ReviewCommentDrawer/ReviewCommentDrawerHost';
+import { AutoChildPane } from './AutoChildPane';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
+import { RunStepDrawer } from '../../features/session/components/RunStepDrawer';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
@@ -26,6 +32,7 @@ const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 export const DrawerHost = () => {
   const drawer = useAppStore(selectDrawerPanel);
   const closeDrawer = useAppStore((s) => s.closeDrawer);
+  const openDrawer = useAppStore((s) => s.openDrawer);
   const isReading = useAppStore((s) => {
     const open = selectDrawerPanel(s);
     return (
@@ -70,6 +77,13 @@ export const DrawerHost = () => {
           sessionDir={drawer.payload.sessionDir}
           entry={drawer.payload.entry}
           line={drawer.payload.line}
+          {...(drawer.payload.from === 'explore' && {
+            back: {
+              label: 'Back to files',
+              onBack: () =>
+                openDrawer({ kind: 'explore', sessionId: drawer.sessionId, payload: null }),
+            },
+          })}
           renderChanges={({ sessionDir, relPath, baseBranch }) => (
             <ExploreFileChanges sessionDir={sessionDir} relPath={relPath} baseBranch={baseBranch} />
           )}
@@ -118,11 +132,40 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           scriptKey={drawer.payload.scriptKey}
           mountId={drawer.payload.mountId}
+          {...(drawer.payload.from === 'scripts' && {
+            back: {
+              label: 'Back to scripts',
+              onBack: () =>
+                openDrawer({ kind: 'scripts', sessionId: drawer.sessionId, payload: null }),
+            },
+          })}
+          onClose={closeDrawer}
+        />
+      );
+    case 'explore':
+      return (
+        <ExplorePane key={drawer.sessionId} sessionId={drawer.sessionId} onClose={closeDrawer} />
+      );
+    case 'scripts':
+      return (
+        <SessionScriptsDrawer
+          key={drawer.sessionId}
+          sessionId={drawer.sessionId}
           onClose={closeDrawer}
         />
       );
     case 'ask':
       return <AskDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
+    case 'question':
+      return (
+        <QuestionDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          questionId={drawer.payload.questionId}
+          from={drawer.payload.from ?? null}
+          onClose={closeDrawer}
+        />
+      );
     case 'new':
       return (
         <NewDrawer
@@ -142,6 +185,25 @@ export const DrawerHost = () => {
           onClose={closeDrawer}
         />
       );
+    case 'auto-child':
+      return (
+        <AutoChildPane
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          agentId={drawer.payload.agentId}
+          onClose={closeDrawer}
+        />
+      );
+    case 'run-step':
+      return (
+        <RunStepDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          runId={drawer.payload.runId}
+          agentId={drawer.payload.agentId}
+          onClose={closeDrawer}
+        />
+      );
     case 'fix-comments':
       return (
         <FixCommentsDrawer
@@ -149,9 +211,12 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           focusThreadId={drawer.payload.focusThreadId ?? null}
           threadIds={drawer.payload.threadIds ?? null}
+          fromThreadId={drawer.payload.fromThreadId ?? null}
           onClose={closeDrawer}
         />
       );
+    case 'conversation':
+      return <ReviewCommentDrawerHost />;
     case 'history-versions':
       return (
         <HistoryVersionsDrawer

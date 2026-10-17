@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { Button, EmptyLine, Skeleton, Textarea } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { ContextBlock } from './ContextBlock';
+import { ContextSection } from './ContextSection';
 import { KeyLineList } from './KeyLineList';
 import { summaryItems } from './summaryItems';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { WriteFromWorkButton } from './WriteFromWorkButton';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
+import type { Visibility } from './roleVisibility';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -16,6 +16,7 @@ type Props = {
   readonly historyCount: number;
   readonly isLoading: boolean;
   readonly isLocked: boolean;
+  readonly visibility: Visibility | null;
   readonly onOpenVersions: () => void;
 };
 
@@ -25,6 +26,7 @@ export const GoalTab = ({
   historyCount,
   isLoading,
   isLocked,
+  visibility,
   onOpenVersions,
 }: Props) => {
   const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
@@ -48,16 +50,18 @@ export const GoalTab = ({
 
   if (isLoading) {
     return (
-      <div role="status" aria-label="Loading goal" className="flex flex-col gap-2">
-        <Skeleton className="h-4 w-3/5" />
-        <Skeleton className="h-4 w-4/5" />
-      </div>
+      <ContextSection section="goal" visibility={visibility}>
+        <div role="status" aria-label="Loading goal" className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-3/5" />
+          <Skeleton className="h-4 w-4/5" />
+        </div>
+      </ContextSection>
     );
   }
 
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-2">
+      <ContextSection section="goal" visibility={visibility}>
         <Textarea
           autoFocus
           value={draft}
@@ -89,13 +93,13 @@ export const GoalTab = ({
             Save
           </Button>
         </div>
-      </div>
+      </ContextSection>
     );
   }
 
   if (value.trim() === '') {
     return (
-      <div className="flex flex-col items-start gap-2">
+      <ContextSection section="goal" visibility={visibility}>
         <EmptyLine
           className="self-stretch"
           action={
@@ -110,40 +114,33 @@ export const GoalTab = ({
         {isLocked ? (
           <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>
         ) : null}
-      </div>
+      </ContextSection>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <ContextBlock
-        title="Goal"
-        icon={CONCEPT_ICONS.goal}
-        action={
-          <div className="flex items-center gap-1">
-            {historyCount > 0 ? (
-              <Button variant="ghost" size="sm" onClick={onOpenVersions}>
-                {`Versions ${historyCount}`}
-              </Button>
-            ) : null}
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={isLocked}
-              onClick={() => setIsEditing(true)}
-            >
-              Edit
+    <ContextSection
+      section="goal"
+      visibility={visibility}
+      action={
+        <div className="flex items-center gap-1">
+          {historyCount > 0 ? (
+            <Button variant="ghost" size="sm" onClick={onOpenVersions}>
+              {`Versions ${historyCount}`}
             </Button>
-          </div>
-        }
-      >
-        <KeyLineList items={summaryItems({ body: value })} label="Goal" />
-      </ContextBlock>
+          ) : null}
+          <Button variant="ghost" size="sm" disabled={isLocked} onClick={() => setIsEditing(true)}>
+            Edit
+          </Button>
+        </div>
+      }
+    >
+      <KeyLineList items={summaryItems({ body: value })} label="Goal" />
       <WriteFromWorkButton sessionId={sessionId} isLocked={isLocked} />
       <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
       {isLocked ? (
         <p className="text-meta text-faint-foreground">Editing opens when the update finishes.</p>
       ) : null}
-    </div>
+    </ContextSection>
   );
 };

@@ -15,5 +15,5 @@ export const confirmLineOf = ({ view, delegation, card }: Params): string => {
       : view.artifacts.find((candidate) => candidate.artifact.artifactId === delegation.reviseOf);
   return row === undefined
     ? `Start ${card.roleLabel}?`
-    : `Change plan ${row.title} at v${row.revision}?`;
+    : `Revise ${row.title} to v${row.revision + 1}?`;
 };

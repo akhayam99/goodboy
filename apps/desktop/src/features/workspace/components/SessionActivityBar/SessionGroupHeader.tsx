@@ -4,7 +4,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly label: string;
-  readonly total: number;
+  readonly total: number | null;
   readonly tone?: Tone;
   readonly title?: string;
   readonly isCollapsed?: boolean;
@@ -32,9 +32,11 @@ export const SessionGroupHeader = ({
         />
       )}
       <Eyebrow label={label} tone={tone} />
-      <span aria-hidden className="text-meta tabular-nums text-faint-foreground">
-        {total}
-      </span>
+      {total === null ? null : (
+        <span aria-hidden className="text-meta tabular-nums text-faint-foreground">
+          {total}
+        </span>
+      )}
     </>
   );
   if (onToggle === undefined) {

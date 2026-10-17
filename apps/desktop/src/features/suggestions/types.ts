@@ -67,6 +67,13 @@ type SuggestionBase = {
   readonly targetKey: string | null;
 };
 
+type CleanupWorktree = {
+  readonly mountId: MountId;
+  readonly requestId: string;
+  readonly branch: string;
+  readonly prNumber: number | null;
+};
+
 export type RebaseSuggestionTarget = {
   readonly id: string;
   readonly mountId: MountId;
@@ -196,10 +203,7 @@ export type SessionSuggestion =
   | (SuggestionBase & {
       readonly kind: 'close-worktree';
       readonly payload: {
-        readonly mountId: MountId;
-        readonly requestId: string;
-        readonly branch: string;
-        readonly prNumber: number | null;
+        readonly worktrees: ReadonlyArray<CleanupWorktree>;
       };
     })
   | (SuggestionBase & {

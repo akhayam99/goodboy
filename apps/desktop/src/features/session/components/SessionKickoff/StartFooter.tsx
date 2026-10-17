@@ -1,23 +1,34 @@
 import type { ReactNode } from 'react';
+import type { WorkspaceId } from '@goodboy/types';
+import { Button, FormActions } from '@goodboy/ui';
+import { useDraftDiscard } from './useDraftDiscard';
 
 type Props = {
+  readonly workspaceId: WorkspaceId;
+  readonly leading?: ReactNode;
   readonly note: string | null;
   readonly error?: string | null;
+  readonly isStarting: boolean;
   readonly children: ReactNode;
 };
 
-export const StartFooter = ({ note, error = null, children }: Props) => (
-  <div className="flex flex-col gap-1 pt-1">
-    {error == null ? null : (
-      <p role="alert" className="text-meta text-danger">
-        {error}
-      </p>
-    )}
-    <div className="flex items-center justify-end gap-2">
-      {note == null ? null : (
-        <span className="min-w-0 flex-1 text-meta text-faint-foreground">{note}</span>
-      )}
+export const StartFooter = ({
+  workspaceId,
+  leading = null,
+  note,
+  error = null,
+  isStarting,
+  children,
+}: Props) => {
+  const { canDiscard, discard } = useDraftDiscard({ workspaceId });
+  return (
+    <FormActions leading={leading} reason={note} error={error}>
+      {canDiscard ? (
+        <Button variant="ghost" size="sm" onClick={discard} disabled={isStarting}>
+          Discard
+        </Button>
+      ) : null}
       {children}
-    </div>
-  </div>
-);
+    </FormActions>
+  );
+};

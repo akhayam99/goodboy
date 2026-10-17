@@ -1,6 +1,6 @@
 import type { AutoPhase } from '@goodboy/db';
 
-const TERMINAL_PHASES: ReadonlySet<AutoPhase> = new Set<AutoPhase>(['done', 'stopped']);
+const TERMINAL_PHASES: ReadonlySet<AutoPhase> = new Set<AutoPhase>(['done', 'finished', 'stopped']);
 
 type PhaseParams = {
   readonly phase: AutoPhase;

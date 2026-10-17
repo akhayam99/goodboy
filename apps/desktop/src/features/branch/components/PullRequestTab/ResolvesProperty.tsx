@@ -7,7 +7,7 @@ import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRep
 import { closingIssueReferences } from '../../../integrations/github/closingIssueReferences';
 import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
 import { openLens } from '../../../session/openLens';
-import { PropertyBlock } from '../../../../shared/components/PropertyBlock';
+import { PropertyField } from './PropertyField';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -77,7 +77,7 @@ export const ResolvesProperty = ({ sessionId, pr, view, canEdit }: Props) => {
   }
 
   return (
-    <PropertyBlock label="Linked issues" action={action}>
+    <PropertyField label="Linked issues" action={action}>
       {rows.length === 0 ? (
         <EmptyLine>Nothing linked yet</EmptyLine>
       ) : (
@@ -112,6 +112,6 @@ export const ResolvesProperty = ({ sessionId, pr, view, canEdit }: Props) => {
           ))}
         </ul>
       )}
-    </PropertyBlock>
+    </PropertyField>
   );
 };

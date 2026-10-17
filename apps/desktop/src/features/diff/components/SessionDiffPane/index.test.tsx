@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { FileDiff, MountId, SessionId } from '@goodboy/types';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
@@ -104,7 +104,7 @@ vi.mock('../DiffView', async () => {
   };
 });
 
-import { DiffRailHarness } from '../../../../__tests__/helpers/DiffRailHarness';
+import { installFakeResizeObserver } from '../../../../test/fakeResizeObserver';
 import { SessionDiffPane } from './index';
 
 const diffOf = (files: ReadonlyArray<FileDiff> = []): SessionDiff => ({
@@ -138,27 +138,39 @@ const FILE: FileDiff = {
 const renderPane = ({
   diff = diffOf(),
   isReadOnly = false,
-  isOverlay = false,
+  pageWidth = null,
 }: {
   readonly diff?: SessionDiff;
   readonly isReadOnly?: boolean;
-  readonly isOverlay?: boolean;
-}) =>
-  render(
-    <DiffRailHarness isOverlay={isOverlay}>
-      <SessionDiffPane
-        sessionId={SESSION_ID}
-        workingDir="/w/ledger"
-        worktreePath={MOUNT.worktreePath}
-        diff={diff}
-        isReadOnly={isReadOnly}
-        toolbarEnd={<button type="button">Fix comments 2</button>}
-      />
-    </DiffRailHarness>,
+  readonly pageWidth?: number | null;
+}) => {
+  const observers = pageWidth === null ? null : installFakeResizeObserver();
+  if (pageWidth !== null) {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 0, pageWidth, 800),
+    );
+  }
+  const view = render(
+    <SessionDiffPane
+      sessionId={SESSION_ID}
+      workingDir="/w/ledger"
+      worktreePath={MOUNT.worktreePath}
+      diff={diff}
+      isReadOnly={isReadOnly}
+      toolbarEnd={<button type="button">Fix comments 2</button>}
+    />,
   );
+  if (observers !== null) {
+    act(() => observers.resizeAll());
+  }
+  return view;
+};
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  localStorage.clear();
   h.store = baseStore();
 });
 
@@ -243,28 +255,39 @@ const FILES: ReadonlyArray<FileDiff> = [FILE, { ...FILE, path: 'src/ledger/expor
 
 const treeOf = (): HTMLElement => screen.getByRole('navigation', { name: 'Changed files' });
 
-const hostOf = (): HTMLElement => screen.getByTestId('rail-host');
+const railOf = (): HTMLElement => screen.getByRole('complementary', { name: 'Files' });
 
-describe('SessionDiffPane with the tree in the docked rail', () => {
-  it('draws the tree, the filter and Next unviewed in the rail host, never in the diff column', () => {
+const toolbarFiles = (): HTMLElement | null =>
+  within(screen.getByTestId('diff-toolbar')).queryByRole('button', { name: /^Files/ });
+
+const FOLDED_KEY = 'goodboy:diff-file-rail-folded:v1';
+const WIDTH_KEY = 'goodboy:diff-file-rail-width:v1';
+
+describe('SessionDiffPane with the file rail docked on the right', () => {
+  it('draws the tree, the filter and Next unviewed in the rail, never in the diff column', () => {
     renderPane({ diff: diffOf(FILES) });
 
-    expect(hostOf().contains(treeOf())).toBe(true);
-    expect(within(hostOf()).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
-    expect(within(hostOf()).getByRole('tablist', { name: 'Show files' })).toBeDefined();
-    expect(within(hostOf()).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
+    expect(railOf().getAttribute('data-file-rail')).toBe('docked');
+    expect(railOf().contains(treeOf())).toBe(true);
+    expect(within(railOf()).getByRole('searchbox', { name: 'Filter files' })).toBeDefined();
+    expect(within(railOf()).getByRole('button', { name: 'Filter and group files' })).toBeDefined();
+    expect(within(railOf()).getByRole('button', { name: /^Next unviewed/ })).toBeDefined();
     expect(screen.getByTestId('diff-view').contains(treeOf())).toBe(false);
   });
 
-  it('puts no Files button, strip or rail head in the toolbar or the host', () => {
+  it('puts Next unviewed, the keys and Fold in the rail head, above the filter', () => {
     renderPane({ diff: diffOf(FILES) });
 
-    expect(
-      within(screen.getByTestId('diff-toolbar')).queryByRole('button', { name: /^Files/ }),
-    ).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Fold the file rail/ })).toBeNull();
-    expect(screen.queryByRole('separator', { name: 'Resize the file rail' })).toBeNull();
-    expect(screen.queryByText(/of 2 viewed/)).toBeNull();
+    const buttons = within(railOf())
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label') ?? button.textContent);
+    expect(buttons.slice(0, 3)).toEqual([
+      'Next unviewed2',
+      'Keyboard shortcuts',
+      'Fold the file list',
+    ]);
+    expect(within(railOf()).getByRole('separator', { name: 'Resize the file list' })).toBeDefined();
+    expect(toolbarFiles()).toBeNull();
   });
 
   it('keeps the tree after a pick, and Escape does not hide it', () => {
@@ -296,7 +319,7 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Filter files' }));
   });
 
-  it('counts the unviewed files on the filter and the footer, from the whole review', () => {
+  it('counts the unviewed files on the filter and the rail head, from the whole review', () => {
     const diff = {
       ...diffOf(FILES),
       viewed: {
@@ -311,11 +334,12 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
       target: { value: 'postings' },
     });
 
-    expect(screen.getByRole('tab', { name: /^Unviewed/ }).textContent).toContain('1');
+    fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
+    expect(screen.getByRole('menuitemradio', { name: /^Unviewed/ }).textContent).toContain('1');
     expect(screen.getByRole('button', { name: /^Next unviewed/ }).textContent).toContain('1');
   });
 
-  it('jumps to the next unviewed file from the footer and keeps the rail in place', () => {
+  it('jumps to the next unviewed file from the rail head and keeps the rail in place', () => {
     const diff = {
       ...diffOf(FILES),
       viewed: {
@@ -332,47 +356,118 @@ describe('SessionDiffPane with the tree in the docked rail', () => {
     expect(treeOf()).toBeDefined();
   });
 
-  it('shows the same empty state, with no tree, when nothing changed', () => {
+  it('shows the same empty state, with no rail and no Files button, when nothing changed', () => {
     renderPane({});
 
     expect(screen.getByText('Branch matches its base branch')).toBeDefined();
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Files/ })).toBeNull();
   });
 });
 
-describe('SessionDiffPane with the rail hidden behind Sections', () => {
-  it('draws no tree until the rail is open', () => {
-    renderPane({ diff: diffOf(FILES), isOverlay: true });
+describe('SessionDiffPane with the file rail folded', () => {
+  it('folds the rail, remembers it and opens it again from Files N in the toolbar', () => {
+    renderPane({ diff: diffOf(FILES) });
 
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
-    expect(
-      within(screen.getByTestId('diff-toolbar')).queryByRole('button', { name: /^Files/ }),
-    ).toBeNull();
+    fireEvent.click(within(railOf()).getByRole('button', { name: 'Fold the file list' }));
+
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+    expect(localStorage.getItem(FOLDED_KEY)).toBe('1');
+    expect(toolbarFiles()?.textContent).toBe('Files');
+
+    cleanup();
+    renderPane({ diff: diffOf(FILES) });
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+
+    const files = toolbarFiles();
+    if (files === null) {
+      throw new Error('the folded rail leaves no Files button');
+    }
+    fireEvent.click(files);
+
+    expect(railOf().getAttribute('data-file-rail')).toBe('docked');
+    expect(treeOf().contains(document.activeElement)).toBe(true);
+    expect(localStorage.getItem(FOLDED_KEY)).toBe('0');
+    expect(toolbarFiles()).toBeNull();
   });
 
-  it('opens the rail and puts focus in the tree with the focus key', () => {
-    renderPane({ diff: diffOf(FILES), isOverlay: true });
+  it('opens a folded rail with the focus key and puts focus in the tree', () => {
+    localStorage.setItem(FOLDED_KEY, '1');
+    renderPane({ diff: diffOf(FILES) });
 
     pressShortcut({ id: 'diff.focusTree' });
 
     expect(treeOf().contains(document.activeElement)).toBe(true);
+    expect(localStorage.getItem(FOLDED_KEY)).toBe('0');
   });
 
-  it('opens the rail and puts focus in the filter field with the slash key', () => {
-    renderPane({ diff: diffOf(FILES), isOverlay: true });
+  it('keeps j and k walking the diff while the rail is folded', () => {
+    localStorage.setItem(FOLDED_KEY, '1');
+    renderPane({ diff: diffOf(FILES) });
 
-    pressShortcut({ id: 'diff.focusFilter' });
+    pressShortcut({ id: 'diff.fileDown' });
 
-    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Filter files' }));
+    expect(h.scroll).toHaveBeenCalled();
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
   });
 
-  it('closes the rail on a pick', () => {
-    renderPane({ diff: diffOf(FILES), isOverlay: true });
+  it('remembers the width the handle gives it', () => {
+    renderPane({ diff: diffOf(FILES) });
+
+    const handle = within(railOf()).getByRole('separator', { name: 'Resize the file list' });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+
+    expect(localStorage.getItem(WIDTH_KEY)).toBe('328');
+    cleanup();
+    renderPane({ diff: diffOf(FILES) });
+    expect(
+      within(railOf())
+        .getByRole('separator', { name: 'Resize the file list' })
+        .getAttribute('aria-valuenow'),
+    ).toBe('328');
+  });
+});
+
+describe('SessionDiffPane on a page too narrow to dock the rail', () => {
+  it('draws no rail and offers Files N in the toolbar', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 700 });
+
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+    expect(toolbarFiles()).not.toBeNull();
+  });
+
+  it('opens the rail over the diff with the focus key and closes it on a pick', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 700 });
 
     pressShortcut({ id: 'diff.focusTree' });
+
+    expect(railOf().getAttribute('data-file-rail')).toBe('overlay');
+    expect(treeOf().contains(document.activeElement)).toBe(true);
     fireEvent.click(within(treeOf()).getByRole('button', { name: /^export\.ts/ }));
     expect(h.scroll).toHaveBeenCalledWith('src/ledger/export.ts');
-    expect(screen.queryByRole('navigation', { name: 'Changed files' })).toBeNull();
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+  });
+
+  it('opens it into the filter with the slash, Fold closes it, Files N opens it into the tree and Esc closes it', () => {
+    renderPane({ diff: diffOf(FILES), pageWidth: 700 });
+
+    pressShortcut({ id: 'diff.focusFilter' });
+    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Filter files' }));
+
+    fireEvent.click(within(railOf()).getByRole('button', { name: 'Fold the file list' }));
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
+
+    const files = toolbarFiles();
+    if (files === null) {
+      throw new Error('the narrow page leaves no Files button');
+    }
+    fireEvent.click(files);
+    expect(railOf().getAttribute('data-file-rail')).toBe('overlay');
+    expect(treeOf().contains(document.activeElement)).toBe(true);
+    expect(localStorage.getItem(FOLDED_KEY)).toBeNull();
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    expect(screen.queryByRole('complementary', { name: 'Files' })).toBeNull();
   });
 });
 
@@ -438,7 +533,8 @@ describe('SessionDiffPane files', () => {
     };
     renderPane({ diff });
 
-    fireEvent.click(screen.getByRole('tab', { name: /^Unviewed/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Filter and group files' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /^Unviewed/ }));
 
     expect(screen.getByTestId('diff-view').getAttribute('data-files')).toBe('src/ledger/export.ts');
     expect(screen.getByText('Showing 1 of 2')).toBeDefined();

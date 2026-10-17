@@ -60,6 +60,7 @@ export type UnmountMountInput = {
   readonly mountId: MountId;
   readonly keepDirectory?: boolean;
   readonly requestId?: string;
+  readonly isRemovalRequired?: boolean;
 };
 
 export type MountKeyInput = {

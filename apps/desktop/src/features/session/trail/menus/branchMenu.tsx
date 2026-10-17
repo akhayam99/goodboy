@@ -1,11 +1,5 @@
 import type { PullRequestStateKind, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
-import type {
-  CrumbMenuAction,
-  CrumbMenuGroup,
-  CrumbMenuModel,
-  CrumbMenuRow,
-  CrumbState,
-} from '@goodboy/ui';
+import type { CrumbMenuGroup, CrumbMenuRow, CrumbState } from '@goodboy/ui';
 import { EmptyLine } from '@goodboy/ui';
 import {
   ArrowDown,
@@ -49,10 +43,6 @@ type GroupsParams = {
   readonly openRequestOf?: (mount: SessionProjectMount) => OpenRequestHead | null;
   readonly requestOf?: (mount: SessionProjectMount) => BranchRequest | null;
   readonly onSelect: (mount: SessionProjectMount) => void;
-};
-
-type Params = GroupsParams & {
-  readonly actions: ReadonlyArray<CrumbMenuAction>;
 };
 
 type BranchLook = Pick<CrumbState, 'tone' | 'glyph'>;
@@ -150,14 +140,3 @@ export const branchMenuGroups = ({
     rows: mounts.filter((mount) => mount.mountName === repo).map(rowOf),
   }));
 };
-
-export const branchMenu = ({ actions, ...params }: Params): CrumbMenuModel => ({
-  title: 'Branches',
-  context: 'this session',
-  count: params.mounts.length,
-  triggerLabel: 'Switch branch',
-  groups: branchMenuGroups(params),
-  actions: actions.slice(0, 2),
-  width: 'wide',
-  filterPlaceholder: 'Filter branches',
-});

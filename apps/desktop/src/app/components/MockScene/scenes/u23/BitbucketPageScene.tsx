@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
+import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { SESSION } from '../resolveSeed';
 import {
   BITBUCKET_PAGE_WORKTREE,
@@ -37,7 +38,9 @@ export const BitbucketPageScene = ({ variant }: Props) => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <BranchPage session={SESSION} workingDir={BITBUCKET_PAGE_WORKTREE} />
+      <WorktreeSceneColumn>
+        <BranchPage session={SESSION} workingDir={BITBUCKET_PAGE_WORKTREE} />
+      </WorktreeSceneColumn>
     </main>
   );
 };

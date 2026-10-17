@@ -29,7 +29,7 @@ beforeEach(async () => {
 });
 
 describe('startTalkItThrough', () => {
-  it('seeds the Auto goal of the drawer with the card and opens the Agent tab, without starting', () => {
+  it('seeds the Auto goal of the drawer with the card and opens the Start Auto form, without starting', () => {
     startTalkItThrough({
       state: useAppStore.getState(),
       sessionId: SESSION,
@@ -43,7 +43,7 @@ describe('startTalkItThrough', () => {
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'new',
       sessionId: SESSION,
-      payload: { tab: 'agent' },
+      payload: { form: 'auto' },
     });
   });
 });

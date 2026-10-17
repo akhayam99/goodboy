@@ -40,6 +40,8 @@ type Props = {
   readonly duration: string | null;
   readonly startedAt: IsoDateTime | null;
   readonly endedAt: IsoDateTime | null;
+  readonly outcome?: string | null;
+  readonly turns?: number | null;
 };
 
 export const TurnFooterDetail = ({
@@ -50,6 +52,8 @@ export const TurnFooterDetail = ({
   duration,
   startedAt,
   endedAt,
+  outcome = null,
+  turns = null,
 }: Props) => {
   const providerLabel = providerLabelFor(data.provider);
   const heading = [
@@ -66,6 +70,8 @@ export const TurnFooterDetail = ({
     <div className="flex w-70 flex-col gap-2 p-2 text-label">
       <div className="text-row text-foreground">{heading}</div>
       <div className="flex flex-col gap-0.5">
+        {outcome !== null && detailRow({ label: 'Ended', value: outcome })}
+        {turns !== null && turns > 0 && detailRow({ label: 'Turns', value: formatInteger(turns) })}
         {detailRow({ label: 'Input', value: formatInteger(totalInput) })}
         {cachedPct != null &&
           detailRow({

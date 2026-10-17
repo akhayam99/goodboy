@@ -175,7 +175,7 @@ describe('StageBoard lanes', () => {
 
     expect(within(lane('done')).getByText('Nothing done yet')).toBeDefined();
     expect(within(lane('archived')).getByText('Nothing archived')).toBeDefined();
-    expect(within(lane('running')).getByText('No agent running')).toBeDefined();
+    expect(within(lane('running')).getByText('Nothing running')).toBeDefined();
     expect(within(lane('needs you')).getByText('Nothing needs you')).toBeDefined();
     expect(within(lane('in review')).getByText('Nothing in review')).toBeDefined();
     expect(within(lane('building')).queryByText('Nothing in progress')).toBeNull();
@@ -380,7 +380,7 @@ describe('StageBoard header', () => {
     inProgress: null,
   });
 
-  it('reads the repo summary as quiet text after the title, with the filter on the right', () => {
+  it('keeps repo state out of the filter: no dot on its icon, no repositories footer', () => {
     const building = sessionOf('Add idempotency keys to the refund endpoint');
     const repos = ['payments-api', 'notify-relay', 'ledger-core'].map((name) =>
       aProject({ workspaceId: workspace.id, name, kind: 'repo', rootPath: `/tmp/${name}` }),
@@ -397,13 +397,30 @@ describe('StageBoard header', () => {
     });
     mountBoard([building]);
 
-    const title = screen.getByRole('heading', { level: 1, name: 'Board' });
-    const chip = screen.getByRole('button', { name: '3 repository git statuses' });
+    expect(document.querySelector('[data-filter-dot]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
+    const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
+    expect(within(dialog).queryByRole('group', { name: 'Repositories' })).toBeNull();
+  });
 
-    expect(title.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(title.parentElement?.contains(chip)).toBe(true);
-    expect(within(chip).getByText('3 repos')).toBeDefined();
-    expect(within(chip).getByText(/uncommitted$/)).toBeDefined();
+  it('shows no repo pill while every repo is fine', () => {
+    const building = sessionOf('Add idempotency keys to the refund endpoint');
+    const repos = ['payments-api', 'ledger-core'].map((name) =>
+      aProject({ workspaceId: workspace.id, name, kind: 'repo', rootPath: `/tmp/${name}` }),
+    );
+    seed({ active: [building] });
+    useAppStore.setState({
+      projects: repos,
+      projectGitStatus: {
+        [repos[0]?.id ?? '']: statusOf({}),
+        [repos[1]?.id ?? '']: statusOf({}),
+      },
+      loadProjectGitStatus: async () => undefined,
+    });
+    mountBoard([building]);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Repositories/ })).toBeNull();
   });
 });
 

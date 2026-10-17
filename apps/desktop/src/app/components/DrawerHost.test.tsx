@@ -29,6 +29,7 @@ import type {
   ArtifactId,
   IsoDateTime,
   MountId,
+  OpenQuestionId,
   ReportArtifact,
   SessionId,
 } from '@goodboy/types';
@@ -38,8 +39,20 @@ import type { TerminalTabId } from '../../shared/types/terminal';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
 import { ToastProvider } from '../../shared/components/Toast';
 import { CTX_SESSION_ID } from './MockScene/scenes/brand/contextBase';
+import { BranchPage } from '../../features/branch/components/BranchPage';
+import {
+  EXPANDED_THREAD_ID,
+  SESSION as RESOLVE_SESSION,
+  seedResolveScene,
+} from './MockScene/scenes/resolveSeed';
 import { SESSION_ID as RESOLVE_SESSION_ID } from './MockScene/scenes/resolveSeed';
 import { seedBulkScene } from './MockScene/scenes/bulkSeed';
+import {
+  C09_RUN_ID,
+  C09_SESSION_ID,
+  C09_TESTER_ID,
+  seedC09,
+} from './MockScene/scenes/u25/c09OrchestratedSeed';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION } from '../../test/planFixtures';
 import { seedPlanDrawer } from '../../test/planDrawerFixtures';
 import { brandedId } from '../../features/history/testing/brandedId';
@@ -50,6 +63,7 @@ const SESSION = 'session-harborline' as SessionId;
 const REPORT = 'artifact-report' as ArtifactId;
 const AGENT = 'agent-resolver' as AgentId;
 const TERMINAL = brandedId<TerminalTabId>({ value: `${SESSION}::t1` });
+const QUESTION = brandedId<OpenQuestionId>({ value: 'question-retry-queue' });
 const AT = '2026-10-05T10:00:00.000Z' as IsoDateTime;
 
 const REPORT_ARTIFACT: ReportArtifact = {
@@ -111,10 +125,22 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'ask', sessionId: SESSION, payload: null },
   },
   {
+    kind: 'question',
+    region: 'Question',
+    seed: () => {
+      seedSession();
+      useAppStore.setState({
+        sessionOpenQuestions: { [SESSION]: [] },
+        sessionAnsweredQuestions: { [SESSION]: [] },
+      });
+    },
+    drawer: { kind: 'question', sessionId: SESSION, payload: { questionId: QUESTION } },
+  },
+  {
     kind: 'new',
-    region: 'New',
+    region: 'Run a workflow',
     seed: seedSession,
-    drawer: { kind: 'new', sessionId: SESSION, payload: null },
+    drawer: { kind: 'new', sessionId: SESSION, payload: { form: 'run' } },
   },
   {
     kind: 'context',
@@ -128,9 +154,27 @@ const ENTRIES: ReadonlyArray<Entry> = [
   },
   {
     kind: 'transcript',
-    region: 'Resolve retries',
+    region: 'Transcript',
     seed: seedSession,
     drawer: { kind: 'transcript', sessionId: SESSION, payload: { agentId: AGENT } },
+  },
+  {
+    kind: 'auto-child',
+    region: 'Agent',
+    seed: seedSession,
+    drawer: { kind: 'auto-child', sessionId: SESSION, payload: { agentId: AGENT } },
+  },
+  {
+    kind: 'run-step',
+    region: 'Step 3 · Tester',
+    seed: () => {
+      seedC09({ state: 'running', page: 'document' });
+    },
+    drawer: {
+      kind: 'run-step',
+      sessionId: C09_SESSION_ID,
+      payload: { runId: C09_RUN_ID, agentId: C09_TESTER_ID },
+    },
   },
   {
     kind: 'explore-file',
@@ -160,6 +204,18 @@ const ENTRIES: ReadonlyArray<Entry> = [
       sessionId: SESSION,
       payload: { scriptKey: 'package:test', mountId: null },
     },
+  },
+  {
+    kind: 'explore',
+    region: 'Explore',
+    seed: seedSession,
+    drawer: { kind: 'explore', sessionId: SESSION, payload: null },
+  },
+  {
+    kind: 'scripts',
+    region: 'Scripts',
+    seed: seedSession,
+    drawer: { kind: 'scripts', sessionId: SESSION, payload: null },
   },
   {
     kind: 'file-diff',
@@ -256,7 +312,7 @@ const ENTRIES: ReadonlyArray<Entry> = [
   },
   {
     kind: 'terminal',
-    region: 'payments-api',
+    region: 'Terminal',
     seed: () => {
       seedSession();
       useAppStore.setState({
@@ -289,6 +345,8 @@ const ENTRIES: ReadonlyArray<Entry> = [
     },
   },
 ];
+
+const PAGE_OWNED_KINDS: ReadonlyArray<DrawerRequest['kind']> = ['conversation'];
 
 const renderHost = () =>
   render(
@@ -331,10 +389,34 @@ describe('every drawer names its close control Close', () => {
       ),
       (match) => match[1],
     );
-    const covered = new Set(ENTRIES.map((entry) => entry.kind));
+    const covered = new Set([...ENTRIES.map((entry) => entry.kind), ...PAGE_OWNED_KINDS]);
 
     expect(hosted.length).toBeGreaterThan(0);
     expect(hosted.filter((kind) => !covered.has(kind as DrawerRequest['kind']))).toEqual([]);
+  });
+});
+
+describe('the comment drawer the Comments page portals into the host', () => {
+  it('names its close control Close and closes back to the list', async () => {
+    seedResolveScene({ expandedThreadId: EXPANDED_THREAD_ID });
+    render(
+      <ToastProvider>
+        <BranchPage session={RESOLVE_SESSION} workingDir={null} />
+        <DrawerHost />
+      </ToastProvider>,
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    const region = screen.getByRole('region', { name: /retryPolicy\.ts:42/ });
+    expect(region.closest('[data-slot="review-comment-drawer"]')).not.toBeNull();
+    const close = within(region).getByRole('button', { name: 'Close' });
+    expect(within(region).queryAllByRole('button', { name: /^Close .+/ })).toHaveLength(0);
+
+    fireEvent.click(close);
+
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 });
 

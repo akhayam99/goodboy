@@ -885,7 +885,7 @@ describe('resolve queue scheduler', () => {
     );
 
     expect((harness.get().sessionResolveAttempts[SESSION_A] ?? [])[0]?.error).toBe(
-      'every provider is over its spend cap',
+      'every provider is over its limit',
     );
     expect(h.slots.size).toBe(0);
   });

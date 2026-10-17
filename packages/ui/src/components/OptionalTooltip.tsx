@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import { Tooltip, type TooltipProps } from './Tooltip';
 
-export type OptionalTooltipProps = Pick<TooltipProps, 'children' | 'anchorClassName' | 'side'> & {
+export type OptionalTooltipProps = Pick<
+  TooltipProps,
+  'children' | 'anchorClassName' | 'side' | 'shortcut'
+> & {
   readonly content: ReactNode;
 };
 

@@ -84,7 +84,7 @@ describe('diff context interaction', () => {
 
   it('retains expanded lines through scrolling and collapse, then resets on refresh', async () => {
     const view = render(<DiffView files={[FILE]} loadFileSides={load} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Show all 29 hidden lines' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show 29 lines' }));
     expect(await screen.findByText('ledger1')).toBeDefined();
     fireEvent.scroll(screen.getByRole('grid', { name: 'Changes in ledger-core.ts' }));
     fireEvent.click(screen.getByRole('button', { name: 'Collapse ledger-core.ts' }));
@@ -92,7 +92,7 @@ describe('diff context interaction', () => {
     expect(screen.getByText('ledger1')).toBeDefined();
     view.rerender(<DiffView files={[{ ...FILE, hunks: [...FILE.hunks] }]} loadFileSides={load} />);
     expect(screen.queryByText('ledger1')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Show all 29 hidden lines' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Show 29 lines' })).toBeDefined();
   });
 
   it('expands the whole file again when the same path reopens at another revision', async () => {
@@ -102,7 +102,7 @@ describe('diff context interaction', () => {
       <DiffView files={[{ ...FILE, hunks: [...FILE.hunks] }]} loadFileSides={load} isWholeFile />,
     );
     expect(await screen.findByText('ledger1')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Show all 29 hidden lines' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show 29 lines' })).toBeNull();
   });
 
   it('expand all reveals windowed hunks and opens a collapsed file', async () => {
@@ -177,7 +177,7 @@ describe('diff context interaction', () => {
     stubStoryInvoke({ worktree_file_sides: { old: null, new: null, too_large: true } });
     const open = vi.fn();
     render(<DiffView files={[FILE]} loadFileSides={load} fileActions={{ onOpenInEditor: open }} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Show all 29 hidden lines' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show 29 lines' }));
     await screen.findAllByText('This file is too large to expand here.');
     const button = screen.getAllByRole('button', { name: 'Open in editor' })[0];
     expect(button).toBeDefined();

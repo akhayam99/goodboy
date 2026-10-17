@@ -146,6 +146,7 @@ export {
   AUTO_BATCH_MIN_CHILDREN,
   AUTO_DEFAULT_TREE_CAP_USD,
   AUTO_DELEGATION_DEADLINE_MINUTES,
+  AUTO_STALE_DECIDE_MS,
   AUTO_GATES,
   AUTO_GRANT_ALLOWANCE,
   AUTO_LEDGER_CHAR_BUDGET,
@@ -165,9 +166,13 @@ export {
   type AutoTreeLimitKey,
 } from './auto/limits';
 export {
-  autoBudgetFacts,
+  autoBudgetOf,
   autoBudgetLabel,
   autoBudgetPromptLine,
+  autoBudgetUsedUsd,
+  autoRemainingForGates,
+  autoTreeSpendOf,
+  capTextOf,
   type AutoBudgetFacts,
 } from './auto/budget';
 export {
@@ -199,6 +204,7 @@ export {
   isAutoLimitRefusal,
   type AutoRefusalCode,
 } from './auto/refusals';
+export { AUTO_REFUSAL_USER_REASON, autoRefusalUserReason } from './auto/refusalUserReason';
 export { AUTO_SYSTEM_PROMPT, autoRoleCatalog, buildAutoSystemPrompt } from './auto/prompt';
 export {
   parseRevisionFromTurn,
@@ -218,10 +224,12 @@ export {
 export {
   AUTO_BLOCK_REASONS,
   AUTO_BLOCK_TEXT,
+  AUTO_STALE_DECIDE_TEXT,
   turnGate,
   type AutoBlockReason,
   type TurnGateParams,
 } from './auto/turnGate';
+export { isAutoGateBlock } from './auto/isAutoGateBlock';
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './auto/refusalText';
 export {
   AUTO_CHILD_PROVIDERS,
@@ -325,6 +333,7 @@ export {
   type PickMountParams,
   type PickableMount,
 } from './auto/mountPick';
+export { buildMountsLine } from './auto/mountsLine';
 export {
   ADOPTION_DEFAULT_INSTRUCTION,
   ADOPTION_REFUSAL_TEXT,
@@ -342,6 +351,7 @@ export {
 export {
   AUTO_DELEGATION_ROLES,
   AUTO_ROLE_ARTIFACT,
+  AUTO_ROLE_WHEN,
   AUTO_WRITER_ROLES,
   isAutoWriterRole,
   parseAutoDelegationRole,

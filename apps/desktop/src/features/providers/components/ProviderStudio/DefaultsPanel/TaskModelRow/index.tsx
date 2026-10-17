@@ -130,7 +130,6 @@ export const TaskModelRow = ({
         overridden={preference != null}
         onReset={() => onChange(null)}
         resetLabel="Back to Auto"
-        align="end"
         disabled={disabled}
         onChange={(route) => {
           if (route.provider === '') {

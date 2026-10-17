@@ -55,7 +55,7 @@ describe('defaultChatModel', () => {
 
   it('labels a model from its catalog', () => {
     expect(chatModelLabel({ provider: 'anthropic', model: 'sonnet-5' })).toBe('Sonnet 5');
-    expect(chatModelLabel({ provider: 'anthropic', model: 'unknown-key' })).toBe('unknown-key');
+    expect(chatModelLabel({ provider: 'anthropic', model: 'unknown-key' })).toBe('Unknown Key');
   });
 
   it('never starts a chat on a hidden Sonnet, it takes the next visible one', () => {

@@ -131,6 +131,18 @@ describe('filterInboxRecords', () => {
     expect(keys({ ...NO_INBOX_FILTERS, kind: 'error' })).toEqual(['c']);
     expect(keys({ ...NO_INBOX_FILTERS, source: 'github' })).toEqual(['a', 'd', 'e']);
     expect(keys({ ...NO_INBOX_FILTERS, source: 'github' }, 'linked')).toEqual(['e']);
+    expect(keys({ ...NO_INBOX_FILTERS, view: 'assigned' })).toEqual(['a', 'd', 'e']);
+  });
+
+  it('keeps only the starred records under the starred view', () => {
+    expect(
+      filterInboxRecords({
+        records,
+        query: '',
+        filters: { ...NO_INBOX_FILTERS, view: 'starred' },
+        isStarred: (item) => item.key === 'c',
+      }).map((item) => item.key),
+    ).toEqual(['c']);
   });
 });
 
@@ -142,7 +154,14 @@ describe('inboxFacetCounts', () => {
       filters: { ...NO_INBOX_FILTERS, source: 'github' },
     });
 
-    expect(counts.view).toEqual({ all: 3, 'in-progress': 0, 'with-session': 1, closed: 1 });
+    expect(counts.view).toEqual({
+      all: 3,
+      assigned: 3,
+      starred: 0,
+      'in-progress': 0,
+      'with-session': 1,
+      closed: 1,
+    });
     expect(counts.kind).toEqual({ issue: 3, 'pr-mr': 0, thread: 0, error: 0 });
     expect(counts.source.github).toBe(3);
     expect(counts.source.slack).toBe(1);

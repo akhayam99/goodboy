@@ -112,7 +112,7 @@ describe('type scale line boxes', () => {
     expect(roleBox({ role: 'chip' }).size).toBeLessThan(roleBox({ role: 'meta' }).size);
   });
 
-  it('weighs only display, title, heading, row and chip above regular', () => {
+  it('weighs only display, title, heading, row, chip and lead above regular', () => {
     const weighted = [...css.matchAll(/--text-([a-z]+)--font-weight:\s*(\d+);/g)].map((match) => [
       String(match[1]),
       Number(match[2]),
@@ -124,6 +124,7 @@ describe('type scale line boxes', () => {
       heading: 600,
       row: 500,
       chip: 500,
+      lead: 500,
     });
   });
 

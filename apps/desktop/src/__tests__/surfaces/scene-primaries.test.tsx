@@ -126,7 +126,8 @@ describe('one entry per intent on the run page', () => {
   it.each(RUN_SCENES)('scene %s draws at most one menu trigger in its header', async (id) => {
     await settleScene(id);
 
-    expect(document.querySelectorAll(MENU_TRIGGER_IN_HEADER).length).toBeLessThanOrEqual(1);
+    const objectMenus = Array.from(document.querySelectorAll(MENU_TRIGGER_IN_HEADER));
+    expect(objectMenus.length).toBeLessThanOrEqual(1);
   });
 });
 
