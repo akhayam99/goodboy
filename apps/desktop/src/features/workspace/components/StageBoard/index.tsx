@@ -232,7 +232,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             filterSessions={filterSessions}
             archivedCount={archived.length}
             onArchivedShownChange={onArchivedShownChange}
-            gitEntries={projectGitStatuses}
             hiddenCount={pending || empty ? 0 : hiddenCount}
             onClearFilters={clearFilters}
           />

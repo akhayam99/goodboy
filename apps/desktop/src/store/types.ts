@@ -97,6 +97,7 @@ import type { FileVersionsState } from './slices/file-versions/state';
 import type { TerminalState } from './slices/terminal/state';
 import type { SessionViewState } from './slices/session-view/state';
 import type { SessionPinsState } from './slices/session-pins/state';
+import type { RepoDivergenceState } from './slices/repo-divergence/state';
 
 export type SessionGithubState = {
   readonly pr: PullRequestState | null;
@@ -205,7 +206,8 @@ type AppSliceState = ArtifactsState &
   FileVersionsState &
   TerminalState &
   SessionViewState &
-  SessionPinsState;
+  SessionPinsState &
+  RepoDivergenceState;
 
 export type AppState = UndoState &
   AppSliceState & {

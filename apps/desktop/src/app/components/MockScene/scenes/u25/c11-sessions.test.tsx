@@ -120,12 +120,10 @@ describe('the c11 Sessions scenes', () => {
     expect(screen.getByText(/^\d+ hidden$/)).toBeDefined();
   });
 
-  it('c11-sessions-repos-attention marks the filter with a warning dot and no header sentence', async () => {
+  it('c11-sessions-repos-attention keeps repo state off the filter and the header', async () => {
     await mount('c11-sessions-repos-attention');
     expect(screen.queryByText('1 repo needs attention')).toBeNull();
-    expect(document.querySelector('[data-filter-dot]')?.getAttribute('data-filter-dot')).toBe(
-      'warning',
-    );
+    expect(document.querySelector('[data-filter-dot]')).toBeNull();
   });
 
   it('c11-sessions-empty offers New session under No sessions yet', async () => {
@@ -188,15 +186,14 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
     expect(within(screen.getByRole('toolbar')).getByText('1 selected')).toBeDefined();
   });
 
-  it('project filter, sort and the repo status live in the filter popover', async () => {
+  it('project filter and sort live in the filter popover, the repo status does not', async () => {
     await mount('c11-sessions-board');
     fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
     await settle();
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
     expect(within(dialog).getByRole('group', { name: 'Project' })).toBeDefined();
     expect(within(dialog).getByRole('group', { name: 'Sort' })).toBeDefined();
-    expect(within(dialog).getByRole('group', { name: 'Repositories' })).toBeDefined();
-    expect(within(dialog).getByRole('button', { name: 'Check origin' })).toBeDefined();
+    expect(within(dialog).queryByRole('group', { name: 'Repositories' })).toBeNull();
     expect(within(dialog).queryByRole('group', { name: 'Status' })).toBeNull();
   });
 
@@ -208,16 +205,6 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
     expect(within(dialog).getByRole('group', { name: 'Status' })).toBeDefined();
     expect(within(dialog).getByRole('group', { name: 'Archive' })).toBeDefined();
     expect(within(dialog).getByRole('group', { name: 'Group' })).toBeDefined();
-  });
-
-  it('repo status pill opens the whole repository popover with Update and the detail', async () => {
-    await mount('c11-sessions-repos-attention');
-    fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
-    await settle();
-    fireEvent.click(screen.getByRole('button', { name: /repository git statuses/ }));
-    await settle();
-    const popover = screen.getByRole('dialog', { name: 'Repository git statuses' });
-    expect(within(popover).getByRole('button', { name: 'Update 1' })).toBeDefined();
   });
 
   it('a List row opens its session', async () => {

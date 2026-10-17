@@ -16,3 +16,4 @@ export const SETTING_CONTEXT_ROLE_MAP = 'context.roleMap';
 export const SETTING_CONTEXT_LEARNINGS = 'context.learnings';
 export const SETTING_CHAT_IMAGES = 'chat.images';
 export const SETTING_AUTO_PLAN_APPROVAL = 'agents.autoPlanApproval';
+export const SETTING_REPO_CHECK_MINUTES = 'repos.checkMinutes';

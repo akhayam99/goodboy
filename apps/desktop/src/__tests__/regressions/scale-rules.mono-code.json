@@ -85,7 +85,7 @@
   "apps/desktop/src/features/wireframes/components/WireframeViewer/WireframeStage.tsx": "path",
   "apps/desktop/src/features/workflows/components/NextActionStrip/NextActionDetails.tsx": "command",
   "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx": "path",
-  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitSummaryPill.tsx": "branch",
+  "apps/desktop/src/features/workspace/components/RepoEntry/RepoEntryRow.tsx": "branch",
   "apps/desktop/src/features/workspace/components/SessionRowTitle.tsx": "identifier",
   "apps/desktop/src/features/workspace/components/StageBoard/SessionsList/SessionListRow.tsx": "identifier",
   "apps/desktop/src/features/worktree/BranchSwitchPanel/index.tsx": "branch",

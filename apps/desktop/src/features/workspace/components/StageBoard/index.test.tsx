@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
@@ -64,26 +64,8 @@ vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
   ),
 }));
 
-vi.mock('../ProjectGitPill/RepoStatusSection', () => ({
-  RepoStatusSection: ({
-    entries,
-  }: {
-    entries: ReadonlyArray<{ project: Project; status: WorkspaceGitStatus | null }>;
-  }) => <span data-testid="repo-pill">{entries.map(({ project }) => project.name).join(',')}</span>,
-}));
-
 vi.mock('../SessionActivityBar/SessionFilterPopover', () => ({
-  SessionFilterPopover: ({
-    footer,
-    hasAttention,
-  }: {
-    footer?: ReactNode;
-    hasAttention?: boolean;
-  }) => (
-    <span data-testid="session-filter" data-attention={String(hasAttention === true)}>
-      {footer}
-    </span>
-  ),
+  SessionFilterPopover: () => <span data-testid="session-filter" />,
 }));
 
 vi.mock('./useBoardNavigation', () => ({
@@ -313,22 +295,6 @@ describe('StageBoard git gate', () => {
     expect(screen.getByRole('button', { name: 'New session' }).hasAttribute('disabled')).toBe(
       false,
     );
-  });
-
-  it('hands every repo project and no folder project to the filter footer, and dots the filter', () => {
-    state.projects = [
-      projectOf({ id: 'repo-a', name: 'Alpha' }),
-      projectOf({ id: 'folder-a', kind: 'folder', name: 'Notes' }),
-      projectOf({ id: 'repo-b', name: 'Beta' }),
-    ];
-    gitStatuses.current = {
-      'repo-a': statusOf('ready'),
-      'repo-b': statusOf('absent'),
-    };
-    render(<StageBoard workspaceId={wsId} sessions={[]} />);
-    expect(screen.getAllByTestId('repo-pill')).toHaveLength(1);
-    expect(screen.getByTestId('repo-pill').textContent).toBe('Alpha,Beta');
-    expect(screen.getByTestId('session-filter').getAttribute('data-attention')).toBe('true');
   });
 
   it('explains an empty board whose only project is not usable yet', () => {

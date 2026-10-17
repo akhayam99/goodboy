@@ -1,10 +1,7 @@
 import { SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import type { Session, SessionPageView, WorkspaceId } from '@goodboy/types';
-import type { ProjectGitStatusEntry } from '../../hooks/useProjectGitStatuses';
 import { SessionFilterPopover } from '../SessionActivityBar/SessionFilterPopover';
-import { repoNeedsAttention } from '../ProjectGitPill/repoNeedsAttention';
 import { HiddenByFilters } from './HiddenByFilters';
-import { RepoStatusSection } from '../ProjectGitPill/RepoStatusSection';
 
 const VIEW_OPTIONS: ReadonlyArray<SegmentedTabOption<SessionPageView>> = [
   { value: 'board', label: 'Board' },
@@ -18,7 +15,6 @@ type Props = {
   readonly filterSessions: ReadonlyArray<Session>;
   readonly archivedCount: number;
   readonly onArchivedShownChange: (isShown: boolean) => void;
-  readonly gitEntries: ReadonlyArray<ProjectGitStatusEntry>;
   readonly hiddenCount: number;
   readonly onClearFilters: () => void;
 };
@@ -30,7 +26,6 @@ export const SessionsHeader = ({
   filterSessions,
   archivedCount,
   onArchivedShownChange,
-  gitEntries,
   hiddenCount,
   onClearFilters,
 }: Props) => (
@@ -56,8 +51,6 @@ export const SessionsHeader = ({
             archivedCount={archivedCount}
             onArchivedShownChange={onArchivedShownChange}
             isBoard={view === 'board'}
-            hasAttention={gitEntries.some(({ status }) => repoNeedsAttention({ status }))}
-            footer={<RepoStatusSection workspaceId={workspaceId} entries={gitEntries} />}
           />
         </span>
       </span>

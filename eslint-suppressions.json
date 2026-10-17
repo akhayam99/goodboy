@@ -7568,11 +7568,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitPill.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 8
-    }
-  },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionActivityItem.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
