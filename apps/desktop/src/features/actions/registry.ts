@@ -10,6 +10,7 @@ import { DIFF_FILE_KIND } from './kinds/diffFile';
 import { EXPLORE_FILE_KIND } from './kinds/exploreFile';
 import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
+import { QUESTION_KIND } from './kinds/question';
 import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
 import { NEW_FORM_KIND } from './kinds/newForm';
@@ -120,6 +121,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: WORKFLOW_RUN_KIND, state, target });
     case 'planPart':
       return bind({ definition: PLAN_PART_KIND, state, target });
+    case 'question':
+      return bind({ definition: QUESTION_KIND, state, target });
     case 'artifact':
       return bind({ definition: ARTIFACT_KIND, state, target });
     case 'record':

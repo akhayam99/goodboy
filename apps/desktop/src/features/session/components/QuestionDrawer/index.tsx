@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { DrawerFrame, EmptyLine, SkeletonText } from '@goodboy/ui';
+import { DrawerFrame, EmptyLine, FOCUS_RING, SkeletonText, cn } from '@goodboy/ui';
 import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -7,6 +7,7 @@ import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQ
 import { useQuestionsLens } from '../../hooks/useQuestionsLens';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { AGENT_KIND_META, type AgentKind } from '../../agent-kind';
+import { openAsker } from '../../openAsker';
 import { questionMetaOf } from '../SessionWorkspace/parts/questionMetaOf';
 import { nextWaitingQuestion, questionRowsOf } from '../SessionWorkspace/parts/questionsLensModel';
 
@@ -74,10 +75,44 @@ export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) 
       ? FALLBACK_TITLE
       : AGENT_KIND_META[meta.askerKind].noun;
   const title = meta === null ? FALLBACK_TITLE : `${asker} · ${meta.age}`;
+  const askerId = row?.question.createdByAgentId ?? null;
+  const askerAgent =
+    askerId === null
+      ? null
+      : (agents.find((agent) => agent.id === askerId && agent.deletedAt == null) ?? null);
+  const openTheAsker = () => {
+    if (askerAgent === null || row === undefined) {
+      return;
+    }
+    openAsker({
+      state: useAppStore.getState(),
+      sessionId,
+      asker: askerAgent,
+      questionId: row.question.id,
+    });
+  };
+  const titleContent =
+    meta === null || askerAgent === null ? undefined : (
+      <h2 className="min-w-0 truncate">
+        <button
+          type="button"
+          onClick={openTheAsker}
+          aria-label={`Open the agent: ${askerAgent.name}`}
+          className={cn(
+            'rounded-sm underline decoration-border-soft underline-offset-3 hover:decoration-foreground',
+            FOCUS_RING,
+          )}
+        >
+          {asker}
+        </button>
+        <span className="text-muted-foreground">{` · ${meta.age}`}</span>
+      </h2>
+    );
 
   return (
     <DrawerFrame
       title={title}
+      {...(titleContent !== undefined && { titleContent })}
       icon={CONCEPT_ICONS.questions}
       iconClassName="text-muted-foreground"
       {...(from === 'ask' && {

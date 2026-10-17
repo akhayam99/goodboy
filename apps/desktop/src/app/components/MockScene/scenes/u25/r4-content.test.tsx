@@ -12,6 +12,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { brandId, type SessionId } from '@goodboy/types';
 import { requestRename } from '../../../../../features/actions/renameRequest';
 import { sessionObjectKey } from '../../../../../features/actions/kinds/session';
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import {
@@ -24,6 +25,8 @@ import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
 import { MOCK_SCENES } from '../..';
 import { U25_R4_CONTENT_SCENES } from './r4-content';
+import { CHAT_SESSION_ID, LENS_QUESTIONS } from '../flow-audit/fixtures';
+import { agentPlace } from '../../../../../store/slices/navigation/place';
 
 const SETTLE_MS = 2_000;
 
@@ -52,7 +55,9 @@ const mount = async (name: SceneName): Promise<void> => {
   const Scene = U25_R4_CONTENT_SCENES[name];
   render(
     <ToastProvider>
-      <Scene />
+      <ObjectMenuProvider>
+        <Scene />
+      </ObjectMenuProvider>
     </ToastProvider>,
   );
   await act(async () => {
@@ -130,6 +135,89 @@ describe('the r4 content scenes', () => {
     expect(question).not.toBe('');
     expect(drawerTitle).not.toContain(question);
     expect(card.textContent ?? '').toContain(question);
+  });
+
+  it('r4-questions-drawer links the asker: Implementer opens its conversation', async () => {
+    await mount('r4-questions-drawer');
+    const askerId = LENS_QUESTIONS[0]?.createdByAgentId;
+    if (askerId === undefined) {
+      throw new Error('no asker');
+    }
+
+    const navigate = vi.fn();
+    act(() => {
+      useAppStore.setState({ navigate });
+    });
+
+    const link = screen.getByRole('button', { name: /^Open the agent: / });
+    expect(link.textContent).toBe('Implementer');
+    expect(link.closest('h2')?.textContent).toMatch(/^Implementer · \S+/);
+    await act(async () => {
+      fireEvent.click(link);
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: agentPlace({ sessionId: CHAT_SESSION_ID, agentId: askerId }),
+    });
+  });
+
+  it('r4-questions-drawer opens the asker from the row menu too', async () => {
+    await mount('r4-questions-drawer');
+    const askerId = LENS_QUESTIONS[0]?.createdByAgentId;
+    if (askerId === undefined) {
+      throw new Error('no asker');
+    }
+    const navigate = vi.fn();
+    act(() => {
+      useAppStore.setState({ navigate });
+    });
+    const row = document.querySelector<HTMLElement>('[data-list-grid-row][aria-current="true"]');
+    if (row === null) {
+      throw new Error('no open row');
+    }
+
+    await act(async () => {
+      fireEvent.contextMenu(row);
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Open the agent' }));
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: agentPlace({ sessionId: CHAT_SESSION_ID, agentId: askerId }),
+    });
+  });
+
+  it('r4-questions-drawer names a deleted asker with no link and no menu verb', async () => {
+    await mount('r4-questions-drawer');
+    const askerId = LENS_QUESTIONS[0]?.createdByAgentId ?? null;
+    act(() => {
+      useAppStore.setState((state) => ({
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [CHAT_SESSION_ID]: (state.sessionPhaseRuns[CHAT_SESSION_ID] ?? []).map((agent) =>
+            agent.id === askerId ? { ...agent, deletedAt: agent.startedAt } : agent,
+          ),
+        },
+      }));
+    });
+
+    expect(screen.queryByRole('button', { name: /^Open the agent: / })).toBeNull();
+    const drawerTitle = document.querySelector('[data-container="drawer"] h2')?.textContent ?? '';
+    expect(drawerTitle).toMatch(/^Implementer · \S+/);
+    const row = document.querySelector<HTMLElement>('[data-list-grid-row][aria-current="true"]');
+    if (row === null) {
+      throw new Error('no open row');
+    }
+    await act(async () => {
+      fireEvent.contextMenu(row);
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+    expect(screen.getByRole('menuitem', { name: 'Open question' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Open the agent' })).toBeNull();
   });
 
   it('r4-overview-title answers a rename for the open session on the Overview title', async () => {

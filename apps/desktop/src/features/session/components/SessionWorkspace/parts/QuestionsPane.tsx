@@ -110,6 +110,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   return (
     <PaneShell page="questions" title={TITLE}>
       <QuestionsGrid
+        sessionId={sessionId}
         groups={groups}
         agents={agents}
         kindOverrides={kindOverrides}

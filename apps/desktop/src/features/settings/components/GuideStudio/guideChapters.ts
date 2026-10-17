@@ -395,7 +395,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Open questions',
-        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions page lists them under Needs you and Answered, a row opens its card in a drawer, and the same card sits in the transcript. A blocking question holds its step until you answer or choose Send as message, and Let an agent decide hands it to another agent.',
+        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions page lists them under Needs you and Answered, a row opens its card in a drawer, and the same card sits in the transcript. The role in the drawer title, or Open the agent in the right click menu of a row, opens the agent that asked, or its run step. A blocking question holds its step until you answer or choose Send as message, and Let an agent decide hands it to another agent.',
       },
     ],
     links: [{ label: 'Open Workflows', target: { kind: 'studio', studio: { kind: 'workflow' } } }],

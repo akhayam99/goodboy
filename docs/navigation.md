@@ -2530,7 +2530,14 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   asker's role and the age; a blocking ask is one warning dot in the leading cell. The row
   opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), titled with
   the asker's role and the age (`questionMetaOf`, the same function as the row) while the
-  card carries the question itself; the card answers, skips, dismisses and undoes; answering moves the drawer to the next
+  card carries the question itself. The role in that title is a link to the asker
+  (`openAsker`, `features/session/openAsker.ts`): an agent you started opens its
+  conversation scrolled to the question, a step of a preset run opens that step on
+  the run page, a step of an orchestrated run opens the run with the step in the
+  pane (drawer `run-step`). A deleted asker keeps its role with no link. A row's
+  right click menu is the registry kind `question` (`features/actions/kinds/question.ts`):
+  **Open question** and **Open the agent** (the same `openAsker`, hidden for a
+  deleted asker); the card answers, skips, dismisses and undoes; answering moves the drawer to the next
   waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
   carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
   question at all. Inside the asker's own conversation a question card shows only the question
