@@ -37,7 +37,7 @@ tauri-plugin-log = "2"
 keyring = { version = "3", features = ["apple-native", "sync-secret-service", "crypto-rust", "windows-native"] }
 thiserror = "2"
 rusqlite = { version = "0.40", features = ["bundled"] }
-dirs = "6"
+dirs = "7"
 regex = "1"
 sha2 = "0.10"
 base64 = "0.22"
