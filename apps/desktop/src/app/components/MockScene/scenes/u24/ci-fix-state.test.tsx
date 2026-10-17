@@ -71,7 +71,7 @@ const openRowDrawer = () => {
   return screen.getByRole('region', { name: 'Debugger' });
 };
 
-const nextCard = () => screen.getByRole('region', { name: 'Next' });
+const nextCard = () => screen.getByRole('region', { name: 'Next steps' });
 
 describe('CI fix state scenes', () => {
   it('labels the checks row Not pushed and opens the Debugger with Push from the row', () => {

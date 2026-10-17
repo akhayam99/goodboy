@@ -83,7 +83,7 @@ const present = ({ value, what }: PresentParams): HTMLElement => {
 const nextRows = (): ReadonlyArray<HTMLElement> =>
   Array.from(
     screen
-      .getByRole('region', { name: 'Next' })
+      .getByRole('region', { name: 'Next steps' })
       .querySelectorAll<HTMLElement>('[data-testid^="next-step-"]'),
   );
 
@@ -167,7 +167,7 @@ describe('the c05 overview scenes', () => {
     await mount('c05-overview-blank');
 
     screen.getByRole('button', { name: 'Add a goal' });
-    const hasNext = screen.queryByRole('region', { name: 'Next' }) !== null;
+    const hasNext = screen.queryByRole('region', { name: 'Next steps' }) !== null;
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('data-variant')).toBe(
       hasNext ? 'secondary' : 'primary',
     );

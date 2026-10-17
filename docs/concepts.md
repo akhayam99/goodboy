@@ -367,7 +367,9 @@ whether you clicked it on the board or in the session overview.
   in the session overview, above Activity, outside its views and its
   grouping: a suggestion is not activity, it is a pointer to what activity
   should happen next. A new session shows the kickoff instead; the two never
-  compete for the same moment.
+  compete for the same moment. Its heading reads Next, but its landmark is
+  named "Next steps" so it never collides with the summary's Next block in
+  the same pane.
 - Every row has the same five columns (`NEXT_STEP_GRID` and `NEXT_STEP_CELLS`
   in `features/suggestions/components/NextStepSlot/nextStepGrid.ts`): tile,
   text, primary, **Not now**, **⋯**. The primary and **Not now** have a fixed
