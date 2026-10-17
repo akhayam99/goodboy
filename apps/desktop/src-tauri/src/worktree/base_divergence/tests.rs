@@ -50,7 +50,10 @@ fn fixture(name: &str) -> Fixture {
     configure(&origin);
     commit(&origin, "base.txt", "base", "base");
     let remote = origin.join("remote.git");
-    git_ok(&origin, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        &origin,
+        &["init", "--bare", "-b", "main", remote.to_str().unwrap()],
+    );
     git_ok(
         &origin,
         &["remote", "add", "origin", remote.to_str().unwrap()],
