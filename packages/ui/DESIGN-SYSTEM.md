@@ -1732,8 +1732,8 @@ page under it is `inert`, a click on the scrim dismisses the top escape layer
 like Esc, and focus moves into the card on open and back to the trigger on
 close.
 
-**The drawer container.** `DrawerFrame` is its one frame: a header whose 28px row is centred on the
-band's centre line (`FRAME_DRAWER_ROW_PX`), a
+**The drawer container.** `DrawerFrame` is its one frame: a header whose 32px row sits on the
+page title line (`PANE_RHYTHM.headerInset`, `PANE_RHYTHM.headerRow`), a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
 then Close. A pane whose title is a control (the terminal scope picker) passes it as

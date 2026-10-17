@@ -8,10 +8,6 @@ export const FRAME_TITLE_CENTRE_PX = FRAME_BAND_PX + FRAME_TITLE_ROW_PX / 2;
 
 export const FRAME_PAGE_HEADER_INSET_PX = 12;
 
-export const FRAME_DRAWER_ROW_PX = FRAME_TITLE_ROW_PX;
-
-export const FRAME_DRAWER_INSET_PX = FRAME_PAGE_HEADER_INSET_PX;
-
 export const FRAME_PAGES = [
   'board',
   'terminal',
@@ -161,7 +157,7 @@ export const frameGeometryOf = ({ page }: FramePageParams): FrameGeometry => {
     bandHeight,
     titleRowHeight: FRAME_TITLE_ROW_PX,
     titleCentreY: bandHeight + FRAME_TITLE_ROW_PX / 2,
-    drawerRowHeight: FRAME_DRAWER_ROW_PX,
+    drawerRowHeight: FRAME_TITLE_ROW_PX,
     titleLeft: TITLE_LEFT_OF[type],
   };
 };

@@ -300,9 +300,9 @@ Five rules:
 2. **One page rail.** Every split page uses `StudioRailLayout` with `railWidth="standard"`
    (288, resizable 220 to 420). No page draws a second rail column.
 3. **Stage pages are only the Board and the Terminal.** Nothing else is fluid.
-4. **The crumb row and the drawer header share one centre line.** `DrawerFrame` draws a 28px
-   row centred in the band's 40px (`FRAME_DRAWER_ROW_PX`, `FRAME_DRAWER_INSET_PX`), with one
-   close control.
+4. **The page title row and the drawer header share one line.** `DrawerFrame` draws its
+   header row on the page header line (`PANE_RHYTHM.headerInset` and `headerRow`: 12px
+   inset, 32px row), with one close control.
 5. **First-time states sit at the top left of the page column**, in one `EmptyState`
    layout; only the empty chat stage centres.
 

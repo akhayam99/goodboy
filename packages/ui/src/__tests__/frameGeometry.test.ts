@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   FRAME_BAND_PX,
-  FRAME_DRAWER_INSET_PX,
-  FRAME_DRAWER_ROW_PX,
   FRAME_PAGES,
   FRAME_PAGE_HEADER_INSET_PX,
   FRAME_TITLE_CENTRE_PX,
@@ -67,9 +65,10 @@ describe('frameGeometryOf', () => {
   });
 
   it('puts the drawer header row on the page title line', () => {
-    expect(FRAME_DRAWER_ROW_PX).toBe(FRAME_TITLE_ROW_PX);
-    expect(FRAME_DRAWER_INSET_PX).toBe(FRAME_PAGE_HEADER_INSET_PX);
-    expect(FRAME_DRAWER_INSET_PX + FRAME_DRAWER_ROW_PX / 2).toBe(28);
+    for (const page of FRAME_PAGES) {
+      expect(frameGeometryOf({ page }).drawerRowHeight, page).toBe(FRAME_TITLE_ROW_PX);
+    }
+    expect(FRAME_PAGE_HEADER_INSET_PX + FRAME_TITLE_ROW_PX / 2).toBe(28);
   });
 });
 
