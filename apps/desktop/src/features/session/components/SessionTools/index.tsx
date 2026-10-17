@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from 'react';
+import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { openPaneOf } from '../../panes/openPaneOf';
@@ -36,7 +37,10 @@ export const SessionTools = ({ sessionId }: Props) => {
       aria-orientation="vertical"
       data-testid="session-tools"
       onKeyDown={onKeyDown}
-      className="flex h-full w-11 shrink-0 flex-col items-center gap-1 bg-background pt-1"
+      className={cn(
+        'flex h-full w-11 shrink-0 flex-col items-center gap-1 bg-background',
+        PANE_RHYTHM.headerInset,
+      )}
     >
       {SESSION_TOOLS.map((tool, index) => (
         <SessionToolButton

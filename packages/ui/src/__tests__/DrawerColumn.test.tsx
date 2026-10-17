@@ -251,7 +251,8 @@ describe('DrawerColumn over the page', () => {
     expect(className).not.toMatch(/(^|\s)rounded-frame(\s|$)/);
     expect(className).toContain('border-l');
     expect(className).not.toMatch(/(^|\s)border(\s|$)/);
-    expect(className).not.toMatch(/border-[trb](\s|$)/);
+    expect(className).not.toMatch(/border-[rb](\s|$)/);
+    expect(className).toContain('border-t-transparent');
     expect(className).toContain('shadow-xl');
   });
 

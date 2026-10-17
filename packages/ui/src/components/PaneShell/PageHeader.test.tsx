@@ -27,6 +27,7 @@ describe('PageHeader', () => {
 
     const header = headerOf('Sessions');
     expect(PANE_RHYTHM.headerInset).toBe('pt-3');
+    expect(PANE_RHYTHM.headerRow).toBe('h-8');
     expect(header.className.split(' ')).toContain('pt-3');
     expect(header.getAttribute('data-page')).toBe('board');
     expect(header.querySelector('[data-slot="pane-title-row"]')?.className).toContain('h-8');
