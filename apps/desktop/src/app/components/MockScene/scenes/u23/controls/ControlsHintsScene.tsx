@@ -12,7 +12,7 @@ export const ControlsHintsScene = () => (
     <SceneRow name="Session tools and Search side by side">
       <div className="@container/topbar flex w-full items-end gap-4">
         <div className="w-60">
-          <SessionTools sessionId={SESSION_ID} isFolded={false} />
+          <SessionTools sessionId={SESSION_ID} />
         </div>
         <CommandCenter />
       </div>

@@ -188,6 +188,7 @@ describe('the main sidebar beside the session rail', () => {
       'Agents',
       'Auto agentsExperimental',
       'Artifacts',
+      'Questions',
     ]);
   });
 
@@ -284,7 +285,7 @@ describe('the session level pages', () => {
     expect(sessionLayer().querySelector('[data-page-value="runs"]')?.textContent).toBe('2');
   });
 
-  it('adds Questions last with a warning dot only while one is open', () => {
+  it('keeps Questions last with the open count and a warning dot while one is open', () => {
     seed();
     seedColumn({
       store: useAppStore,
@@ -328,11 +329,12 @@ describe('the session level projects and linked work', () => {
 
     const projects = within(within(sessionLayer()).getByRole('group', { name: 'Projects' }));
     const paymentsRows = within(projects.getByRole('list', { name: 'payments-api worktrees' }));
-    expect(paymentsRows.getByRole('button').textContent).toBe(`goodboy/${openId}#418`);
+    const worktree = paymentsRows.getByRole('button', { name: /^payments-api, / });
+    expect(worktree.textContent).toBe(`goodboy/${openId}#418`);
     expect(projects.getByRole('list', { name: 'ledger-core worktrees' })).toBeDefined();
 
     await act(async () => {
-      fireEvent.click(paymentsRows.getByRole('button'));
+      fireEvent.click(worktree);
     });
 
     expect(useAppStore.getState().activeLens[openId]).toBe('branch');
@@ -428,27 +430,121 @@ describe('the session level projects and linked work', () => {
   });
 });
 
-describe('the session menu on the rail top row', () => {
-  it('keeps Rename, Pin, Refresh, Archive and Delete, and renames the main sidebar row in place', () => {
+describe('the session rail top row and foot', () => {
+  it('holds the fold toggle, then Autopilot, Pin and Refresh as icons, with no menu', () => {
     seed();
     mountColumn();
     expect(sessionLayer().querySelector('[data-level-identity]')).toBeNull();
     const top = within(elementOf('[data-rail-top]', rail()));
 
-    fireEvent.click(top.getByRole('button', { name: 'More session actions' }));
-    for (const label of [
-      'Rename',
+    expect(top.queryByRole('button', { name: 'More session actions' })).toBeNull();
+    expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Fold session rail',
+      'Autopilot',
       'Pin session',
-      'Refresh',
-      'Archive session',
-      'Delete session…',
-    ]) {
-      expect(screen.getByRole('menuitem', { name: new RegExp(`^${label}`) })).toBeDefined();
-    }
-    fireEvent.click(screen.getByRole('menuitem', { name: /^Rename/ }));
+      'Refresh session',
+    ]);
+    expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
 
-    expect(within(nav()).getByDisplayValue('Stop retried webhooks')).toBeDefined();
-    expect(within(rail()).queryByRole('textbox', { name: 'Session title' })).toBeNull();
+  it('pins through the registry action and shows Pin pressed once pinned', async () => {
+    seed();
+    const pinSession = vi.fn(async () => undefined);
+    useAppStore.setState({ pinSession });
+    mountColumn();
+    const top = within(elementOf('[data-rail-top]', rail()));
+
+    await act(async () => {
+      fireEvent.click(top.getByRole('button', { name: 'Pin session' }));
+    });
+    expect(pinSession).toHaveBeenCalledWith(openId);
+
+    act(() => {
+      useAppStore.setState({
+        sessionPins: { [harborline.id]: [{ id: openId, at: 1 }] },
+      });
+    });
+    expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('turns Autopilot on from its toggle and shows it pressed while on', async () => {
+    seed();
+    const setSessionAutoRun = vi.fn(async () => undefined);
+    useAppStore.setState({ setSessionAutoRun });
+    mountColumn();
+    const top = within(elementOf('[data-rail-top]', rail()));
+
+    await act(async () => {
+      fireEvent.click(top.getByRole('button', { name: 'Autopilot' }));
+    });
+    expect(setSessionAutoRun).toHaveBeenCalledWith(openId, true);
+  });
+
+  it('keeps the pin as it was and says why when pinning fails, with Retry', async () => {
+    seed();
+    const pinSession = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error('database is locked'))
+      .mockResolvedValueOnce(undefined);
+    useAppStore.setState({ pinSession });
+    mountColumn();
+    const top = within(elementOf('[data-rail-top]', rail()));
+
+    await act(async () => {
+      fireEvent.click(top.getByRole('button', { name: 'Pin session' }));
+    });
+    expect(within(rail()).getByText(/database is locked/)).toBeDefined();
+    expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+
+    await act(async () => {
+      fireEvent.click(within(rail()).getByRole('button', { name: 'Retry' }));
+    });
+    expect(pinSession).toHaveBeenCalledTimes(2);
+    expect(within(rail()).queryByText(/database is locked/)).toBeNull();
+  });
+
+  it('puts Archive and Delete at the foot, Delete behind its confirm', async () => {
+    seed();
+    const deleteTask = vi.fn(async () => undefined);
+    useAppStore.setState({ deleteTask });
+    mountColumn();
+    const foot = within(elementOf('[data-session-foot]', rail()));
+
+    expect(foot.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Archive',
+      'Delete…',
+    ]);
+    fireEvent.click(foot.getByRole('button', { name: 'Delete…' }));
+    const dialog = within(screen.getByRole('dialog', { name: /^Delete .+\?$/ }));
+    expect(deleteTask).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent.click(dialog.getByRole('button', { name: 'Delete session' }));
+    });
+    expect(deleteTask).toHaveBeenCalledTimes(1);
+    expect(deleteTask).toHaveBeenCalledWith(openId);
+  });
+
+  it('offers Restore at the foot of an archived session and no top row actions', () => {
+    seed({
+      session: {
+        ...open,
+        archivedAt: brandedId<IsoDateTime>({ value: '2026-10-06T10:00:00.000Z' }),
+      },
+    });
+    mountColumn();
+
+    const foot = within(elementOf('[data-session-foot]', rail()));
+    expect(foot.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Restore',
+      'Delete…',
+    ]);
+    expect(rail().querySelector('[data-session-actions]')).toBeNull();
   });
 });
 

@@ -38,14 +38,10 @@ afterEach(() => {
   cleanup();
 });
 
-type RenderParams = {
-  readonly isFolded?: boolean;
-};
-
-const renderCluster = ({ isFolded = false }: RenderParams = {}) =>
+const renderCluster = () =>
   render(
     <ToastProvider>
-      <SessionTools sessionId={SESSION_ID} isFolded={isFolded} />
+      <SessionTools sessionId={SESSION_ID} />
       <DrawerHost />
     </ToastProvider>,
   );
@@ -70,35 +66,48 @@ const README: ExploreEntry = {
 };
 
 describe('SessionTools', () => {
-  it('shows Ask, Terminal, Explore, Context and Scripts in that order, as words, with no menu', () => {
+  it('stacks Ask, Terminal, Explore, Context and Scripts as icons in a vertical toolbar', () => {
     renderCluster();
-
-    const group = screen.getByRole('group', { name: 'Session tools' });
-    const words = within(group)
-      .getAllByRole('button')
-      .map((button) => button.textContent);
-    expect(words).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Scripts']);
-    expect(within(group).queryByRole('button', { name: /^More/ })).toBeNull();
+    const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
+    expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
+    const buttons = within(toolbar).getAllByRole('button');
+    expect(buttons.map((button) => button.getAttribute('aria-label')?.split(',')[0])).toEqual([
+      'Ask',
+      'Terminal',
+      'Explore',
+      'Context',
+      'Scripts',
+    ]);
+    expect(buttons.every((button) => button.textContent === '')).toBe(true);
+    expect(within(toolbar).queryByRole('button', { name: /^More/ })).toBeNull();
   });
 
-  it('folds to icons named by their word, the open one pressed', async () => {
-    renderCluster({ isFolded: true });
+  it('keeps one tab stop and moves it with the arrow keys, Home and End', () => {
+    renderCluster();
+    const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
+    const buttons = within(toolbar).getAllByRole('button');
+    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1]);
+    act(() => {
+      buttons[0]?.focus();
+    });
+    fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(buttons[1]);
+    fireEvent.keyDown(toolbar, { key: 'End' });
+    expect(document.activeElement).toBe(buttons[4]);
+    fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(buttons[0]);
+    fireEvent.keyDown(toolbar, { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(buttons[4]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, -1, -1, 0]);
+  });
 
-    const group = screen.getByRole('group', { name: 'Session tools' });
-    const names = within(group)
-      .getAllByRole('button')
-      .map((button) => button.getAttribute('aria-label')?.split(',')[0]);
-    expect(names).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Scripts']);
-    expect(
-      within(group)
-        .getAllByRole('button')
-        .every((button) => button.textContent === ''),
-    ).toBe(true);
-
+  it('presses the icon of the open pane', async () => {
+    renderCluster();
     fireEvent.click(toggle('scripts'));
     await settle();
     expect(drawerKind()).toBe('scripts');
     expect(toggle('scripts').getAttribute('aria-pressed')).toBe('true');
+    expect(toggle('ask').getAttribute('aria-pressed')).toBe('false');
   });
 
   it('marks Context with a pulsing dot while the summary runs and a danger dot when it failed', async () => {

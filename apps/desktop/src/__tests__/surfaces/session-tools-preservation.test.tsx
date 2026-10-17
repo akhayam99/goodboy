@@ -57,7 +57,7 @@ type MountParams = {
 const mountSession = async ({ sessionId }: MountParams): Promise<void> => {
   render(
     <ToastProvider>
-      <SessionTools sessionId={sessionId} isFolded={false} />
+      <SessionTools sessionId={sessionId} />
       <KeepAliveWorkSurface sessionId={sessionId} isActive />
       <DrawerHost />
     </ToastProvider>,
