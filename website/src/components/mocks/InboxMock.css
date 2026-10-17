@@ -3,7 +3,7 @@
   container-name: ibxw;
   min-width: 0;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--r-shot);
   background: var(--mk-win);
   box-shadow: var(--mk-win-shadow);
   font: 400 12px / 16px var(--sans);

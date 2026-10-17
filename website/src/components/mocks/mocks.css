@@ -9,9 +9,9 @@
   container-type: inline-size;
   min-width: 0;
   max-width: 100%;
-  padding: 32px;
+  padding: var(--stage-pad);
   border-radius: var(--r-stage);
-  border: 1px solid var(--stage-line);
+  border: var(--stage-border-width) solid var(--stage-line);
   background: var(--g-stage-gradient);
   color: var(--t1);
   font: 400 var(--mk-fs) / 1.45 var(--sans);
@@ -28,15 +28,9 @@
   }
 }
 
-@media (max-width: 600px) {
-  .mockStage {
-    padding: 16px;
-  }
-}
-
 .mkWin {
   min-width: 0;
-  border-radius: 10px;
+  border-radius: var(--r-shot);
   background: var(--mk-win);
   box-shadow: var(--mk-win-shadow);
 }

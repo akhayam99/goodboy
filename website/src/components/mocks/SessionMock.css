@@ -2,7 +2,7 @@
   container: smapp / inline-size;
   min-width: 0;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--r-shot);
   background: var(--mk-win);
   box-shadow: var(--mk-win-shadow);
 }

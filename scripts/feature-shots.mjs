@@ -279,12 +279,20 @@ const probeScene = async ({ send, options }) => {
   console.log((rows ?? []).join('\n') || 'no match');
 };
 
+const FRAME_RADIUS = 16;
+const FRAME_BORDER = 1;
+const VIEW_RADIUS_MIN = 8;
+
+const viewRadiusOf = ({ framePad }) =>
+  Math.max(VIEW_RADIUS_MIN, FRAME_RADIUS - framePad - FRAME_BORDER);
+
 const frameHtml = ({ png, width, height, framePad, theme }) => {
   const stage = STAGE[theme];
+  const viewRadius = viewRadiusOf({ framePad });
   return `<!doctype html><html><head><style>
 html,body{margin:0;background:transparent}
-.stage{display:inline-block;padding:${framePad}px;border-radius:28px;background:${stage.gradient};box-shadow:inset 0 0 0 1px ${stage.line}}
-.view{display:block;width:${width}px;height:${height}px;border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px ${stage.edge}}
+.stage{display:inline-block;padding:${framePad}px;border-radius:${FRAME_RADIUS}px;background:${stage.gradient};box-shadow:inset 0 0 0 1px ${stage.line}}
+.view{display:block;width:${width}px;height:${height}px;border-radius:${viewRadius}px;overflow:hidden;box-shadow:0 0 0 1px ${stage.edge}}
 .view img{display:block;width:${width}px;height:${height}px}
 </style></head><body><div class="stage"><div class="view"><img src="data:image/png;base64,${png}"></div></div></body></html>`;
 };

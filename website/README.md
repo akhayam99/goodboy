@@ -328,3 +328,14 @@ people Dana R., Kenji W., Marta L. and Omar T. A repo the story only reads has
 no branch or pull request in any mock, and any number in the copy matches the
 mock next to it. Nothing on the page names a real person, customer or
 repository. When the canon changes, it changes everywhere in one pass.
+
+## Image frames
+
+Every frame that hosts a picture reads its corners from tokens in
+`website/src/styles.css`: `--r-stage` for the outer radius, `--stage-pad` and
+`--stage-border-width` for the space inside it, and `--r-shot` for the picture
+or window it holds, which is the larger of `--r-view` and the outer radius minus
+the padding and the border. A new frame or window inside a stage uses
+`--r-shot` and never a number. A feature-guide figure is a picture with its own
+transparent-cornered frame, so `.prose` draws no border or clip around an image
+from `features/`.

@@ -155,6 +155,11 @@
   border-radius: var(--r-view);
 }
 
+.prose img[src*='/features/'] {
+  border: 0;
+  border-radius: 0;
+}
+
 .prose sub {
   vertical-align: baseline;
   font: var(--t-caption);
