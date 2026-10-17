@@ -2490,6 +2490,9 @@ pull request`) and Comments lists the session's notes. Every door to a pull
   `SegmentedTabs`: Fix and
   Transcript (`FixRunTranscriptDrawer` in `app/components`, which hands
   `AgentTranscriptDrawer` a `lead`; a drawer without a `lead` has no tabs).
+  The transcript pane shows only the steps of each turn while the agent's
+  conversation is the page beside it, and the whole record otherwise (a fix
+  run, an agent opened from another page), so it never repeats the page.
   Fix is the fix run summary at full height with its own scroll
   (`FixRunSummary`: one status line that says each shared fact once, `Working ·
 2m 48s · Opus 5.5 · High` while it works and `Done · 8m · 8 fix ready · Opus 5.5

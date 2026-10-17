@@ -166,7 +166,7 @@ export const AgentTranscriptDrawer = ({
           isActive={isActive}
           topInset="tight"
           hasComposer={false}
-          mode="steps"
+          mode={isConversationCenter ? 'steps' : 'record'}
           briefLabel={briefLabel}
         />
       )}

@@ -56,7 +56,7 @@ describe('ExploreFileChanges context gaps', () => {
         baseBranch="develop"
       />,
     );
-    fireEvent.click(await screen.findByRole('button', { name: 'Show all 29 hidden lines' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show 29 lines' }));
     expect(await screen.findByText('ledger1')).toBeDefined();
     expect(storySpies.tauriInvoke).toHaveBeenCalledWith('worktree_file_sides', {
       worktreePath: WORKTREE,
