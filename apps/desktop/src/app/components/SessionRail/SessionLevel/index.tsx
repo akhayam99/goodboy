@@ -1,4 +1,4 @@
-import { ScrollFade } from '@goodboy/ui';
+import { ScrollFade, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
@@ -8,6 +8,7 @@ import { SessionPages } from '../../../../features/workspace/components/SessionA
 import { useCardPages } from '../../../../features/workspace/hooks/useCardPages';
 import { LevelLinked } from './LevelLinked';
 import { LevelProjects } from './LevelProjects';
+import { RAIL_INSET } from './railInset';
 
 type Props = {
   readonly session: Session;
@@ -30,8 +31,8 @@ export const SessionLevel = ({ session, isActive }: Props) => {
   return (
     <div data-session-level="" className="flex min-h-0 flex-1 flex-col gap-1">
       <ScrollFade className="min-h-0 flex-1">
-        <div className="flex flex-col gap-4 px-1 pb-2">
-          <div className="flex flex-col px-1">
+        <div className={cn('flex flex-col gap-4 pb-2', RAIL_INSET)}>
+          <div className="flex flex-col">
             <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
           </div>
           <div data-level-cards="" className="flex flex-col gap-2">

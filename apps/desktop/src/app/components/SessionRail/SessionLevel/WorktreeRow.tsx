@@ -125,7 +125,7 @@ export const WorktreeRow = ({
                 mode: 'push',
               }),
           })}
-          className="h-7 items-center gap-2 pl-6 pr-2 text-ui"
+          className="h-7 items-center gap-2 pl-5 pr-1 text-ui"
         >
           <StateIcon
             size={ICON_SIZE.row}
@@ -160,7 +160,7 @@ export const WorktreeRow = ({
             data-worktree-toggle=""
             onClick={() => tree.toggle(node)}
             className={cn(
-              'absolute inset-y-0 left-0 flex w-6 items-center justify-end rounded-md pr-1 text-faint-foreground hover:text-foreground',
+              'absolute inset-y-0 left-0 flex w-5 items-center justify-end rounded-md pr-1 text-faint-foreground hover:text-foreground',
               FOCUS_RING,
             )}
           >

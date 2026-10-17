@@ -2,6 +2,7 @@ import { useId, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { FOCUS_RING, Reveal, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CARD_ROW_INSET } from './railInset';
 
 type Props = {
   readonly id: string;
@@ -31,7 +32,8 @@ export const LevelCard = ({ id, label, isOpen, onToggle, meta, action, children 
             aria-controls={bodyId}
             onClick={onToggle}
             className={cn(
-              'flex h-full min-w-0 items-center gap-1 rounded-md px-2 text-ui text-muted-foreground hover:text-foreground',
+              'flex h-full min-w-0 items-center gap-1 rounded-md text-ui text-muted-foreground hover:text-foreground',
+              CARD_ROW_INSET,
               FOCUS_RING,
             )}
           >
@@ -46,7 +48,10 @@ export const LevelCard = ({ id, label, isOpen, onToggle, meta, action, children 
             />
           </button>
         </h2>
-        <div className="flex shrink-0 items-center gap-2 pr-1">
+        <div
+          data-card-actions=""
+          className="flex shrink-0 items-center gap-2 [&_[data-level-add]]:size-5"
+        >
           {isOpen || meta === undefined ? null : meta}
           {action}
         </div>

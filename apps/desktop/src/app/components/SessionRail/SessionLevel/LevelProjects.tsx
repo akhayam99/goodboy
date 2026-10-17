@@ -84,7 +84,7 @@ export const LevelProjects = ({ session, isActive }: Props) => {
       {lapName === null ? null : (
         <div
           data-lap-project=""
-          className="flex h-7 min-w-0 items-center gap-2 px-2 text-ui text-muted-foreground"
+          className="flex h-7 min-w-0 items-center gap-2 px-1 text-ui text-muted-foreground"
         >
           <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="truncate">{lapName}</span>

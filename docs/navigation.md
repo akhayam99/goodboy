@@ -738,8 +738,14 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   its flyout read the same function; the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
 - **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
-  `bg-subtle` surface (`rounded-lg`, 4px inset, set 4px wider than the page
-  rows so its rows keep their left edge) with a header row inside it: the
+  `bg-subtle` surface (`rounded-lg`, 4px inset) whose edges sit on the page
+  row highlight edges: pages and cards share one column inset
+  (`SessionLevel/railInset`, `RAIL_INSET`), and a card row adds 4px
+  (`CARD_ROW_INSET`) to the card's 4px, the page row's 8px, so the header
+  label and the project icon start on the page icons' line and every right
+  slot (counts, diff stat, the worst state dot, the `+` glyph at `size-5`)
+  ends on the page counts' line (guarded by the `r4-rail-session` scene
+  test). It has a header row inside it: the
   title and a fold chevron as one button, then the quiet meta and a `+` icon
   button (`LevelAddTrigger`) at the right. A card folds from its header and
   remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);

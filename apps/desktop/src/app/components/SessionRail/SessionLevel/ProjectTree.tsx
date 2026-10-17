@@ -42,7 +42,7 @@ export const ProjectTree = ({
         isExpanded={isOpen}
         ariaLabel={`${group.projectName}, ${rows.length} ${branchWord}`}
         onClick={() => tree.toggle(node)}
-        className="h-7 items-center gap-2 pl-2 pr-0 text-ui"
+        className="h-7 items-center gap-2 pl-1 pr-0 text-ui"
       >
         <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span className="min-w-0 flex-1 truncate text-left">{group.projectName}</span>
