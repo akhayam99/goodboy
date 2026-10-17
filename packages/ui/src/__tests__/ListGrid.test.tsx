@@ -7,6 +7,7 @@ import { ListGridGroup } from '../components/ListGrid/ListGridGroup';
 import { ListGridRow } from '../components/ListGrid/ListGridRow';
 import type { ListGridColumn } from '../components/ListGrid/listGridTemplate';
 import { StateDot } from '../components/StateDot';
+import { ToneBar } from '../components/ToneBar';
 
 afterEach(cleanup);
 
@@ -97,6 +98,23 @@ describe('ListGrid', () => {
     );
     expect(screen.queryByRole('button')).toBeNull();
     screen.getByText('test (payments-api)');
+  });
+
+  it('draws a row track inside the row edge, outside every cell', () => {
+    render(
+      <ListGrid label="Sessions" columns={COLUMNS}>
+        <ListGridRow
+          onSelect={vi.fn()}
+          track={<ToneBar tone="info" density="row" />}
+          cells={['', 'Implementer', 'Speed up the ledger export', '1:12']}
+        />
+      </ListGrid>,
+    );
+    const row = screen.getByRole('button');
+    const track = screen.getByTestId('tone-bar');
+    expect(track.parentElement).toBe(row);
+    expect(row.className).toContain('relative');
+    expect(track.closest('[data-list-grid-cell]')).toBeNull();
   });
 
   it('drops a column that hides when empty from the template when no row fills it', () => {

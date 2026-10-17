@@ -394,7 +394,7 @@ describe('StageBoardCard actions', () => {
     ['warning', '1 open question'],
     ['danger', 'Confirm skip and continue'],
   ] as const)(
-    'keeps a %s quick action quiet at rest, with no tone bar beside it',
+    'keeps a %s quick action quiet at rest, so the stage track is the one tone',
     (tone, label) => {
       useDynamicActionsMock.mockReturnValue([
         { key: 'attention', icon: HelpCircle, tone, label, onClick: vi.fn() },
@@ -403,10 +403,32 @@ describe('StageBoardCard actions', () => {
       render(<StageBoardCard session={session} nav={nav} />);
 
       expect(screen.getByLabelText(label).hasAttribute('data-highlighted')).toBe(false);
-      expect(screen.queryByTestId('tone-bar')).toBeNull();
+      expect(screen.getAllByTestId('tone-bar')).toHaveLength(1);
       expect(screen.queryByLabelText('run next step')).toBeNull();
     },
   );
+
+  it.each([
+    ['building', 'neutral'],
+    ['running', 'info'],
+    ['attention', 'warning'],
+    ['review', 'success'],
+    ['done', 'merged'],
+  ] as const)('draws the %s stage as a %s track at the card edge', (stage, tone) => {
+    hooks.stage = stage;
+    render(<StageBoardCard session={session} nav={nav} />);
+    const track = screen.getByTestId('tone-bar');
+    expect(track.getAttribute('data-tone')).toBe(tone);
+    expect(track.className.includes('animate-soft-pulse')).toBe(stage === 'running');
+  });
+
+  it('keeps an archived card on a neutral, still track', () => {
+    hooks.stage = 'running';
+    render(<StageBoardCard session={session} nav={nav} archived />);
+    const track = screen.getByTestId('tone-bar');
+    expect(track.getAttribute('data-tone')).toBe('neutral');
+    expect(track.className.includes('animate-soft-pulse')).toBe(false);
+  });
 
   it('draws no menu glyph on the card: the lifecycle menu is its right click', () => {
     render(<StageBoardCard session={session} nav={nav} />);

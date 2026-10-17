@@ -6,6 +6,7 @@ import {
   Tooltip,
   InlineMarkdown,
   inlineMarkdownText,
+  ToneBar,
 } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -14,6 +15,7 @@ import { CardAction, CardActionSlot } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell } from '../../../../session/components/sessionCardShell';
 import { sessionDisplayTitle } from '../../../../session/sessionTitle';
+import { stageTrackOf } from '../../../../session/stageTrackOf';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { useDynamicActions } from './useDynamicActions';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
@@ -24,6 +26,9 @@ import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitle
 import { SessionSignal } from '../SessionSignal';
 import { useSessionSignal } from '../useSessionSignal';
 import { projectLineOf } from '../projectLineOf';
+
+const TRACK_UNDER_CHECKBOX =
+  'group-hover/select-row:top-9 group-focus-within/select-row:top-9 group-data-[selecting=true]/select-list:top-9';
 
 type CardSelectionEvent = {
   readonly shiftKey: boolean;
@@ -73,6 +78,7 @@ export const StageBoardCard = memo(function StageBoardCard({
   const title = sessionDisplayTitle({ session, tasks: summary.tasks });
   const isArchived = archived === true;
   const signal = useSessionSignal({ session, isArchived });
+  const track = stageTrackOf({ stage, isArchived });
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
   const projectLine = projectLineOf({ mounts });
   const dynamicActions = useDynamicActions(session, nav, stage);
@@ -123,10 +129,16 @@ export const StageBoardCard = memo(function StageBoardCard({
       }}
       className={cn(
         'group/session-card group/select-row grid h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_1.25rem] gap-x-2 gap-y-1 p-3 text-left',
-        onToggleSelect !== undefined && 'pl-7',
+        onToggleSelect === undefined ? 'pl-5' : 'pl-7',
         sessionCardShell({ selected }),
       )}
     >
+      <ToneBar
+        tone={track.tone}
+        density="card"
+        isBreathing={track.isBreathing}
+        {...(onToggleSelect === undefined ? {} : { className: TRACK_UNDER_CHECKBOX })}
+      />
       {onToggleSelect !== undefined && (
         <SelectionCheckbox
           checked={selected === true}

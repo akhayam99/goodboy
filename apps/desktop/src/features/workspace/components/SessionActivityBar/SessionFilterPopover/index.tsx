@@ -70,6 +70,7 @@ type Props = {
   readonly isBoard?: boolean;
   readonly footer?: ReactNode;
   readonly hasAttention?: boolean;
+  readonly canGroup?: boolean;
 };
 
 export const SessionFilterPopover = ({
@@ -80,6 +81,7 @@ export const SessionFilterPopover = ({
   isBoard = false,
   footer,
   hasAttention = false,
+  canGroup = true,
 }: Props) => {
   const prefs = useSessionViewPrefs(workspaceId);
   const setSessionViewPrefs = useAppStore((state) => state.setSessionViewPrefs);
@@ -208,7 +210,7 @@ export const SessionFilterPopover = ({
           />
         ))}
       </FilterSection>
-      {isBoard ? null : (
+      {isBoard || !canGroup ? null : (
         <FilterSection title="Group">
           {GROUP_OPTIONS.map((option) => (
             <FilterChoice
