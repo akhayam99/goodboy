@@ -77,7 +77,13 @@ export const RepoEntryRow = ({ project, base, facts, onOpen, onPull }: Props) =>
         >
           Pull
         </Button>
-      ) : null}
+      ) : (
+        <span aria-hidden data-pull-slot="" className="invisible shrink-0">
+          <Button size="xs" variant="secondary" disabled tabIndex={-1}>
+            Pull
+          </Button>
+        </span>
+      )}
     </div>
     {facts.note === null ? null : (
       <span className="text-meta text-muted-foreground">{facts.note}</span>

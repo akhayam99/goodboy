@@ -216,6 +216,20 @@ describe('the repositories entry in the top bar', () => {
     ).toBeDefined();
   });
 
+  it('keeps the Pull width on a row without Pull, so the base column stays put', async () => {
+    await mount({
+      projects: [PAYMENTS],
+      answers: { [PAYMENTS.rootPath]: reportOf({ state: 'behind', behind: 3, uncommitted: 2 }) },
+    });
+
+    open();
+    const row = rowOf({ name: 'payments-api' });
+    const slot = row.querySelector('[data-pull-slot]');
+    expect(slot?.getAttribute('aria-hidden')).toBe('true');
+    expect(slot?.className).toContain('invisible');
+    expect(slot?.querySelector('button')?.tabIndex).toBe(-1);
+  });
+
   it('says a feature checkout stays where it is when main is pulled', async () => {
     await mount({
       projects: [PAYMENTS],
