@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -48,6 +49,12 @@ const useEdgeHost = () => {
     observer.observe(host);
     return () => observer.disconnect();
   }, [host]);
+  useLayoutEffect(() => {
+    const measured = host === null ? 0 : host.getBoundingClientRect().width;
+    if (measured !== width) {
+      setWidth(measured);
+    }
+  }, [host, width]);
   return { host, setHost, width };
 };
 
@@ -160,7 +167,13 @@ export const DrawerColumn = ({
   const layout =
     column.width === null
       ? unmeasuredLayoutOf({ savedWidth: resizable.width, sizing, placement })
-      : drawerLayoutOf({ main: column.width, sizing, savedWidth: resizable.width, placement });
+      : drawerLayoutOf({
+          main: column.width,
+          sizing,
+          savedWidth: resizable.width,
+          placement,
+          edgeWidth: edge.width,
+        });
   const mode: DrawerMode = isOpen ? layout.mode : 'closed';
   modeRef.current = mode;
   const isOverlay = mode === 'overlay';

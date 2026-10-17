@@ -51,6 +51,7 @@ type LayoutParams = {
   readonly sizing: DrawerSizing;
   readonly savedWidth: number;
   readonly placement?: DrawerPlacement;
+  readonly edgeWidth?: number;
 };
 
 export const drawerLayoutOf = ({
@@ -58,6 +59,7 @@ export const drawerLayoutOf = ({
   sizing,
   savedWidth,
   placement = 'auto',
+  edgeWidth = 0,
 }: LayoutParams): DrawerLayout => {
   const tier = DRAWER_TIERS[sizing];
   const room = pushRoomOf(main);
@@ -68,7 +70,7 @@ export const drawerLayoutOf = ({
       dragMax: Math.min(tier.max, room),
     };
   }
-  const overlayRoom = main - DRAWER_INSET * 2;
+  const overlayRoom = main - DRAWER_INSET * 2 - edgeWidth;
   return {
     mode: 'overlay',
     width: Math.min(savedWidth, overlayRoom),

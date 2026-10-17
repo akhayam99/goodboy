@@ -508,3 +508,35 @@ describe('the one drawer rule: fixed thresholds', () => {
     }
   });
 });
+
+describe('drawerLayoutOf beside an edge column', () => {
+  it.each([
+    [852, 'reader', 720],
+    [852, 'side', 400],
+    [640, 'reader', 720],
+    [520, 'side', 400],
+  ] as const)(
+    'fits the overlay card and a 44px column in a %ipx sheet (%s)',
+    (main, sizing, savedWidth) => {
+      const layout = drawerLayoutOf({ main, sizing, savedWidth, edgeWidth: 44 });
+
+      expect(layout.mode).toBe('overlay');
+      expect(drawerAsideWidthOf({ width: layout.width, mode: 'overlay' }) + 44).toBeLessThanOrEqual(
+        main,
+      );
+      expect(layout.dragMax + DRAWER_INSET * 2 + 44).toBeLessThanOrEqual(main);
+    },
+  );
+
+  it('keeps the saved width when the sheet has room for it and the column', () => {
+    expect(
+      drawerLayoutOf({ main: 852, sizing: 'reader', savedWidth: 720, edgeWidth: 44 }).width,
+    ).toBe(720);
+  });
+
+  it('decides push or overlay on the sheet alone', () => {
+    expect(
+      drawerLayoutOf({ main: 1400, sizing: 'side', savedWidth: 400, edgeWidth: 44 }).mode,
+    ).toBe('push');
+  });
+});
