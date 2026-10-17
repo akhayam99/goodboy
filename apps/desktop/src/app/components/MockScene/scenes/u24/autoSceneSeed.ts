@@ -1,4 +1,9 @@
-import { MODEL_CATALOGS, autoBudgetOf, autoTreeSpendOf } from '@goodboy/core';
+import {
+  AUTO_STALE_DECIDE_TEXT,
+  MODEL_CATALOGS,
+  autoBudgetOf,
+  autoTreeSpendOf,
+} from '@goodboy/core';
 import type { AutoArtifactLedgerRow, AutoDelegation, AutoPhase } from '@goodboy/db';
 import {
   brandId,
@@ -63,7 +68,8 @@ export type AutoSceneState =
   | 'refused'
   | 'done'
   | 'finished'
-  | 'nocap';
+  | 'nocap'
+  | 'blocked';
 
 const GOAL_TEXT =
   'Why does the ledger retry post a second credit? Fix it and add a test for the retry path.';
@@ -664,6 +670,17 @@ export const autoSceneOf = ({ state }: SceneParams): AutoSceneData => {
       return {
         ...resting,
         view: { ...resting.view, tree: { ...resting.view.tree, phase: 'finished' } },
+      };
+    }
+    case 'blocked': {
+      const asked = autoSceneOf({ state: 'answering' });
+      return {
+        ...asked,
+        view: {
+          ...asked.view,
+          tree: { ...asked.view.tree, phase: 'blocked', blockedReason: AUTO_STALE_DECIDE_TEXT },
+        },
+        events: asked.events.slice(0, 1),
       };
     }
     case 'nocap': {

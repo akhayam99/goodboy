@@ -209,6 +209,7 @@ c06-agents-empty
 c06-agents-list
 c06-turn-detail
 c07-auto-answering
+c07-auto-blocked
 c07-auto-capped
 c07-auto-child
 c07-auto-child-done
@@ -221,6 +222,7 @@ c07-auto-plan
 c07-auto-project
 c07-auto-session-level
 c07-auto-start
+c07-auto-stop-failed
 c07-auto-working
 c08-run-add-step
 c08-run-approval

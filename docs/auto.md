@@ -17,7 +17,13 @@ and there is no switch to turn it off.
 
 The feature is on: `AUTO_GATES.isDelegationEnabled` is `true` and is the only gate. Settings has
 no Auto switch and no Experiments band. The runtime (`startAutoRuntime`) runs in the main window,
-ticks every 15 seconds from its start and drives the trees that exist. An old
+ticks every 15 seconds from its start and drives the trees that exist. Another
+window has no runtime of its own: it hands Stop, Retry, a message to Auto and a
+confirm answer to the main window over a Tauri event
+(`features/auto/bridge/`: `createAutoBridgeClient` in the other window,
+`serveAutoBridge` in the main one) and waits up to 30 seconds for the answer. No
+answer reads "The main window did not answer. Do it from the main window." on the
+tail, and a message counts as not taken. An old
 `agents.autoExperiment` row left in the database is never read, so a stored `false` hides nothing:
 `useIsAutoOn`, the agent menu facts, `isAutoAgentsShown` and `moveToAuto` read only the gate.
 
@@ -141,9 +147,11 @@ outbox row (`images` in the payload) and shows them on the bubble (`operator_tex
 after that message gets them in its brief (`childImagesOf`: the images of the accepted user rows
 of the tree's generation up to the delegation); the child pane names them as chips. An image that
 cannot be written refuses the message with "Auto could not keep the images. Attach them again.":
-nothing is dropped silently. A turn that is not an operator message, a
-child, or an Auto agent in a window with no runtime (the main window owns it) is
-left to the plain turn.
+nothing is dropped silently. A turn that is not an operator message or
+a child is left to the plain turn. A message to the root of an Auto tree is never a
+plain turn: with no Auto door registered at all (the runtime has not started yet)
+`routeAutoUserTurn` refuses it with "Auto is not running yet. Send it again in a
+moment." and the composer keeps its text.
 
 ## Overview
 
@@ -230,9 +238,14 @@ writing to it reopens it to **Deciding**.
   agents** (just **Stop** while no child exists), **Starting agents**, **Reading the results**, **Deciding what to do
   next**, a refused hand over in the user voice, **Paused at the limit: $4.80
   of $5.00** with **Raise to $10** and **Change limit** (opens the limit
-  popover of the rail foot), **Blocked, open the chat** with **View
-  transcript**. A resting or finished tree draws no tail: the rail says Idle or
-  Done and **Mark finished** is in the header. While Auto's own turn runs, the
+  popover of the rail foot), **Blocked: <reason>** with **Retry** and **View
+  transcript** (a block at the budget offers **Raise limit** and **Change limit**
+  instead, one at the time limit only **View transcript**). Only `deciding` reads
+  **Deciding what to do next**: a resting tree (`answering`, `done`, `finished`)
+  whose turn ended draws no tail and no Stop, the rail says Idle or Done and
+  **Mark finished** is in the header. A Stop or a Retry that fails says why on the
+  tail itself, in an inline danger notice under the line ("Couldn't stop the Auto
+  agents", "Couldn't retry Auto"), never only in the notifications. While Auto's own turn runs, the
   thinking line of the conversation speaks instead, and while a plan waits for
   approval the ask is the state. The composer says "Message Auto" while Auto
   waits, or "Message Auto, or describe changes to plan v1", and shows **Ask
@@ -286,6 +299,24 @@ A revise Auto is not sure about waits for an OK under its delegation line: "Chan
 Retry-safe credit retries at v2?" with **Confirm** and **Cancel**. The answer
 goes through one port, `registerDelegationDecisionPort`, which the runtime
 registers; without a port the click says Auto cannot take the answer yet.
+
+## Blocked and Retry
+
+A tree is blocked when a limit stops the next delivery (turns, three answers in a
+row with no progress, the time limit, the budget), when the provider refuses to
+start Auto's turn, or when Auto stopped answering: a tree still deciding 10 minutes
+after its delivery (`AUTO_STALE_DECIDE_MS`) with no live root run settles from what
+the run left behind, or, with nothing stored, blocks with "Auto stopped answering
+before it replied. Retry to send the message again." and puts the message back.
+
+A blocked tree writes nothing while it waits. It resumes by itself only after a
+budget block, once the limit is raised. Otherwise **Retry** on the tail
+(`retryBlockedTree`, through the retry port) resumes it: it clears the reason,
+resets the no progress streak, takes one more grant of turns at the turn limit (at
+most three) and redelivers what waits. Past the time limit, at the budget or with
+every grant used it refuses with the reason on the tail. A message from the user to
+a blocked tree is a Retry too, and the first recovery after a restart retries a
+block that no limit caused.
 
 ## How Auto decides
 

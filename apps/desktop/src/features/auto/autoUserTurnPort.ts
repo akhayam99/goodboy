@@ -1,6 +1,6 @@
 import type { AgentId, MessageAttachment, SessionId } from '@goodboy/types';
 
-type AutoUserTurnParams = Readonly<{
+export type AutoUserTurnParams = Readonly<{
   agentId: AgentId;
   sessionId: SessionId;
   workspaceId: string;
@@ -8,7 +8,7 @@ type AutoUserTurnParams = Readonly<{
   images?: ReadonlyArray<MessageAttachment>;
 }>;
 
-type AutoUserTurnResult = 'queued' | 'lost';
+export type AutoUserTurnResult = 'queued' | 'lost';
 
 export type AutoUserTurnPort = (params: AutoUserTurnParams) => Promise<AutoUserTurnResult>;
 

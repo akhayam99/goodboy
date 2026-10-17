@@ -788,9 +788,10 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   rail) folds it to the current level as icons with right tooltips
   (`SessionRailIcons`): on level 2 the back icon, then one icon per worktree
   entry (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto
-  level the back icon, then one button per rail row holding its role glyph next
-  to its state node (the node of the Auto word map the open rail draws), with
-  the role and state word in the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot,
+  level the back icon, then one 28px button per rail row, centered on the icon
+  column like the run steps, holding its role glyph with its state node as a
+  small badge on the lower right corner (the node of the Auto word map the open
+  rail draws), with the role and state word in the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot,
   then one branch icon per worktree. On
   every level the tools follow at the bottom as five icons
   (`SessionToolIcon`), each named by its word in its tooltip and accessible

@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 import { brandId, type AgentId, type ArtifactId, type SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
+import { formatError } from '@goodboy/ui';
+import { currentTreeRetryPort } from '../../treeRetryPort';
 import { currentTreeStopPort } from '../../treeStopPort';
 import { focusAgentComposer } from '../focusAgentComposer';
 import type { RailRow } from '../railRowsOf';
@@ -14,9 +16,16 @@ type ViewParams = {
   readonly view: AutoTreeView;
 };
 
+export type AutoTreeActionFailure = Readonly<{
+  title: string;
+  message: string;
+}>;
+
 export type AutoTreeActions = Readonly<{
   isStopping: boolean;
+  failure: AutoTreeActionFailure | null;
   stop: (params: ViewParams) => Promise<void>;
+  retry: (params: ViewParams) => Promise<void>;
   changeApproach: (params: ViewParams) => Promise<void>;
   openAgent: (agentId: AgentId) => void;
   openChild: (agentId: AgentId) => void;
@@ -28,32 +37,46 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
   const navigate = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const closeDrawer = useAppStore((state) => state.closeDrawer);
-  const reportError = useAppStore((state) => state.reportError);
   const [isStopping, setIsStopping] = useState(false);
+  const [failure, setFailure] = useState<AutoTreeActionFailure | null>(null);
 
-  const stop = useCallback(
-    async ({ view }: ViewParams): Promise<void> => {
-      setIsStopping(true);
-      try {
-        const port = currentTreeStopPort();
-        if (port === null) {
-          throw new Error('Auto cannot be stopped from this window.');
-        }
-        const result = await port({ treeId: view.tree.id });
-        if (result === 'stuck') {
-          throw new Error('Some agents are still running. Press Stop again to retry.');
-        }
-        if (result === 'not_owner') {
-          throw new Error('Another window runs this conversation. Stop it there.');
-        }
-      } catch (error) {
-        await reportError({ title: "Couldn't stop the Auto agents", error, sessionId });
-      } finally {
-        setIsStopping(false);
+  const stop = useCallback(async ({ view }: ViewParams): Promise<void> => {
+    setIsStopping(true);
+    setFailure(null);
+    try {
+      const port = currentTreeStopPort();
+      if (port === null) {
+        throw new Error('Auto is not running yet. Stop it again in a moment.');
       }
-    },
-    [reportError, sessionId],
-  );
+      const result = await port({ treeId: view.tree.id });
+      if (result === 'stuck') {
+        throw new Error('Some agents are still running. Press Stop again to retry.');
+      }
+      if (result === 'not_owner') {
+        throw new Error('Another window runs this conversation. Stop it there.');
+      }
+    } catch (error) {
+      setFailure({ title: "Couldn't stop the Auto agents", message: formatError(error) });
+    } finally {
+      setIsStopping(false);
+    }
+  }, []);
+
+  const retry = useCallback(async ({ view }: ViewParams): Promise<void> => {
+    setFailure(null);
+    try {
+      const port = currentTreeRetryPort();
+      if (port === null) {
+        throw new Error('Auto is not running yet. Retry again in a moment.');
+      }
+      const result = await port({ treeId: view.tree.id });
+      if (result.kind === 'refused') {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      setFailure({ title: "Couldn't retry Auto", message: formatError(error) });
+    }
+  }, []);
 
   const changeApproach = useCallback(
     async ({ view }: ViewParams): Promise<void> => {
@@ -97,5 +120,15 @@ export const useAutoTreeActions = ({ sessionId }: Params): AutoTreeActions => {
     [openDrawer, sessionId],
   );
 
-  return { isStopping, stop, changeApproach, openAgent, openChild, openRow, openArtifact };
+  return {
+    isStopping,
+    failure,
+    stop,
+    retry,
+    changeApproach,
+    openAgent,
+    openChild,
+    openRow,
+    openArtifact,
+  };
 };

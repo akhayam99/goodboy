@@ -18,6 +18,10 @@ import {
   registerAutoUserTurnPort,
   type AutoUserTurnPort,
 } from '../../../../../features/auto/autoUserTurnPort';
+import {
+  registerTreeRetryPort,
+  type TreeRetryPort,
+} from '../../../../../features/auto/treeRetryPort';
 import { MOCK_SCENES } from '../..';
 import { U25_C07_AUTO_SCENES } from './c07-auto';
 
@@ -34,6 +38,7 @@ beforeEach(async () => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  registerTreeRetryPort({ port: null });
 });
 
 type MountParams = {
@@ -327,6 +332,11 @@ describe('c07 Auto scenes', () => {
     expect(implementer.getAttribute('data-rail-auto-role')).toBe('implementer');
     expect(within(implementer).getByRole('img', { name: 'Running' })).toBeDefined();
     expect(within(rail).getByRole('button', { name: 'Tester, Queued' })).toBeDefined();
+    for (const button of within(rail).getAllByRole('button', {
+      name: /, (Running|Queued|Done)$/,
+    })) {
+      expect(within(button).getAllByRole('img')).toHaveLength(1);
+    }
   });
 
   it('c07-auto-session-level keeps the Auto chat in the center with the session level shown', async () => {
@@ -352,6 +362,60 @@ describe('c07 Auto scenes', () => {
     const level = shownLayer();
     expect(within(level).getAllByRole('listitem')).toHaveLength(1);
     expect(within(level).getByText('No agents started yet')).toBeDefined();
+    expect(within(level).getByText('Idle')).toBeDefined();
+  });
+
+  it('c07-auto-answering rests after Auto answered: no Deciding tail and no Stop', async () => {
+    mount({ id: 'c07-auto-answering' });
+
+    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
+    expect(document.querySelector('[data-auto-tail]')).toBeNull();
+    expect(screen.queryByText('Deciding what to do next')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop Auto and its agents' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();
+  });
+
+  it('c07-auto-blocked says why Auto stopped and redelivers on Retry', async () => {
+    const retry = vi.fn<TreeRetryPort>(async () => ({ kind: 'retried' }));
+    registerTreeRetryPort({ port: retry });
+    mount({ id: 'c07-auto-blocked' });
+
+    const tail = await waitFor(() => {
+      const found = document.querySelector<HTMLElement>('[data-auto-tail]');
+      expect(found?.textContent).toContain('Blocked: Auto stopped answering before it replied.');
+      return found;
+    }, WAIT);
+    if (tail === null || tail === undefined) {
+      throw new Error('no tail');
+    }
+    fireEvent.click(within(tail).getByRole('button', { name: 'Retry' }));
+
+    await waitFor(() => expect(retry).toHaveBeenCalledTimes(1), WAIT);
+    expect(within(tail).queryByRole('alert')).toBeNull();
+  });
+
+  it('c07-auto-blocked shows a refused Retry on the tail, not in a notification', async () => {
+    registerTreeRetryPort({
+      port: async () => ({ kind: 'refused', message: 'This conversation reached its time limit.' }),
+    });
+    mount({ id: 'c07-auto-blocked' });
+
+    const retry = await screen.findByRole('button', { name: 'Retry' }, WAIT);
+    fireEvent.click(retry);
+
+    const title = await screen.findByText("Couldn't retry Auto", undefined, WAIT);
+    const alert = title.closest('[role="alert"]');
+    expect(alert?.closest('[data-auto-tail]')).not.toBeNull();
+    expect(alert?.textContent).toContain('This conversation reached its time limit.');
+  });
+
+  it('c07-auto-stop-failed shows the failed Stop inline on the tail', async () => {
+    mount({ id: 'c07-auto-stop-failed' });
+
+    const title = await screen.findByText("Couldn't stop the Auto agents", undefined, WAIT);
+    const alert = title.closest('[role="alert"]');
+    expect(alert?.closest('[data-auto-tail]')).not.toBeNull();
+    expect(alert?.textContent).toContain('Auto is not running yet. Stop it again in a moment.');
   });
 
   it('c07-auto-list lists every Auto conversation on one grid and opens one', async () => {

@@ -1,4 +1,4 @@
-type TreeStopResult = 'stopped' | 'stuck' | 'not_owner';
+export type TreeStopResult = 'stopped' | 'stuck' | 'not_owner';
 
 type StopParams = {
   readonly treeId: string;
