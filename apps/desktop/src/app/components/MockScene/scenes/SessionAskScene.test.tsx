@@ -111,12 +111,12 @@ describe('the session Ask scene', () => {
     if (questionChip === null) {
       throw new Error('no question chip');
     }
-    expect(screen.getByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
+    expect(screen.getByTestId('overview-title')).toBeDefined();
     act(() => {
       fireEvent.click(questionChip);
     });
     expect(useAppStore.getState().activeLens[SESSION.id]).toBe('questions');
-    expect(screen.queryByRole('heading', { level: 1, name: 'Overview' })).toBeNull();
+    expect(screen.queryByTestId('overview-title')).toBeNull();
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
     expect(askDrawer()).toBeDefined();
   });

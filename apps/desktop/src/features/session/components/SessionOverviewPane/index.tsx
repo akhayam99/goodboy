@@ -2,8 +2,8 @@ import { PaneShell } from '@goodboy/ui';
 import { useCallback, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
-import { NAMES } from '../../../../shared/names';
 import { HeaderBand } from './HeaderBand';
+import { OverviewTitle } from './OverviewTitle';
 import { OverviewHeaderActions } from './OverviewHeaderActions';
 import { OverviewNotices } from './OverviewNotices';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
@@ -30,7 +30,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
 
   return (
     <PaneShell
-      title={NAMES.overview}
+      title={<OverviewTitle session={session} />}
       width="measure"
       actions={<OverviewHeaderActions session={session} hasNextLead={hasNextLead} />}
       headerRhythm="section"

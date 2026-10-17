@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 type Props = {
-  readonly title: string;
+  readonly title: ReactNode;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
 };

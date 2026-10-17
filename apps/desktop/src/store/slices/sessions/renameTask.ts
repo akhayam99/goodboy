@@ -12,22 +12,14 @@ export const renameTask = (set: SetFn, get: GetFn) => {
       throw new Error('session name cannot be empty');
     }
     const now = new Date().toISOString() as IsoDateTime;
-    const prev = sessionById(get().sessions, sessionId);
-    if (!prev) {
+    if (sessionById(get().sessions, sessionId) === undefined) {
       throw new Error(`session not found: ${sessionId}`);
     }
+    await renameSessionInDb(tauriDatabase, sessionId, title, now, true);
     set((state) => ({
       sessions: state.sessions.map((s) =>
         s.id === sessionId ? { ...s, goal: title, titleUserEdited: true, updatedAt: now } : s,
       ),
     }));
-    try {
-      await renameSessionInDb(tauriDatabase, sessionId, title, now, true);
-    } catch (err) {
-      set((state) => ({
-        sessions: state.sessions.map((s) => (s.id === sessionId ? prev : s)),
-      }));
-      throw err;
-    }
   };
 };

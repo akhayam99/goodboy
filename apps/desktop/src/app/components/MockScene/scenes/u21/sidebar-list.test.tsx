@@ -64,12 +64,7 @@ describe('the pinned sessions scene', () => {
   it('opens the session on its Overview, not on the loading skeleton', async () => {
     await mount();
 
-    expect(
-      await screen.findByRole('heading', {
-        level: 1,
-        name: 'Overview',
-      }),
-    ).toBeDefined();
+    expect((await screen.findByTestId('overview-title')).closest('h1')).not.toBeNull();
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
   });
 

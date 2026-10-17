@@ -507,7 +507,7 @@ type LensRow = {
 };
 
 const overviewLands = async (): Promise<void> =>
-  expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
+  expect((await screen.findByTestId('overview-title')).closest('h1')).not.toBeNull();
 
 export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },

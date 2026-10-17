@@ -685,12 +685,16 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
 
 - **Level 1 reads top to bottom:** the pages, then Projects and Linked. The
   session level has no identity row: the selected main sidebar row is the
-  session's identity (its title and state node) and the page h1 names the
-  entry. The rail's top row holds the rail toggle at the left and the session
+  session's identity (its title and state node). The Overview h1 is the session
+  title, the linked key in gray mono before it (`SessionOverviewPane/OverviewTitle`);
+  double click renames it in place with the same rename as the sidebar row,
+  and "Overview" is only the rail entry's label. The rail's top row holds the rail toggle at the left and the session
   `⋯` at the right (`SessionLevel/SessionLevelMenu`: Rename, Pin, Refresh,
   Archive, Delete). Rename edits the main sidebar row in place (the active row
   answers the `session-header` rename request); with the sidebar folded it
-  edits in the rail top row. A title Goodboy wrote reads "Named by Goodboy" on
+  edits in the rail top row. A rename writes the database first and changes the
+  title only once the write lands (`renameTask`); a failure keeps the old title
+  and shows the error beside the field, which stays open. A title Goodboy wrote reads "Named by Goodboy" on
   the session hover card. It has no back row: the column beside it is the way
   to another place. Only one level shows, so a session
   never carries a nested card in the workspace list.

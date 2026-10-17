@@ -6,7 +6,13 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
 );
-vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+const { renameSession } = vi.hoisted(() => ({
+  renameSession: vi.fn(async (..._args: ReadonlyArray<unknown>): Promise<void> => undefined),
+}));
+
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../store/storyHarness')).dbModuleMock({ renameSession }),
+);
 vi.mock('./HeaderBand', () => ({ HeaderBand: () => <p>Overview goal</p> }));
 vi.mock('./ArchivedRestore', () => ({
   ArchivedRestore: () => <button type="button">Restore</button>,
@@ -30,12 +36,13 @@ vi.mock('../SessionWorkspace/parts/TimelinePane', () => ({
 
 import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   IsoDateTime,
   OpenQuestion,
   OpenQuestionId,
   Session,
+  SessionExternalTask,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -65,6 +72,8 @@ const SESSION: Session = aSession({
 
 beforeEach(async () => {
   await resetStoryStore();
+  renameSession.mockReset();
+  renameSession.mockResolvedValue(undefined);
   useAppStore.setState({
     sessions: [SESSION],
     sessionProjectMounts: { [SESSION_ID]: [] },
@@ -115,6 +124,96 @@ describe('SessionOverviewPane', () => {
     renderPane();
 
     expect(screen.getAllByRole('region', { name: 'Needs you' })).toHaveLength(1);
+  });
+
+  it('titles the page with the session name, the linked key in mono before it, never Overview', () => {
+    const linked: SessionExternalTask = {
+      sessionId: SESSION_ID,
+      provider: 'linear',
+      externalId: 'issue-204',
+      identifier: 'HL-204',
+      title: 'Stop retried webhooks posting a second credit',
+      url: 'https://linear.app/harborline/issue/HL-204',
+      createdAt: SESSION.createdAt,
+    };
+    const session = { ...SESSION, goal: '[HL-204] Stop retried webhooks posting a second credit' };
+    useAppStore.setState({
+      sessions: [session],
+      sessionExternalTasks: { [SESSION_ID]: [linked] },
+    });
+    renderPane({ session });
+
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading.textContent).toBe('HL-204Stop retried webhooks posting a second credit');
+    expect(screen.getByText('HL-204').className).toContain('font-mono');
+    expect(screen.queryByRole('heading', { name: 'Overview' })).toBeNull();
+  });
+
+  it('renames the session in place on double click, writing only after the save lands', async () => {
+    const { rerender } = renderPane();
+    fireEvent.doubleClick(screen.getByTestId('overview-title'));
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    fireEvent.change(field, { target: { value: 'Key redeliveries by event id' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull(),
+    );
+    expect(renameSession).toHaveBeenCalledWith(
+      expect.anything(),
+      SESSION_ID,
+      'Key redeliveries by event id',
+      expect.any(String),
+      true,
+    );
+    const renamed = useAppStore.getState().sessions.find((row) => row.id === SESSION_ID);
+    expect(renamed?.goal).toBe('Key redeliveries by event id');
+    rerender(<SessionOverviewPane session={renamed ?? SESSION} onSelectLens={vi.fn()} />);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+      'Key redeliveries by event id',
+    );
+  });
+
+  it('keeps the old title and shows the error when the rename fails', async () => {
+    let fail: (error: Error) => void = () => undefined;
+    renameSession.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    renderPane();
+    fireEvent.doubleClick(screen.getByTestId('overview-title'));
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    fireEvent.change(field, { target: { value: 'Key redeliveries by event id' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+
+    expect(useAppStore.getState().sessions[0]?.goal).toBe(SESSION.goal);
+    fail(new Error('database is locked'));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('database is locked');
+    expect(useAppStore.getState().sessions[0]?.goal).toBe(SESSION.goal);
+    expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+  });
+
+  it('cancels the rename on Escape without writing', () => {
+    renderPane();
+    fireEvent.doubleClick(screen.getByTestId('overview-title'));
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    fireEvent.change(field, { target: { value: 'Something else' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
+
+    expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
+    expect(renameSession).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(SESSION.goal);
+    expect(useAppStore.getState().sessions[0]?.goal).toBe(SESSION.goal);
+  });
+
+  it('keeps the title read only on an archived session', () => {
+    renderPane({ session: { ...SESSION, archivedAt: SESSION.createdAt } });
+    fireEvent.doubleClick(screen.getByTestId('overview-title'));
+
+    expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
   });
 
   it('keeps New on a live session and only Restore once archived', () => {

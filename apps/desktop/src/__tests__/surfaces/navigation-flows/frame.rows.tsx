@@ -109,7 +109,7 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       await lens(null)(ctx);
-      expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeDefined();
+      expect((await screen.findByTestId('overview-title')).closest('h1')).not.toBeNull();
       await waitFor(() => expectOnGrid({ page: 'overview', isStudio: false }), WAIT);
     },
   },

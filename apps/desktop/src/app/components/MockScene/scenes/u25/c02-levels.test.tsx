@@ -174,10 +174,10 @@ describe('the c02 sidebar and session rail scenes', () => {
     );
   });
 
-  it('c02-shell-overview draws the Overview page header with Ask and no trail band', async () => {
+  it('c02-shell-overview draws the Overview page header (the session name) with Ask and no trail band', async () => {
     await mount('c02-shell-overview');
 
-    expect(screen.getByRole('heading', { name: 'Overview', level: 1 })).toBeDefined();
+    expect(screen.getByTestId('overview-title').closest('h1')).not.toBeNull();
     expect(screen.getAllByTestId('pane-toggle-ask').length).toBeGreaterThan(0);
     expect(document.querySelector('[data-slot="trail-bar"]')).toBeNull();
   });
