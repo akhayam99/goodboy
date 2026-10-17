@@ -220,4 +220,31 @@ describe('the r4 content scenes', () => {
     expect(within(row).queryByRole('alert')).toBeNull();
     expect(within(row).queryByRole('button', { name: 'Retry' })).toBeNull();
   });
+
+  it('r4-overview-title shows a refused name without Retry', async () => {
+    await mount('r4-overview-title');
+    const sibling = brandId<SessionId>({ value: 'mock-mounts-sibling-dunning' });
+    const renameTask = vi.fn(async () => undefined);
+    useAppStore.setState({ renameTask });
+    act(() => {
+      requestRename({
+        objectKey: sessionObjectKey({ sessionId: sibling }),
+        anchorKey: `sidebar:${sibling}`,
+      });
+    });
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    const row = field.closest('[data-title-field]')?.parentElement ?? null;
+    if (row === null) {
+      throw new Error('the rename field has no row');
+    }
+
+    fireEvent.change(field, { target: { value: 'x'.repeat(200) } });
+    await act(async () => {
+      fireEvent.keyDown(field, { key: 'Enter' });
+    });
+
+    expect(within(row).getByRole('alert').textContent).toContain('name is too long');
+    expect(within(row).queryByRole('button', { name: 'Retry' })).toBeNull();
+    expect(renameTask).not.toHaveBeenCalled();
+  });
 });

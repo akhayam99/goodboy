@@ -94,6 +94,7 @@ const SessionActivityItemView = ({
         used={rename.used}
         limit={rename.limit}
         error={rename.error}
+        canRetry={rename.canRetry}
         isPending={rename.isPending}
         onRetry={() => void rename.commit()}
         lead={

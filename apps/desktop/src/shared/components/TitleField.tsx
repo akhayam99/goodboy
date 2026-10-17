@@ -11,6 +11,7 @@ type Props = {
   readonly used: number;
   readonly limit: number;
   readonly error: string | null;
+  readonly canRetry: boolean;
   readonly isPending: boolean;
   readonly onRetry: () => void;
   readonly lead?: ReactNode;
@@ -28,6 +29,7 @@ export const TitleField = ({
   used,
   limit,
   error,
+  canRetry,
   isPending,
   onRetry,
   lead,
@@ -61,6 +63,7 @@ export const TitleField = ({
     <RenameStatus
       isPending={isPending}
       error={error}
+      canRetry={canRetry}
       onRetry={onRetry}
       {...(isTitle ? { className: 'max-w-[40%] shrink-0' } : {})}
     />

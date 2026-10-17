@@ -746,8 +746,9 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   any write (`useInlineRename`). Enter saves, Escape cancels and focus goes back
   to the title. A rename writes the database first and changes the title only once the
   write lands (`renameTask`); the field shows pending while it writes, and a
-  failure keeps the old title and shows the error with Retry beside the field,
-  which stays open. Every one of these verbs is also in the sidebar row's right
+  failed write keeps the old title and shows the error with Retry beside the field,
+  which stays open; a name it refuses (empty, too long) shows the reason with no
+  Retry (`useInlineRename` `canRetry`). Every one of these verbs is also in the sidebar row's right
   click menu and the palette. A title Goodboy wrote reads "Named by Goodboy" on
   the session hover card. It has no back row: the column beside it is the way
   to another place. Only one level shows, so a session never carries a nested

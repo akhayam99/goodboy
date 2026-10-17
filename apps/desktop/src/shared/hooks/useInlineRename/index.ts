@@ -14,6 +14,7 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
   const [draft, setDraft] = useState(value);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [canRetry, setCanRetry] = useState(false);
   const pendingRef = useRef(false);
   const editing = isEditing === undefined ? selfEditing : isEditing;
 
@@ -27,12 +28,14 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
   const start = () => {
     setDraft(value);
     setError(null);
+    setCanRetry(false);
     setSelfEditing(true);
   };
 
   const cancel = () => {
     setSelfEditing(false);
     setError(null);
+    setCanRetry(false);
     onCancel?.();
   };
 
@@ -43,10 +46,12 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
     const next = draft.trim();
     if (next === '') {
       setError('name cannot be empty');
+      setCanRetry(false);
       return;
     }
     if (maxLength !== undefined && next.length > maxLength) {
       setError('name is too long');
+      setCanRetry(false);
       return;
     }
     pendingRef.current = true;
@@ -55,8 +60,10 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
       await onCommit(next);
       setSelfEditing(false);
       setError(null);
+      setCanRetry(false);
     } catch (err) {
       setError(formatError(err));
+      setCanRetry(true);
     } finally {
       pendingRef.current = false;
       setIsPending(false);
@@ -88,6 +95,7 @@ export const useInlineRename = ({ value, onCommit, isEditing, onCancel, maxLengt
     editing,
     draft,
     error,
+    canRetry,
     isPending,
     maxLength,
     setDraft,

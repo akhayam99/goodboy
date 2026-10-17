@@ -3,11 +3,12 @@ import { Button, cn } from '@goodboy/ui';
 type Props = {
   readonly isPending: boolean;
   readonly error: string | null;
+  readonly canRetry: boolean;
   readonly onRetry: () => void;
   readonly className?: string;
 };
 
-export const RenameStatus = ({ isPending, error, onRetry, className }: Props) => {
+export const RenameStatus = ({ isPending, error, canRetry, onRetry, className }: Props) => {
   if (isPending) {
     return (
       <span role="status" className={cn('shrink-0 text-meta text-muted-foreground', className)}>
@@ -23,14 +24,16 @@ export const RenameStatus = ({ isPending, error, onRetry, className }: Props) =>
       <span role="alert" className="min-w-0 truncate text-meta text-danger">
         {error}
       </span>
-      <Button
-        size="xs"
-        variant="secondary"
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={onRetry}
-      >
-        Retry
-      </Button>
+      {canRetry ? (
+        <Button
+          size="xs"
+          variant="secondary"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onRetry}
+        >
+          Retry
+        </Button>
+      ) : null}
     </span>
   );
 };
