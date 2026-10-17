@@ -15,6 +15,7 @@ import {
 } from './validateScenesBrowser.mjs';
 import {
   COLUMN_NAMES,
+  COLUMN_ROW_SELECTOR,
   COLUMN_SCENES,
   COLUMN_WIDTHS,
   columnDriftFailures,
@@ -584,7 +585,10 @@ const measureColumns = async ({ send, scene }) => {
   const failures = [];
   for (const width of COLUMN_WIDTHS) {
     await open({ send, scene, width, zoom: 1 });
-    const rows = await run(send, columnEdgesProbe, { names: COLUMN_NAMES });
+    const rows = await run(send, columnEdgesProbe, {
+      names: COLUMN_NAMES,
+      selector: COLUMN_ROW_SELECTOR,
+    });
     failures.push(...columnDriftFailures({ scene, width, rows }));
   }
   console.log(`${scene}: ${COLUMN_WIDTHS.length} widths, ${failures.length} column drifts`);

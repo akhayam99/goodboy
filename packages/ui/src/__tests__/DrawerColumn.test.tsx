@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
-import { createElement, useSyncExternalStore, type ReactNode } from 'react';
+import { createElement, useContext, useSyncExternalStore, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LEFT_SIDEBAR_DEFAULT, LEFT_SIDEBAR_MAX } from '../components/AppShell';
@@ -26,6 +27,7 @@ import {
   type DrawerSizing,
 } from '../drawerGeometry';
 import { registerEscapeLayer } from '../escape';
+import { DrawerEdgeContext } from '../drawerEdgeContext';
 import { FOLD_MS } from '../motionTimings';
 
 type ObserverCallback = (entries: ReadonlyArray<{ contentRect: { width: number } }>) => void;
@@ -1134,5 +1136,82 @@ describe('DrawerColumn closing', () => {
 
     expect(clone).not.toHaveBeenCalled();
     clone.mockRestore();
+  });
+});
+
+const EDGE_WIDTH = 44;
+
+type EdgeWidthsParams = {
+  readonly column: number;
+};
+
+const stubEdgeWidths = ({ column }: EdgeWidthsParams) => {
+  class EdgeObserver {
+    private readonly callback: ObserverCallback;
+    constructor(callback: ObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      const isEdge = target.hasAttribute('data-drawer-edge');
+      this.callback([{ contentRect: { width: isEdge ? EDGE_WIDTH : column } }]);
+    }
+    disconnect() {}
+  }
+  vi.stubGlobal('ResizeObserver', EdgeObserver);
+};
+
+const ToolColumn = () => {
+  const host = useContext(DrawerEdgeContext);
+  const tools = (
+    <div role="toolbar" aria-label="Session tools">
+      <button type="button">Scripts</button>
+    </div>
+  );
+  return (
+    <>
+      {tools}
+      {host === null ? null : createPortal(tools, host)}
+    </>
+  );
+};
+
+const renderWithTools = (drawer: string | null) =>
+  render(
+    <DrawerColumn
+      main={<ToolColumn />}
+      drawer={drawer === null ? null : <div>{drawer}</div>}
+      frame="sheet"
+      ariaLabel="Side panel"
+      resizeLabel="Resize side panel"
+    />,
+  );
+
+describe('DrawerColumn edge', () => {
+  it('keeps the tools column clickable above the scrim while a drawer lies over the page at 1100', () => {
+    stubEdgeWidths({ column: 852 });
+    const { container } = renderWithTools('Scripts');
+    const edge = container.querySelector<HTMLElement>('[data-drawer-edge]');
+    const live = edge?.querySelector('[role="toolbar"]') ?? null;
+
+    expect(pageOf(container).hasAttribute('inert')).toBe(true);
+    expect(live).not.toBeNull();
+    expect(live?.closest('[inert]')).toBeNull();
+    expect(edge?.className).toContain('z-30');
+    expect(scrim()?.className).toContain('z-10');
+    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
+  });
+
+  it('draws no edge copy while the drawer pushes the page or is closed', () => {
+    stubEdgeWidths({ column: 1300 });
+    const pushed = renderWithTools('Scripts');
+
+    expect(pushed.container.querySelector('[data-drawer-edge]')).toBeNull();
+    expect(screen.getAllByRole('toolbar', { name: 'Session tools' })).toHaveLength(1);
+    pushed.unmount();
+
+    stubEdgeWidths({ column: 852 });
+    const closed = renderWithTools(null);
+
+    expect(closed.container.querySelector('[data-drawer-edge]')).toBeNull();
   });
 });

@@ -665,7 +665,7 @@ html[data-theme='light'] {
 }
 
 html[data-theme='light'] {
-  --app-backdrop-scale: 0.5;
+  --app-backdrop-scale: 1;
 }
 
 html {
