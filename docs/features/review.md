@@ -11,7 +11,7 @@ Turn review comments into commits without writing the fixes yourself. Check the 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="The Comments tab of the Branch page for PR #318 with the buttons Fix 1 comment, Push 1 fix and Merge, the strip Fixing 4 comments with Stop and View transcript, and the comments grouped as Needs you 4, Working and Ready to push, each with its state at the right">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Bulk actions
 
@@ -32,7 +32,7 @@ See what each comment needs next. The list groups comments under **Needs you**, 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" width="532" alt="The comment list of the Branch page grouped as Needs you 5, Working 1, Ready to push 1 and Open, each row with its author, age, file and line, and its state at the right: Question for you, Push failed or Fix ready">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Failed drafts
 
@@ -65,7 +65,7 @@ Finish a review with **Push N fixes** in the Branch header. It always covers eve
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The header of the Branch page with its Fix 1 comment, Push 1 fix and Merge buttons, and under it a confirm: Push 2 commits to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 1 comment needs you first, with Cancel and Push buttons">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Review replies in your voice
 
@@ -94,7 +94,7 @@ The **Pull request** entry is the pull request. Its properties come first, group
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of the Branch page for hl/fix-duplicate-credit, between the tabs Pull request, Comments, Files 6, Commits 3 and Checks 1, with the state Open #318, the base, Checks 1 failing, Readiness Blocked by lint, reviewers, the linked issue, the description with its Edit button and the Activity list">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### One trail to the Branch page
 
@@ -117,7 +117,7 @@ Read the branch against its base in **Files**, unified or split. The changed fil
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Files tab of the Branch page for hl/fix-duplicate-credit with a diff of ledgerClient.ts and postCredit.ts, each file header with Viewed and Comment, and on the right the file list with Next unviewed 6, a filter box and the changed files in a tree with their added and removed lines">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Write review
 
@@ -125,10 +125,10 @@ Review someone else's pull request from its diff. Click a line number to leave a
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-write-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-write-light.webp" alt="The Write review form under a diff: Line comments 1 for src/webhooks/applyWebhook.ts:26, a Verdict of Comment, Approve or Request changes, an optional Summary, and a Submit comments button" width="800">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-write-light.webp" alt="The Files diff with the Review panel open: Line comments 1 for src/webhooks/applyWebhook.ts:26, a Verdict of Comment, Approve or Request changes, an optional Summary, GitHub shows it as one review, and a Submit comments button" width="800">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 **Also in this area**
 

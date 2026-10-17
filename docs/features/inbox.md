@@ -25,7 +25,7 @@ Click a row or press **Enter** to open it in the pane on the right, and move wit
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-list-light.webp" alt="The Tasks page with the For me and All switch, the search box, the Filters button and Group: Source, listing 10 items from Linear, GitHub, Jira, Sentry and Slack, with Linear issue CAS-231 open on the right with Start session, Link to a session and its conversation">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Find any issue by code or link
 
@@ -36,7 +36,7 @@ Paste `HBL-412`, `#318` or a link in the search box and open the issue, even whe
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-lookup-light.webp" alt="The Tasks search box holding HBL-412, with the Linear issue Retried webhooks post a second credit listed under Not in Tasks above the Starred, Linear and Slack groups, and its details open on the right with Start session and its conversation">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Starred issues
 
@@ -59,7 +59,7 @@ Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and fi
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-sentry-light.webp" alt="Tasks with 4 Sentry errors listed, and DuplicateChargeError: charge already captured for order open on the right, showing status Unresolved, culprit settle_batch, 42 events, 9 users, Start session and a 2 frame stack trace">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Code hosts
 
@@ -74,7 +74,7 @@ Decide how far agents go in Slack. Tick the channels they follow, then set each 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-slack-permissions-light.webp" alt="Settings, Integrations, Slack: the channels #payments-oncall and #ledger-dev ticked and #releases not, and under What agents can do, Read threads in followed channels Allowed, Read other channels you're in Off, Reply in threads Ask first, Add reactions Allowed, then the Signature note Written with Goodboy">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Reply ready for #channel
 
@@ -85,7 +85,7 @@ Approve what goes out in Slack from where you already are. Under **Ask first**, 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-slack-reply-light.webp" alt="An agent chat with a card titled Reply ready for #payments-oncall, waiting for you, quoting Omar T. and holding a drafted answer about payments-api #318 and notify-relay #57, with the buttons Send, Edit and Discard above the message box">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Slack signature
 
@@ -108,4 +108,4 @@ Follow replies under the comment they answer, in Linear and GitLab, and fold lon
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/inbox-comment-threads-light.webp" alt="Three conversation panels: a GitLab merge request conversation with Robin V. and a threaded reply from Sam K., a Show 2 earlier replies fold and a Resolved thread row above Reply on GitLab, a GitHub issue conversation quoting leo-t in the Write a comment box, and a read only conversation">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>

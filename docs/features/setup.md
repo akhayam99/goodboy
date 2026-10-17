@@ -11,7 +11,7 @@ Five short steps take you from install to a first agent reading your project: **
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-light.webp" alt="The Welcome to Goodboy screen: a Setup stepper with Provider, Project, Code host, Tasks and First session, the line Five short steps, then an agent reads your project, four rows with their time, and a Get started button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Provider connection
 
@@ -22,7 +22,7 @@ Connect the provider you already pay for, with a login or an API key. Each card 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-connection-light.webp" alt="The Provider step of setup: Claude marked Connected, Cursor Not signed in with a Connect button, Codex with an Error status and a Connect button, and Gemini Not installed with a Set up manually button, above Back and Continue">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### One page per provider
 
@@ -33,7 +33,7 @@ Each provider has its own page in **Providers & models** with its usage, the mod
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-light.webp" alt="The Claude page in Settings under Providers and models: a warning that Claude is about to run out, Usage with a 5-hour window at 85% used and a Weekly bar at 48% used, Models in the picker showing Haiku, Sonnet, Opus and Fable, and Permissions with Claude">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Update the provider CLI
 
@@ -41,10 +41,10 @@ When a model needs a newer provider CLI, the provider page says so and one butto
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-light.webp" alt="The top of the Claude page with a banner reading Opus 5.5 needs a newer Claude CLI, You have Claude CLI 2.1.260, Update to 2.1.280 or newer, and an Update Claude CLI button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-cli-update-light.webp" alt="The Account group at the foot of the Claude page: the signed in account with Claude CLI 2.1.260, and a banner reading Opus 5.5 and Sonnet 5.5 need a newer Claude CLI, You have Claude CLI 2.1.260, Update to 2.1.284 or newer, with an Update Claude CLI button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Permissions for each provider
 
@@ -55,7 +55,7 @@ See which permission modes a provider can honor before you pick one, from **Read
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-permissions-light.webp" alt="The Permissions with Codex table on a provider page: Read only Works, Ask first Not available, Edits allowed Partly, Full access Partly, Rules Not followed and Role limits Asked, not locked, each with its reason in words">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Integrations
 
@@ -66,7 +66,7 @@ Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page,
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-integrations-light.webp" alt="Settings under Integrations: GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack in the left list with a status dot each, and the GitHub page open showing the all-workspaces account connected as harborline-bot with a personal API key, This workspace and Open in Tasks">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### About you
 
@@ -77,7 +77,7 @@ Tell agents once who you are and how you like to work, in four short fields. **S
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-about-you-light.webp" alt="The About you page of workspace settings with the Profile card: Your job (Tech Lead, Backend Engineer), About your work, How agents should work with you, Explain more when it touches (Rust, Database migrations, Idempotency), the Explanations count with Open and a See who reads what link">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Settings
 

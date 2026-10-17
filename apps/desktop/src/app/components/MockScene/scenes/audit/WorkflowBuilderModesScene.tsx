@@ -8,7 +8,7 @@ export const WorkflowBuilderModesScene = () => {
   useSceneClicks({
     isReady: true,
     labels: MODES,
-    selector: 'button, [role="tab"], [role="radio"]',
+    selector: 'button, [role="tab"], [role="radio"], [role="option"]',
     match: 'prefix',
     intervalMs: 250,
   });

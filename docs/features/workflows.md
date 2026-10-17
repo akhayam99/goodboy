@@ -8,10 +8,10 @@ Set up a run before it starts: a name, a goal and a mode, with the plan previewe
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-light.webp" alt="The New session page on Orchestrate: the goal in a Write and Preview editor, Projects, the Orchestrator row on Auto, Add guidance, the Autonomy, Starts and Limit controls and the Start orchestration button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-light.webp" alt="The New session page on Run an orchestrator: the goal in a Write and Preview editor, Projects, the Orchestrator row on Auto, Add guidance, the Autonomy, Starts and Limit controls and the Run an orchestrator button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Orchestrated
 
@@ -19,21 +19,21 @@ Give a goal and let a model pick each next step, with its role, model, effort an
 
 ### Preset and Custom
 
-Write the steps yourself with **Add step** and **Generate plan**, or let **Draft with planner** propose them. In **Pick a workflow** mode, start from a saved sequence and edit any step before starting. Each preset in the **Preset** list shows the provider mark of every step in run order, the same routing the run rail reads (`resolveStepRouting`); a step whose provider the start still picks shows the Auto glyph, and the tooltip names each step and its model ("Step 1 Scout · Sonnet 5.5"). The step lane under the picked preset reads the same function through `draftStepRoutingOf`, so a lane step and its mark never name two providers; a provider you pin in the lane wins over the decided one. **Save as preset** keeps what you changed.
+In **Run a workflow**, pick a ready sequence from the **Preset** list and change the model of any step before it starts. A step you changed carries a dot, and **Reset to the preset** in the list brings the sequence back. Each preset in the **Preset** list shows the provider mark of every step in run order, the same routing the run rail reads (`resolveStepRouting`); a step whose provider the start still picks shows the Auto glyph, and the tooltip names each step and its model ("Step 1 Scout · Sonnet 5.5"). The step lane under the picked preset reads the same function through `draftStepRoutingOf`, so a lane step and its mark never name two providers; a provider you pin in the lane wins over the decided one.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-light.webp" alt="The workflow builder in Custom mode: Describe the steps, Auto and Generate plan, the Draft with planner button, an Add step row and the Save as preset switch next to Start workflow">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-light.webp" alt="The Run a workflow form with the Trace and fix preset picked: its four steps Trace the failing path, Agree the fix, Apply the fix and Cover the regression with a model on each, a pause for plan approval after step 2, Guidance, and the Autonomy, Starts and Limit controls beside Run a workflow">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-light.webp" alt="The New session page on Run a workflow with the Pick a preset list open: Trace and fix, Harden an endpoint and Migrate a contract, each with a description and its step marks">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Built-in workflows
 
@@ -52,7 +52,7 @@ Reuse steps across workflows. The built-in steps are read-only, and **Save a cop
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-studio-steps-light.webp" alt="The Workflows studio on the Saved steps tab: the 7 built-in steps Scout, Investigate, Plan, Implement, Test, Review and Update docs, each with its role, a short description and the model setting Auto, and an empty This workspace list with a New step button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Model per step
 
@@ -63,7 +63,7 @@ Put a light model on a scout and a strong one on the planner. A step follows its
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-model-light.webp" alt="The model popover of a workflow step in the Run a workflow form, opened on Opus 5.5 High with Follow role and Pin a model: it follows the Planner role and Auto picks Opus 5.5 High from the providers you can use now">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Autonomy
 
@@ -86,7 +86,7 @@ Cap what a run or a session can spend, and choose **Pause workflows** or **Warn 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-spend-light.webp" alt="The Limit popover of the workflow form, switched on at $25 with Pause runs and Warn only, and the Limit chip reading $25.00 Pause">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Chained starts
 
@@ -97,7 +97,7 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-starts-light.webp" alt="The Starts menu of the workflow form open with Now, Manually and After Harden an endpoint, each with its line of explanation">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Workflow run
 
@@ -108,7 +108,7 @@ Open a preset run and the session rail steps into it: **Overview**, every step i
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The run Fix flaky tests in the ledger: the rail with Overview and three steps, step 2 Fix the batching selected, the step conversation with its answer, the line Step 2 done, ready to continue with Start step 3, Stop run in the header and the limit and spend at the foot">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Hints to the orchestrator
 
@@ -119,7 +119,7 @@ Steer a run while it goes with a markdown hint, images included. **Queue** keeps
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-hints-light.webp" alt="The orchestrator hint box of a run: two queued hints, Replay the event from the Sentry trace before the tester signs off and a second hint with 3 more lines, each with Remove, above the Hint the orchestrator box with its model GPT-5.6 Sol, High and pinned">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Why each step, and the run recap
 
@@ -127,10 +127,10 @@ See why each step was picked. A short **Recap** says what is done and what is le
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The Orchestrated page of a finished run: its goal with Can use Claude, Codex, Limit $3.00 and $1.21 spent, four steps with the hint read at step 3 and step 4, the closing summary and a Recap with Done and Left lists, then Create report, Create wireframe and Run complete">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-recap-light.webp" alt="The Orchestrated page of a finished run: its goal with Can use Claude, Codex, Limit $3.00 and $1.21 spent, four steps with the hint read at step 3 and step 4, the closing summary and a Recap with Done and Left lists, then Create report and Create wireframe above a Continue with a hint box">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Step handoff summary
 
@@ -145,7 +145,7 @@ Each question arrives as one card with who asks, whether it is **Blocking**, and
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-light.webp" alt="The Questions page of a session: Needs you 3 and Answered 4 as rows with the agent and the age, and the question Which queue should the delivery retries run on? open in the drawer with its file and the answers Dedicated retry queue (Recommended), Shared jobs queue, Retry in process and Something else, plus Let an agent decide, Skip, Send as message and Answer">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Let an agent decide
 
@@ -156,7 +156,7 @@ Hand a question to another agent with a hint and a model from **Let an agent dec
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-question-agent-light.webp" alt="The Questions page of a session with Which queue should the delivery retries run on? open in the drawer on Let an agent decide: An agent decides with GPT-5.6 Terra Medium, a hints box, Cancel, Skip and Hand off">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Import workflows
 
