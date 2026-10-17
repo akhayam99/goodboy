@@ -1,12 +1,12 @@
-import { ChevronLeft, type LucideIcon } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { StatusDot } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { branchPlace } from '../../../store/slices/navigation/place';
-import type { BranchTab } from '../../../store/slices/navigation/types';
 import { branchScopeOf } from '../../../store/slices/session-view/branchScopeOf';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { WORKTREE_ENTRY_ICONS } from '../../../features/branch/worktreeEntryIcons';
 import { branchTabsOf, resolveBranchTab } from '../../../features/branch/branchTabs';
 import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdentity';
 import { useBranchTab } from '../../../features/branch/hooks/useBranchTab';
@@ -17,14 +17,6 @@ import { RailButton } from '../SideColumn/RailButton';
 
 type Props = {
   readonly session: Session;
-};
-
-const ENTRY_ICON: Readonly<Record<BranchTab, LucideIcon>> = {
-  pr: CONCEPT_ICONS.pr,
-  comments: CONCEPT_ICONS.comments,
-  files: CONCEPT_ICONS.diff,
-  commits: CONCEPT_ICONS.commits,
-  checks: CONCEPT_ICONS.checks,
 };
 
 export const RailWorktreeLevel = ({ session }: Props) => {
@@ -55,7 +47,7 @@ export const RailWorktreeLevel = ({ session }: Props) => {
           <RailButton
             key={entry.id}
             id={`worktree-${entry.id}`}
-            icon={ENTRY_ICON[entry.id]}
+            icon={WORKTREE_ENTRY_ICONS[entry.id]}
             iconSize={ICON_SIZE.row}
             label={word === null ? entry.label : `${entry.label}, ${word}`}
             {...(entry.shortcut !== null && { shortcut: entry.shortcut })}
