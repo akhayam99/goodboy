@@ -18,12 +18,10 @@
   **List** switch
   (`SessionViewPrefs.pageView`, kept per workspace in the session view prefs,
   a version 3 record without it reads Board), and **Filter sessions**
-  (`SessionFilterPopover`). Its icon carries one 6px dot: neutral while a filter
-  is on, warning while a repository needs attention (`repoNeedsAttention`). On
-  the Board the filter holds Project and Sort, plus a Repositories footer
-  (`RepoStatusSection`): Check origin while every repository is fine, else the
-  "2 repos need attention" pill (`RepoAttentionPill`) that opens the repository
-  popover whole; the List adds Status, Archive and Group. New session is not
+  (`SessionFilterPopover`). Its icon carries one neutral 6px dot while a filter
+  is on. On the Board the filter holds Project and Sort; the List adds Status,
+  Archive and Group. Repository state is not here: it lives on the
+  Repositories entry of the top bar (`RepoEntry`). New session is not
   here: it is the first row of the column. Nothing else sits on that line, and
   no row sits under it. The List is one `ListGrid` with 32px
   rows on the 960 list measure: state node 28 (glyph 16, so the title sits 24
@@ -96,7 +94,12 @@
   content (see Studios).
 - **One home per thing.** Say a thing must exist in state A and can exist in
   state B. It lives where it must, and B gets no second copy. Workspace identity
-  is always pinned at the left of the top bar. Neither the column nor a studio
+  is always pinned at the left of the top bar, followed by the Repositories
+  entry (`RepoEntry`): a branch icon alone while nothing needs a pull, a dot
+  and "3 behind" or "Diverged" when a base branch moved on origin, a quiet
+  "Check failed" when origin cannot be reached. Its facts come from
+  `repoEntryFactsOf` and each row's from `repoRowFactsOf`; the background
+  check is `useRepoDivergenceCheck` over `checkRepoDivergence`. Neither the column nor a studio
   header shows the workspace name again. A studio subtitle is a one-line
   purpose or the installed version, never the workspace.
 - **Pin the structure, flex the density.** A control keeps a fixed position so
