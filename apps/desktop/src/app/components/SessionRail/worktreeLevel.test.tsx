@@ -14,6 +14,8 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { MountId, PullRequestState, WorktreeStatus } from '@goodboy/types';
+import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
+import type { MountGitlabMrState } from '../../../store/slices/gitlab-mr/state';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -181,6 +183,50 @@ describe('the worktree level', () => {
 
     expect(useAppStore.getState().activeLens[sessionId] ?? null).toBeNull();
     expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull();
+  });
+
+  it('names the merge request entry of a GitLab branch on the folded rail', async () => {
+    seed({ status: worktreeStatusOf({}) });
+    const mr: GitlabMergeRequest = {
+      id: 4201,
+      iid: 42,
+      projectId: 9,
+      title: 'Stop retried webhooks',
+      description: null,
+      state: 'opened',
+      webUrl: 'https://gitlab.com/harborline/payments-api/-/merge_requests/42',
+      sourceBranch: mount.branch,
+      targetBranch: 'main',
+      draft: false,
+      hasConflicts: false,
+      mergeStatus: 'can_be_merged',
+      updatedAt: '2026-10-06T09:00:00.000Z',
+    };
+    const gitlab: MountGitlabMrState = {
+      mountId: mount.mountId,
+      projectId: mount.projectId,
+      revision: 1,
+      host: 'https://gitlab.com',
+      projectPath: 'harborline/payments-api',
+      branch: mount.branch,
+      mrs: [mr],
+      links: [],
+      mr,
+      fetchedAt: '2026-10-06T09:00:00.000Z',
+      loading: false,
+      error: null,
+    };
+    useAppStore.setState({ mountGitlabMr: { [mount.mountId]: gitlab } });
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
+    await mountRail();
+    await openWorktree();
+
+    const level = document.querySelector<HTMLElement>('[data-rail-level="worktree"]');
+    if (level === null) {
+      throw new Error('the folded rail is not on the worktree level');
+    }
+    expect(within(level).getAllByRole('button', { name: /^Merge request/ })).toHaveLength(1);
+    expect(within(level).queryAllByRole('button', { name: /^Pull request/ })).toEqual([]);
   });
 
   it('goes up one level on Command [ while the session rail has focus', async () => {

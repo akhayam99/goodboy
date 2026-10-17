@@ -8,6 +8,7 @@ import { branchScopeOf } from '../../../store/slices/session-view/branchScopeOf'
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { WORKTREE_ENTRY_ICONS } from '../../../features/branch/worktreeEntryIcons';
 import { branchTabsOf, resolveBranchTab } from '../../../features/branch/branchTabs';
+import { requestNounLabel } from '../../../features/branch/requestNounLabel';
 import { useBranchIdentity } from '../../../features/branch/hooks/useBranchIdentity';
 import { useBranchTab } from '../../../features/branch/hooks/useBranchTab';
 import { useWorktreeEntryFacts } from '../../../features/branch/hooks/useWorktreeEntryFacts';
@@ -43,13 +44,15 @@ export const RailWorktreeLevel = ({ session }: Props) => {
       {branchTabsOf(scope).map((entry) => {
         const fact = facts?.[entry.id] ?? null;
         const word = fact === null ? null : (fact.tooltip ?? fact.text);
+        const entryLabel =
+          entry.id === 'pr' ? requestNounLabel({ host: identity.host }) : entry.label;
         return (
           <RailButton
             key={entry.id}
             id={`worktree-${entry.id}`}
             icon={WORKTREE_ENTRY_ICONS[entry.id]}
             iconSize={ICON_SIZE.row}
-            label={word === null ? entry.label : `${entry.label}, ${word}`}
+            label={word === null ? entryLabel : `${entryLabel}, ${word}`}
             {...(entry.shortcut !== null && { shortcut: entry.shortcut })}
             isCurrent={tab === entry.id}
             isPage
