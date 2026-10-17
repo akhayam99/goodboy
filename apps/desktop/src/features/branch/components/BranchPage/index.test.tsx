@@ -41,6 +41,7 @@ import {
 import { WorktreeEntriesSlot } from '../../../../app/components/MockScene/scenes/WorktreeEntriesSlot';
 import { railOf, sectionNames } from '../../../../test/branchRail';
 import { BranchPage } from './index';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 
 let useAppStore: StoryStore;
 
@@ -70,6 +71,7 @@ const mount = async ({
     <ToastProvider>
       <WorktreeEntriesSlot />
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -624,11 +626,12 @@ describe('Branch page Comments', () => {
     expect(current?.getAttribute('data-thread-id')).toBe(threadId);
   });
 
-  it('shows one column on a pane under 900px: the open thread with no back link of its own', async () => {
+  it('keeps the list on a pane under 900px and opens the thread in the drawer, with no back link', async () => {
     await mountAt({ width: 384, threadId: EXPANDED_THREAD_ID });
 
-    expect(screen.queryByRole('navigation', { name: 'Comments' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Comments$/ })).toBeNull();
+    screen.getByRole('navigation', { name: 'Comments' });
+    expect(screen.queryByRole('button', { name: /comments$/ })).toBeNull();
+    expect(document.querySelector(`[data-review-drawer="${EXPANDED_THREAD_ID}"]`)).not.toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 
@@ -659,17 +662,19 @@ describe('Branch page Comments', () => {
     }
   });
 
-  it('reads one column in a 1024px window with a wide sidebar and an open drawer', async () => {
-    await mountAt({ width: 1024 - LEFT_SIDEBAR_MAX, threadId: EXPANDED_THREAD_ID });
-    useAppStore.getState().openDrawer({
-      kind: 'conversation',
-      sessionId: SESSION.id,
-      payload: { threadId: EXPANDED_THREAD_ID },
+  it('keeps the full list in a 1024px window with a wide sidebar while the drawer reads the thread', async () => {
+    await mountAt({ width: 1024 - LEFT_SIDEBAR_MAX });
+    act(() => {
+      useAppStore.getState().openDrawer({
+        kind: 'conversation',
+        sessionId: SESSION.id,
+        payload: { threadId: EXPANDED_THREAD_ID },
+      });
     });
     await settle();
 
-    expect(screen.queryByRole('navigation', { name: 'Comments' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Comments$/ })).toBeNull();
+    screen.getByRole('navigation', { name: 'Comments' });
+    expect(document.querySelector(`[data-review-drawer="${EXPANDED_THREAD_ID}"]`)).not.toBeNull();
     expect(screen.queryByRole('complementary', { name: 'Thread details' })).toBeNull();
   });
 });

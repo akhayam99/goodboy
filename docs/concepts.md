@@ -890,7 +890,7 @@ too. When GitHub denies it they ask again without it and the pull request
 carries `checksUnknown`, so the Checks tab and the merge gates say Checks
 unknown and never read it as no checks.
 
-Review is one flow: the list on the left, the focused comment on the right.
+Review is one flow: the list across the page, and the open comment in the drawer beside it.
 Every comment in a fix run shows one of five words, the same word in the list,
 the thread, Activity, Needs you and the transcript card.
 A comment not yet in a fix run reads Open, which is not a sixth word. One pure
@@ -963,18 +963,18 @@ fix can be answered without undoing its accepted decision. The git facts live in
 `store/slices/resolve/threadGitState.ts`, the git side in
 `src-tauri/src/thread_git.rs`.
 
-Each comment has four verbs, with single keys while the list has focus:
+Each comment has four verbs, with single keys while its drawer is open:
 `Apply fix` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new
 comment` when the reviewer changed it, `Add a hint` when the run failed), `Reply only` (R, drops the change and sends a reply; `Reply`, which opens the text box, where there is no change to drop) and `Skip` (S), plus `Undo` (U, `Undo skip` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the Fix comments drawer. They sit in the bar at the bottom of the thread (`ReviewActionBar`). `Retry push` shows on a comment whose push failed. J and K move. A checkbox appears on hover on the comments you
+the Fix comments drawer. They sit at the end of the comment drawer (`CommentDrawerActions` in `FormActions`), the primary last on the right, each with its key; a verb that fails says why there and its button reads Retry. `Retry push` shows on a comment whose push failed. J and K, or the arrow keys while the drawer is open, move; Escape closes the drawer. A checkbox appears on hover on the comments you
 can fix (open, or couldn't fix) and on comments to review (X toggles the focused
 row, Cmd+A picks every fixable one, Esc clears): the bar `3 selected · Fix 3`
 opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to review, and
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
-`…` also offers Stop drafting, Resolve, Open in Files, Agent
-transcript, Open on GitHub and Copy link. Apply fix and Skip move focus to the
+`…` in the drawer header also offers Stop drafting, Resolve, Open in Files, Agent
+transcript, Open on GitHub and Copy link, and shows only with two or more of them. Apply fix and Skip move the drawer to the
 next open comment. Apply fix never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the
 `review` and `reviewComment` kinds of the action registry

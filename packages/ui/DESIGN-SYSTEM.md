@@ -1755,12 +1755,9 @@ the `PageColumn` of its tabs. It keeps the 24px gutter (16px under 720px) and
 drops the 960px cap, so the header and the body share one left edge on any
 pane, from the pane's own edge. The Branch page is not one of them: every tab
 sits on the 960px column, the trail and the Ask button included, so nothing
-moves from one tab to the next. Its Comments tab reads the width of its own
-pane, not the window's (`branchLayoutOf`): under 900px one column, the list,
-then the thread with a `‹ Comments` back that keeps the selected row; from
-900px a 300px list and the thread, wide, with the properties inline under it at
-every width. A drawer or a wide sidebar narrows the pane, so the layout follows
-them.
+moves from one tab to the next. Its Comments tab is one full-width list at
+every width; a comment opens in a side tier `DrawerFrame` with its actions at
+the end of the content through `FormActions`.
 
 **Trail separator.** Each segment except the last ends with one 24px chevron
 slot in `faint-foreground`: a button that opens the segment's menu, or a static

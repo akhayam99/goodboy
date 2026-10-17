@@ -1,14 +1,12 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check, CircleCheck } from 'lucide-react';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Button, Chip, Kbd, Markdown, SectionHeader, Tooltip } from '@goodboy/ui';
+import { Button, Chip, Markdown, SectionHeader, Tooltip } from '@goodboy/ui';
 import { useThreadQuestion } from '../../hooks/useThreadQuestion';
 import { PromptField } from '../../../../shared/components/PromptField';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { RelativeTime } from '../../../../shared/components/RelativeTime';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import {
   PARTIAL_ACCEPTANCE,
   PARTIAL_REFUSAL,
@@ -16,7 +14,6 @@ import {
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
-import type { ResolvedAction } from '../../../actions/types';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { attemptNumberOf, previousAttemptsOf } from '../../attemptHistory';
 import { conversationSha } from '../../conversationAgentResult';
@@ -35,7 +32,6 @@ import {
   replyHeading,
   sharedFixLine,
 } from '../../reviewFlowCopy';
-import { REMOTE_LABEL } from '../../reviewRemote';
 import { selectResolveCandidate } from '../../selectResolveCandidate';
 import { handledByLine } from '../../../../store/slices/resolve/threadGitState';
 import { foldedReply, verdictReply } from '../../commentVerdict';
@@ -51,8 +47,6 @@ import { ThreadGitEvidence } from './ThreadGitEvidence';
 import { NewReplyNote } from './NewReplyNote';
 import { ReplyNote } from './ReplyNote';
 import { PushFailedNote } from './PushFailedNote';
-import { SteerLine } from './SteerLine';
-import { STATE_CHIP_TONE } from './stateTone';
 import { replyNoteKindOf } from './replyNoteKind';
 import { SourceChangeCard } from './SourceChangeCard';
 import { ThreadRecheckLine } from './ThreadRecheckLine';
@@ -67,8 +61,6 @@ type Props = ReviewCommentBinding & {
   readonly onTryAgain: () => void;
   readonly onStartOver: () => void;
   readonly hunk?: ReactNode;
-  readonly noteActions?: ReactNode;
-  readonly hasBar?: boolean;
 };
 
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
@@ -76,12 +68,6 @@ const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const DECIDED_NOTE_STATES = new Set(['accepted', 'replied', 'skipped', 'pushed', 'resolved']);
 
 const POST_NOW_ACTION = 'reviewComment.postReplyNow';
-const OPEN_NOTE_WORD = 'Open note';
-
-const verbsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<ResolvedAction> => [
-  ...actions.filter((action) => action.slot === 'primary'),
-  ...actions.filter((action) => action.slot === 'secondary'),
-];
 
 const HINT_OPTIONAL: ReadonlySet<ReviewCompose['mode']> = new Set([
   'redraft',
@@ -123,8 +109,6 @@ export const ReviewComment = ({
   onTryAgain,
   onStartOver,
   hunk = null,
-  noteActions = null,
-  hasBar = false,
 }: Props) => {
   const { row, state, word, threadId } = entry;
   const { answer: answered } = useThreadQuestion({
@@ -134,7 +118,6 @@ export const ReviewComment = ({
   });
   const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
   const isNote = row.thread.originKind === 'diff_comment';
-  const originLabel = row.thread.sourceKind === 'local' ? 'Note' : provider;
   const canResolve = REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve;
   const isPushFailed = entry.resolveWord === 'push_failed';
   const target = useMemo(
@@ -193,11 +176,6 @@ export const ReviewComment = ({
   const [replyText, setReplyText] = useState(reply);
   const note = row.reviewerNote;
   const author = note?.author ?? null;
-  const verbs = verbsOf(actions).filter(
-    (action) =>
-      !(state === 'needs' && action.id === 'reviewComment.answer') &&
-      !(isNote && state === 'new' && action.id === 'reviewComment.skip'),
-  );
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
   const isOwnFixGone = remote === 'looks_fixed' || remote === 'missing' || remote === 'folded';
   const hasChange = candidate !== null && !isOwnFixGone;
@@ -268,39 +246,6 @@ export const ReviewComment = ({
       data-review-comment={threadId}
       className="flex min-w-0 flex-col gap-4"
     >
-      <header className="flex min-w-0 items-center gap-2 text-meta">
-        {author !== null && (
-          <span
-            aria-hidden
-            className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-subtle text-chip uppercase text-muted-foreground"
-          >
-            {author.charAt(0)}
-          </span>
-        )}
-        {author !== null && <span className="shrink-0 text-label text-foreground">{author}</span>}
-        {note !== null && (
-          <span className="shrink-0 text-muted-foreground">
-            <RelativeTime iso={new Date(note.createdAtMs).toISOString()} />
-          </span>
-        )}
-        {note?.location != null && (
-          <span className="min-w-0 truncate font-mono text-faint-foreground">{note.location}</span>
-        )}
-        {row.commentThread?.head.outdated === true && (
-          <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.lineMoved} />
-        )}
-        {isNote ? (
-          <Chip
-            tone={STATE_CHIP_TONE[entry.toneKey]}
-            size="3xs"
-            className="shrink-0 whitespace-nowrap"
-            label={state === 'new' ? OPEN_NOTE_WORD : word}
-          />
-        ) : (
-          <Chip tone="neutral" size="3xs" label={originLabel} />
-        )}
-      </header>
-
       {hunk}
 
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
@@ -472,15 +417,6 @@ export const ReviewComment = ({
         </p>
       )}
 
-      {compose === null && !isEditingReply && !isFailed && !hasBar && (
-        <SteerLine
-          actions={actions}
-          state={state}
-          pendingActionId={pendingActionId}
-          onRun={onRun}
-        />
-      )}
-
       {isPushFailed && <PushFailedNote rowState={row.rowState} />}
 
       {isFailed && !isPushFailed && (
@@ -538,56 +474,8 @@ export const ReviewComment = ({
             </Button>
           </div>
         </div>
-      ) : (
-        !isEditingReply &&
-        !isFailed &&
-        !hasBar &&
-        (verbs.length > 0 || noteActions !== null) && (
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {verbs.map((action) => {
-              const isPrimary =
-                action.slot === 'primary' && !(isNote && action.id === 'reviewComment.draft');
-              const button = (
-                <Button
-                  key={action.id}
-                  size="sm"
-                  variant={isPrimary ? 'primary' : 'ghost'}
-                  data-review-verb={action.id}
-                  disabled={
-                    action.blockedReason !== null ||
-                    (pendingActionId !== null && pendingActionId !== action.id)
-                  }
-                  isBusy={pendingActionId === action.id}
-                  onClick={() => onRun(action.id)}
-                >
-                  {action.label}
-                  {action.shortcut !== null && (
-                    <Kbd look="inline" isOnTone={isPrimary} aria-hidden>
-                      {shortcutGlyphs(action.shortcut)}
-                    </Kbd>
-                  )}
-                </Button>
-              );
-              return action.blockedReason === null ? (
-                button
-              ) : (
-                <Tooltip
-                  key={action.id}
-                  content={action.blockedReason}
-                  anchorClassName="inline-flex"
-                >
-                  {button}
-                </Tooltip>
-              );
-            })}
-            {noteActions}
-            {remote === 'on_origin' && (
-              <span className="text-meta text-faint-foreground">{REMOTE_LABEL.nothingToPush}</span>
-            )}
-          </div>
-        )
-      )}
-      {error !== null && (
+      ) : null}
+      {error !== null && (compose !== null || isEditingReply) && (
         <p role="alert" className="text-meta text-danger">
           {error}
         </p>

@@ -22,6 +22,7 @@ import {
 } from '../../../../app/components/MockScene/scenes/bulkSeed';
 import { ResolveBulkScene } from '../../../../app/components/MockScene/scenes/ResolveBulkScene';
 import { BranchPage } from '../../../branch/components/BranchPage';
+import { DrawerHost } from '../../../../app/components/DrawerHost';
 import { eligibleReviewThreadCount } from '../../../suggestions/eligibleThreads';
 import { requestReview } from '../../../review/reviewRequest';
 import { isFixableThread } from '../../fixableComments';
@@ -65,6 +66,7 @@ const mount = async ({ stage }: { readonly stage: BulkStage }): Promise<void> =>
   render(
     <ToastProvider>
       <BranchPage session={SESSION} workingDir={null} />
+      <DrawerHost />
     </ToastProvider>,
   );
   await settle();
@@ -254,6 +256,7 @@ describe('answers in bulk', () => {
     render(
       <ToastProvider>
         <BranchPage session={SESSION} workingDir={null} />
+        <DrawerHost />
       </ToastProvider>,
     );
     await settle();

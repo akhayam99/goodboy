@@ -152,17 +152,18 @@ describe('the u23 comments scenes', () => {
     expect(within(bar()).getByRole('button', { name: /^Undo skip/ })).toBeDefined();
   });
 
-  it('puts Apply fix in the bar after the thread, outside the scrolling column', async () => {
+  it('puts Apply fix at the end of the comment drawer, after the thread, with its key', async () => {
     await renderScene({ name: 'comments-action-bar' });
 
     const article = screen.getByRole('article', { name: 'Comment' });
     const accept = within(bar()).getByRole('button', { name: /^Apply fix/ });
     expect(article.contains(accept)).toBe(false);
     expect(article.compareDocumentPosition(bar()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(bar().closest('[data-radix-scroll-area-viewport]')).toBeNull();
+    expect(bar().closest('[data-slot="review-comment-drawer"]')).not.toBeNull();
+    expect(bar().closest('[data-slot="form-actions"]')).not.toBeNull();
     expect(within(bar()).getByRole('button', { name: /^Reply only/ })).toBeDefined();
     expect(within(bar()).getByRole('button', { name: /^Skip/ })).toBeDefined();
-    expect(within(bar()).queryByText('R', { selector: 'kbd[data-look="cap"]' })).toBeNull();
+    expect(within(bar()).getByText('R', { selector: 'kbd' })).toBeDefined();
   });
 
   it('stops a working comment only behind a confirm, from its one live line', async () => {

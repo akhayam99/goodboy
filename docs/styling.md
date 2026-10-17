@@ -365,10 +365,8 @@ the fix run drawer.
 column, so nothing moves from one section to the next. Its sections are the worktree level's
 entries in the sidebar; Files opens its file tree under the Files entry, outside the column, so
 the diff keeps the column. The Pull request entry is one column: a label 96 property block in
-three groups, then the description and the activity. Comments puts the list and the thread side by
-side from 900px, the thread's properties inline under it at every width. Both
-read the width of their own pane (`branchLayoutOf`), so a wide sidebar or an
-open drawer narrows them.
+three groups, then the description and the activity. Comments is one full-width list; the open comment and its
+properties read in the comment drawer beside it.
 
 ## Layout: fixed-height shell, scroll on content
 

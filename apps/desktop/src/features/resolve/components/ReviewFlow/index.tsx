@@ -7,7 +7,8 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { AlertTriangle, ChevronLeft, MessageSquare } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { AlertTriangle, MessageSquare } from 'lucide-react';
 import {
   Button,
   EmptyState,
@@ -16,16 +17,12 @@ import {
   PageColumn,
   ScrollFade,
   Skeleton,
-  cn,
   formatError,
 } from '@goodboy/ui';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
-import { branchLayoutOf } from '../../../branch/branchLayout';
-import { branchPlace } from '../../../../store/slices/navigation/place';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { isTypingTarget } from '../../../../shared/keyboard/isTypingTarget';
 import { SHORTCUTS, shortcutGlyphs, type ShortcutId } from '../../../../shared/keyboard/registry';
@@ -33,8 +30,6 @@ import { isReportedError } from '../../../../store/slices/notifications/reported
 import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
-import { ThreadHunk } from '../../../branch/components/ThreadHunk';
-import { ThreadProperties } from '../../../branch/components/ThreadProperties';
 import { openReview } from '../../../review/openReview';
 import {
   REVIEW_TARGET_REASON_COPY,
@@ -45,6 +40,12 @@ import { fixRunOf } from '../../fixRun';
 import type { ResolveGroup } from '../../commentProjection';
 import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
+import { useReviewCommentDrawerSlot } from '../../hooks/useReviewCommentDrawerSlot';
+import { openReviewComment } from '../../openReviewComment';
+import { reviewCommentDrawerSlot } from '../../reviewCommentDrawerSlot';
+import { ReviewCommentDrawer } from '../ReviewCommentDrawer';
+import { FixCommentsButton } from '../FixCommentsButton';
+import { TabActions } from '../../../../shared/components/TabActions';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
 import { isUndoableAccept } from '../../bulkAccept';
 import { REVIEW_BULK_LABEL, bulkAcceptFailureLine } from '../../reviewBulkCopy';
@@ -54,14 +55,11 @@ import { bulkRunOf } from './bulkRun';
 import { AnswersPanel } from './AnswersPanel';
 import { BulkUndoBar } from './BulkUndoBar';
 import { openFixComments } from '../../../../store/slices/resolve/openFixComments';
-import { NoteThreadActions } from './NoteThreadActions';
 import { ReviewScopeBar, type CommentScope, type CommentState } from './ReviewScopeBar';
 import { RunStatusBulkActions } from './RunStatusBulkActions';
 import { useBulkQuestions } from './useBulkQuestions';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ResolveRunStatus } from './ResolveRunStatus';
-import { ReviewActionBar } from './ReviewActionBar';
-import { ReviewComment } from './ReviewComment';
 import { ReviewList } from './ReviewList';
 import { ReviewSelectionBar } from './ReviewSelectionBar';
 import type { ReviewPush } from './useReviewPush';
@@ -91,12 +89,26 @@ type FixLaunchParams = {
   readonly threadIds: ReadonlyArray<string>;
 };
 
+type StepParams = {
+  readonly delta: 1 | -1;
+};
+
+type FocusRowParams = {
+  readonly threadId: string;
+};
+
 type ShownParams = {
   readonly entry: ReviewEntry;
   readonly group: ResolveGroup;
 };
 
 const SKELETON_ROWS = [0, 1, 2];
+
+const focusedRowId = (): string | null =>
+  document.activeElement instanceof HTMLElement
+    ? (document.activeElement.closest('[data-thread-id]')?.getAttribute('data-thread-id') ?? null)
+    : null;
+
 const DOCK_BOTTOM_OFFSET = 24;
 
 export const ReviewFlow = ({ session, push }: Props) => {
@@ -110,7 +122,12 @@ export const ReviewFlow = ({ session, push }: Props) => {
   } = useReviewEntries({ sessionId, scope: 'branch' });
   const [pickedScope, setScope] = useState<CommentScope>('branch');
   const scope: CommentScope = counts.notes > 0 && counts.host > 0 ? pickedScope : 'branch';
-  const [commentState, setCommentState] = useState<CommentState>('open');
+  const [pickedState, setCommentState] = useState<CommentState>('open');
+  const resolvedCount = useMemo(
+    () => branchGroups.find(({ group }) => group === 'done')?.entries.length ?? 0,
+    [branchGroups],
+  );
+  const commentState: CommentState = resolvedCount > 0 ? pickedState : 'open';
   const allGroups = useMemo(() => {
     const isShown = ({ entry, group }: ShownParams): boolean => {
       const isNote = entry.row.thread.originKind === 'diff_comment';
@@ -178,9 +195,18 @@ export const ReviewFlow = ({ session, push }: Props) => {
   );
   const selectAllFixable = () => setReviewSelection({ sessionId, threadIds: shownFixableIds });
   const { source } = useActiveReviewSource({ sessionId });
-  const addressThreadId = useAppStore((s) => s.branchThreadId[sessionId] ?? null);
   const navigate = useAppStore((s) => s.navigate);
   const openDrawer = useAppStore((s) => s.openDrawer);
+  const openThreadId = useAppStore((s) => {
+    const open = selectOpenDrawer(s);
+    return open?.kind === 'conversation' && open.sessionId === sessionId
+      ? open.payload.threadId
+      : null;
+  });
+  const drawerSlot = useReviewCommentDrawerSlot();
+  const openThreadRef = useRef(openThreadId);
+  openThreadRef.current = openThreadId;
+  const [lastThreadId, setLastThreadId] = useState<string | null>(openThreadId);
   const openTranscriptAgentId = useAppStore((s) =>
     s.drawer?.kind === 'transcript' && s.drawer.sessionId === sessionId
       ? s.drawer.payload.agentId
@@ -196,9 +222,11 @@ export const ReviewFlow = ({ session, push }: Props) => {
     sessionId,
     entries,
     onFocus: (threadId) => select(threadId),
-    onAdvance: (threadId) => {
+    onAdvance: ({ threadId, fromThreadId }) => {
+      if (openThreadRef.current !== fromThreadId) {
+        return;
+      }
       select(threadId);
-      focusRow(threadId);
     },
   });
   const { compose, editingReplyId, runVerb } = controller;
@@ -225,9 +253,6 @@ export const ReviewFlow = ({ session, push }: Props) => {
   );
   const launchRequest = useAppStore((s) => s.reviewLaunchRequests[sessionId] ?? null);
   const consumeReviewLaunch = useAppStore((s) => s.consumeReviewLaunch);
-  const [lastThreadId, setLastThreadId] = useState<string | null>(null);
-  const stage = useElementWidth();
-  const layout = branchLayoutOf({ widthPx: stage.width });
   const listRef = useRef<HTMLDivElement | null>(null);
   const provider = source === null ? null : REVIEW_SOURCE_LABEL[source.kind];
 
@@ -251,15 +276,30 @@ export const ReviewFlow = ({ session, push }: Props) => {
     void refreshThreadGitState({ sessionId }).catch(() => undefined);
   }, [gitKey, hasComments, refreshThreadGitState, sessionId]);
 
-  const hasAddressThread =
-    addressThreadId !== null && entries.some((entry) => entry.threadId === addressThreadId);
-  const focused =
-    entries.find((entry) => entry.threadId === addressThreadId) ??
-    entries.find((entry) => entry.threadId === lastThreadId) ??
-    shownEntries[0] ??
-    entries[0] ??
-    null;
-  const focusedThreadId = focused?.threadId ?? null;
+  useEffect(() => {
+    if (openThreadId === null) {
+      return;
+    }
+    setLastThreadId(openThreadId);
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-thread-id="${CSS.escape(openThreadId)}"]`)
+      ?.scrollIntoView?.({ block: 'nearest' });
+  }, [openThreadId]);
+
+  const opened =
+    openThreadId === null
+      ? null
+      : (entries.find((entry) => entry.threadId === openThreadId) ?? null);
+
+  const focusDrawer = useCallback((): void => {
+    requestAnimationFrame(() => {
+      const slot = reviewCommentDrawerSlot.get();
+      if (slot === null || slot.contains(document.activeElement)) {
+        return;
+      }
+      slot.querySelector<HTMLElement>('section')?.focus({ preventScroll: true });
+    });
+  }, []);
 
   const select = useCallback(
     (threadId: string): void => {
@@ -267,14 +307,14 @@ export const ReviewFlow = ({ session, push }: Props) => {
       if (reviewTarget !== null) {
         consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
       }
-      setLastThreadId(threadId);
-      navigate({ to: branchPlace({ sessionId, threadId }), mode: 'replace' });
+      openReviewComment({ navigate, sessionId, threadId });
       controller.resetFor(threadId);
+      focusDrawer();
     },
-    [consumeReviewTarget, controller.resetFor, navigate, reviewTarget, sessionId],
+    [consumeReviewTarget, controller.resetFor, focusDrawer, navigate, reviewTarget, sessionId],
   );
 
-  const focusRow = useCallback((threadId: string): void => {
+  const focusRow = useCallback(({ threadId }: FocusRowParams): void => {
     requestAnimationFrame(() =>
       listRef.current
         ?.querySelector<HTMLElement>(`[data-thread-id="${CSS.escape(threadId)}"]`)
@@ -282,17 +322,32 @@ export const ReviewFlow = ({ session, push }: Props) => {
     );
   }, []);
 
+  const closeComment = useCallback((): void => {
+    const threadId = openThreadId;
+    openReviewComment({ navigate, sessionId, threadId: null });
+    if (threadId !== null) {
+      focusRow({ threadId });
+    }
+  }, [focusRow, navigate, openThreadId, sessionId]);
+
   const step = useCallback(
-    (delta: 1 | -1): void => {
-      const index = shownEntries.findIndex((entry) => entry.threadId === focusedThreadId);
-      const next = shownEntries[index + delta];
+    ({ delta }: StepParams): void => {
+      const anchor = openThreadId ?? focusedRowId();
+      const index = shownEntries.findIndex((entry) => entry.threadId === anchor);
+      const next =
+        index === -1
+          ? shownEntries[delta === 1 ? 0 : shownEntries.length - 1]
+          : shownEntries[index + delta];
       if (next === undefined) {
         return;
       }
-      select(next.threadId);
-      focusRow(next.threadId);
+      if (openThreadId !== null) {
+        select(next.threadId);
+        return;
+      }
+      focusRow({ threadId: next.threadId });
     },
-    [focusRow, focusedThreadId, select, shownEntries],
+    [focusRow, openThreadId, select, shownEntries],
   );
 
   const openLaunch = useCallback(
@@ -309,10 +364,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
 
   const closeAnswers = useCallback((): void => {
     setIsAnswering(false);
-    if (focusedThreadId !== null) {
-      focusRow(focusedThreadId);
-    }
-  }, [focusRow, focusedThreadId]);
+  }, []);
 
   useEffect(() => {
     if (isAnswering && bulkQuestions.length === 0) {
@@ -415,14 +467,22 @@ export const ReviewFlow = ({ session, push }: Props) => {
     if (isTypingTarget(event.target) || compose !== null || editingReplyId !== null) {
       return;
     }
-    if (eventMatches({ event: native, entry: SHORTCUTS['review.next'] })) {
+    const rowId = focusedRowId();
+    const isArrowStep = openThreadId !== null || rowId !== null;
+    if (
+      eventMatches({ event: native, entry: SHORTCUTS['review.next'] }) ||
+      (isArrowStep && eventMatches({ event: native, entry: SHORTCUTS['review.down'] }))
+    ) {
       event.preventDefault();
-      step(1);
+      step({ delta: 1 });
       return;
     }
-    if (eventMatches({ event: native, entry: SHORTCUTS['review.previous'] })) {
+    if (
+      eventMatches({ event: native, entry: SHORTCUTS['review.previous'] }) ||
+      (isArrowStep && eventMatches({ event: native, entry: SHORTCUTS['review.up'] }))
+    ) {
       event.preventDefault();
-      step(-1);
+      step({ delta: -1 });
       return;
     }
     if (eventMatches({ event: native, entry: SHORTCUTS['review.selectAll'] })) {
@@ -430,28 +490,34 @@ export const ReviewFlow = ({ session, push }: Props) => {
       selectAllFixable();
       return;
     }
-    if (focusedThreadId === null) {
-      return;
-    }
-    if (eventMatches({ event: native, entry: SHORTCUTS['review.select'] })) {
+    const anchorId = openThreadId ?? rowId;
+    if (anchorId !== null && eventMatches({ event: native, entry: SHORTCUTS['review.select'] })) {
       event.preventDefault();
-      if (fixableIds.has(focusedThreadId) || acceptableIds.has(focusedThreadId)) {
-        toggleReviewSelection({ sessionId, threadId: focusedThreadId });
+      if (fixableIds.has(anchorId) || acceptableIds.has(anchorId)) {
+        toggleReviewSelection({ sessionId, threadId: anchorId });
       }
       return;
     }
+    const isInDrawer =
+      event.target instanceof Node &&
+      reviewCommentDrawerSlot.get()?.contains(event.target) === true;
     if (
-      eventMatches({ event: native, entry: SHORTCUTS['review.fix'] }) &&
-      fixSelectedIds.length > 0
+      !isInDrawer &&
+      fixSelectedIds.length > 0 &&
+      eventMatches({ event: native, entry: SHORTCUTS['review.fix'] })
     ) {
       event.preventDefault();
       openLaunch({ threadIds: fixSelectedIds });
       return;
     }
+    if (opened === null) {
+      return;
+    }
+    const openedId = opened.threadId;
     const available =
       bindTarget({
         state: useAppStore.getState(),
-        target: { kind: 'reviewComment', sessionId, threadId: focusedThreadId },
+        target: { kind: 'reviewComment', sessionId, threadId: openedId },
       })?.resolve() ?? [];
     for (const [shortcut, actionIds] of COMMENT_KEYS) {
       if (!eventMatches({ event: native, entry: SHORTCUTS[shortcut] })) {
@@ -464,16 +530,16 @@ export const ReviewFlow = ({ session, push }: Props) => {
         .find((candidate) => candidate !== undefined);
       if (action !== undefined) {
         event.preventDefault();
-        void runVerb({ threadId: focusedThreadId, actionId: action.id });
+        void runVerb({ threadId: openedId, actionId: action.id });
         return;
       }
       if (
         shortcut === 'review.fix' &&
-        focused?.state === 'failed' &&
-        !isPushFailure({ row: focused.row })
+        opened.state === 'failed' &&
+        !isPushFailure({ row: opened.row })
       ) {
         event.preventDefault();
-        void controller.retryRun(focusedThreadId);
+        void controller.retryRun(openedId);
         return;
       }
       return;
@@ -496,6 +562,8 @@ export const ReviewFlow = ({ session, push }: Props) => {
           ? reviewTarget.error
           : null;
   const retry = (): void => void refreshReviewSource({ sessionId, force: true });
+  const openedIndex =
+    openThreadId === null ? -1 : shownEntries.findIndex((entry) => entry.threadId === openThreadId);
 
   const body = (): ReactNode => {
     if (isWholeError && refreshError !== null) {
@@ -525,8 +593,21 @@ export const ReviewFlow = ({ session, push }: Props) => {
         </div>
       );
     }
-    if (focused === null) {
+    if (entries.length === 0) {
       return <ReviewEmptyState sessionId={sessionId} provider={provider} />;
+    }
+    if (isAnswering && bulkRun !== null) {
+      return (
+        <ScrollFade className="min-h-0 min-w-0 flex-1" viewportClassName="pb-8" fadeSize="h-6">
+          <AnswersPanel
+            sessionId={sessionId}
+            run={bulkRun}
+            questions={bulkQuestions}
+            onClose={closeAnswers}
+            onContinued={closeAnswers}
+          />
+        </ScrollFade>
+      );
     }
     if (shownEntries.length === 0) {
       return (
@@ -537,141 +618,75 @@ export const ReviewFlow = ({ session, push }: Props) => {
         />
       );
     }
-    const isSingle = layout === 'single';
-    const isPanelOpen = isAnswering && bulkRun !== null;
-    const isRightShown = !isSingle || hasAddressThread || isPanelOpen;
     return (
-      <div className="flex min-h-0 min-w-0 flex-1 gap-6">
-        {(!isSingle || (!hasAddressThread && !isPanelOpen)) && (
-          <div
-            className={cn(
-              'relative flex min-h-0 shrink-0 flex-col',
-              isSingle ? 'w-full' : 'w-[300px]',
-            )}
-          >
-            <ScrollFade className="min-h-0 flex-1" viewportClassName="pr-2 pb-5" fadeSize="h-6">
-              <div ref={listRef}>
-                <ReviewList
-                  groups={groups}
-                  focusedThreadId={focusedThreadId}
-                  onSelect={select}
-                  checked={checked}
-                  onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
-                />
-              </div>
-              <div
-                aria-hidden
-                data-testid="review-list-clearance"
-                style={{ height: dockHeight === 0 ? 0 : dockHeight + DOCK_BOTTOM_OFFSET }}
-              />
-            </ScrollFade>
-            <ReviewSelectionBar
-              count={selectedIds.length}
-              total={shownFixableIds.length}
-              fixCount={fixSelectedIds.length}
-              acceptCount={acceptSelectedIds.length}
-              isAccepting={isAccepting}
-              note={
-                undoableCount > 0 && selectedIds.length === 0 ? (
-                  <BulkUndoBar
-                    count={undoableCount}
-                    hint={shortcutGlyphs('app.undo')}
-                    isBusy={isUndoing}
-                    onUndo={() => void undoBulk()}
-                  />
-                ) : null
-              }
-              onHeightChange={setDockHeight}
-              onClear={() => clearReviewSelection({ sessionId })}
-              onSelectAll={selectAllFixable}
-              onFix={() => openLaunch({ threadIds: fixSelectedIds })}
-              onAccept={() => void acceptMany(acceptSelectedIds)}
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <ScrollFade className="min-h-0 flex-1" viewportClassName="pb-5" fadeSize="h-6">
+          <div ref={listRef}>
+            <ReviewList
+              groups={groups}
+              focusedThreadId={openThreadId ?? lastThreadId}
+              onSelect={select}
+              checked={checked}
+              onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
             />
           </div>
-        )}
-        {isRightShown && (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            {isSingle ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                data-review-back=""
-                className="w-fit shrink-0 text-muted-foreground"
-                onClick={() => {
-                  setIsAnswering(false);
-                  navigate({ to: branchPlace({ sessionId }), mode: 'replace' });
-                }}
-              >
-                <ChevronLeft size={ICON_SIZE.row} aria-hidden />
-                {`${shownEntries.length} ${shownEntries.length === 1 ? 'comment' : 'comments'}`}
-              </Button>
-            ) : null}
-            <ScrollFade
-              className="min-h-0 min-w-0 flex-1"
-              viewportClassName="pb-8 pr-4"
-              fadeSize="h-6"
-            >
-              {isAnswering && bulkRun !== null ? (
-                <AnswersPanel
-                  sessionId={sessionId}
-                  run={bulkRun}
-                  questions={bulkQuestions}
-                  onClose={closeAnswers}
-                  onContinued={closeAnswers}
-                />
-              ) : (
-                <div className="flex min-w-0 gap-6">
-                  <div className="flex min-w-0 flex-1 flex-col gap-4">
-                    <ReviewComment
-                      key={focused.threadId}
-                      sessionId={sessionId}
-                      entry={focused}
-                      entries={entries}
-                      hasBar
-                      hunk={
-                        <ThreadHunk
-                          row={focused.row}
-                          onOpenInDiff={() =>
-                            void runVerb({
-                              threadId: focused.threadId,
-                              actionId: 'reviewComment.openInDiff',
-                            })
-                          }
-                        />
-                      }
-                      {...controller.bind(focused.threadId)}
-                      onSelect={select}
-                      onTryAgain={() => void controller.retryRun(focused.threadId)}
-                      onStartOver={() => void controller.startOver(focused.threadId)}
-                    />
-                    <ThreadProperties sessionId={sessionId} entry={focused} />
-                  </div>
-                </div>
-              )}
-            </ScrollFade>
-            {!(isAnswering && bulkRun !== null) && (
-              <ReviewActionBar
-                key={focused.threadId}
-                sessionId={sessionId}
-                entry={focused}
-                push={push}
-                hasRunLine={run !== null && run.threadIds.includes(focused.threadId)}
-                extra={
-                  focused.row.thread.originKind === 'diff_comment' ? (
-                    <NoteThreadActions sessionId={sessionId} entry={focused} />
-                  ) : null
-                }
-                binding={controller.bind(focused.threadId)}
+          <div
+            aria-hidden
+            data-testid="review-list-clearance"
+            style={{ height: dockHeight === 0 ? 0 : dockHeight + DOCK_BOTTOM_OFFSET }}
+          />
+        </ScrollFade>
+        <ReviewSelectionBar
+          count={selectedIds.length}
+          total={shownFixableIds.length}
+          fixCount={fixSelectedIds.length}
+          acceptCount={acceptSelectedIds.length}
+          isAccepting={isAccepting}
+          note={
+            undoableCount > 0 && selectedIds.length === 0 ? (
+              <BulkUndoBar
+                count={undoableCount}
+                hint={shortcutGlyphs('app.undo')}
+                isBusy={isUndoing}
+                onUndo={() => void undoBulk()}
               />
-            )}
-          </div>
-        )}
+            ) : null
+          }
+          onHeightChange={setDockHeight}
+          onClear={() => clearReviewSelection({ sessionId })}
+          onSelectAll={selectAllFixable}
+          onFix={() => openLaunch({ threadIds: fixSelectedIds })}
+          onAccept={() => void acceptMany(acceptSelectedIds)}
+        />
       </div>
     );
   };
 
+  const isDrawerShown = drawerSlot !== null && openThreadId !== null && !isLoading && !isWholeError;
+  const drawer =
+    !isDrawerShown || drawerSlot === null || openThreadId === null
+      ? null
+      : createPortal(
+          <ReviewCommentDrawer
+            sessionId={sessionId}
+            entry={opened}
+            entries={entries}
+            push={push}
+            position={
+              openedIndex === -1 ? null : { index: openedIndex, total: shownEntries.length }
+            }
+            hasRunLine={run !== null && run.threadIds.includes(openThreadId)}
+            binding={controller.bind(openThreadId)}
+            onClose={closeComment}
+            onSelect={select}
+            onTryAgain={() => void controller.retryRun(openThreadId)}
+            onStartOver={() => void controller.startOver(openThreadId)}
+          />,
+          drawerSlot,
+        );
+
   return (
-    <div ref={stage.ref} className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
       <PageColumn width="column" className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
         {refreshError !== null && !isWholeError && (
           <ErrorStrip
@@ -706,14 +721,16 @@ export const ReviewFlow = ({ session, push }: Props) => {
             body={acceptError}
           />
         )}
+        <TabActions>
+          <FixCommentsButton sessionId={sessionId} mountId={source?.mountId ?? null} />
+        </TabActions>
         <ReviewScopeBar
-          sessionId={sessionId}
-          mountId={source?.mountId ?? null}
           scope={scope}
           onScope={setScope}
           state={commentState}
           onState={setCommentState}
           counts={counts}
+          resolvedCount={resolvedCount}
           hostLabel={provider}
         />
         {run === null ? null : (
@@ -748,6 +765,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
         )}
         {body()}
       </PageColumn>
+      {drawer}
     </div>
   );
 };

@@ -2413,8 +2413,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
   way back. No lens keeps a rail beside its detail. Review is the one
-  exception, because its work happens in bulk: the focused comment sits in a
-  column to the right of the list, in the layer, and the list stays visible
+  exception, because its work happens in bulk: the open comment sits in the
+  drawer beside the list, and the list stays visible
   and selectable. A studio pairs a rail with
   a detail and has no back link. Completed and discarded groups sit behind
   header toggles that hide themselves at zero. So a session whose runs are all
@@ -2470,16 +2470,16 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   contract of its header and tabs is in [The Branch page](#the-branch-page).
   Comments is one flow: the list grouped by delivery (Needs you, Working,
   Ready to push, Open, Done and Left open on its host, the last two closed)
-  under the run status line, and the focused comment beside it in the page
-  itself, never in a drawer. A comment reads one word (Question for you, Fix ready,
+  under the run status line, across the page, and the open comment in the drawer beside it
+  (kind `conversation`, side tier), the same pattern as a check opening the Debugger. A comment reads one word (Question for you, Fix ready,
   Push failed, Failed, Working, Applied, Replied, Done, Left open, Open), all from `RESOLVE_WORD_LABEL`
   in `commentProjection.ts` (Applied is a fix on the branch whose reply is not sent, Replied is a
   thread delivered and resolved on the host), and `reviewTally` is the one count behind every number of them.
-  The action that takes a fix is `Apply fix` in the detail bar and `Apply N fixes` in the
+  The action that takes a fix is `Apply fix` in the comment drawer and `Apply N fixes` in the
   selection bar and the drawer; group labels carry their count and no verbs. A fix run is one agent and one transcript for all its comments: answers, retries and
   hints continue that run, only a model the owner picks starts a new one, and a finished turn
   without a result for a comment reads Failed with Retry, never a question. A thread in the address is
-  `s/{session}/branch/comments/t/{thread}`. A comment nobody started has `Fix` in its detail bar (and `F`), which opens the **Fix comments** drawer
+  `s/{session}/branch/comments/t/{thread}`. A comment nobody started has `Fix` in its drawer (and `F`), which opens the **Fix comments** drawer
   (kind `fix-comments`, side tier) with that comment checked; a checkbox on hover picks comments (`X` on the focused row,
   Cmd+A for every fixable comment, open or couldn't fix, Esc clears) and the bar `N selected ·
 Fix N` opens the same panel, or `Apply N fixes` for comments with a fix ready. With no fix run
@@ -3062,15 +3062,15 @@ the pane over the list. Open full in the pane header puts the record at the 720
 measure in place of the list (`TaskFullPage`), with Back at its top (named `Back to Tasks`) to return.
 Escape closes the record before the studio.
 
-`conversation` (payload `{ threadId }`) is the focused comment in Review. It
-rides the drawer slot of the location, so Back from the Diff or from the
-resolver's page finds the same comment focused, but it never opens the shell
-drawer: `selectDrawerPanel` leaves it out, `DrawerHost` has no case for it, and
-Review renders the comment in its own right column beside the list, with the
-trail visible. The column reads its own width (`@container`): below 56rem the
-list folds into an `N of M` counter with previous and next. This is the old
-Review layout; the Branch page's Comments tab has its own, described under
-Comments below.
+`conversation` (payload `{ threadId }`) is the open comment on the Comments tab, side tier.
+It rides the drawer slot of the location next to the address
+`s/{session}/branch/comments/t/{thread}` (`placeWithThread` keeps both, `openReviewComment`
+writes both), so Back, a refresh of the list and a window reload find the same comment open.
+`DrawerHost` renders only a slot for it (`ReviewCommentDrawerHost`); `ReviewFlow` portals the
+`DrawerFrame` into that slot, so the drawer shares the page's diff, filters, verb controller and
+keys. Its title is the file and line, its meta the author, age and state word, `N of M` its
+position in the shown list; a later answer for a comment it already left is dropped because the
+content is keyed by thread.
 
 `scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
 `ScriptRunDrawer` reads the run from `scriptRuns`, where the one
@@ -3294,26 +3294,23 @@ the author and its age, its `path:line`, the first line of the body and a `Note`
 while the list mixes sources. A note keeps `Post to GitHub` (it moves the note into
 the pull request's review draft and closes it) and `Delete` under its thread, and a
 note shows even while the host is still loading or failed to load. The open thread has the code
-around the commented line above it (`hunkAround`, linking to Files). Comments exists when a pull
+around the commented line above it (`hunkAround`, linking to Files), all inside the comment drawer. Comments exists when a pull
 request exists or at least one comment exists, a local note or a thread open or resolved; its count is
 the notes alone while there is no pull request. The
 properties (Origin, Attempts, Fix commit) sit inline under the thread at every width, never in a margin rail. The
-actions of the comment sit in a 48px bar (`ReviewActionBar`) at the bottom of the thread column, outside the scrolling thread, so Apply fix is in view at 1440x900; `⋯` holds the transcript, Resolve without a reply, Open on the host and Copy link.
+actions of the comment sit at the end of the drawer content through `FormActions` (`CommentDrawerActions`), never in a bar pinned to the page bottom; the `⋯` in the drawer header holds the transcript, Resolve without a reply, Open on the host and Copy link, and shows only with two or more of them (one rare verb shows as a quiet button instead).
 Every Branch section sits on the 960px column (`PaneShell width="column"`, bodies in
 `PageColumn width="column"`), the header and Ask included, so nothing
 moves from one section to the next, except that Files gives up the width of its file rail
-on the right and the column re-centres in what is left. The Comments section reads the width of its own pane
-(`branchLayoutOf`, so a wide sidebar, the rail or an open drawer narrows it): from 900px a
-300px list beside a wide thread; under 900px the list, then the thread, with no back link: the
-`Branch` crumb, with the thread's own crumb after it, is the way back to the list. The selected row stays selected on the way back.
-`branchLayout.test.ts` pins the widths a 1024px window gets with a wide sidebar
-and an open drawer. The entry slots read nothing until the data arrives and nothing at zero:
+on the right and the column re-centres in what is left. The Comments section is one full-width
+list at every pane width, with no back link; the open comment is the drawer, and the last row
+opened stays marked after the drawer closes. The entry slots read nothing until the data arrives and nothing at zero:
 Pull request `Draft`, `Merged` or `Closed`; Comments the count that needs you; Files the
 count; Commits `↑2` (tooltip `2 not pushed`, `notPushedCountOf`); Checks the failing or
 running count (`worktreeEntryFactsOf`; the comment
 source tabs drop a zero badge the same way). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the
-draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Comments section header, is the one fix launch.
+draft is not there yet, so the Commits count is a number on the Comments section too. `Fix N comments`, in the Branch header on the Comments section, is the one fix launch.
 
 **Files.** The branch against its base, with the changed file list in a rail on the
 right of the Branch page, dedicated to the diff (`FileRail` in `features/diff/components`).

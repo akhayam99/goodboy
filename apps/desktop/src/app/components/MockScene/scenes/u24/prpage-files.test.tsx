@@ -145,7 +145,7 @@ describe('the u24 prpage files scenes', () => {
     expect(localStorage.getItem('goodboy:diff-layout-mode')).toBe('split');
   });
 
-  it('lists the notes and the GitHub threads together on Comments with the scope bar', async () => {
+  it('lists the notes and the GitHub threads together with the source switch, and no Resolved switch while nothing is resolved', async () => {
     renderScene({ name: 'branch-comments-both' });
 
     const list = await screen.findByRole('navigation', { name: 'Comments' }, WAIT);
@@ -154,7 +154,7 @@ describe('the u24 prpage files scenes', () => {
     expect(screen.getByRole('tab', { name: /^All/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^Notes/ })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^On GitHub/ })).toBeDefined();
-    expect(screen.getByRole('tab', { name: 'Resolved' })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: 'Resolved' })).toBeNull();
     expect(screen.getByRole('button', { name: /^Fix \d+ comments?$/ })).toBeDefined();
   });
 });

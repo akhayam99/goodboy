@@ -969,6 +969,22 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
     lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics), WAIT),
   }),
   worldRow({
+    id: 'review.down',
+    world: 'resolve',
+    open: async () => {
+      await openReview();
+      neighbour = neighbourOf(THREADS.metrics, 1);
+      await pressed('review.down', await focusThread(THREADS.metrics));
+    },
+    lands: async () => waitFor(() => expect(currentThread()).toBe(neighbour), WAIT),
+  }),
+  worldRow({
+    id: 'review.up',
+    world: 'resolve',
+    open: reviewKey('review.up', THREADS.metrics),
+    lands: async () => waitFor(() => expect(currentThread()).not.toBe(THREADS.metrics), WAIT),
+  }),
+  worldRow({
     id: 'review.select',
     world: 'resolve',
     open: reviewKey('review.select', THREADS.constant),

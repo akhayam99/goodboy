@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
@@ -29,6 +30,7 @@ type Props = {
   readonly tab: BranchTab;
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
+  readonly pageAction?: ReactNode;
   readonly onMutated: () => void;
 };
 
@@ -49,6 +51,7 @@ export const BranchHeader = ({
   tab,
   isActive = true,
   canEditTitle,
+  pageAction = null,
   onMutated,
 }: Props) => {
   const { primary, secondary } = controls;
@@ -116,6 +119,7 @@ export const BranchHeader = ({
         }
         actions={
           <div className="flex min-w-0 items-center gap-2">
+            {pageAction}
             <HeaderActions
               secondary={
                 secondary === null

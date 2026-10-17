@@ -917,7 +917,7 @@ describe('Branch page', () => {
     expect(new Set(keys).size).toBe(1);
   });
 
-  it('keeps a requested mount and moves a conversation request into the address', () => {
+  it('keeps a requested mount, puts a conversation request in the address and opens its drawer', () => {
     const store = makeStore();
     store.getState().navigate({
       to: branchPlace({ sessionId: S1, mountPath: MOUNT }),
@@ -928,7 +928,10 @@ describe('Branch page', () => {
       tab: 'comments',
       threadId: 'thread-9',
     });
-    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().drawer).toMatchObject({
+      kind: 'conversation',
+      payload: { threadId: 'thread-9' },
+    });
     expect(store.getState().branchThreadId[S1]).toBe('thread-9');
   });
 

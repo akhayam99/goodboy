@@ -32,6 +32,7 @@ export type ReviewCommentBinding = {
   readonly isSubmitting: boolean;
   readonly pendingActionId: string | null;
   readonly error: string | null;
+  readonly failedActionId: string | null;
   readonly onRun: (actionId: string) => void;
   readonly onComposeChange: (text: string) => void;
   readonly onComposeSubmit: () => void;
@@ -54,12 +55,27 @@ export type ReviewCommentController = {
   readonly setError: (threadId: string, message: string | null) => void;
 };
 
+type ReviewAdvance = {
+  readonly threadId: string;
+  readonly fromThreadId: string;
+};
+
+type AdvanceParams = {
+  readonly next: string | null;
+  readonly from: string;
+};
+
+type ThreadError = {
+  readonly message: string;
+  readonly actionId: string | null;
+};
+
 type Params = {
   readonly sessionId: SessionId;
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly threadIds?: ReadonlyArray<string>;
   readonly onFocus?: (threadId: string) => void;
-  readonly onAdvance?: (threadId: string) => void;
+  readonly onAdvance?: (params: ReviewAdvance) => void;
 };
 
 const ADVANCING = new Set([
@@ -116,7 +132,7 @@ export const useReviewCommentController = ({
   const [modelOpenId, setModelOpenId] = useState<string | null>(null);
   const [pending, setPending] = useState<{ threadId: string; actionId: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  const [errors, setErrors] = useState<Readonly<Record<string, ThreadError>>>({});
   const onFocusRef = useRef(onFocus);
   const onAdvanceRef = useRef(onAdvance);
   onFocusRef.current = onFocus;
@@ -128,16 +144,24 @@ export const useReviewCommentController = ({
     setEditingReplyId(null);
   }, []);
 
-  const setError = useCallback((threadId: string, message: string | null): void => {
-    setErrors((current) => {
-      const { [threadId]: _dropped, ...rest } = current;
-      return message === null ? rest : { ...rest, [threadId]: message };
-    });
-  }, []);
+  const setFailure = useCallback(
+    (threadId: string, message: string | null, actionId: string | null): void => {
+      setErrors((current) => {
+        const { [threadId]: _dropped, ...rest } = current;
+        return message === null ? rest : { ...rest, [threadId]: { message, actionId } };
+      });
+    },
+    [],
+  );
 
-  const advance = useCallback((threadId: string | null): void => {
-    if (threadId !== null) {
-      onAdvanceRef.current?.(threadId);
+  const setError = useCallback(
+    (threadId: string, message: string | null): void => setFailure(threadId, message, null),
+    [setFailure],
+  );
+
+  const advance = useCallback(({ next, from }: AdvanceParams): void => {
+    if (next !== null) {
+      onAdvanceRef.current?.({ threadId: next, fromThreadId: from });
     }
   }, []);
 
@@ -158,16 +182,16 @@ export const useReviewCommentController = ({
           actionId,
           env,
         });
-        advance(advanceTo);
+        advance({ next: advanceTo, from: threadId });
       } catch (caught) {
         if (!isReportedError(caught)) {
-          setError(threadId, formatError(caught));
+          setFailure(threadId, formatError(caught), actionId);
         }
       } finally {
         setPending(null);
       }
     },
-    [advance, entries, env, pending, sessionId, setError],
+    [advance, entries, env, pending, sessionId, setError, setFailure],
   );
 
   const retryRun = useCallback(
@@ -267,7 +291,7 @@ export const useReviewCommentController = ({
             ? null
             : nextOpenAfter({ entries, threadId: entry.threadId });
         setCompose(null);
-        advance(next);
+        advance({ next, from: entry.threadId });
         return;
       }
       if (compose.mode === 'fixAnyway' || compose.mode === 'rewrite') {
@@ -365,7 +389,8 @@ export const useReviewCommentController = ({
     onToggleModel: () => setModelOpenId((current) => (current === threadId ? null : threadId)),
     isSubmitting,
     pendingActionId: pending?.threadId === threadId ? pending.actionId : null,
-    error: errors[threadId] ?? null,
+    error: errors[threadId]?.message ?? null,
+    failedActionId: errors[threadId]?.actionId ?? null,
     onRun: (actionId) => void runVerb({ threadId, actionId }),
     onComposeChange: (text) =>
       setCompose((current) => (current === null ? current : { ...current, text })),

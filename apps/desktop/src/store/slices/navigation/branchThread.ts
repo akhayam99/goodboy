@@ -24,7 +24,7 @@ export const placeWithThread = ({ place, drawer }: Params): CanonicalPick => {
         target: { ...target, tab: 'comments', threadId: drawer.payload.threadId },
       },
     },
-    drawer: null,
+    drawer,
   };
 };
 

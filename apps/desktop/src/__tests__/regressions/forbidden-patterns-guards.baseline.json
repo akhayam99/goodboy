@@ -1106,7 +1106,6 @@
     "apps/desktop/src/features/resolve/components/ReviewFlow/NewReplyNote.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/PushFailedNote.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/ResolveRunStatus.tsx": 1,
-    "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewActionBar.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 3,
     "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewListRow.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/ThreadGitFact.tsx": 1,
