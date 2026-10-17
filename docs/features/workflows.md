@@ -19,7 +19,7 @@ Give a goal and let a model pick each next step, with its role, model, effort an
 
 ### Preset and Custom
 
-Write the steps yourself with **Add step** and **Generate plan**, or let **Draft with planner** propose them. In **Pick a workflow** mode, start from a saved sequence and edit any step before starting. **Save as preset** keeps what you changed.
+Write the steps yourself with **Add step** and **Generate plan**, or let **Draft with planner** propose them. In **Pick a workflow** mode, start from a saved sequence and edit any step before starting. Each preset in the **Preset** list shows the provider mark of every step in run order, the same routing the run rail reads (`resolveStepRouting`); a step whose provider the start still picks shows the Auto glyph, and the tooltip names each step and its model ("Step 1 Scout · Sonnet 5.5"). **Save as preset** keeps what you changed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-dark.webp">

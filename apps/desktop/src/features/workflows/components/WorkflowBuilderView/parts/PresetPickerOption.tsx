@@ -3,10 +3,13 @@ import { IconButton, ListboxOptionRow } from '@goodboy/ui';
 import type { ListboxMatch } from '@goodboy/ui';
 import type { Workflow } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import type { PresetStepMark } from '../../../presetStepMarksOf';
+import { PresetStepMarks } from './PresetStepMarks';
 
 type Props = {
   readonly id: string;
   readonly preset: Workflow;
+  readonly marks: ReadonlyArray<PresetStepMark>;
   readonly match: ListboxMatch;
   readonly isActive: boolean;
   readonly isSelected: boolean;
@@ -18,6 +21,7 @@ type Props = {
 export const PresetPickerOption = ({
   id,
   preset,
+  marks,
   match,
   isActive,
   isSelected,
@@ -25,7 +29,6 @@ export const PresetPickerOption = ({
   onSelect,
   onDelete,
 }: Props) => {
-  const stepCount = preset.steps.length;
   const description = preset.description !== '' ? preset.description : (preset.goal ?? '');
   return (
     <div className="group/preset flex min-w-0 items-center gap-1">
@@ -39,7 +42,7 @@ export const PresetPickerOption = ({
         isSelected={isSelected}
         onActivate={onActivate}
         onSelect={onSelect}
-        meta={stepCount === 0 ? undefined : stepCount === 1 ? '1 step' : `${stepCount} steps`}
+        meta={marks.length === 0 ? undefined : <PresetStepMarks marks={marks} />}
       />
       <IconButton
         icon={Trash2}

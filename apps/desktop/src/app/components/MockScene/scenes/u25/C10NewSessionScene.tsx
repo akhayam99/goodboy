@@ -22,6 +22,7 @@ export type C10SceneState = {
   readonly isPickerOpen?: boolean;
   readonly startFailure?: string;
   readonly clickLabel?: string;
+  readonly openPrefix?: string;
 };
 
 type Props = {
@@ -111,10 +112,28 @@ export const C10NewSessionScene = ({ state }: Props) => {
   }, [state]);
 
   useEffect(() => {
-    if (state.isPickerOpen !== true && state.clickLabel === undefined) {
+    if (
+      state.isPickerOpen !== true &&
+      state.clickLabel === undefined &&
+      state.openPrefix === undefined
+    ) {
       return;
     }
     const timer = window.setInterval(() => {
+      if (state.openPrefix !== undefined) {
+        const prefix = state.openPrefix;
+        const chip = [...document.querySelectorAll('button')].find(
+          (button) => button.getAttribute('aria-label')?.startsWith(prefix) === true,
+        );
+        if (chip === undefined) {
+          return;
+        }
+        if (chip.getAttribute('aria-expanded') !== 'true') {
+          chip.click();
+        }
+        window.clearInterval(timer);
+        return;
+      }
       if (state.clickLabel !== undefined) {
         const target = [...document.querySelectorAll('button')].find(
           (button) => button.textContent?.trim() === state.clickLabel && !button.disabled,

@@ -92,6 +92,7 @@ describe('the c10 New session scenes', () => {
       'c10-start-auto',
       'c10-start-failed',
       'c10-start-orchestrate',
+      'c10-start-presets',
       'c10-start-projects',
       'c10-start-task',
       'c10-start-workflow',
@@ -114,6 +115,20 @@ describe('the c10 New session scenes', () => {
     expect(screen.getByRole('button', { name: 'Model for Scout the retry path' })).toBeDefined();
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
     expect(screen.getAllByRole('button', { name: 'Start run' })).toHaveLength(1);
+  });
+
+  it('c10-start-presets opens the Preset list with one provider mark per step', async () => {
+    await mount({ id: 'c10-start-presets' });
+
+    const list = screen.getByRole('listbox', { name: 'Presets' });
+    const options = within(list).getAllByRole('option');
+    expect(options.length).toBeGreaterThan(0);
+    for (const option of options) {
+      const marks = option.querySelectorAll('[data-step-mark]');
+      expect(marks.length).toBeGreaterThan(0);
+      expect(option.textContent).toContain('Step 1 ');
+      expect(option.textContent).not.toMatch(/\d steps?\b/);
+    }
   });
 
   it('c10-start-orchestrate draws the goal, two project chips and one Start orchestration', async () => {

@@ -703,6 +703,46 @@ describe('WorkflowBuilderView (preset)', () => {
     expect(toastMock).toHaveBeenCalledWith({ kind: 'success', message: 'Started Ship It.' });
   });
 
+  it('shows one provider mark per step in run order on the preset option', () => {
+    storeState.providers = [{ id: 'anthropic', connection: 'connected' }];
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
+    render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
+
+    openChip(/^preset:/i);
+    const option = screen.getByRole('option', { name: /ship it/i });
+    const marks = [...option.querySelectorAll('[data-step-mark]')].map((mark) =>
+      mark.getAttribute('data-step-mark'),
+    );
+    expect(marks).toEqual(['anthropic', 'anthropic']);
+    expect(option.textContent).toMatch(/Step 1 Scout · (?!Auto)/);
+    expect(option.textContent).toMatch(/Step 2 Implementer · (?!Auto)/);
+    expect(option.textContent).not.toContain('2 steps');
+  });
+
+  it('shows the Auto glyph for a step it cannot resolve, and a pinned provider as pinned', () => {
+    const base = presetWorkflow('wf-preset-1', 'Ship It');
+    const [scout, implementer] = base.steps;
+    storeState.phaseTemplates = {
+      'ws-1': [
+        {
+          ...base,
+          steps: [scout, { ...implementer, providerOverride: 'codex' }].flatMap((step) =>
+            step === undefined ? [] : [step],
+          ),
+        } as Workflow,
+      ],
+    };
+    render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
+
+    openChip(/^preset:/i);
+    const option = screen.getByRole('option', { name: /ship it/i });
+    const marks = [...option.querySelectorAll('[data-step-mark]')].map((mark) =>
+      mark.getAttribute('data-step-mark'),
+    );
+    expect(marks).toEqual(['auto', 'codex']);
+    expect(option.textContent).toContain('Step 1 Scout · Auto');
+  });
+
   it('draws the real steps with one model chip each and the pause the autonomy asks for', () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);

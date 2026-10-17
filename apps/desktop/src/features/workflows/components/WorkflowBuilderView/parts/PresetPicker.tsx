@@ -12,11 +12,15 @@ import {
 import type { Workflow, WorkflowId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { ControlChip } from '../../../../../shared/components/ControlChip';
+import type { PresetStepMark } from '../../../presetStepMarksOf';
 import { PresetPickerOption } from './PresetPickerOption';
+
+const NO_MARKS: ReadonlyArray<PresetStepMark> = [];
 
 type Props = {
   readonly presets: ReadonlyArray<Workflow>;
   readonly selectedId: WorkflowId | null;
+  readonly marks: ReadonlyMap<WorkflowId, ReadonlyArray<PresetStepMark>>;
   readonly isEdited: boolean;
   readonly disabled: boolean;
   readonly onSelect: (preset: Workflow) => void;
@@ -27,6 +31,7 @@ type Props = {
 export const PresetPicker = ({
   presets,
   selectedId,
+  marks,
   isEdited,
   disabled,
   onSelect,
@@ -156,6 +161,7 @@ export const PresetPicker = ({
                 key={preset.id}
                 id={listboxOptionId({ id: listId, index })}
                 preset={preset}
+                marks={marks.get(preset.id) ?? NO_MARKS}
                 match={match}
                 isActive={index === activeIndex}
                 isSelected={preset.id === selectedId}

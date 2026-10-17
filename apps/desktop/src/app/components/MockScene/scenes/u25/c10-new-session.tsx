@@ -16,6 +16,11 @@ const WORKFLOW: C10SceneState = {
   projectNames: TWO_PROJECTS,
 };
 
+const PRESETS_OPEN: C10SceneState = {
+  ...WORKFLOW,
+  openPrefix: 'Preset:',
+};
+
 const ORCHESTRATE: C10SceneState = {
   page: { choice: 'orchestrate', goal: RUN_GOAL },
   projectNames: TWO_PROJECTS,
@@ -48,6 +53,7 @@ const FAILED: C10SceneState = {
 export const U25_C10_NEW_SESSION_SCENES = {
   'c10-start-task': StartPickedScene,
   'c10-start-workflow': () => <C10NewSessionScene state={WORKFLOW} />,
+  'c10-start-presets': () => <C10NewSessionScene state={PRESETS_OPEN} />,
   'c10-start-orchestrate': () => <C10NewSessionScene state={ORCHESTRATE} />,
   'c10-start-agent': () => <C10NewSessionScene state={AGENT} />,
   'c10-start-auto': () => <C10NewSessionScene state={AUTO} />,
