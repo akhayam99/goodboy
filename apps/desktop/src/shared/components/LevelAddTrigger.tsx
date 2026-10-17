@@ -1,24 +1,25 @@
 import type { ComponentProps } from 'react';
 import { Plus } from 'lucide-react';
-import { Button } from '@goodboy/ui';
-import { ICON_SIZE } from './conceptIcons';
+import { IconButton } from '@goodboy/ui';
 
-type Props = Omit<ComponentProps<'button'>, 'type' | 'children'> & {
+type Props = Omit<
+  ComponentProps<typeof IconButton>,
+  'icon' | 'label' | 'size' | 'aria-haspopup' | 'aria-expanded'
+> & {
   readonly ariaLabel: string;
   readonly isExpanded: boolean;
 };
 
-export const LevelAddTrigger = ({ ariaLabel, isExpanded, ...rest }: Props) => (
-  <Button
+export const LevelAddTrigger = ({ ariaLabel, isExpanded, tooltip, ...rest }: Props) => (
+  <IconButton
     {...rest}
-    variant="quiet"
+    icon={Plus}
+    label={ariaLabel}
+    tooltip={tooltip ?? ariaLabel}
+    isTooltipSuppressed={isExpanded}
     size="xs"
-    aria-label={ariaLabel}
     aria-haspopup="dialog"
     aria-expanded={isExpanded}
-    data-level-add
-  >
-    <Plus size={ICON_SIZE.row} aria-hidden />
-    Add
-  </Button>
+    data-level-add=""
+  />
 );

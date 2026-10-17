@@ -25,6 +25,7 @@ import { branchPlace, sessionPlace } from '../../../store/slices/navigation/plac
 import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { worktreeStatusOf } from '../../../test/worktreeStatusOf';
+import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import {
   ledgerCore,
   mountGithubOf,
@@ -150,6 +151,14 @@ const statusLine = (): HTMLElement => {
   return line;
 };
 
+const worktreeButton = (list: HTMLElement): HTMLElement => {
+  const [first] = within(list).getAllByRole('button');
+  if (first === undefined) {
+    throw new Error('no worktree row');
+  }
+  return first;
+};
+
 describe('the worktree level', () => {
   it('drills in from a worktree row and goes back to the session Overview with its back row', async () => {
     seed({ status: worktreeStatusOf({}) });
@@ -157,7 +166,7 @@ describe('the worktree level', () => {
     await mountRail();
 
     const rows = await screen.findByRole('list', { name: 'payments-api worktrees' });
-    fireEvent.click(within(rows).getByRole('button'));
+    fireEvent.click(worktreeButton(rows));
     await settle();
 
     const identity = within(worktreeLayer()).getByText('payments-api');
@@ -262,10 +271,10 @@ describe('the worktree rows of the session level', () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await mountRail();
 
-    const row = within(projectRows('payments-api')).getByRole('button');
+    const row = worktreeButton(projectRows('payments-api'));
     expect(row.textContent).toBe(`${mount.branch}#418`);
     expect(row.querySelector('[data-worktree-dot] [data-tone]')).toBeNull();
-    expect(within(projectRows('ledger-core')).getByRole('button').textContent).toContain('#77');
+    expect(worktreeButton(projectRows('ledger-core')).textContent).toContain('#77');
   });
 
   it('draws the worst state as one dot named in the row, a failed check above being behind', async () => {
@@ -274,13 +283,13 @@ describe('the worktree rows of the session level', () => {
     await mountRail();
 
     await waitFor(() =>
-      expect(
-        within(projectRows('ledger-core')).getByRole('button').getAttribute('aria-label'),
-      ).toContain('3 behind main'),
+      expect(worktreeButton(projectRows('ledger-core')).getAttribute('aria-label')).toContain(
+        '3 behind main',
+      ),
     );
-    expect(
-      within(projectRows('payments-api')).getByRole('button').getAttribute('aria-label'),
-    ).toContain('A check failed');
+    expect(worktreeButton(projectRows('payments-api')).getAttribute('aria-label')).toContain(
+      'A check failed',
+    );
   });
 
   it('folds the finished worktrees of a project into one count row that opens them', async () => {
@@ -319,5 +328,148 @@ describe('the worktree rows of the session level', () => {
     await settle();
 
     expect(await screen.findByRole('dialog', { name: 'New branch in ledger-core' })).toBeDefined();
+  });
+});
+
+type ChangedParams = {
+  readonly additions: number;
+  readonly deletions: number;
+};
+
+const seedChangedFiles = ({ additions, deletions }: ChangedParams) => {
+  useAppStore.setState({
+    sessionWorktreeRecords: {
+      [sessionId]: [
+        {
+          id: 'worktree-payments',
+          sessionId,
+          worktreePath: mount.worktreePath,
+          branch: mount.branch,
+          parallelIndex: 0,
+          createdAt: 1,
+        },
+      ],
+    },
+  });
+  stubStoryInvoke({
+    worktree_status: () => worktreeStatusOf({}),
+    worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+    detect_editors: () => [],
+    worktree_changed_files: () => ({ paths: [], entries: [], additions, deletions, numstat: '' }),
+  });
+};
+
+const entriesOf = (name: string): HTMLElement => {
+  const list = projectRows(name).querySelector<HTMLElement>('[data-worktree-entries]');
+  if (list === null) {
+    throw new Error(`${name} shows no worktree pages`);
+  }
+  return list;
+};
+
+const entryLabels = (list: HTMLElement): ReadonlyArray<string> =>
+  [...list.querySelectorAll('[data-entry-label]')].map((label) => label.textContent ?? '');
+
+describe('the worktree pages inside the Projects card', () => {
+  it('lists Pull request, Comments, Files and Checks under a worktree with a pull request', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    seedChangedFiles({ additions: 652, deletions: 99 });
+    await mountRail();
+
+    expect(entryLabels(entriesOf('payments-api'))).toEqual([
+      'Pull request',
+      'Comments',
+      'Files',
+      'Checks',
+    ]);
+    await waitFor(() =>
+      expect(
+        within(entriesOf('payments-api'))
+          .getByRole('button', { name: /^Files/ })
+          .querySelector('[data-testid="diff-stat"]')?.textContent,
+      ).toBe('+652-99'),
+    );
+    expect(
+      within(entriesOf('payments-api'))
+        .getByRole('button', { name: /^Files/ })
+        .getAttribute('aria-label'),
+    ).toBe('Files, +652 -99');
+  });
+
+  it('lists only Files under a worktree with no pull request, the drill keeps the rest', async () => {
+    seed({ status: worktreeStatusOf({}) });
+    useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
+    await mountRail();
+
+    expect(entryLabels(entriesOf('payments-api'))).toEqual(['Files']);
+  });
+
+  it('opens the worktree page of an entry directly, on its tab', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    useAppStore.setState({ setSessionActiveMount: vi.fn(async () => undefined) });
+    await mountRail();
+
+    await act(async () => {
+      fireEvent.click(within(entriesOf('payments-api')).getByRole('button', { name: /^Files/ }));
+    });
+
+    expect(useAppStore.getState().activeLens[sessionId]).toBe('branch');
+    expect(useAppStore.getState().diffMountPath[sessionId]).toBe(mount.worktreePath);
+    expect(useAppStore.getState().branchTab?.[sessionId]).toBe('files');
+  });
+
+  it('puts a failing check on the Checks entry and not again on its worktree row', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    patchRequest({ mountId: mount.mountId, patch: { checks: 'failure' } });
+    useAppStore.setState((state) => {
+      const current = state.mountGithub[mount.mountId];
+      if (current === undefined) {
+        return {};
+      }
+      return {
+        mountGithub: {
+          ...state.mountGithub,
+          [mount.mountId]: {
+            ...current,
+            detail: {
+              prNumber: 418,
+              comments: [],
+              reviews: [],
+              reviewRequests: [],
+              checks: [
+                { name: 'lint', conclusion: 'failure', detailsUrl: null, durationMs: null },
+                { name: 'test', conclusion: 'success', detailsUrl: null, durationMs: null },
+              ],
+            },
+          },
+        },
+      };
+    });
+    await mountRail();
+
+    const checks = within(entriesOf('payments-api')).getByRole('button', { name: /^Checks/ });
+    expect(checks.getAttribute('aria-label')).toBe('Checks, 1 failing');
+    expect(checks.querySelector('[data-entry-slot]')?.textContent).toBe('1');
+    expect(worktreeButton(projectRows('payments-api')).getAttribute('aria-label')).not.toContain(
+      'A check failed',
+    );
+  });
+
+  it('folds the card from its header, remembers it, and keeps a state dot on the folded header', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({ behind: 3 }) });
+    await mountRail();
+    const toggle = screen.getByRole('button', { name: 'Projects' });
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(toggle);
+    await settle();
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(localStorage.getItem(STORAGE_KEYS.sessionRailFoldedCards)).toBe('["projects"]');
+    const card = toggle.closest<HTMLElement>('[data-level-card]');
+    await waitFor(() => expect(card?.querySelector('[data-card-signal]')).not.toBeNull());
+    expect(
+      within(card as HTMLElement).getByRole('button', { name: 'Add to this session' }),
+    ).toBeDefined();
   });
 });

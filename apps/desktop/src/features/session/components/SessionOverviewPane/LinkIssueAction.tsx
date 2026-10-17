@@ -17,6 +17,8 @@ type Props = {
 
 const LABEL = 'Link work';
 
+const TOOLTIP = 'Link an issue, an error or a thread to this session';
+
 export const LinkIssueAction = ({
   session,
   initialSource,
@@ -74,14 +76,16 @@ export const LinkIssueAction = ({
       ariaLabel={LABEL}
       className="overflow-hidden p-0"
       trigger={
-        <Tooltip
-          content="Link an issue, an error or a thread to this session"
-          shortcut="session.linkWork"
-          isSuppressed={isOpen}
-        >
-          {look === 'level' ? (
-            <LevelAddTrigger ariaLabel={LABEL} isExpanded={isOpen} onClick={openFresh} />
-          ) : (
+        look === 'level' ? (
+          <LevelAddTrigger
+            ariaLabel={LABEL}
+            tooltip={TOOLTIP}
+            shortcut="session.linkWork"
+            isExpanded={isOpen}
+            onClick={openFresh}
+          />
+        ) : (
+          <Tooltip content={TOOLTIP} shortcut="session.linkWork" isSuppressed={isOpen}>
             <Chip
               as="button"
               tone="neutral"
@@ -94,8 +98,8 @@ export const LinkIssueAction = ({
               icon={<Plus size={ICON_SIZE.row} aria-hidden />}
               label={LABEL}
             />
-          )}
-        </Tooltip>
+          </Tooltip>
+        )
       }
     >
       {isOpen ? (

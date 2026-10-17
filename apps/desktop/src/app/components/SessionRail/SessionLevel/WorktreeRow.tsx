@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import { SelectableRow, StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
@@ -5,21 +6,41 @@ import type { MountRowView } from '../../../../store/slices/project-mounts/mount
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BranchName } from '../../../../features/branch/components/BranchHeader/BranchName';
 import { switchBranchMount } from '../../../../features/branch/switchBranchMount';
+import type { EntryDiffStat } from '../../../../features/branch/worktreeEntryFacts';
 import { useTaskDropState } from '../../../../features/session/hooks/useTaskDropState';
+import { useWorktreeCardEntries } from './useWorktreeCardEntries';
 import { useWorktreeRowState } from './useWorktreeRowState';
+import { WorktreeEntries } from './WorktreeEntries';
+import type { EntryShownFact } from './worktreeRowStateOf';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly row: MountRowView;
   readonly status: WorktreeStatus | null;
   readonly isShown: boolean;
+  readonly diff?: EntryDiffStat | null;
 };
 
-export const WorktreeRow = ({ sessionId, row, status, isShown }: Props) => {
+export const WorktreeRow = ({ sessionId, row, status, isShown, diff = null }: Props) => {
   const request = row.request;
   const branch = row.branch === '' ? row.mountName : row.branch;
   const path = row.worktreePath ?? row.lastWorktreePath;
-  const state = useWorktreeRowState({ sessionId, row, status });
+  const entries = useWorktreeCardEntries({ sessionId, row, diff });
+  const livePath = row.isFinished || !row.isAttached ? null : row.worktreePath;
+  const shownByEntries = useMemo(
+    () =>
+      new Set<EntryShownFact>(
+        livePath === null
+          ? []
+          : entries.flatMap((entry) =>
+              entry.tab === 'comments' || (entry.tab === 'checks' && entry.fact.tone !== null)
+                ? [entry.tab]
+                : [],
+            ),
+      ),
+    [entries, livePath],
+  );
+  const state = useWorktreeRowState({ sessionId, row, status, shownByEntries });
   const number =
     request === null ? '' : `${PULL_REQUEST_NOUNS[request.provider].numberPrefix}${request.number}`;
   const isDropTarget = row.branch !== '' && row.isAttached && !row.isFinished;
@@ -52,7 +73,7 @@ export const WorktreeRow = ({ sessionId, row, status, isShown }: Props) => {
               mode: 'push',
             }),
         })}
-        className="h-7 items-center gap-2 px-2 text-ui"
+        className="h-7 items-center gap-2 pl-6 pr-2 text-ui"
       >
         <CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
         <span data-worktree-branch="" className="flex min-w-0 flex-1">
@@ -73,6 +94,15 @@ export const WorktreeRow = ({ sessionId, row, status, isShown }: Props) => {
           )}
         </span>
       </SelectableRow>
+      {livePath === null || entries.length === 0 ? null : (
+        <WorktreeEntries
+          sessionId={sessionId}
+          mountId={row.mountId}
+          worktreePath={livePath}
+          branch={branch}
+          entries={entries}
+        />
+      )}
     </div>
   );
 };

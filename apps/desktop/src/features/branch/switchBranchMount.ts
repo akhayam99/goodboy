@@ -2,6 +2,7 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import { mountRequestOf } from '../../store/slices/project-mounts/mountRowModel';
 import { branchPlace } from '../../store/slices/navigation/place';
+import type { BranchTab } from '../../store/slices/navigation/types';
 import { branchLandingTabOf } from './branchLandingTab';
 
 type Params = {
@@ -9,6 +10,7 @@ type Params = {
   readonly mountId: MountId;
   readonly worktreePath: string;
   readonly mode?: 'push' | 'replace';
+  readonly tab?: BranchTab;
 };
 
 export const switchBranchMount = async ({
@@ -16,6 +18,7 @@ export const switchBranchMount = async ({
   mountId,
   worktreePath,
   mode = 'replace',
+  tab,
 }: Params): Promise<void> => {
   const before = useAppStore.getState();
   try {
@@ -29,10 +32,12 @@ export const switchBranchMount = async ({
     to: branchPlace({
       sessionId,
       mountPath: worktreePath,
-      tab: branchLandingTabOf({
-        hasPullRequest: mountRequestOf({ state, mountId }) !== null,
-        deepLink: null,
-      }),
+      tab:
+        tab ??
+        branchLandingTabOf({
+          hasPullRequest: mountRequestOf({ state, mountId }) !== null,
+          deepLink: null,
+        }),
     }),
     mode,
   });
