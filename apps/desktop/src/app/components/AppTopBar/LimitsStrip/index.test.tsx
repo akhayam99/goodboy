@@ -1,23 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { IsoDateTime, ProviderId, ProviderLimits } from '@goodboy/types';
-
-type ProviderRow = {
-  readonly id: ProviderId;
-  readonly connection: 'connected' | 'missing' | 'unknown';
-};
-
-const { store } = vi.hoisted(() => ({
-  store: {
-    providers: [] as ReadonlyArray<ProviderRow>,
-    providerLimits: {} as Partial<Record<ProviderId, ProviderLimits>>,
-    currentWorkspaceId: 'workspace-1' as string | null,
-  },
-}));
-
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-}));
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 
 vi.mock('../../ProvidersMenu/ProvidersMenuPanel', () => ({
   ProvidersMenuPanel: ({ workspaceId }: { readonly workspaceId: string }) => (
@@ -25,15 +12,66 @@ vi.mock('../../ProvidersMenu/ProvidersMenuPanel', () => ({
   ),
 }));
 
-import { LimitsStrip } from './index';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import type {
+  IsoDateTime,
+  ProviderConnectionState,
+  ProviderId,
+  ProviderLimits,
+  WorkspaceId,
+} from '@goodboy/types';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
+
+let useAppStore: StoryStore;
+let LimitsStrip: typeof import('./index').LimitsStrip;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ LimitsStrip } = await import('./index'));
+}, STORE_IMPORT_TIMEOUT_MS);
+
+const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
+
+type ProviderParams = {
+  readonly id: ProviderId;
+  readonly connection: ProviderConnectionState;
+};
+
+const providerRow = ({ id, connection }: ProviderParams): ProviderDisplayInfo => ({
+  id,
+  binary: id,
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  connection,
+  version: '1.0.0',
+  identity: null,
+  label: id,
+  error: null,
+  docsUrl: '',
+});
+
+type LimitsSeed = Partial<Record<ProviderId, ProviderLimits>>;
+
+const setLimits = (providerLimits: LimitsSeed): void => useAppStore.setState({ providerLimits });
+
+const setProviders = (providers: ReadonlyArray<ProviderDisplayInfo>): void =>
+  useAppStore.setState({ providers: [...providers] });
+
+const setWorkspace = (currentWorkspaceId: WorkspaceId | null): void =>
+  useAppStore.setState({ currentWorkspaceId });
 
 const NOW = Date.parse('2026-09-25T12:00:00.000Z');
 
-const connected = (ids: ReadonlyArray<ProviderId>): ReadonlyArray<ProviderRow> =>
-  (['anthropic', 'cursor', 'codex', 'gemini', 'opencode'] as const).map((id) => ({
-    id,
-    connection: ids.includes(id) ? 'connected' : 'missing',
-  }));
+const connected = (ids: ReadonlyArray<ProviderId>): ReadonlyArray<ProviderDisplayInfo> =>
+  (['anthropic', 'cursor', 'codex', 'gemini', 'opencode'] as const).map((id) =>
+    providerRow({ id, connection: ids.includes(id) ? 'connected' : 'missing' }),
+  );
 
 const limits = (patch: Partial<ProviderLimits>): ProviderLimits => ({
   providerId: 'anthropic',
@@ -52,16 +90,17 @@ const limits = (patch: Partial<ProviderLimits>): ProviderLimits => ({
   ...patch,
 });
 
-const bothReporting = (): Partial<Record<ProviderId, ProviderLimits>> => ({
+const bothReporting = (): LimitsSeed => ({
   anthropic: limits({}),
   codex: limits({ providerId: 'codex', plan: 'Plus' }),
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  await resetStoryStore();
   vi.useFakeTimers({ now: NOW, toFake: ['Date'] });
-  store.providers = connected(['anthropic', 'codex', 'cursor', 'gemini']);
-  store.providerLimits = {};
-  store.currentWorkspaceId = null;
+  setProviders(connected(['anthropic', 'codex', 'cursor', 'gemini']));
+  setLimits({});
+  setWorkspace(null);
 });
 
 afterEach(() => {
@@ -74,10 +113,15 @@ const chipButtons = () =>
     .getAllByRole('button')
     .filter((button) => button.getAttribute('data-limits-chip') !== 'overflow');
 
+const marksOf = (button: HTMLElement): ReadonlyArray<string | null> =>
+  [...button.querySelectorAll('[data-limits-mark]')].map((mark) =>
+    mark.getAttribute('data-limits-mark'),
+  );
+
 describe('LimitsStrip', () => {
   it('draws a chip only for providers with data and keeps the rest under +N', () => {
-    store.providers = connected(['anthropic', 'codex', 'cursor', 'gemini', 'opencode']);
-    store.providerLimits = bothReporting();
+    setProviders(connected(['anthropic', 'codex', 'cursor', 'gemini', 'opencode']));
+    setLimits(bothReporting());
     render(<LimitsStrip />);
 
     expect(chipButtons().map((button) => button.getAttribute('data-limits-chip'))).toEqual([
@@ -102,7 +146,7 @@ describe('LimitsStrip', () => {
   });
 
   it('shows the icon and one bar, the percent only above 70%, every window in the label', () => {
-    store.providerLimits = {
+    setLimits({
       anthropic: limits({}),
       codex: limits({
         providerId: 'codex',
@@ -118,7 +162,7 @@ describe('LimitsStrip', () => {
           },
         ],
       }),
-    };
+    });
     render(<LimitsStrip />);
 
     const [claude, codex] = chipButtons();
@@ -130,7 +174,7 @@ describe('LimitsStrip', () => {
   });
 
   it('draws one bar per chip, the tighter of the 5-hour and the weekly window', () => {
-    store.providerLimits = {
+    setLimits({
       anthropic: limits({
         status: 'warning',
         windows: [
@@ -150,7 +194,7 @@ describe('LimitsStrip', () => {
           },
         ],
       }),
-    };
+    });
     render(<LimitsStrip />);
 
     const [claude] = chipButtons();
@@ -163,7 +207,7 @@ describe('LimitsStrip', () => {
   });
 
   it('fills the bar when the provider stopped and says out only in the label', () => {
-    store.providerLimits = {
+    setLimits({
       codex: limits({
         providerId: 'codex',
         status: 'reached',
@@ -177,7 +221,7 @@ describe('LimitsStrip', () => {
           },
         ],
       }),
-    };
+    });
     render(<LimitsStrip />);
 
     const codex = chipButtons().find(
@@ -191,7 +235,7 @@ describe('LimitsStrip', () => {
   });
 
   it('sits on the bar without a card or a label', () => {
-    store.providerLimits = bothReporting();
+    setLimits(bothReporting());
     const { container } = render(<LimitsStrip />);
 
     const toolbar = screen.getByRole('toolbar', { name: 'Provider limits' });
@@ -200,7 +244,7 @@ describe('LimitsStrip', () => {
   });
 
   it('shows the fewest chips below chrome-labels and moves the rest into +N', () => {
-    store.providerLimits = bothReporting();
+    setLimits(bothReporting());
     render(<LimitsStrip />);
 
     const buttons = chipButtons();
@@ -209,18 +253,19 @@ describe('LimitsStrip', () => {
     expect(buttons[1]?.className).toContain('@min-chrome-labels/topbar:flex');
     expect(screen.getByRole('button', { name: '3 more providers' })).toBeTruthy();
     expect(screen.getAllByRole('button', { name: '2 more providers' })).toHaveLength(2);
-    expect(screen.getByRole('button', { name: '3 more providers' }).textContent).toBe(
-      '+3 providers',
-    );
+    const three = screen.getByRole('button', { name: '3 more providers' });
+    expect(three.textContent).toBe('+3');
+    expect(marksOf(three)).toEqual(['codex', 'cursor', 'gemini']);
     screen.getAllByRole('button', { name: '2 more providers' }).forEach((chip) => {
-      expect(chip.textContent).toBe('+2 providers');
+      expect(chip.textContent).toBe('+2');
+      expect(marksOf(chip)).toEqual(['cursor', 'gemini']);
     });
     expect(screen.queryByRole('button', { name: '0 more providers' })).toBeNull();
   });
 
   it('gives +N the tone of the worst hidden provider and lists them', () => {
-    store.providers = connected(['anthropic', 'codex']);
-    store.providerLimits = {
+    setProviders(connected(['anthropic', 'codex']));
+    setLimits({
       anthropic: limits({}),
       codex: limits({
         providerId: 'codex',
@@ -234,12 +279,15 @@ describe('LimitsStrip', () => {
           },
         ],
       }),
-    };
+    });
     render(<LimitsStrip />);
 
     const overflow = screen.getByRole('button', { name: '1 more provider' });
-    expect(overflow.textContent).toBe('+1 provider');
-    expect(overflow.querySelector('svg')?.getAttribute('class')).toContain('text-danger');
+    expect(overflow.textContent).toBe('+1');
+    expect(marksOf(overflow)).toEqual(['codex']);
+    expect(overflow.querySelector('[data-limits-alert]')?.getAttribute('class')).toContain(
+      'text-danger',
+    );
     fireEvent.click(overflow);
     expect(screen.getByRole('list', { name: 'More provider limits' }).textContent).toContain(
       'Codex',
@@ -247,7 +295,7 @@ describe('LimitsStrip', () => {
   });
 
   it('moves between chips with the arrow keys', () => {
-    store.providerLimits = bothReporting();
+    setLimits(bothReporting());
     render(<LimitsStrip />);
     const buttons = chipButtons();
     buttons[0]?.focus();
@@ -261,7 +309,7 @@ describe('LimitsStrip', () => {
   });
 
   it('presses the chip of the provider open in settings and opens its usage on click', () => {
-    store.providerLimits = bothReporting();
+    setLimits(bothReporting());
     const listener = vi.fn();
     window.addEventListener('goodboy:open-settings', listener);
     render(<LimitsStrip openProviderId="codex" />);
@@ -282,7 +330,7 @@ describe('LimitsStrip', () => {
   });
 
   it('leaves the call to connect to the footer when none is connected', () => {
-    store.providers = connected([]);
+    setProviders(connected([]));
     const { container } = render(<LimitsStrip />);
 
     expect(screen.queryByRole('toolbar')).toBeNull();
@@ -290,7 +338,7 @@ describe('LimitsStrip', () => {
   });
 
   it('draws nothing while providers are still being detected', () => {
-    store.providers = [{ id: 'anthropic', connection: 'unknown' }];
+    setProviders([providerRow({ id: 'anthropic', connection: 'unknown' })]);
     const { container } = render(<LimitsStrip />);
 
     expect(container.textContent).toBe('');
@@ -299,11 +347,11 @@ describe('LimitsStrip', () => {
 
 describe('LimitsStrip opening the Providers menu', () => {
   beforeEach(() => {
-    store.currentWorkspaceId = 'workspace-1';
+    setWorkspace(WORKSPACE_ID);
   });
 
   it('opens the Providers menu under the strip from any chip, and never leaves for Settings', () => {
-    store.providerLimits = bothReporting();
+    setLimits(bothReporting());
     const listener = vi.fn();
     window.addEventListener('goodboy:open-settings', listener);
     render(<LimitsStrip />);
@@ -317,8 +365,8 @@ describe('LimitsStrip opening the Providers menu', () => {
   });
 
   it('opens the same menu from a provider listed under +N', () => {
-    store.providers = connected(['anthropic', 'codex', 'cursor', 'gemini', 'opencode']);
-    store.providerLimits = bothReporting();
+    setProviders(connected(['anthropic', 'codex', 'cursor', 'gemini', 'opencode']));
+    setLimits(bothReporting());
     render(<LimitsStrip />);
 
     const [overflow] = screen.getAllByRole('button', { name: /more providers?/ });
@@ -332,7 +380,7 @@ describe('LimitsStrip opening the Providers menu', () => {
   });
 
   it('keeps one Connect a provider chip that opens the menu when none is connected', () => {
-    store.providers = connected([]);
+    setProviders(connected([]));
     render(<LimitsStrip />);
 
     const connect = screen.getByRole('button', { name: 'Connect a provider' });
@@ -344,15 +392,15 @@ describe('LimitsStrip opening the Providers menu', () => {
   });
 
   it('still draws nothing while providers are being detected', () => {
-    store.providers = [{ id: 'anthropic', connection: 'unknown' }];
+    setProviders([providerRow({ id: 'anthropic', connection: 'unknown' })]);
     const { container } = render(<LimitsStrip />);
 
     expect(container.textContent).toBe('');
   });
 
   it('falls back to the usage page with no workspace, where no policy exists', () => {
-    store.providerLimits = bothReporting();
-    store.currentWorkspaceId = null;
+    setLimits(bothReporting());
+    setWorkspace(null);
     const listener = vi.fn();
     window.addEventListener('goodboy:open-settings', listener);
     render(<LimitsStrip />);

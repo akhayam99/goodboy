@@ -28,6 +28,7 @@ type Props = {
 
 const PANEL_WIDTH = 320;
 const ROW_HEIGHT = 32;
+const MAX_MARKS = 3;
 
 type ValueParams = {
   readonly chip: LimitsChip;
@@ -84,13 +85,31 @@ export const LimitsOverflowPopover = ({
             TOP_BAR_CONTROL.height,
             TOP_BAR_CONTROL.radius,
             FOCUS_RING,
-            'flex shrink-0 items-center gap-0.5 px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
+            'flex shrink-0 items-center gap-1 px-2 text-chip tabular-nums text-muted-foreground motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
-          <span>{hasShownChips ? `+${hidden.length} ${noun}` : 'Limits'}</span>
+          <span>{hasShownChips ? `+${hidden.length}` : 'Limits'}</span>
+          {hasShownChips ? (
+            <span data-limits-overflow-marks="" className="flex items-center gap-0.5">
+              {hidden.slice(0, MAX_MARKS).map((chip) => {
+                const Glyph = PROVIDER_BRAND[chip.providerId].icon;
+                return (
+                  <Glyph
+                    key={chip.providerId}
+                    data-limits-mark={chip.providerId}
+                    size={ICON_SIZE.row}
+                    aria-hidden
+                    className="shrink-0"
+                    style={{ color: brandColor(chip.providerId) }}
+                  />
+                );
+              })}
+            </span>
+          ) : null}
           {worst === null ? null : (
             <TriangleAlert
+              data-limits-alert=""
               size={ICON_SIZE.mark}
               aria-hidden
               className={worst.state === 'out' ? 'text-danger' : 'text-warning'}

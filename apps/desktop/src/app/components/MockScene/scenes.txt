@@ -394,6 +394,9 @@ explorefile-overlay
 explorefile-ts
 explorefirstlap
 exploremulti
+f58-chat-1100
+f58-chat-origin
+f58-chat-room
 features-composer-menu
 features-impact-overview
 features-newer-data

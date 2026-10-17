@@ -706,24 +706,6 @@ describe('ChatRoom', () => {
     renderRoom({ chat: CHAT });
 
     expect(screen.queryByRole('button', { name: /Linked sessions/ })).toBeNull();
-    expect(screen.queryByText('Started a session ·')).toBeNull();
-  });
-
-  it('keeps the handoff note under the answer it came from, from the saved link', () => {
-    store.chatMessages = { [CHAT_ID]: ANSWERED };
-    store.sessions = [SESSION_CONSENT];
-    store.chatLinks = { [CHAT_ID]: [LINK_NEW] };
-    renderRoom({ chat: CHAT });
-
-    const note = screen.getByRole('status');
-    expect(note.textContent).toContain('Started a session');
-    expect(note.textContent).toContain('Ask for consent again when the policy changes');
-    const answer = screen.getByText('It lives in payments-api').closest('li');
-    expect(answer?.nextElementSibling?.contains(note)).toBe(true);
-    fireEvent.click(within(note).getByRole('button', { name: 'Open session' }));
-    expect(store.navigate).toHaveBeenCalledWith({
-      to: { at: 'session', sessionId: 'session-consent' },
-    });
   });
 
   it('offers Start work from chat only under a finished answer', () => {

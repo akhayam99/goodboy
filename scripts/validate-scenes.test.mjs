@@ -23,6 +23,7 @@ import {
   missingFrameScenes,
 } from './validateScenesFrame.mjs';
 import { menuRowsFailures, menuRowsProbe } from './validateScenesMenus.mjs';
+import { chatMeasureFailures } from './validateScenesChatMeasure.mjs';
 
 const { Window } = createRequire(new URL('../apps/desktop/package.json', import.meta.url))(
   'happy-dom',
@@ -651,5 +652,48 @@ describe('the frame probe scene list', () => {
       'utf8',
     ).split('\n');
     assert.deepEqual(missingFrameScenes({ ids }), []);
+  });
+});
+
+const chatEdges = ({ left, right }) => ({ left, right });
+
+const alignedChat = () => ({
+  header: chatEdges({ left: 911, right: 1620 }),
+  title: chatEdges({ left: 911, right: 1174 }),
+  remove: chatEdges({ left: 1592, right: 1620 }),
+  messages: chatEdges({ left: 911, right: 1620 }),
+  copy: chatEdges({ left: 1600, right: 1620 }),
+  composer: chatEdges({ left: 911, right: 1620 }),
+});
+
+describe('chatMeasureFailures', () => {
+  it('passes a room whose header, thread and composer share one column', () => {
+    assert.deepEqual(
+      chatMeasureFailures({ scene: 'fixture', width: 2000, probe: alignedChat() }),
+      [],
+    );
+  });
+
+  it('fails a room whose thread runs on the wider list column', () => {
+    const probe = { ...alignedChat(), messages: chatEdges({ left: 788, right: 1748 }) };
+    assert.deepEqual(
+      chatMeasureFailures({ scene: 'fixture', width: 2000, probe }).map((failure) => failure.check),
+      [
+        'chat header, thread and composer start on different left edges',
+        'chat header, thread and composer end on different right edges',
+      ],
+    );
+  });
+
+  it('fails a room with no thread or a missing control', () => {
+    assert.equal(
+      chatMeasureFailures({ scene: 'fixture', width: 1100, probe: null })[0]?.check,
+      'no chat room to measure',
+    );
+    const probe = { ...alignedChat(), remove: null };
+    assert.equal(
+      chatMeasureFailures({ scene: 'fixture', width: 1100, probe })[0]?.check,
+      'chat room is missing remove',
+    );
   });
 });
