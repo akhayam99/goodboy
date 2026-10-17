@@ -548,7 +548,10 @@
 
   .handoff .hmReply,
   .handoff .hmOps,
-  .handoff .hmComposer,
+  .handoff .hmComposer {
+    display: none;
+  }
+
   .handoff .hmLeft,
   .handoff .hmRight {
     gap: 12px;
