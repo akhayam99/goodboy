@@ -33,6 +33,8 @@ type Props = {
 
 const WIDTH_VAR = '--goodboy-session-rail-width';
 
+const FOOT_ACTION_IDS: ReadonlySet<string> = new Set(['session.archive', 'session.restore']);
+
 const isBackKey = (event: KeyboardEvent): boolean =>
   event.key === '[' && event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey;
 
@@ -54,6 +56,7 @@ export const SessionRail = ({ session }: Props) => {
   const target = useMemo<ObjectTarget>(() => ({ kind: 'session', sessionId }), [sessionId]);
   const controls = useActionControls({ target, scopeKey: sessionId });
   const isSessionChrome = level === 'session' && !fold.isFolded;
+  const isTopFailure = controls.failure !== null && !FOOT_ACTION_IDS.has(controls.failure.actionId);
   const goBack = () => {
     if (level === 'run') {
       leaveRunLevel({ sessionId });
@@ -96,7 +99,7 @@ export const SessionRail = ({ session }: Props) => {
         </div>
         {isSessionChrome ? <SessionLevelActions session={session} controls={controls} /> : null}
       </div>
-      {isSessionChrome && controls.failure !== null ? (
+      {isSessionChrome && isTopFailure ? (
         <div className="shrink-0 px-2">
           <ActionStatusLine controls={controls} showReasons={false} />
         </div>

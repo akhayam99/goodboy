@@ -37,6 +37,7 @@ import {
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { useCurrentSession } from '../../../store';
+import type { AppStore } from '../../../store/store';
 import type { ColumnActions } from '../SideColumn/columnDoors';
 import type { ColumnPlace } from '../SideColumn/columnPlace';
 import { SideColumn } from '../SideColumn';
@@ -528,6 +529,32 @@ describe('the session rail top row and foot', () => {
     });
     expect(deleteTask).toHaveBeenCalledTimes(1);
     expect(deleteTask).toHaveBeenCalledWith(openId);
+  });
+
+  it('says why Archive failed at the foot, keeps the session live and retries', async () => {
+    seed();
+    const bulkArchiveTask = vi
+      .fn<AppStore['bulkArchiveTask']>()
+      .mockRejectedValueOnce(new Error('database is locked'))
+      .mockResolvedValueOnce({ succeeded: [], failed: [] });
+    useAppStore.setState({ bulkArchiveTask });
+    mountColumn();
+    const foot = within(elementOf('[data-session-foot]', rail()));
+
+    await act(async () => {
+      fireEvent.click(foot.getByRole('button', { name: 'Archive' }));
+    });
+    const footArea = elementOf('[data-session-foot]', rail()).parentElement ?? rail();
+    expect(within(footArea).getByText(/database is locked/)).toBeDefined();
+    expect(
+      within(elementOf('[data-rail-top]', rail())).queryByText(/database is locked/),
+    ).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(within(footArea).getByRole('button', { name: 'Retry' }));
+    });
+    expect(bulkArchiveTask).toHaveBeenCalledTimes(2);
+    expect(bulkArchiveTask).toHaveBeenLastCalledWith([openId]);
   });
 
   it('offers Restore at the foot of an archived session and no top row actions', () => {
