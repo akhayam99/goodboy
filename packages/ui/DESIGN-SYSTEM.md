@@ -158,6 +158,10 @@ state is a `StateDot` or a glyph in a 16px column.
   buttons of its own and nothing appears on hover. `isSelected` sets
   `data-selected` and `aria-current`. Up and Down move focus between rows.
 - `rowHeight` is 32 by default and 28 in the sidebar.
+- `track` draws one mark inside the row, outside every cell: a `ToneBar` of
+  `row` density at the row's left edge, in the zero edge track before the first
+  cell (the Sessions List row carries its stage there, the same tone as its
+  Board card). The row turns `relative` only when it has a track.
 - `shouldHideWhenEmpty` on a column drops it from the template, its cells and its
   gap, while no mounted row fills it (a cell of `null`, `undefined`, `false` or
   `''` is empty). As soon as one row fills it, every row keeps the cell, empty
@@ -175,8 +179,7 @@ state is a `StateDot` or a glyph in a 16px column.
   grouped grid (`isGrouped`) spaces its groups 16px apart, never with a divider.
   `headingLevel` is 3 by default and 2 on a page whose title is the only heading
   above the groups. A group with no `label` draws its rows alone, with no heading
-  and no count, for a lead group that needs no name above a named one (the
-  Sessions list before **Inactive**).
+  and no count, for a lead group that needs no name above a named one.
 - A list with a keyboard cursor (Tasks) makes each group its own listbox
   (`isListbox`, `activeDescendant`) and its rows options (`isOption`,
   `isCursor` marks the cursor with `data-cursor` and the hover fill). What is not

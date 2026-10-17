@@ -138,7 +138,7 @@ const SessionActivityItemView = ({
           onModifierClick(sessionId, event);
         }}
         className={cn(
-          'group/session-row relative flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-ui',
+          'group/session-row relative flex h-7 w-full select-none items-center gap-2 rounded-md px-2 text-left text-ui',
           ROW_INTERACTIVE,
           isCalm ? 'text-muted-foreground' : 'text-foreground',
           isActive && 'font-medium text-foreground',

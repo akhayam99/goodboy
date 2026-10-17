@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { PANE_RHYTHM, Tooltip, cn } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
@@ -20,6 +21,7 @@ type Props = {
   readonly isCurrent: boolean;
   readonly signal?: DoorSignal | undefined;
   readonly create?: DoorCreate;
+  readonly action?: ReactNode;
   readonly onSelect: () => void;
 };
 
@@ -31,6 +33,7 @@ export const ColumnDoorRow = ({
   isCurrent,
   signal,
   create,
+  action,
   onSelect,
 }: Props) => {
   const name = signal === undefined ? label : `${label}, ${signal.fact}`;
@@ -81,6 +84,14 @@ export const ColumnDoorRow = ({
           {...(create.shortcut !== undefined && { shortcut: create.shortcut })}
           onCreate={create.onCreate}
         />
+      )}
+      {action === undefined || action === null ? null : (
+        <div
+          data-door-action={id}
+          className="absolute right-0.5 top-0.5 flex size-6 items-center justify-center"
+        >
+          {action}
+        </div>
       )}
     </div>
   );

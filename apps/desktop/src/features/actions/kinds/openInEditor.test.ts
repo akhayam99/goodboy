@@ -61,6 +61,7 @@ const sessionFacts: SessionFacts = {
   title: 'Fix duplicate credit',
   isArchived: false,
   isPinned: false,
+  isRefreshing: false,
   canMovePinUp: false,
   canMovePinDown: false,
   isBranchless: false,

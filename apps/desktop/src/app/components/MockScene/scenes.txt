@@ -584,6 +584,8 @@ r4-layout-settings
 r4-layout-tasks
 r4-layout-terminal
 r4-layout-workflows
+r4-sidebar-filter
+r4-sidebar-row-menu
 rail-draft-dot
 rail-flyout
 rail-pinned

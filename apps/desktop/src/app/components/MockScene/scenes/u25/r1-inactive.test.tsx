@@ -130,32 +130,30 @@ describe('the r1 inactive sessions scenes', () => {
     expect(sidebarRows({ root: sidebarInactive() })).toEqual(INACTIVE_ROWS);
   });
 
-  it('r1-inactive-list ends the Sessions list with an Inactive group whose last column says how long', async () => {
+  it('r1-inactive-list keeps an inactive session in its stage group, its last column says how long', async () => {
     await mount('r1-inactive-list');
 
-    const heading = await screen.findByRole('heading', { level: 2, name: 'Inactive' });
-    const group = heading.closest('li');
-    if (group === null) {
-      throw new Error('the Inactive heading has no group');
+    const list = await screen.findByRole('list', { name: 'Sessions' });
+    expect(screen.queryByRole('heading', { level: 2, name: 'Inactive' })).toBeNull();
+    for (const inactive of INACTIVE) {
+      const row = within(list).getByRole('button', { name: inactive.title });
+      expect(row.textContent).toContain(inactive.age);
+      expect(row.closest('li')?.parentElement?.closest('li')).not.toBeNull();
     }
-    const rows = within(group).getAllByRole('button');
-    expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual(
-      INACTIVE.map((row) => row.title),
-    );
-    for (const [index, row] of rows.entries()) {
-      expect(row.textContent).toContain(INACTIVE[index]?.age ?? '');
-    }
-    expect(within(group).getByText('3')).toBeDefined();
   });
 
-  it('r1-inactive-list-grouped keeps the stage groups and adds Inactive last', async () => {
+  it('r1-inactive-list-grouped groups by the board stages in lane order and adds no Inactive group', async () => {
     await mount('r1-inactive-list-grouped');
 
-    await screen.findByRole('heading', { level: 2, name: 'Inactive' });
+    await screen.findByRole('list', { name: 'Sessions' });
     const headings = screen
       .getAllByRole('heading', { level: 2 })
-      .map((heading) => heading.textContent);
-    expect(headings.at(-1)).toBe('Inactive');
+      .map((heading) => heading.textContent ?? '');
+    const LANE_ORDER = ['Building', 'Running', 'Needs you', 'In review', 'Done', 'Archived'];
     expect(headings.length).toBeGreaterThan(1);
+    expect(headings.every((heading) => LANE_ORDER.includes(heading))).toBe(true);
+    expect([...headings].sort((a, b) => LANE_ORDER.indexOf(a) - LANE_ORDER.indexOf(b))).toEqual(
+      headings,
+    );
   });
 });

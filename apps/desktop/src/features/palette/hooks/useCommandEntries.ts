@@ -20,7 +20,6 @@ import { NAMES, formerNamesOf } from '../../../shared/names';
 import { getAppliedTheme, oppositeOfApplied, switchTheme } from '../../../shared/lib/theme';
 import { classifyAgent } from '../../session/agent-kind';
 import { useLensDestinations } from '../../session/hooks/useLensDestinations';
-import { useSessionRefresh } from '../../session/hooks/useSessionRefresh';
 import { openLens } from '../../session/openLens';
 import { LENS_ICON } from '../../session/lens-labels';
 import { requestNewSession } from '../../session/requestNewSession';
@@ -135,7 +134,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const projectGitStatus = useAppStore((s) => s.projectGitStatus);
   const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
-  const refreshSession = useSessionRefresh();
   const { showToast } = useToast();
   const theme = getAppliedTheme();
 
@@ -225,19 +223,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           shortcut: 'lens.context',
           run: () => toggleContextDrawer({ sessionId }),
         },
-        ...(currentSession?.archivedAt == null
-          ? [
-              {
-                key: 'action:refresh',
-                label: SHORTCUTS['session.refresh'].label,
-                kind: 'page' as const,
-                group: 'action' as const,
-                icon: CONCEPT_ICONS.refresh,
-                shortcut: 'session.refresh' as const,
-                run: () => void refreshSession({ sessionId }),
-              },
-            ]
-          : []),
         {
           key: 'goto:board',
           label: 'Board',
@@ -586,7 +571,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     sessions,
     everywhere,
     currentWorkspace,
-    currentSession,
     sessionId,
     projectPairs,
     agents,
@@ -610,7 +594,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     toggleContextDrawer,
     runScript,
     reportError,
-    refreshSession,
     showToast,
     theme,
     settingsGroups,

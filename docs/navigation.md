@@ -23,14 +23,20 @@
   the Board the filter holds Project and Sort, plus a Repositories footer
   (`RepoStatusSection`): Check origin while every repository is fine, else the
   "2 repos need attention" pill (`RepoAttentionPill`) that opens the repository
-  popover whole; the List adds Status, Archive and Group. New session is not
+  popover whole; the List adds Status and Archive (no Group: the List always
+  groups by stage). New session is not
   here: it is the first row of the column. Nothing else sits on that line, and
   no row sits under it. The List is one `ListGrid` with 32px
   rows on the 960 list measure: state node 28 (glyph 16, so the title sits 24
   after it), title led by its issue key in mono when there is one, project 128,
-  signal 96, updated 56, right aligned; it follows the filter's sort and
-  grouping, shows archived sessions only under Show archived, and a row opens
-  its session. Header and lanes share one frame centred in the pane, so the
+  signal 96, updated 56, right aligned. It groups by the board lanes, in lane
+  order (`listStageGroupsOf`: Building, Running, Needs you, In review, Done,
+  then Archived under Show archived), each group labelled by `stageWord` with
+  its count from two, an empty group not drawn, and no Inactive group: an
+  inactive session sits in its stage with its age in the last column. Every row
+  carries the 2px stage track of its card at the row edge (`ToneBar` row
+  density through the `ListGridRow` track slot, static); it follows the filter's
+  sort and Status, and a row opens its session. Header and lanes share one frame centred in the pane, so the
   title's left edge is the first lane's left edge and the actions' right edge is
   the last lane's right edge.
   There are six lanes in pipeline order (building, running, needs you, in
@@ -49,8 +55,12 @@
   folded, and no lane caps its cards. Selection covers every lane in lane order:
   Select all, Shift ranges and the lasso run across Done and Archived too. Lane
   labels are sentence case in the neutral grade with the count in gray, never
-  the stage color. Cards are a fixed 96px and neutral, no colored side bar (the
-  lane names the state): a goal of up to two lines (the full goal in the
+  the stage color. Cards are a fixed 96px with the stage track inside their
+  left padding (`ToneBar` card density, tone from `stageTrackOf`, the one
+  function the List rows read too: building neutral, running info and
+  breathing, needs you warning, in review success, done merged, archived
+  neutral and still; it steps under the selection box while one shows): a goal
+  of up to two lines (the full goal in the
   tooltip) is the card's one button, the quick action sits at its right, the
   lifecycle menu is the right click and Shift F10, and the bottom line holds the project
   in gray (`projectLineOf`, "payments-api +1" for several) and one signal at the
@@ -396,6 +406,15 @@ never exists on one surface only.
   for linking work to a session or workspace. Moving a task is one verb,
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
+- **The sidebar session row.** Its right click (and Shift+F10) opens the
+  session kind's menu, the full set of session verbs: Open, the lenses, Rename,
+  Pin session or Unpin session, **Refresh session** (`session.refresh`, the
+  same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
+  flight), Autopilot, Start agent, Link work, the copies, Archive and Delete,
+  whose confirm still asks first. The palette lists the same verbs. The row is
+  `select-none`: on macOS WebKit selects the word under the pointer before the
+  contextmenu event, and a selection inside the row keeps the native menu
+  (`keepsNativeMenu`), so the row never offers text to select.
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.
@@ -883,17 +902,21 @@ hands the rest of the summary to the hover card; the session header keeps its
 chips.
 
 **The user chooses what the list shows and in what order.** The sidebar list
-has no "Sessions" eyebrow (the Sessions door already names it): its first row
-holds one funnel button at the right, **Filter sessions**
-(`SessionFilterPopover`), with a neutral 6px dot while a filter is on; the
-Sessions page header holds the same button. Its
-popover is a labelled dialog, not a menu of menus. Status lists Needs you,
+has no "Sessions" eyebrow and no filter row of its own: the Sessions door row
+holds one funnel button in its action slot at the right, **Filter sessions**
+(`SidebarSessionsFilter` over `SessionFilterPopover`), with a neutral 6px dot
+while a filter is on. The door row never regroups, so the popover stays open
+while the list under it changes grouping. The Sessions page header holds the
+same button. Its popover is a labelled dialog, not a menu of menus. Every
+choice starts on its label at the section's left edge, with its count after
+it (from one; a zero row is dimmed with no number) and one check slot last,
+as in every other menu (`FilterChoice`). Status lists Needs you,
 Running, In review, Building and Done with their counts (`statusFilter` in the
 prefs). Project lists the projects of the sessions with their counts and shows
 only when two or more projects have sessions (the same selection as the board's
 project filter). Archive holds Show archived. Sort offers Needs you first
 [default], Alphabetical, Last activity and Created; Group offers None
-[default], PR state, Stage and Project. **Clear filters** shows while a filter
+[default], PR state, Stage and Project (the Sessions page drops Group). **Clear filters** shows while a filter
 is active. The choices persist per workspace in the browser storage
 (`goodboy:session-view:<workspace id>`, version 3: a version 2 record loads with
 an empty status filter); nothing goes to the database.
@@ -949,10 +972,9 @@ whatever the sort. The sidebar draws it last as **Inactive** with its count
 from two, after the fold, never folded; in a grouped list it is a toggle like
 the others, open by default. Its rows show the title alone: the label already
 says Inactive, and the age lives on the hover card. The List view of the
-Sessions page uses the same model: a flat list becomes an unnamed group
-followed by **Inactive**, and the last column of an inactive row reads its age
-in the same form as every other row ("4d ago", `inactiveWords` over
-`formatAge`). A change to any input recomputes at once, so
+Sessions page groups by stage like the Board and draws no Inactive group: an
+inactive row stays in its stage, and its last column reads its age in the same
+form as every other row ("4d ago", `inactiveWords` over `formatAge`). A change to any input recomputes at once, so
 opening, an agent starting, a new reply, a draft or a pull request event puts
 the row straight back in the list. `⌘⇧[` and `⌘⇧]` walk the Inactive rows too.
 

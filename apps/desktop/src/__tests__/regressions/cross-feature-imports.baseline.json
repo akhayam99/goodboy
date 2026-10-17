@@ -47,7 +47,7 @@
     "onboarding -> providers": 4,
     "onboarding -> session": 1,
     "palette -> search": 1,
-    "palette -> session": 2,
+    "palette -> session": 1,
     "palette -> settings": 1,
     "permissions -> chat": 2,
     "plans -> artifacts": 1,

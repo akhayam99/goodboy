@@ -56,6 +56,7 @@ export const SessionsHeader = ({
             archivedCount={archivedCount}
             onArchivedShownChange={onArchivedShownChange}
             isBoard={view === 'board'}
+            canGroup={false}
             hasAttention={gitEntries.some(({ status }) => repoNeedsAttention({ status }))}
             footer={<RepoStatusSection workspaceId={workspaceId} entries={gitEntries} />}
           />

@@ -35,6 +35,7 @@ import { useBoardSelection } from './useBoardSelection';
 import { SessionsHeader } from './SessionsHeader';
 import { SessionsList } from './SessionsList';
 import { SessionsListSkeleton } from './SessionsListSkeleton';
+import { listStageGroupsOf } from './SessionsList/listStageGroupsOf';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { useClearSessionFilters } from '../SessionActivityBar/useClearSessionFilters';
@@ -207,11 +208,15 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     ? unreachableDescription
     : 'Sessions branch from the latest commit. Open the git pill on the project and make the first commit, or link another project in workspace settings.';
   const boardShown = groups.reduce((count, group) => count + group.sessions.length, 0);
-  const hiddenCount = view === 'board' ? sessions.length - boardShown : listModel.hiddenByFilters;
   const shownArchived = prefs.isArchivedShown ? projectArchived : EMPTY_ARRAY;
-  const listShown =
-    listModel.groups.reduce((count, group) => count + group.sessions.length, 0) +
-    shownArchived.length;
+  const listGroups = listStageGroupsOf({
+    byStage,
+    statusFilter: prefs.statusFilter,
+    archived: shownArchived,
+  });
+  const listShown = listGroups.reduce((count, group) => count + group.sessions.length, 0);
+  const listLiveShown = listShown - shownArchived.length;
+  const hiddenCount = sessions.length - (view === 'board' ? boardShown : listLiveShown);
   const hoveredId = hover.target?.sessionId ?? null;
   const hoveredSession =
     hoveredId === null ? null : (boardSessions.find((session) => session.id === hoveredId) ?? null);
@@ -325,9 +330,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 />
               ) : (
                 <SessionsList
-                  groups={listModel.groups}
-                  groupMode={prefs.group}
-                  shownArchived={shownArchived}
+                  groups={listGroups}
                   inactiveLabels={listModel.inactiveLabels}
                   onOpen={nav.selectCard}
                 />

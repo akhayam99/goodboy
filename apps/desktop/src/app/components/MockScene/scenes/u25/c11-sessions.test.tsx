@@ -109,6 +109,39 @@ describe('the c11 Sessions scenes', () => {
     ).toBe('true');
   });
 
+  it('c11-sessions-list splits the rows by the board stages, each row on its stage track', async () => {
+    await mount('c11-sessions-list');
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent ?? '');
+    expect(headings).toEqual(['Building', 'Running', 'Needs you', 'In review', 'Done']);
+    const TONE_OF_STAGE: Readonly<Record<string, string>> = {
+      Building: 'neutral',
+      Running: 'info',
+      'Needs you': 'warning',
+      'In review': 'success',
+      Done: 'merged',
+    };
+    for (const heading of screen.getAllByRole('heading', { level: 2 })) {
+      const group = heading.closest('li');
+      if (group === null) {
+        throw new Error(`no group for ${heading.textContent ?? ''}`);
+      }
+      const tones = within(group)
+        .getAllByTestId('tone-bar')
+        .map((track) => track.getAttribute('data-tone'));
+      expect(new Set(tones)).toEqual(new Set([TONE_OF_STAGE[heading.textContent ?? '']]));
+    }
+  });
+
+  it('c11-sessions-board draws each card on the track of its lane', async () => {
+    await mount('c11-sessions-board');
+    const running = screen.getByRole('group', { name: 'running' });
+    const tracks = within(running).getAllByTestId('tone-bar');
+    expect(tracks.length).toBeGreaterThan(0);
+    expect(tracks.every((track) => track.getAttribute('data-tone') === 'info')).toBe(true);
+  });
+
   it('c11-sessions-list-grouped heads each stage group with its count', async () => {
     await mount('c11-sessions-list-grouped');
     expect(screen.getByRole('heading', { level: 2, name: 'Needs you' })).toBeDefined();
@@ -200,14 +233,14 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
     expect(within(dialog).queryByRole('group', { name: 'Status' })).toBeNull();
   });
 
-  it('the List view filter keeps Status, Archive and Group', async () => {
+  it('the List view filter keeps Status and Archive, and no Group: the list groups by stage', async () => {
     await mount('c11-sessions-list');
     fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
     await settle();
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
     expect(within(dialog).getByRole('group', { name: 'Status' })).toBeDefined();
     expect(within(dialog).getByRole('group', { name: 'Archive' })).toBeDefined();
-    expect(within(dialog).getByRole('group', { name: 'Group' })).toBeDefined();
+    expect(within(dialog).queryByRole('group', { name: 'Group' })).toBeNull();
   });
 
   it('repo status pill opens the whole repository popover with Update and the detail', async () => {

@@ -18,7 +18,6 @@ import { useProjectFilterOptions } from '../../../hooks/useProjectFilterOptions'
 import { useSidebarPeekHold } from '../../SidebarPeekOverlay/hold';
 import { useClearSessionFilters } from '../useClearSessionFilters';
 import { FilterChoice } from './FilterChoice';
-import { FilterCount } from './FilterCount';
 import { FilterSection } from './FilterSection';
 
 type SortOption = {
@@ -70,6 +69,7 @@ type Props = {
   readonly isBoard?: boolean;
   readonly footer?: ReactNode;
   readonly hasAttention?: boolean;
+  readonly canGroup?: boolean;
 };
 
 export const SessionFilterPopover = ({
@@ -80,6 +80,7 @@ export const SessionFilterPopover = ({
   isBoard = false,
   footer,
   hasAttention = false,
+  canGroup = true,
 }: Props) => {
   const prefs = useSessionViewPrefs(workspaceId);
   const setSessionViewPrefs = useAppStore((state) => state.setSessionViewPrefs);
@@ -168,7 +169,7 @@ export const SessionFilterPopover = ({
               label={option.label}
               isChecked={prefs.statusFilter.includes(option.stage)}
               onSelect={() => toggleStatus(option.stage)}
-              trailing={<FilterCount count={stageCounts.get(option.stage) ?? 0} />}
+              count={stageCounts.get(option.stage) ?? 0}
             />
           ))}
         </FilterSection>
@@ -182,7 +183,7 @@ export const SessionFilterPopover = ({
               label={option.label}
               isChecked={selectedProjectIds.includes(option.id)}
               onSelect={() => toggleProject(option.id)}
-              trailing={<FilterCount count={option.count} />}
+              count={option.count}
             />
           ))}
         </FilterSection>
@@ -191,7 +192,8 @@ export const SessionFilterPopover = ({
         <FilterSection title="Archive">
           <FilterChoice
             kind="multiple"
-            label={`Show archived (${archivedCount})`}
+            label="Show archived"
+            count={archivedCount}
             isChecked={prefs.isArchivedShown}
             onSelect={() => onArchivedShownChange(!prefs.isArchivedShown)}
           />
@@ -208,7 +210,7 @@ export const SessionFilterPopover = ({
           />
         ))}
       </FilterSection>
-      {isBoard ? null : (
+      {isBoard || !canGroup ? null : (
         <FilterSection title="Group">
           {GROUP_OPTIONS.map((option) => (
             <FilterChoice

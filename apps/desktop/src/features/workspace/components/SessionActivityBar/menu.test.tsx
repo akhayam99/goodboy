@@ -117,7 +117,7 @@ describe('the Sessions filter popover', () => {
       'Project',
     ]);
     expect(within(menu).getByRole('group', { name: 'Project' })).toBeDefined();
-    expect(within(menu).getByRole('checkbox', { name: 'Show archived (2)' })).toBeDefined();
+    expect(within(menu).getByRole('checkbox', { name: 'Show archived 2' })).toBeDefined();
   });
 
   it('starts on Needs you first and no grouping', () => {
@@ -169,7 +169,7 @@ describe('the funnel', () => {
     expect(trigger.closest('.relative')?.textContent).toBe('');
   });
 
-  it('lists the stages with their counts and hides the project facet for a single project', () => {
+  it('lists the stages label first, a count from one and the check slot last, with no project facet for one project', () => {
     seedColumn({
       store: useAppStore,
       sessions: [webhook, copy],
@@ -181,11 +181,25 @@ describe('the funnel', () => {
     renderBar();
     const dialog = openMenu();
     const status = within(dialog).getByRole('group', { name: 'Status' });
-    expect(
-      within(status)
-        .getAllByRole('checkbox')
-        .map((item) => item.textContent),
-    ).toEqual(['Needs you0', 'Running0', 'In review0', 'Building2', 'Done0']);
+    const rows = within(status).getAllByRole('checkbox');
+    expect(rows.map((item) => item.textContent)).toEqual([
+      'Needs you',
+      'Running',
+      'In review',
+      'Building2',
+      'Done',
+    ]);
+    expect(rows.map((item) => item.hasAttribute('data-filter-empty'))).toEqual([
+      true,
+      true,
+      true,
+      false,
+      true,
+    ]);
+    for (const row of rows) {
+      expect(row.firstElementChild?.textContent).toBe(row.textContent?.replace(/\d+$/, ''));
+      expect(row.lastElementChild?.hasAttribute('data-filter-check')).toBe(true);
+    }
     expect(within(dialog).queryByRole('group', { name: 'Project' })).toBeNull();
   });
 
@@ -377,7 +391,7 @@ describe('show archived', () => {
 
   it('adds the archived sessions after the rest, with the archived node', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('checkbox', { name: 'Show archived (2)' }));
+    fireEvent.click(within(openMenu()).getByRole('checkbox', { name: 'Show archived 2' }));
     expect(titlesOnScreen().slice(-2).sort()).toEqual([
       'Legacy hook cleanup',
       'Spike: batch settle',
@@ -389,10 +403,10 @@ describe('show archived', () => {
 
   it('hides them again and remembers the choice', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('checkbox', { name: 'Show archived (2)' }));
+    fireEvent.click(within(openMenu()).getByRole('checkbox', { name: 'Show archived 2' }));
     expect(storedPrefs(harborline.id)).toMatchObject({ isArchivedShown: true });
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('checkbox', { name: 'Show archived (2)' }),
+      within(screen.getByRole('dialog')).getByRole('checkbox', { name: 'Show archived 2' }),
     );
     expect(titlesOnScreen()).toHaveLength(3);
   });
@@ -401,7 +415,7 @@ describe('show archived', () => {
     mount();
     fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Project' }));
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('checkbox', { name: 'Show archived (2)' }),
+      within(screen.getByRole('dialog')).getByRole('checkbox', { name: 'Show archived 2' }),
     );
     closeMenu();
     expect(screen.getByText('Archived')).toBeDefined();
