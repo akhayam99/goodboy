@@ -574,8 +574,12 @@ r1-inactive-sidebar
 r1-inactive-sidebar-grouped
 r1-motion-shell-folded
 r1-motion-shell-open
+r4-brand-dark
+r4-brand-light
 r4-chatlist-selecting
 r4-chatlist-states
+r4-column-dark
+r4-column-light
 r4-comments-drawer
 r4-comments-drawer-failed
 r4-comments-drawer-ready
@@ -610,12 +614,14 @@ r4-repos-behind
 r4-repos-closed
 r4-repos-dirty
 r4-repos-failed
+r4-repos-mix
 r4-repos-quiet
 r4-sidebar-filter
 r4-sidebar-row-menu
 r4-title-edit
 r4-title-edit-near-limit
 r4-title-row-edit
+r4-workspace-switcher
 rail-draft-dot
 rail-flyout
 rail-pinned

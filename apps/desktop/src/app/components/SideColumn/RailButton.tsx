@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { PANE_RHYTHM, Tooltip, cn } from '@goodboy/ui';
 import type { ShortcutId } from '../../../shared/keyboard/registry';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
@@ -60,7 +60,7 @@ export const RailButton = ({
       className={cn(RAIL_BUTTON, isCurrent ? RAIL_BUTTON_CURRENT : RAIL_BUTTON_IDLE, className)}
     >
       {isIconSlotted ? (
-        <span className="flex size-4 shrink-0 items-center justify-center">
+        <span data-nav-icon="" className={PANE_RHYTHM.navRail.icon}>
           <Icon size={iconSize} aria-hidden />
         </span>
       ) : (

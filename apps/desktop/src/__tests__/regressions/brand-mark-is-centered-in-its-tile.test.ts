@@ -13,7 +13,7 @@ const CHROME_MARK = join(
   'app',
   'components',
   'GoodboyChip',
-  'GoodboyChipLabel.tsx',
+  'BrandLockup.tsx',
 );
 const DESKTOP_STYLES = join(__dirname, '..', '..', 'styles.css');
 const DESKTOP_ICONS = join(__dirname, '..', '..', '..', 'src-tauri', 'icons');
@@ -494,7 +494,7 @@ describe('brand mark is centered in its tile', () => {
     expect(margins.top).toBe(margins.bottom);
   });
 
-  it('shows the chrome mark as a bare glyph in the theme foreground, with no tile', () => {
+  it('draws the chrome mark in the brand chip foreground, centered by the box model', () => {
     expect(CHROME_MARK_SOURCE).not.toContain('absolute');
     expect(CHROME_MARK_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
     expect(CHROME_MARK_SOURCE).not.toContain('bg-brand');

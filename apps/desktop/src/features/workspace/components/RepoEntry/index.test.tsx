@@ -37,6 +37,13 @@ const PAYMENTS = aProject({
   rootPath: '/work/payments-api',
   baseBranch: 'main',
 });
+const RELAY = aProject({
+  workspaceId: WORKSPACE,
+  name: 'notify-relay',
+  kind: 'repo',
+  rootPath: '/work/notify-relay',
+  baseBranch: 'main',
+});
 const LEDGER = aProject({
   workspaceId: WORKSPACE,
   name: 'ledger-core',
@@ -136,6 +143,15 @@ const rowOf = ({ name }: { readonly name: string }): HTMLElement => {
   return row;
 };
 
+const unfoldQuiet = (): HTMLElement => {
+  const line = document.querySelector<HTMLElement>('[data-testid="repo-quiet"] > button');
+  if (line === null) {
+    throw new Error('no quiet line');
+  }
+  fireEvent.click(line);
+  return line;
+};
+
 const callsOf = ({ command }: { readonly command: string }) =>
   storySpies.tauriInvoke.mock.calls.filter(([name]) => name === command);
 
@@ -161,6 +177,8 @@ describe('the repositories entry in the top bar', () => {
     expect(entry().getAttribute('data-repo-entry')).toBe('info');
     const dialog = open();
     expect(within(rowOf({ name: 'payments-api' })).getByText('3 behind')).toBeDefined();
+    expect(document.querySelector('[data-repo-row="ledger-core"]')).toBeNull();
+    expect(unfoldQuiet().textContent).toBe('1 up to date');
     expect(within(rowOf({ name: 'ledger-core' })).getByText('Up to date')).toBeDefined();
     expect(
       within(rowOf({ name: 'ledger-core' })).queryByRole('button', { name: /^Pull/ }),
@@ -176,28 +194,85 @@ describe('the repositories entry in the top bar', () => {
 
   it('offers Pull all for the repos that can fast-forward, never for a diverged one', async () => {
     await mount({
-      projects: [PAYMENTS, LEDGER],
+      projects: [PAYMENTS, LEDGER, RELAY],
       answers: {
         [PAYMENTS.rootPath]: reportOf({ state: 'behind', behind: 3 }),
         [LEDGER.rootPath]: reportOf({ state: 'diverged', ahead: 1, behind: 2 }),
+        [RELAY.rootPath]: reportOf({ state: 'behind', behind: 1 }),
       },
       extra: { checkout_update_base: { base: 'main', checkoutBranch: 'main', commitsPulled: 3 } },
     });
 
-    expect(entry().textContent).toBe('3 behind · Diverged');
+    expect(entry().textContent).toBe('2 repos behind · Diverged');
     expect(entry().getAttribute('data-repo-entry')).toBe('warning');
     const dialog = open();
     expect(within(rowOf({ name: 'ledger-core' })).getByText('Diverged ↑1 ↓2')).toBeDefined();
+    expect(
+      within(rowOf({ name: 'ledger-core' })).getByText(/merge or rebase it yourself/),
+    ).toBeDefined();
     expect(
       within(rowOf({ name: 'ledger-core' })).queryByRole('button', { name: /^Pull/ }),
     ).toBeNull();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Pull all' }));
 
-    await waitFor(() => expect(callsOf({ command: 'checkout_update_base' })).toHaveLength(1));
-    expect(callsOf({ command: 'checkout_update_base' })[0]?.[1]).toEqual(
+    await waitFor(() => expect(callsOf({ command: 'checkout_update_base' })).toHaveLength(2));
+    const pulled = callsOf({ command: 'checkout_update_base' }).map(([, args]) => args);
+    expect(pulled).toEqual([
       expect.objectContaining({ checkoutPath: PAYMENTS.rootPath }),
+      expect.objectContaining({ checkoutPath: RELAY.rootPath }),
+    ]);
+  });
+
+  it('hides Pull all while only one repo can pull', async () => {
+    await mount({
+      projects: [PAYMENTS, LEDGER],
+      answers: {
+        [PAYMENTS.rootPath]: reportOf({ state: 'behind', behind: 3 }),
+        [LEDGER.rootPath]: reportOf({ state: 'diverged', ahead: 1, behind: 2 }),
+      },
+    });
+
+    const dialog = open();
+    expect(within(dialog).queryByRole('button', { name: 'Pull all' })).toBeNull();
+    expect(
+      within(rowOf({ name: 'payments-api' })).getByRole('button', {
+        name: 'Pull main in payments-api',
+      }),
+    ).toBeDefined();
+  });
+
+  it('lists the repos that need attention first and folds the rest into one line', async () => {
+    const quiet = Array.from({ length: 4 }, (_, index) =>
+      aProject({
+        workspaceId: WORKSPACE,
+        name: `acme-tool-${index}`,
+        kind: 'repo',
+        rootPath: `/work/acme-tool-${index}`,
+        baseBranch: 'main',
+      }),
     );
+    await mount({
+      projects: [...quiet, PAYMENTS, LEDGER, RELAY],
+      answers: {
+        [PAYMENTS.rootPath]: reportOf({ state: 'fetch-failed' }),
+        [LEDGER.rootPath]: reportOf({ state: 'diverged', ahead: 1, behind: 2 }),
+        [RELAY.rootPath]: reportOf({ state: 'behind', behind: 1 }),
+      },
+    });
+
+    const dialog = open();
+    const names = (): ReadonlyArray<string | null> =>
+      Array.from(dialog.querySelectorAll('[data-repo-row]')).map((row) =>
+        row.getAttribute('data-repo-row'),
+      );
+    expect(names()).toEqual(['notify-relay', 'ledger-core', 'payments-api']);
+    const line = unfoldQuiet();
+    expect(line.textContent).toBe('4 up to date');
+    expect(line.getAttribute('aria-expanded')).toBe('true');
+    expect(names()).toHaveLength(7);
+    fireEvent.click(line);
+    expect(names()).toHaveLength(3);
   });
 
   it('explains a dirty checkout on the base branch instead of offering Pull', async () => {
@@ -281,26 +356,56 @@ describe('the repositories entry in the top bar', () => {
     expect(entry().getAttribute('aria-label')).toBe('Repositories');
   });
 
-  it('shows a quiet failure with Retry, and Retry fetches again without the cache', async () => {
+  it('shows a quiet failure with Retry on its row, and Retry fetches again without the cache', async () => {
     await mount({
       projects: [PAYMENTS],
       answers: { [PAYMENTS.rootPath]: reportOf({ state: 'fetch-failed' }) },
     });
 
     expect(entry().textContent).toBe('Check failed');
-    const dialog = open();
-    expect(within(dialog).getByText("Couldn't reach origin for 1 repo")).toBeDefined();
+    open();
+    const row = rowOf({ name: 'payments-api' });
+    expect(within(row).getByText('Could not resolve host: github.com')).toBeDefined();
 
     stubStoryInvoke({
       project_git_status: statusOf({}),
       repo_identity: null,
       repo_base_divergence: reportOf({ state: 'behind', behind: 2 }),
     });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Retry' }));
+    fireEvent.click(within(row).getByRole('button', { name: 'Retry the check of payments-api' }));
 
     await waitFor(() => expect(entry().textContent).toBe('2 behind'));
     const last = callsOf({ command: 'repo_base_divergence' }).at(-1)?.[1];
     expect(isDivergenceArgs(last) ? last.maxAgeMs : null).toBe(0);
+  });
+
+  it('shows the title, the check time and the refresh on one header row', async () => {
+    await mount({ projects: [PAYMENTS, LEDGER], answers: {} });
+
+    const dialog = open();
+    const header = dialog.querySelector<HTMLElement>('[data-repo-header]');
+    expect(header?.textContent).toMatch(/^RepositoriesChecked /);
+    expect(
+      header === null ? null : within(header).getByRole('button', { name: 'Check now' }),
+    ).not.toBeNull();
+  });
+
+  it('shows a repo in Finder and opens it in the editor from its row, in one click', async () => {
+    await mount({
+      projects: [PAYMENTS],
+      answers: { [PAYMENTS.rootPath]: reportOf({ state: 'behind', behind: 1 }) },
+      extra: { reveal_in_file_manager: null, open_in_editor: null },
+    });
+
+    open();
+    const row = rowOf({ name: 'payments-api' });
+    fireEvent.click(within(row).getByRole('button', { name: 'Show payments-api in Finder' }));
+    fireEvent.click(within(row).getByRole('button', { name: 'Open payments-api in the editor' }));
+
+    await waitFor(() => expect(callsOf({ command: 'open_in_editor' })).toHaveLength(1));
+    expect(callsOf({ command: 'reveal_in_file_manager' })[0]?.[1]).toEqual({
+      path: PAYMENTS.rootPath,
+    });
   });
 
   it('is absent from a workspace without repositories', async () => {
@@ -330,6 +435,7 @@ describe('the repository detail inside the entry', () => {
     });
 
     open();
+    unfoldQuiet();
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
     expect(screen.getByText('This folder has no git repository yet')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Start a repository' }));
@@ -350,6 +456,7 @@ describe('the repository detail inside the entry', () => {
     });
 
     open();
+    unfoldQuiet();
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
     fireEvent.click(screen.getByRole('button', { name: /Fast-forward main to origin\/main/ }));
     await waitFor(() => expect(callsOf({ command: 'checkout_fast_forward' })).toHaveLength(1));
@@ -370,6 +477,7 @@ describe('the repository detail inside the entry', () => {
     });
 
     open();
+    unfoldQuiet();
     fireEvent.click(screen.getByRole('button', { name: 'payments-api' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open in editor' }));
 

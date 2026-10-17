@@ -18,6 +18,17 @@ const IDENTITY_ROW = readFileSync(
   join(SOURCE_ROOT, 'features', 'workspace', 'components', 'WorkspaceIdentityRow', 'index.tsx'),
   'utf8',
 );
+const TILE = readFileSync(
+  join(
+    SOURCE_ROOT,
+    'features',
+    'workspace',
+    'components',
+    'WorkspaceSwitcher',
+    'WorkspaceTile.tsx',
+  ),
+  'utf8',
+);
 const STYLES = readFileSync(join(SOURCE_ROOT, 'styles.css'), 'utf8');
 const COLUMN_RAIL = readFileSync(
   join(SOURCE_ROOT, 'app', 'components', 'SideColumn', 'ColumnRail.tsx'),
@@ -59,7 +70,7 @@ describe('workspace tile and collapsed rail axis', () => {
     const bar = classNameContaining({ source: TOP_BAR, marker: 'grid h-9' });
     const row = classNameContaining({ source: IDENTITY_ROW, marker: 'flex w-full' });
     const trigger = classNameContaining({ source: IDENTITY_ROW, marker: 'group flex w-full' });
-    const tile = classNameContaining({ source: IDENTITY_ROW, marker: 'flex size-5' });
+    const tile = classNameContaining({ source: TILE, marker: 'flex size-5' });
 
     const tileCenter =
       spacingOf({ className: bar, prefix: 'px' }) +

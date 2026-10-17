@@ -1,6 +1,12 @@
 import { memo, useId } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { ROW_INTERACTIVE, SelectionCheckbox, cn, inlineMarkdownText } from '@goodboy/ui';
+import {
+  PANE_RHYTHM,
+  ROW_INTERACTIVE,
+  SelectionCheckbox,
+  cn,
+  inlineMarkdownText,
+} from '@goodboy/ui';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
@@ -163,7 +169,9 @@ const SessionActivityItemView = ({
           isCurrent && 'bg-selected',
         )}
       >
-        <StateNode node={node} isOnSelectedRow={isSelected || isCurrent} isCheckboxSlot />
+        <span data-nav-icon="" className={PANE_RHYTHM.navRail.icon}>
+          <StateNode node={node} isOnSelectedRow={isSelected || isCurrent} isCheckboxSlot />
+        </span>
         <SessionRowTitle keys={keys} title={title} className="flex-1" titleClassName="truncate" />
       </button>
       <span id={descriptionId} className="sr-only">

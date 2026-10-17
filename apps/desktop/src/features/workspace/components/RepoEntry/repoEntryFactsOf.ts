@@ -14,7 +14,6 @@ export type RepoEntryFacts = {
   readonly dot: 'info' | 'warning' | null;
   readonly isFailed: boolean;
   readonly tooltip: string;
-  readonly failedCount: number;
 };
 
 type CountParams = {
@@ -78,6 +77,5 @@ export const repoEntryFactsOf = ({ entries }: Params): RepoEntryFacts => {
     dot: diverged.length > 0 ? 'warning' : behind.length > 0 ? 'info' : null,
     isFailed,
     tooltip: lines.length === 0 ? summary : lines.join(' · '),
-    failedCount,
   };
 };

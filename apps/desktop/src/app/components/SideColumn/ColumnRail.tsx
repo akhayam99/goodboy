@@ -75,6 +75,7 @@ export const ColumnRail = ({
                   key={door.id}
                   id={door.id}
                   icon={door.icon}
+                  isIconSlotted
                   label={signal === undefined ? door.label : `${door.label}, ${signal.fact}`}
                   {...(door.shortcutId !== undefined && {
                     shortcut: door.shortcutId,
@@ -111,6 +112,7 @@ export const ColumnRail = ({
         <RailButton
           id="settings"
           icon={CONCEPT_ICONS.settings}
+          isIconSlotted
           label="Settings"
           shortcut="settings.open"
           isCurrent={place === 'settings'}

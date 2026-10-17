@@ -1736,7 +1736,10 @@ carries a dot while an update or setup waits.
 The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
 menu or Linear's help menu does. Its label says one thing, in this order: an
 update is ready, setup is unfinished (with its progress), or
-"Goodboy | BETA v<version>" with the installed version. The version is
+the brand lockup with the installed version. The lockup
+(`GoodboyChip/BrandLockup.tsx`) is one dark chip holding only the dog mark and
+"Goodboy", the same in light and dark; "Beta" and "v<version>" sit after it in
+theme text. The popover header and the rail mark draw the same lockup. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
 and shows in mock scenes too. The update pill is soft, enters once and holds

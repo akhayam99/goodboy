@@ -13,6 +13,7 @@ export type RepoRowFacts = {
   readonly tooltip: string;
   readonly isPullable: boolean;
   readonly isPulling: boolean;
+  readonly isFailed: boolean;
   readonly note: string | null;
 };
 
@@ -42,6 +43,7 @@ const quiet = ({ word, tooltip, tone }: QuietParams): RepoRowFacts => ({
   tooltip,
   isPullable: false,
   isPulling: false,
+  isFailed: false,
   note: null,
 });
 
@@ -62,6 +64,7 @@ const behindFacts = ({ report, base, upstream }: BehindParams): RepoRowFacts => 
       tooltip,
       isPullable: false,
       isPulling: false,
+      isFailed: false,
       note: dirtyTreeSentence({ count: report.uncommitted }),
     };
   }
@@ -73,6 +76,7 @@ const behindFacts = ({ report, base, upstream }: BehindParams): RepoRowFacts => 
     tooltip,
     isPullable: true,
     isPulling: false,
+    isFailed: false,
     note: isElsewhere
       ? `Pull updates ${base} without switching: your checkout stays on ${report.checkoutBranch}.`
       : null,
@@ -111,6 +115,7 @@ const reportFacts = ({ report }: ReportParams): RepoRowFacts => {
           tone: 'warning',
         }),
         glyph: 'diverged',
+        note: `${base} and ${upstream} both moved. Goodboy only fast-forwards: merge or rebase it yourself.`,
       };
     case 'no-upstream':
       return quiet({
@@ -135,6 +140,8 @@ const reportFacts = ({ report }: ReportParams): RepoRowFacts => {
           tone: 'muted',
         }),
         glyph: 'failed',
+        isFailed: true,
+        note: report.message ?? 'The fetch failed.',
       };
     case 'missing':
       return quiet({

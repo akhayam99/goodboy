@@ -359,6 +359,14 @@ header, with the doors' gap above and below it, and the first row under the
 header is New session, shaped like a session row. `paneRhythm.test.ts` holds the
 three edges and the gaps.
 
+The main sidebar has one icon column. Every leading glyph (New session, the
+doors, the session state nodes, Settings, and the same buttons on the folded
+rail) sits in `navRail.icon`, a 12px slot that centers a glyph of any size at
+22px, the folded rail's axis and the workspace tile's center in the top bar
+while `--titlebar-inset` is 0. `sidebar-icon-column.test.tsx` reads the centers
+in the `r4-column-dark` and `r4-column-light` scenes and on the folded rail,
+within 1px.
+
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
 own row under the figure, never beside the label. A row of cards that carry
