@@ -1,8 +1,10 @@
 import type { Session, SessionExternalTask } from '@goodboy/types';
 import { InlineMarkdown, Input, cn } from '@goodboy/ui';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { sessionRowTitle } from '../../sessionTitle';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
+
+const NO_TASKS: ReadonlyArray<SessionExternalTask> = [];
 
 type Props = {
   readonly session: Session;
@@ -10,10 +12,7 @@ type Props = {
 
 export const OverviewTitle = ({ session }: Props) => {
   const sessionId = session.id;
-  const tasks = useAppStore(
-    (state) =>
-      state.sessionExternalTasks[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<SessionExternalTask>),
-  );
+  const tasks = useAppStore((state) => state.sessionExternalTasks[sessionId] ?? NO_TASKS);
   const { keys, title } = sessionRowTitle({ session, tasks });
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const canRename = session.archivedAt == null;
