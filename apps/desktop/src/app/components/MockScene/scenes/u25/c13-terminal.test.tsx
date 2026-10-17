@@ -101,14 +101,12 @@ describe('c13 terminal scenes', () => {
     expect(screen.getByRole('menuitem', { name: 'Open session' })).toBeDefined();
   });
 
-  it('gives the workspace folder the same strip menu with Copy folder path and no Open session', async () => {
+  it('gives the workspace folder a quiet Copy folder path instead of a menu of one', async () => {
     await renderScene('c13-terminal-workspace');
     await settle(400);
 
-    expect(screen.queryByRole('button', { name: 'Copy folder path' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^More on/ }));
-    expect(screen.getByRole('menuitem', { name: 'Copy folder path' })).toBeDefined();
-    expect(screen.queryByRole('menuitem', { name: 'Open session' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy folder path' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^More on/ })).toBeNull();
     expect(within(grid()).queryByRole('button', { name: /^Open session Workspace/ })).toBeNull();
   });
 

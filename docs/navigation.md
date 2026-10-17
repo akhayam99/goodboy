@@ -3509,11 +3509,12 @@ file, open folders, notes, `Viewed`), and a model in `features/diff/lib/changeTr
 builds the rows. The file cards sit 8 apart on the 960 column (never the pane's width); a
 card header is 44 high on the panel surface and holds the fold chevron, the status square,
 the path (folders faint, the name whole, cut from the left, with a real tooltip) and
-`+N −N`, then five 28px controls that are always there: `Viewed` (a checkbox with the
-word; checked folds the file, tooltip `Changed since you viewed it` when it went stale),
-then icon-only `Comment` (tooltip with the count of both kinds), `Open in editor`, `Copy path`
-(the tooltip reads `Copied` after the click) and `Show whole file`. There is no overflow menu;
-a right click on the header still lists Open in editor, Show whole file and Copy path.
+`+N −N`, then `Viewed` (a checkbox with the word; checked folds the file, tooltip
+`Changed since you viewed it` when it went stale), the `Comment` word (tooltip with the count
+of both kinds) and one `⋯` from the `diffFile` kind of the action registry with `Open in editor`,
+`Show whole file` and `Copy path`. When only one of them applies (a peek with no editor and no
+whole file) the header draws that one as a quiet word instead of a `⋯` of one item
+(`ObjectMenuOrVerb`). A right click on the header lists the same actions.
 `Show whole file` opens a right drawer (`FileWholeDrawer`) with the full file and the change
 marked, loaded for the same view as the page (branch, working tree or commit). The drawer starts
 in the page's Display layout and has its own Unified and Split toggle in its header: it is local

@@ -5,6 +5,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { ObjectMenuOrVerb } from '../../../actions/ObjectMenuOrVerb';
 import type { DiffFileActionTarget } from '../../../actions/types';
 
 type Props = {
@@ -132,11 +133,16 @@ export const FileHeader = ({
           </Button>
         </Tooltip>
       )}
-      <IconButton
-        icon={CONCEPT_ICONS.more}
-        label={`More for ${name}`}
-        aria-haspopup="menu"
-        onClick={menu.onContextMenu}
+      <ObjectMenuOrVerb
+        target={target}
+        menu={
+          <IconButton
+            icon={CONCEPT_ICONS.more}
+            label={`More for ${name}`}
+            aria-haspopup="menu"
+            onClick={menu.onContextMenu}
+          />
+        }
       />
     </div>
   );
