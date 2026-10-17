@@ -78,15 +78,14 @@ describe('the u23 top bar scenes', () => {
     expect(within(bar).getByRole('button', { name: /^Search \(/ })).toBeDefined();
   });
 
-  it('words the Limits overflow as +N providers', async () => {
+  it('shows the Limits overflow as +N with the hidden provider marks', async () => {
     await renderScene('topbar-limits-overflow');
 
-    const overflow = screen
-      .getAllByRole('button', { name: /more providers?$/ })
-      .map((chip) => chip.textContent);
+    const overflow = screen.getAllByRole('button', { name: /more providers?$/ });
     expect(overflow.length).toBeGreaterThan(0);
-    for (const text of overflow) {
-      expect(text).toMatch(/^\+\d+ providers?$/);
+    for (const chip of overflow) {
+      expect(chip.textContent).toMatch(/^\+\d+$/);
+      expect(chip.querySelectorAll('[data-limits-mark]').length).toBeGreaterThan(0);
     }
   });
 
