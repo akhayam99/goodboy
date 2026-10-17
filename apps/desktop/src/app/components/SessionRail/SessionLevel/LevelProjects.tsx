@@ -9,12 +9,12 @@ import { useWorktreeStatusSnapshot } from '../../../../features/session/hooks/us
 import { worktreeStatusTargetsOf } from '../../../../features/session/hooks/useWorktreeStatuses/targets';
 import { BRANCH_LENSES } from '../branchLenses';
 import { useLapProject } from '../../../../features/bootstrap/useLapProject';
-import { FinishedWorktrees } from './FinishedWorktrees';
 import { LevelAddMenu, type BranchableProject } from './LevelAddMenu';
 import { LevelCard } from './LevelCard';
+import { ProjectTree } from './ProjectTree';
 import { useLevelCardFold } from './useLevelCardFold';
 import { useProjectsSignal } from './useProjectsSignal';
-import { WorktreeRow } from './WorktreeRow';
+import { useRailTreeOpen } from './useRailTreeOpen';
 
 type Props = {
   readonly session: Session;
@@ -29,8 +29,10 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   const projects = useAppStore((state) => state.projects);
   const branch = useBranchIdentity({ sessionId });
   const isBranchShown = useAppStore((s) => BRANCH_LENSES.has(s.activeLens[sessionId] ?? null));
-  const shownPath = isActive && isBranchShown ? branch.mountPath : null;
+  const openedPath = isBranchShown ? branch.mountPath : null;
+  const shownPath = isActive ? openedPath : null;
   const fold = useLevelCardFold({ card: 'projects' });
+  const tree = useRailTreeOpen({ sessionId });
   const liveRows = useMemo(() => groups.flatMap((group) => group.rows), [groups]);
   const targets = useMemo(
     () =>
@@ -89,38 +91,16 @@ export const LevelProjects = ({ session, isActive }: Props) => {
         </div>
       )}
       {groups.map((group) => (
-        <div key={group.projectId} data-card-project={group.projectName} className="flex flex-col">
-          <div className="flex h-7 min-w-0 items-center gap-2 px-2 text-ui text-muted-foreground">
-            <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-            <span className="truncate">{group.projectName}</span>
-          </div>
-          <ul aria-label={`${group.projectName} worktrees`} className="flex flex-col">
-            {group.rows.map((row) => (
-              <li key={row.mountId}>
-                <WorktreeRow
-                  sessionId={sessionId}
-                  row={row}
-                  status={
-                    row.worktreePath === null
-                      ? null
-                      : (snapshot.statuses.get(row.worktreePath) ?? null)
-                  }
-                  isShown={row.worktreePath !== null && row.worktreePath === shownPath}
-                  diff={
-                    row.worktreePath === null ? null : (diffStats.get(row.worktreePath) ?? null)
-                  }
-                />
-              </li>
-            ))}
-            <FinishedWorktrees
-              sessionId={sessionId}
-              projectName={group.projectName}
-              rows={group.finishedRows}
-              statuses={snapshot.statuses}
-              shownPath={shownPath}
-            />
-          </ul>
-        </div>
+        <ProjectTree
+          key={group.projectId}
+          sessionId={sessionId}
+          group={group}
+          tree={tree}
+          statuses={snapshot.statuses}
+          diffStats={diffStats}
+          shownPath={shownPath}
+          openedPath={openedPath}
+        />
       ))}
     </LevelCard>
   );

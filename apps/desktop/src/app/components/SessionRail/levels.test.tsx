@@ -595,7 +595,7 @@ describe('the folded session rail', () => {
 
     const icons = within(elementOf('[data-rail-worktrees]', rail())).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label'))).toEqual([
-      `payments-api, goodboy/${openId}, A check failed`,
+      `payments-api, goodboy/${openId}, Open, A check failed`,
     ]);
   });
 

@@ -77,16 +77,7 @@ describe('r4 session rail scenes', () => {
     await mount('r4-rail-session');
 
     const projects = card('Projects');
-    expect(entryLabels(projects)).toEqual([
-      'Pull request',
-      'Comments',
-      'Files',
-      'Checks',
-      'Pull request',
-      'Comments',
-      'Files',
-      'Checks',
-    ]);
+    expect(entryLabels(projects)).toEqual(['Pull request', 'Comments', 'Files', 'Checks']);
     expect(
       within(projects)
         .getAllByRole('button', { name: /^Checks/ })[0]
@@ -148,6 +139,35 @@ describe('r4 session rail scenes', () => {
     expect(rail().hasAttribute('data-rail-folded')).toBe(true);
     expect(rail().querySelector('[data-session-foot]')).toBeNull();
     expect(within(tools()).getAllByRole('button')).toHaveLength(5);
+  });
+
+  it('r4-rail-tree draws many branches with their pull request icons, two open at once', async () => {
+    await mount('r4-rail-tree');
+
+    const projects = card('Projects');
+    const states = [...projects.querySelectorAll('[data-pr-state]')].map((icon) =>
+      icon.getAttribute('data-pr-state'),
+    );
+    expect(states).toEqual([
+      'open',
+      'draft',
+      'queued',
+      'merged',
+      'closed',
+      'open',
+      'approved',
+      'none',
+    ]);
+    const open = [...projects.querySelectorAll('[data-worktree-toggle]')].filter(
+      (toggle) => toggle.getAttribute('aria-expanded') === 'true',
+    );
+    expect(open).toHaveLength(2);
+    expect(
+      within(projects)
+        .getAllByRole('button', { name: /, \d+ branch/ })
+        .map((row) => row.querySelector('[data-project-count]')?.textContent),
+    ).toEqual(['5', '3']);
+    expect(rail().textContent).not.toMatch(/finished/i);
   });
 
   it('r4-rail-delete opens the delete confirm from the foot', async () => {

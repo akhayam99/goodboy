@@ -11,7 +11,7 @@ import { useSceneRailFold } from '../useSceneRailFold';
 import { seedR4Rail } from './r4RailSeed';
 
 export type R4RailState =
-  'session' | 'cards-folded' | 'worktree' | 'tools-open' | 'narrow' | 'folded' | 'delete';
+  'session' | 'cards-folded' | 'worktree' | 'tools-open' | 'narrow' | 'folded' | 'delete' | 'tree';
 
 const BACKFILL_WORKTREE = '~/code/harborline/payments-api-backfill';
 
@@ -45,6 +45,7 @@ export const R4RailScene = ({ state }: Props) => {
     () => () => {
       try {
         localStorage.removeItem(STORAGE_KEYS.sessionRailFoldedCards);
+        localStorage.removeItem(STORAGE_KEYS.sessionRailTreeOpen);
       } catch {
         return;
       }
@@ -72,7 +73,7 @@ export const R4RailScene = ({ state }: Props) => {
     return () => window.clearTimeout(timer);
   }, [state]);
   const seed = useCallback(() => {
-    seedR4Rail({ isCardFolded: state === 'cards-folded' });
+    seedR4Rail({ isCardFolded: state === 'cards-folded', hasManyBranches: state === 'tree' });
     const pane = PANE_OF[state];
     if (pane !== undefined) {
       openPane({ pane });

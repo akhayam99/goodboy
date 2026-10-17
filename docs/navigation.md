@@ -658,8 +658,9 @@ mounts editors and takes a title.
 **The Projects card of the session level shows which projects a session has
 materialized.** It lives in the session rail, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
-row with its worktrees one indent in and their main pages one more indent in;
-merged and closed ones fold into `N finished`. Sessions are created lazily on the workspace
+row that folds its worktrees, each worktree folds its main pages one more
+indent in; a merged or closed worktree stays a row with its pull request
+icon, never a "finished" fold. Sessions are created lazily on the workspace
 ([concepts.md](concepts.md) → Lazy sessions), and this group is where a
 session's footprint grows. What a worktree asks the user to decide shows in the
 Overview notices slot ([mounts.md](mounts.md#worktree-rows-and-the-overview-notices)).
@@ -735,16 +736,25 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   header (`useProjectsSignal`) and Linked its item count from 2, so a state
   that needs you never hides in a fold. Cards sit 8px apart, 16px under the
   pages.
-- **Projects** lists each mounted project as a label row, its worktrees one
-  16px indent in (`SessionLevel/WorktreeRow`): branch icon, mono branch cut in
-  the middle so the distinguishing tail stays (`BranchName`), pull request
-  number right aligned at its content width (a row with no pull request gives
-  its branch the room), then the worst state as one 6px dot in the last column
-  (`worktreeRowStateOf`: danger for a failed check; warning for conflicts, a
-  running rebase, behind its base, a branch decision waiting, comments waiting
-  on you; none when fine), named in its tooltip and in the row's accessible
-  name. Under each live worktree, one more indent in, its main pages as 24px
-  rows (`SessionLevel/WorktreeEntries`, `worktreeCardEntriesOf`): **Pull
+- **Projects is a tree** you fold at two depths, many nodes open at once. A
+  project row (`SessionLevel/ProjectTree`) is one toggle (`aria-expanded`):
+  folder icon, name, then its branch count from 1 in quiet tabular gray beside
+  a chevron in the right slot. Its worktrees sit one 16px indent in
+  (`SessionLevel/WorktreeRow`): the pull request state icon in its GitHub color
+  (`pullRequestStateToneOf`, next to `pullRequestStateWordOf` and shared with
+  the worktree level identity row, the folded rail and the session hover card:
+  draft gray, open or approved green, in the merge queue (`queued`) the warning
+  amber, merged violet, closed red, no pull request a neutral branch glyph),
+  mono branch cut in the middle so the distinguishing tail stays
+  (`BranchName`), pull request number right aligned at its content width, then
+  the worst state as one 6px dot in the last column (`worktreeRowStateOf`:
+  danger for a failed check; warning for conflicts, a running rebase, behind
+  its base, a branch decision waiting, comments waiting on you; none when
+  fine), named in its tooltip and in the row's accessible name with the state
+  word. A click on the row opens the worktree; the chevron in the indent
+  before the icon (a 24px button named `<branch> pages`, `aria-expanded`)
+  folds its main pages, one more indent in, as 24px rows
+  (`SessionLevel/WorktreeEntries`, `worktreeCardEntriesOf`): **Pull
   request** (Merge request on GitLab), **Comments** and **Checks** while it
   has a pull request, and **Files** always; Commits stays on the worktree
   level, since its not pushed count reads the history the level loads. Each
@@ -755,13 +765,16 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   of the Overview project rows); failing checks with a danger dot or running
   ones with an info dot (`checksWordOf` in the tooltip). A row opens that
   worktree directly on its tab (`switchBranchMount` with `tab`); the drill
-  keeps the full set. The worktree row drops a reason its own Comments entry
-  or toned Checks entry already shows (`shownByEntries`), one mark per fact.
-  Merged and closed worktrees fold into one row `2 finished ›` under their
-  project (`FinishedWorktrees`, at the worktree indent, the chevron right
-  after the text), which opens them in place. Folded, the
-  rail draws one branch icon per worktree under the page icons
-  (`RailWorktrees`), its tooltip "project, branch, worst state" and the worst
+  keeps the full set. An open worktree row drops a reason its own Comments
+  entry or toned Checks entry already shows (`shownByEntries`), one mark per
+  fact; folded, the dot carries them again. Defaults: projects open; a
+  worktree folded unless it needs you (comments waiting or a failing check)
+  or you opened its page in this rail. What you open or fold is remembered per
+  session (`useRailTreeOpen`, `goodboy:session-rail-tree-open:v1`, the last 50
+  sessions). Merged and closed worktrees list after the live ones in their
+  project, as rows like any other. Folded, the
+  rail draws one pull request state icon per worktree under the page icons
+  (`RailWorktrees`), its tooltip "project, branch, state word, worst state" and the worst
   state dot on its corner (`useWorktreeRowState`, shared with the open row); the
   folded rail never draws the session node. A worktree row drills into the worktree level
   (level 2) on its landing entry. The card header carries one `+`
@@ -823,7 +836,7 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   level the back icon, then one button per rail row holding its role glyph next
   to its state node (the node of the Auto word map the open rail draws), with
   the role and state word in the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot,
-  then one branch icon per worktree. The folded rail has no foot and no top
+  then one pull request state icon per worktree. The folded rail has no foot and no top
   row buttons; the tools column beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
   nodes on every screen. Folding the session rail leaves the diff page's file

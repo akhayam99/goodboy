@@ -14,6 +14,7 @@ type Props = {
   readonly badge?: ReactNode;
   readonly isPage?: boolean;
   readonly iconSize?: number;
+  readonly iconClassName?: string;
   readonly isIconSlotted?: boolean;
   readonly onSelect: () => void;
 };
@@ -41,6 +42,7 @@ export const RailButton = ({
   badge,
   isPage = false,
   iconSize = ICON_SIZE.control,
+  iconClassName,
   isIconSlotted = false,
   onSelect,
 }: Props) => (
@@ -61,10 +63,10 @@ export const RailButton = ({
     >
       {isIconSlotted ? (
         <span className="flex size-4 shrink-0 items-center justify-center">
-          <Icon size={iconSize} aria-hidden />
+          <Icon size={iconSize} aria-hidden className={iconClassName} />
         </span>
       ) : (
-        <Icon size={iconSize} aria-hidden className="shrink-0" />
+        <Icon size={iconSize} aria-hidden className={cn('shrink-0', iconClassName)} />
       )}
       {badge}
     </button>

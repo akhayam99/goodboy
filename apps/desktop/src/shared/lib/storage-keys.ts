@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   sessionRailCollapsed: `${PREFIX}session-rail-collapsed:v1`,
   sessionRailWidth: `${PREFIX}session-rail-width:v1`,
   sessionRailFoldedCards: `${PREFIX}session-rail-folded-cards:v1`,
+  sessionRailTreeOpen: `${PREFIX}session-rail-tree-open:v1`,
   changelogCache: `${PREFIX}changelog-cache:v1`,
   paletteFrecency: `${PREFIX}palette-frecency:v1`,
   chatUnread: `${PREFIX}chat-unread:v1`,

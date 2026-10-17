@@ -292,21 +292,18 @@ describe('the worktree rows of the session level', () => {
     );
   });
 
-  it('folds the finished worktrees of a project into one count row that opens them', async () => {
+  it('shows a merged worktree as its branch with the merged icon, never a finished row', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     patchRequest({ mountId: ledgerMount.mountId, patch: { state: 'merged' } });
     await mountRail();
 
-    const fold = within(projectRows('ledger-core')).getByRole('button', {
-      name: '1 finished in ledger-core',
-    });
-    expect(fold.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('list', { name: 'ledger-core finished worktrees' })).toBeNull();
-
-    fireEvent.click(fold);
-
-    const finished = screen.getByRole('list', { name: 'ledger-core finished worktrees' });
-    expect(within(finished).getByRole('button').textContent).toContain(ledgerMount.branch);
+    const row = worktreeButton(projectRows('ledger-core'));
+    expect(row.textContent).toContain(ledgerMount.branch);
+    expect(row.querySelector('[data-pr-state]')?.getAttribute('data-pr-state')).toBe('merged');
+    expect(row.getAttribute('aria-label')).toContain('Merged');
+    expect(screen.getByRole('navigation', { name: 'Session' }).textContent).not.toMatch(
+      /finished/i,
+    );
   });
 
   it('adds from one Add word: a project, a workspace project or a new branch in each repo', async () => {
@@ -367,6 +364,17 @@ const entriesOf = (name: string): HTMLElement => {
   return list;
 };
 
+const expandBranch = (name: string): void => {
+  const toggle = projectRows(name).querySelector<HTMLElement>('[data-worktree-toggle]');
+  if (toggle === null) {
+    throw new Error(`${name} shows no branch toggle`);
+  }
+  if (toggle.getAttribute('aria-expanded') === 'true') {
+    return;
+  }
+  fireEvent.click(toggle);
+};
+
 const entryLabels = (list: HTMLElement): ReadonlyArray<string> =>
   [...list.querySelectorAll('[data-entry-label]')].map((label) => label.textContent ?? '');
 
@@ -375,6 +383,7 @@ describe('the worktree pages inside the Projects card', () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     seedChangedFiles({ additions: 652, deletions: 99 });
     await mountRail();
+    expandBranch('payments-api');
 
     expect(entryLabels(entriesOf('payments-api'))).toEqual([
       'Pull request',
@@ -400,6 +409,7 @@ describe('the worktree pages inside the Projects card', () => {
     seed({ status: worktreeStatusOf({}) });
     useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
     await mountRail();
+    expandBranch('payments-api');
 
     expect(entryLabels(entriesOf('payments-api'))).toEqual(['Files']);
   });
@@ -408,6 +418,7 @@ describe('the worktree pages inside the Projects card', () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     useAppStore.setState({ setSessionActiveMount: vi.fn(async () => undefined) });
     await mountRail();
+    expandBranch('payments-api');
 
     await act(async () => {
       fireEvent.click(within(entriesOf('payments-api')).getByRole('button', { name: /^Files/ }));
@@ -472,5 +483,153 @@ describe('the worktree pages inside the Projects card', () => {
     }
     await waitFor(() => expect(card.querySelector('[data-card-signal]')).not.toBeNull());
     expect(within(card).getByRole('button', { name: 'Add to this session' })).toBeDefined();
+  });
+});
+
+type FailParams = {
+  readonly mountId: MountId;
+  readonly prNumber: number;
+};
+
+const failChecks = ({ mountId, prNumber }: FailParams) => {
+  patchRequest({ mountId, patch: { checks: 'failure' } });
+  useAppStore.setState((state) => {
+    const current = state.mountGithub[mountId];
+    if (current === undefined) {
+      return {};
+    }
+    return {
+      mountGithub: {
+        ...state.mountGithub,
+        [mountId]: {
+          ...current,
+          detail: {
+            prNumber,
+            comments: [],
+            reviews: [],
+            reviewRequests: [],
+            checks: [{ name: 'lint', conclusion: 'failure', detailsUrl: null, durationMs: null }],
+          },
+        },
+      },
+    };
+  });
+};
+
+const projectToggle = (name: string): HTMLElement =>
+  screen.getByRole('button', { name: new RegExp(`^${name}, \\d+ branch`) });
+
+const branchToggle = (name: string): HTMLElement => {
+  const toggle = projectRows(name).querySelector<HTMLElement>('[data-worktree-toggle]');
+  if (toggle === null) {
+    throw new Error(`${name} shows no branch toggle`);
+  }
+  return toggle;
+};
+
+const prMarkOf = (name: string): Element | null =>
+  worktreeButton(projectRows(name)).querySelector('[data-pr-state]');
+
+describe('the Projects tree', () => {
+  it('opens projects and closes branches by default, except a branch that needs you', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    failChecks({ mountId: mount.mountId, prNumber: 418 });
+    await mountRail();
+
+    expect(projectToggle('payments-api').getAttribute('aria-expanded')).toBe('true');
+    expect(projectToggle('ledger-core').getAttribute('aria-expanded')).toBe('true');
+    expect(projectToggle('payments-api').querySelector('[data-project-count]')?.textContent).toBe(
+      '1',
+    );
+    expect(branchToggle('payments-api').getAttribute('aria-expanded')).toBe('true');
+    expect(branchToggle('ledger-core').getAttribute('aria-expanded')).toBe('false');
+    expect(projectRows('ledger-core').querySelector('[data-worktree-entries]')).toBeNull();
+  });
+
+  it('opens the branch you were on, also after going back to the session', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    await mountRail();
+    expect(branchToggle('payments-api').getAttribute('aria-expanded')).toBe('false');
+
+    await openWorktree();
+    act(() => {
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
+    });
+    await settle();
+
+    expect(branchToggle('payments-api').getAttribute('aria-expanded')).toBe('true');
+    expect(branchToggle('ledger-core').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('toggles a project and a branch, with several open at once', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    await mountRail();
+
+    fireEvent.click(branchToggle('payments-api'));
+    fireEvent.click(branchToggle('ledger-core'));
+    await settle();
+
+    expect(entryLabels(entriesOf('payments-api'))).toContain('Pull request');
+    expect(entryLabels(entriesOf('ledger-core'))).toContain('Pull request');
+
+    fireEvent.click(branchToggle('ledger-core'));
+    await settle();
+    expect(projectRows('ledger-core').querySelector('[data-worktree-entries]')).toBeNull();
+    expect(entriesOf('payments-api')).toBeDefined();
+
+    fireEvent.click(projectToggle('payments-api'));
+    await settle();
+    expect(projectToggle('payments-api').getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('list', { name: 'payments-api worktrees' })).toBeNull();
+    expect(projectRows('ledger-core')).toBeDefined();
+  });
+
+  it('keeps what you opened and closed across a reload, per session', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    await mountRail();
+    fireEvent.click(branchToggle('ledger-core'));
+    fireEvent.click(projectToggle('payments-api'));
+    await settle();
+    cleanup();
+
+    await mountRail();
+
+    expect(projectToggle('payments-api').getAttribute('aria-expanded')).toBe('false');
+    expect(branchToggle('ledger-core').getAttribute('aria-expanded')).toBe('true');
+    const stored: unknown = JSON.parse(
+      localStorage.getItem(STORAGE_KEYS.sessionRailTreeOpen) ?? '{}',
+    );
+    expect(Object.keys(typeof stored === 'object' && stored !== null ? stored : {})).toEqual([
+      sessionId,
+    ]);
+  });
+
+  it('leads each branch with its pull request state icon in its color', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    patchRequest({ mountId: mount.mountId, patch: { state: 'queued' } });
+    patchRequest({ mountId: ledgerMount.mountId, patch: { state: 'closed' } });
+    await mountRail();
+
+    expect(prMarkOf('payments-api')?.getAttribute('data-pr-state')).toBe('queued');
+    expect(prMarkOf('payments-api')?.getAttribute('class')).toContain('text-warning');
+    expect(prMarkOf('ledger-core')?.getAttribute('data-pr-state')).toBe('closed');
+    expect(prMarkOf('ledger-core')?.getAttribute('class')).toContain('text-danger');
+  });
+
+  it('draws a draft pull request gray and a branch with none as a neutral branch glyph', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    patchRequest({ mountId: mount.mountId, patch: { isDraft: true } });
+    useAppStore.setState((state) => {
+      const ledger = state.mountGithub[ledgerMount.mountId];
+      return ledger === undefined
+        ? {}
+        : { mountGithub: { ...state.mountGithub, [ledgerMount.mountId]: { ...ledger, pr: null } } };
+    });
+    await mountRail();
+
+    expect(prMarkOf('payments-api')?.getAttribute('data-pr-state')).toBe('draft');
+    expect(prMarkOf('payments-api')?.getAttribute('class')).toContain('text-muted-foreground');
+    expect(prMarkOf('ledger-core')?.getAttribute('data-pr-state')).toBe('none');
+    expect(prMarkOf('ledger-core')?.getAttribute('class')).toContain('lucide-git-branch');
   });
 });

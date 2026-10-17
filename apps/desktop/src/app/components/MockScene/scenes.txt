@@ -577,6 +577,7 @@ r4-rail-folded
 r4-rail-narrow
 r4-rail-session
 r4-rail-tools-open
+r4-rail-tree
 r4-rail-worktree
 rail-draft-dot
 rail-flyout

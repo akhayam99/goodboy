@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { AnchoredPopover, FOCUS_RING, ROW_INTERACTIVE, cn, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -13,11 +13,12 @@ type Props = {
   readonly currentPath: string | null;
   readonly repoName: string | null;
   readonly branch: string;
+  readonly leading?: ReactNode;
 };
 
 const FACE_CLASS = 'flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-label';
 
-export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Props) => {
+export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch, leading }: Props) => {
   const switcher = useBranchSwitcher({ sessionId, currentPath });
   const dropdown = useDropdown({
     align: 'start',
@@ -37,7 +38,9 @@ export const BranchSwitcher = ({ sessionId, currentPath, repoName, branch }: Pro
     }
   }, [isOpen]);
 
-  const icon = <CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden className="shrink-0" />;
+  const icon = leading ?? (
+    <CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+  );
 
   if (!isInteractive) {
     return (
