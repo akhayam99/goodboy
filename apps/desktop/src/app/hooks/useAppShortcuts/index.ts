@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { innerColumnStore } from '@goodboy/ui';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { isTerminalFocused } from '../../../shared/keyboard/isTerminalFocused';
 import { WORKSPACE_DIGIT_IDS } from '../../../shared/keyboard/registry';
@@ -209,6 +210,9 @@ export const useAppShortcuts = ({
   const goToBoard = useGoToBoard();
 
   useShortcut('column.toggle', toggleVisibleSidebar);
+  useShortcut('innerColumn.toggle', () => {
+    innerColumnStore.toggleCurrent();
+  });
   useShortcut('nav.back', back);
   useShortcut('nav.forward', forward);
   useMouseHistoryButtons({ back, forward });

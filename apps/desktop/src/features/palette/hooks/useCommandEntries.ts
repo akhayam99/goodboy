@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Plus, RotateCcw, Smartphone } from 'lucide-react';
+import { PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
+import { useCurrentInnerColumn } from '@goodboy/ui';
 import type { AgentId, Project, ProjectScript, SessionId } from '@goodboy/types';
 import {
   BOARD_PLACE,
@@ -138,6 +139,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const refreshSession = useSessionRefresh();
   const { showToast } = useToast();
   const theme = getAppliedTheme();
+  const innerColumn = useCurrentInnerColumn();
 
   return useMemo<ReadonlyArray<PaletteEntry>>(() => {
     const now = Date.now();
@@ -512,6 +514,19 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       });
     }
 
+    if (innerColumn !== null) {
+      out.push({
+        key: 'action:inner-column',
+        label: innerColumn.label,
+        secondary: ['fold unfold inner column rail list'],
+        kind: 'action',
+        group: 'action',
+        icon: PanelLeft,
+        shortcut: 'innerColumn.toggle',
+        run: innerColumn.toggle,
+      });
+    }
+
     out.push(
       {
         key: 'action:settings',
@@ -614,5 +629,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     showToast,
     theme,
     settingsGroups,
+    innerColumn,
   ]);
 };

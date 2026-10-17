@@ -847,7 +847,7 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   the page and the open drawer (see The session tools), the same on level 1,
   on a worktree, on a run and on Auto, folded rail or not.
 - **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
-  rail) folds it to the current level as icons with right tooltips
+  rail, ⌥⌘B) folds it to the current level as icons with right tooltips
   (`SessionRailIcons`): on level 2 the back icon, then one icon per worktree
   entry (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto
   level the back icon, then one button per rail row holding its role glyph next
@@ -2125,8 +2125,18 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   288px (`standard`); the skeleton reads the same constant.
 - **A page rail folds, and folds itself when there is no room.** A page may pass
   `onCollapsedChange`: the rail's first row then holds a fold control (tooltip
-  "Fold the rail"), and `useStudioRailFold` remembers the choice per surface
-  (`goodboy:studio-rail-folded:<studio>:v1`). Under a pane of 880px the rail
+  "Fold the rail" with ⌥⌘B), a folded rail leaves a 44px strip with "Show the
+  rail" at the same height (none while the pane is too narrow to dock,
+  `canUnfold`), and `useStudioRailFold` remembers the choice per surface
+  (`goodboy:studio-rail-folded:<studio>:v1`). Chat, Terminal, the Guide, the
+  changelog, Settings in its studio frame and Notifications fold this way.
+  **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
+  on: each foldable column registers with `useInnerColumn` while its page
+  shows (the session rail while no studio covers it, a page rail through
+  `StudioRailLayout`), the key toggles the last one registered
+  (`innerColumnStore.toggleCurrent`), the palette lists it under that
+  column's name (Fold the chat list, Show the session rail) and leaves it out
+  on a page with none, where the key does nothing. Under a pane of 880px the rail
   folds without saving anything and docks again when the pane widens. A folded
   rail leaves the shared `FilterButton` (28px tall, the funnel with the count of
   active filters, "Dock the filters" beside it while the pane is wide enough)

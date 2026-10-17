@@ -14,6 +14,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import { innerColumnStore } from '@goodboy/ui';
 import type { IsoDateTime, Session, StepId, Workflow, WorkflowId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -597,6 +598,25 @@ describe('the session rail top row and foot', () => {
       'Delete…',
     ]);
     expect(rail().querySelector('[data-session-actions]')).toBeNull();
+  });
+});
+
+describe('the session rail as the inner column', () => {
+  it('folds and unfolds the rail through the inner column key, remembered', () => {
+    seed();
+    mountColumn();
+    expect(innerColumnStore.current()?.label).toBe('Fold the session rail');
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+
+    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
+    expect(innerColumnStore.current()?.label).toBe('Show the session rail');
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+    expect(rail().hasAttribute('data-rail-folded')).toBe(false);
   });
 });
 

@@ -8,7 +8,7 @@ Open a real login shell in the workspace folder or any linked worktree. **⌃`**
 
 ### Keyboard shortcuts, back and forward
 
-A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[** and **⌘]** walk your history, and **⌘/** opens the full list. On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it; text fields keep their own undo. Tooltips show keys beside their controls.
+A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[** and **⌘]** walk your history, and **⌘/** opens the full list. **⌘B** folds the sidebar and **⌥⌘B** folds the column inside the page you are on: the session rail on every level, the Chat and Terminal lists, the Guide chapters, the changelog versions, the Settings scopes and the notification filters; each remembers it per page, and on a page with no inner column the key does nothing and the palette leaves the entry out. On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it; text fields keep their own undo. Tooltips show keys beside their controls.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-dark.webp">

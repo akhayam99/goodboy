@@ -206,6 +206,12 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'navigate',
   },
+  'innerColumn.toggle': {
+    combo: 'cmd+alt+KeyB',
+    label: 'Show or hide the inner column',
+    plane: 'lens',
+    group: 'navigate',
+  },
   'session.board': {
     combo: 'cmd+shift+KeyH',
     label: 'Board',

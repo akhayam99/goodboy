@@ -14,6 +14,7 @@ const GUIDE_SHORTCUTS: ReadonlyArray<ShortcutId> = [
   'nav.back',
   'nav.forward',
   'column.toggle',
+  'innerColumn.toggle',
   'settings.open',
   'settings.shortcuts',
 ];

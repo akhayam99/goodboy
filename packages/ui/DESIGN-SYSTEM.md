@@ -1598,8 +1598,9 @@ draws the only line between it and the detail. Every page rail is 288 wide
 adds the fold control to the first row; `isCollapsed` hides the rail, and
 `rail={null}` draws no rail at all, for a page with nothing to list (Chat before
 its first chat, Terminal before its first terminal). Chat and Terminal rails
-never fold, and their first child is the full-width secondary New chat / New
-terminal button. The page
+fold like every page rail (⌥⌘B, `useInnerColumn`), and their first child is
+the full-width secondary New chat / New terminal button. A folded rail keeps a
+44px strip with Show the rail at the fold control's height. The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
 forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
 title row: a 28px secondary button with the funnel and the count of active

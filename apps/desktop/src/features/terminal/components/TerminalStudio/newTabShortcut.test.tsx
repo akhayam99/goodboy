@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { TerminalTab, TerminalTabId } from '../../../../shared/types/terminal';
+import { innerColumnStore } from '@goodboy/ui';
 import { registerShortcut } from '../../../../shared/keyboard/dispatcher';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -106,6 +107,22 @@ const mountLens = (): HTMLElement => {
 
 const tabCount = (): number =>
   Object.values(store.getState().terminalTabs).reduce((total, tabs) => total + tabs.length, 0);
+
+describe('the terminal list fold', () => {
+  it('folds the terminal list as the page inner column, and remembers it', () => {
+    mountLens();
+    expect(screen.getByRole('complementary', { name: 'Terminals' })).toBeDefined();
+    expect(innerColumnStore.current()?.id).toBe('terminal');
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+
+    expect(screen.queryByRole('complementary', { name: 'Terminals' })).toBeNull();
+    expect(localStorage.getItem('goodboy:studio-rail-folded:terminal:v1')).toBe('1');
+    expect(screen.getByRole('button', { name: 'Show the rail' })).toBeDefined();
+  });
+});
 
 describe('the terminal page new terminal shortcut', () => {
   it('opens a terminal on the command combo on darwin', () => {

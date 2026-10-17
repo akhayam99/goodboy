@@ -123,6 +123,10 @@ export {
 } from './components/StudioRailLayout';
 export { readStoredWidth, useResizableWidth } from './useResizableWidth';
 export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
+export { INNER_COLUMN_SHORTCUT, innerColumnStore } from './innerColumnStore';
+export type { InnerColumn } from './innerColumnStore';
+export { useInnerColumn } from './useInnerColumn';
+export { useCurrentInnerColumn } from './useCurrentInnerColumn';
 export type { StudioRailFold } from './useStudioRailFold';
 export { StudioWidget } from './components/StudioWidget';
 export {
