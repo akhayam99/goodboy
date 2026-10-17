@@ -87,6 +87,7 @@ type Props = {
   readonly onSeeded?: () => void;
   readonly isPageFollowed?: boolean;
   readonly isContextRead?: boolean;
+  readonly seedRuns?: () => void;
 };
 
 const IDLE_SESSION: Session = {
@@ -100,11 +101,12 @@ export const ActivityRunScene = ({
   onSeeded,
   isPageFollowed = false,
   isContextRead = false,
+  seedRuns = seedActivityRunScene,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedActivityRunScene();
+    seedRuns();
     seedShellChrome({
       session: SESSION,
       siblings: SIBLINGS,
@@ -140,7 +142,7 @@ export const ActivityRunScene = ({
     }
     onSeeded?.();
     setIsReady(true);
-  }, [contextTab, isContextRead, isFinished, onSeeded]);
+  }, [contextTab, isContextRead, isFinished, onSeeded, seedRuns]);
 
   if (!isReady) {
     return null;
