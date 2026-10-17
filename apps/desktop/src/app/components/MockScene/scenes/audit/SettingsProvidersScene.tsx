@@ -84,10 +84,10 @@ const seedRoleSets = () => {
 
 const OUTDATED_CLI_VERSION = '2.1.260';
 
-const HAS_OUTDATED_CLI = sceneParam({ key: 'cli' }) === 'old';
+const CLI_STATE = sceneParam({ key: 'cli' });
 
 const seedOutdatedCli = () => {
-  if (!HAS_OUTDATED_CLI) {
+  if (CLI_STATE !== 'old') {
     return;
   }
   useAppStore.setState((state) => ({
