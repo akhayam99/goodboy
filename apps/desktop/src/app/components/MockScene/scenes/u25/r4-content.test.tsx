@@ -8,13 +8,17 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { brandId, type SessionId } from '@goodboy/types';
+import { requestRename } from '../../../../../features/actions/renameRequest';
+import { sessionObjectKey } from '../../../../../features/actions/kinds/session';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
@@ -25,8 +29,10 @@ const SETTLE_MS = 2_000;
 
 type SceneName = keyof typeof U25_R4_CONTENT_SCENES;
 
+let useAppStore: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -110,5 +116,89 @@ describe('the r4 content scenes', () => {
 
     expect(screen.getByRole('article')).toBeDefined();
     expect(document.querySelector('[data-list-grid-row][aria-current="true"]')).not.toBeNull();
+  });
+
+  it('r4-overview-title answers a rename for the open session on the Overview title', async () => {
+    await mount('r4-overview-title');
+    const sessionId = brandId<SessionId>({ value: 'mock-session-mount-rows' });
+    const title = (): HTMLElement | null =>
+      screen.queryByRole('heading', { level: 1 })?.querySelector('input') ?? null;
+    const sidebarField = (): HTMLElement | null =>
+      document.querySelector('[data-select-id] input, nav input[aria-label="Session title"]');
+
+    act(() => {
+      requestRename({ objectKey: sessionObjectKey({ sessionId }), anchorKey: null });
+    });
+    expect(title()).not.toBeNull();
+    expect(screen.getAllByRole('textbox', { name: 'Session title' })).toHaveLength(1);
+    fireEvent.keyDown(title() as HTMLElement, { key: 'Escape' });
+    expect(title()).toBeNull();
+
+    act(() => {
+      requestRename({
+        objectKey: sessionObjectKey({ sessionId }),
+        anchorKey: `sidebar:${sessionId}`,
+      });
+    });
+    expect(title()).not.toBeNull();
+    expect(sidebarField()).toBeNull();
+  });
+
+  it('r4-overview-title renames a session whose Overview is not open on its sidebar row', async () => {
+    await mount('r4-overview-title');
+    const sibling = brandId<SessionId>({ value: 'mock-mounts-sibling-dunning' });
+
+    act(() => {
+      requestRename({
+        objectKey: sessionObjectKey({ sessionId: sibling }),
+        anchorKey: `sidebar:${sibling}`,
+      });
+    });
+
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    expect(field.closest('h1')).toBeNull();
+    expect((field as HTMLInputElement).value).toBe(
+      'Retry failed card payments on a dunning schedule',
+    );
+  });
+
+  it('r4-overview-title shows a sidebar rename pending, then its error with Retry', async () => {
+    await mount('r4-overview-title');
+    const sibling = brandId<SessionId>({ value: 'mock-mounts-sibling-dunning' });
+    const answers: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
+    const renameTask = vi.fn(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          answers.push({ resolve, reject });
+        }),
+    );
+    useAppStore.setState({ renameTask });
+    act(() => {
+      requestRename({
+        objectKey: sessionObjectKey({ sessionId: sibling }),
+        anchorKey: `sidebar:${sibling}`,
+      });
+    });
+    const field = screen.getByRole('textbox', { name: 'Session title' });
+    fireEvent.change(field, { target: { value: 'Retry card payments on a schedule' } });
+
+    const row = field.parentElement as HTMLElement;
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(within(row).getByRole('status').textContent).toBe('Saving');
+    expect(field.getAttribute('aria-busy')).toBe('true');
+    await act(async () => {
+      answers[0]?.reject(new Error('The database is locked'));
+    });
+
+    expect(within(row).getByRole('alert').textContent).toContain('The database is locked');
+    fireEvent.click(within(row).getByRole('button', { name: 'Retry' }));
+    expect(renameTask).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      answers[1]?.resolve();
+    });
+
+    expect(screen.queryByRole('textbox', { name: 'Session title' })).toBeNull();
+    expect(within(row).queryByRole('alert')).toBeNull();
+    expect(within(row).queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 });

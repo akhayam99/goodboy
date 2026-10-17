@@ -1,8 +1,13 @@
+import { useEffect, useRef } from 'react';
 import type { Session, SessionExternalTask } from '@goodboy/types';
 import { InlineMarkdown, Input, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { sessionRowTitle } from '../../sessionTitle';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
+import { overviewTitleHost } from '../../overviewTitleHost';
+import { RenameStatus } from '../../../../shared/components/RenameStatus';
+import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 
 const NO_TASKS: ReadonlyArray<SessionExternalTask> = [];
 
@@ -16,6 +21,21 @@ export const OverviewTitle = ({ session }: Props) => {
   const { keys, title } = sessionRowTitle({ session, tasks });
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
   const canRename = session.archivedAt == null;
+  const startRef = useRef(rename.start);
+  startRef.current = rename.start;
+
+  useEffect(() => {
+    if (!canRename) {
+      return;
+    }
+    return overviewTitleHost.attach({ sessionId, start: () => startRef.current() });
+  }, [canRename, sessionId]);
+
+  useRenameRequest({
+    objectKey: sessionObjectKey({ sessionId }),
+    anchorKeys: canRename ? [SESSION_HEADER_ANCHOR, null, `sidebar:${sessionId}`] : [],
+    onRename: rename.start,
+  });
 
   if (rename.editing) {
     const hasError = rename.error !== null;
@@ -28,16 +48,19 @@ export const OverviewTitle = ({ session }: Props) => {
           maxLength={rename.maxLength}
           aria-label="Session title"
           aria-invalid={hasError}
+          aria-busy={rename.isPending}
+          readOnly={rename.isPending}
           onChange={(event) => rename.setDraft(event.target.value)}
           onKeyDown={rename.onKeyDown}
           onBlur={rename.onBlur}
           className={cn('min-w-0 flex-1 text-title', hasError && 'border-danger')}
         />
-        {hasError ? (
-          <span role="alert" className="max-w-[40%] shrink-0 truncate text-meta text-danger">
-            {rename.error}
-          </span>
-        ) : null}
+        <RenameStatus
+          isPending={rename.isPending}
+          error={rename.error}
+          onRetry={() => void rename.commit()}
+          className="max-w-[40%] shrink-0"
+        />
       </span>
     );
   }
