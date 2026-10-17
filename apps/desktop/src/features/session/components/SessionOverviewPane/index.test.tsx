@@ -22,7 +22,7 @@ vi.mock('./OverviewNotices', () => ({
 }));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => <button type="button">New</button> }));
 vi.mock('../../../suggestions/components/NextStepSlot', () => ({
-  NextStepSlot: () => <section aria-label="Next" />,
+  NextStepSlot: () => <section aria-label="Next steps" />,
 }));
 vi.mock('../SessionWorkspace/parts/TimelinePane', () => ({
   TimelinePane: ({ lead }: { readonly lead: ReactNode }) => (
@@ -96,7 +96,7 @@ describe('SessionOverviewPane', () => {
 
     const body = container.querySelector('[data-slot="pane-body"]');
     const header = container.querySelector('[data-slot="pane-header"]');
-    const names = ['Notices', 'Needs you', 'Next', 'Activity'];
+    const names = ['Notices', 'Needs you', 'Next steps', 'Activity'];
     const sections = names.map((name) => screen.getByRole('region', { name }));
     sections.forEach((section) => expect(section.parentElement).toBe(body));
     expect(Array.from(body?.querySelectorAll(':scope > section') ?? [])).toEqual(sections);
@@ -363,7 +363,7 @@ describe('SessionOverviewPane', () => {
     expect(screen.queryByRole('button', { name: /New/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
     expect(screen.queryByText('Archived')).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Next' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Next steps' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Notices' })).toBeNull();
   });
 });

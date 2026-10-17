@@ -228,7 +228,7 @@ export const NextStepSlot = ({
   };
 
   return (
-    <section aria-label="Next" className="flex flex-col gap-2">
+    <section aria-label="Next steps" className="flex flex-col gap-2">
       <SectionHeader label="Next" headingLevel={2} />
       <div className={NEXT_STEP_LIST}>
         {shown.map((suggestion, index) =>

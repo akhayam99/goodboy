@@ -55,8 +55,9 @@ Below, `X` is the new version and `X-1` is the current latest.
      add what is new. Edit them in place, never rewrite them from scratch.
    - Every user-facing feature the release adds or changes gets its website
      text updated in the same PR, or a new entry when none tells it yet. The
-     website has no captures: its product views are React mocks, so edit the
-     mock when the feature changes how the app looks. Re-shoot every figure the
+     website's product views are React mocks, so edit the mock when the
+     feature changes how the app looks. Its one capture is the hero, which
+     `pnpm readme:hero` writes together with the README hero. Re-shoot every figure the
      change made stale in `docs/readme/`, from the mock scenes as
      [mock-screenshots.md](mock-screenshots.md) describes, at a scale of 4 or
      more, in both themes. Feature-area guide figures go to goodboy-media through

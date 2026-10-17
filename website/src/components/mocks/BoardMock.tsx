@@ -1,13 +1,7 @@
 import './BoardMock.css';
-import {
-  AppBrandIcon,
-  Bot,
-  ChevronRight,
-  CircleHelp,
-  GitPullRequest,
-  type AppBrandId,
-} from './icons';
-import { GroupLabel, RepoChip, ToneBar, type Tone } from './kit';
+import type { ReactNode } from 'react';
+import { CircleHelp, GitPullRequest } from './icons';
+import { ToneBar, type Tone } from './kit';
 import { MockStage } from './MockStage';
 
 type Props = {
@@ -16,13 +10,8 @@ type Props = {
 
 type Card = {
   readonly title: string;
-  readonly reason?: string;
   readonly repo: string;
-  readonly cost: string;
-  readonly age: string;
-  readonly agents?: number;
-  readonly sources?: readonly AppBrandId[];
-  readonly hasPullRequest?: boolean;
+  readonly pullRequest?: number;
   readonly hasQuestion?: boolean;
 };
 
@@ -38,20 +27,8 @@ const COLUMNS: readonly Column[] = [
     name: 'Building',
     tone: 'neutral',
     cards: [
-      {
-        title: 'Draft the payout delay notice',
-        reason: 'no PR yet',
-        repo: 'notify-relay',
-        cost: '$1.20',
-        age: '40m ago',
-      },
-      {
-        title: 'Rotate the processor signing secret',
-        reason: 'no PR yet',
-        repo: 'payments-api',
-        cost: '$0.46',
-        age: '1h ago',
-      },
+      { title: 'Draft the payout delay notice', repo: 'notify-relay' },
+      { title: 'Rotate the processor signing secret', repo: 'payments-api' },
     ],
   },
   {
@@ -59,115 +36,72 @@ const COLUMNS: readonly Column[] = [
     tone: 'info',
     isBreathing: true,
     cards: [
-      {
-        title: 'Speed up the payout export',
-        reason: 'agent running',
-        repo: 'ledger-core',
-        cost: '$0.88',
-        age: '12m ago',
-        agents: 1,
-      },
-      {
-        title: 'Nightly reconciliation job',
-        reason: 'agent running',
-        repo: 'ledger-core',
-        cost: '$2.15',
-        age: '25m ago',
-        agents: 2,
-      },
+      { title: 'Speed up the payout export', repo: 'ledger-core' },
+      { title: 'Nightly reconciliation job', repo: 'ledger-core' },
     ],
   },
   {
     name: 'Needs you',
     tone: 'warning',
     cards: [
-      {
-        title: 'Fix the rounding drift in exports',
-        reason: '1 open question',
-        repo: 'ledger-core',
-        cost: '$0.58',
-        age: '1h ago',
-        sources: ['jira'],
-        hasQuestion: true,
-      },
-      {
-        title: 'Warn merchants before a hold',
-        reason: '1 open question',
-        repo: 'notify-relay',
-        cost: '$0.02',
-        age: '5h ago',
-        hasQuestion: true,
-      },
+      { title: 'Fix the rounding drift in exports', repo: 'ledger-core', hasQuestion: true },
+      { title: 'Warn merchants before a hold', repo: 'notify-relay', hasQuestion: true },
     ],
   },
   {
     name: 'In review',
     tone: 'success',
     cards: [
-      {
-        title: 'Stop retried webhook credits',
-        reason: 'PR #318 awaiting review',
-        repo: 'ledger-core',
-        cost: '$3.47',
-        age: '6h ago',
-        sources: ['linear'],
-        hasPullRequest: true,
-      },
-      {
-        title: 'Reconcile export with the ledger',
-        reason: 'draft PR #90',
-        repo: 'ledger-core',
-        cost: '$4.82',
-        age: '2d ago',
-        sources: ['jira'],
-        hasPullRequest: true,
-      },
+      { title: 'Stop retried webhook credits', repo: 'payments-api', pullRequest: 318 },
+      { title: 'Reconcile export with the ledger', repo: 'ledger-core', pullRequest: 90 },
     ],
   },
   {
     name: 'Done',
     tone: 'merged',
     cards: [
-      {
-        title: 'Bump the lockfile after the audit',
-        reason: 'PR #198 merged',
-        repo: 'payments-api',
-        cost: '$1.64',
-        age: '3d ago',
-        hasPullRequest: true,
-      },
-      {
-        title: 'Retire the legacy export route',
-        reason: 'PR #205 merged',
-        repo: 'notify-relay',
-        cost: '$2.10',
-        age: '4d ago',
-        hasPullRequest: true,
-      },
+      { title: 'Bump the lockfile after the audit', repo: 'payments-api', pullRequest: 198 },
+      { title: 'Retire the legacy export route', repo: 'notify-relay', pullRequest: 205 },
     ],
   },
   {
     name: 'Archived',
     tone: 'neutral',
     cards: [
-      {
-        title: 'Update the refund policy copy',
-        repo: 'payments-api',
-        cost: '$0.74',
-        age: '5d ago',
-      },
-      {
-        title: 'Fix a flaky retry test in the export',
-        repo: 'ledger-core',
-        cost: '$1.31',
-        age: '9d ago',
-      },
+      { title: 'Update the refund policy copy', repo: 'payments-api' },
+      { title: 'Fix a flaky retry test in the export', repo: 'ledger-core' },
     ],
   },
 ];
 
 const ARIA_LABEL =
-  'Board with six lanes, two cards each. Building: draft the payout delay notice, rotate the processor signing secret. Running: speed up the payout export, nightly reconciliation job. Needs you: two cards, each with one open question. In review: stop retried webhook credits on PR 318, reconcile export with the ledger on draft PR 90. Done: bump the lockfile after the audit on merged PR 198, retire the legacy export route on merged PR 205. Archived: update the refund policy copy, fix a flaky retry test in the export.';
+  'Board with six lanes, two cards each, every card with its title and project. Building: draft the payout delay notice, rotate the processor signing secret. Running: speed up the payout export, nightly reconciliation job. Needs you: two cards, each with an open question. In review: stop retried webhook credits on pull request 318, reconcile export with the ledger on pull request 90. Done: bump the lockfile after the audit on merged pull request 198, retire the legacy export route on merged pull request 205. Archived: update the refund policy copy, fix a flaky retry test in the export.';
+
+type SignalParams = {
+  readonly card: Card;
+  readonly isBreathing: boolean;
+};
+
+const signalOf = ({ card, isBreathing }: SignalParams): ReactNode => {
+  if (card.pullRequest !== undefined) {
+    return (
+      <span className="brdPr">
+        <GitPullRequest size={12} />#{card.pullRequest}
+      </span>
+    );
+  }
+  if (card.hasQuestion === true) {
+    return (
+      <span className="brdAction">
+        <CircleHelp size={13} />
+      </span>
+    );
+  }
+  if (isBreathing) {
+    return <span className="brdRunning" aria-hidden="true" />;
+  }
+  return null;
+};
 
 export const BoardMock = ({ className }: Props) => (
   <MockStage label={ARIA_LABEL} className={className}>
@@ -175,56 +109,16 @@ export const BoardMock = ({ className }: Props) => (
       {COLUMNS.map(({ name, tone, isBreathing = false, cards }) => (
         <section key={name} className="brdCol" data-tone={tone}>
           <h4 className="brdHead">
-            <GroupLabel label={name} className="brdHeadLabel" />
+            <span className="brdHeadLabel">{name}</span>
             <span className="brdCount">{cards.length}</span>
           </h4>
           {cards.map((card) => (
             <article key={card.title} className="brdCard">
               <ToneBar tone={tone} isBreathing={isBreathing} />
-              <span className="brdMain">
-                <span className="brdTop">
-                  {card.hasPullRequest === true ? (
-                    <span className="brdPr">
-                      <GitPullRequest size={14} />
-                    </span>
-                  ) : null}
-                  <span className="brdTitle">{card.title}</span>
-                </span>
-                {card.reason === undefined ? null : (
-                  <span className="brdReason">{card.reason}</span>
-                )}
-              </span>
-              <span className="brdSide">
-                {card.hasQuestion === true ? (
-                  <span className="brdAction">
-                    <CircleHelp size={14} />
-                  </span>
-                ) : null}
-                <ChevronRight size={14} className="brdChevron" />
-              </span>
+              <span className="brdTitle">{card.title}</span>
               <span className="brdFoot">
-                <span className="brdFootStart">
-                  {card.agents === undefined ? null : (
-                    <span className="brdAgents">
-                      <Bot size={12} />
-                      <span>{card.agents}</span>
-                    </span>
-                  )}
-                  <RepoChip name={card.repo} />
-                  {card.sources?.map((source) => (
-                    <span
-                      key={source}
-                      className="brdSource"
-                      style={{ color: `var(--g-provider-${source})` }}
-                    >
-                      <AppBrandIcon brand={source} size={14} />
-                    </span>
-                  ))}
-                </span>
-                <span className="brdFootEnd">
-                  <span>{card.cost}</span>
-                  <span className="brdAge">{card.age}</span>
-                </span>
+                <span className="brdRepo">{card.repo}</span>
+                {signalOf({ card, isBreathing })}
               </span>
             </article>
           ))}

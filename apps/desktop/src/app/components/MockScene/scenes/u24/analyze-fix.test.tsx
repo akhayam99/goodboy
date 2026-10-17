@@ -94,7 +94,7 @@ describe('analyze fix scenes', () => {
     show({ name: 'activity-check-chain' });
     expect(screen.getAllByText('CI fix · payments-api / test · #318').length).toBeGreaterThan(0);
     expect(screen.queryByText('Implementer')).toBeNull();
-    const next = screen.getByRole('region', { name: 'Next' });
+    const next = screen.getByRole('region', { name: 'Next steps' });
     expect(within(next).getByText('Fixing payments-api / test on #318')).toBeDefined();
     expect(within(next).getByRole('button', { name: 'Open' })).toBeDefined();
     expect(within(next).queryByRole('button', { name: 'Push' })).toBeNull();

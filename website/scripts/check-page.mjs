@@ -468,6 +468,7 @@ const buildRulesProbe = ({ clusterIds }) => `(() => {
       .filter((node) => clusterIds.includes(node.id))
       .map((node) => ({ name: node.id, height: Math.round(node.getBoundingClientRect().height) })),
     rasters: [...document.querySelectorAll('main img, main picture')]
+      .filter((node) => !node.hasAttribute('data-hero-shot'))
       .filter((node) => node.tagName === 'PICTURE' || !isSvgSource(node))
       .map((node) => describe(node) + ' ' + (node.getAttribute('src') ?? '')),
     heroMock: heroBox === null ? null : {

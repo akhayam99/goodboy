@@ -298,44 +298,51 @@
   font-weight: 600;
 }
 
-.handoff .hmUpdated {
+.handoff .hmStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--hm-muted);
   font-size: var(--hm-xs);
   white-space: nowrap;
 }
 
-.handoff .hmTabs {
-  display: flex;
-  gap: 4px;
-  width: max-content;
-  max-width: 100%;
-  padding: 2px;
-  border-radius: 8px;
-  background: var(--g-fill);
+.handoff .hmStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--g-success);
 }
 
-.handoff .hmTab {
-  padding: 5px 9px;
-  border-radius: 6px;
+.handoff .hmSection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 6px;
   color: var(--hm-muted);
   font-size: var(--hm-sm);
+}
+
+.handoff .hmSectionTitle {
+  color: var(--t2);
   font-weight: 500;
-  white-space: nowrap;
 }
 
-.handoff .hmTab[data-active] {
-  background: var(--raise);
-  box-shadow: inset 0 0 0 1px var(--g-border-soft);
+.handoff .hmSectionAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--t1);
-}
-
-.handoff .hmTab b {
-  font-weight: 600;
+  font-size: var(--hm-xs);
+  white-space: nowrap;
 }
 
 .handoff .hmActive {
   display: flex;
   flex-direction: column;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--g-fill);
 }
 
 .handoff .hmDec {
@@ -541,8 +548,7 @@
 
   .handoff .hmReply,
   .handoff .hmOps,
-  .handoff .hmComposer,
-  .handoff .hmTabs {
+  .handoff .hmComposer {
     display: none;
   }
 

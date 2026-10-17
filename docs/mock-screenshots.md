@@ -285,11 +285,17 @@ every picture shares. Add `&brand=1` to skip onboarding and hide the toasts a
 browser tab raises. The README images live in `docs/readme/`, the
 feature-area guide ones in the public
 [goodboy-media](https://github.com/akhayam99/goodboy-media) repo, both as dark
-and light `.webp` pairs. The website takes no screenshots: its product views are
-React mocks. The README hero is the exception that goes the other way:
-`pnpm readme:hero` draws the logo, the headline and the website's hero
-`SessionMock` from the website dev server on port 1499 and writes
-`docs/readme/readme-hero-{dark,light}.webp` at three times the README width. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
+and light `.webp` pairs. The README hero is also the website's hero picture,
+the one capture on the site; every other product view there is a React mock.
+`pnpm readme:hero` shoots the `readme-hero` scene (the Harborline session on
+its Overview with the Projects card unfolded, the shared Context drawer open
+and three runs interleaving in Activity) from the desktop mock dev server
+(`http://localhost:5230`, or the URL passed as its first argument) at
+1920x1200 and scale 4, in both themes. It writes
+`docs/readme/readme-hero-{dark,light}.webp` at the full 7680 px and
+`website/public/hero/hero-{dark,light}-{1208,2416,3624}.webp`, 1, 2 and 3 times
+the width the site draws it at, cropped to the top 840 px of the window and
+resampled once from the same capture. To crop a short surface, use a `--window-size` height shorter than 900. The layout keeps its own proportions and the footer stays pinned.
 
 The scenes listed in `FRAME_SCENES` (`scripts/validateScenesFrame.mjs`) are also measured by the scene job at three window widths, so changing their layout can fail the frame probe: [testing.md](./testing.md) → Frame probe.
 

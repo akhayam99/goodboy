@@ -1,0 +1,12 @@
+.heroShotImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: var(--mk-win-shadow);
+}
+
+:root[data-theme='dark'] .heroShot-light,
+:root:not([data-theme='dark']) .heroShot-dark {
+  display: none;
+}

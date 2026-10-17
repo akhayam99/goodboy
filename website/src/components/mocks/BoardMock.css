@@ -22,23 +22,8 @@
 }
 
 .mockStage .brdHeadLabel {
-  color: var(--g-faint-foreground);
-}
-
-.mockStage .brdCol[data-tone='info'] .brdHeadLabel {
-  color: var(--g-info);
-}
-
-.mockStage .brdCol[data-tone='warning'] .brdHeadLabel {
-  color: var(--g-warning);
-}
-
-.mockStage .brdCol[data-tone='success'] .brdHeadLabel {
-  color: var(--g-success);
-}
-
-.mockStage .brdCol[data-tone='merged'] .brdHeadLabel {
-  color: var(--g-merged);
+  color: var(--t2);
+  font: 500 12px / 16px var(--sans);
 }
 
 .mockStage .brdCount {
@@ -49,14 +34,14 @@
 
 .mockStage .brdCard {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 4px 8px;
-  height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  height: 84px;
   min-width: 0;
   margin: 0;
-  padding: 12px 12px 12px 18px;
+  padding: 10px 12px 10px 18px;
   border-radius: 8px;
   background: var(--mk-win);
   box-shadow: 0 0 0 1px var(--g-border-soft);
@@ -64,50 +49,27 @@
   text-align: left;
 }
 
-.mockStage .brdMain {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.mockStage .brdTop {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-height: 40px;
-}
-
-.mockStage .brdPr {
-  display: inline-flex;
-  flex: none;
-  width: 20px;
-  height: 20px;
-  margin-left: -2px;
-  margin-top: 1px;
-  align-items: center;
-  justify-content: center;
-  color: var(--g-success);
-}
-
-.mockStage .brdCol[data-tone='merged'] .brdPr {
-  color: var(--g-merged);
-}
-
 .mockStage .brdTitle {
   display: -webkit-box;
   min-width: 0;
-  min-height: 40px;
-  flex: 1;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   color: var(--t1);
-  font: 500 14px / 20px var(--sans);
+  font: 500 13px / 18px var(--sans);
 }
 
-.mockStage .brdReason {
+.mockStage .brdFoot {
+  display: flex;
+  min-width: 0;
+  height: 18px;
+  align-items: center;
+  gap: 8px;
+}
+
+.mockStage .brdRepo {
+  min-width: 0;
   overflow: hidden;
   color: var(--g-muted-foreground);
   font: 400 11px / 16px var(--sans);
@@ -115,86 +77,43 @@
   white-space: nowrap;
 }
 
-.mockStage .brdSide {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
+.mockStage .brdPr,
+.mockStage .brdAction,
+.mockStage .brdRunning {
+  flex: none;
+  margin-left: auto;
+}
+
+.mockStage .brdPr {
+  display: inline-flex;
   align-items: center;
-  align-self: start;
-  gap: 4px;
-  color: var(--g-faint-foreground);
+  gap: 3px;
+  color: var(--g-success);
+  font: 500 11px / 16px var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.mockStage .brdCol[data-tone='merged'] .brdPr {
+  color: var(--g-merged);
 }
 
 .mockStage .brdAction {
   display: inline-flex;
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
   color: var(--g-warning);
-  background: color-mix(in oklab, var(--g-warning) 10%, transparent);
 }
 
-.mockStage .brdChevron {
-  flex: none;
-}
-
-.mockStage .brdFoot {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  display: flex;
-  min-width: 0;
-  height: 20px;
-  align-items: center;
-  gap: 8px;
-}
-
-.mockStage .brdFootStart {
-  display: flex;
-  min-width: 0;
-  flex: 0 1 auto;
-  align-items: center;
-  gap: 8px;
-  overflow: hidden;
-}
-
-.mockStage .brdAgents {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 4px;
-  color: var(--g-faint-foreground);
-  font: 400 10px / 14px var(--sans);
-}
-
-.mockStage .brdSource {
-  display: inline-flex;
-  flex: none;
-}
-
-.mockStage .brdSource svg {
-  display: block;
-}
-
-.mockStage .brdFootEnd {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  color: var(--g-faint-foreground);
-  font: 400 10px / 14px var(--sans);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+.mockStage .brdRunning {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--g-info);
 }
 
 @media (hover: none) and (pointer: coarse) {
   .mockStage .brdHeadLabel,
   .mockStage .brdCount,
-  .mockStage .brdReason,
-  .mockStage .brdAgents,
-  .mockStage .brdFootEnd {
+  .mockStage .brdRepo,
+  .mockStage .brdPr {
     font-size: 13px;
   }
 }
@@ -256,7 +175,7 @@
   }
 
   .mockStage .brdCard:nth-of-type(2) {
-    display: grid;
+    display: flex;
   }
 
   .mockStage .brdCount {

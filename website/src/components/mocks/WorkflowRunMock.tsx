@@ -14,7 +14,7 @@ const ROWS: readonly RunTreeRowData[] = [
     kind: 'tester',
     title: 'Replay one event three times',
     phase: 'queued',
-    routing: { provider: 'anthropic', name: 'Haiku 4.5', isPlanned: true },
+    routing: { provider: 'anthropic', name: 'Sonnet 5', isPlanned: true },
   },
   {
     id: 'step-4-2',
@@ -60,7 +60,7 @@ const ROWS: readonly RunTreeRowData[] = [
     reason: { kind: 'skipped' },
     isNested: true,
     groupId: 'fan-3',
-    routing: { provider: 'anthropic', name: 'Haiku 4.5' },
+    routing: { provider: 'anthropic', name: 'Sonnet 5' },
   },
   {
     id: 'step-3',

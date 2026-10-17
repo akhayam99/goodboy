@@ -111,9 +111,10 @@ table row) it has in the area file. Check the page fails when they drift.
 
 ## Product views
 
-The page shows no screenshots. Every product view is a React mock, built from
-the same tokens as the page, so it is sharp at any zoom, follows the theme and
-ships no raster file.
+The hero is the one screenshot on the page: the same picture as the README
+hero, a real app capture of the `readme-hero` mock scene. Every other product
+view is a React mock, built from the same tokens as the page, so it is sharp at
+any zoom, follows the theme and ships no raster file.
 
 - `website/src/components/mocks/` holds the kit: `MockStage` puts a mock on a
   stage, `MockWindow` is the app window chrome, and `mocks.css` holds the shared
@@ -121,9 +122,14 @@ ships no raster file.
   own `.tsx` and `.css`.
 - A mock that plays runs once, when it scrolls into view, through
   `usePlayOnce`. It rests on its final state under `prefers-reduced-motion`.
-- The hero mock is the one `MockStage` with `isHero`, which sets
+- The hero is `HeroShot`, the one `MockStage` with `isHero`, which sets
   `data-hero-mock`. At least 380 px of it must show in the first 900 px at 1440.
-- On `/` and `/features` the only images are brand assets, see
+  It holds a dark and a light `img`, each marked `data-hero-shot`, and shows the
+  one that matches `data-theme`. `pnpm readme:hero` writes their files to
+  `website/public/hero/` at 1, 2 and 3 times the 1208 px it is drawn at, from
+  one 4x capture, together with the README pair. The site keeps the top 840 of
+  the 1200 px window, so the hero stays inside its 1100 px section budget.
+- On `/` and `/features` the only other images are brand assets, see
   [docs/brand.md](../docs/brand.md). The `/docs` pages show the guide's own
   screenshots.
 
@@ -249,7 +255,8 @@ Rules that run on every page:
   triplet; the docs quote app labels that use one.
 - A section never runs into the next one, and its content never spills below
   it. The consent card never covers the h1.
-- Marketing pages: no raster image in `main`, no `img` and no `picture`.
+- Marketing pages: no raster image in `main`, no `img` and no `picture`,
+  except the hero's `[data-hero-shot]` pair.
 - No shadow on a mock window or a stage, outside `data-shadow-exception`. A
   marketing page with no `.mockStage` fails, so the rule cannot pass by finding
   nothing.

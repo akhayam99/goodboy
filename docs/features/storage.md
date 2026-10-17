@@ -8,10 +8,10 @@ Free disk space from the checkout folders of archived, deleted or gone sessions.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-light.webp" alt="Storage, Worktrees 5.0 GB, with the tabs To review 3, In use 0 and Kept 0: hl/flaky-retry-test 2.5 GB and hl/retire-export-cron 1.8 GB in ledger-core, hl/receipt-email-retry 700 MB in notify-relay, each marked Safe to remove, and the button Remove 3 safe folders in Harborline, 5.0 GB">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-light.webp" alt="Settings, App, Storage: 5.1 GB with 5.0 GB that can go, the Can go, Review first and Keep bars, and the Worktrees table with hl/flaky-retry-test 2.5 GB and hl/retire-export-cron 1.8 GB in ledger-core and hl/receipt-email-retry 700 MB in notify-relay, each marked safe to remove, and the button Remove 3 safe folders in Harborline">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Branches
 
@@ -19,10 +19,10 @@ Delete old branches with confidence. **Branches**, under App settings, opens on 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-light.webp" alt="Clean up branches: 9 local branches with the tabs Safe to delete 7, Needs a look 2 and All 9, grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete merged by merge commit, rebase or pull request, plus the button Select 7 safe to delete">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-light.webp" alt="Settings, App, Branches: the line that Goodboy deletes the branch on this Mac after a pull request merges, Recently deleted 3, 7 safe to delete and 2 need a look, local branches grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete with how it merged">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Storage scope
 

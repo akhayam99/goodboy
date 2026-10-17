@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronRight,
+  CodeXml,
   Database,
   Plus,
   Waypoints,
@@ -142,24 +143,21 @@ export const HandoffMock = () => {
           <div className="hmDrawerHead">
             <Database size={16} />
             <span className="hmDrawerTitle">Context</span>
-            <span className="hmSpacer" />
-            <span className="hmUpdated">{isAdded ? 'Updated just now' : 'Updated 1h ago'}</span>
           </div>
-          <div className="hmTabs">
-            <span className="hmTab">Goal</span>
-            <span className="hmTab" data-active="">
-              Decisions <b>{isAdded ? 4 : 3}</b>
-            </span>
-            <span className="hmTab">Summary</span>
+          <div className="hmStatus">
+            <span className="hmStatusDot" aria-hidden="true" />
+            {isAdded ? 'Updated just now' : 'Updated 1h ago'}
           </div>
           <div className="hmActive">
-            <GroupLabel
-              label={
-                <>
-                  Active <span className="hmBadge">{isAdded ? 4 : 3}</span>
-                </>
-              }
-            />
+            <div className="hmSection">
+              <span className="hmSectionTitle">Decisions</span>
+              <span className="hmBadge">{isAdded ? 4 : 3}</span>
+              <span className="hmSpacer" />
+              <span className="hmSectionAction">
+                <CodeXml size={12} />
+                Edit source
+              </span>
+            </div>
             <DecisionRow number={4} source="You · 1d">
               Backfill runs read only for its first pass
             </DecisionRow>
@@ -189,7 +187,7 @@ export const HandoffMock = () => {
                       className="hmLabel hmAdded"
                       data-on={step >= 1 && !isRead ? '' : undefined}
                     >
-                      Added by Planner
+                      New
                     </span>
                     <span className="hmLabel hmReadBy" data-on={isRead ? '' : undefined}>
                       Read by Implementer

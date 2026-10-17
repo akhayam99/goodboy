@@ -8,10 +8,10 @@ The Overview is titled with the session's name, its linked issue key in gray bef
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of the session Stop retried webhooks posting a second credit, with Context, Artifacts 3, the linked pull request #57, HBL-412 and PAYMENTS-API-3F2, and Link work, then the projects payments-api (pull request #318, and #311 under Show finished with Close branch) and notify-relay (pull request #57), each with New branch, above the Activity and Log tabs with the cost $3.47 and New">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-session-light.webp" alt="The overview of the session Stop retried webhooks posting a second credit: the rail with Overview, Runs, Agents, Artifacts and Questions and the projects payments-api (pull request #318 and #311) and notify-relay (pull request #57), the goal, a Needs you block with a question, and the Activity and Log tabs with the first steps">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Refresh a session
 
@@ -23,10 +23,10 @@ Follow what happened in a session in two views. **Activity** has one row per age
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" alt="The Activity timeline of a session: the Activity and Log tabs with the cost $12.87 and New, a Needs you block with #318 and Surface retry state in notify-relay, each with Open, and below Now the steps, each row with a role icon, its title, the model with its effort and the time: Cover the console retry states on Haiku 4.5 Medium with a range of 11 to 14 minutes, Report the session outcome, a Fix run on #318 with 4 need you and 4 working, and Add the stuck-delivery banner on Kimi K3 marked Needs you">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-activity-light.webp" width="821" alt="The Activity timeline of a session: a Needs you block with #318 and Which failures should count toward a stuck delivery, a Next row with Fix and Not now, the Activity and Log tabs with Mark all seen, and below Now the steps, each row with a role icon, its title, its model and its time, a Fix run on #318 with 4 need you and 4 working, and Add the stuck-delivery banner on Kimi K3">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Next
 
@@ -34,10 +34,10 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-light.webp" alt="The Next row of a session: the plan Show the attempts on each delivery, marked Ready to implement, with a Start implementer button and a more menu">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/overview-next-light.webp" width="821" alt="The Next block of a session: Split the reconciliation rewrite into six parts, Ready to implement, with a Start button, and Remove the ledger-core worktree, #418 merged, 412 MB, with a Remove button, each with Not now">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Time left
 

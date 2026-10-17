@@ -127,7 +127,7 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
   it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
     const row = screen
-      .getByRole('region', { name: 'Next' })
+      .getByRole('region', { name: 'Next steps' })
       .querySelector<HTMLElement>(
         '[data-testid="next-step-close-worktree:mock-mount-ledger-rounding"]',
       );
@@ -228,7 +228,7 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
 
     header().getByRole('button', { name: /Restore/ });
     expect(header().queryByRole('button', { name: 'New' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Next' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Next steps' })).toBeNull();
   });
 
   it('keeps the move of a task onto a branch by drag, now onto a worktree row of the sidebar', async () => {
