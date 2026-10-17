@@ -2378,14 +2378,16 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   (`LapPublishNotice`; Retry when the remote did not answer, `Checking the remote`
   while it is read). `FirstLapBanner` keeps only the move card, the move in progress
   and the move report, as a `Notice` in the page banner slot (`PaneBannerContext`).
-- **Questions is one tier.** The 288px queue and the question beside it sit inside the
-  same 1008px column under the title, apart by a gap (no divider); the detail no longer
-  narrows to a measure column of its own beside a full-bleed rail. The title carries no
-  meta line. A queue row wraps the question to two lines over its role glyph and age,
-  with a blocking ask as one warning dot in a fixed cell; the asker shows only in the
-  detail, which has no pager (the queue is the pager). Answered is always open and last;
-  group labels show only with two groups. Inside the asker's own conversation a question
-  card shows only the question (and Blocking as a dot and a word).
+- **Questions is a list, like Artifacts.** One `ListGrid` (`parts/QuestionsGrid`) with two
+  groups, **Waiting on you** then **Answered**, each counted from two; the grouping is
+  `questionGroupsOf` in `questionsLensModel` (a question an agent is answering stays under
+  Waiting on you and says so in gray). A row reads the question, the answer in gray, the
+  asker's role and the age; a blocking ask is one warning dot in the leading cell. The row
+  opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), where the
+  card answers, skips, dismisses and undoes; answering moves the drawer to the next
+  waiting question. The shared `EmptyState` shows only when the session has no question
+  at all. Inside the asker's own conversation a question card shows only the question
+  (and Blocking as a dot and a word).
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
   way back. No lens keeps a rail beside its detail. Review is the one

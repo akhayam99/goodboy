@@ -56,20 +56,24 @@ export const buildQuestionsLens = ({
   };
 };
 
-type VisibleParams = {
+type ModelParams = {
   readonly model: QuestionsLensModel;
-  readonly isAnsweredOpen: boolean;
 };
 
-export const visibleQuestionRows = ({
-  model,
-  isAnsweredOpen,
-}: VisibleParams): ReadonlyArray<QuestionRow> => [
-  ...model.waiting,
-  ...model.delegated,
-  ...model.recent,
-  ...(isAnsweredOpen ? model.answered : []),
-];
+export type QuestionGroups = {
+  readonly waiting: ReadonlyArray<QuestionRow>;
+  readonly answered: ReadonlyArray<QuestionRow>;
+};
+
+export const questionGroupsOf = ({ model }: ModelParams): QuestionGroups => ({
+  waiting: [...model.waiting, ...model.delegated],
+  answered: [...model.recent, ...model.answered],
+});
+
+export const questionRowsOf = ({ model }: ModelParams): ReadonlyArray<QuestionRow> => {
+  const groups = questionGroupsOf({ model });
+  return [...groups.waiting, ...groups.answered];
+};
 
 type NextParams = {
   readonly model: QuestionsLensModel;

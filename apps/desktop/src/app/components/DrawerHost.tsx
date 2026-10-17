@@ -13,6 +13,7 @@ import { TerminalDrawer } from '../../features/terminal/components/TerminalDrawe
 import { FileDiffDrawer } from '../../features/diff/components/FileDiffDrawer';
 import { FileWholeDrawer } from '../../features/diff/components/FileWholeDrawer';
 import { AskDrawer } from '../../features/session/ask/components/AskDrawer';
+import { QuestionDrawer } from '../../features/session/components/QuestionDrawer';
 import { WritePanel } from '../../features/artifacts/components/WritePanel';
 import { NewDrawer } from '../../features/session/components/NewDrawer';
 import { HistoryVersionsDrawer } from '../../features/history/components/HistoryVersionsDrawer';
@@ -154,6 +155,15 @@ export const DrawerHost = () => {
       );
     case 'ask':
       return <AskDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
+    case 'question':
+      return (
+        <QuestionDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          questionId={drawer.payload.questionId}
+          onClose={closeDrawer}
+        />
+      );
     case 'new':
       return (
         <NewDrawer
