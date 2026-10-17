@@ -1174,7 +1174,9 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   brief for the consent and retry chats, so scenes can send, stop and turn a
   chat into work. `?scene=chat-room` takes `work=drawer|project|add|session`
   (opens the panel, then the popover or mode), `chat=<key>` (`retry` drafts two
-  projects) and `activity=running|unread` for the top bar and the list.
+  projects) and `activity=running|unread|mixed` for the top bar and the list
+  (`r4-chatlist-states` and `r4-chatlist-selecting` show the row nodes and
+  the checkbox swap).
 
 ## Session Ask turns
 
