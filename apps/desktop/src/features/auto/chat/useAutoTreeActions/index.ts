@@ -16,7 +16,7 @@ type ViewParams = {
   readonly view: AutoTreeView;
 };
 
-export type AutoTreeActionFailure = Readonly<{
+type AutoTreeActionFailure = Readonly<{
   title: string;
   message: string;
 }>;
