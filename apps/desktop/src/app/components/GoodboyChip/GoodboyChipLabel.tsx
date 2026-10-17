@@ -1,8 +1,8 @@
-import { DogMascot, Eyebrow } from '@goodboy/ui';
 import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { useAppStore } from '../../../store';
 import { useRunningAgentCount } from '../../../features/updater/hooks/useRunningAgentCount';
 import { UpdatePillVisual } from '../../../features/updater/components/UpdatePill/UpdatePillVisual';
+import { BrandLockup } from './BrandLockup';
 
 export type GoodboyChipState = 'update' | 'setup' | 'rest';
 
@@ -12,9 +12,6 @@ type Props = {
   readonly installedVersion: string | null;
   readonly isMarkOnly?: boolean;
 };
-
-const MARK_SIZE = 14;
-const RAIL_MARK_SIZE = 16;
 
 export const GoodboyChipLabel = ({
   state,
@@ -28,7 +25,7 @@ export const GoodboyChipLabel = ({
   const runningCount = useRunningAgentCount();
 
   if (isMarkOnly) {
-    return <DogMascot size={RAIL_MARK_SIZE} className="text-foreground" />;
+    return <BrandLockup version={installedVersion} isMarkOnly />;
   }
   if (state === 'update') {
     return (
@@ -50,15 +47,5 @@ export const GoodboyChipLabel = ({
       </>
     );
   }
-  return (
-    <>
-      <DogMascot size={MARK_SIZE} className="text-foreground" />
-      <span className="font-semibold text-foreground">Goodboy</span>
-      <span aria-hidden className="h-3 w-px bg-border" />
-      <Eyebrow label="Beta" muted />
-      {installedVersion === null ? null : (
-        <span className="tabular-nums text-faint-foreground">v{installedVersion}</span>
-      )}
-    </>
-  );
+  return <BrandLockup version={installedVersion} />;
 };
