@@ -179,14 +179,32 @@ describe('SessionOverviewPane', () => {
     const title = screen.getByRole('button', { name: SESSION.goal });
     expect(title.closest('h1')).not.toBeNull();
     fireEvent.keyDown(title, { key: 'F2' });
-    const field = screen.getByRole('textbox', { name: 'Session title' });
+    const field = screen.getByRole<HTMLInputElement>('textbox', { name: 'Session title' });
     expect(document.activeElement).toBe(field);
+    expect([field.selectionStart, field.selectionEnd]).toEqual([0, SESSION.goal.length]);
     fireEvent.keyDown(field, { key: 'Escape' });
 
     const again = screen.getByRole('button', { name: SESSION.goal });
     expect(document.activeElement).toBe(again);
     fireEvent.click(again, { detail: 0 });
     expect(screen.getByRole('textbox', { name: 'Session title' })).toBeDefined();
+  });
+
+  it('puts the caret where the title was clicked, so the text stays put', () => {
+    renderPane();
+    const title = screen.getByRole('button', { name: SESSION.goal });
+    const text = title.querySelector('span')?.firstChild;
+    if (text == null) {
+      throw new Error('no title text');
+    }
+    const range = document.createRange();
+    range.setStart(text, 5);
+    Object.assign(document, { caretRangeFromPoint: () => range });
+    fireEvent.click(title, { detail: 1, clientX: 40, clientY: 10 });
+    Object.assign(document, { caretRangeFromPoint: undefined });
+
+    const field = screen.getByRole<HTMLInputElement>('textbox', { name: 'Session title' });
+    expect([field.selectionStart, field.selectionEnd]).toEqual([5, 5]);
   });
 
   it('keeps the linked key outside the field and saves it back before the edited name', async () => {

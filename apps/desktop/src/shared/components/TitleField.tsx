@@ -1,4 +1,4 @@
-import { useId, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { ICON_SIZE, cn } from '@goodboy/ui';
 import { LimitRing } from './LimitRing';
 import { RenameStatus } from './RenameStatus';
@@ -14,6 +14,7 @@ type Props = {
   readonly isPending: boolean;
   readonly onRetry: () => void;
   readonly lead?: ReactNode;
+  readonly initialCaret?: number | null;
   readonly onDraftChange: (draft: string) => void;
   readonly onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
   readonly onBlur: () => void;
@@ -30,13 +31,30 @@ export const TitleField = ({
   isPending,
   onRetry,
   lead,
+  initialCaret = null,
   onDraftChange,
   onKeyDown,
   onBlur,
 }: Props) => {
   const ringId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
   const hasError = error !== null;
   const isTitle = density === 'title';
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input === null) {
+      return;
+    }
+    input.focus();
+    if (initialCaret !== null) {
+      const at = Math.min(initialCaret, input.value.length);
+      input.setSelectionRange(at, at);
+      return;
+    }
+    input.setSelectionRange(0, input.value.length, 'backward');
+    input.scrollLeft = 0;
+  }, []);
+
   const status = (
     <RenameStatus
       isPending={isPending}
@@ -64,7 +82,7 @@ export const TitleField = ({
       ) : null}
       {lead}
       <input
-        autoFocus
+        ref={inputRef}
         type="text"
         value={draft}
         maxLength={maxLength}

@@ -36,7 +36,7 @@ export const LimitRing = ({ id, used, limit, size }: Props) => {
           fill="none"
           strokeWidth={STROKE}
           stroke="currentColor"
-          className="text-border"
+          className="text-border opacity-60"
         />
         {share > 0 ? (
           <circle

@@ -3,6 +3,7 @@ import type { Session, SessionExternalTask } from '@goodboy/types';
 import { InlineMarkdown, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { TitleField } from '../../../../shared/components/TitleField';
+import { caretOffsetAt } from '../../../../shared/utils/caretOffsetAt';
 import { sessionRowTitle } from '../../sessionTitle';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { overviewTitleHost } from '../../overviewTitleHost';
@@ -26,6 +27,7 @@ export const OverviewTitle = ({ session }: Props) => {
   const canRename = session.archivedAt == null;
   const titleRef = useRef<HTMLButtonElement>(null);
   const shouldRefocus = useRef(false);
+  const caretRef = useRef<number | null>(null);
   const startRef = useRef(rename.start);
   startRef.current = rename.start;
   const keyLead =
@@ -49,7 +51,11 @@ export const OverviewTitle = ({ session }: Props) => {
   });
 
   useEffect(() => {
-    if (rename.editing || !shouldRefocus.current) {
+    if (rename.editing) {
+      caretRef.current = null;
+      return;
+    }
+    if (!shouldRefocus.current) {
       return;
     }
     shouldRefocus.current = false;
@@ -69,6 +75,7 @@ export const OverviewTitle = ({ session }: Props) => {
         isPending={rename.isPending}
         onRetry={() => void rename.commit()}
         lead={keyLead}
+        initialCaret={caretRef.current}
         onDraftChange={rename.setDraft}
         onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
           shouldRefocus.current = true;
@@ -103,7 +110,19 @@ export const OverviewTitle = ({ session }: Props) => {
       type="button"
       data-testid="overview-title"
       aria-keyshortcuts="Enter F2"
-      onClick={rename.start}
+      onClick={(event) => {
+        const offset =
+          event.detail === 0
+            ? null
+            : caretOffsetAt({
+                root: event.currentTarget,
+                clientX: event.clientX,
+                clientY: event.clientY,
+              });
+        const keysLength = keys.join(' ').length;
+        caretRef.current = offset === null || offset < keysLength ? null : offset - keysLength;
+        rename.start();
+      }}
       onKeyDown={(event) => {
         if (event.key !== 'F2') {
           return;
