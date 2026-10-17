@@ -11,7 +11,7 @@ See how much of your Claude and Codex plans is left before a run stops. Each pro
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-limits-chip-light.webp" width="460" alt="The top bar with the Claude limits chip at 84% and its card open: Claude max, Claude is about to run out, Weekly 84% used, resets Tue 13:07, and Click for details">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Use reset
 
@@ -22,7 +22,7 @@ Spend a free Codex reset at the right moment. When Codex offers one, its page sh
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-codex-reset-light.webp" alt="The Codex provider page, Usage group: 5-hour window 41% used, Weekly 58% used, a row reading 1 free reset that expires Oct 3 with the Use reset button, and Open in Impact">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Fallback when a limit is hit
 
@@ -37,7 +37,7 @@ Choose which providers a workspace uses and in what order. **When a provider is 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-light.webp" alt="Settings, Providers and models, Models: the line When a provider is out with Claude, Codex and Cursor as backup, the Chat row for new chats, and the roles Scout, Debugger and Planner, Implementer, Tester and Resolver, then Reviewer, Docs and Report, each with its model, effort and an Auto picker">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Model picker
 
@@ -48,7 +48,7 @@ Pick a model with the reason next to it. The picker leads with **Auto** and what
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-model-picker-light.webp" alt="The model picker opened on the New chats row in Models: Auto with what it resolves to now, then Provider icons, Model chips Haiku, Sonnet, Opus and Fable, Version 4.6, 5 and 5.5, and Effort from Low to Max">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Impact
 
@@ -59,7 +59,7 @@ See what Goodboy got done and what it cost over **7 days**, **30 days** or **All
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-impact-overview-light.webp" alt="Impact, Overview, over 30 days: the tiles Sessions 24, Pull requests merged 17, Reviews resolved 46, Run by workflows 63% and Median session 1.4h, and the sessions that shipped the most">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Monthly cap and budget alert
 
@@ -70,4 +70,4 @@ Set a monthly cap per provider and hear about it before you reach it. In **Spend
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-monthly-cap-light.webp" alt="Impact, Spend, Claude: 90% of cap with spent this month $152.37, cap $170.00 and remaining $17.63, and the monthly cap form with a $170 cap, an alert at 80% of the cap, and the note that Goodboy warns you and routes the next turn to another provider">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>

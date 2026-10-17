@@ -11,7 +11,7 @@ See where each task stands without moving cards around. Six lanes, **building**,
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-light.webp" alt="The Harborline board with its sessions in six lanes: Building, Running, Needs you, In review, Done and Archived, with the Board and List switch at the top right">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### List view
 
@@ -30,7 +30,7 @@ Read a task at a glance: its title on two lines, its project in gray, and one si
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-card-light.webp" width="572" alt="Four session cards: Warn merchants before a payout hold in notify-relay and Fix the rounding drift in the settlement export in ledger-core, each with an open question mark at the right, and Stop retried webhooks posting a second credit in payments-api with pull request #318 and Reconcile the settlement export in ledger-core with pull request #90, each with its pull request in green">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Bulk select
 

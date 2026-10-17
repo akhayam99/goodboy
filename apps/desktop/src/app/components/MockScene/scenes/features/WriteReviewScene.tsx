@@ -1,12 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import type { IsoDateTime, PrReviewDraft } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { CodeLayersScene } from '../CodeLayersScene';
+import { WorktreeScene } from '../u25/c04WorktreeScene';
 import { SESSION_ID } from '../resolveSeed';
-import { useSceneClicks } from '../audit/useSceneClicks';
 import { APPLY_WEBHOOK_NOTE_LINE, APPLY_WEBHOOK_PATH, CTX_PATCH } from '../brand/contextDiffPatch';
-
-const LABELS: ReadonlyArray<string> = ['Write review'];
 
 type Internals = {
   invoke: (command: string, args?: unknown, options?: unknown) => Promise<unknown>;
@@ -39,45 +36,49 @@ const DRAFT: PrReviewDraft = {
   createdAt: '2026-09-25T09:00:00.000Z' as IsoDateTime,
 };
 
-const useScrollToVerdict = (): void => {
+const PANEL_TRIGGER_SELECTOR = '[data-slot="diff-toolbar"] button';
+const PANEL_POLL_MS = 200;
+const MODE_DELAY_MS = 500;
+const PANEL_TRIES = 60;
+
+const useOpenReviewPanel = (): void => {
   useEffect(() => {
     let tries = 0;
     const interval = window.setInterval(() => {
       tries += 1;
-      const target = [...document.querySelectorAll('button')].find((node) =>
-        (node.textContent ?? '').trim().startsWith('Submit comments'),
+      const trigger = [...document.querySelectorAll<HTMLElement>(PANEL_TRIGGER_SELECTOR)].find(
+        (node) => (node.textContent ?? '').trim().startsWith('Review'),
       );
-      if (target !== undefined) {
-        target.scrollIntoView({ block: 'center' });
+      if (trigger !== undefined) {
+        trigger.click();
         window.clearInterval(interval);
         return;
       }
-      if (tries > 80) {
+      if (tries > PANEL_TRIES) {
         window.clearInterval(interval);
       }
-    }, 200);
+    }, PANEL_POLL_MS);
     return () => window.clearInterval(interval);
   }, []);
 };
 
+const CONFIG = { variant: 'github', level: 'worktree', tab: 'files' } as const;
+
 export const FeaturesWriteReviewScene = () => {
-  const [isReady, setIsReady] = useState(false);
-  useScrollToVerdict();
+  useOpenReviewPanel();
 
   useEffect(() => {
     withPrDiff();
-    useAppStore.setState({ reviewDrafts: { [SESSION_ID]: [DRAFT] } });
-    const timer = window.setTimeout(() => setIsReady(true), 600);
+    useAppStore.setState({
+      reviewDrafts: { [SESSION_ID]: [DRAFT] },
+      loadReviewDrafts: async () => undefined,
+    });
+    const timer = window.setTimeout(
+      () => useAppStore.setState({ pullRequestModes: { [SESSION_ID]: 'write_review' } }),
+      MODE_DELAY_MS,
+    );
     return () => window.clearTimeout(timer);
   }, []);
 
-  useSceneClicks({
-    isReady,
-    labels: LABELS,
-    selector: 'button',
-    match: 'prefix',
-    intervalMs: 200,
-  });
-
-  return <CodeLayersScene />;
+  return <WorktreeScene config={CONFIG} />;
 };

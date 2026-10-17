@@ -5,7 +5,7 @@
   <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy with the Harborline session Stop retried webhooks posting a second credit open on its Overview: the Projects card lists payments-api and notify-relay with their branches, one branch unfolded to its pull request, comments, files with a diff stat and checks; the Activity timeline interleaves three runs on Claude, Codex and Cursor models; the shared Context drawer shows the decisions that changed; the top bar shows the Repositories entry, provider limits and two sessions that need you" width="880">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/akhayam99/goodboy?style=for-the-badge&logo=github&logoColor=white&label=release&labelColor=15181b&color=0e9aa4)](https://github.com/akhayam99/goodboy/releases/latest)

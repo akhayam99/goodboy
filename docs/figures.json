@@ -1,359 +1,362 @@
 {
   "features/agents-composer-menu": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'features-composer-menu&brand=1' --window 1280x800 --wait 8000"
   },
   "features/agents-transcript": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'c06-agent-transcript&brand=1' --window 1280x800 --wait 8000"
   },
   "features/agents-what-received": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-slack&brand=1' --click 'Also received' --clip 290,60,940,232 --window 1280x800 --wait 8000"
   },
   "features/agents-workspace-chat": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'chat-room&brand=1' --window 1280x800 --wait 8000"
   },
   "features/artifact-compare": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-compare&brand=1' --window 1280x800 --wait 8000"
   },
   "features/artifact-create": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'artifact-create-wireframe&brand=1' --window 1280x700 --wait 8000"
   },
   "features/artifact-list": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'artifacts-rows&brand=1' --window 1280x800 --wait 8000"
   },
   "features/artifact-report": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'artifact-report&brand=1' --window 1280x800 --wait 8000"
   },
   "features/artifact-scouts": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'artifact-generating&brand=1' --window 1280x330 --wait 8000"
   },
   "features/board-card": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'board-shell&brand=1' --clip 727,125,492,236 --window 1700x700 --wait 8000"
   },
   "features/board-stage": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'board-shell&brand=1' --window 1700x560 --wait 8000"
   },
   "features/context-decisions": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-context&brand=1' --window 1280x800 --wait 8000"
   },
   "features/context-drawer": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'context-drawer&brand=1' --window 1280x800 --wait 8000"
   },
   "features/context-summary": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'r4-context-summary&brand=1' --window 1280x800 --wait 8000"
   },
   "features/history-backups": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'rebase-row-versions&brand=1' --window 1280x700 --wait 8000"
   },
   "features/history-conflicts": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'live-edit-conflict&brand=1' --window 1280x700 --wait 8000"
   },
   "features/history-result": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'live-edit-after&brand=1' --window 1280x650 --wait 8000"
   },
   "features/history-rewrite": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-history&brand=1' --window 1280x800 --wait 8000"
   },
   "features/history-stopped": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-history-stopped&brand=1' --window 1280x800 --wait 8000"
   },
   "features/history-trial": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-history-trial&brand=1' --window 1280x800 --wait 8000"
   },
   "features/inbox-comment-threads": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'conversation&brand=1' --window 1280x900 --wait 8000"
   },
   "features/inbox-list": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'inbox&brand=1' --window 1600x900 --wait 8000"
   },
   "features/inbox-lookup": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-lookup&brand=1' --window 1600x800 --wait 8000"
   },
   "features/inbox-sentry": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'inbox-source&brand=1' --window 1600x740 --wait 8000"
   },
   "features/inbox-slack-permissions": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'slack-permissions&brand=1' --clip 280,234,990,655 --window 1280x900 --wait 8000"
   },
   "features/inbox-slack-reply": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-slack&brand=1' --window 1280x800 --wait 8000"
   },
   "features/keyboard-explore": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'explore-drawerchanges&brand=1' --window 1500x760 --wait 8000"
   },
   "features/keyboard-script-drawer": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'features-script-drawer&brand=1' --window 1280x800 --wait 8000"
   },
   "features/keyboard-shortcuts": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-app&section=shortcuts&brand=1' --window 1280x800 --wait 8000"
   },
   "features/overview-activity": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'activity-groups&brand=1' --clip 491,133,741,917 --window 1280x1050 --wait 8000"
   },
   "features/overview-next": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'c05-overview-merged-next&brand=1' --clip 491,217,741,172 --window 1280x800 --wait 8000"
   },
   "features/overview-session": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'activity-run&brand=1' --selector main --pad 0 --window 1280x540 --wait 8000"
   },
   "features/providers-codex-reset": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-codex&brand=1' --window 1280x800 --wait 8000"
   },
   "features/providers-fallback-auto": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-providers&brand=1' --window 1280x800 --wait 8000"
   },
   "features/providers-impact-overview": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'features-impact-overview&brand=1' --window 1280x700 --wait 8000"
   },
   "features/providers-limits-chip": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'shell&brand=1' --hover '[aria-label^=\"Claude limits\"]' --window 1480x300 --clip 1100,0,380,206 --wait 8000"
   },
   "features/providers-model-picker": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-providers&brand=1' --click Auto --window 1280x700 --wait 8000"
   },
   "features/providers-monthly-cap": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'impact-scopes&v=full&scope=Spend&brand=1' --click Claude --window 1280x760 --wait 8000"
   },
   "features/review-comment-states": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'comments-groups&brand=1' --selector 'nav[class*=\"select-list\"]' --pad 20 --window 1100x900 --wait 8000"
   },
   "features/review-diff": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'c04-worktree-files&brand=1' --window 1500x760 --wait 8000"
   },
   "features/review-pr-page": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'branch-pr-github&brand=1' --window 1100x820 --wait 8000"
   },
   "features/review-push-confirm": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'header-branch-push-confirm&brand=1' --window 1280x420 --wait 8000"
   },
   "features/review-resolve": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'resolve&brand=1' --window 1100x800 --wait 8000"
   },
   "features/review-write": {
-    "version": "0.13.1"
+    "version": "0.27.1",
+    "recipe": "--scene 'features-write-review&brand=1' --window 1280x800 --wait 8000"
   },
   "features/search-command-palette": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'command-palette&brand=1' --window 1280x800 --wait 8000"
   },
   "features/search-go-anywhere": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'palette-query&q=webhook&brand=1' --window 1280x800 --wait 8000"
   },
   "features/search-jump": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'search&view=jump&brand=1' --window 1280x800 --wait 8000"
   },
   "features/search-overlay": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'search&brand=1' --window 1280x800 --wait 8000"
   },
   "features/security-backup-notice": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'changelog&brand=1' --window 1280x800 --clip 290,20,980,235 --wait 8000"
   },
   "features/security-changelog-update": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'changelog&brand=1' --window 1280x800 --wait 8000"
   },
   "features/security-export-import": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-app&section=backup&brand=1' --window 1280x1050 --wait 8000"
   },
   "features/security-findings": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-security-findings&brand=1' --window 1280x420 --wait 8000"
   },
   "features/security-newer-data": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'features-newer-data&brand=1' --window 1280x700 --wait 8000"
   },
   "features/security-updates": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'update-card&brand=1' --window 1280x800 --clip 0,650,380,150 --wait 8000"
   },
   "features/setup-about-you": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-workspace&section=profile&brand=1' --window 1280x700 --wait 8000"
   },
   "features/setup-cli-update": {
-    "version": "0.13.1"
+    "version": "0.27.1",
+    "recipe": "--scene 'settings-providers&provider=anthropic&cli=old&brand=1' --scroll '[aria-label=\"Account\"]' --window 1280x800 --wait 8000"
   },
   "features/setup-integrations": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-tools&tool=github&brand=1' --window 1280x800 --wait 8000"
   },
   "features/setup-permissions": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-providers&provider=codex&brand=1' --window 1280x1100 --clip 264,533,1000,280 --wait 8000"
   },
   "features/setup-provider-connection": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'onboarding&step=1&brand=1' --window 1280x800 --wait 8000"
   },
   "features/setup-provider-page": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-providers&provider=anthropic&brand=1' --window 1280x800 --wait 8000"
   },
   "features/setup-welcome": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'onboarding&step=0&brand=1' --window 1280x600 --wait 8000"
   },
   "features/start-ask-agent": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'new-session-page-agent&brand=1' --window 1280x600 --wait 8000"
   },
   "features/start-pick-task": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'brand-kickoff&brand=1' --window 1000x940 --wait 8000"
   },
   "features/start-run-workflow": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'new-session-page-run-preset&brand=1' --window 1280x800 --wait 8000"
   },
   "features/storage-branches": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-app&section=branches&brand=1' --window 1280x800 --wait 8000"
   },
   "features/storage-worktrees": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'settings-app&section=storage&brand=1' --window 1280x800 --wait 8000"
   },
   "features/support-report-bug": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'r4-report-bug&brand=1' --window 1280x800 --clip 225,560,600,235 --wait 8000"
   },
   "features/switch-display-options": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'sessions-menu&brand=1' --window 1280x900 --wait 8000"
   },
   "features/switch-notifications": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'notifications&brand=1' --click 'Needs action' --window 1280x800 --wait 8000"
   },
   "features/switch-now-chip": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'board-shell&brand=1' --click 2 --window 1500x600 --wait 8000"
   },
   "features/switch-rail": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'session-hover&brand=1' --window 1280x720 --clip 0,0,680,720 --wait 8000"
   },
   "features/workflow-builder": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'new-session-page-run&brand=1' --window 1280x700 --wait 8000"
   },
   "features/workflow-builder-custom": {
-    "version": "0.13.1"
+    "version": "0.27.1",
+    "recipe": "--scene 'workflow-builder-modes&click=Preset,Trace%20and%20fix&brand=1' --window 1280x620 --wait 8000"
   },
   "features/workflow-builder-preset": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'workflow-builder-modes&brand=1' --window 1280x500 --wait 8000"
   },
   "features/workflow-hints": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'workflow-run-step-question&brand=1' --clip 300,600,930,190 --window 1280x800 --wait 8000"
   },
   "features/workflow-model": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'new-session-page-run-preset&brand=1' --click 'Opus 5.5' --window 1280x900 --wait 8000"
   },
   "features/workflow-question-agent": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'r4-questions-drawer&brand=1' --click 'Let an agent decide' --window 1500x800 --wait 8000"
   },
   "features/workflow-questions": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'r4-questions-drawer&brand=1' --window 1500x800 --wait 8000"
   },
   "features/workflow-recap": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'c09-orch-done&brand=1' --window 1280x800 --wait 8000"
   },
   "features/workflow-run": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'c08-run-ready&brand=1' --window 1280x720 --wait 8000"
   },
   "features/workflow-spend": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'workflow-builder-modes&click=Limit&brand=1' --window 1280x600 --wait 8000"
   },
   "features/workflow-starts": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'workflow-builder-modes&click=Starts&brand=1' --window 1280x600 --wait 8000"
   },
   "features/workflow-studio-steps": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'workflow-studio&brand=1' --click 'Saved steps' --scroll '[data-studio-overlay]' --window 1280x580 --wait 8000"
   },
   "features/workspace-branches": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'mount-mismatch&brand=1' --selector section --pad 24 --window 1100x900 --wait 8000"
   },
   "features/workspace-locate": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'forms&form=locate&brand=1' --window 1280x800 --clip 289,49,942,298 --wait 8000"
   },
   "features/workspace-repo-status": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'r4-repos-mix&brand=1' --window 1280x700 --clip 0,0,660,360 --wait 8000"
   },
   "features/workspace-several-projects": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'overview-projects-many&brand=1' --window 1280x700 --wait 8000"
   },
   "features/workspace-starred": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'workspace-projects&brand=1' --window 1100x800 --wait 8000"
   },
   "features/workspace-worktrees": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "--scene 'mounts&brand=1' --window 1280x700 --wait 8000"
   },
   "readme/readme-hero": {
-    "version": "0.27.0",
+    "version": "0.27.1",
     "recipe": "pnpm readme:hero"
   }
 }

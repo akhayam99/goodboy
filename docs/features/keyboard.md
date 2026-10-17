@@ -15,7 +15,7 @@ A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Shortcuts page in Settings, 105 shortcuts in the groups General, Workspaces, Views and Lists, with Command palette on ⌘K, Search on ⌘F, Report a bug on ⌘I and a ⌘⌥ key for each view from Overview to Slack threads">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Script drawer
 
@@ -26,7 +26,7 @@ Pin the scripts you use and run them from the session. The Scripts pane (the Scr
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-light.webp" alt="The Scripts pane grouped by project with Services and Tasks, and the Check posting drift output open on the right: Failed after 12s in ledger-core on nw/fix-settlement-replay, the failing vitest output, Run again, Exit 1 and Copy output">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Open in editor
 
@@ -41,4 +41,4 @@ Browse the session folder as a file tree, with a preview of the selected file be
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-explore-light.webp" alt="Explore in Harborline: the session folder of payments-api as a file tree with a letter M or A on the files that changed against the base branch, the All files and Changed 7 switch, and the rounding.ts changes on the right with its Preview and Changes tabs and Open">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>

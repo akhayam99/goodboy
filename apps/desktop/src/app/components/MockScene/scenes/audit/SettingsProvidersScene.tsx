@@ -82,8 +82,24 @@ const seedRoleSets = () => {
   });
 };
 
+const OUTDATED_CLI_VERSION = '2.1.260';
+
+const HAS_OUTDATED_CLI = sceneParam({ key: 'cli' }) === 'old';
+
+const seedOutdatedCli = () => {
+  if (!HAS_OUTDATED_CLI) {
+    return;
+  }
+  useAppStore.setState((state) => ({
+    providers: state.providers.map((provider) =>
+      provider.id === 'anthropic' ? { ...provider, version: OUTDATED_CLI_VERSION } : provider,
+    ),
+  }));
+};
+
 const seedScene = () => {
   seedPolicyScene({ workspaceId: SETTINGS_WORKSPACE_ID, hasNewProvider: HAS_NEW_PROVIDER });
+  seedOutdatedCli();
   seedHidden();
   seedRoleSets();
 };

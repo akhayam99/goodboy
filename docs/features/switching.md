@@ -11,14 +11,14 @@ The left column lists the sessions of the workspace, one line each, with a sign 
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-rail-light.webp" width="760" alt="The left column of the Northwind workspace: New session, the doors Tasks, Chat and Workflows, and the Sessions list of one-line rows with a state sign and a title, then Inactive 14. The open session Fix webhook retries shows its pages Overview, Runs, Orchestrated, Agents and Artifacts, and a card over its row reads Running, pull request #318 Draft with checks passing, HBL-212, payments-api, notify-relay and 2 agents">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-display-options-light.webp" alt="The Sessions options menu open in the left column of the Northwind workspace, with Status, Project, Archive with Show archived, Sort set to Needs you first, Alphabetical, Last activity and Created, and Group set to None, PR state, Stage and Project">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Pin a session to keep it at the top
 
@@ -33,7 +33,7 @@ Know what needs you from any screen. The chip in the top bar counts sessions tha
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-now-chip-light.webp" alt="The top bar chip 2 sessions need you, 2 running opened into the panel Now in Harborline over the Board: Needs you 2 with Warn merchants before a payout hold and Fix the rounding drift in the settlement export, Running 2 with Speed up the payout export for large merchants and Nightly reconciliation before the Monday close, and Open Monitoring">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Notifications
 
@@ -44,7 +44,7 @@ Catch up in one place. Everything Goodboy has to tell you, from a pull request o
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-light.webp" alt="The Notifications page for Harborline filtered on Needs action: Session reached 80% of its cap, Handoff degraded and 1 session folder left on disk, with Mark all read, Delete all and Close, and a left column of views, severity, source and workspace filters">
 </picture>
 
-<sub>Screenshot from Goodboy 0.27.0</sub>
+<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Open in new window
 
