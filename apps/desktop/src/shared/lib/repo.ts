@@ -1,5 +1,6 @@
 import { invokeCommand } from './invokeCommand';
 import type {
+  BaseDivergence,
   BaseUpdateResult,
   BootstrapAlignOutcome,
   BootstrapClearReport,
@@ -129,6 +130,30 @@ export const checkoutUpdateBase = async ({
   return invokeCommand<BaseUpdateResult>('checkout_update_base', {
     checkoutPath,
     baseBranch,
+    workspaceId,
+    projectId,
+  });
+};
+
+type RepoBaseDivergenceParams = {
+  readonly projectPath: string;
+  readonly baseBranch: string | null;
+  readonly maxAgeMs: number;
+  readonly workspaceId: string;
+  readonly projectId: string;
+};
+
+export const repoBaseDivergence = async ({
+  projectPath,
+  baseBranch,
+  maxAgeMs,
+  workspaceId,
+  projectId,
+}: RepoBaseDivergenceParams): Promise<BaseDivergence> => {
+  return invokeCommand<BaseDivergence>('repo_base_divergence', {
+    projectPath,
+    baseBranch,
+    maxAgeMs,
     workspaceId,
     projectId,
   });
