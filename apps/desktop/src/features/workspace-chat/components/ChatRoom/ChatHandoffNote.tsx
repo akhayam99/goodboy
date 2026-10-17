@@ -1,7 +1,6 @@
-import { Check } from 'lucide-react';
+import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { SESSION_STAGE_META } from '../../../session/session-stage';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { sessionTitle } from '../../../session/sessionTitle';
 import type { ChatSessionEntry } from '../../chatSessionEntries';
 
@@ -10,28 +9,31 @@ type Props = {
   readonly onOpen: (sessionId: SessionId) => void;
 };
 
-const LABEL: Record<ChatSessionEntry['link']['kind'], string> = {
-  new: 'Started a session',
-  add: 'Added to a session',
+const VERB: Record<ChatSessionEntry['link']['kind'], string> = {
+  new: 'Started',
+  add: 'Added to',
 };
 
-export const ChatHandoffNote = ({ entry, onOpen }: Props) => (
-  <div
-    role="status"
-    className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-3 py-2 text-label text-muted-foreground"
-  >
-    <Check size={ICON_SIZE.row} aria-hidden className="shrink-0 text-success" />
-    <span className="shrink-0">{LABEL[entry.link.kind]} ·</span>
-    <span className="min-w-0 flex-1 truncate text-foreground">
-      {sessionTitle({ session: entry.session })}
-    </span>
-    <span className="shrink-0 text-faint-foreground">{SESSION_STAGE_META[entry.stage].label}</span>
-    <button
-      type="button"
-      onClick={() => onOpen(entry.session.id)}
-      className="shrink-0 rounded-sm px-2 py-0.5 text-foreground motion-safe:transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-    >
-      Open session
-    </button>
-  </div>
-);
+export const ChatHandoffNote = ({ entry, onOpen }: Props) => {
+  const title = sessionTitle({ session: entry.session });
+  const verb = VERB[entry.link.kind];
+  return (
+    <Tooltip content={`Open ${title}`} anchorClassName="flex min-w-0 self-start">
+      <button
+        type="button"
+        aria-label={`${verb} ${title}`}
+        onClick={() => onOpen(entry.session.id)}
+        className={cn(
+          'group/started flex min-w-0 items-center gap-1 rounded-sm text-meta text-faint-foreground motion-safe:transition-colors hover:text-muted-foreground',
+          FOCUS_RING,
+        )}
+      >
+        <CONCEPT_ICONS.sessions size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+        <span className="shrink-0">{verb}</span>
+        <span className="min-w-0 truncate text-muted-foreground group-hover/started:text-foreground">
+          {title}
+        </span>
+      </button>
+    </Tooltip>
+  );
+};
