@@ -66,6 +66,7 @@ export const useDropdown = ({
     align,
     shouldMatchTriggerWidth: width == null,
     isAtLeastTriggerWidth,
+    isAnchorWrapper: true,
     viewportMargin,
     maxWidth,
   });

@@ -27,6 +27,10 @@
   "apps/desktop/src/features/branch/components/PullRequestTab/LinkIssueToPrPopover.tsx": {
     "trailing action of a property row": 1
   },
+  "apps/desktop/src/features/bug-report/components/ReportSheetHost.tsx": {
+    "f76: the report opens to the right of the sidebar bug icon": 1,
+    "f76: its bottom sits on the icon's bottom, growing up": 1
+  },
   "apps/desktop/src/features/chat/components/TurnFooter/index.tsx": {
     "detail button at the end of the turn footer": 1
   },

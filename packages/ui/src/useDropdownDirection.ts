@@ -17,6 +17,7 @@ type Params = {
   readonly align: DropdownAlign;
   readonly shouldMatchTriggerWidth: boolean;
   readonly isAtLeastTriggerWidth?: boolean;
+  readonly isAnchorWrapper?: boolean;
   readonly viewportMargin?: number;
   readonly maxWidth?: number;
 };
@@ -29,6 +30,7 @@ type ResolveDesiredLeftParams = {
 
 type AnchorRectParams = {
   readonly trigger: HTMLElement;
+  readonly isAnchorWrapper: boolean;
 };
 
 type PlaceOnRightParams = {
@@ -59,9 +61,10 @@ const readBottomInset = (): number => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-const anchorRectOf = ({ trigger }: AnchorRectParams): DOMRect => {
+const anchorRectOf = ({ trigger, isAnchorWrapper }: AnchorRectParams): DOMRect => {
   const own = trigger.getBoundingClientRect();
-  const only = trigger.childElementCount === 1 ? trigger.firstElementChild : null;
+  const only =
+    isAnchorWrapper && trigger.childElementCount === 1 ? trigger.firstElementChild : null;
   if (only === null) {
     return own;
   }
@@ -123,6 +126,7 @@ export const useDropdownDirection = ({
   align,
   shouldMatchTriggerWidth,
   isAtLeastTriggerWidth = false,
+  isAnchorWrapper = false,
   viewportMargin = DEFAULT_VIEWPORT_MARGIN,
   maxWidth,
 }: Params): CSSProperties | undefined => {
@@ -138,7 +142,7 @@ export const useDropdownDirection = ({
       if (trigger == null) {
         return;
       }
-      const rect = anchorRectOf({ trigger });
+      const rect = anchorRectOf({ trigger, isAnchorWrapper });
       const viewportWidth = Math.max(window.innerWidth - viewportMargin * 2, 0);
       const matchedWidth = Math.max(rect.width, MIN_TRIGGER_MATCH_WIDTH);
       const measuredWidth = popupRef.current?.getBoundingClientRect().width ?? 0;
@@ -205,6 +209,7 @@ export const useDropdownDirection = ({
     align,
     expectedHeight,
     expectedWidth,
+    isAnchorWrapper,
     isAtLeastTriggerWidth,
     maxWidth,
     open,
