@@ -153,9 +153,9 @@ describe('the shell chapter', () => {
     expect(pointOf('shell', 'Hide the sidebar')).toContain('only the sidebar');
   });
 
-  it('names the session tools at the foot of the rail, with no second menu', () => {
+  it('names the session tools in their column at the right of the page, with no second menu', () => {
     const panes = pointOf('shell', 'Session tools');
-    ['Ask', 'Terminal', 'Explore', 'Context', 'Scripts', 'foot of the session rail'].forEach(
+    ['Ask', 'Terminal', 'Explore', 'Context', 'Scripts', 'right of the session page'].forEach(
       (pane) => expect(panes).toContain(pane),
     );
     expect(panes).not.toContain('More panes');

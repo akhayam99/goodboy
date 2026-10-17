@@ -297,7 +297,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rail',
-        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. At its top sit the session's name, which you click to rename, and its menu, then its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents with an Experimental chip while Auto is on, Artifacts, and Questions while one waits. A dot beside a count says something runs, and a warning dot says a question waits. Projects lists each branch with its pull request number and one dot for its worst state, and Linked lists the work linked to the session. Drag its edge to resize it.",
+        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. Its top row holds the fold button, then Autopilot, Pin and Refresh, each pressed while it is on. Then come its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents with an Experimental chip while Auto is on, Artifacts and Questions. A dot beside a count says something runs, and a warning dot says a question waits. The Projects card lists each project, its branches with their pull request number and one dot for their worst state, and under each branch its Pull request, Comments, Files with the lines added and removed, and Checks, one click from the session. The Linked card lists the work linked to the session. Each card folds from its title and has a + to add. Archive and Delete sit at the foot; rename the session from its row in the sidebar. Drag the rail's edge to resize it.",
       },
       {
         term: 'Levels',
@@ -305,11 +305,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Fold the rail',
-        desc: 'Fold session rail, the button at the top of the rail, shrinks it to the icons of the current level with the tools at the foot, and Show session rail brings it back. It keeps its own setting, apart from the sidebar. In a narrow window the sidebar folds first and then the rail, so the page keeps room to work; open one by hand and it stays open until the window grows.',
+        desc: 'Fold session rail, the button at the top of the rail, shrinks it to the icons of the current level, and Show session rail brings it back. It keeps its own setting, apart from the sidebar. In a narrow window the sidebar folds first and then the rail, so the page keeps room to work; open one by hand and it stays open until the window grows.',
       },
       {
         term: 'Session tools',
-        desc: 'The foot of the session rail holds Ask, Terminal, Explore, Context and Scripts, one row each, and they stay the same while the rail steps into a branch, a run or Auto. A tool opens as a pane beside the page, one at a time: press its row again, or Esc, to close it, and another row replaces it. A dot on Context says the context is updating or changed since you last looked, and a red dot says it could not update. Page headers keep only the actions of the page and one ⋯. Outside a session, the Terminal and Chat doors of the sidebar take their place.',
+        desc: 'A thin column of icons at the right of the session page, before any open panel, holds Ask, Terminal, Explore, Context and Scripts, and they stay the same while the rail steps into a branch, a run or Auto, folded or not. Hover an icon to read its name and key. A tool opens as a pane beside the page, one at a time: press its icon again, or Esc, to close it, and another icon replaces it; the open one shows pressed. A dot on Context says the context is updating or changed since you last looked, and a red dot says it could not update. Page headers keep only the actions of the page and one ⋯. Outside a session, the Terminal and Chat doors of the sidebar take their place.',
       },
       {
         term: 'Ask',
