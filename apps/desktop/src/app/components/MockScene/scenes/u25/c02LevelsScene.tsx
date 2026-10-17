@@ -99,7 +99,7 @@ export const LevelsScene = ({ config }: Props) => {
   }
   const currentSessionId = place === 'board' ? null : seed.session.id;
   return (
-    <div data-shot className="flex h-screen min-h-0 flex-col bg-background">
+    <div data-shot className="flex h-screen min-h-0 flex-col bg-backdrop">
       <AppTopBar
         sidebar={{ isCollapsed: config.isMainFolded === true, onToggle: noop }}
         onOpenSpend={noop}

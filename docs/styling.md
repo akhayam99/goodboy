@@ -111,9 +111,14 @@ and the contrast floors are in
 [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#surface-ladder). A colour
 class with no `--color-*` token behind it fails `no-token-bypass.test.ts`.
 
-`bg-chrome` is the app frame and nothing else: `AppShell` paints it on the
-window and the left column, and `AppTopBar` paints its bar with it. The main pane stays on `bg-background`, one step in front.
-`no-token-bypass.test.ts` fails a `bg-chrome` anywhere else.
+`bg-chrome` is the app frame and nothing else. `AppShell` paints the window
+once with `bg-backdrop` (chrome plus the `--app-backdrop` glow), and the top bar
+and the left column stay transparent on it, so one field runs behind both. The
+main pane stays on `bg-background`, one step in front, and every panel and
+drawer stays flat. `no-token-bypass.test.ts` fails a `bg-chrome` anywhere else
+and a `bg-backdrop` outside `AppShell` (the c02 levels scene, which draws the
+shell without it, is the one exception). `--app-backdrop-strength` defaults to
+3 (percent of `primary`), halved in light mode.
 
 ## The window grid
 
