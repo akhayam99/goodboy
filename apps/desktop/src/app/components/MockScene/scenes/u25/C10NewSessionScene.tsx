@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
 import type { StartChoice } from '../../../../../store/slices/sessionDraft/state';
 import { sceneClock } from '../../sceneClock';
+import { SETTINGS_PROVIDERS } from '../audit/settingsSeed';
 import { WORKSPACE_ID } from '../BoardScene';
 import { NewSessionPageScene } from '../u24/NewSessionPageScene';
 
@@ -23,6 +24,7 @@ export type C10SceneState = {
   readonly startFailure?: string;
   readonly clickLabel?: string;
   readonly openPrefix?: string;
+  readonly hasConnectedProviders?: boolean;
 };
 
 type Props = {
@@ -87,6 +89,9 @@ const seedProjects = ({ state }: Props): void => {
     useAppStore.setState((current) => ({
       projects: [...current.projects, ...extraProjects({ template })],
     }));
+  }
+  if (state.hasConnectedProviders === true) {
+    useAppStore.setState({ providers: SETTINGS_PROVIDERS });
   }
   const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID] ?? EMPTY_SESSION_DRAFT;
   useAppStore.setState((current) => ({

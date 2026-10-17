@@ -124,8 +124,9 @@ describe('the c10 New session scenes', () => {
     const options = within(list).getAllByRole('option');
     expect(options.length).toBeGreaterThan(0);
     for (const option of options) {
-      const marks = option.querySelectorAll('[data-step-mark]');
+      const marks = [...option.querySelectorAll('[data-step-mark]')];
       expect(marks.length).toBeGreaterThan(0);
+      expect(marks.every((mark) => mark.getAttribute('data-step-mark') === 'anthropic')).toBe(true);
       expect(option.textContent).toContain('Step 1 ');
       expect(option.textContent).not.toMatch(/\d steps?\b/);
     }

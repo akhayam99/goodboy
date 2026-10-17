@@ -19,6 +19,7 @@ const WORKFLOW: C10SceneState = {
 const PRESETS_OPEN: C10SceneState = {
   ...WORKFLOW,
   openPrefix: 'Preset:',
+  hasConnectedProviders: true,
 };
 
 const ORCHESTRATE: C10SceneState = {

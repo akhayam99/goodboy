@@ -240,7 +240,7 @@ describe('useDropdown', () => {
       result.current.toggle();
     });
 
-    expect(result.current.popupStyle).toMatchObject({ left: 236, top: 428, maxHeight: 752 });
+    expect(result.current.popupStyle).toMatchObject({ left: 236, bottom: 40, maxHeight: 720 });
     trigger.remove();
   });
 
@@ -266,7 +266,7 @@ describe('useDropdown', () => {
       result.current.toggle();
     });
 
-    expect(result.current.popupStyle).toMatchObject({ left: 508, top: 8 });
+    expect(result.current.popupStyle).toMatchObject({ left: 508, top: 20 });
     trigger.remove();
   });
 

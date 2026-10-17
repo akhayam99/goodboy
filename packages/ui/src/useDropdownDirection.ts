@@ -43,7 +43,8 @@ type PlaceOnRightParams = {
 
 type RightPlacement = {
   readonly left: number;
-  readonly top: number;
+  readonly top?: number;
+  readonly bottom?: number;
   readonly maxHeight: number;
 };
 
@@ -93,15 +94,6 @@ const placeOnRight = ({
     window.innerHeight - viewportMargin - readBottomInset(),
     Math.min(rect.bottom, window.innerHeight - viewportMargin),
   );
-  const maxHeight = Math.max(bottomLimit - viewportMargin, 0);
-  const shownHeight = Math.min(popupHeight, maxHeight);
-  const desiredTop =
-    align === 'end'
-      ? rect.bottom - shownHeight
-      : align === 'center'
-        ? rect.top + rect.height / 2 - shownHeight / 2
-        : rect.top;
-  const top = Math.min(Math.max(desiredTop, viewportMargin), bottomLimit - shownHeight);
   const roomRight = window.innerWidth - viewportMargin - rect.right - SIDE_GAP;
   const roomLeft = rect.left - SIDE_GAP - viewportMargin;
   const desiredLeft =
@@ -109,9 +101,18 @@ const placeOnRight = ({
       ? rect.right + SIDE_GAP
       : rect.left - SIDE_GAP - popupWidth;
   const maxLeft = Math.max(window.innerWidth - popupWidth - viewportMargin, viewportMargin);
+  const left = Math.min(Math.max(desiredLeft, viewportMargin), maxLeft);
+  const bottomEdge = Math.min(rect.bottom, bottomLimit);
+  const roomAbove = Math.max(bottomEdge - viewportMargin, 0);
+  if (align === 'end' && popupHeight <= roomAbove) {
+    return { left, bottom: window.innerHeight - bottomEdge, maxHeight: roomAbove };
+  }
+  const maxHeight = Math.max(bottomLimit - viewportMargin, 0);
+  const shownHeight = Math.min(popupHeight, maxHeight);
+  const desiredTop = align === 'center' ? rect.top + rect.height / 2 - shownHeight / 2 : rect.top;
   return {
-    left: Math.min(Math.max(desiredLeft, viewportMargin), maxLeft),
-    top,
+    left,
+    top: Math.min(Math.max(desiredTop, viewportMargin), bottomLimit - shownHeight),
     maxHeight,
   };
 };
