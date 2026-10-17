@@ -299,6 +299,37 @@ describe('DrawerColumn over the page', () => {
     expect(order.indexOf(scrim() as HTMLElement)).toBeLessThan(order.indexOf(panel()));
   });
 
+  it('rounds the scrim with the corners of the sheet it dims', () => {
+    stubColumnWidth(678);
+    const { container, unmount } = render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>drafts</div>}
+        frame="sheet"
+        sheetEdge="wrapped"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(pageOf(container).className).toContain('rounded-l-frame');
+    expect(scrim()?.className).toContain('rounded-l-frame');
+    unmount();
+
+    render(
+      <DrawerColumn
+        main={<div>main</div>}
+        drawer={<div>drafts</div>}
+        frame="sheet"
+        sheetEdge="flush"
+        ariaLabel="Side panel"
+        resizeLabel="Resize side panel"
+      />,
+    );
+
+    expect(scrim()?.className).not.toMatch(/rounded/);
+  });
+
   it('answers a scrim click with the layer on top of the escape stack, once', () => {
     stubColumnWidth(678);
     const under = vi.fn();
@@ -1159,7 +1190,50 @@ const stubEdgeWidths = ({ column }: EdgeWidthsParams) => {
     disconnect() {}
   }
   vi.stubGlobal('ResizeObserver', EdgeObserver);
+  stubEdgeRect();
 };
+
+const stubEdgeRect = () => {
+  const original = Element.prototype.getBoundingClientRect;
+  const spy = vi
+    .spyOn(Element.prototype, 'getBoundingClientRect')
+    .mockImplementation(function rectOf(this: Element) {
+      const rect = original.call(this);
+      return this.hasAttribute('data-drawer-edge') && this.childElementCount > 0
+        ? new DOMRect(rect.x, rect.y, EDGE_WIDTH, rect.height)
+        : rect;
+    });
+  cleanups.push(() => spy.mockRestore());
+};
+
+const stubSilentObserver = ({ column }: EdgeWidthsParams) => {
+  class SilentEdgeObserver {
+    private readonly callback: ObserverCallback;
+    constructor(callback: ObserverCallback) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      if (!target.hasAttribute('data-drawer-edge')) {
+        this.callback([{ contentRect: { width: column } }]);
+      }
+    }
+    disconnect() {}
+  }
+  vi.stubGlobal('ResizeObserver', SilentEdgeObserver);
+  stubEdgeRect();
+};
+
+const renderReaderWithTools = () =>
+  render(
+    <DrawerColumn
+      main={<ToolColumn />}
+      drawer={<div>Plan</div>}
+      sizing="reader"
+      frame="sheet"
+      ariaLabel="Side panel"
+      resizeLabel="Resize side panel"
+    />,
+  );
 
 const ToolColumn = () => {
   const host = useContext(DrawerEdgeContext);
@@ -1199,6 +1273,29 @@ describe('DrawerColumn edge', () => {
     expect(live?.closest('[inert]')).toBeNull();
     expect(edge?.className).toContain('z-30');
     expect(scrim()?.className).toContain('z-10');
+    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
+  });
+
+  it('ends the overlay card at the left edge of the tools column at 1100', () => {
+    stubEdgeWidths({ column: 852 });
+    renderReaderWithTools();
+
+    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
+    expect(Number.parseFloat(panel().style.width) + EDGE_WIDTH).toBeLessThanOrEqual(852);
+  });
+
+  it('narrows the overlay card so it and the tools column fit a narrow sheet', () => {
+    stubEdgeWidths({ column: 640 });
+    renderReaderWithTools();
+
+    expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
+    expect(Number.parseFloat(panel().style.width) + EDGE_WIDTH).toBeLessThanOrEqual(640);
+  });
+
+  it('measures the tools column once it mounts, without waiting for an observer', () => {
+    stubSilentObserver({ column: 852 });
+    renderReaderWithTools();
+
     expect(panel().style.right).toBe(`${EDGE_WIDTH}px`);
   });
 

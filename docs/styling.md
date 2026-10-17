@@ -167,7 +167,10 @@ squeezed. While it lies over the page, `DrawerColumn` draws an edge host
 (`data-drawer-edge`) at the right edge above the scrim and hands it to the page
 through `DrawerEdgeContext`; the session tools column portals a live copy there
 (`SessionFrame`), and the card sits left of it, so a tool can still switch or
-close the drawer. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
+close the drawer. The host is measured after every commit (and by a
+`ResizeObserver` after that), and `drawerLayoutOf` takes its width as
+`edgeWidth`: the overlay card plus the column always fit in the sheet, so the
+column never covers the card's primary or its Close. `sizing` on `DrawerColumn` is `side` (400, drag 384 to 560), `reader`
 (720, drag 480 to 1000) or `full` (the whole column, always over the page); each
 tier has its own saved width and a handle. `placement="overlay"` skips the push
 rule for a drawer that always lies over the page; the thresholds (1024 for

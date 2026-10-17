@@ -242,29 +242,29 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
   })),
   {
-    name: 'palette: Start a run lists the workflows and asks before it starts anything',
-    covers: ['palette:Start a run'],
+    name: 'palette: Run a workflow lists the workflows and asks before it starts anything',
+    covers: ['palette:Run a workflow'],
     open: async () => {
       attached = vi.fn(async () => undefined);
       seedWorkflow();
-      await openPalette(/^Start a run$/, 'start a run');
+      await openPalette(/^Run a workflow$/, 'start a run');
       fireEvent.mouseDown(await screen.findByRole('option', { name: /^Ship a fix/ }));
       await settle();
     },
     lands: async () => {
-      expect(await screen.findByText('Start a run: Ship a fix', {}, WAIT)).toBeDefined();
+      expect(await screen.findByText('Run a workflow: Ship a fix', {}, WAIT)).toBeDefined();
       expect(screen.getByText('Plan · Implement')).toBeDefined();
       expect(attached).not.toHaveBeenCalled();
     },
   },
   {
-    name: 'palette: confirming Start a run attaches the workflow to this session',
-    covers: ['attachWorkflowToSession', 'palette:Start a run: Ship a fix'],
+    name: 'palette: confirming Run a workflow attaches the workflow to this session',
+    covers: ['attachWorkflowToSession', 'palette:Run a workflow: Ship a fix'],
     open: async () => {
       attached = vi.fn(async () => undefined);
       seedWorkflow();
-      await openPalette(/^Start a run: Ship a fix/, 'ship a fix');
-      await clickButton('Start run');
+      await openPalette(/^Run a workflow: Ship a fix/, 'ship a fix');
+      await clickButton('Run');
     },
     lands: ({ sessionId }) =>
       waitFor(
@@ -385,7 +385,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       () => heading('New session'),
       () => visible('tab', /Pick up a task/),
       () => visible('tab', /Run a workflow/),
-      () => visible('tab', /Ask an agent/),
+      () => visible('tab', /Start an agent/),
       () => visible('button', /Start blank/),
     ),
   },
@@ -483,9 +483,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('textbox', 'Session title'),
   },
   {
-    name: 'palette verb: Start agent',
-    covers: ['navigate', 'palette:Start agent'],
-    open: () => openPalette(/^Start agent$/),
+    name: 'palette verb: Start an agent',
+    covers: ['navigate', 'palette:Start an agent'],
+    open: () => openPalette(/^Start an agent$/),
     lands: both(lens('agents'), () => heading('Agents')),
   },
   {

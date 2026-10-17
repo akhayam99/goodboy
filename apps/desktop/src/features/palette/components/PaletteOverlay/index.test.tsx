@@ -351,7 +351,7 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
       .getAllByText(/^For this (agent|session)$/)
       .map((node) => node.textContent);
     expect(eyebrows).toEqual(['For this agent', 'For this session']);
-    expect(optionNames()).toContain('Start agent');
+    expect(optionNames()).toContain('Start an agent');
   });
 });
 

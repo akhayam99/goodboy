@@ -77,6 +77,7 @@ import { offeredSessionGoal } from './offeredSessionGoal';
 import { presetStepMarksOf } from '../../presetStepMarksOf';
 import { draftStepRoutingOf } from '../../draftStepRoutingOf';
 import { useRoutingScope } from '../../../../shared/hooks/useRoutingScope';
+import { NAMES } from '../../../../shared/names';
 
 export type BuilderKickoff = {
   readonly workspaceId: WorkspaceId;
@@ -143,8 +144,8 @@ const PRESET_FALLBACK_NAME = 'Preset run';
 const IMMEDIATE_START: StartChoice = { triggerMode: 'immediate', chainAfterId: null };
 
 const PRIMARY_LABEL: Readonly<Record<Mode, string>> = {
-  preset: 'Start run',
-  dynamic: 'Start orchestration',
+  preset: NAMES.startRun,
+  dynamic: NAMES.startOrchestrator,
 };
 
 export const WorkflowBuilderView = (props: Props) => {

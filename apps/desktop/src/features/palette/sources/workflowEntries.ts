@@ -61,7 +61,7 @@ const stepsLabel = (workflow: Workflow): string => {
 export const workflowEntries = ({ workflows, start }: Params): ReadonlyArray<PaletteEntry> =>
   workflows.map((workflow): PaletteEntry => ({
     key: `workflow:${workflow.id}`,
-    label: `Start a run: ${workflow.name}`,
+    label: `${NAMES.startRun}: ${workflow.name}`,
     secondary: [workflow.name],
     kind: 'workflow',
     group: 'workflow',

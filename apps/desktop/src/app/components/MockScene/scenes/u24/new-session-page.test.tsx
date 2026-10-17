@@ -53,7 +53,7 @@ describe('the New session page scenes', () => {
     }
   });
 
-  it('new-session-page-run draws Orchestrate with its line, no Use session goal and one Start orchestration', async () => {
+  it('new-session-page-run draws Run an orchestrator with its line, no Use session goal and one Run an orchestrator', async () => {
     mount({ id: 'new-session-page-run' });
 
     expect(await screen.findByRole('textbox', { name: 'Goal' }, WAIT)).toBeDefined();
@@ -62,7 +62,7 @@ describe('the New session page scenes', () => {
     ).toBeDefined();
     expect(screen.queryByText('Likely steps')).toBeNull();
     expect(screen.queryByRole('button', { name: /use session goal/i })).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Start orchestration' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Run an orchestrator' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Discard' })).toBeDefined();
     expect(screen.getByRole('button', { name: /start blank/i })).toBeDefined();
   });
@@ -95,6 +95,6 @@ describe('the New session page scenes', () => {
     ).toBeDefined();
     expect(screen.queryByText('It may not work well yet.')).toBeNull();
     expect(screen.getByText('Experimental')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start Auto' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start an auto' })).toBeDefined();
   });
 });

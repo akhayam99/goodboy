@@ -985,10 +985,10 @@ describe('moving across every place keeps one frame', () => {
       }
 
       const runsBefore = sessionRuns(sessionId);
-      await openPalette(/^Start a run$/, 'Start a run');
+      await openPalette(/^Run a workflow$/, 'Run a workflow');
       fireEvent.mouseDown(await screen.findByRole('option', { name: /^Ship a fix/ }));
       await settle();
-      await clickButton('Start run');
+      await clickButton('Run');
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1), WAIT);
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
       expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(

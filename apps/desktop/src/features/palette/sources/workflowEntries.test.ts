@@ -58,12 +58,12 @@ const list = ({ query, entries }: { query: string; entries: ReadonlyArray<Palett
   ).map((row) => row.item.label);
 
 describe('workflowEntries', () => {
-  it('turns each workflow into a Start a run row with its description or its step count', () => {
+  it('turns each workflow into a Run a workflow row with its description or its step count', () => {
     const entries = workflowEntries({ workflows: [PLAN, REVIEW], start: vi.fn() });
 
     expect(entries.map((entry) => [entry.key, entry.label, entry.detail])).toEqual([
-      [PLAN.id.replace(/^/, 'workflow:'), 'Start a run: Plan then build', 'Two passes'],
-      [REVIEW.id.replace(/^/, 'workflow:'), 'Start a run: Review a branch', '0 steps'],
+      [PLAN.id.replace(/^/, 'workflow:'), 'Run a workflow: Plan then build', 'Two passes'],
+      [REVIEW.id.replace(/^/, 'workflow:'), 'Run a workflow: Review a branch', '0 steps'],
     ]);
     expect(entries.every((entry) => entry.group === 'workflow')).toBe(true);
   });
@@ -82,36 +82,38 @@ describe('workflowEntries', () => {
     const entries = [session, ...workflowEntries({ workflows: [PLAN, REVIEW], start: vi.fn() })];
 
     expect(list({ query: '~', entries })).toEqual([
-      'Start a run: Plan then build',
-      'Start a run: Review a branch',
+      'Run a workflow: Plan then build',
+      'Run a workflow: Review a branch',
     ]);
-    expect(list({ query: '~review', entries })).toEqual(['Start a run: Review a branch']);
+    expect(list({ query: '~review', entries })).toEqual(['Run a workflow: Review a branch']);
   });
 
   it('finds a workflow by its plain name too', () => {
     const entries = [session, ...workflowEntries({ workflows: [PLAN], start: vi.fn() })];
 
-    expect(list({ query: 'plan then', entries })).toEqual(['Start a run: Plan then build']);
+    expect(list({ query: 'plan then', entries })).toEqual(['Run a workflow: Plan then build']);
   });
 
-  it('lists the plain workflow names inside the Start a run level', () => {
+  it('lists the plain workflow names inside the Run a workflow level', () => {
     const choices = workflowChoiceEntries({ workflows: [PLAN, REVIEW], start: vi.fn() });
 
     expect(choices.map((entry) => entry.label)).toEqual(['Plan then build', 'Review a branch']);
     expect(choices.every((entry) => entry.level?.kind === 'confirm-run')).toBe(true);
   });
 
-  it('offers the Start a run level only when a workflow exists, with its former names', () => {
+  it('offers the Run a workflow level only when a workflow exists, with its former names', () => {
     expect(startRunEntry({ workflows: [] })).toBeNull();
     const entry = startRunEntry({ workflows: [PLAN] });
 
-    expect(entry?.label).toBe('Start a run');
+    expect(entry?.label).toBe('Run a workflow');
     expect(entry?.detail).toBe('from a workflow');
     expect(entry?.level).toEqual({ kind: 'start-run' });
     expect(entry?.secondary).toEqual([
       'Run workflow',
       'Start a workflow',
       'Attach another workflow',
+      'Start a run',
+      'Start another run',
     ]);
   });
 });

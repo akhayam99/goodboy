@@ -69,9 +69,9 @@ const mount = async ({ id }: MountParams): Promise<void> => {
 
 const FORM_SCENES: ReadonlyArray<readonly [SceneId, string]> = [
   ['c10-new-run', 'Run a workflow'],
-  ['c10-new-orchestrate', 'Orchestrate'],
-  ['c10-new-agent', 'Ask an agent'],
-  ['c10-new-auto', 'Start Auto'],
+  ['c10-new-orchestrate', 'Run an orchestrator'],
+  ['c10-new-agent', 'Start an agent'],
+  ['c10-new-auto', 'Start an auto'],
   ['c10-new-report', 'Write a report'],
   ['c10-new-wireframe', 'Draw a wireframe'],
 ];
@@ -108,16 +108,16 @@ describe('the c10 New session scenes', () => {
   it('c10-start-task picks HBL-412 into one block with one Start from HBL-412', async () => {
     await mount({ id: 'c10-start-task' });
 
-    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Runs as: Run an orchestrator' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Start from HBL-412' })).toBeDefined();
   });
 
-  it('c10-start-workflow draws the preset steps, the two project chips and Start run', async () => {
+  it('c10-start-workflow draws the preset steps, the two project chips and Run a workflow', async () => {
     await mount({ id: 'c10-start-workflow' });
 
     expect(screen.getByRole('button', { name: 'Model for Scout the retry path' })).toBeDefined();
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
-    expect(screen.getAllByRole('button', { name: 'Start run' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Run a workflow' })).toHaveLength(1);
   });
 
   it('c10-start-presets opens the Preset list with one provider mark per step', async () => {
@@ -149,12 +149,12 @@ describe('the c10 New session scenes', () => {
     expect(violations.map((violation) => violation.id)).toEqual([]);
   });
 
-  it('c10-start-orchestrate draws the goal, two project chips and one Start orchestration', async () => {
+  it('c10-start-orchestrate draws the goal, two project chips and one Run an orchestrator', async () => {
     await mount({ id: 'c10-start-orchestrate' });
 
     expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
-    expect(screen.getAllByRole('button', { name: 'Start orchestration' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Run an orchestrator' })).toHaveLength(1);
     expect(screen.queryByText('Likely steps')).toBeNull();
   });
 
@@ -167,12 +167,12 @@ describe('the c10 New session scenes', () => {
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
   });
 
-  it('c10-start-auto is the Auto form with its Experimental chip and Start Auto', async () => {
+  it('c10-start-auto is the Auto form with its Experimental chip and Start an auto', async () => {
     await mount({ id: 'c10-start-auto' });
 
     expect(screen.getByRole('region', { name: 'Auto' })).toBeDefined();
     expect(screen.getByText('Experimental')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start Auto' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start an auto' })).toBeDefined();
   });
 
   it('c10-start-projects opens the picker over 50 projects, searched for pay', async () => {
@@ -215,9 +215,9 @@ describe('the c10 New session scenes', () => {
         .map((item) => item.textContent),
     ).toEqual([
       'Run a workflow',
-      'Orchestrate',
-      'Ask an agent',
-      'Start Auto',
+      'Run an orchestrator',
+      'Start an agent',
+      'Start an auto',
       'Write a report',
       'Draw a wireframe',
     ]);

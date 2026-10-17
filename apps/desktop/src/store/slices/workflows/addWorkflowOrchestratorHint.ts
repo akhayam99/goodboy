@@ -60,12 +60,12 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     draft: OrchestratorHintDraft,
-  ) => {
+  ): Promise<OrchestratorHint | null> => {
     const run = findWorkflowRun({ get, sessionId, workflowRunId });
     const inputs = draft.attachments ?? [];
     const typed = draft.text.trim();
     if (run == null || (typed === '' && inputs.length === 0)) {
-      return;
+      return null;
     }
     const attachmentIds = await saveHintFiles({ set, get, sessionId, workflowRunId, inputs });
     const hint: OrchestratorHint = {
@@ -88,8 +88,9 @@ export const addWorkflowOrchestratorHint = (set: SetFn, get: GetFn) => {
       run.discardedAt != null ||
       isRunPaused({ run: current })
     ) {
-      return;
+      return hint;
     }
     void readNow({ set, get, sessionId, workflowRunId, hintIds: [hint.id] });
+    return hint;
   };
 };

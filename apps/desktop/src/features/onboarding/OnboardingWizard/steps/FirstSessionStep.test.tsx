@@ -26,9 +26,9 @@ const renderStep = ({ hasIssueSource = false } = {}) => {
 };
 
 describe('FirstSessionStep', () => {
-  it('opens on Ask an agent with the first starter written out for the project', () => {
+  it('opens on Start an agent with the first starter written out for the project', () => {
     renderStep();
-    expect(screen.getByRole('tab', { name: /ask an agent/i }).getAttribute('aria-selected')).toBe(
+    expect(screen.getByRole('tab', { name: /start an agent/i }).getAttribute('aria-selected')).toBe(
       'true',
     );
     const field = screen.getByRole('textbox', {

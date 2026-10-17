@@ -572,7 +572,7 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
     expect(fromContext).toEqual([
       'Open',
       'Show in Finder',
-      'Ask an agent about this file',
+      'Start an agent on this file',
       'Copy path',
     ]);
     expect(buttons).toEqual(['Actions for rounding.ts']);

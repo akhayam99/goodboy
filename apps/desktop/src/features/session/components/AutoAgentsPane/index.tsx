@@ -1,13 +1,16 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { PaneShell } from '@goodboy/ui';
+import { Plus } from 'lucide-react';
+import { Button, EmptyState, PaneShell } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import { autoRootsOf } from '../../../auto/autoRootsOf';
 import { railRowsOf, restingRootRowOf, type RailRow } from '../../../auto/chat/railRowsOf';
 import { useAutoTrees } from '../../../auto/useAutoTrees';
 import { useIsAutoOn } from '../../../auto/useIsAutoOn';
-import { AutoComposer } from '../AutoComposer';
+import { openAutoForm } from '../../../auto/openAutoForm';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { AutoTreeRow } from './AutoTreeRow';
 import { RunWorkTime } from '../AgentTree/RunWorkTime';
 
@@ -15,8 +18,8 @@ type Props = {
   readonly session: Session;
 };
 
-const START_HINT =
-  'Ask Auto a question or give it a task. It answers itself, or starts the right agent.';
+const EMPTY_TITLE = 'No Auto agents yet';
+const EMPTY_DESCRIPTION = 'Auto answers itself, or starts the right agent.';
 
 export const AutoAgentsPane = ({ session }: Props) => {
   const sessionId = session.id;
@@ -61,24 +64,45 @@ export const AutoAgentsPane = ({ session }: Props) => {
     pickRailLevel({ level: 'auto' });
   };
 
+  const hasRows = rows.length > 0;
+  const start = () => openAutoForm({ sessionId });
+
   return (
     <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
-      <PaneShell page="auto" title="Auto agents">
-        <div className="flex min-w-0 flex-col gap-6">
-          {rows.length === 0 ? null : (
-            <ul aria-label="Auto agents" className="flex flex-col">
-              {rows.map(({ agent, row }) => (
-                <AutoTreeRow key={agent.id} agent={agent} row={row} onOpen={() => open(agent.id)} />
-              ))}
-            </ul>
-          )}
-          {isAutoOn ? (
-            <section aria-label="Start Auto" className="flex min-w-0 flex-col gap-3">
-              <p className="text-prose text-muted-foreground">{START_HINT}</p>
-              <AutoComposer sessionId={sessionId} onDone={() => undefined} />
-            </section>
-          ) : null}
-        </div>
+      <PaneShell
+        page="auto"
+        title={NAMES.autoAgents}
+        actions={
+          hasRows && isAutoOn ? (
+            <Button variant="secondary" size="sm" onClick={start}>
+              <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+              {NAMES.startAuto}
+            </Button>
+          ) : null
+        }
+      >
+        {hasRows ? (
+          <ul aria-label={NAMES.autoAgents} className="flex flex-col">
+            {rows.map(({ agent, row }) => (
+              <AutoTreeRow key={agent.id} agent={agent} row={row} onOpen={() => open(agent.id)} />
+            ))}
+          </ul>
+        ) : (
+          <EmptyState
+            size="page"
+            icon={CONCEPT_ICONS.auto}
+            title={EMPTY_TITLE}
+            description={EMPTY_DESCRIPTION}
+            action={
+              isAutoOn ? (
+                <Button variant="primary" size="sm" onClick={start}>
+                  <Plus size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                  {NAMES.startAuto}
+                </Button>
+              ) : null
+            }
+          />
+        )}
       </PaneShell>
     </RunWorkTime>
   );

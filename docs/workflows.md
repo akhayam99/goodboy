@@ -327,11 +327,22 @@ read top to bottom at the conversation measure:
   plan pane is open, **Review plan** on the tail goes quiet. The verbs of `runPrimaryOf` go through
   today's `RunPrimaryAction`, so their gates and confirms are the same.
 - **Result** (`OrchestratedResult`), on a finished run: the closing reason,
-  the recap's **Done** and **Left** lists, **Create report**, **Create
-  wireframe** and **Add step**. A live run offers **Add step** under the tail
-  (not while the orchestrator decides).
-- **Composer** (`OrchestratedComposer`), docked: "Hint the orchestrator", gone
-  once the run is complete. A queued hint shows its first line and "+2 lines".
+  the recap's **Done** and **Left** lists, **Create report** and **Create
+  wireframe**. An orchestrated run never offers **Add step**, in the document
+  or in its rail level: the orchestrator picks the steps. **Add step** stays on
+  preset runs.
+- **Continue with a hint** (`OrchestratedContinue`), docked in place of the
+  composer once the run is complete: one field with files and **Continue**.
+  It goes through `continueWithHint` (store `workflows`): the hint is saved as
+  a queued hint, then `clearOrchestrationOutcome` reopens the run (the same
+  reopen `continueWorkflowRun` and Add step use, no migration), then the
+  orchestrator decides the next step from the goal, the decisions and the
+  hint. A failed reopen removes the hint again, keeps the text and says
+  "Couldn't continue the run" inline with **Retry**; the run stays complete.
+  When another window reopened the run first, the hint is only queued and the
+  orchestrator reads it with its next decision.
+- **Composer** (`OrchestratedComposer`), docked while the run lives: "Hint the
+  orchestrator". A queued hint shows its first line and "+2 lines".
   Waiting hints sit above it under one line, **Waits for the next decision**,
   each row with **Remove**; a row being read says **Reading now** with
   **Remove** disabled. Enter queues,
@@ -402,15 +413,15 @@ Waits to start are the dot alone, named in its tooltip (`isWordRead`). Groups:
 **In progress**, **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button
 and carries no action; an archived run is restored from its page. The state
 word and the dot come from `runRowFactsOf`, the same function the run level's
-identity row reads. The header holds **Start run**; a session with no run shows
+identity row reads. The header holds **Run a workflow**; a session with no run shows
 today's start card. Opening a preset run drills into its run level.
 
 The Orchestrated page (`OrchestratedPane`, lens `orchestrated`, ⌘⌥W pressed
 again) lists the orchestrated runs on the same `RunsGrid`, its counts on the
 group rows (In progress, Finished, Archived) and none under the title. With
-rows, the header holds **Orchestrate**. With none it says
+rows, the header holds **Run an orchestrator**. With none it says
 "No orchestrated runs yet. The orchestrator picks each next step from your
-goal." with **Orchestrate**, which opens the launch form on its orchestrated
+goal." with **Run an orchestrator**, which opens the launch form on its orchestrated
 mode (`OrchestrateStart`). Opening a row shows
 [the orchestrated document](#the-orchestrated-document); Esc or Back returns
 to the list (`parentPlace`).

@@ -216,9 +216,9 @@ drawer instead of the Terminal page.
   3. **Runs**: only when the session has a run or a workflow exists. The run on
      screen, else the one that needs you, is live, or is queued, as a row with its
      state; its verbs in state order (Answer, Start run, Continue step, Start next
-     step, Restart step, Stop run); **Start a run**, which opens a level of
+     step, Restart step, Stop run); **Run a workflow**, which opens a level of
      workflows ("from a workflow"); and **Open Runs**. Picking a workflow, here or
-     from a typed `Start a run: Ship a fix` row, opens a confirm that names the
+     from a typed `Run a workflow: Ship a fix` row, opens a confirm that names the
      session, the project, the model and the steps, and nothing starts until you
      confirm.
   4. **Recent**, agents of this session first; then **Go to** (Board inside a
@@ -415,7 +415,7 @@ never exists on one surface only.
   session kind's menu, the full set of session verbs: Open, the lenses, Rename,
   Pin session or Unpin session, **Refresh session** (`session.refresh`, the
   same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
-  flight), Autopilot, Start agent, Link work, the copies, Archive and Delete,
+  flight), Autopilot, Start an agent, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is
   `select-none`: on macOS WebKit selects the word under the pointer before the
   contextmenu event, and a selection inside the row keeps the native menu
@@ -440,7 +440,7 @@ never exists on one surface only.
   editor; Rename (inline, in the row that opened the menu), Turn on Autopilot or
   Turn off Autopilot (the session's autorun, the default of a run started
   without its own setting and of agents outside a workflow; the Agents page
-  header has no switch), Start agent, Link
+  header has no switch), Start an agent, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
   Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
@@ -771,9 +771,14 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
   Overview, File versions in a branchless session only, Runs, Agents, Auto
-  agents (with a neutral Experimental chip; Auto is always on, so it always
-  shows), Artifacts, and Questions last, always there like Artifacts: its slot
+  agents (Auto is always on, so it always shows), Artifacts, and Questions last, always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
+  Two entries carry a marker: **Auto agents** reads **Experimental** ("Auto
+  picks and starts agents on its own, under a limit. Its choices are still
+  being tuned.") and, while Auto is shown, **Agents** reads
+  **Deprecated** ("Use Start an auto: Auto picks and starts the right agent.
+  Agents you start by hand keep working."). the marker is a quiet gray `Chip` right of the label, beside the count, from `pageMarkerOf` (`features/session/pageMarkerOf.ts`), and its why is the row tooltip, after the count
+  fact. Start an agent stays available.
   Agents lists standalone agents only; an Auto agent lives under Auto agents
   (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
   right-aligned slot as wide as its content, so a label never truncates for an
@@ -931,7 +936,7 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   ([The orchestrated document](workflows.md#the-orchestrated-document)).
 - **Orchestrated** is its own session page (lens `orchestrated`, after Runs,
   ⌘⌥W pressed again; Runs counts preset runs only). It lists the orchestrated
-  runs on the Runs grid, or offers **Orchestrate** when there are none. The
+  runs on the Runs grid, or offers **Run an orchestrator** when there are none. The
   entry stays selected while an orchestrated run is open (`pageLensOf`, read by
   `useSessionPageLens` in the open, folded and flyout session levels). Back, Esc
   and `parentPlace` from an orchestrated run land on this list. A step row of
@@ -940,8 +945,10 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
 - **The Auto level (level 2).** Auto agents opens the session's only Auto
   conversation and drills the rail into it (`openAutoAgents`); with none or
   several it opens the Auto agents page (`AutoAgentsPane`: one grid row per
-  conversation with its state word, then Start Auto while Auto is on), and a
-  row there drills in. The Auto level (`SessionRail/AutoLevel`) reads: the back
+  conversation with its state word and **Start an auto** in the header; with
+  none, the shared `EmptyState` "No Auto agents yet" with **Start an auto**;
+  both open the Auto form of the New drawer through `openAutoForm`, and the
+  page has no composer of its own), and a row there drills in. The Auto level (`SessionRail/AutoLevel`) reads: the back
   row `‹ <session title>`, the Work rail exactly as the chat had it (Auto
   first, then each child with its state word, queued children on the dashed
   spine), the empty state "No agents started yet" while Auto has no child, and
@@ -1192,8 +1199,8 @@ required first, and the draft stays for the next New.
 
 The draft asks one question, "How do you want to start?", with four choices
 on one row as compact tabs (`StartChoiceTabs`, `SegmentedTabs` pill variant):
-Pick up a task, Run a workflow, Orchestrate and Ask an agent. **Start blank** sits
-in the page header. Run a workflow, Orchestrate and Ask an agent each hold
+Pick up a task, Run a workflow, Run an orchestrator and Start an agent. **Start blank** sits
+in the page header. Run a workflow, Run an orchestrator and Start an agent each hold
 **Projects** (`KickoffProjects` over the shared `ProjectPicker`): optional, a
 searchable multiple `Listbox` with the picked projects as removable chips under
 it, in two groups (`projectPickerGroups`): "Suggested" holds at most five (the
@@ -1217,7 +1224,7 @@ and `AutoStart` (page, bound to the draft) both draw.
   in the search) replaces the list with one block (`PickedIssue`): the brief
   title as an editable input over the brief flow in [concepts.md](concepts.md),
   then **How to work on it** (`HowToWorkOnIt`): the same Run a workflow
-  or Ask an agent choice as the other two tabs, precompiled with the goal,
+  or Start an agent choice as the other two tabs, precompiled with the goal,
   Run a workflow preselected. There is no gate: the title and the goal start as
   the issue text (`usePickedIssueText`) and the brief takes their place when it
   lands, unless either was edited. **Use the issue text** and **Use brief**
@@ -1234,8 +1241,8 @@ and `AutoStart` (page, bound to the draft) both draw.
   `In payments-api, from GitHub repo harborline/payments-api.`) with no chip;
   with several it stays the project chip, which lets you pick another or none
   (the Launch session panel always draws the chip). The way to start is one
-  `ControlChip` in the options row, `Runs as Orchestrate` (`RunsAsChip`, with
-  Run a workflow and Ask an agent in its menu), never a second switch; the
+  `ControlChip` in the options row, `Runs as Run an orchestrator` (`RunsAsChip`, with
+  Run a workflow and Start an agent in its menu), never a second switch; the
   brief card is headed `Brief` and drops the model, time and cost of the
   brief. **Start from HBL-412**, on the
   workflow side and on the agent side, links the issue, mounts that project, creates the session and
@@ -1283,28 +1290,28 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   one request per tracker for Linear and Jira, one per project for GitLab,
   and one per issue for GitHub and Sentry, which have no batch endpoint for
   fetching by id.
-- **Run a workflow** and **Orchestrate** are the workflow builder itself
+- **Run a workflow** and **Run an orchestrator** are the workflow builder itself
   (`WorkflowBuilderView` with a `kickoff` target and a fixed `mode`: `preset`
-  for Run a workflow, `dynamic` for Orchestrate; the choice is the mode, so
+  for Run a workflow, `dynamic` for Run an orchestrator; the choice is the mode, so
   there is no mode switch and no remembered mode): goal card with the paperclip
   and Polish (no title field: the run is named from the preset or the goal, and
   renamed on its page), Projects, Can use (only with two or more providers), the
   preset with its editable steps and a model per step or the orchestrator row
   with its model right after the label, guidance, then one actions row with
   Autonomy, Starts and Limit at the left and Discard, the estimate and the
-  primary (Start run, Start orchestration) at the right, with the start gate
+  primary (Run a workflow, Run an orchestrator) at the right, with the start gate
   reason under it. No rules card: a control that leaves your rules carries the
   rule dot and offers `Reset to your rule` in its popover. An edited preset reads
   `edited` on the Preset select with `Reset to the preset` in its menu. Its goal field is the kickoff goal (`workflowGoal` in the
   draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
   in `workflowDrafts`, so it survives leaving the kickoff, and Discard
-  clears it with the rest. Start run runs `startSessionFromDraft` with
+  clears it with the rest. Run a workflow runs `startSessionFromDraft` with
   kind `workflow-run`: the session is created first, then the builder saves
   the workflow and attaches the run to it in the same action, and the view
   lands on the run. A failure removes the half-created session and keeps the
   draft, and the reason is stored on the draft (`startError`, with `isStarting`
   while it runs), because the page that clicked Start is unmounted by then:
-  the reopened draft shows it under Start run (the builder and the agent
+  the reopened draft shows it under Run a workflow (the builder and the agent
   starts both read it), and the next Start clears it. One start per workspace
   runs at a time: a second click while one runs gets the same session, never a
   second one. The estimate total (`PlanEstimateChip`, one `~` prefix) sits
@@ -1313,20 +1320,20 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   in its title tooltip. Before a session exists the builder leaves out Use session goal, the
   title suggestion (the orchestrated title is generated after start, as in a
   session) and the worktree as the planner's working folder.
-- **Ask an agent** opens the role grid (`AgentStart`, below): Auto being always
+- **Start an agent** opens the role list (`AgentStart`, below): Auto being always
   available does not make it the start here. `SessionKickoff` takes `isAuto`
   (false by default, set only by a scene) to draw the Auto composer instead
   (`AutoStart`): one goal with files, Projects, then one actions row with the
-  Model chip and the Auto limit chip at the left and Discard and **Start Auto**
+  Model chip and the Auto limit chip at the left and Discard and **Start an auto**
   at the right, no role list, no guidance; `Experimental` is a gray word after
   the choice line, on the page and in the drawer. Its goal and
   model live in the draft (`autoGoal`, `autoRouting`) and count as written for
   Discard. Start runs `startSessionFromDraft` kind `scout` with an Auto agent
   (`agentKind: 'auto'`), the goal as its prompt and the chosen routing.
-- **Ask an agent** (`AgentStart`) is the goal field, then Projects, then one
+- **Start an agent** (`AgentStart`) is the goal field, then Projects, then one
   actions row with Role and Model as `ControlChip`s (`AgentStartFields`,
-  `ModelControlChip`) and the primary, opening the same role grid and model
-  picker the New drawer and the Start agent popover use (`AgentStartBlock`:
+  `ModelControlChip`) and the primary, opening the same role list and model
+  picker the New drawer and the Start an agent popover use (`AgentStartBlock`:
   goal, role and model; an empty goal starts the role and its chat takes the
   first message). The role defaults to
   Scout every time, never the last one picked, because a habitual Implementer
@@ -1555,7 +1562,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   lists every step of its run in order, the ones not started switched off; an
   agent lists the agents of the same home grouped Needs you, Running, Done,
   newest first; an artifact lists the session's artifacts by kind. Actions
-  exist only where a real action backs them: `Start agent`, `Start a run`
+  exist only where a real action backs them: `Start an agent`, `Run a workflow`
   and `New artifact` (opens the kind picker) on their pages, `Stop this step`
   while a step runs and `Retry step` when it failed or is blocked
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
@@ -1853,7 +1860,7 @@ repositories inside one. Code host is skipped by itself when no project is a
 repository. Code host and Tasks can be skipped; Sentry, Slack and the rest
 live in Settings › Integrations. There is no permissions question: every
 workspace starts on Full access. The last step offers the same three ways as
-a new session, with Ask an agent picked and three starters: Start Scout
+a new session, with Start an agent picked and three starters: Start Scout
 starts the session from a Scout draft (`startSessionFromDraft`) with that
 starter as its focus, and Scout running. Pick up a task and Run a workflow
 close the wizard on the new session draft with that choice picked. Either
@@ -1867,8 +1874,9 @@ ticks when an agent finishes a turn, not when a session row exists.
 ## Auto in the shell
 
 Auto is described in [auto.md](auto.md); this is where it sits. Auto is always
-on: Settings has no Auto switch, and the **Experimental** chip sits on the
-**Auto agents** entry of the session rail. The Work rail of an Auto agent, and of each
+on: Settings has no Auto switch, and the **Experimental** marker sits beside
+the count of the **Auto agents** entry of the session rail, the **Deprecated**
+one beside the count of **Agents**. The Work rail of an Auto agent, and of each
 child of an Auto tree, is the session rail's Auto level (see Session rail), never
 a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The
@@ -2522,7 +2530,14 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   asker's role and the age; a blocking ask is one warning dot in the leading cell. The row
   opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), titled with
   the asker's role and the age (`questionMetaOf`, the same function as the row) while the
-  card carries the question itself; the card answers, skips, dismisses and undoes; answering moves the drawer to the next
+  card carries the question itself. The role in that title is a link to the asker
+  (`openAsker`, `features/session/openAsker.ts`): an agent you started opens its
+  conversation scrolled to the question, a step of a preset run opens that step on
+  the run page, a step of an orchestrated run opens the run with the step in the
+  pane (drawer `run-step`). A deleted asker keeps its role with no link. A row's
+  right click menu is the registry kind `question` (`features/actions/kinds/question.ts`):
+  **Open question** and **Open the agent** (the same `openAsker`, hidden for a
+  deleted asker); the card answers, skips, dismisses and undoes; answering moves the drawer to the next
   waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
   carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
   question at all. Inside the asker's own conversation a question card shows only the question

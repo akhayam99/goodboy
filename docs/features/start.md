@@ -4,13 +4,13 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 ### How do you want to start?
 
-The **New session** draft has one compact selector with four choices: **Pick up a task**, **Run a workflow**, **Orchestrate** and **Ask an agent**, and a line under it that says what the selected one does. **Start blank** sits in the page header, and **Discard** sits next to the start button at the end of every form, once you wrote something. Run a workflow, Orchestrate and Ask an agent are the same forms as in the **New** menu of a session, at page width, and a limit that is switched on needs an amount with a preset too. Every option is a labelled select in the row that ends the form, and the goal field starts the work with ⌘↵ in every form, while ↵ adds a line. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard** throws it away.
+The **New session** draft has one compact selector with four choices: **Pick up a task**, **Run a workflow**, **Run an orchestrator** and **Start an agent**, and a line under it that says what the selected one does. **Start blank** sits in the page header, and **Discard** sits next to the start button at the end of every form, once you wrote something. Run a workflow, Run an orchestrator and Start an agent are the same forms as in the **New** menu of a session, at page width, and a limit that is switched on needs an amount with a preset too. Every option is a labelled select in the row that ends the form, and the goal field starts the work with ⌘↵ in every form, while ↵ adds a line. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard** throws it away.
 
 **Projects** is optional. Search it by name, even with 50 projects in the workspace, and the projects you pick show as chips you can remove. The list opens on Suggested (the issue's project, the ones you used last, then starred ones, five at most) and then All projects by name. The picker reads **Add project** whether you picked one or not. A project the picked issue points to comes first and is already picked, with one line that says why, such as _In payments-api, from GitHub repo harborline/payments-api._
 
 ### Pick up a task, with a drafted brief
 
-Turn an issue into a session with a brief in one pick. Pick an issue such as HBL-412 and Goodboy drafts a title, a goal and **Done when** criteria from it, ready to edit. **Runs as** in the options row chooses how to work on it: **Orchestrate**, **Run a workflow** or **Ask an agent**. **Start from HBL-412** links the issue, creates the session and starts the work.
+Turn an issue into a session with a brief in one pick. Pick an issue such as HBL-412 and Goodboy drafts a title, a goal and **Done when** criteria from it, ready to edit. **Runs as** in the options row chooses how to work on it: **Run an orchestrator**, **Run a workflow** or **Start an agent**. **Start from HBL-412** links the issue, creates the session and starts the work.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-dark.webp">
@@ -29,7 +29,7 @@ A pull request waiting on you in Tasks shows **Review pull request** in place of
 
 ### Run a workflow
 
-Write the goal, pick a preset and read the **Plan** you will run, with a model on every step. **Orchestrate** is its own choice: the orchestrator picks each next step until the goal is done, with its model and your guidance. Set when the run asks you and a **Limit**, then **Start run** creates the session and starts the run in one step. The total estimate sits beside **Start run**, and each step shows its own estimate in its tooltip. A changed option carries a small dot, and its menu offers **Reset to your rule**. An edited preset reads **edited** on the Preset select, with **Reset to the preset** in its menu. One click starts it, and the button stays where it is while the estimate loads. If the run cannot start, the page keeps everything you wrote and shows the reason under **Start run**; press it again to retry.
+Write the goal, pick a preset and read the **Plan** you will run, with a model on every step. **Run an orchestrator** is its own choice: the orchestrator picks each next step until the goal is done, with its model and your guidance. Set when the run asks you and a **Limit**, then **Run a workflow** creates the session and starts the run in one step. The total estimate sits beside **Start run**, and each step shows its own estimate in its tooltip. A changed option carries a small dot, and its menu offers **Reset to your rule**. An edited preset reads **edited** on the Preset select, with **Reset to the preset** in its menu. One click starts it, and the button stays where it is while the estimate loads. If the run cannot start, the page keeps everything you wrote and shows the reason under **Start run**; press it again to retry.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-dark.webp">
@@ -38,7 +38,7 @@ Write the goal, pick a preset and read the **Plan** you will run, with a model o
 
 <sub>Screenshot from Goodboy 0.27.0</sub>
 
-### Ask an agent
+### Start an agent
 
 Map an unfamiliar repo before you plan. **Scout** is the default role and only reads, so it changes nothing: type an area, a file or a question and press **Start Scout**. **Role** and **Model** sit beside **Start Scout**, and the first project you picked is the one the agent works in. On a broad question it can split the search and merge the findings into one report.
 
@@ -51,7 +51,7 @@ Map an unfamiliar repo before you plan. **Scout** is the default role and only r
 
 ### Start more work in a session
 
-**New** in a session opens a menu: **Run a workflow**, **Orchestrate**, **Ask an agent**, **Start Auto**, **Write a report** and **Draw a wireframe**. Each opens its own form in the drawer. Run a workflow and Orchestrate end with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Limit. Ask an agent takes a goal, a **Role** and a **Model** and starts that role; with no goal you write its first message in its chat; Start Auto starts Auto, which picks the roles itself. Report and Wireframe draft one from the session. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**. The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel, and stay put while the rail steps into a branch, a run or Auto: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C) and **Scripts** (⌘⌥S). Hover one to read its name and key; the one whose panel is open shows pressed. While a run lives, **Pause run** (then **Resume run** in its place) and **Stop run** sit as buttons in its header.
+**New** in a session opens a menu: **Run a workflow**, **Run an orchestrator**, **Start an agent**, **Start an auto**, **Write a report** and **Draw a wireframe**. Each opens its own form in the drawer. Run a workflow and Run an orchestrator end with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Limit. Start an agent takes a goal, a **Role** and a **Model** and starts that role; with no goal you write its first message in its chat; Start an auto starts Auto, which picks the roles itself. Report and Wireframe draft one from the session. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**. The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel, and stay put while the rail steps into a branch, a run or Auto: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C) and **Scripts** (⌘⌥S). Hover one to read its name and key; the one whose panel is open shows pressed. While a run lives, **Pause run** (then **Resume run** in its place) and **Stop run** sit as buttons in its header.
 
 ### Start blank
 

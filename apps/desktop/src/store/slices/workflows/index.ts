@@ -18,6 +18,7 @@ import { loadPhaseTemplates } from './loadPhaseTemplates';
 import { loadStepLibrary } from './loadStepLibrary';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
 import { continueWorkflowRun } from './continueWorkflowRun';
+import { continueWithHint } from './continueWithHint';
 import { copyWorkflowsFromWorkspaces } from './copyWorkflowsFromWorkspaces';
 import { orchestrateNextStep } from './orchestrateNextStep';
 import { addWorkflowOrchestratorHint } from './addWorkflowOrchestratorHint';
@@ -86,6 +87,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     retryWorkflowOrchestration: retryWorkflowOrchestration(set, get),
     readQueuedWorkflowHints: readQueuedWorkflowHints({ set, get }),
     continueWorkflowRun: continueWorkflowRun(set, get),
+    continueWithHint: continueWithHint(set, get),
     addWorkflowOrchestratorHint: addWorkflowOrchestratorHint(set, get),
     removeWorkflowOrchestratorHint: removeWorkflowOrchestratorHint(set, get),
     setWorkflowOrchestratorRouting: setWorkflowOrchestratorRouting(set, get),

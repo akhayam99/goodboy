@@ -9,10 +9,10 @@ export const TooltipShortcutStage = () => (
   >
     <span className="text-label text-muted-foreground">rounding.ts</span>
     <div className="flex items-center gap-2">
-      <Tooltip content="Ask an agent" shortcut="ask.open" side="bottom" isOpen>
+      <Tooltip content="Start an agent" shortcut="ask.open" side="bottom" isOpen>
         <button
           type="button"
-          aria-label="Ask an agent about rounding.ts"
+          aria-label="Start an agent on rounding.ts"
           className="inline-flex size-7 items-center justify-center rounded-md border border-transparent text-muted-foreground hover:bg-hover hover:text-foreground"
         >
           <Bot size={ICON_SIZE.control} aria-hidden />

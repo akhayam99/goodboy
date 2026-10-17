@@ -9,7 +9,9 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { nextWorkflowRunId } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../../shared/components/Toast';
+import { useAppStore } from '../../../../../store';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -87,12 +89,12 @@ describe('the c09 orchestrated scenes', () => {
     expect(within(grid).queryByText('Fix flaky tests in the ledger export')).toBeNull();
   });
 
-  it('c09-orchestrated-empty offers Orchestrate with the one line', async () => {
+  it('c09-orchestrated-empty offers Run an orchestrator with the one line', async () => {
     await mount('c09-orchestrated-empty');
 
     expect(screen.getByText('No orchestrated runs yet')).toBeDefined();
     expect(screen.getByText('The orchestrator picks each next step from your goal.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Run an orchestrator' })).toBeDefined();
   });
 
   it('c09-orch-running reads as one document with the sidebar on Orchestrated', async () => {
@@ -206,15 +208,116 @@ describe('the c09 orchestrated scenes', () => {
 
     expect(within(tail()).getByText('Run complete')).toBeDefined();
     expect(screen.queryByPlaceholderText('Hint the orchestrator')).toBeNull();
+    const resume = screen.getByRole('form', { name: 'Continue with a hint' });
+    expect(within(resume).getByRole('textbox', { name: 'Continue with a hint' })).toBeDefined();
+    expect(within(resume).getByRole('button', { name: 'Continue' })).toHaveProperty(
+      'disabled',
+      true,
+    );
     const result = nodeOf('[data-orchestrated-result]');
     expect(within(result).getByText(/export takes 4.1s on 12,000 rows/)).toBeDefined();
     expect(within(result).getByRole('list', { name: 'Done' })).toBeDefined();
     expect(within(result).getByText('Stream rows to CSV, a follow up')).toBeDefined();
     expect(within(result).getByRole('button', { name: 'Create report' })).toBeDefined();
-    expect(within(result).getByRole('button', { name: 'Add step' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Add step' })).toBeNull();
+    expect(document.querySelector('[data-run-add-step]')).toBeNull();
     expect(within(checklist()).getByText('Your hint, read at step 4')).toBeDefined();
     expect(within(checklist()).queryByText('Stream rows to CSV, a follow up')).toBeNull();
     expect(screen.queryByRole('list', { name: 'Queued hints' })).toBeNull();
+  });
+
+  it('c09-orch-done continues with a hint: the run reopens and the hint box comes back', async () => {
+    await mount('c09-orch-done');
+    Reflect.set(window, '__TAURI_INTERNALS__', {
+      invoke: (command: string) =>
+        command === 'db_execute'
+          ? Promise.resolve({ rowsAffected: 1, lastInsertId: 0 })
+          : new Promise<never>(() => undefined),
+    });
+
+    const resume = screen.getByRole('form', { name: 'Continue with a hint' });
+    fireEvent.change(within(resume).getByRole('textbox', { name: 'Continue with a hint' }), {
+      target: { value: 'Also cover the ledger-core refund path' },
+    });
+    await act(async () => {
+      fireEvent.click(within(resume).getByRole('button', { name: 'Continue' }));
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(screen.queryByRole('form', { name: 'Continue with a hint' })).toBeNull();
+    expect(screen.getByPlaceholderText('Hint the orchestrator')).toBeDefined();
+    expect(document.querySelector('[data-orchestrated-result]')).toBeNull();
+    expect(screen.getByText('Also cover the ledger-core refund path')).toBeDefined();
+  });
+
+  it('c09-orch-done keeps the run complete and the text when the reopen fails, with Retry', async () => {
+    await mount('c09-orch-done');
+    act(() => {
+      useAppStore.setState({
+        continueWithHint: async () => {
+          throw new Error('database is locked');
+        },
+      });
+    });
+
+    const resume = screen.getByRole('form', { name: 'Continue with a hint' });
+    const field = within(resume).getByRole('textbox', { name: 'Continue with a hint' });
+    fireEvent.change(field, { target: { value: 'Also cover the ledger-core refund path' } });
+    await act(async () => {
+      fireEvent.click(within(resume).getByRole('button', { name: 'Continue' }));
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    const alert = within(resume).getByRole('alert');
+    expect(alert.textContent).toContain("Couldn't continue the run");
+    expect(alert.textContent).toContain('database is locked');
+    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(field).toHaveProperty('value', 'Also cover the ledger-core refund path');
+    expect(within(tail()).getByText('Run complete')).toBeDefined();
+  });
+
+  it('c09-orch-done starts an empty hint box when another complete run takes the page', async () => {
+    await mount('c09-orch-done');
+    const state = useAppStore.getState();
+    const [sessionId, runId] = Object.entries(state.focusedWorkflowRunId).find(
+      ([, id]) => id !== null,
+    ) ?? ['', null];
+    const session = state.sessions.find((candidate) => candidate.id === sessionId);
+    const run = session?.workflowRuns.find((candidate) => candidate.id === runId);
+    if (session === undefined || run === undefined) {
+      throw new Error('no focused run');
+    }
+    const otherRunId = nextWorkflowRunId();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Continue with a hint' }), {
+      target: { value: 'Also cover the ledger-core refund path' },
+    });
+    await act(async () => {
+      useAppStore.setState((current) => ({
+        sessions: current.sessions.map((candidate) =>
+          candidate.id === session.id
+            ? {
+                ...candidate,
+                workflowRuns: [...candidate.workflowRuns, { ...run, id: otherRunId }],
+              }
+            : candidate,
+        ),
+        focusedWorkflowRunId: { ...current.focusedWorkflowRunId, [session.id]: otherRunId },
+      }));
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(screen.getByRole('textbox', { name: 'Continue with a hint' })).toHaveProperty(
+      'value',
+      '',
+    );
+  });
+
+  it('c09-orch-running offers no Add step: the orchestrator picks the steps', async () => {
+    await mount('c09-orch-running');
+
+    expect(screen.queryByRole('button', { name: 'Add step' })).toBeNull();
+    expect(document.querySelector('[data-run-add-step]')).toBeNull();
   });
 
   it('c09-orch-archived is read only with Restore and no composer', async () => {

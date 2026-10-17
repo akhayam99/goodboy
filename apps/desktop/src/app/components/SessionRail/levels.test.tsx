@@ -187,7 +187,7 @@ describe('the main sidebar beside the session rail', () => {
       'Overview',
       'Runs',
       'Orchestrated',
-      'Agents',
+      'AgentsDeprecated',
       'Auto agentsExperimental',
       'Artifacts',
       'Questions',

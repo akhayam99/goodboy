@@ -10,8 +10,11 @@
 Auto is an agent that answers questions itself and hands the work it cannot do
 alone to agents of the right role, with a model it picks for each. It waits for
 their results, reads them and goes on. It is always on and stays labelled
-**Experimental**: the **Auto agents** entry of the session rail carries the chip,
-and there is no switch to turn it off.
+**Experimental**: the **Auto agents** entry of the session rail carries the
+marker beside its count, its tooltip says why, and there is no switch to turn
+it off. The **Agents** entry reads **Deprecated** beside its count: Auto
+starts agents of the role it picks (`AUTO_ROLE_WHEN`), and agents started by
+hand keep working.
 
 ## Status
 
@@ -48,17 +51,19 @@ accept. Neither tried to write a file or run a shell command, and the work tree 
   screens through `AutoReleaseContext`; `useIsAutoOn` returns it. A build with
   the gate false hides the Auto start and every Auto control and keeps the role
   start of before.
-- Settings, App, General has no Experiments band. The **Experimental** chip
-  stays on the **Auto agents** entry of the session rail.
+- Settings, App, General has no Experiments band. The **Experimental** marker
+  stays on the **Auto agents** entry of the session rail (`pageMarkerOf`).
 
 ## Starting
 
-Auto is always available, and it is its own start: **Start Auto** in the
-session **New** menu opens the **Start Auto** form of the New drawer
-(`form: 'auto'`). There is no role list, no project field and no guidance: Auto
-picks the mount and asks when it is ambiguous. **Start agent** stays the role
-start: the **Agent** form of the New drawer, the **Start agent** popover of the
-Agents page and **Ask an agent** on the New session page open the role grid
+Auto is always available, and it is its own start: **Start an auto** in the
+session **New** menu opens the **Start an auto** form of the New drawer
+(`form: 'auto'`). The Auto agents page opens the same form: **Start an auto**
+sits in its header once it has rows and in its `EmptyState` before
+(`openAutoForm`), and the page holds no composer of its own. There is no role list, no project field and no guidance: Auto
+picks the mount and asks when it is ambiguous. **Start an agent** stays the role
+start: the **Agent** form of the New drawer, the **Start an agent** popover of the
+Agents page and **Start an agent** on the New session page open the role list
 (Generalist as default, Routing), whatever the gate says (`CreateAgentPopover`,
 `NewDrawerBody`, `SessionKickoff` with `isAuto` false by default).
 
@@ -68,10 +73,10 @@ Agents page and **Ask an agent** on the New session page open the role grid
   tree is created at the start and the goal is queued in its outbox, so Auto's
   first turn is a delivery like every later one. A start that loses the message
   says "Auto didn't start" and the chat keeps no half-started turn.
-- The composer is one goal, files, one model chip and **Start Auto**. Auto runs
+- The composer is one goal, files, one model chip and **Start an auto**. Auto runs
   on any connected provider that can confine a read-only agent (`AUTO_OWN_PROVIDERS`: not the
   opencode family, see Providers), with the route the workspace picks for the role.
-  **Start Auto** says why it is off when no such provider is connected, also when only
+  **Start an auto** says why it is off when no such provider is connected, also when only
   opencode, OpenRouter or Moonshot is.
 - The **Limit** chip proposes 5 USD, or shows the budget of the session when
   there is one ("Limit for this Auto run" in its popover). The first start stores the cap for the workspace

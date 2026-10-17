@@ -1,3 +1,5 @@
+import { NAMES } from '../../shared/names';
+
 type StepParams = {
   readonly step: number;
 };
@@ -9,7 +11,7 @@ type ReasonParams = {
 export const ORCHESTRATED_COPY = {
   emptyTitle: 'No orchestrated runs yet',
   emptyDescription: 'The orchestrator picks each next step from your goal.',
-  start: 'Orchestrate',
+  start: NAMES.startOrchestrator,
   showGuidance: 'Show guidance',
   hideGuidance: 'Hide guidance',
   checklist: 'Plan and progress',
@@ -22,4 +24,7 @@ export const ORCHESTRATED_COPY = {
   stepGone: 'This step is no longer in the run.',
   stepPane: 'Step',
   nextStep: 'Next step, not decided yet',
+  continueLabel: 'Continue with a hint',
+  continueAction: 'Continue',
+  continueFailed: "Couldn't continue the run",
 } as const;

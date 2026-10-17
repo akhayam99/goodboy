@@ -71,11 +71,11 @@ describe('ExploreSpawnPopover', () => {
         target: { value: 'Explain the backoff' },
       },
     );
-    const start = screen.getByRole('button', { name: 'Start agent' });
+    const start = screen.getByRole('button', { name: 'Start an agent' });
     expect(start.closest('[data-slot="form-actions"]')).not.toBeNull();
     expect(
       screen
-        .getByRole('dialog', { name: 'Ask an agent about retry.ts' })
+        .getByRole('dialog', { name: 'Start an agent on retry.ts' })
         .querySelector('[role="separator"]'),
     ).toBeNull();
     fireEvent.click(start);

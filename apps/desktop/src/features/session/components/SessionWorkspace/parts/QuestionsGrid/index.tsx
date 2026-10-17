@@ -1,4 +1,4 @@
-import type { Agent, AgentId, OpenQuestionId } from '@goodboy/types';
+import type { Agent, AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import { ListGrid, ListGridGroup } from '@goodboy/ui';
 import { useNow } from '../../../../../../shared/hooks/useNow';
 import { NAMES } from '../../../../../../shared/names';
@@ -13,6 +13,7 @@ type OpenQuestionParams = {
 };
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly groups: QuestionGroups;
   readonly agents: ReadonlyArray<Agent>;
   readonly kindOverrides: Readonly<Record<AgentId, AgentKind>>;
@@ -24,7 +25,14 @@ type RowParams = {
   readonly row: QuestionRow;
 };
 
-export const QuestionsGrid = ({ groups, agents, kindOverrides, selectedId, onOpen }: Props) => {
+export const QuestionsGrid = ({
+  sessionId,
+  groups,
+  agents,
+  kindOverrides,
+  selectedId,
+  onOpen,
+}: Props) => {
   const now = useNow(30_000);
 
   const renderRow = ({ row }: RowParams) => {
@@ -33,6 +41,7 @@ export const QuestionsGrid = ({ groups, agents, kindOverrides, selectedId, onOpe
     return (
       <QuestionsGridRow
         key={question.id}
+        sessionId={sessionId}
         row={row}
         askerKind={meta.askerKind}
         age={meta.age}

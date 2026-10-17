@@ -1819,7 +1819,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. The less frequent starts sit behind an `OverflowMenu`. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon, and `OverflowMenu` renders the items through `MenuItems`.
 - The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
-- The session overview's actions are one secondary `New` button that opens a menu of every start: Start a run (Open run once one is active), Start agent, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
+- The session overview's actions are one secondary `New` button that opens a menu of every start: Run a workflow (Open run once one is active), Start an agent, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". A page header holds no switch: the session's autorun is a menu verb, Turn on Autopilot or Turn off Autopilot, in the session `⋯`.
 
@@ -2013,7 +2013,7 @@ icon outside `packages/ui`, and its baseline only falls. Convert such a button t
 **One shortcut format.** A tooltip that names a key takes `shortcut="<id>"`, a
 registry id, on `Tooltip`, `IconButton` or a wrapper. The
 tooltip draws the label, then the keys from `shortcutGlyphs` as faint `Kbd` text
-a `gap-2` after it: `Ask an agent  ⌘L`, two nodes, never `Ask an agent (⌘L)`
+a `gap-2` after it: `Start an agent  ⌘L`, two nodes, never `Start an agent (⌘L)`
 and never a key typed into the string. `tooltip-shortcuts-use-the-prop` fails on
 a key written into a `tooltip`, `content` or `title` string and on a `shortcut`
 literal that is not an id. A key with no registered keys prints the label alone.
@@ -2237,7 +2237,7 @@ old shape, and the next round moves it.
 
 | Page           | Loading                                  | First time                                                                                        | Nothing matches                                          | Can't load                                                          | Not connected                             |
 | -------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
-| Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Start a run. `section`: No runs in progress                                  | N/A                                                      | N/A                                                                 | N/A                                       |
+| Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Run a workflow. `section`: No runs in progress                               | N/A                                                      | N/A                                                                 | N/A                                       |
 | Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                                | N/A                                                      | N/A                                                                 | N/A                                       |
 | Artifacts      | Three skeleton rows                      | `page`: No artifacts yet, New artifact                                                            | `EmptyLine`: No plans in this session, Clear filter      | `Notice` danger: Could not load artifacts, Retry and Details        | N/A                                       |
 | Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add project. `section`: No scripts in a project, Pin a script, New script | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |

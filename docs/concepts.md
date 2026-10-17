@@ -342,7 +342,7 @@ whoever owns the action (the first comment that waits on you, the exact
 question, the branch). A fix run's Activity row reads "Fix run · #318 · 9
 comments" with its tally, and there is one row per run, no per-agent burst. Push is
 never offered there. The block disappears when nothing waits, and there is no
-filter to switch on first. **Start agent** is the one primary, and its menu
+filter to switch on first. **Start an agent** is the one primary, and its menu
 starts a workflow, a report or a wireframe. Suggestions live in **Next steps**,
 above Activity, not as a row inside the feed.
 
@@ -499,7 +499,7 @@ You do not need a workflow to start an agent. When you attach a workflow,
 Goodboy starts one agent per step. Those agents sit next to any you added
 yourself.
 
-**Start agent** asks only for a role and its routing. The button says what
+**Start an agent** asks only for a role and its routing. The button says what
 happens next: an Implementer with an active plan starts on that plan right
 away, and every other role opens its chat with the cursor in the composer so
 you write the first message. Until you do, its row reads "Waiting for your
@@ -540,8 +540,8 @@ do alone to agents of the right role, with a model it picks for each, then
 reads their results and goes on. Its children are agents of the roles Scout,
 Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
 time and one level deep. It is always available and labelled **Experimental** on its
-session entry; there is no switch in Settings. **Start Auto** starts it, and
-**Start agent** keeps the role start. A person sees an Auto tree as one row in the
+session entry; there is no switch in Settings. **Start an auto** starts it, and
+**Start an agent** keeps the role start. A person sees an Auto tree as one row in the
 Overview, under **Auto agents** in the session, and as one chat with one
 line for each delegation, its Work rail being the sidebar's Auto level
 ([auto.md](auto.md)).
@@ -1316,7 +1316,7 @@ Start is possible at once; when the brief lands it takes their place unless you
 already edited either, and Use the issue text or Use brief switches between the
 two. A failure stays inline with Retry. Under the title sits How to work on it
 (`HowToWorkOnIt`): Run a workflow (preselected, the full workflow builder with
-the goal filled in) or Ask an agent, precompiled with that goal and editable. Its
+the goal filled in) or Start an agent, precompiled with that goal and editable. Its
 one action, Start from HBL-412, links the issue, mounts the project the issue
 maps to (the same rule as Start in Tasks), creates the session
 and starts the workflow or agent in the same gesture, and raises one Follow
@@ -1550,7 +1550,7 @@ task up again in Goodboy.
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word
   stays for definitions you pick ("Run a workflow", "from a workflow"). A verb
-  on one execution says run: **Start a run**, **Stop run**, **Archive run**,
+  on one execution says run: **Run a workflow**, **Stop run**, **Archive run**,
   **Delete run**. The ⌘K section that lists them is **Runs**. **Run defaults**
   is the tab of Workflows that sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:

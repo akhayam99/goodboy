@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -105,7 +105,7 @@ describe('the c02 sidebar and session rail scenes', () => {
       'Overview',
       'Runs1',
       'Orchestrated',
-      'Agents3',
+      'AgentsDeprecated3',
       'Auto agentsExperimental',
       'Artifacts3',
       'Questions1',
@@ -133,7 +133,37 @@ describe('the c02 sidebar and session rail scenes', () => {
     await mount('c02-level-session-agents');
 
     const current = Array.from(sessionLayer().querySelectorAll('[aria-current="page"]'));
-    expect(current.map((row) => row.textContent)).toEqual(['Agents3']);
+    expect(current.map((row) => row.textContent)).toEqual(['AgentsDeprecated3']);
+  });
+
+  it('c02-level-session sets the Experimental and Deprecated markers beside the count, with the why on hover', async () => {
+    await mount('c02-level-session');
+
+    const pages = within(sessionLayer()).getByTestId('session-pages');
+    const agents = within(pages).getByRole('button', { name: /^Agents/ });
+    const auto = within(pages).getByRole('button', { name: /^Auto agents/ });
+    const deprecated = within(agents).getByTestId('page-marker-agents');
+    const experimental = within(auto).getByTestId('page-marker-auto');
+    expect(deprecated.textContent).toBe('Deprecated');
+    expect(experimental.textContent).toBe('Experimental');
+    expect(deprecated.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
+    expect(experimental.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
+
+    fireEvent.mouseEnter(agents);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+    expect(screen.getByRole('tooltip').textContent).toContain(
+      'Use Start an auto: Auto picks and starts the right agent.',
+    );
+    fireEvent.mouseLeave(agents);
+    fireEvent.mouseEnter(auto);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+    expect(screen.getByRole('tooltip').textContent).toContain(
+      'Auto picks and starts agents on its own, under a limit.',
+    );
   });
 
   it('c02-level-branchless shows File versions and no Projects', async () => {

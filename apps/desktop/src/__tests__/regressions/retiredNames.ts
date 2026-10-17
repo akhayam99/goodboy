@@ -108,6 +108,11 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
     pattern: /\bPick up (?:issue\b|[A-Z][A-Z0-9]*-\d+|#\d+)/,
     use: NAMES.pickAnIssue,
   },
+  { id: 'ask-an-agent', pattern: /\bAsk an agent\b/, use: NAMES.startAgent },
+  { id: 'start-agent', pattern: /^Start agent$/, use: NAMES.startAgent },
+  { id: 'start-auto', pattern: /\bStart Auto\b/, use: NAMES.startAuto },
+  { id: 'orchestrate-verb', pattern: /^Orchestrate$/, use: NAMES.startOrchestrator },
+  { id: 'start-a-run', pattern: /\bStart (?:another|a) run\b/, use: NAMES.startRun },
   {
     id: 'turn-into-work',
     pattern: /^(?:Turn into work|Start work(?: from here)?)$/,

@@ -101,7 +101,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
       startChoices()
         .getAllByRole('tab')
         .map((tab) => tab.textContent),
-    ).toEqual(['Pick up a task', 'Run a workflow', 'Orchestrate', 'Ask an agent']);
+    ).toEqual(['Pick up a task', 'Run a workflow', 'Run an orchestrator', 'Start an agent']);
     screen.getByText('The orchestrator picks each next step until the goal is done.');
   });
 
@@ -162,15 +162,15 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByText('Will close HBL-412, HBL-398, HBL-405 when merged');
   });
 
-  it('offers three ways to work on a picked issue, Orchestrate included', async () => {
+  it('offers three ways to work on a picked issue, Run an orchestrator included', async () => {
     await mountScene({ name: 'start-pick-one-block' });
 
     fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
     const ways = within(screen.getByRole('menu', { name: 'Runs as' }));
     expect(ways.getAllByRole('menuitemradio').map((way) => way.textContent)).toEqual([
-      'Orchestrate',
+      'Run an orchestrator',
       'Run a workflow',
-      'Ask an agent',
+      'Start an agent',
     ]);
   });
 
@@ -195,7 +195,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
 
     screen.getByRole('button', { name: 'Model for Scout the retry path' });
     screen.getByRole('button', { name: 'Model for Build the guard' });
-    screen.getByRole('button', { name: 'Start run' });
+    screen.getByRole('button', { name: 'Run a workflow' });
   });
 
   it('puts optional projects up front in a searchable picker with chips', async () => {
@@ -210,7 +210,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByRole('button', { name: 'Remove ledger-core' });
   });
 
-  it('keeps Ask an agent with Scout by default, the model and the project it works in', async () => {
+  it('keeps Start an agent with Scout by default, the model and the project it works in', async () => {
     await mountScene({ name: 'c10-start-agent' });
 
     screen.getByRole('button', { name: 'Role: Scout' });
@@ -232,12 +232,12 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     ).toEqual(['ledger-core', 'payments-api']);
   });
 
-  it('keeps Ask an agent with Auto on: Experimental and Start Auto', async () => {
+  it('keeps Start an agent with Auto on: Experimental and Start an auto', async () => {
     await mountScene({ name: 'c10-start-auto' });
 
     screen.getByRole('region', { name: 'Auto' });
     screen.getByText('Experimental');
-    screen.getByRole('button', { name: 'Start Auto' });
+    screen.getByRole('button', { name: 'Start an auto' });
   });
 
   it('marks a title Goodboy wrote as Named by Goodboy on the session hover card', async () => {
@@ -258,20 +258,20 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByText(/Named by Goodboy/);
   });
 
-  it('makes Orchestrate its own choice and keeps no mode switch in Run a workflow', async () => {
+  it('makes Run an orchestrator its own choice and keeps no mode switch in Run a workflow', async () => {
     await mountScene({ name: 'c10-start-workflow' });
 
     expect(screen.queryByRole('tablist', { name: 'Mode' })).toBeNull();
-    fireEvent.click(startChoices().getByRole('tab', { name: 'Orchestrate' }));
+    fireEvent.click(startChoices().getByRole('tab', { name: 'Run an orchestrator' }));
     await settle();
 
-    screen.getByRole('button', { name: 'Start orchestration' });
+    screen.getByRole('button', { name: 'Run an orchestrator' });
   });
 
-  it('keeps the orchestrator row and Guidance in the Orchestrate choice and drawer form', async () => {
+  it('keeps the orchestrator row and Guidance in the Run an orchestrator choice and drawer form', async () => {
     await mountScene({ name: 'c10-new-orchestrate' });
 
-    const form = within(screen.getByRole('region', { name: 'Orchestrate' }));
+    const form = within(screen.getByRole('region', { name: 'Run an orchestrator' }));
     form.getByText('Orchestrator');
     form.getByRole('button', { name: /guidance/i });
   });
@@ -322,7 +322,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), { target: { value: '' } });
     await settle();
 
-    expect(screen.getByRole('button', { name: 'Start orchestration' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Run an orchestrator' })).toHaveProperty(
       'disabled',
       true,
     );
@@ -340,7 +340,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
 
     fireEvent.click(
       within(screen.getByRole('menu', { name: 'New' })).getByRole('menuitem', {
-        name: 'Orchestrate',
+        name: 'Run an orchestrator',
       }),
     );
     await settle();
@@ -360,7 +360,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     );
   });
 
-  it('opens the Start Auto form with the context from Talk it through with Auto', async () => {
+  it('opens the Start an auto form with the context from Talk it through with Auto', async () => {
     const session = aSession({ id: brandedId<SessionId>({ value: 'mock-c10-talk' }) });
     useAppStore.setState({ sessions: [session] });
 

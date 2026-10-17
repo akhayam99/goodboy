@@ -150,7 +150,7 @@ const mountOf = ({ index }: MountParams): SessionProjectMount => {
 describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated document', () => {
   it('Orchestrated entry: its own list, the empty state starts an orchestration', async () => {
     await mount('c09-orchestrated-empty');
-    expect(screen.getByRole('button', { name: 'Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Run an orchestrator' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Orchestrated/ })).toBeDefined();
   });
 
@@ -285,10 +285,10 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(menu.getByText('Skip step 3')).toBeDefined();
   });
 
-  it('Add step, Create report and Create wireframe on a finished run', async () => {
+  it('Create report and Create wireframe on a finished run, and no Add step', async () => {
     await mount('c09-orch-done');
     const result = within(nodeOf('[data-orchestrated-result]'));
-    expect(result.getByRole('button', { name: 'Add step' })).toBeDefined();
+    expect(result.queryByRole('button', { name: 'Add step' })).toBeNull();
     expect(result.getByRole('button', { name: 'Create report' })).toBeDefined();
     expect(result.getByRole('button', { name: /^Create wireframe/ })).toBeDefined();
   });

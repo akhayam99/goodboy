@@ -64,13 +64,14 @@ const autoLevel = async (): Promise<HTMLElement> => {
 };
 
 describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () => {
-  it('Start Auto from the Auto agents entry, with the Limit of the workspace', async () => {
+  it('Start an auto from the Auto agents entry, with the Limit of the workspace', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start'] });
 
-    const start = await screen.findByRole('region', { name: 'Start Auto' }, WAIT);
-    expect(within(start).getByRole('button', { name: /Start Auto/ })).toBeDefined();
-    expect(within(start).getByText(/^Limit \$/)).toBeDefined();
-    expect(within(start).queryByText(/Spend cap/)).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Start an auto' }, WAIT));
+    const start = await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
+    expect(within(start).getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
+    expect(screen.getByText(/^Limit \$/)).toBeDefined();
+    expect(screen.queryByText(/Spend cap/)).toBeNull();
   });
 
   it('Experimental marking: the chip on the Auto agents entry', async () => {

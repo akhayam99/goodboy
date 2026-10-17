@@ -108,7 +108,7 @@ const renderPicked = (candidates: ReadonlyArray<IssueCandidate> = [CANDIDATE]) =
 
 const useAgent = () => {
   fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
-  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ask an agent' }));
+  fireEvent.click(screen.getByRole('menuitemradio', { name: 'Start an agent' }));
 };
 
 beforeAll(async () => {
@@ -143,7 +143,7 @@ describe('PickedIssue', () => {
       'value',
       CANDIDATE.title,
     );
-    expect(screen.getByRole('button', { name: 'Runs as: Orchestrate' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Runs as: Run an orchestrator' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
   });

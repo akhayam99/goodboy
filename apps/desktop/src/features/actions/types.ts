@@ -3,6 +3,7 @@ import type {
   AgentId,
   ArtifactId,
   MountId,
+  OpenQuestionId,
   ProjectId,
   PullRequestHost,
   SessionExternalTaskProvider,
@@ -227,6 +228,13 @@ export type WorkflowRunActionTarget = {
   readonly stepAgentId?: AgentId | null;
 };
 
+export type QuestionActionTarget = {
+  readonly kind: 'question';
+  readonly sessionId: SessionId;
+  readonly questionId: OpenQuestionId;
+  readonly askerId: AgentId | null;
+};
+
 export type PlanPartActionTarget = {
   readonly kind: 'planPart';
   readonly sessionId: SessionId;
@@ -438,6 +446,7 @@ export type ObjectTarget =
   | AgentActionTarget
   | WorkflowRunActionTarget
   | PlanPartActionTarget
+  | QuestionActionTarget
   | ArtifactActionTarget
   | RecordActionTarget
   | PullRequestActionTarget

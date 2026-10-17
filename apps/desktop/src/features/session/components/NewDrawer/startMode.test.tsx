@@ -126,21 +126,21 @@ const typeGoal = (): void => {
   });
 };
 
-describe('Start agent and Start Auto with Auto always available', () => {
-  it('keeps the role grid on the Agent form, so Start agent opens one role', async () => {
+describe('Start an agent and Start an auto with Auto always available', () => {
+  it('keeps the role grid on the Agent form, so Start an agent opens one role', async () => {
     openForm({ form: 'agent' });
 
     expect(await screen.findByRole('button', { name: 'Start Generalist' })).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Start Auto' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
   });
 
-  it('opens the Auto composer on the Start Auto form and starts at once', async () => {
+  it('opens the Auto composer on the Start an auto form and starts at once', async () => {
     openForm({ form: 'auto' });
     await screen.findByRole('textbox', { name: 'Describe the work' });
     typeGoal();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
@@ -155,7 +155,7 @@ describe('Start agent and Start Auto with Auto always available', () => {
     await screen.findByRole('textbox', { name: 'Describe the work' });
     typeGoal();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
     expect(reportError).not.toHaveBeenCalled();

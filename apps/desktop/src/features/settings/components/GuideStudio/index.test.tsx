@@ -188,7 +188,7 @@ describe('GuideStudio', () => {
     render(<GuideStudio onClose={vi.fn()} />);
 
     const kickoff = within(screen.getByRole('region', { name: 'New session and kickoff' }));
-    ['Four ways to start', 'Orchestrate', 'Projects'].forEach((term) =>
+    ['Four ways to start', 'Run an orchestrator', 'Projects'].forEach((term) =>
       expect(kickoff.getByText(term)).toBeDefined(),
     );
     const agents = within(screen.getByRole('region', { name: 'Agents, roles and workflows' }));

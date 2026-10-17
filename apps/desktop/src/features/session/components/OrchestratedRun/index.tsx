@@ -6,9 +6,9 @@ import { RunWorkTime } from '../AgentTree/RunWorkTime';
 import { RunWriteDestination } from '../AgentTree/RunWriteDestination';
 import { useRunView } from '../AgentTree/useRunView';
 import { RunPageActions } from '../PresetRun/RunPageActions';
-import { OrchestratedAddStep } from './OrchestratedAddStep';
 import { OrchestratedChecklist } from './OrchestratedChecklist';
 import { OrchestratedComposer } from './OrchestratedComposer';
+import { OrchestratedContinue } from './OrchestratedContinue';
 import { OrchestratedGoal } from './OrchestratedGoal';
 import { OrchestratedResult } from './OrchestratedResult';
 import { OrchestratedRouting } from './OrchestratedRouting';
@@ -31,10 +31,11 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
     anchorKey: `workflow-run-title:${run.id}`,
     viewing: { kind: 'workflowRun', id: run.id },
   });
-  const composer =
-    view.isDiscarded || isDone ? null : (
-      <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />
-    );
+  const composer = view.isDiscarded ? null : isDone ? (
+    <OrchestratedContinue key={run.id} sessionId={sessionId} runId={run.id} />
+  ) : (
+    <OrchestratedComposer sessionId={sessionId} run={run} agents={view.agents} />
+  );
 
   return (
     <RunWorkTime sessionId={sessionId} workspaceId={session.workspaceId}>
@@ -75,11 +76,7 @@ export const OrchestratedRunPage = ({ session, run, workflow }: Props) => {
           <OrchestratedGoal session={session} view={view} />
           {view.isDiscarded ? null : <RunWriteDestination sessionId={sessionId} />}
           <OrchestratedChecklist session={session} view={view} />
-          {isDone ? (
-            <OrchestratedResult session={session} view={view} />
-          ) : (
-            <OrchestratedAddStep sessionId={sessionId} view={view} />
-          )}
+          {isDone ? <OrchestratedResult session={session} view={view} /> : null}
           <OrchestratedTail session={session} view={view} />
           <OrchestratedRouting sessionId={sessionId} run={run} workflow={workflow} />
         </article>

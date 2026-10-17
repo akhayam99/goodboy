@@ -5,7 +5,9 @@ import { ControlChip } from '../../../shared/components/ControlChip';
 import { ModelControlChip } from '../../../shared/components/ModelControlChip';
 import { AGENT_FORM_GRAMMAR } from '../agent-form-grammar';
 import { AGENT_KIND_META, type AgentKind, type AgentKindRouting } from '../agent-kind';
-import { AgentKindGrid } from './CreateAgentPopover/AgentKindGrid';
+import { AgentKindList } from './CreateAgentPopover/AgentKindList';
+
+const ROLE_POPOVER_WIDTH = 'w-96 max-w-[calc(100vw-2rem)]';
 
 export type AgentStartRouting = AgentKindRouting | null;
 
@@ -43,8 +45,9 @@ export const AgentStartFields = ({
   const roleDropdown = useDropdown({
     align: 'start',
     disabled: isDisabled,
-    expectedWidth: 320,
-    expectedHeight: 220,
+    width: ROLE_POPOVER_WIDTH,
+    expectedWidth: 384,
+    expectedHeight: 420,
   });
   const effective = routing ?? suggestion;
   const noun = AGENT_KIND_META[kind].noun;
@@ -64,7 +67,6 @@ export const AgentStartFields = ({
           dropdown={roleDropdown}
           role="dialog"
           ariaLabel={AGENT_FORM_GRAMMAR.role.label}
-          className="w-80"
           trigger={
             <ControlChip
               label={AGENT_FORM_GRAMMAR.role.label}
@@ -76,7 +78,7 @@ export const AgentStartFields = ({
           }
         >
           <PopoverBody>
-            <AgentKindGrid
+            <AgentKindList
               kinds={kinds}
               value={kind}
               onChange={(next) => {

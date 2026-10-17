@@ -2,7 +2,6 @@ import { Check, CircleDashed } from 'lucide-react';
 import { Markdown } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core';
 import type { Session } from '@goodboy/types';
-import { RunAddStep } from '../AgentTree/RunAddStep';
 import { RunFinishedActions } from '../AgentTree/RunFinishedActions';
 import type { RunView } from '../AgentTree/useRunView';
 import { decisionEntries } from '../../../workflows/decisionEntries';
@@ -46,18 +45,7 @@ export const OrchestratedResult = ({ session, view }: Props) => {
         </div>
       )}
       {view.isDiscarded ? null : (
-        <RunFinishedActions
-          sessionId={session.id}
-          workflowRunId={run.id}
-          trailing={
-            <RunAddStep
-              sessionId={session.id}
-              workspaceId={workflow.workspaceId}
-              workflowRunId={run.id}
-              stepCount={view.stepCount}
-            />
-          }
-        />
+        <RunFinishedActions sessionId={session.id} workflowRunId={run.id} />
       )}
     </section>
   );

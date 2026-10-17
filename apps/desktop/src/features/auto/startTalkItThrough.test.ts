@@ -29,7 +29,7 @@ beforeEach(async () => {
 });
 
 describe('startTalkItThrough', () => {
-  it('seeds the Auto goal of the drawer with the card and opens the Start Auto form, without starting', () => {
+  it('seeds the Auto goal of the drawer with the card and opens the Start an auto form, without starting', () => {
     startTalkItThrough({
       state: useAppStore.getState(),
       sessionId: SESSION,

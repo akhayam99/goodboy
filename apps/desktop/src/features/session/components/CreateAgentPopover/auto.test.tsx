@@ -106,12 +106,12 @@ const mount = ({ isReleased }: MountParams): void => {
   );
 };
 
-describe('Start agent with Auto always available', () => {
+describe('Start an agent with Auto always available', () => {
   const expectRoles = async (): Promise<void> => {
-    fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start an agent' }));
     expect(await screen.findByRole('button', { name: 'Start Generalist' })).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Start Auto' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
   };
 
   it('opens the role grid while Auto is released, and starts the picked role', async () => {

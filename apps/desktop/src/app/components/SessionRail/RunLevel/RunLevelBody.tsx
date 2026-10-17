@@ -104,7 +104,7 @@ export const RunLevelBody = ({ session, run, workflow, selectedAgentId }: Props)
             onSelect={(agentId) => open(agentId)}
             onAnswer={() => undefined}
           />
-          {isArchived ? null : (
+          {isArchived || run.executionMode === 'dynamic' ? null : (
             <div data-run-add-step="" className="flex min-w-0">
               <span aria-hidden className="shrink-0" style={{ width: gutter }} />
               <SelectableRow

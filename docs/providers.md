@@ -943,7 +943,7 @@ When a provider ships or retires a model, update these together:
   next step button, agent rows, the reference a turn starts from, pre-spawned step
   agents, the step estimate and the run time left. A provider set to Off is never
   offered or estimated there, even when it is the session default; the test also
-  fails on a step routing call without its scope. Resolve, its next-step card, Start agent, the kickoff,
+  fails on a step routing call without its scope. Resolve, its next-step card, Start an agent, the kickoff,
   Explore and Start work from chat now follow the workspace default provider
 - **Runs on.** A one-click start of an expensive role (Implementer, Resolver,
   Reviewer, PR reviewer, Debugger) shows `Runs on Sonnet 5.5 · Medium · Change`

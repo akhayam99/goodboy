@@ -163,15 +163,15 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
     expect(screen.queryByText('Completed')).toBeNull();
   });
 
-  it('Start agent popover: the Agents header opens the start form on click only', async () => {
+  it('Start an agent popover: the Agents header opens the start form on click only', async () => {
     await mount({ name: 'c06-agents-list' });
 
-    expect(screen.queryByRole('dialog', { name: 'Start agent' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Start an agent' })).toBeNull();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Start an agent' }));
       await vi.advanceTimersByTimeAsync(50);
     });
-    expect(screen.getByRole('dialog', { name: 'Start agent' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Start an agent' })).toBeDefined();
   });
 
   it('Rename, close and delete from a list row: the row right click menu keeps them', async () => {

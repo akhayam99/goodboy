@@ -197,7 +197,7 @@ describe('the c06 conversation scenes', () => {
     expect(within(first).getByText('Implementer')).toBeDefined();
     expect(within(first).getByText('Running')).toBeDefined();
     expect(within(first).queryAllByRole('button')).toHaveLength(0);
-    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start an agent' })).toBeDefined();
     expect(screen.queryByRole('switch', { name: 'Autopilot' })).toBeNull();
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
     act(() => useAppStore.setState({ selectedAgentId: {} }));
@@ -288,10 +288,10 @@ describe('the c06 conversation scenes', () => {
     expect(useAppStore.getState().drawer).toBeNull();
   });
 
-  it('c06-agents-empty says it in one line with the header Start agent', async () => {
+  it('c06-agents-empty says it in one line with the header Start an agent', async () => {
     await mount({ name: 'c06-agents-empty' });
 
     expect(screen.getByText('No agents in this session yet.')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Start agent' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Start an agent' })).toHaveLength(1);
   });
 });

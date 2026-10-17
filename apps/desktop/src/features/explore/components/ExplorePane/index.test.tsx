@@ -675,7 +675,7 @@ describe('ExplorePane row actions', () => {
     expect(await openRowMenu({ row })).toEqual([
       'Open',
       'Show in Finder',
-      'Ask an agent about this file',
+      'Start an agent on this file',
       'Copy path',
     ]);
   });
@@ -694,9 +694,9 @@ describe('ExplorePane row actions', () => {
     await rowNamed('a.txt');
     expect(screen.queryByRole('dialog')).toBeNull();
 
-    await pickRowAction({ row: await rowNamed('b.txt'), item: /Ask an agent/ });
+    await pickRowAction({ row: await rowNamed('b.txt'), item: /Start an agent/ });
 
-    const dialog = await screen.findByRole('dialog', { name: 'Ask an agent about b.txt' });
+    const dialog = await screen.findByRole('dialog', { name: 'Start an agent on b.txt' });
     expect(dialog).toBeDefined();
     expect(screen.getAllByRole('dialog')).toHaveLength(1);
   });
@@ -704,12 +704,12 @@ describe('ExplorePane row actions', () => {
   it('shows no tooltip over the ask button while its popover is open', async () => {
     listOne('notes.txt');
     mount();
-    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Ask an agent/ });
-    const open = await screen.findByRole('button', { name: 'Ask an agent about notes.txt' });
+    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Start an agent/ });
+    const open = await screen.findByRole('button', { name: 'Start an agent on notes.txt' });
     fireEvent.mouseEnter(open);
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    expect(screen.getByRole('dialog', { name: 'Ask an agent about notes.txt' })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Start an agent on notes.txt' })).toBeDefined();
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
 
@@ -717,13 +717,13 @@ describe('ExplorePane row actions', () => {
     listOne('notes.txt');
     mount();
 
-    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Ask an agent/ });
-    await screen.findByRole('dialog', { name: 'Ask an agent about notes.txt' });
+    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Start an agent/ });
+    await screen.findByRole('dialog', { name: 'Start an agent on notes.txt' });
     fireEvent.mouseDown(document.body);
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     fireEvent.contextMenu(await rowNamed('notes.txt'));
-    expect(await screen.findByRole('menuitem', { name: /Ask an agent/ })).toBeDefined();
+    expect(await screen.findByRole('menuitem', { name: /Start an agent/ })).toBeDefined();
   });
 
   it('spawns from a file with the selected model and a prompt that includes ask and path', async () => {
@@ -734,14 +734,14 @@ describe('ExplorePane row actions', () => {
     listOne('budget.xlsx');
     h.reads.push({ type: 'binary', size: 4096 }, { type: 'binary', size: 4096 });
     mount();
-    await pickRowAction({ row: await rowNamed('budget.xlsx'), item: /Ask an agent/ });
+    await pickRowAction({ row: await rowNamed('budget.xlsx'), item: /Start an agent/ });
     fireEvent.change(
       await screen.findByRole('textbox', { name: 'What should the agent do with this file?' }),
       { target: { value: 'Analyze this spreadsheet and summarize trends.' } },
     );
     fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start an agent' }));
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalled());
     const args = spawnAgent.mock.calls.at(-1)?.[1];
@@ -766,10 +766,10 @@ describe('ExplorePane row actions', () => {
   it('keeps spawn disabled when the ask is empty', async () => {
     listOne('notes.txt');
     mount();
-    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Ask an agent/ });
+    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Start an agent/ });
 
     expect(
-      (await screen.findByRole('button', { name: 'Start agent' })).hasAttribute('disabled'),
+      (await screen.findByRole('button', { name: 'Start an agent' })).hasAttribute('disabled'),
     ).toBe(true);
   });
 
@@ -788,7 +788,7 @@ describe('ExplorePane row actions', () => {
 
     const labels = await openRowMenu({ row });
 
-    expect(labels.some((label) => label.startsWith('Ask an agent'))).toBe(false);
+    expect(labels.some((label) => label.startsWith('Start an agent'))).toBe(false);
     expect(labels).toContain('Show in Finder');
   });
 });
@@ -937,7 +937,7 @@ describe('ExplorePane context menu', () => {
     expect(menuLabels()).toEqual([
       'Open in editor',
       'Show in Finder',
-      'Ask an agent about this file',
+      'Start an agent on this file',
       'Copy path',
     ]);
   });

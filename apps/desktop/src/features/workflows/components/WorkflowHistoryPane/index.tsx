@@ -66,7 +66,7 @@ export const WorkflowHistoryPane = ({
           <EmptyLine
             action={
               <Button size="xs" variant="secondary" onClick={onStartRun}>
-                Start a run with this workflow
+                Run this workflow
               </Button>
             }
           >

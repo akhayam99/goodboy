@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -48,6 +49,12 @@ const useEdgeHost = () => {
     observer.observe(host);
     return () => observer.disconnect();
   }, [host]);
+  useLayoutEffect(() => {
+    const measured = host === null ? 0 : host.getBoundingClientRect().width;
+    if (measured !== width) {
+      setWidth(measured);
+    }
+  }, [host, width]);
   return { host, setHost, width };
 };
 
@@ -88,6 +95,12 @@ export type DrawerColumnFrame = 'sheet' | 'none';
 const TRACK_VAR = '--goodboy-drawer-track';
 
 const PUSH_CONTENT = 'w-[calc(var(--goodboy-drawer-track)-18px)]';
+
+const SCRIM_RADIUS: Readonly<Record<SheetEdge, string>> = {
+  wrapped: 'rounded-l-frame',
+  flush: '',
+  pushed: 'rounded-frame',
+};
 
 export type DrawerColumnProps = {
   readonly main: ReactNode;
@@ -154,7 +167,13 @@ export const DrawerColumn = ({
   const layout =
     column.width === null
       ? unmeasuredLayoutOf({ savedWidth: resizable.width, sizing, placement })
-      : drawerLayoutOf({ main: column.width, sizing, savedWidth: resizable.width, placement });
+      : drawerLayoutOf({
+          main: column.width,
+          sizing,
+          savedWidth: resizable.width,
+          placement,
+          edgeWidth: edge.width,
+        });
   const mode: DrawerMode = isOpen ? layout.mode : 'closed';
   modeRef.current = mode;
   const isOverlay = mode === 'overlay';
@@ -240,6 +259,7 @@ export const DrawerColumn = ({
           onClick={isExiting ? undefined : () => dismissTopEscapeLayer()}
           className={cn(
             'absolute inset-0 z-10 bg-scrim',
+            isSheet && SCRIM_RADIUS[sheetState],
             isOverlayExit && 'pointer-events-none animate-drawer-fade-out',
             !isOverlayExit && !exit.isResumed && 'motion-safe:animate-fade-in',
           )}

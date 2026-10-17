@@ -222,6 +222,7 @@ c07-auto-plan
 c07-auto-project
 c07-auto-session-level
 c07-auto-start
+c07-auto-start-open
 c07-auto-stop-failed
 c07-auto-working
 c08-run-add-step
@@ -500,6 +501,7 @@ mounts
 needs-you-card
 new-drawer-agent
 new-drawer-agent-auto
+new-drawer-agent-roles
 new-drawer-narrow
 new-drawer-orchestrate
 new-drawer-run

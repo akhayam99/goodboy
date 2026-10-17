@@ -12,6 +12,49 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.1
+
+Every start reads one verb, a finished orchestrated run takes a hint to keep going, and a question opens the agent that asked it.
+
+### Improved
+
+#### One verb for every start
+<!-- gb area=sessions -->
+
+Starting work reads the same everywhere: Run a workflow, Run an orchestrator, Start an agent and Start an auto. The New menu, drawer titles and their buttons, page headers, empty states, the palette, the composer plus menu, onboarding and the Guide all use them. Search still finds the old names.
+
+#### Roles in a readable list
+<!-- gb area=agents -->
+
+The Role picker in Start an agent opens under its chip as a one column list, each role with its icon, its name and a one line hint, instead of tiles one letter wide.
+
+#### Experimental and Deprecated markers
+<!-- gb area=agents -->
+
+On the session rail, Auto agents carries a quiet Experimental marker beside its count and Agents a Deprecated one. Hover the row to read why.
+
+#### Start an auto from the Auto agents page
+<!-- gb area=agents -->
+
+The Auto agents page has no composer of its own. Its empty state offers Start an auto, and once it has rows its header does. Both open the Auto form of the New drawer, with files, model and limit.
+
+#### Continue a complete orchestrated run
+<!-- gb area=workflows -->
+
+A complete orchestrated run ends with a Continue with a hint field. Send a hint, with files if you need them, and the orchestrator picks the next step. When the run can't reopen, it stays complete, keeps your text and shows the reason with Retry.
+
+Add step is on preset runs only, since the orchestrator picks the steps of an orchestrated run.
+
+#### Open the agent that asked a question
+<!-- gb area=sessions -->
+
+The role in a question's title opens the agent that asked it, and a Questions row has a menu with Open question and Open the agent. An agent you started opens its conversation at the question, and a step of a run opens on that run.
+
+### Fixed
+
+- The dimmed area behind a drawer keeps the rounded top left corner of the page instead of squaring it off. <!-- gb area=app -->
+- In a narrow window, a drawer beside the page no longer runs under the session tools column, so its buttons and Close stay in view. <!-- gb area=app -->
+
 ## Goodboy v0.27.0
 
 Each session gets its own rail and tools column, every page shares one header, and comments, repositories and titles each take one click.

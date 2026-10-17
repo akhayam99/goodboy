@@ -3,10 +3,10 @@ import type { NewDrawerForm } from '../../store/slices/drawer/state';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 import {
   AGENT_LINE,
-  ASK_AGENT_CHOICE,
+  START_AGENT_CHOICE,
   AUTO_AGENT_LINE,
   DRAW_WIREFRAME_CHOICE,
-  ORCHESTRATE_CHOICE,
+  RUN_ORCHESTRATOR_CHOICE,
   ORCHESTRATE_LINE,
   RUN_LINE,
   RUN_WORKFLOW_CHOICE,
@@ -29,13 +29,13 @@ export const NEW_DRAWER_FORMS = {
     isAutoOnly: false,
   },
   orchestrate: {
-    title: ORCHESTRATE_CHOICE,
+    title: RUN_ORCHESTRATOR_CHOICE,
     icon: CONCEPT_ICONS.orchestrator,
     line: ORCHESTRATE_LINE,
     isAutoOnly: false,
   },
   agent: {
-    title: ASK_AGENT_CHOICE,
+    title: START_AGENT_CHOICE,
     icon: CONCEPT_ICONS.agents,
     line: AGENT_LINE,
     isAutoOnly: false,

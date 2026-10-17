@@ -34,7 +34,7 @@ Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim,
 
 ### Explore
 
-Browse the session folder as a file tree, with a preview of the selected file beside it, **Open** and **Copy**. Files that changed against the base branch carry a letter, and **Changed** lists only those. **Ask an agent** on a file row starts an agent on that file.
+Browse the session folder as a file tree, with a preview of the selected file beside it, **Open** and **Copy**. Files that changed against the base branch carry a letter, and **Changed** lists only those. **Start an agent** on a file row starts an agent on that file.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-explore-dark.webp">

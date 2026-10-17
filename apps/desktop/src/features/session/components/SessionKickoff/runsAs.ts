@@ -1,8 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
-  ASK_AGENT_CHOICE,
-  ORCHESTRATE_CHOICE,
+  START_AGENT_CHOICE,
+  RUN_ORCHESTRATOR_CHOICE,
   RUN_WORKFLOW_CHOICE,
 } from '../../../../shared/lib/startCopy';
 
@@ -15,7 +15,7 @@ type RunsAsOption = {
 };
 
 export const RUNS_AS_OPTIONS = [
-  { value: 'orchestrate', label: ORCHESTRATE_CHOICE, icon: CONCEPT_ICONS.orchestrator },
+  { value: 'orchestrate', label: RUN_ORCHESTRATOR_CHOICE, icon: CONCEPT_ICONS.orchestrator },
   { value: 'workflow', label: RUN_WORKFLOW_CHOICE, icon: CONCEPT_ICONS.workflows },
-  { value: 'agent', label: ASK_AGENT_CHOICE, icon: CONCEPT_ICONS.agents },
+  { value: 'agent', label: START_AGENT_CHOICE, icon: CONCEPT_ICONS.agents },
 ] as const satisfies readonly [RunsAsOption, ...ReadonlyArray<RunsAsOption>];

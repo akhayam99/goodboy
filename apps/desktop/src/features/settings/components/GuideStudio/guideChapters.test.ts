@@ -166,12 +166,12 @@ describe('the shell chapter', () => {
 describe('the start and agent chapters', () => {
   it('names the four ways to start a session and the Projects picker', () => {
     const start = pointOf('kickoff', 'Four ways to start');
-    ['Pick up a task', 'Run a workflow', 'Orchestrate', 'Ask an agent'].forEach((choice) =>
-      expect(start).toContain(choice),
+    ['Pick up a task', 'Run a workflow', 'Run an orchestrator', 'Start an agent'].forEach(
+      (choice) => expect(start).toContain(choice),
     );
     expect(pointOf('kickoff', 'Projects')).toContain('Suggested');
     expect(pointOf('kickoff', 'Projects')).toContain('All projects');
-    expect(NEW_DRAWER_FORMS.orchestrate.title).toBe('Orchestrate');
+    expect(NEW_DRAWER_FORMS.orchestrate.title).toBe('Run an orchestrator');
   });
 
   it('lists the New menu forms by their titles', () => {
@@ -191,7 +191,7 @@ describe('the start and agent chapters', () => {
     expect(auto).toContain('child agents');
     const both = pointOf('agents', 'Orchestrated or Auto');
     expect(both).toContain('Orchestrated is not Auto');
-    expect(both).toContain('Experimental chip');
+    expect(both).toContain('Experimental marker');
   });
 });
 
