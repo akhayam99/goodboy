@@ -35,7 +35,7 @@ export const WorktreeEntries = ({ sessionId, mountId, worktreePath, branch, entr
                 tab: entry.tab,
               })
             }
-            className="h-6 items-center gap-2 pl-10 pr-2 text-ui"
+            className="h-6 items-center gap-2 pl-9 pr-1 text-ui"
           >
             <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span data-entry-label="" className="min-w-0 flex-1 truncate">

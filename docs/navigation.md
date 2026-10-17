@@ -686,8 +686,9 @@ mounts editors and takes a title.
 **The Projects card of the session level shows which projects a session has
 materialized.** It lives in the session rail, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
-row with its worktrees one indent in and their main pages one more indent in;
-merged and closed ones fold into `N finished`. Sessions are created lazily on the workspace
+row that folds its worktrees, each worktree folds its main pages one more
+indent in; a merged or closed worktree stays a row with its pull request
+icon, never a "finished" fold. Sessions are created lazily on the workspace
 ([concepts.md](concepts.md) → Lazy sessions), and this group is where a
 session's footprint grows. What a worktree asks the user to decide shows in the
 Overview notices slot ([mounts.md](mounts.md#worktree-rows-and-the-overview-notices)).
@@ -718,18 +719,32 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   before it (`SessionOverviewPane/OverviewTitle`); a single click, or Enter or
   F2 on the focused title, renames it in place with the same rename as the
   sidebar row (an archived session's title stays read only), and "Overview" is only the
-  rail entry's label. The rail's top row holds the rail toggle at the left and
-  three icon buttons at the right, no `⋯` (`SessionLevel/SessionLevelActions`):
-  **Autopilot** and **Pin session**, toggles that show pressed while on and run
-  their registry actions (`session.autopilotOn` / `Off`, `session.pin` /
-  `unpin`; a failure keeps the old state and shows under the row with Retry,
-  `ActionStatusLine`), and **Refresh session** (⌘⇧R, `useSessionRefresh`, the
-  same call as the key and the palette). An archived session shows none of
-  them. The foot (`SessionLevel/SessionLevelFoot`) holds **Archive** (⌘⇧A, the
-  registry `session.archive`; **Restore** on an archived session) and
-  **Delete…** (⌘⇧⌫) as quiet `xs` buttons; Delete opens `DeleteSessionConfirm`
-  anchored to the button (`align="start"`, flipped above it and kept inside the
-  window by `useDropdownDirection`). Rename has no rail control: a rename
+  rail entry's label. The rail's top row holds the rail
+  toggle at the left and two icon buttons at the right, no `⋯`
+  (`SessionLevel/SessionLevelActions`): **Pin session**, a toggle that shows
+  pressed while on and runs its registry action (`session.pin` / `unpin`; a
+  failure keeps the old state and shows under the row with Retry,
+  `ActionStatusLine`), and
+  **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
+  the palette). Autopilot has no rail control: Turn on Autopilot and Turn off
+  Autopilot (`session.autopilotOn` / `Off`) stay in the sidebar row's right
+  click menu and the palette. An archived session shows none of them. The foot
+  (`SessionLevel/SessionLevelFoot`) starts with one quiet line, the session
+  spend (`SessionCostChip`, over `sessionSpendByAgent` and
+  `sessionSpendPresentation`, the one source of the number): `$3.47`, or
+  `$3.47 of $10.00 limit` once a limit is set, the warning tone from 80
+  percent and danger past it, `Paused · …` when a pausing limit stopped the
+  session, and `Set a limit` in faint gray while nothing is spent and no limit
+  is set. A click opens the session spend popover (the limit editor, the
+  agents and the context cost, Open in Impact); **Raise limit** on a paused
+  run opens it on the editor, from any session level (`SessionFrame` listens).
+  Under it sit **Archive** (⌘⇧A, the registry
+  `session.archive`; **Restore** on an archived session) in gray text and
+  **Delete…** (⌘⇧⌫) in red text (`ghost-danger`: no fill, no border), side by
+  side, half the rail width each, text only, no `⋯`; Delete opens
+  `DeleteSessionConfirm` anchored to the button (`align="end"`, flipped above
+  it and kept inside the window by `useDropdownDirection`). Rename has no rail
+  control: a rename
   request (`session-header`, from the palette, the sidebar row's right click
   menu or the shortcut) edits the Overview title in place while that session's
   Overview is open, else the main sidebar row. Both edit in one primitive,
@@ -774,8 +789,14 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   its flyout read the same function; the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
 - **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
-  `bg-subtle` surface (`rounded-lg`, 4px inset, set 4px wider than the page
-  rows so its rows keep their left edge) with a header row inside it: the
+  `bg-subtle` surface (`rounded-lg`, 4px inset) whose edges sit on the page
+  row highlight edges: pages and cards share one column inset
+  (`SessionLevel/railInset`, `RAIL_INSET`), and a card row adds 4px
+  (`CARD_ROW_INSET`) to the card's 4px, the page row's 8px, so the header
+  label and the project icon start on the page icons' line and every right
+  slot (counts, diff stat, the worst state dot, the `+` glyph at `size-5`)
+  ends on the page counts' line (guarded by the `r4-rail-session` scene
+  test). It has a header row inside it: the
   title and a fold chevron as one button, then the quiet meta and a `+` icon
   button (`LevelAddTrigger`) at the right. A card folds from its header and
   remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);
@@ -783,16 +804,25 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   header (`useProjectsSignal`) and Linked its item count from 2, so a state
   that needs you never hides in a fold. Cards sit 8px apart, 16px under the
   pages.
-- **Projects** lists each mounted project as a label row, its worktrees one
-  16px indent in (`SessionLevel/WorktreeRow`): branch icon, mono branch cut in
-  the middle so the distinguishing tail stays (`BranchName`), pull request
-  number right aligned at its content width (a row with no pull request gives
-  its branch the room), then the worst state as one 6px dot in the last column
-  (`worktreeRowStateOf`: danger for a failed check; warning for conflicts, a
-  running rebase, behind its base, a branch decision waiting, comments waiting
-  on you; none when fine), named in its tooltip and in the row's accessible
-  name. Under each live worktree, one more indent in, its main pages as 24px
-  rows (`SessionLevel/WorktreeEntries`, `worktreeCardEntriesOf`): **Pull
+- **Projects is a tree** you fold at two depths, many nodes open at once. A
+  project row (`SessionLevel/ProjectTree`) is one toggle (`aria-expanded`):
+  folder icon, name, then its branch count from 1 in quiet tabular gray beside
+  a chevron in the right slot. Its worktrees sit one 16px indent in
+  (`SessionLevel/WorktreeRow`): the pull request state icon in its GitHub color
+  (`pullRequestStateToneOf`, next to `pullRequestStateWordOf` and shared with
+  the worktree level identity row, the folded rail and the session hover card:
+  draft gray, open or approved green, in the merge queue (`queued`) the warning
+  amber, merged violet, closed red, no pull request a neutral branch glyph),
+  mono branch cut in the middle so the distinguishing tail stays
+  (`BranchName`), pull request number right aligned at its content width, then
+  the worst state as one 6px dot in the last column (`worktreeRowStateOf`:
+  danger for a failed check; warning for conflicts, a running rebase, behind
+  its base, a branch decision waiting, comments waiting on you; none when
+  fine), named in its tooltip and in the row's accessible name with the state
+  word. A click on the row opens the worktree; the chevron in the indent
+  before the icon (a 24px button named `<branch> pages`, `aria-expanded`)
+  folds its main pages, one more indent in, as 24px rows
+  (`SessionLevel/WorktreeEntries`, `worktreeCardEntriesOf`): **Pull
   request** (Merge request on GitLab), **Comments** and **Checks** while it
   has a pull request, and **Files** always; Commits stays on the worktree
   level, since its not pushed count reads the history the level loads. Each
@@ -803,13 +833,16 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   of the Overview project rows); failing checks with a danger dot or running
   ones with an info dot (`checksWordOf` in the tooltip). A row opens that
   worktree directly on its tab (`switchBranchMount` with `tab`); the drill
-  keeps the full set. The worktree row drops a reason its own Comments entry
-  or toned Checks entry already shows (`shownByEntries`), one mark per fact.
-  Merged and closed worktrees fold into one row `2 finished ›` under their
-  project (`FinishedWorktrees`, at the worktree indent, the chevron right
-  after the text), which opens them in place. Folded, the
-  rail draws one branch icon per worktree under the page icons
-  (`RailWorktrees`), its tooltip "project, branch, worst state" and the worst
+  keeps the full set. An open worktree row drops a reason its own Comments
+  entry or toned Checks entry already shows (`shownByEntries`), one mark per
+  fact; folded, the dot carries them again. Defaults: projects open; a
+  worktree folded unless it needs you (comments waiting or a failing check)
+  or you opened its page in this rail. What you open or fold is remembered per
+  session (`useRailTreeOpen`, `goodboy:session-rail-tree-open:v1`, the last 50
+  sessions). Merged and closed worktrees list after the live ones in their
+  project, as rows like any other. Folded, the
+  rail draws one pull request state icon per worktree under the page icons
+  (`RailWorktrees`), its tooltip "project, branch, state word, worst state" and the worst
   state dot on its corner (`useWorktreeRowState`, shared with the open row); the
   folded rail never draws the session node. A worktree row drills into the worktree level
   (level 2) on its landing entry. The card header carries one `+`
@@ -865,14 +898,14 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   the page and the open drawer (see The session tools), the same on level 1,
   on a worktree, on a run and on Auto, folded rail or not.
 - **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
-  rail) folds it to the current level as icons with right tooltips
+  rail, ⌥⌘B) folds it to the current level as icons with right tooltips
   (`SessionRailIcons`): on level 2 the back icon, then one icon per worktree
   entry (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto
   level the back icon, then one 28px button per rail row, centered on the icon
   column like the run steps, holding its role glyph with its state node as a
   small badge on the lower right corner (the node of the Auto word map the open
   rail draws), with the role and state word in the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot,
-  then one branch icon per worktree. The folded rail has no foot and no top
+  then one pull request state icon per worktree. The folded rail has no foot and no top
   row buttons; the tools column beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
   nodes on every screen. Folding the session rail leaves the diff page's file
@@ -1341,7 +1374,7 @@ activity yet show the plain overview with its actions.
   `SessionWorkspace`), not by the row, so two mounted pages never bind it
   twice.
 - **The Overview header** reads `Overview`. The session title and its rename
-  live on the main sidebar row; Pin, Autopilot and Refresh on the session rail
+  live on the main sidebar row; Pin and Refresh on the session rail
   top row, Archive and Delete at its foot. The header holds
   **New**
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of
@@ -2152,12 +2185,22 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   288px (`standard`); the skeleton reads the same constant.
 - **A page rail folds, and folds itself when there is no room.** A page may pass
   `onCollapsedChange`: the rail's first row then holds a fold control (tooltip
-  "Fold the rail"), and `useStudioRailFold` remembers the choice per surface
-  (`goodboy:studio-rail-folded:<studio>:v1`). Under a pane of 880px the rail
+  "Fold the rail" with ⌥⌘B), a folded rail leaves a 44px strip with "Show the
+  rail" at the same height (none while the pane is too narrow to dock,
+  `canUnfold`), and `useStudioRailFold` remembers the choice per surface
+  (`goodboy:studio-rail-folded:<studio>:v1`). Chat, Terminal, the Guide, the
+  changelog, Settings in its studio frame and Notifications fold this way.
+  **⌥⌘B** (`innerColumn.toggle`) folds the inner column of the page you are
+  on: each foldable column registers with `useInnerColumn` while its page
+  shows (the session rail while no studio covers it, a page rail through
+  `StudioRailLayout`), the key toggles the last one registered
+  (`innerColumnStore.toggleCurrent`), the palette lists it under that
+  column's name (Fold the chat list, Show the session rail) and leaves it out
+  on a page with none, where the key does nothing. Under a pane of 880px the rail
   folds without saving anything and docks again when the pane widens. A folded
-  rail leaves the shared `FilterButton` (28px tall, the funnel with the count of
-  active filters, "Dock the filters" beside it while the pane is wide enough)
-  in the title row, opening the same facets in a popover. The search field of
+  rail leaves the shared `FilterButton` (28px tall, the lines icon with the
+  count of active filters; docking the rail again is the Show the rail strip
+  at the rail edge or ⌥⌘B, never a header button) in the title row, opening the same facets in a popover. The search field of
   Tasks moves into the title row with it.
 - **Every studio list resizes.** `StudioRailLayout` (Settings in the legacy
   layout, Guide, Chat, Changelog, Bitbucket, Tasks, Notifications) drags from
@@ -2516,8 +2559,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   no cost (it is in the duration tooltip and the spend popover), the model line
   holds the effort (`Sonnet 5.5 · Medium`), the day label has no rule and an
   empty Activity reads `Nothing ran yet`. A Next button carries its label only
-  and the menu column leaves when no row has a menu. The cost chip sits at
-  the right of the Activity header and reads `Limit` before anything is spent.
+  and the menu column leaves when no row has a menu. The Activity header holds
+  no spend: the session spend lives once, at the session rail foot.
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.

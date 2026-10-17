@@ -4,6 +4,8 @@ import type { AriaAttributes, ReactNode } from 'react';
 import { cn } from '../cn';
 import { ROW_INTERACTIVE } from '../rowInteractive';
 import { SELECTED_ROW_CLASSES } from '../selectedRow';
+import { selectedIconClass } from '../selectedIcon';
+import type { Tone } from '../tint';
 
 export type SelectableRowProps = {
   readonly selected: boolean;
@@ -22,6 +24,7 @@ export type SelectableRowProps = {
   readonly isExpanded?: boolean;
   readonly tabIndex?: number;
   readonly className?: string;
+  readonly selectedIconTone?: Tone;
 };
 
 const ROW_CLASSES = cn(
@@ -47,6 +50,7 @@ export const SelectableRow = ({
   isExpanded,
   tabIndex,
   className,
+  selectedIconTone,
 }: SelectableRowProps) => {
   return (
     <OptionalTooltip content={title} shortcut={shortcut} side={tooltipSide}>
@@ -61,9 +65,16 @@ export const SelectableRow = ({
         role={role}
         aria-selected={ariaSelected}
         aria-expanded={isExpanded}
+        data-icon-tone={selected && selectedIconTone !== undefined ? selectedIconTone : undefined}
         tabIndex={tabIndex}
         onClick={onClick}
-        className={cn(ROW_CLASSES, className)}
+        className={cn(
+          ROW_CLASSES,
+          selected &&
+            selectedIconTone !== undefined &&
+            selectedIconClass({ tone: selectedIconTone }),
+          className,
+        )}
       >
         {children}
       </button>

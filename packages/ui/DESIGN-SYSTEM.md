@@ -109,7 +109,13 @@ selected is 13% and 12%, so a selected row always reads above a hovered one.
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
-hairline track, `bg-selected` on the active segment, no raised pill.
+hairline track, `bg-selected` on the active segment, no raised pill. A
+selected nav entry also lights its icon in its own kind color, never the
+label: `selectedIconClass` (`SelectableRow selectedIconTone`, the column
+doors, `RailButton` and the pressed session tool) over one function,
+`navEntryToneOf`, which reads the icon's `CONCEPT_TONE` (questions warning,
+artifacts draft, files and comments info, checks success) and falls back to
+`primary` for an entry with no kind color (Overview, Terminal, Settings).
 
 A selected row adds no hover wash on top of `bg-selected`
 (`data-[selected=true]:hover:bg-selected`), and faint text inside it reads as
@@ -300,7 +306,8 @@ outside `ArtifactDocument`.
 A surface rebuilt for 0.27.0 reads in two sizes and two weights. The sidebar
 is 13 throughout: a door, a session row and a rail entry are one 28px row in
 `text-ui` (13, 400) whatever the glyph, with `ICON_SIZE.row` icons in hint gray
-(no colored nav icons), `bg-selected` plus foreground for the selected row, and
+at rest (only the selected entry's icon takes its kind color), `bg-selected`
+plus foreground for the selected row, and
 a trailing slot drawn by `countSlotText`. Nothing appears on hover; a shortcut
 lives in the tooltip. The page is 15 for its title (`text-lead`) and its prose
 (`text-read`) and 13 for everything else: list cells, labels, times, counts,
@@ -1623,12 +1630,16 @@ draws the only line between it and the detail. Every page rail is 288 wide
 adds the fold control to the first row; `isCollapsed` hides the rail, and
 `rail={null}` draws no rail at all, for a page with nothing to list (Chat before
 its first chat, Terminal before its first terminal). Chat and Terminal rails
-never fold, and their first child is the full-width secondary New chat / New
-terminal button. The page
+fold like every page rail (⌥⌘B, `useInnerColumn`), and their first child is
+the full-width secondary New chat / New terminal button. A folded rail keeps a
+44px strip with Show the rail at the fold control's height. The page
 owns the folded state through `useStudioRailFold` (remembered per surface, and
 forced under a pane of 880px), and a folded rail leaves `FilterButton` in the
-title row: a 28px secondary button with the funnel and the count of active
-filters, opening the same facets in a popover.
+title row: a 28px secondary button with the lines icon (`ListFilter`) and the count of active
+filters, opening the same facets in a popover. Every filter trigger renders
+through `FilterButton` (Tasks included); `filter-triggers.test.ts` allows only
+the two icon-only `xs` triggers (the Sessions header and the file tree), and
+that list only falls.
 
 ## Pane anatomy
 

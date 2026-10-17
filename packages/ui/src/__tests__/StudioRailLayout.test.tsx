@@ -11,6 +11,7 @@ import {
   readStudioRailWidth,
   studioRailStorageKey,
 } from '../components/StudioRailLayout';
+import { innerColumnStore } from '../innerColumnStore';
 
 const WIDTH_VAR = '--goodboy-studio-rail-width';
 
@@ -203,6 +204,31 @@ describe('StudioRailLayout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fold the rail' }));
 
     expect(onCollapsedChange).toHaveBeenCalledWith(true);
+  });
+
+  it('keeps a Show the rail control at the rail edge while folded, unless it cannot dock', () => {
+    const onCollapsedChange = vi.fn();
+    const { unmount } = renderLayout({ isCollapsed: true, onCollapsedChange });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show the rail' }));
+    expect(onCollapsedChange).toHaveBeenCalledWith(false);
+    unmount();
+
+    renderLayout({ isCollapsed: true, onCollapsedChange, canUnfold: false });
+    expect(screen.queryByRole('button', { name: 'Show the rail' })).toBeNull();
+  });
+
+  it('offers its fold to the inner column key only while it can fold', () => {
+    const onCollapsedChange = vi.fn();
+    const { unmount } = renderLayout({ onCollapsedChange });
+
+    expect(innerColumnStore.current()?.label).toBe('Fold the project navigation');
+    innerColumnStore.toggleCurrent();
+    expect(onCollapsedChange).toHaveBeenCalledWith(true);
+    unmount();
+
+    renderLayout({});
+    expect(innerColumnStore.current()).toBeNull();
   });
 
   it('renders only the detail, with no rail and no handle, when the rail is null', () => {

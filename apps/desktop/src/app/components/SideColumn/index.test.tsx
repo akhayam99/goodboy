@@ -190,6 +190,20 @@ describe('SideColumn', () => {
     expect(currentDoors(navLayer())).toEqual(expected);
   });
 
+  it.each([
+    ['inbox', 'info'],
+    ['chat', 'primary'],
+    ['terminal', 'primary'],
+    ['settings', 'primary'],
+  ] as const)('lights the %s door icon in its kind color while current', (place, tone) => {
+    mountColumn({ place });
+
+    const icons = Array.from(navLayer().querySelectorAll('[data-column-door] [data-nav-icon]'));
+    const lit = icons.filter((icon) => icon.getAttribute('data-icon-tone') === tone);
+    expect(lit).toHaveLength(1);
+    expect(lit[0]?.closest('[data-column-door]')?.getAttribute('data-column-door')).toBe(place);
+  });
+
   it('opens each door through its action, and a current door does nothing', () => {
     const doors = actions();
     mountColumn({ place: 'inbox', doors });

@@ -87,7 +87,7 @@ describe('the c04 worktree level scenes', () => {
     }
   });
 
-  it('c04-session-worktrees lists three projects, a danger dot, and a finished fold', async () => {
+  it('c04-session-worktrees lists three projects, a danger dot, and a merged branch inline', async () => {
     await mount('c04-session-worktrees');
 
     expect(screen.getByRole('list', { name: 'payments-api worktrees' })).toBeDefined();
@@ -96,7 +96,13 @@ describe('the c04 worktree level scenes', () => {
       ledger.getByRole('button', { name: /^ledger-core, / }).getAttribute('aria-label'),
     ).toContain('A check failed');
     const notify = within(screen.getByRole('list', { name: 'notify-relay worktrees' }));
-    expect(notify.getByRole('button', { name: '1 finished in notify-relay' })).toBeDefined();
+    expect(notify.queryByRole('button', { name: /finished/ })).toBeNull();
+    expect(
+      notify
+        .getByRole('button', { name: /^notify-relay, / })
+        .querySelector('[data-pr-state]')
+        ?.getAttribute('data-pr-state'),
+    ).toBe('merged');
     expect(screen.getByRole('button', { name: 'Add to this session' })).toBeDefined();
   });
 

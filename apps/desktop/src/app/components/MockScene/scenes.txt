@@ -517,6 +517,7 @@ notifications
 notifications-delete-all
 notifications-empty
 notifications-rail
+notifications-rail-folded
 onboarding
 open-question-prose
 open-questions
@@ -608,6 +609,7 @@ r4-rail-folded
 r4-rail-narrow
 r4-rail-session
 r4-rail-tools-open
+r4-rail-tree
 r4-rail-worktree
 r4-report-bug
 r4-repos-behind

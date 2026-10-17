@@ -26,6 +26,7 @@ vi.mock('../activeChatBackend', () => ({
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ChatId } from '@goodboy/types';
+import { innerColumnStore } from '@goodboy/ui';
 import {
   CHAT_WORKSPACE_ID,
   chatIdOf,
@@ -121,6 +122,25 @@ const renderEmptyStudio = async () => {
   render(<Host />);
   await pressChatDoor();
 };
+
+describe('the chat list fold', () => {
+  it('folds and unfolds the chat list as the page inner column, and remembers it', async () => {
+    await renderStudio();
+    expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
+    expect(innerColumnStore.current()?.id).toBe('chat');
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+
+    expect(screen.queryByRole('complementary', { name: 'Chat list' })).toBeNull();
+    expect(localStorage.getItem('goodboy:studio-rail-folded:chat:v1')).toBe('1');
+    fireEvent.click(screen.getByRole('button', { name: 'Show the rail' }));
+
+    expect(screen.getByRole('complementary', { name: 'Chat list' })).toBeDefined();
+    expect(localStorage.getItem('goodboy:studio-rail-folded:chat:v1')).toBe('0');
+  });
+});
 
 describe('the Chat first-run page', () => {
   it('shows one Start a chat and no rail when there are no chats', async () => {

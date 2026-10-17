@@ -1,5 +1,6 @@
-import { IconButton } from '@goodboy/ui';
+import { IconButton, cn, selectedIconClass } from '@goodboy/ui';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
+import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
 import { ToolSignalDot } from './ToolSignalDot';
 import type { ToolSignal } from './useToolSignal';
@@ -27,7 +28,11 @@ export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onT
         aria-pressed={isOpen}
         tabIndex={tabIndex}
         data-testid={`pane-toggle-${tool.pane}`}
-        className={PRESSED_TOGGLE}
+        data-icon-tone={isOpen ? navEntryToneOf({ icon: tool.icon }) : undefined}
+        className={cn(
+          PRESSED_TOGGLE,
+          isOpen && selectedIconClass({ tone: navEntryToneOf({ icon: tool.icon }) }),
+        )}
         onFocus={onFocus}
         onClick={onToggle}
       />

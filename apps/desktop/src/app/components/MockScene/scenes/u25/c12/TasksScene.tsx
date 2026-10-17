@@ -135,7 +135,7 @@ export const TasksScene = ({ state }: Props) => {
       return;
     }
     const timer = window.setTimeout(() => {
-      document.querySelector<HTMLButtonElement>('[data-tasks-filter]')?.click();
+      document.querySelector<HTMLButtonElement>('[data-filter-button]')?.click();
     }, OPEN_MENU_DELAY_MS);
     return () => window.clearTimeout(timer);
   }, [state]);

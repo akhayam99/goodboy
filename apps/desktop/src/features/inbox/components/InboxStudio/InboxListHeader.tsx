@@ -7,7 +7,7 @@ import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { TaskListMenu } from '../../../actions/TaskListMenu';
 import type { TaskGroupBy } from '../../taskGroups';
 import type { TaskScope } from '../../taskListViewStorage';
-import { TasksFilterMenu } from './TasksFilterMenu';
+import { FilterButton } from '../../../../shared/components/FilterButton';
 import { TasksGroupByMenu } from './TasksGroupByMenu';
 
 type Props = {
@@ -92,7 +92,12 @@ export const InboxListHeader = ({
         className="min-w-0 flex-1"
       />
     </div>
-    <TasksFilterMenu activeCount={activeFilterCount} facets={facets} />
+    <FilterButton
+      popoverLabel="Task filters"
+      activeCount={activeFilterCount}
+      facets={facets}
+      popoverHeight={520}
+    />
     <TasksGroupByMenu groupBy={groupBy} onGroupBy={onGroupBy} />
     <TaskListMenu facts={{ isRefreshing, onRefresh, onManageTools }} />
   </div>

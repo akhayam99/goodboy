@@ -19,7 +19,10 @@ export const RailWorktrees = ({ session }: Props) => {
   const branch = useBranchIdentity({ sessionId });
   const isBranchShown = useAppStore((s) => BRANCH_LENSES.has(s.activeLens[sessionId] ?? null));
   const shownPath = isBranchShown ? branch.mountPath : null;
-  const rows = useMemo(() => groups.flatMap((group) => group.rows), [groups]);
+  const rows = useMemo(
+    () => groups.flatMap((group) => [...group.rows, ...group.finishedRows]),
+    [groups],
+  );
   const targets = useMemo(
     () => worktreeStatusTargetsOf({ mounts: rows, projects }),
     [rows, projects],

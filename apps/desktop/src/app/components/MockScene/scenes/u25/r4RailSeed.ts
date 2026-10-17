@@ -4,9 +4,13 @@ import type {
   PrCheckRun,
   PrDetail,
   ProjectId,
+  PullRequestState,
+  PullRequestStateKind,
   ResolveQueueItemWithThread,
   ResolveThread,
+  SessionProjectMount,
 } from '@goodboy/types';
+import type { AppState } from '../../../../../store/types';
 import { useAppStore } from '../../../../../store';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { STORAGE_KEYS } from '../../../../../shared/lib/storage-keys';
@@ -18,6 +22,7 @@ import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 const PAYMENTS_ID = brandedId<ProjectId>({ value: 'mock-run-project-payments-api' });
 const BACKFILL_MOUNT = brandedId<MountId>({ value: 'mock-run-mount-payments-backfill' });
 const RELAY_MOUNT = brandedId<MountId>({ value: 'mock-run-mount-console' });
+const PAYMENTS_MOUNT = brandedId<MountId>({ value: 'mock-run-mount-payments' });
 const FETCHED_AT = brandedId<IsoDateTime>({ value: '2026-10-16T09:00:00.000Z' });
 const PAYMENTS_WORKTREE = '~/code/harborline/payments-api/.goodboy/worktrees/gb-7k2q9x';
 const RELAY_WORKTREE = '~/code/harborline/notify-relay/.goodboy/worktrees/gb-2p6w0z';
@@ -122,11 +127,116 @@ const changedFilesAnswer = (payload: unknown): unknown => {
   return { paths: [], entries: [], additions: diff[0], deletions: diff[1], numstat: '' };
 };
 
-type SeedParams = {
-  readonly isCardFolded: boolean;
+type ExtraRequest = {
+  readonly number: number;
+  readonly state: PullRequestStateKind;
+  readonly isDraft: boolean;
 };
 
-export const seedR4Rail = ({ isCardFolded }: SeedParams): void => {
+type ExtraBranch = {
+  readonly from: MountId;
+  readonly id: string;
+  readonly branch: string;
+  readonly request: ExtraRequest | null;
+};
+
+const EXTRA_BRANCHES: ReadonlyArray<ExtraBranch> = [
+  {
+    from: PAYMENTS_MOUNT,
+    id: 'mock-r4-tree-draft',
+    branch: 'hl/retry-budget-guard',
+    request: { number: 322, state: 'open', isDraft: true },
+  },
+  {
+    from: PAYMENTS_MOUNT,
+    id: 'mock-r4-tree-queued',
+    branch: 'hl/settlement-export-rounding',
+    request: { number: 315, state: 'queued', isDraft: false },
+  },
+  {
+    from: PAYMENTS_MOUNT,
+    id: 'mock-r4-tree-closed',
+    branch: 'hl/drop-legacy-ledger-hook',
+    request: { number: 309, state: 'closed', isDraft: false },
+  },
+  {
+    from: RELAY_MOUNT,
+    id: 'mock-r4-tree-approved',
+    branch: 'hl/relay-timeout-metrics',
+    request: { number: 61, state: 'approved', isDraft: false },
+  },
+  {
+    from: RELAY_MOUNT,
+    id: 'mock-r4-tree-none',
+    branch: 'hl/banner-copy-pass',
+    request: null,
+  },
+];
+
+type ExtraParams = {
+  readonly state: AppState;
+};
+
+const extraBranchesOf = ({
+  state,
+}: ExtraParams): Pick<AppState, 'sessionProjectMounts' | 'mountGithub'> => {
+  const mounts = state.sessionProjectMounts[SESSION_ID] ?? [];
+  const added = EXTRA_BRANCHES.flatMap((extra, index) => {
+    const base = mounts.find((mount) => mount.mountId === extra.from);
+    const github = state.mountGithub[extra.from];
+    if (base === undefined || github === undefined || github.pr === null) {
+      return [];
+    }
+    const mount: SessionProjectMount = {
+      ...base,
+      mountId: brandedId<MountId>({ value: extra.id }),
+      branch: extra.branch,
+      worktreePath: `${base.repoRoot}/.goodboy/worktrees/${extra.id}`,
+      parallelIndex: index + 2,
+    };
+    const pr: PullRequestState | null =
+      extra.request === null
+        ? null
+        : {
+            ...github.pr,
+            number: extra.request.number,
+            state: extra.request.state,
+            isDraft: extra.request.isDraft,
+            checks: 'success',
+            headBranch: extra.branch,
+          };
+    return [
+      {
+        mount,
+        github: {
+          ...github,
+          mountId: mount.mountId,
+          branch: extra.branch,
+          pr,
+          prs: pr === null ? [] : [pr],
+          detail: null,
+        },
+      },
+    ];
+  });
+  return {
+    sessionProjectMounts: {
+      ...state.sessionProjectMounts,
+      [SESSION_ID]: [...mounts, ...added.map((entry) => entry.mount)],
+    },
+    mountGithub: {
+      ...state.mountGithub,
+      ...Object.fromEntries(added.map((entry) => [entry.mount.mountId, entry.github])),
+    },
+  };
+};
+
+type SeedParams = {
+  readonly isCardFolded: boolean;
+  readonly hasManyBranches?: boolean;
+};
+
+export const seedR4Rail = ({ isCardFolded, hasManyBranches = false }: SeedParams): void => {
   const files = handlersFor(BRANCH_FILES_PATCH);
   mockSceneIpc((command, payload) => {
     if (command === 'worktree_changed_files') {
@@ -141,6 +251,10 @@ export const seedR4Rail = ({ isCardFolded }: SeedParams): void => {
     localStorage.setItem(
       STORAGE_KEYS.sessionRailFoldedCards,
       isCardFolded ? '["projects","linked"]' : '[]',
+    );
+    localStorage.setItem(
+      STORAGE_KEYS.sessionRailTreeOpen,
+      JSON.stringify(hasManyBranches ? { [SESSION_ID]: { [`branch:${RELAY_MOUNT}`]: true } } : {}),
     );
   } catch {
     return;
@@ -203,4 +317,7 @@ export const seedR4Rail = ({ isCardFolded }: SeedParams): void => {
       },
     };
   });
+  if (hasManyBranches) {
+    useAppStore.setState((state) => extraBranchesOf({ state }));
+  }
 };

@@ -124,6 +124,10 @@ export {
 } from './components/StudioRailLayout';
 export { readStoredWidth, useResizableWidth } from './useResizableWidth';
 export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
+export { INNER_COLUMN_SHORTCUT, innerColumnStore } from './innerColumnStore';
+export type { InnerColumn } from './innerColumnStore';
+export { useInnerColumn } from './useInnerColumn';
+export { useCurrentInnerColumn } from './useCurrentInnerColumn';
 export type { StudioRailFold } from './useStudioRailFold';
 export { StudioWidget } from './components/StudioWidget';
 export {
@@ -325,6 +329,7 @@ export { registerShortcutGlyphs } from './shortcutGlyphs';
 export type { ShortcutGlyphLookup } from './shortcutGlyphs';
 export type { TooltipProps, TooltipSide, TooltipVariant } from './components/Tooltip';
 export { tintClasses } from './tint';
+export { selectedIconClass } from './selectedIcon';
 export type { TintClasses, Tone } from './tint';
 export { ModelBlock } from './components/WorkTree/ModelBlock';
 export { WorkMeta } from './components/WorkTree/WorkMeta';

@@ -14,6 +14,7 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import { innerColumnStore } from '@goodboy/ui';
 import type { IsoDateTime, Session, StepId, Workflow, WorkflowId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -257,6 +258,24 @@ describe('the session level pages', () => {
     ).toBe(null);
   });
 
+  it('lights the selected page icon in its kind color, the label and fill unchanged', () => {
+    seed();
+    mountColumn();
+    const overview = pages().getByRole('button', { name: /^Overview/ });
+    expect(overview.getAttribute('data-icon-tone')).toBe('primary');
+
+    fireEvent.click(pages().getByRole('button', { name: /^Questions/ }));
+
+    const questions = pages().getByRole('button', { name: /^Questions/ });
+    expect(questions.getAttribute('data-icon-tone')).toBe('warning');
+    expect(questions.getAttribute('data-selected')).toBe('true');
+    expect(
+      pages()
+        .getByRole('button', { name: /^Overview/ })
+        .hasAttribute('data-icon-tone'),
+    ).toBe(false);
+  });
+
   it('shows the running count beside the info dot while one of two runs runs, the total at rest', () => {
     const workflow = workflowOf();
     const first = aWorkflowRun({ ordinal: 0, workflowId: workflow.id });
@@ -432,7 +451,7 @@ describe('the session level projects and linked work', () => {
 });
 
 describe('the session rail top row and foot', () => {
-  it('holds the fold toggle, then Autopilot, Pin and Refresh as icons, with no menu', () => {
+  it('holds the fold toggle, then Pin and Refresh as icons, with no menu and no Autopilot', () => {
     seed();
     mountColumn();
     expect(sessionLayer().querySelector('[data-level-identity]')).toBeNull();
@@ -441,7 +460,6 @@ describe('the session rail top row and foot', () => {
     expect(top.queryByRole('button', { name: 'More session actions' })).toBeNull();
     expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
       'Fold session rail',
-      'Autopilot',
       'Pin session',
       'Refresh session',
     ]);
@@ -470,19 +488,6 @@ describe('the session rail top row and foot', () => {
     expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-  });
-
-  it('turns Autopilot on from its toggle and shows it pressed while on', async () => {
-    seed();
-    const setSessionAutoRun = vi.fn(async () => undefined);
-    useAppStore.setState({ setSessionAutoRun });
-    mountColumn();
-    const top = within(elementOf('[data-rail-top]', rail()));
-
-    await act(async () => {
-      fireEvent.click(top.getByRole('button', { name: 'Autopilot' }));
-    });
-    expect(setSessionAutoRun).toHaveBeenCalledWith(openId, true);
   });
 
   it('keeps the pin as it was and says why when pinning fails, with Retry', async () => {
@@ -515,12 +520,19 @@ describe('the session rail top row and foot', () => {
     const deleteTask = vi.fn(async () => undefined);
     useAppStore.setState({ deleteTask });
     mountColumn();
-    const foot = within(elementOf('[data-session-foot]', rail()));
+    const footRow = elementOf('[data-session-foot]', rail());
+    const foot = within(footRow);
 
     expect(foot.getAllByRole('button').map((button) => button.textContent)).toEqual([
       'Archive',
       'Delete…',
     ]);
+    expect(
+      foot.getAllByRole('button').map((button) => button.getAttribute('data-variant')),
+    ).toEqual(['quiet', 'ghost-danger']);
+    expect(
+      foot.getAllByRole('button').every((button) => button.querySelector('svg') === null),
+    ).toBe(true);
     fireEvent.click(foot.getByRole('button', { name: 'Delete…' }));
     const dialog = within(screen.getByRole('dialog', { name: /^Delete .+\?$/ }));
     expect(deleteTask).not.toHaveBeenCalled();
@@ -529,6 +541,21 @@ describe('the session rail top row and foot', () => {
     });
     expect(deleteTask).toHaveBeenCalledTimes(1);
     expect(deleteTask).toHaveBeenCalledWith(openId);
+  });
+
+  it('puts the session spend one line above Archive and Delete, opening the spend popover', async () => {
+    seed();
+    useAppStore.setState({
+      sessionBudgets: { [openId]: { sessionId: openId, softCapUsd: 10, onExceed: 'pause' } },
+    });
+    mountColumn();
+    const footRow = elementOf('[data-session-foot]', rail());
+    const spend = elementOf('[data-session-spend]', rail());
+
+    expect(spend.textContent).toBe('$0 of $10.00 limit');
+    expect(spend.compareDocumentPosition(footRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(spend);
+    expect(screen.getByRole('dialog', { name: 'Session spend' })).toBeDefined();
   });
 
   it('says why Archive failed at the foot, keeps the session live and retries', async () => {
@@ -575,6 +602,25 @@ describe('the session rail top row and foot', () => {
   });
 });
 
+describe('the session rail as the inner column', () => {
+  it('folds and unfolds the rail through the inner column key, remembered', () => {
+    seed();
+    mountColumn();
+    expect(innerColumnStore.current()?.label).toBe('Fold the session rail');
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+
+    expect(rail().hasAttribute('data-rail-folded')).toBe(true);
+    expect(innerColumnStore.current()?.label).toBe('Show the session rail');
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+    expect(rail().hasAttribute('data-rail-folded')).toBe(false);
+  });
+});
+
 describe('the folded session rail', () => {
   it('draws one branch icon per worktree with its project, branch and state in the tooltip', () => {
     seed();
@@ -595,7 +641,7 @@ describe('the folded session rail', () => {
 
     const icons = within(elementOf('[data-rail-worktrees]', rail())).getAllByRole('button');
     expect(icons.map((icon) => icon.getAttribute('aria-label'))).toEqual([
-      `payments-api, goodboy/${openId}, A check failed`,
+      `payments-api, goodboy/${openId}, Open, A check failed`,
     ]);
   });
 

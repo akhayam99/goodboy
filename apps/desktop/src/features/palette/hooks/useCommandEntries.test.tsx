@@ -20,6 +20,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { innerColumnStore } from '@goodboy/ui';
 import { brandedId } from '../../history/testing/brandedId';
 import { ToastProvider } from '../../../shared/components/Toast';
 import {
@@ -63,6 +64,25 @@ const entryKeys = (): ReadonlyArray<string> => {
   const { result } = renderHook(() => useCommandEntries(), { wrapper });
   return result.current.map((entry) => entry.key);
 };
+
+describe('the palette entry for the inner column', () => {
+  it('leaves it out on a page with no inner column and names the column once one shows', () => {
+    expect(entryKeys()).not.toContain('action:inner-column');
+
+    const toggle = vi.fn();
+    const key = innerColumnStore.add({
+      column: { id: 'chat', label: 'Fold the chat list', toggle },
+    });
+    const { result } = renderHook(() => useCommandEntries(), { wrapper });
+    const entry = result.current.find((candidate) => candidate.key === 'action:inner-column');
+    innerColumnStore.remove({ key });
+
+    expect(entry?.label).toBe('Fold the chat list');
+    expect(entry?.shortcut).toBe('innerColumn.toggle');
+    entry?.run();
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('the palette entries for new things', () => {
   it('lists New session, New chat and New terminal so Cmd+K reaches every new', () => {

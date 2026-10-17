@@ -14,7 +14,7 @@ import { ExternalTaskChip } from '../../../integrations/components/ExternalTaskC
 import { sessionRowTitle } from '../../../session/sessionTitle';
 import { SessionRowTitle } from '../SessionRowTitle';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { PULL_REQUEST_PRESENTATION } from '../../../../shared/pullRequestPresentation';
+import { pullRequestStateToneOf } from '../../../branch/pullRequestStateToneOf';
 import { requestChipLabel } from './requestChipLabel';
 import { stageWord } from './stageWord';
 
@@ -56,7 +56,7 @@ export const SessionHoverCardBody = ({
   const node = sessionNodeOf({ info: summary.info, isArchived });
   const { keys, title } = sessionRowTitle({ session, tasks: summary.tasks });
   const linked = getLinkedRequest({ pullRequest, mergeRequest });
-  const request = linked.state === 'none' ? null : PULL_REQUEST_PRESENTATION[linked.state];
+  const request = linked.state === 'none' ? null : pullRequestStateToneOf({ state: linked.state });
   const RequestIcon = request?.icon;
   const agentWord = summary.agentCount === 1 ? 'agent' : 'agents';
   const draftWord = draftCount === 1 ? 'draft comment' : 'draft comments';

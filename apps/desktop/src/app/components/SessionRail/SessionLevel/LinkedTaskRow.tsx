@@ -47,7 +47,7 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
               : `${task.identifier} ${task.title}. ${placement}`
           }
           onClick={() => openExternalTaskLens(sessionId, task)}
-          className="h-7 items-center gap-2 px-2 text-ui"
+          className="h-7 items-center gap-2 px-1 text-ui"
         >
           <IntegrationGlyph provider={task.provider} size="xs" className="shrink-0" />
           <LinkedKey identifier={task.identifier} />

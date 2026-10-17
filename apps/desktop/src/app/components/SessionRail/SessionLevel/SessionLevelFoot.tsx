@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button, Tooltip } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ActionStatusLine } from '../../../../features/actions/components/ActionControls/ActionStatusLine';
 import type { ActionControls } from '../../../../features/actions/useActionControls';
 import { DeleteSessionConfirm } from '../../../../features/session/components/DeleteSessionConfirm';
+import { SessionCostChip } from '../../../../features/session/components/SessionOverviewPane/SessionCostChip';
 
 type Props = {
   readonly session: Session;
@@ -16,30 +16,32 @@ const LIFECYCLE_IDS: ReadonlySet<string> = new Set(['session.archive', 'session.
 export const SessionLevelFoot = ({ session, controls }: Props) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const lifecycle = controls.actions.find((action) => LIFECYCLE_IDS.has(action.id)) ?? null;
-  const LifecycleIcon = lifecycle?.icon ?? null;
   const isFailed = lifecycle !== null && controls.failure?.actionId === lifecycle.id;
   return (
     <div className="flex shrink-0 flex-col gap-1 px-2">
       {isFailed ? <ActionStatusLine controls={controls} showReasons={false} /> : null}
+      <SessionCostChip sessionId={session.id} />
       <div
         role="group"
         aria-label="Session"
         data-session-foot=""
-        className="flex shrink-0 items-center gap-1"
+        className="grid shrink-0 grid-cols-2 gap-1"
       >
-        {lifecycle === null || LifecycleIcon === null ? null : (
+        {lifecycle === null ? (
+          <span aria-hidden />
+        ) : (
           <Tooltip
             content={lifecycle.id === 'session.archive' ? 'Archive session' : 'Restore session'}
             {...(lifecycle.shortcut !== null && { shortcut: lifecycle.shortcut })}
           >
             <Button
               variant="quiet"
-              size="xs"
+              size="sm"
               isBusy={controls.pendingId === lifecycle.id}
               data-session-foot-action={lifecycle.id}
+              className="w-full"
               onClick={() => controls.trigger({ actionId: lifecycle.id })}
             >
-              <LifecycleIcon size={ICON_SIZE.row} aria-hidden />
               {lifecycle.label}
             </Button>
           </Tooltip>
@@ -47,18 +49,19 @@ export const SessionLevelFoot = ({ session, controls }: Props) => {
         <DeleteSessionConfirm
           session={session}
           isOpen={isDeleteOpen}
-          align="start"
+          align="end"
+          anchorClassName="flex min-w-0"
           onClose={() => setIsDeleteOpen(false)}
           trigger={() => (
             <Tooltip content="Delete session" shortcut="session.delete" isSuppressed={isDeleteOpen}>
               <Button
-                variant="quiet"
-                size="xs"
+                variant="ghost-danger"
+                size="sm"
                 aria-haspopup="dialog"
                 data-session-foot-action="session.delete"
+                className="w-full"
                 onClick={() => setIsDeleteOpen(true)}
               >
-                <CONCEPT_ICONS.delete size={ICON_SIZE.row} aria-hidden />
                 Delete…
               </Button>
             </Tooltip>

@@ -1,6 +1,7 @@
 import { useRef, type KeyboardEvent } from 'react';
 import { SelectableRow, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { BranchTabEntry } from '../../branchTabs';
@@ -52,6 +53,7 @@ export const BranchRail = ({ tabs, current, facts, onSelect }: Props) => {
           const row = (
             <SelectableRow
               selected={isCurrent}
+              selectedIconTone={navEntryToneOf({ icon: Icon })}
               ariaCurrent={isCurrent ? 'page' : undefined}
               ariaLabel={entryAriaLabel({ label: entry.label, fact })}
               id={`${ENTRY_ID_PREFIX}${entry.id}`}

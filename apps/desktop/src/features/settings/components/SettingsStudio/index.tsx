@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
+import { ScrollFade, StudioRailLayout, UnderTrailContext, useStudioRailFold } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
@@ -71,6 +71,7 @@ export const SettingsStudio = ({
   columnSlot = null,
   isInColumnShell = false,
 }: Props) => {
+  const fold = useStudioRailFold({ surface: 'settings' });
   const amendStudio = useAppStore((state) => state.amendStudio);
   const openFocus = useCallback(
     (next: SettingsFocus) => amendStudio({ studio: { kind: 'settings', focus: next } }),
@@ -263,6 +264,8 @@ export const SettingsStudio = ({
               railLabel="Settings scopes"
               railWidth="narrow"
               surface="settings"
+              isCollapsed={fold.isCollapsed}
+              onCollapsedChange={fold.setFolded}
               rail={
                 <ScrollFade className="min-h-0 flex-1" fadeFrom="background">
                   {renderRail({ isInColumn: false })}

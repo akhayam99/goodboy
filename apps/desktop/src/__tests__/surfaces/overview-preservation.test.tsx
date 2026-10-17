@@ -212,11 +212,11 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
     expect(within(needsYou).getAllByRole('button', { name: /^Open: / }).length).toBeGreaterThan(0);
   });
 
-  it('keeps the Log with its search and the session spend in the Activity header', async () => {
+  it('keeps the Log with its search, the session spend moved to the rail foot', async () => {
     await mountScene({ name: 'c05-overview-running' });
     const activity = within(screen.getByRole('region', { name: 'Activity' }));
 
-    activity.getByRole('button', { name: /^Spend / });
+    expect(activity.queryByRole('button', { name: /^Spend / })).toBeNull();
     fireEvent.click(activity.getByRole('tab', { name: 'Log' }));
     await advance();
 

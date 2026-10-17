@@ -8,6 +8,7 @@ import {
   PANE_RHYTHM,
   ResizeHandle,
   cn,
+  useInnerColumn,
   useResizableWidth,
 } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
@@ -54,6 +55,12 @@ export const SessionRail = ({ session }: Props) => {
     cssVar: WIDTH_VAR,
   });
   const isStudioOver = place !== null;
+  useInnerColumn({
+    id: 'session-rail',
+    label: fold.isFolded ? 'Show the session rail' : 'Fold the session rail',
+    toggle: fold.toggle,
+    isActive: !isStudioOver,
+  });
   const target = useMemo<ObjectTarget>(() => ({ kind: 'session', sessionId }), [sessionId]);
   const controls = useActionControls({ target, scopeKey: sessionId });
   const isSessionChrome = level === 'session' && !fold.isFolded;

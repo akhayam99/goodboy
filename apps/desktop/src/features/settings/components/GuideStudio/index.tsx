@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
+import { ScrollFade, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { StudioDetail } from '../../../../shared/components/StudioShell/StudioDetail';
@@ -15,6 +15,7 @@ type Props = {
 };
 
 export const GuideStudio = ({ onClose }: Props) => {
+  const fold = useStudioRailFold({ surface: 'guide' });
   const scrollToRef = useRef<(id: string) => void>(() => {});
   const suppressUntilRef = useRef(0);
   const [query, setQuery] = useState('');
@@ -78,6 +79,8 @@ export const GuideStudio = ({ onClose }: Props) => {
           railWidth="standard"
           surface="guide"
           placement="page"
+          isCollapsed={fold.isCollapsed}
+          onCollapsedChange={fold.setFolded}
           rail={
             <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
               <GuideRail

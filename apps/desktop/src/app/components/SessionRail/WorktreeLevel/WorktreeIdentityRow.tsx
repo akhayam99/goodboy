@@ -1,9 +1,14 @@
 import { useEffect } from 'react';
 import type { SessionId, SessionProjectMount } from '@goodboy/types';
+import { cn } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { mountRequestOf } from '../../../../store/slices/project-mounts/mountRowModel';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { pullRequestStateToneOf } from '../../../../features/branch/pullRequestStateToneOf';
 import { BranchSwitcher } from '../../../../features/branch/components/BranchHeader/BranchSwitcher';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
 import type { MountActionTarget } from '../../../../features/actions/types';
+import { requestStateOf } from '../SessionLevel/requestStateOf';
 import { WorktreeMenuAnchors } from './WorktreeMenuAnchors';
 
 type Props = {
@@ -33,6 +38,11 @@ export const WorktreeIdentityRow = ({
 }: Props) => {
   const hasDetectedEditors = useAppStore((state) => state.detectedEditors.length > 0);
   const loadDetectedEditors = useAppStore((state) => state.loadDetectedEditors);
+  const requestState = useAppStore((state) =>
+    requestStateOf({ request: mountRequestOf({ state, mountId: mount.mountId }) }),
+  );
+  const mark = pullRequestStateToneOf({ state: requestState });
+  const StateIcon = mark.icon;
   useEffect(() => {
     if (!hasDetectedEditors) {
       void loadDetectedEditors();
@@ -51,6 +61,14 @@ export const WorktreeIdentityRow = ({
           currentPath={mountPath}
           repoName={name}
           branch={branch}
+          leading={
+            <StateIcon
+              size={ICON_SIZE.row}
+              aria-hidden
+              data-pr-state={requestState}
+              className={cn('shrink-0', mark.iconClass)}
+            />
+          }
         />
         {target === null ? null : (
           <ObjectOverflowMenu

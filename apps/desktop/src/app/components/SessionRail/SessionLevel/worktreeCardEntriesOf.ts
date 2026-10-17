@@ -2,8 +2,6 @@ import type { ResolveThread } from '@goodboy/types';
 import type { SessionGithubState } from '../../../../store/types';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
-import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
-import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
 import { branchTabsOf } from '../../../../features/branch/branchTabs';
 import { requestNounLabel } from '../../../../features/branch/requestNounLabel';
 import {
@@ -13,6 +11,7 @@ import {
 } from '../../../../features/branch/worktreeEntryFacts';
 import { checksRunsOf } from '../../../../features/integrations/github/checksRollup';
 import { commentsCountOf } from '../../../../features/resolve/commentsCountOf';
+import { requestStateOf } from './requestStateOf';
 
 export type WorktreeCardEntry = {
   readonly tab: BranchTab;
@@ -38,10 +37,7 @@ export const worktreeCardEntriesOf = ({
   diff,
 }: Params): ReadonlyArray<WorktreeCardEntry> => {
   const request = row.request;
-  const pullRequestState: PullRequestPresentationState =
-    request === null
-      ? 'none'
-      : pullRequestKindOf({ state: request.state, isDraft: request.isDraft });
+  const pullRequestState = requestStateOf({ request });
   const pr = request !== null && github?.pr?.number === request.number ? github.pr : null;
   const ownThreads =
     request === null
