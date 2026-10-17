@@ -510,6 +510,12 @@
           "also": "built-in workflows"
         },
         {
+          "title": "Runs of a workflow",
+          "text": "Each workflow row shows when it last ran and how many runs it has. The run count opens every run of that workflow beside the list, newest first.",
+          "group": "Workflows",
+          "also": "runs of a workflow"
+        },
+        {
           "title": "Saved steps",
           "text": "Reuse steps across workflows. The built-in steps are read-only, and Save a copy makes your own.",
           "group": "Workflows",
