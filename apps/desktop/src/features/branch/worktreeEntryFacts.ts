@@ -89,10 +89,13 @@ const filesFactOf = ({ files, diff }: FilesParams): WorktreeEntryFact => {
   if (count === null && shownDiff === null) {
     return EMPTY;
   }
+  if (shownDiff === null) {
+    return { ...EMPTY, text: count };
+  }
   const tooltip = joinFacts({
     facts: [
       count === null ? null : `${count} ${files === 1 ? 'file' : 'files'}`,
-      shownDiff === null ? null : `+${shownDiff.additions} -${shownDiff.deletions}`,
+      `+${shownDiff.additions} -${shownDiff.deletions}`,
     ],
   });
   return { text: count, tone: null, tooltip, diff: shownDiff };
