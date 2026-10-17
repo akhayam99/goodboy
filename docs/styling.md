@@ -118,7 +118,7 @@ main pane stays on `bg-background`, one step in front, and every panel and
 drawer stays flat. `no-token-bypass.test.ts` fails a `bg-chrome` anywhere else
 and a `bg-backdrop` outside `AppShell` (the c02 levels scene, which draws the
 shell without it, is the one exception). `--app-backdrop-strength` defaults to
-3 (percent of `primary`), halved in light mode.
+3 (percent of `primary`), the same in light and dark mode.
 
 ## The window grid
 

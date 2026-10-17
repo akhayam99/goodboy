@@ -26,9 +26,9 @@ afterEach(() => {
 const STYLES = readFileSync(join(__dirname, '..', '..', '..', '..', 'styles.css'), 'utf8');
 
 describe('backdrop default', () => {
-  it('ships the faint glow at 3, halved in light mode', () => {
+  it('ships the faint glow at 3, at the same strength in light mode', () => {
     expect(STYLES).toMatch(/:root \{[^}]*--app-backdrop-strength: 3;/);
-    expect(STYLES).toMatch(/html\[data-theme='light'\] \{\s*--app-backdrop-scale: 0\.5;\s*\}/);
+    expect(STYLES).toMatch(/html\[data-theme='light'\] \{\s*--app-backdrop-scale: 1;\s*\}/);
   });
 });
 
