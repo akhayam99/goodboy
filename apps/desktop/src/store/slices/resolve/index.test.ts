@@ -896,12 +896,12 @@ describe('durable resolve store', () => {
       agentId: AGENT_ID,
       attemptId,
       phase: 'failed',
-      error: 'every provider is over its spend cap',
+      error: 'every provider is over its limit',
       failureCause: 'spend_cap',
     });
     expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]).toMatchObject({
       phase: 'failed',
-      error: 'every provider is over its spend cap',
+      error: 'every provider is over its limit',
       failureCause: 'spend_cap',
     });
     await live.actions.recordResolvePhase({

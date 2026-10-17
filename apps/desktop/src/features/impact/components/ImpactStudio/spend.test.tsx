@@ -292,7 +292,7 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'session', sessionId: 'session-1' as SessionId } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Set limit' }));
-    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), {
+    fireEvent.change(screen.getByLabelText('Limit in dollars'), {
       target: { value: '12.5' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));

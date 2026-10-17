@@ -1465,7 +1465,7 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
 - **Session events**: when a session starts, resets, hits a limit, changes
   provider or ends
 - **Budgets**: a monthly budget per provider, counted across all workspaces on a
-  UTC calendar month, and a spend cap per session that pauses workflows or
+  UTC calendar month, and a limit per session that pauses workflows or
   only warns, with an alert before you reach them
 - **Ask**: every answer is recorded as telemetry kind `ask` on its session
   (m227). It counts in the session cost, today's spend, provider budgets and
@@ -1553,8 +1553,8 @@ task up again in Goodboy.
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - **Models** is the Providers page that sets what each role runs on (it was
-  Defaults). **Spend cap** is the limit on a run, **Spend caps** the backup
-  group that holds them, **Copy context** the drawer button, **Context window**
+  Defaults). **Limit** is the most a run or a session may spend (it was Spend
+  cap), **Limits** the backup group that holds them (it was Spend caps), **Copy context** the drawer button, **Context window**
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
 - **Add a plain folder** and **Add existing** put a folder or a repository

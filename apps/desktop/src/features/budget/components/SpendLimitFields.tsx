@@ -41,7 +41,7 @@ export const SpendLimitFields = ({
         inputMode="decimal"
         value={amount}
         placeholder="no limit"
-        aria-label="Spend cap in dollars"
+        aria-label="Limit in dollars"
         aria-invalid={invalid}
         data-testid="spend-limit-amount"
         onChange={(event) => onAmount(event.target.value)}

@@ -323,7 +323,7 @@ const startResolverTurn = async ({
         error: hasStarted
           ? 'the run ended before the resolver reported a result'
           : result?.blockedOverBudget === true
-            ? 'every provider is over its spend cap'
+            ? 'every provider is over its limit'
             : 'the turn ended before the fix attempt started',
       });
     }

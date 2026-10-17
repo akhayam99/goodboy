@@ -12,7 +12,7 @@ export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   ready: 'Ready to run',
   running: 'Running',
   question: NAMES.needsYou,
-  budget: 'Paused at the spend cap',
+  budget: 'Paused at the limit',
   approval: NAMES.waitingForPermission,
   alert: NAMES.needsYou,
   failed: 'Failed',

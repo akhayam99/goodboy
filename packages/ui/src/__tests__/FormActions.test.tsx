@@ -58,12 +58,12 @@ describe('FormActions', () => {
 
   it('keeps the options on the left of the actions', () => {
     render(
-      <FormActions leading={<span>Spend cap</span>}>
+      <FormActions leading={<span>Limit</span>}>
         <button type="button">Start</button>
       </FormActions>,
     );
 
-    const option = screen.getByText('Spend cap');
+    const option = screen.getByText('Limit');
     const start = screen.getByRole('button', { name: 'Start' });
     expect(option.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

@@ -595,7 +595,7 @@ run lives (`RunLiveVerbs`, the `workflowRun` registry's own `when`: Pause while
 a step is in flight and the run is not paused, Stop while the run is closable),
 then the run `⋯`; the verbs of `runPrimaryOf`
 (**Review plan**, **Answer**, **Continue the run**, **Retry**,
-**Raise spend cap**, **Decide next step**, **Start step 2**, **Start run**)
+**Raise limit**, **Decide next step**, **Start step 2**, **Start run**)
 sit on the run tail (a paused run's tail only says Paused by you, since
 Resume run sits in the header), and an archived run shows **Restore** as its one header
 primary. The `⋯` holds View diff, Step routing (orchestrated), Autonomy, Skip
@@ -1109,7 +1109,7 @@ and `AutoStart` (page, bound to the draft) both draw.
   pick. The goal is edited where the work is: the builder goal field or the
   agent instructions. Run a workflow is the same embedded
   `WorkflowBuilderView` as the Workflow tab (Orchestrated, Describe steps or Pick a workflow,
-  the plan, guidance, Can use, Starts, when to ask, Spend cap), with the issue as
+  the plan, guidance, Can use, Starts, when to ask, Limit), with the issue as
   its goal and its own draft under `kickoff-task:<workspace>`. When the issue
   maps to a project (`launchMountFor`, the Tasks rule: a GitHub or GitLab repo
   path, or a Sentry project linked or code-mapped to a project) a

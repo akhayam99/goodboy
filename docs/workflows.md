@@ -374,12 +374,12 @@ the step where the orchestrator first read it.
 
 Asking for a certain provider or model on a step is a hint too.
 
-### Spend cap
+### Limit
 
-Each run can have a spend cap in dollars. You set it on the run (the limit
+Each run can have a limit in dollars. You set it on the run (the limit
 in the run level foot or the orchestrated facts line) or in the creation form. You also choose what happens when
 the run reaches it: **Pause workflows** or **Warn only**, the same editor
-and words as the session's spend cap. The cap starts at unlimited. The
+and words as the session's limit. The limit starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
 
 A session has its own limit, set from the spend chip in its header. With
@@ -472,7 +472,7 @@ A run waits when:
 
 When a run waits for more than one reason, its row in the activity feed says
 one thing only. A failed or blocked step comes first, then an open question, then a step
-waiting for your click, then the spend cap. A summarizer writing the handoff
+waiting for your click, then the limit. A summarizer writing the handoff
 and an agent still running are Goodboy at work, so the row shows them as
 running, never as waiting on you. The rule lives in `resolveRunRowState`.
 
@@ -1126,8 +1126,8 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   no agent could take the answer (`answerOpenQuestions`); the next sweep is the
   backstop.
 - **Stops are saved, with a kind.** Before the call, the orchestrator checks
-  for a session paused by its spend cap (`sessionBudgetBlockAfterLoad`,
-  which reads `session_budgets.on_exceed` first), the run's spend cap in
+  for a session paused by its limit (`sessionBudgetBlockAfterLoad`,
+  which reads `session_budgets.on_exceed` first), the run's limit in
   pause mode, and open
   questions that block the run. Each one saves a `budget` or `questions` stop.
   A failed or unreadable call saves `failure`, and so does a decision whose

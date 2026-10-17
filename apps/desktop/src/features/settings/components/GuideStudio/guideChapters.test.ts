@@ -186,7 +186,8 @@ describe('the start and agent chapters', () => {
     expect(orchestrated).toContain('Read now');
     const auto = pointOf('agents', 'Auto');
     expect(auto).toContain('experimental');
-    expect(auto).toContain('Spend cap');
+    expect(auto).toContain('under a limit');
+    expect(auto).not.toMatch(/spend cap/i);
     expect(auto).toContain('child agents');
     const both = pointOf('agents', 'Orchestrated or Auto');
     expect(both).toContain('Orchestrated is not Auto');

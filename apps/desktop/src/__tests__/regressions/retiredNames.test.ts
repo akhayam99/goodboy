@@ -18,6 +18,14 @@ describe('retired names match whatever the casing', () => {
     expect(retiredIdsIn({ text: 'close worktree' })).toContain('close-worktree');
   });
 
+  it.each(['Spend cap', 'Raise spend cap', 'over its spend cap'])('flags %s for Limit', (text) => {
+    expect(retiredIdsIn({ text })).toContain('spend-cap');
+  });
+
+  it('leaves the spend_cap cause key alone', () => {
+    expect(retiredIdsIn({ text: 'spend_cap' })).toEqual([]);
+  });
+
   it('leaves a data attribute alone', () => {
     expect(retiredIdsIn({ text: '[data-inbox-key="a"]' })).toEqual([]);
   });

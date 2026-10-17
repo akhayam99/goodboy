@@ -4,7 +4,7 @@ A workflow runs several agents in one session, each step with its own role, mode
 
 ### Workflow builder
 
-Set up a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top. **Starts** and **Spend cap** sit under the plan.
+Set up a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top. **Starts** and **Limit** sit under the plan.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-dark.webp">
@@ -75,9 +75,9 @@ Choose how often a run stops for you: **Ask me**, **Balanced** to approve once a
 
 ### Run defaults
 
-Set what every new run starts with in the **Run defaults** tab: how it asks, the spend cap and shared **Guidance** for the agents that write code. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers & models**.
+Set what every new run starts with in the **Run defaults** tab: how it asks, the limit and shared **Guidance** for the agents that write code. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers & models**.
 
-### Spend cap
+### Limit
 
 Cap what a run or a session can spend, and choose **Pause workflows** or **Warn only**. A paused run offers **Raise limit**.
 
@@ -101,7 +101,7 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
 
 ### Workflow run
 
-Open a preset run and the session rail steps into it: **Overview**, every step in order with its sub-agents, **Add step** at the end, and the run's limit and spend at the foot. The center shows the step you pick as its conversation. The line at the end says what the run waits for, with the one button that moves it on: **Start step 3**, **Review plan**, **Raise spend cap**, **Continue step**. **Pause run** and **Stop run** sit as buttons in the run header while the run lives (once paused, **Resume run** takes the place of Pause run), and **Autonomy**, **Skip step** and the rest sit in the run's **⋯**. An orchestrated run lives under **Orchestrated** in the session and reads as one document: the goal with its autonomy, providers and limit, one checklist of the steps it decided, the hints it read and what is left, the line that says what the orchestrator does now with the reason for its last choice, the result once done, and the hint box at the bottom. A step opens beside it. After a restart, **Resume all** restarts every stopped agent.
+Open a preset run and the session rail steps into it: **Overview**, every step in order with its sub-agents, **Add step** at the end, and the run's limit and spend at the foot. The center shows the step you pick as its conversation. The line at the end says what the run waits for, with the one button that moves it on: **Start step 3**, **Review plan**, **Raise limit**, **Continue step**. **Pause run** and **Stop run** sit as buttons in the run header while the run lives (once paused, **Resume run** takes the place of Pause run), and **Autonomy**, **Skip step** and the rest sit in the run's **⋯**. An orchestrated run lives under **Orchestrated** in the session and reads as one document: the goal with its autonomy, providers and limit, one checklist of the steps it decided, the hints it read and what is left, the line that says what the orchestrator does now with the reason for its last choice, the result once done, and the hint box at the bottom. A step opens beside it. After a restart, **Resume all** restarts every stopped agent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">

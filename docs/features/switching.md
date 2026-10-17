@@ -37,7 +37,7 @@ Know what needs you from any screen. The chip in the top bar counts sessions tha
 
 ### Notifications
 
-Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its spend cap, lands in one list behind the bell, and **Needs action** shows only what waits on you.
+Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its limit, lands in one list behind the bell, and **Needs action** shows only what waits on you.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-dark.webp">

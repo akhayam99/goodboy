@@ -83,7 +83,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Budget',
-        desc: 'A spend cap you set on a session or a provider. Goodboy warns you as the spend nears it.',
+        desc: 'A limit you set on a session or a provider. Goodboy warns you as the spend nears it.',
       },
     ],
     links: [],
@@ -204,7 +204,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run a workflow',
-        desc: 'Several agents work through your goal, step by step. Describe the steps or pick a saved workflow, see and edit the plan, set Autonomy, Starts and Spend cap, then Start run creates the session and starts the run.',
+        desc: 'Several agents work through your goal, step by step. Describe the steps or pick a saved workflow, see and edit the plan, set Autonomy, Starts and Limit, then Start run creates the session and starts the run.',
       },
       {
         term: 'Orchestrate',
@@ -212,7 +212,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Ask an agent',
-        desc: 'One agent in the role you pick. Scout is the default and maps an unfamiliar repo before you plan. To let Auto pick the roles, use Start Auto in the session New menu, with a Spend cap.',
+        desc: 'One agent in the role you pick. Scout is the default and maps an unfamiliar repo before you plan. To let Auto pick the roles, use Start Auto in the session New menu, with a limit.',
       },
       {
         term: 'Projects',
@@ -355,7 +355,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise spend cap. Pause run, then Resume run in its place, and Stop run sit in the run header, and Autonomy and Skip step in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
+        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise limit. Pause run, then Resume run in its place, and Stop run sit in the run header, and Autonomy and Skip step in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
       },
       {
         term: 'Agent suggests',
@@ -367,7 +367,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run defaults',
-        desc: 'The Run defaults tab in Workflows sets what new runs start with: autonomy, a spend cap, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
+        desc: 'The Run defaults tab in Workflows sets what new runs start with: autonomy, a limit, which providers get the next step and guidance. Use providers with room left sends steps to the provider with room. A run keeps the copy of the rules it started with.',
       },
       {
         term: 'Orchestrated',
@@ -375,11 +375,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'Auto is an experimental agent that is always available. Start Auto in the session New menu starts it: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a Spend cap. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself.',
+        desc: 'Auto is an experimental agent that is always available. Start Auto in the session New menu starts it: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a limit. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself.',
       },
       {
         term: 'Orchestrated or Auto',
-        desc: 'Orchestrated is not Auto. Orchestrated runs a workflow: the orchestrator only decides the next step, each step gets its own agent, and you steer with hints. Auto is one agent you talk to, which delegates work to children on its own under a Spend cap. Each has its own entry in the session rail, and only Auto carries the Experimental chip.',
+        desc: 'Orchestrated is not Auto. Orchestrated runs a workflow: the orchestrator only decides the next step, each step gets its own agent, and you steer with hints. Auto is one agent you talk to, which delegates work to children on its own under a limit. Each has its own entry in the session rail, and only Auto carries the Experimental chip.',
       },
       {
         term: 'Pause and resume',

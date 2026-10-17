@@ -531,8 +531,8 @@
           "shown": true
         },
         {
-          "title": "Spend cap",
-          "text": "Cap what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise spend cap.",
+          "title": "Limit",
+          "text": "Limit what a run or a session can spend, then choose to pause workflows or only be warned. A paused run offers Raise limit.",
           "group": "Workflows",
           "main": true
         },
@@ -545,7 +545,7 @@
         },
         {
           "title": "Run defaults",
-          "text": "Set once what every new run starts with: when it asks, a spend cap and guidance. Spread work by what each provider has left.",
+          "text": "Set once what every new run starts with: when it asks, a limit and guidance. Spread work by what each provider has left.",
           "group": "Workflows",
           "also": "run defaults",
           "shown": true

@@ -39,15 +39,15 @@ const sessionTitleFor = ({ alert, get }: TitleParams): string => {
   const name = sessionTitle({ session });
   const limit = formatUsd(alert.capUsd);
   if (alert.kind === 'session-threshold') {
-    return `${name} is close to its ${limit} spend cap.`;
+    return `${name} is close to its ${limit} limit.`;
   }
   const onExceed =
     alert.sessionId == null
       ? 'pause'
       : (state.sessionBudgets[alert.sessionId]?.onExceed ?? 'pause');
   return onExceed === 'warn'
-    ? `${name} passed its ${limit} spend cap.`
-    : `${name} paused its runs at the ${limit} spend cap.`;
+    ? `${name} passed its ${limit} limit.`
+    : `${name} paused its runs at the ${limit} limit.`;
 };
 
 const titleFor = ({ alert, get }: TitleParams): string => {
@@ -56,9 +56,9 @@ const titleFor = ({ alert, get }: TitleParams): string => {
   }
   const subject = providerName({ alert });
   if (alert.kind === 'provider-exceeded' || alert.kind === 'session-exceeded') {
-    return `${subject} spend cap reached`;
+    return `${subject} limit reached`;
   }
-  return `${subject} is close to its spend cap`;
+  return `${subject} is close to its limit`;
 };
 
 type BodyParams = AlertParams;

@@ -258,7 +258,7 @@ describe('New session page, Run lane', () => {
     fireEvent.click(screen.getByRole('option', { name: /scout, plan, build/i }));
     fireEvent.click(screen.getByRole('button', { name: /^limit:/i }));
     fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
-    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '9' } });
+    fireEvent.change(screen.getByLabelText('Limit in dollars'), { target: { value: '9' } });
 
     fireEvent.click(startButton());
 

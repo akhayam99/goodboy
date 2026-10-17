@@ -947,7 +947,7 @@ Settings › App › Backup reads and writes a JSON bundle, schema version 3
 `packages/types/src/config-bundle.ts`). What goes in is chosen per group
 (`ExportGroups`): workspaces, projects, folder paths, profile, workflows you
 made, workflows the orchestrator wrote, saved scripts, permission rules,
-spend caps, linked integrations and app preferences. Folder paths and
+limits, linked integrations and app preferences. Folder paths and
 orchestrator-written workflows are off by default; every other group is on.
 Never included, in any bundle: API keys and tokens, sign-ins, sessions and
 transcripts, artifacts, worktree folders, usage history, notifications.
@@ -971,7 +971,7 @@ picks, per workspace, `merge into <existing>` or `add as a new workspace`,
 and resolves a folder for projects the engine could not place, before calling
 `config_import_apply`. The preview also returns `groupStats`, a per-group
 adds/updates tally (workspaces, projects, skills, workflows, permission
-rules, spend caps, scripts, linked integrations) computed by checking each
+rules, limits, scripts, linked integrations) computed by checking each
 bundle row against the local database before any write, so the confirm step
 shows what will change instead of only a post-apply count. Import only
 inserts and updates; it never deletes a row, and a project it cannot resolve

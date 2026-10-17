@@ -2068,7 +2068,7 @@ it:
 - **`FormPage`** is the scrolling body of a page-sized form: a `ScrollFade`
   holding a centred `PageColumn` with `gap-8` between the blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
 - **`FormActions`** is the action row. `leading` holds the quiet options or the
-  status line on the left (Starts, Run on its own, Spend cap, routing, an error
+  status line on the left (Starts, Run on its own, Limit, routing, an error
   with `role="alert"`). A job that runs longer than a few seconds shows its
   status inside the input card, never in this row: the create form's card holds
   Scribe's running dot, seconds and `Stop` in its bottom row, and the actions

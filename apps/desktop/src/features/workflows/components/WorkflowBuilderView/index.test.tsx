@@ -377,7 +377,7 @@ describe('WorkflowBuilderView (orchestrate)', () => {
     setGoal();
     openSpendCap();
     fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
-    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), {
+    fireEvent.change(screen.getByLabelText('Limit in dollars'), {
       target: { value: 'not a number' },
     });
 
@@ -389,10 +389,10 @@ describe('WorkflowBuilderView (orchestrate)', () => {
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
     setGoal();
     openSpendCap();
-    expect(screen.queryByLabelText('Spend cap in dollars')).toBeNull();
+    expect(screen.queryByLabelText('Limit in dollars')).toBeNull();
 
     fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
-    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '15' } });
+    fireEvent.change(screen.getByLabelText('Limit in dollars'), { target: { value: '15' } });
     fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
     fireEvent.click(startBtn());
 
@@ -838,7 +838,7 @@ describe('WorkflowBuilderView (preset)', () => {
     pickPreset(/ship it/i);
     openSpendCap();
     fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
-    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: 'x' } });
+    fireEvent.change(screen.getByLabelText('Limit in dollars'), { target: { value: 'x' } });
 
     expect(startBtn().disabled).toBe(true);
     expect(screen.getByText('Enter a valid limit to start')).toBeDefined();
@@ -851,7 +851,7 @@ describe('WorkflowBuilderView (preset)', () => {
     pickPreset(/ship it/i);
     openSpendCap();
     fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
-    fireEvent.change(screen.getByLabelText('Spend cap in dollars'), { target: { value: '9' } });
+    fireEvent.change(screen.getByLabelText('Limit in dollars'), { target: { value: '9' } });
     fireEvent.click(startBtn());
 
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
