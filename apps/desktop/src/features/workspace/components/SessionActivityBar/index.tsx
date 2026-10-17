@@ -36,7 +36,6 @@ import { useSidebarPeekHold } from '../SidebarPeekOverlay/hold';
 import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { sessionGroupPresentation } from './groupPresentation';
-import { SessionFilterPopover } from './SessionFilterPopover';
 import { useClearSessionFilters } from './useClearSessionFilters';
 import { SessionActivityItem } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
@@ -83,10 +82,6 @@ export const SessionActivityBar = ({
   const hover = useHoverCardTarget();
   const { close: closeHover } = hover;
 
-  const filterSessions = useMemo(
-    () => (prefs.isArchivedShown ? [...sessions, ...archivedSessions] : sessions),
-    [archivedSessions, prefs.isArchivedShown, sessions],
-  );
   const filteredArchived = useProjectFilteredSessions({
     workspaceId,
     sessions: archivedSessions,
@@ -197,11 +192,6 @@ export const SessionActivityBar = ({
     setSessionViewPrefs({ workspaceId, patch: { isFoldOpen: !prefs.isFoldOpen } });
   }, [closeHover, prefs.isFoldOpen, setSessionViewPrefs, workspaceId]);
 
-  const setArchivedShown = useCallback(
-    (isShown: boolean) => setSessionViewPrefs({ workspaceId, patch: { isArchivedShown: isShown } }),
-    [setSessionViewPrefs, workspaceId],
-  );
-
   const openAttention = useCallback(
     ({ sessionId, reason }: OpenAttention) => {
       closeHover();
@@ -261,14 +251,6 @@ export const SessionActivityBar = ({
     );
   };
 
-  const filter = (
-    <SessionFilterPopover
-      workspaceId={workspaceId}
-      sessions={filterSessions}
-      archivedCount={archivedSessions.length}
-      onArchivedShownChange={setArchivedShown}
-    />
-  );
   const isHeaderedOf = ({ group }: GroupParams): boolean =>
     column.isGrouped || group.label !== null;
   const countOf = ({ group }: GroupParams): number | null => {
@@ -309,15 +291,6 @@ export const SessionActivityBar = ({
 
   return (
     <div ref={barRef} className="relative flex h-full min-h-0 w-full shrink-0 flex-col gap-1">
-      <div
-        className={cn(
-          'flex h-7 shrink-0 items-center justify-end',
-          PANE_RHYTHM.sessionList.headerInset,
-        )}
-      >
-        {filter}
-      </div>
-
       <ScrollFade className="min-h-0 flex-1">
         <div
           ref={listRef}

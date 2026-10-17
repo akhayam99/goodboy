@@ -406,6 +406,15 @@ never exists on one surface only.
   for linking work to a session or workspace. Moving a task is one verb,
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
+- **The sidebar session row.** Its right click (and Shift+F10) opens the
+  session kind's menu, the full set of session verbs: Open, the lenses, Rename,
+  Pin session or Unpin session, **Refresh session** (`session.refresh`, the
+  same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
+  flight), Autopilot, Start agent, Link work, the copies, Archive and Delete,
+  whose confirm still asks first. The palette lists the same verbs. The row is
+  `select-none`: on macOS WebKit selects the word under the pointer before the
+  contextmenu event, and a selection inside the row keeps the native menu
+  (`keepsNativeMenu`), so the row never offers text to select.
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.
@@ -893,11 +902,15 @@ hands the rest of the summary to the hover card; the session header keeps its
 chips.
 
 **The user chooses what the list shows and in what order.** The sidebar list
-has no "Sessions" eyebrow (the Sessions door already names it): its first row
-holds one funnel button at the right, **Filter sessions**
-(`SessionFilterPopover`), with a neutral 6px dot while a filter is on; the
-Sessions page header holds the same button. Its
-popover is a labelled dialog, not a menu of menus. Status lists Needs you,
+has no "Sessions" eyebrow and no filter row of its own: the Sessions door row
+holds one funnel button in its action slot at the right, **Filter sessions**
+(`SidebarSessionsFilter` over `SessionFilterPopover`), with a neutral 6px dot
+while a filter is on. The door row never regroups, so the popover stays open
+while the list under it changes grouping. The Sessions page header holds the
+same button. Its popover is a labelled dialog, not a menu of menus. Every
+choice starts on its label at the section's left edge, with its count after
+it (from one; a zero row is dimmed with no number) and one check slot last,
+as in every other menu (`FilterChoice`). Status lists Needs you,
 Running, In review, Building and Done with their counts (`statusFilter` in the
 prefs). Project lists the projects of the sessions with their counts and shows
 only when two or more projects have sessions (the same selection as the board's

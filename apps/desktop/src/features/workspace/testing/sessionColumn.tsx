@@ -16,6 +16,7 @@ import type { MountGithubState, SessionGithubState } from '../../../store/types'
 import type { StoryStore } from '../../../store/storyHarness';
 import { ToastProvider } from '../../../shared/components/Toast';
 import { SessionActivityBar } from '../components/SessionActivityBar';
+import { SidebarSessionsFilter } from '../components/SessionActivityBar/SidebarSessionsFilter';
 
 export const harborline = aWorkspace({ name: 'Harborline', slug: 'harborline' });
 
@@ -230,15 +231,18 @@ const StoreBar = ({ isStudioOver, onSelectSession, onArchivedTabOpen }: BarProps
   const archived = useAppStore((state) => state.archivedSessions[harborline.id] ?? NO_SESSIONS);
   const currentSessionId = useAppStore((state) => state.currentSessionId);
   return (
-    <SessionActivityBar
-      workspaceId={harborline.id}
-      sessions={sessions}
-      archivedSessions={archived}
-      currentSessionId={currentSessionId as SessionId | null}
-      isStudioOver={isStudioOver}
-      onSelectSession={onSelectSession}
-      {...(onArchivedTabOpen !== undefined && { onArchivedTabOpen })}
-    />
+    <>
+      <SidebarSessionsFilter workspaceId={harborline.id} />
+      <SessionActivityBar
+        workspaceId={harborline.id}
+        sessions={sessions}
+        archivedSessions={archived}
+        currentSessionId={currentSessionId as SessionId | null}
+        isStudioOver={isStudioOver}
+        onSelectSession={onSelectSession}
+        {...(onArchivedTabOpen !== undefined && { onArchivedTabOpen })}
+      />
+    </>
   );
 };
 

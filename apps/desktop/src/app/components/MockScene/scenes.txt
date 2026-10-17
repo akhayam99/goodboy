@@ -568,6 +568,8 @@ r1-inactive-sidebar
 r1-inactive-sidebar-grouped
 r1-motion-shell-folded
 r1-motion-shell-open
+r4-sidebar-filter
+r4-sidebar-row-menu
 rail-draft-dot
 rail-flyout
 rail-pinned

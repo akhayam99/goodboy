@@ -1,8 +1,7 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-
-const REFRESH_FAILED_TITLE = "Couldn't refresh this session";
+import { refreshSession } from '../../refreshSession';
 
 type RefreshParams = {
   readonly sessionId: SessionId;
@@ -13,13 +12,8 @@ export const useSessionRefresh = (): ((params: RefreshParams) => Promise<void>) 
   const reportError = useAppStore((s) => s.reportError);
 
   return useCallback(
-    async ({ sessionId }: RefreshParams): Promise<void> => {
-      try {
-        await resyncSession({ sessionId });
-      } catch (error) {
-        await reportError({ title: REFRESH_FAILED_TITLE, error, sessionId });
-      }
-    },
+    ({ sessionId }: RefreshParams): Promise<void> =>
+      refreshSession({ sessionId, resyncSession, reportError }),
     [reportError, resyncSession],
   );
 };

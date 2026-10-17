@@ -2,6 +2,7 @@ import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { SessionNavSidebar } from '../../../features/session/components/SessionNavSidebar';
 import { NewSessionRow } from '../../../features/workspace/components/SessionActivityBar/NewSessionRow';
+import { SidebarSessionsFilter } from '../../../features/workspace/components/SessionActivityBar/SidebarSessionsFilter';
 import type { ShellColumnScope } from '../../shellArrangement';
 import { ColumnDoorRow } from './ColumnDoorRow';
 import { ColumnFoot } from './ColumnFoot';
@@ -72,6 +73,9 @@ export const SideColumn = ({
                       shortcut: 'chat.new',
                       onCreate: go(actions.openNewChat),
                     },
+                  })}
+                  {...(door.id === 'board' && {
+                    action: <SidebarSessionsFilter workspaceId={workspaceId} />,
                   })}
                   {...(door.id === 'terminal' && {
                     create: {
