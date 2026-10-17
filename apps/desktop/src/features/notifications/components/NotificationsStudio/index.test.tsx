@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
+import { innerColumnStore } from '@goodboy/ui';
 import { pressShortcut } from '../../../../__tests__/helpers/pressKey';
 
 const { state } = vi.hoisted(() => ({
@@ -525,7 +526,7 @@ describe('NotificationsStudio', () => {
     expect(screen.queryByText('Error row')).toBeNull();
   });
 
-  it('folds the rail from its first row and docks it again', () => {
+  it('folds the rail from its first row and docks it again from the rail edge, not the header', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
@@ -533,9 +534,28 @@ describe('NotificationsStudio', () => {
 
     expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
     expect(localStorage.getItem('goodboy:studio-rail-folded:notifications:v1')).toBe('1');
+    expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
+    const unfold = screen.getByRole('button', { name: 'Show the rail' });
+    expect(unfold.closest('[data-studio-rail-unfold]')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dock the filters' }));
+    fireEvent.click(unfold);
 
+    expect(screen.getByRole('complementary', { name: 'Notification filters' })).toBeDefined();
+  });
+
+  it('folds and docks the filters as the page inner column', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+    expect(innerColumnStore.current()?.id).toBe('notifications');
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
+    expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
+
+    act(() => {
+      innerColumnStore.toggleCurrent();
+    });
     expect(screen.getByRole('complementary', { name: 'Notification filters' })).toBeDefined();
   });
 });

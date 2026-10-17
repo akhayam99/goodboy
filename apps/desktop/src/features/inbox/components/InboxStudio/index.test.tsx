@@ -317,7 +317,7 @@ const openFilters = (): void => {
   if (screen.queryByRole('navigation', { name: 'Filter tasks' }) !== null) {
     return;
   }
-  fireEvent.click(screen.getByRole('button', { name: /^Filter(,|$)/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^Filters(,|$)/ }));
 };
 
 const facet = (section: string, name: RegExp) => {
@@ -810,7 +810,7 @@ describe('InboxStudio', () => {
     expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
     fireEvent.click(facet('Source', /GitHub/));
 
-    expect(screen.getByRole('button', { name: 'Filter, 1 active' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Filters, 1 active' })).toBeDefined();
     expect(screen.getByText('Fix the flaky test')).toBeDefined();
     expect(screen.queryByText('Ship the inbox')).toBeNull();
   });

@@ -49,6 +49,7 @@ describe('the rail scenes', () => {
   it('registers every scene for the capture', () => {
     expect(Object.keys(U24_RAILS_SCENES).sort()).toEqual([
       'notifications-rail',
+      'notifications-rail-folded',
       'tasks-rail',
       'tasks-rail-folded',
       'tasks-rail-open',
@@ -60,7 +61,7 @@ describe('the rail scenes', () => {
   it('tasks-rail now keeps the filters in one Filter menu of the header, with no rail', async () => {
     mount({ name: 'tasks-rail' });
 
-    await screen.findByRole('button', { name: 'Filter' }, WAIT);
+    await screen.findByRole('button', { name: 'Filters' }, WAIT);
     expect(screen.getByRole('searchbox', { name: 'Search tasks' })).toBeDefined();
     expect(screen.getByRole('heading', { level: 1, name: 'Tasks' })).toBeDefined();
     expect(screen.queryByRole('complementary', { name: 'Task filters' })).toBeNull();
@@ -69,7 +70,7 @@ describe('the rail scenes', () => {
   it('tasks-rail-open opens the record in the pane beside the list', async () => {
     mount({ name: 'tasks-rail-open' });
 
-    await screen.findByRole('button', { name: 'Filter' }, WAIT);
+    await screen.findByRole('button', { name: 'Filters' }, WAIT);
     const drawer = screen.getByRole('complementary', { name: 'Task' });
     expect(drawer.getAttribute('data-drawer-mode')).not.toBe('closed');
   });
@@ -77,7 +78,7 @@ describe('the rail scenes', () => {
   it('tasks-rail-folded shows the same header Filter menu, since no rail folds anymore', async () => {
     mount({ name: 'tasks-rail-folded' });
 
-    await screen.findByRole('button', { name: 'Filter' }, WAIT);
+    await screen.findByRole('button', { name: 'Filters' }, WAIT);
     expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
   });
 
@@ -89,6 +90,17 @@ describe('the rail scenes', () => {
     expect(within(rail).getByRole('group', { name: 'Severity' })).toBeDefined();
     expect(within(rail).getByRole('group', { name: 'Source' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
+  });
+
+  it('notifications-rail-folded keeps the filters in the header and the dock at the rail edge', async () => {
+    mount({ name: 'notifications-rail-folded' });
+
+    await screen.findByRole('button', { name: /^Filters/ }, WAIT);
+    expect(screen.queryByRole('complementary', { name: 'Notification filters' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Dock the filters' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'Show the rail' }).closest('[data-studio-rail-unfold]'),
+    ).not.toBeNull();
   });
 
   it.each(['tasks-rail', 'tasks-rail-folded'])(

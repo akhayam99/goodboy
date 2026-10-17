@@ -164,6 +164,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
             railHeader={<Eyebrow label="Filters" muted />}
             isCollapsed={fold.isCollapsed}
             onCollapsedChange={fold.setFolded}
+            canUnfold={fold.canDock}
             detail={
               <StudioDetail>
                 <PaneShell
@@ -177,7 +178,6 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                             popoverLabel="Notification filters"
                             activeCount={activeCount}
                             facets={facets}
-                            onDock={fold.canDock ? () => fold.setFolded(false) : undefined}
                           />
                         ) : null
                       }

@@ -944,7 +944,7 @@ chips.
 
 **The user chooses what the list shows and in what order.** The sidebar list
 has no "Sessions" eyebrow (the Sessions door already names it): its first row
-holds one funnel button at the right, **Filter sessions**
+holds one filter button (the lines icon) at the right, **Filter sessions**
 (`SessionFilterPopover`), with a neutral 6px dot while a filter is on; the
 Sessions page header holds the same button. Its
 popover is a labelled dialog, not a menu of menus. Status lists Needs you,
@@ -2138,9 +2138,9 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   column's name (Fold the chat list, Show the session rail) and leaves it out
   on a page with none, where the key does nothing. Under a pane of 880px the rail
   folds without saving anything and docks again when the pane widens. A folded
-  rail leaves the shared `FilterButton` (28px tall, the funnel with the count of
-  active filters, "Dock the filters" beside it while the pane is wide enough)
-  in the title row, opening the same facets in a popover. The search field of
+  rail leaves the shared `FilterButton` (28px tall, the lines icon with the
+  count of active filters; docking the rail again is the Show the rail strip
+  at the rail edge or ⌥⌘B, never a header button) in the title row, opening the same facets in a popover. The search field of
   Tasks moves into the title row with it.
 - **Every studio list resizes.** `StudioRailLayout` (Settings in the legacy
   layout, Guide, Chat, Changelog, Bitbucket, Tasks, Notifications) drags from
