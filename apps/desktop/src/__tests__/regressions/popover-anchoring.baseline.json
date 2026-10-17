@@ -79,9 +79,6 @@
   "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/NewBranchMountAction.tsx": {
     "trailing add of a label row; the anchor presentation starts": 1
   },
-  "apps/desktop/src/features/session/components/SessionOverviewPane/SessionCostChip.tsx": {
-    "spend chip at the end of the timeline header": 1
-  },
   "apps/desktop/src/features/terminal/components/TerminalStudio/NewTerminalMenu.tsx": {
     "the terminal picker opens to the right of the split chevron": 1
   },

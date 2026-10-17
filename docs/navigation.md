@@ -742,7 +742,7 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   `session.archive`; **Restore** on an archived session) in gray text and
   **Delete…** (⌘⇧⌫) in red text (`ghost-danger`: no fill, no border), side by
   side, half the rail width each, text only, no `⋯`; Delete opens
-  `DeleteSessionConfirm` anchored to the button (`align="end"`, flipped above
+  `DeleteSessionConfirm` anchored to the button (end aligned, the `ConfirmPopover` default, flipped above
   it and kept inside the window by `useDropdownDirection`). Rename has no rail
   control: a rename
   request (`session-header`, from the palette, the sidebar row's right click

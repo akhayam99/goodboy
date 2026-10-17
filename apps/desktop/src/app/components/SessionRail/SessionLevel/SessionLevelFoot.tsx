@@ -49,7 +49,6 @@ export const SessionLevelFoot = ({ session, controls }: Props) => {
         <DeleteSessionConfirm
           session={session}
           isOpen={isDeleteOpen}
-          align="end"
           anchorClassName="flex min-w-0"
           onClose={() => setIsDeleteOpen(false)}
           trigger={() => (
