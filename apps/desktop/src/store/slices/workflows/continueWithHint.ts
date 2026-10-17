@@ -13,19 +13,16 @@ export const continueWithHint = (set: SetFn, get: GetFn) => {
     draft: ContinueHintDraft,
   ): Promise<void> => {
     const run = findWorkflowRun({ get, sessionId, workflowRunId });
-    if (
-      run == null ||
-      run.executionMode !== 'dynamic' ||
-      run.discardedAt != null ||
-      run.orchestrationOutcome !== 'done'
-    ) {
+    if (run == null || run.executionMode !== 'dynamic' || run.discardedAt != null) {
       return;
     }
     const hint = await get().addWorkflowOrchestratorHint(sessionId, workflowRunId, {
       ...draft,
       delivery: 'queue',
     });
-    if (hint === null) {
+    const isStillDone =
+      findWorkflowRun({ get, sessionId, workflowRunId })?.orchestrationOutcome === 'done';
+    if (hint === null || !isStillDone) {
       return;
     }
     try {

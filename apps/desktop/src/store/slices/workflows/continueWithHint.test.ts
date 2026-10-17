@@ -131,12 +131,12 @@ describe('continueWithHint', () => {
     expect(orchestrateNextStep).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves a live orchestrated run alone', async () => {
+  it('queues the hint on a run another window already reopened, and decides nothing twice', async () => {
     seed({ run: aWorkflowRun({ id: doneRun.id, executionMode: 'dynamic' }) });
 
     await useAppStore.getState().continueWithHint(session.id, doneRun.id, { text: HINT_TEXT });
 
-    expect(savedHints).toEqual([]);
+    expect(runNow()?.orchestratorHints?.map((hint) => hint.text)).toEqual([HINT_TEXT]);
     expect(outcomeWrites).toEqual([]);
     expect(orchestrateNextStep).not.toHaveBeenCalled();
   });

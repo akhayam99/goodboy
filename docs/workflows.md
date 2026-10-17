@@ -339,6 +339,8 @@ read top to bottom at the conversation measure:
   orchestrator decides the next step from the goal, the decisions and the
   hint. A failed reopen removes the hint again, keeps the text and says
   "Couldn't continue the run" inline with **Retry**; the run stays complete.
+  When another window reopened the run first, the hint is only queued and the
+  orchestrator reads it with its next decision.
 - **Composer** (`OrchestratedComposer`), docked while the run lives: "Hint the
   orchestrator". A queued hint shows its first line and "+2 lines".
   Waiting hints sit above it under one line, **Waits for the next decision**,
