@@ -1,5 +1,5 @@
-import { memo, useMemo, useState, type MouseEvent } from 'react';
-import { InteractiveRow, SelectionCheckbox, StatusDot, cn } from '@goodboy/ui';
+import { memo, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { InteractiveRow, SelectionCheckbox, cn } from '@goodboy/ui';
 import type { ChatId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
@@ -8,6 +8,8 @@ import { chatObjectKey } from '../../../actions/kinds/chat';
 import type { ObjectTarget } from '../../../actions/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { StateNode } from '../../../../shared/components/StateNode';
+import { chatNodeOf } from '../../chatNodeOf';
 import { useChatSessionMarker } from '../../hooks/useChatSessionMarker';
 import { ageTokenOf } from './ageToken';
 import { ChatRenameInput } from './ChatRenameInput';
@@ -49,6 +51,24 @@ const hasModifier = (event: ModifierEvent): boolean =>
 
 const SELECT_TARGET = '[data-select-id]';
 
+type TargetParams = {
+  readonly target: EventTarget;
+};
+
+type KeyParams = {
+  readonly event: KeyboardEvent<HTMLLIElement>;
+};
+
+const isOpenerTarget = ({ target }: TargetParams): boolean =>
+  target instanceof Element && target.closest(SELECT_TARGET) !== null;
+
+const isSpaceOnOpener = ({ event }: KeyParams): boolean =>
+  event.key === ' ' &&
+  !event.metaKey &&
+  !event.ctrlKey &&
+  !event.altKey &&
+  isOpenerTarget({ target: event.target });
+
 const ChatListRowView = ({
   chatId,
   title,
@@ -71,6 +91,7 @@ const ChatListRowView = ({
   const markChatRead = useAppStore((state) => state.markChatRead);
   const navigate = useAppStore((state) => state.navigate);
   const marker = useChatSessionMarker({ chatId });
+  const node = chatNodeOf({ isStreaming, isUnread });
   const [isRenaming, setIsRenaming] = useState(false);
   const anchorKey = `chat-row:${chatId}`;
 
@@ -110,14 +131,20 @@ const ChatListRowView = ({
   });
 
   const captureModifierClick = (event: MouseEvent<HTMLLIElement>): void => {
-    const isOpener =
-      event.target instanceof Element && event.target.closest(SELECT_TARGET) !== null;
-    if (!isOpener || !hasModifier(event)) {
+    if (!isOpenerTarget({ target: event.target }) || !hasModifier(event)) {
       return;
     }
     event.preventDefault();
     event.stopPropagation();
     selection.onModifierClick(chatId, event);
+  };
+
+  const toggleWithSpace = (event: KeyboardEvent<HTMLLIElement>): void => {
+    if (!isSpaceOnOpener({ event })) {
+      return;
+    }
+    event.preventDefault();
+    selection.onToggle(chatId, event);
   };
 
   return (
@@ -126,84 +153,87 @@ const ChatListRowView = ({
       data-idle={isIdle ? 'true' : undefined}
       data-checked={isChecked ? 'true' : undefined}
       onClickCapture={captureModifierClick}
+      onKeyDown={toggleWithSpace}
+      onKeyUp={(event) => {
+        if (isSpaceOnOpener({ event })) {
+          event.preventDefault();
+        }
+      }}
     >
       <InteractiveRow
         label={title}
         isSelected={isSelected}
         onOpen={() => onSelect(chatId)}
         frameClassName={cn('group group/select-row', isChecked && 'bg-selected')}
-        className="flex min-w-0 flex-col gap-0.5 py-2 pl-7 pr-1"
+        className="flex min-w-0 items-start gap-2 py-2 pl-2 pr-1"
         dataAttributes={{ 'data-select-id': chatId }}
         menu={menu}
       >
-        <span className="relative flex min-h-6 min-w-0 items-center gap-1">
-          <SelectionCheckbox
-            checked={isChecked}
-            label={`Select ${title}`}
-            onToggle={(event) => selection.onToggle(chatId, event)}
-            className="absolute -left-[21px] top-1/2 -translate-y-1/2"
-          />
-          {isStreaming ? (
-            <StatusDot
-              tone="info"
-              pulsing
-              ariaLabel="Answering"
-              className="absolute -left-4 top-1/2 -translate-y-1/2 group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
+        <span className="flex h-6 w-5 shrink-0 items-center justify-center">
+          <span className="relative flex size-5 items-center justify-center">
+            <StateNode
+              node={node}
+              isOnSelectedRow={isSelected || isChecked}
+              isNamed
+              isCheckboxSlot
             />
-          ) : null}
-          {!isStreaming && isUnread ? (
-            <StatusDot
-              tone="warning"
-              ariaLabel="New reply"
-              className="absolute -left-4 top-1/2 -translate-y-1/2 group-focus-within/select-row:invisible group-hover/select-row:invisible group-data-[selecting=true]/select-list:invisible"
+            <SelectionCheckbox
+              checked={isChecked}
+              label={`Select ${title}`}
+              onToggle={(event) => selection.onToggle(chatId, event)}
+              className="absolute inset-0"
             />
-          ) : null}
-          {isRenaming ? (
-            <ChatRenameInput
-              title={title}
-              onCommit={(next) => {
-                setIsRenaming(false);
-                void renameChat({ chatId, title: next });
-              }}
-              onCancel={() => setIsRenaming(false)}
-            />
-          ) : (
-            <>
-              <span
-                className={cn(
-                  'min-w-0 flex-1 truncate text-label',
-                  isIdle && !isSelected ? 'text-faint-foreground' : 'text-foreground',
-                )}
-              >
-                {title}
-              </span>
-              <span className="flex h-6 shrink-0 items-center gap-1">
-                <span className="whitespace-nowrap text-meta tabular-nums text-faint-foreground">
-                  {ageTokenOf({ time })}
-                </span>
-              </span>
-            </>
-          )}
+          </span>
         </span>
-        <span
-          className={cn(
-            'flex min-w-0 items-center gap-1 text-meta',
-            isIdle ? 'text-disabled-foreground' : 'text-faint-foreground',
-          )}
-        >
-          {isRenaming ? (
-            <span className="truncate">Enter saves · Esc cancels</span>
-          ) : (
-            <>
-              <span className="min-w-0 flex-1 truncate">{snippet}</span>
-              {marker === null ? null : (
-                <ChatSessionMark
-                  marker={marker}
-                  onOpen={(sessionId) => navigate({ to: sessionPlace({ sessionId }) })}
-                />
-              )}
-            </>
-          )}
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="flex min-h-6 min-w-0 items-center gap-1">
+            {isRenaming ? (
+              <ChatRenameInput
+                title={title}
+                onCommit={(next) => {
+                  setIsRenaming(false);
+                  void renameChat({ chatId, title: next });
+                }}
+                onCancel={() => setIsRenaming(false)}
+              />
+            ) : (
+              <>
+                <span
+                  className={cn(
+                    'min-w-0 flex-1 truncate text-label',
+                    isIdle && !isSelected ? 'text-faint-foreground' : 'text-foreground',
+                  )}
+                >
+                  {title}
+                </span>
+                <span className="flex h-6 shrink-0 items-center gap-1">
+                  <span className="whitespace-nowrap text-meta tabular-nums text-faint-foreground">
+                    {ageTokenOf({ time })}
+                  </span>
+                </span>
+              </>
+            )}
+          </span>
+          <span
+            className={cn(
+              'flex min-w-0 items-center gap-1 text-meta',
+              isIdle ? 'text-disabled-foreground' : 'text-faint-foreground',
+            )}
+          >
+            {isRenaming ? (
+              <span className="truncate">Enter saves · Esc cancels</span>
+            ) : (
+              <>
+                <span className="min-w-0 flex-1 truncate">{snippet}</span>
+                {marker === null ? null : (
+                  <ChatSessionMark
+                    marker={marker}
+                    onOpen={(sessionId) => navigate({ to: sessionPlace({ sessionId }) })}
+                  />
+                )}
+              </>
+            )}
+          </span>
         </span>
       </InteractiveRow>
     </li>

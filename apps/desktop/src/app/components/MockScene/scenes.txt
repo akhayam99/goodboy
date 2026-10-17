@@ -259,6 +259,7 @@ c10-start-agent
 c10-start-auto
 c10-start-failed
 c10-start-orchestrate
+c10-start-presets
 c10-start-projects
 c10-start-task
 c10-start-workflow
@@ -573,6 +574,8 @@ r1-inactive-sidebar
 r1-inactive-sidebar-grouped
 r1-motion-shell-folded
 r1-motion-shell-open
+r4-chatlist-selecting
+r4-chatlist-states
 r4-comments-drawer
 r4-comments-drawer-failed
 r4-comments-drawer-ready
@@ -602,6 +605,7 @@ r4-rail-narrow
 r4-rail-session
 r4-rail-tools-open
 r4-rail-worktree
+r4-report-bug
 r4-repos-behind
 r4-repos-closed
 r4-repos-dirty
