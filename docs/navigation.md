@@ -688,13 +688,15 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   Linked card, then the foot. The session level has no identity row: the
   selected main sidebar row is the session's identity (its title and state
   node) and the page h1 names the entry. The rail's top row holds the rail
-  toggle at the left and three icon buttons at the right, no `⋯`
-  (`SessionLevel/SessionLevelActions`): **Autopilot** and **Pin session**,
-  toggles that show pressed while on and run their registry actions
-  (`session.autopilotOn` / `Off`, `session.pin` / `unpin`; a failure keeps the
-  old state and shows under the row with Retry, `ActionStatusLine`), and
+  toggle at the left and two icon buttons at the right, no `⋯`
+  (`SessionLevel/SessionLevelActions`): **Pin session**, a toggle that shows
+  pressed while on and runs its registry action (`session.pin` / `unpin`; a
+  failure keeps the old state and shows under the row with Retry,
+  `ActionStatusLine`), and
   **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
-  the palette). An archived session shows none of them. The foot
+  the palette). Autopilot has no rail control: Turn on Autopilot and Turn off
+  Autopilot (`session.autopilotOn` / `Off`) stay in the sidebar row's right
+  click menu and the palette. An archived session shows none of them. The foot
   (`SessionLevel/SessionLevelFoot`) starts with one quiet line, the session
   spend (`SessionCostChip`, over `sessionSpendByAgent` and
   `sessionSpendPresentation`, the one source of the number): `$3.47`, or
@@ -1311,7 +1313,7 @@ activity yet show the plain overview with its actions.
   `SessionWorkspace`), not by the row, so two mounted pages never bind it
   twice.
 - **The Overview header** reads `Overview`. The session title and its rename
-  live on the main sidebar row; Pin, Autopilot and Refresh on the session rail
+  live on the main sidebar row; Pin and Refresh on the session rail
   top row, Archive and Delete at its foot. The header holds
   **New**
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of

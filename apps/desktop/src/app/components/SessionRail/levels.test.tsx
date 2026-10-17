@@ -432,7 +432,7 @@ describe('the session level projects and linked work', () => {
 });
 
 describe('the session rail top row and foot', () => {
-  it('holds the fold toggle, then Autopilot, Pin and Refresh as icons, with no menu', () => {
+  it('holds the fold toggle, then Pin and Refresh as icons, with no menu and no Autopilot', () => {
     seed();
     mountColumn();
     expect(sessionLayer().querySelector('[data-level-identity]')).toBeNull();
@@ -441,7 +441,6 @@ describe('the session rail top row and foot', () => {
     expect(top.queryByRole('button', { name: 'More session actions' })).toBeNull();
     expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
       'Fold session rail',
-      'Autopilot',
       'Pin session',
       'Refresh session',
     ]);
@@ -470,19 +469,6 @@ describe('the session rail top row and foot', () => {
     expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-  });
-
-  it('turns Autopilot on from its toggle and shows it pressed while on', async () => {
-    seed();
-    const setSessionAutoRun = vi.fn(async () => undefined);
-    useAppStore.setState({ setSessionAutoRun });
-    mountColumn();
-    const top = within(elementOf('[data-rail-top]', rail()));
-
-    await act(async () => {
-      fireEvent.click(top.getByRole('button', { name: 'Autopilot' }));
-    });
-    expect(setSessionAutoRun).toHaveBeenCalledWith(openId, true);
   });
 
   it('keeps the pin as it was and says why when pinning fails, with Retry', async () => {
