@@ -316,6 +316,10 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
   can pick a `--selector` or a `--clip x,y,w,h` without opening a browser.
 - The clip renders at `--scale 3` (default) and the frame is drawn at the same
   device scale, so the app pixels are never resampled.
+- The frame has a 16 px radius. The clip inside it takes the larger of 8 px and
+  the frame radius minus the frame padding and its 1 px border, the same rule as
+  `--r-shot` in `website/src/styles.css`. Frames drawn before this rule keep the
+  old radii until their file is captured again.
 - The frame's corners are transparent, so one file reads on both GitHub
   themes. The dark and light files still follow the OS through `<picture>`.
 - The script prints the frame's css width. A frame narrower than 880 gets

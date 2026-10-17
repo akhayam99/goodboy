@@ -46,8 +46,9 @@
   --sel-bg: oklch(0.9 0.05 210);
   --sel-ink: oklch(0.35 0.09 210);
 
-  --r-frame: 28px;
-  --r-stage: 20px;
+  --r-stage: 16px;
+  --stage-pad: 32px;
+  --stage-border-width: 1px;
   --g-stage-gradient: linear-gradient(
     160deg,
     var(--g-stage-a) 0%,
@@ -58,6 +59,10 @@
   --r-frag: 10px;
   --r-view: 8px;
   --r-btn: 8px;
+  --r-shot: max(
+    var(--r-view),
+    calc(var(--r-stage) - var(--stage-pad) - var(--stage-border-width))
+  );
 
   --display:
     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
@@ -348,6 +353,10 @@ code {
 }
 
 @media (max-width: 600px) {
+  :root {
+    --stage-pad: 16px;
+  }
+
   .shell {
     padding: 0 20px;
   }

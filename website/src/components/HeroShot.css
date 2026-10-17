@@ -2,7 +2,7 @@
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 10px;
+  border-radius: var(--r-shot);
   box-shadow: var(--mk-win-shadow);
 }
 
