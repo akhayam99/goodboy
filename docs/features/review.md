@@ -19,7 +19,9 @@ Handle many comments at once. **Fix comments** checks every open comment, **Use 
 
 ### Review sources
 
-Read pull request comments and your own notes in one list in the Comments section. Each row is the button: author and age, then `path:line`, then the comment; a **Note** chip shows only while the list mixes notes and host threads, and the source switch shows only then. Group labels carry their row count and no verbs: Fix sits in the detail bar, Apply in the selection bar, Push in the Branch header (`ReviewList`, `ReviewListRow`, `commentsCountOf`). Reading and replying work on every host, and a Bitbucket thread stays open because Bitbucket cannot resolve it.
+Read pull request comments and your own notes in one list in the Comments section. Each row is the button: author and age, then `path:line`, then the comment; a **Note** chip shows only while the list mixes notes and host threads, and the source switch shows only then. The list takes the full width of the page. Group labels carry their row count and no verbs, and the Open and Resolved switch shows only once a comment is resolved. **Fix N comments** in the Branch header is the one page action, beside Push (`ReviewList`, `ReviewListRow`, `commentsCountOf`).
+
+Open a comment to read it in the drawer beside the list, the same way a failing check opens the Debugger. The drawer holds the code around the line, then the comment and its thread, then its actions at the end: **Fix** as the primary, **Reply** and **Skip** beside it, each with its key (F, R, S), and a `⋯` only when two or more rarer verbs remain (`ReviewCommentDrawer`, `CommentDrawerActions`). J and K, or the arrow keys, move to the next or previous comment while it is open, and Escape closes it on the row you were on. A verb that fails says why under the actions and its button reads **Retry**. The open comment survives a refresh of the list and a window reload. Reading and replying work on every host, and a Bitbucket thread stays open because Bitbucket cannot resolve it.
 
 ### Comment states
 
