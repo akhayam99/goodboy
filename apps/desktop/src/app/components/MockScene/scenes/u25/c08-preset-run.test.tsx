@@ -9,6 +9,8 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { requestSessionSpendLimitEdit } from '../../../../../features/budget/requestSessionSpendLimitEdit';
+import { C08_SESSION_ID } from './c08RunSeed';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -161,6 +163,22 @@ describe('the c08 preset run scenes', () => {
     expect(within(tail()).getByText('Paused at the limit')).toBeDefined();
     expect(within(tail()).getByRole('button', { name: 'Raise limit' })).toBeDefined();
     expect(within(runLevel()).getByText('$3.00 spent')).toBeDefined();
+  });
+
+  it('c08-run-capped opens the session limit editor for a session cap on the run level', async () => {
+    await mount('c08-run-capped');
+
+    expect(document.querySelector('[data-session-spend]')).toBeNull();
+    await act(async () => {
+      requestSessionSpendLimitEdit({ sessionId: C08_SESSION_ID });
+      await vi.advanceTimersByTimeAsync(100);
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => resolve(null));
+      });
+    });
+
+    const dialog = screen.getByRole('dialog', { name: 'Session spend' });
+    expect(within(dialog).getByLabelText('Limit in dollars')).toBeDefined();
   });
 
   it('c08-run-done offers report and wireframe, and leaves Add step to the rail', async () => {

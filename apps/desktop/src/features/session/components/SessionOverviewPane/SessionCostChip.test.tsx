@@ -208,6 +208,30 @@ describe('SessionCostChip', () => {
     expect(screen.getByLabelText('Limit in dollars')).toHaveProperty('value', '10');
   });
 
+  it('leaves a raise request to the visible spend line, so one editor opens', async () => {
+    store.sessionBudgets = { [SID]: limit(10) };
+    render(
+      <>
+        <SessionCostChip sessionId={SID} />
+        <SessionCostChip sessionId={SID} placement="editHost" />
+      </>,
+    );
+
+    requestSessionSpendLimitEdit({ sessionId: SID });
+
+    await waitFor(() => expect(screen.getByLabelText('Limit in dollars')).toBeDefined());
+    expect(screen.getAllByRole('dialog', { name: 'Session spend' })).toHaveLength(1);
+  });
+
+  it('opens the editor from the frame host when no spend line is shown', async () => {
+    store.sessionBudgets = { [SID]: limit(10) };
+    render(<SessionCostChip sessionId={SID} placement="editHost" />);
+
+    requestSessionSpendLimitEdit({ sessionId: SID });
+
+    await waitFor(() => expect(screen.getByLabelText('Limit in dollars')).toBeDefined());
+  });
+
   it('ignores a raise request for another session', () => {
     render(<SessionCostChip sessionId={SID} />);
 

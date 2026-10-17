@@ -737,7 +737,8 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   session, and `Set a limit` in faint gray while nothing is spent and no limit
   is set. A click opens the session spend popover (the limit editor, the
   agents and the context cost, Open in Impact); **Raise limit** on a paused
-  run opens it on the editor, from any session level (`SessionFrame` listens).
+  run opens it on the editor from any session level: off the session level an
+  edit host in `SessionFrame` opens it at the rail foot (`sessionSpendLines`).
   Under it sit **Archive** (⌘⇧A, the registry
   `session.archive`; **Restore** on an archived session) in gray text and
   **Delete…** (⌘⇧⌫) in red text (`ghost-danger`: no fill, no border), side by

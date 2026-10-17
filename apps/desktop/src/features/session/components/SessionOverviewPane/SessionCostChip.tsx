@@ -19,10 +19,12 @@ import { SESSION_SPEND_LIMIT_EDIT_EVENT } from '../../../budget/requestSessionSp
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
 import { pickKeys } from '../../../../shared/utils/pickKeys';
+import { sessionSpendLines } from '../../sessionSpendLines';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly placement?: 'line' | 'editHost';
 };
 
 const MIN_SHOWN_USD = 0.005;
@@ -47,7 +49,8 @@ const isEditRequestFor = ({ event, sessionId }: EditRequestParams): boolean => {
   );
 };
 
-export const SessionCostChip = ({ sessionId }: Props) => {
+export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
+  const isEditHost = placement === 'editHost';
   const records = useAppStore((state) => state.sessionTelemetry[sessionId] ?? EMPTY_ARRAY);
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const agentIds = useMemo(() => agents.map((agent) => agent.id), [agents]);
@@ -110,8 +113,18 @@ export const SessionCostChip = ({ sessionId }: Props) => {
   }, [loadSessionTelemetry, open, sessionId]);
 
   useEffect(() => {
+    if (isEditHost) {
+      return;
+    }
+    return sessionSpendLines.mount({ sessionId });
+  }, [isEditHost, sessionId]);
+
+  useEffect(() => {
     const onEditRequest = (event: Event) => {
       if (!isEditRequestFor({ event, sessionId })) {
+        return;
+      }
+      if (isEditHost && sessionSpendLines.isShown({ sessionId })) {
         return;
       }
       if (!open) {
@@ -121,7 +134,7 @@ export const SessionCostChip = ({ sessionId }: Props) => {
     };
     window.addEventListener(SESSION_SPEND_LIMIT_EDIT_EVENT, onEditRequest);
     return () => window.removeEventListener(SESSION_SPEND_LIMIT_EDIT_EVENT, onEditRequest);
-  }, [open, sessionId, toggle]);
+  }, [isEditHost, open, sessionId, toggle]);
 
   useEffect(() => {
     if (!open || popupRef.current == null || triggerRef.current == null) {
@@ -153,53 +166,57 @@ export const SessionCostChip = ({ sessionId }: Props) => {
       className="flex max-h-[32rem] flex-col bg-subtle"
       anchorClassName="flex min-w-0"
       trigger={
-        <Tooltip
-          content={
-            isUnspent
-              ? 'Nothing spent in this session yet. Set a limit'
-              : `${formatUsdPrecise(spend.totalUsd)} spent in this session`
-          }
-          isSuppressed={open}
-        >
-          <Button
-            ref={triggerRef}
-            variant="quiet"
-            size="sm"
-            onClick={toggle}
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            aria-label={isUnspent ? UNSPENT_LABEL : `Spend ${shownLabel}`}
-            data-level={presentation.level}
-            data-tone={isUnspent ? 'faint' : presentation.tone}
-            data-session-spend=""
-            className={cn('w-full min-w-0 justify-start font-normal tabular-nums', textClass)}
+        isEditHost ? (
+          <span aria-hidden data-spend-edit-host="" className="block size-0" />
+        ) : (
+          <Tooltip
+            content={
+              isUnspent
+                ? 'Nothing spent in this session yet. Set a limit'
+                : `${formatUsdPrecise(spend.totalUsd)} spent in this session`
+            }
+            isSuppressed={open}
           >
-            {glyph}
-            <span
-              key={tick}
-              className={cn('min-w-0 flex-1 truncate text-left', tick > 0 && 'cost-tick')}
+            <Button
+              ref={triggerRef}
+              variant="quiet"
+              size="sm"
+              onClick={toggle}
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              aria-label={isUnspent ? UNSPENT_LABEL : `Spend ${shownLabel}`}
+              data-level={presentation.level}
+              data-tone={isUnspent ? 'faint' : presentation.tone}
+              data-session-spend=""
+              className={cn('w-full min-w-0 justify-start font-normal tabular-nums', textClass)}
             >
-              {shownLabel}
-            </span>
-            {presentation.ratio === null ? null : (
+              {glyph}
               <span
-                aria-hidden
-                data-slot="spend-bar"
-                className="h-[3px] w-7 shrink-0 overflow-hidden rounded-full bg-fill"
+                key={tick}
+                className={cn('min-w-0 flex-1 truncate text-left', tick > 0 && 'cost-tick')}
               >
-                <span
-                  className={cn(
-                    'block h-full rounded-full',
-                    presentation.tone === 'neutral'
-                      ? 'bg-primary'
-                      : tintClasses(presentation.tone).solid,
-                  )}
-                  style={{ width: `${fill}%` }}
-                />
+                {shownLabel}
               </span>
-            )}
-          </Button>
-        </Tooltip>
+              {presentation.ratio === null ? null : (
+                <span
+                  aria-hidden
+                  data-slot="spend-bar"
+                  className="h-[3px] w-7 shrink-0 overflow-hidden rounded-full bg-fill"
+                >
+                  <span
+                    className={cn(
+                      'block h-full rounded-full',
+                      presentation.tone === 'neutral'
+                        ? 'bg-primary'
+                        : tintClasses(presentation.tone).solid,
+                    )}
+                    style={{ width: `${fill}%` }}
+                  />
+                </span>
+              )}
+            </Button>
+          </Tooltip>
+        )
       }
     >
       <SessionSpendPopover
