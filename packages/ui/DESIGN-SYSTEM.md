@@ -1610,12 +1610,14 @@ owns the gap below the header, and children add no top margins. The root is
 `@container min-w-0 flex-1` in every scroll mode, so inside a flex row such as
 `StudioShell` it fills the pane and `PageColumn` centres the column inside it.
 
-**One header grid.** Every page, sub-page, studio and the Board uses the same
-three rows. A 40px band (the `Trail` or the studio band: the crumb at the column's
-left, Ask or Close at its right edge), a 32px title row directly under it with the
-page's `h1` at `text-title` and the actions at its right, and an optional 12px muted
-meta line 4px under the row. The title's centre is therefore 56px under the pane top
-and its left edge is the column's content edge on every page; `frameGeometryOf`
+**One header grid.** Every page, sub-page, studio and the Board draws its header
+through `PageHeader` (`packages/ui/src/components/PaneShell/PageHeader.tsx`): the
+12px header inset (`PANE_RHYTHM.headerInset`), or a 40px studio band where the band
+still holds Close, a 32px title row with the page's `h1` at `text-title` and the
+actions at its right, and an optional 12px muted meta line 4px under the row. The
+title's centre is therefore 28px under the pane top (56px under a band) and its left
+edge is the column's content edge on every page; a page names its kind
+(`page="overview"`) and `PAGE_MEASURE` gives its column; `frameGeometryOf`
 (`packages/ui/src/frameGeometry.ts`) is the table and the journey test reads it. Every
 page has one of four frame types in `PAGE_FRAME` (column 1008, reader 768, stage, split
 `[rail 288][detail]`), see [the frame map](../../docs/styling.md#the-frame-map); in a split page the
@@ -1635,9 +1637,8 @@ action of the title row. The other overlays (`band`: Settings over the window,
 Impact, What's new, Pair device, Add workspace) keep a 40px band that holds only
 Close. A band also appears when the body hands it a trail (`StudioTrail`, the
 workflow editor and the Settings crumbs) or a header accessory, and only then is
-the body `UnderTrailContext`. The bandless pages sit on the 12px header inset in
-`frameGeometryOf`, like a session page. The Board has an
-empty 40px band above its title row to land on the same 56px. Optional `tabs` sit on
+the body `UnderTrailContext`. The bandless pages, the Board and Settings included,
+sit on the 12px header inset in `frameGeometryOf`, like a session page. Optional `tabs` sit on
 their own row under the meta line, at the column's left. A glyph never indents the
 title: `PaneShell` has no `icon`, `glyph` or `tone`, the concept lives in the crumb. The
 crumb names the structure and the `h1` the object, and a report's document title is an

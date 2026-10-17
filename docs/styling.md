@@ -225,6 +225,36 @@ pane is under 720px wide. The gutter switch is a container query on the pane
 (`@container` on the `PaneShell` root, `@max-[720px]:` on the column), never a
 media query on the window, because the space that counts is the pane's.
 
+## The page layout
+
+One primitive draws the top of every page: `PageHeader`
+(`packages/ui/src/components/PaneShell/PageHeader.tsx`). It owns the top inset
+(`PANE_RHYTHM.headerInset`, 12px, none under a studio band), the 32px title
+row (`PaneTitleRow`), the gap under the header, the title's left edge (its
+`PageColumn`) and the Close a studio frame hands down. `PaneShell` draws it, and a
+page with its own frame (the Sessions board, the Terminal, the chat room header)
+mounts it directly. No page sets its own header padding: the Settings column, the
+board frame and the terminal drop their own top rows.
+
+A page root names its kind (`page="overview"`, `page="terminal"`) and
+`PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
+
+| Measure | Pages                                                                                                                                                                                        |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| column  | Overview, Runs, a run, Orchestrated, Agents, an agent, Auto agents, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
+| measure | the chat room (header, thread, composer)                                                                                                                                                     |
+| full    | the Sessions board, the Terminal                                                                                                                                                             |
+
+A loading page draws `PageSkeleton` with the same kind, so its title bar and
+body start where the page will: `STUDIO_META[kind].skeleton` names the body shape
+of each studio (`rows`, `prose`, `room`, `terminal`, `cards`) and whether it has a
+rail, and the Sessions list loads on list rows, the board on lanes. A page empty
+state sits on the page column at the top left, at the title's left edge (the
+empty chat stage stays centred). `shared/layout/pageLayout.test.ts` fails when a
+door or session page skips the primitive, sets its own header padding, picks a
+width beside its kind, borrows another page's skeleton or puts its empty state off
+the column.
+
 ## The frame map
 
 `packages/ui/src/frameGeometry.ts` holds one typed map, `PAGE_FRAME: Record<FramePage, FrameType>`.
@@ -237,8 +267,10 @@ A page with no entry fails typecheck. Four frame types:
 | stage  | Board, Terminal                                                                                                                   | fluid from the sheet inset, to 1856 | 24                                 |
 | split  | Chat, Guide, What's new, Tasks, Notifications, Branch                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
 
-`frameGeometryOf({ page })` returns the type, the band (40px), the title row (32px),
-the title centre (56px), the drawer row (28px) and `titleLeft` read from the type.
+`frameGeometryOf({ page })` returns the type, the space above the title (the 12px
+header inset, or the 40px band on Impact, What's new and a release), the title row
+(32px), the title centre (28px, 56px under a band), the drawer row (28px) and
+`titleLeft` read from the type.
 `STUDIO_META[kind].page` names the page of a studio and `frameTierOf` gives the tier its band
 draws at; a test fails when the two disagree.
 
@@ -255,7 +287,8 @@ Five rules:
 4. **The crumb row and the drawer header share one centre line.** `DrawerFrame` draws a 28px
    row centred in the band's 40px (`FRAME_DRAWER_ROW_PX`, `FRAME_DRAWER_INSET_PX`), with one
    close control.
-5. **First-time states centre in the body**, in one `EmptyState` layout.
+5. **First-time states sit at the top left of the page column**, in one `EmptyState`
+   layout; only the empty chat stage centres.
 
 The Branch page is one detail on one 960 column; its sections are the entries of the sidebar's
 worktree level, so the page has no rail of its own (`BranchDetail` draws the studio band first
@@ -271,7 +304,7 @@ Three width tiers, one rule each:
 
 | Tier    | Width                 | Used by                                                                                                                           |
 | ------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| measure | `--measure`, 720px    | prose: plan prose, comment and note bodies, a Brief (`PANE_RHYTHM.prose`, `PageColumn width="measure"`)                           |
+| measure | `--measure`, 720px    | prose: plan prose, comment and note bodies, a Brief, the chat room (`PANE_RHYTHM.prose`, `PageColumn width="measure"`)            |
 | column  | `--column-max`, 960px | the page column, centred: Overview, settings, cards, code blocks and tool output inside the transcript (`PageColumn`, `FormPage`) |
 | full    | the pane, fluid       | work surfaces, from the pane's left edge: the terminal, Tasks lists, the Board (`PageColumn width="full"`)                        |
 

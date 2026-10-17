@@ -4,7 +4,7 @@ The Sessions page shows every session of a workspace, as a board in lanes by sta
 
 ### Stage board
 
-See where each task stands without moving cards around. Six lanes, **building**, **running**, **needs you**, **in review**, **done** and **archived**, always sit in that order, and each session sits in the lane that matches what is happening in it. A session waiting on your answer sits in **needs you**.
+See where each task stands without moving cards around. Six lanes, **building**, **running**, **needs you**, **in review**, **done** and **archived**, always sit in that order, and each session sits in the lane that matches what is happening in it. A session waiting on your answer sits in **needs you**. The **Sessions** title sits on the same header row, at the same height, as every other page. While the page loads it shows empty lanes on the board and empty rows on the list, and with no session yet **No sessions yet** sits under the title at its left edge.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/board-stage-dark.webp">

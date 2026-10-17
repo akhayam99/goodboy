@@ -4,7 +4,7 @@ Talk to agents, watch what they do and steer them while they work. You can ask q
 
 ### Workspace chat
 
-Ask about the workspace without starting a session. **Chat**, in the left column under **Board**, reads every project and never changes a file. When an answer is worth acting on, **Start work from chat** drafts a session from it, and chats you stop using move to **Idle** so you can archive them.
+Ask about the workspace without starting a session. **Chat**, in the left column under **Board**, reads every project and never changes a file. When an answer is worth acting on, **Start work from chat** drafts a session from it, and chats you stop using move to **Idle** so you can archive them. The chat title sits on the same header row, at the same height, as every other page.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">

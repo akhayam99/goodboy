@@ -55,7 +55,7 @@ Map an unfamiliar repo before you plan. **Scout** is the default role and only r
 
 ### Start blank
 
-Start from the goal instead. **Start blank** opens the session straight on its Overview, where you add the goal, projects and work. Once you link an issue, **Write** drafts a title and goal from it for you to review.
+Start from the goal instead. **Start blank** opens the session straight on its Overview, where you add the goal, projects and work. The Overview is as wide as Runs, Agents, Artifacts and the branch pages, so nothing shifts as you move between them. Once you link an issue, **Write** drafts a title and goal from it for you to review.
 
 ### Named by Goodboy
 

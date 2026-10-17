@@ -1900,10 +1900,12 @@ one is open at a time.
   it opens, `studio-out` when it closes, and on a switch only the band's name
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
-  body's chunk arrives, the frame shows one of three opaque skeletons: `list`
-  (Tasks, Notifications, Add workspace, Impact), `rail`
-  (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
-  open, no frame node exists, so nothing covers the page.
+  body's chunk arrives, the frame shows the opaque skeleton of that page
+  (`STUDIO_META[kind].skeleton`, drawn through `PageSkeleton` on the page's header
+  inset and measure): `rows` (Tasks, Workflows, Monitoring, Notifications, Settings,
+  Add workspace), `prose` (the guide, What's new), `room` (Chat), `terminal` and
+  `cards` (Impact, pairing), with a rail skeleton where the page has a rail. With no
+  studio open, no frame node exists, so nothing covers the page.
 - **One title per page; the band holds no title.** `StudioBand` never draws a
   crumb title, an icon or a subtitle; the page `h1` is the one title.
   `STUDIO_META[kind].close` places Close: `none` for the sidebar door pages
@@ -2410,7 +2412,8 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
   its row reads the question with the run or agent in gray after it, no totals
   or repeat counts, and the Activity row keeps only its `?` marker (no amber
-  tint, no Needs you word). The page sits on the 720 measure. Activity rows carry
+  tint, no Needs you word). The page sits on the 960 column of the other session
+  pages (`PAGE_MEASURE.overview`). Activity rows carry
   no cost (it is in the duration tooltip and the spend popover), the model line
   holds the effort (`Sonnet 5.5 · Medium`), the day label has no rule and an
   empty Activity reads `Nothing ran yet`. A Next button carries its label only
