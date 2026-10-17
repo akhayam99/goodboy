@@ -164,13 +164,51 @@ const renderDrawer = (
   );
 
 describe('ContextDrawer', () => {
-  it('reads as one scroll of Goal, Decisions, Summary and Learned, with no tabs and no count on them', () => {
+  it('reads as one scroll of cards: Goal, Decisions, Summary and Explanations, with no tabs', () => {
     renderDrawer('summary');
 
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', 'Learned']);
+    ).toEqual(['Context', 'Goal', 'Decisions', 'Summary', 'Explanations']);
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-context-card]'));
+    expect(cards.map((card) => card.getAttribute('data-context-section'))).toEqual([
+      'goal',
+      'decisions',
+      'summary',
+      'learned',
+    ]);
+    cards.forEach((card) => {
+      const band = card.querySelector<HTMLElement>('[data-band]');
+      expect(band?.querySelector('h2')).not.toBeNull();
+    });
+  });
+
+  it('keeps one meaning for Learned: the summary block, while what agents explained to you is Explanations', () => {
+    renderDrawer('summary');
+
+    expect(screen.getAllByText('Learned')).toHaveLength(1);
+    expect(
+      screen
+        .getByText('Learned')
+        .closest('[data-context-section]')
+        ?.getAttribute('data-context-section'),
+    ).toBe('summary');
+    expect(screen.getByRole('region', { name: 'Explanations' })).toBeDefined();
+  });
+
+  it('counts the active decisions on the card header from two, never one', () => {
+    const countOf = () =>
+      screen.getByRole('region', { name: 'Decisions' }).querySelector('[data-context-count]')
+        ?.textContent ?? null;
+    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
+    const { unmount } = renderDrawer('decisions');
+    expect(countOf()).toBeNull();
+    unmount();
+
+    store.sessionDecisions = { [SID]: [decision({ number: 1 }), decision({ number: 2 })] };
+    renderDrawer('decisions');
+    expect(countOf()).toBe('2');
   });
 
   it('says which roles receive a section and lists them on demand', () => {
@@ -178,7 +216,7 @@ describe('ContextDrawer', () => {
 
     const section = screen.getByRole('region', { name: 'Decisions' });
     const toggle = within(section).getByRole('button', { name: /^Visible to/ });
-    expect(toggle.textContent).toBe('Visible toAll roles except Scout, Docs');
+    expect(toggle.getAttribute('aria-label')).toBe('Visible to All roles except Scout, Docs');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
@@ -191,12 +229,14 @@ describe('ContextDrawer', () => {
     renderDrawer('summary');
 
     const section = screen.getByRole('region', { name: 'Summary' });
-    expect(within(section).getByRole('button', { name: /^Visible to/ }).textContent).toBe(
-      'Visible toAll roles except Resolver',
-    );
+    expect(
+      within(section)
+        .getByRole('button', { name: /^Visible to/ })
+        .getAttribute('aria-label'),
+    ).toBe('Visible to All roles except Resolver');
   });
 
-  it('lists what this session learned, written for you only', () => {
+  it('lists what agents explained to you in this session, written for you only', () => {
     store.sessionContextItems = {
       [SID]: [
         learning({
@@ -209,10 +249,12 @@ describe('ContextDrawer', () => {
     renderDrawer('learned');
 
     const section = document.querySelector<HTMLElement>('[data-context-section="learned"]')!;
-    expect(within(section).getByRole('heading', { level: 2 }).textContent).toBe('Learned');
-    expect(within(section).getByRole('button', { name: /^Visible to/ }).textContent).toBe(
-      'Visible toYou only',
-    );
+    expect(within(section).getByRole('heading', { level: 2 }).textContent).toBe('Explanations');
+    expect(
+      within(section)
+        .getByRole('button', { name: /^Visible to/ })
+        .getAttribute('aria-label'),
+    ).toBe('Visible to You only');
     const row = screen.getByRole('button', { name: /Why select! can drop/ });
     expect(row.textContent).toContain('Turns 4 to 6 · Reviewer');
     expect(screen.queryByText('An old one')).toBeNull();
@@ -221,10 +263,14 @@ describe('ContextDrawer', () => {
     expect(screen.getByRole('button', { name: 'Dismiss' }).tagName).toBe('BUTTON');
   });
 
-  it('says nothing was learned yet on an empty Learned tab', () => {
+  it('says when an explanation arrives on an empty Explanations card', () => {
     renderDrawer('learned');
 
-    expect(screen.getByText('Nothing learned in this session yet.').tagName).toBe('P');
+    expect(
+      screen.getByText(
+        'No explanations yet. One lands here when an agent explains a topic you follow.',
+      ).tagName,
+    ).toBe('P');
   });
 
   it('hides Visible to when the role map is switched off', () => {

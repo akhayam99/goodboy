@@ -117,7 +117,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'About you',
-        desc: 'Tell agents once who you are and how you like to work. Settings shows which role reads each part. Topics under Explain more when it touches collect what agents explained about them, in Learned.',
+        desc: 'Tell agents once who you are and how you like to work. Settings shows which role reads each part. Topics under Explain more when it touches collect what agents explained about them, in Explanations.',
       },
       {
         term: 'Pinned scripts',
@@ -413,11 +413,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context pane',
-        desc: 'Open Context from the foot of the session rail, or with ⌘⌥C, to see the goal, decisions and summary, and Copy context. A dot on Context means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Learned lists what agents explained about your topics, for you only, with Dismiss and Undo.',
+        desc: 'Open Context from the foot of the session rail, or with ⌘⌥C, to see the goal, decisions and summary, and Copy context. A dot on Context means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Explanations lists what agents explained about your topics, for you only, with Dismiss and Undo.',
       },
       {
         term: 'Visible to',
-        desc: 'Each tab of the pane says which roles receive it. Reviewers, debuggers and resolvers also read the decisions.',
+        desc: 'The eye on each card of the pane says which roles receive it. Reviewers, debuggers and resolvers also read the decisions.',
       },
       {
         term: 'What the agent received',

@@ -3,6 +3,8 @@ import type { LucideIcon } from 'lucide-react';
 import { Eyebrow, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
+const COUNT_FLOOR = 2;
+
 type Props = {
   readonly title: string;
   readonly icon?: LucideIcon;
@@ -20,7 +22,7 @@ export const ContextBlock = ({ title, icon: Icon, count, action, className, chil
           label={title}
           icon={Icon != null ? <Icon size={ICON_SIZE.row} aria-hidden /> : undefined}
         />
-        {count === undefined ? null : (
+        {count === undefined || count < COUNT_FLOOR ? null : (
           <span className="text-meta tabular-nums text-faint-foreground">{count}</span>
         )}
       </h3>

@@ -8,6 +8,7 @@ import { summaryItems } from './summaryItems';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 import { WriteFromWorkButton } from './WriteFromWorkButton';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
+import type { Visibility } from './roleVisibility';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -15,6 +16,7 @@ type Props = {
   readonly historyCount: number;
   readonly isLoading: boolean;
   readonly isLocked: boolean;
+  readonly visibility: Visibility | null;
   readonly onOpenVersions: () => void;
 };
 
@@ -24,6 +26,7 @@ export const GoalTab = ({
   historyCount,
   isLoading,
   isLocked,
+  visibility,
   onOpenVersions,
 }: Props) => {
   const upsertSessionSlot = useAppStore((state) => state.upsertSessionSlot);
@@ -47,7 +50,7 @@ export const GoalTab = ({
 
   if (isLoading) {
     return (
-      <ContextSection section="goal">
+      <ContextSection section="goal" visibility={visibility}>
         <div role="status" aria-label="Loading goal" className="flex flex-col gap-2">
           <Skeleton className="h-4 w-3/5" />
           <Skeleton className="h-4 w-4/5" />
@@ -58,7 +61,7 @@ export const GoalTab = ({
 
   if (isEditing) {
     return (
-      <ContextSection section="goal">
+      <ContextSection section="goal" visibility={visibility}>
         <Textarea
           autoFocus
           value={draft}
@@ -96,7 +99,7 @@ export const GoalTab = ({
 
   if (value.trim() === '') {
     return (
-      <ContextSection section="goal">
+      <ContextSection section="goal" visibility={visibility}>
         <EmptyLine
           className="self-stretch"
           action={
@@ -118,6 +121,7 @@ export const GoalTab = ({
   return (
     <ContextSection
       section="goal"
+      visibility={visibility}
       action={
         <div className="flex items-center gap-1">
           {historyCount > 0 ? (

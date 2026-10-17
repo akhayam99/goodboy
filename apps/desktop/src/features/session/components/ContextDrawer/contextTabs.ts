@@ -8,7 +8,7 @@ export const CONTEXT_TAB_LABEL: Readonly<Record<ContextDrawerTab, string>> = {
   goal: 'Goal',
   decisions: 'Decisions',
   summary: 'Summary',
-  learned: 'Learned',
+  learned: 'Explanations',
 };
 
 export const CONTEXT_TAB_SLOT: Readonly<Record<ContextSlotTab, ContextSlotKey>> = {
