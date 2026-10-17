@@ -721,15 +721,14 @@ describe('WorkflowBuilderView (preset)', () => {
 
   it('shows the Auto glyph for a step it cannot resolve, and a pinned provider as pinned', () => {
     const base = presetWorkflow('wf-preset-1', 'Ship It');
-    const [scout, implementer] = base.steps;
     storeState.phaseTemplates = {
       'ws-1': [
         {
           ...base,
-          steps: [scout, { ...implementer, providerOverride: 'codex' }].flatMap((step) =>
-            step === undefined ? [] : [step],
+          steps: base.steps.map((step) =>
+            step.role === 'implementer' ? { ...step, providerOverride: 'codex' } : step,
           ),
-        } as Workflow,
+        },
       ],
     };
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);

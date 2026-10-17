@@ -236,7 +236,7 @@ describe('useDropdown', () => {
     );
 
     act(() => {
-      result.current.containerRef.current = trigger as HTMLDivElement;
+      result.current.containerRef.current = trigger;
       result.current.toggle();
     });
 
@@ -262,7 +262,7 @@ describe('useDropdown', () => {
     );
 
     act(() => {
-      result.current.containerRef.current = trigger as HTMLDivElement;
+      result.current.containerRef.current = trigger;
       result.current.toggle();
     });
 
