@@ -8,7 +8,7 @@ Tell us what broke in one line. The bug icon next to the version at the foot of 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/support-report-bug-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/support-report-bug-light.webp" alt="The Report a bug sheet with the type Bug, an empty line reading What went wrong, in one line, the chips 0.13.0 · 3f9c2ab, macOS 15.5 arm64, Board and Claude CLI 2.1.260, Codex CLI 0.58.0, the What gets sent row, Public issue on GitHub, under your account, Add detail and Send" width="670">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/support-report-bug-light.webp" width="680" alt="The Report a bug sheet with the type Bug, an empty line reading What went wrong, in one line, the chips with the version, the system, Board and the CLI, the What gets sent row, the note that it opens GitHub in your browser, Add detail and Open on GitHub">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>

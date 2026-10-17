@@ -12,10 +12,10 @@ Keep your repos together as one workspace, and let one session work across sever
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="The Northwind workspace with one session open: its Projects section lists api on the branch feat/create-orders-endpoint and storefront-web on feat/checkout-orders-api, each with New branch and its changes, above the activity timeline">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="The Harborline workspace with one session open: its Projects card lists ledger-core with four branches and notify-relay with two, each branch with its pull request icon, above the Linked issues, next to the Next row with Start and the Activity tabs">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Starred projects, descriptions and base branch
 
@@ -23,10 +23,10 @@ Point agents at the right repo without naming it. Star a project and give it a o
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-light.webp" alt="The Harborline workspace settings, Projects: Starred 2 with ledger-core and payments-api and the base branch main, then Other projects 2 with notify-relay and runbooks, a note that starred projects come first for agents, and the Dev project section with Convert">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-light.webp" alt="The Harborline workspace settings, Projects: Starred 2 with ledger-core and payments-api, each with a one-line description and the base branch main, Other projects 2 with notify-relay and runbooks, the Dev project section with Convert, and a note about a session folder left on disk with Review in Storage">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Worktrees
 
@@ -34,10 +34,10 @@ Let agents edit in parallel without touching your checkout. Each branch gets its
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-light.webp" alt="The Projects of one session: ledger-core with three branches (idempotent-postings, pull request 418; statement-backfill with Files kept and Reopen; rounding-drift under Completed, pull request 412 merged, with Close branch) and notify-relay with pull request 96, each project with New branch">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-light.webp" alt="A session with its Projects card: ledger-core with three branches (fix/le...postings with pull request #418, fix/ledger-...backfill with no pull request and fix/ledge...drift with #412) and notify-relay with fix/noti...backoff #96, and above the card the notice that fix/ledger-reconciliation-statement-backfill in ledger-core is closed and its files are still on disk, with a Reopen button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Several branches per project
 
@@ -45,10 +45,10 @@ Work on several branches of one repo in the same session, each in its own worktr
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-light.webp" alt="The Projects of one session where two branches are not the ones recorded: ledger-core is not on the branch it was left on and offers Check again and Not now, and notify-relay offers Use this branch here, Keep both branches and Not now">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-light.webp" alt="The Projects of one session where two branches are not the ones recorded: ledger-core is on another branch and offers Check again and Not now, and notify-relay offers Use this branch here, Keep both branches and Not now">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Workspace switcher and Reconnect
 
@@ -60,10 +60,10 @@ See which repos have something to pull right next to the workspace switcher. Eve
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-repo-status-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-repo-status-light.webp" alt="The 3 repos popover of the board: 1 behind and 1 uncommitted, an Update 1 button, payments-api 2 behind, notify-relay 1 uncommitted and ledger-core up to date" width="746">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-repo-status-light.webp" width="740" alt="The Repositories popover opened from the top bar entry 2 repos behind, Diverged: Checked 4m ago with Pull all, payments-api 3 behind and ledger-core 1 behind each with Pull, notify-relay Diverged with the reason in words, risk-models Couldn't reach origin with Retry, and the line 18 up to date">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Locate moved projects
 
@@ -71,10 +71,10 @@ If you moved your repos to a new folder, the workspace settings name the project
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-locate-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-locate-light.webp" alt="The Harborline workspace settings with a warning, 3 projects are not where Goodboy left them, and a Locate folders button, above the project list where each repo reads Folder not found">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-locate-light.webp" alt="The Locate moved projects form: Confirm the folders Goodboy should reconnect, ledger-core moved from its old folder to ~/code/harborline/ledger-core, Same repository, and the buttons Cancel, Choose another folder and Move 1 project">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Keep .goodboy out of git
 

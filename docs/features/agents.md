@@ -8,10 +8,10 @@ Ask about the workspace without starting a session. **Chat**, in the left column
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, opened from the left column beside the Sessions list: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, session marks on two chats, and the answer to Where is the consent step defined? as a table of three payments-api files with Read 4 files, Sonnet 5.5 · Medium under it and a Started a session note, below the header chip 1 session and above a message box that reads Sonnet 5.5 · Medium and Read-only · 3 projects">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-workspace-chat-light.webp" alt="Chat in Harborline, opened from the left column beside the Sessions list: the chat list grouped by Pinned, Today, This week and Idle with Archive idle and Archived 4, and the answer to Where is the consent step defined? as a table of three payments-api files with Read 4 files, Sonnet 5.5 Medium and a Started note under it, above a message box that reads Read only. Nothing is changed.">
 </picture>
 
-<sub>Screenshot from Goodboy 0.21.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Ask in a session
 
@@ -35,10 +35,10 @@ Check exactly what an agent was told. The top of each chat shows the message and
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-what-received-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-what-received-light.webp" alt="The top of the Credit once per event id chat: an Also received row with the chips Goal, Plan, 2 files and All, above the message sent by Codex about payments-api and notify-relay, then an Operations row with 1 Grep and 1 Read">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-what-received-light.webp" alt="The top of an agent chat: an Also received row with the chips Goal, Plan, 2 files and All, the Asked line holding what the agent was told, and its first answers each reduced to one line such as Searched the code, read applyWebhook.ts">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Agent transcript
 
@@ -46,10 +46,10 @@ Follow one agent's work as one conversation you can write in. Each finished turn
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-light.webp" alt="An agent transcript: the ask about the retried webhooks and payments-api#318, the agent's answer, chips for the plan Dedupe on the event id, the report Where the second credit comes from and the wireframe Deliveries screen, retry state, and a Resolve findings group with thread 1 explained, thread 2 closed with commit 9f2c1ab and thread 3 no change">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-transcript-light.webp" alt="An Implementer agent in a session of Harborline: its turns each reduced to one line such as Read package.json, ran a command, the checklist Remove node_modules in payments-api, Install with pnpm and Run the export tests, and the Transcript drawer open beside the conversation with each step of the turn">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Agent suggests
 
@@ -84,7 +84,7 @@ Do more from the message box. The **+** opens **Attach files**, **Run a script**
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-light.webp" alt="The message box of a chat with the plus menu open, listing Attach files, Run a script ($), Start a run (~) and Ask another agent (@), next to Ask first and the GPT-5.6 Sol model">
 </picture>
 
-<sub>Screenshot from Goodboy 0.21.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Attach files
 

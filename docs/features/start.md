@@ -14,10 +14,10 @@ Turn an issue into a session with a brief in one pick. Pick an issue such as HBL
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-light.webp" alt="The New session page on Pick a task: the task HBL-412 Retried webhooks post a second credit with Dismiss, then one block titled Brief from HBL-412 with its title ready to edit, and under it the tabs Run a workflow and Ask an agent with the Orchestrated workflow and its brief in a Write and Preview editor">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-pick-task-light.webp" alt="The New session page on Pick up a task: the task HBL-412 Retried webhooks post a second credit with Add another issue, a Brief block with its title ready to edit and Use the issue text, the brief with its Done when criteria in a Write and Preview editor, Projects, the Orchestrator row on Auto, Runs as Orchestrate, Autonomy, Starts and Limit, and the Start from HBL-412 button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Start one session from several issues
 
@@ -33,10 +33,10 @@ Write the goal, pick a preset and read the **Plan** you will run, with a model o
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-light.webp" alt="New session with the Run a workflow tab selected: an Orchestrated workflow with the goal Stop retried webhooks posting a second credit, the Orchestrated, Custom and Preset switch, the Plan with an Orchestrator row and example steps Scout, Planner and Implementer, and the Starts Now, Autorun and Spend cap None controls next to Start workflow">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-run-workflow-light.webp" alt="New session with the Run a workflow tab selected: a goal in the Write and Preview editor, the Preset Scout, plan, build with its steps Scout the retry path, Plan the guard and Build the guard, a model on each step, Autonomy, Starts and Limit controls, and the estimate beside Start run">
 </picture>
 
-<sub>Screenshot from Goodboy 0.15.2</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Ask an agent
 
@@ -44,10 +44,10 @@ Map an unfamiliar repo before you plan. **Scout** is the default role and only r
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-ask-agent-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-ask-agent-light.webp" alt="New session with the Ask an agent tab selected: a question field reading How does a retried webhook reach the ledger?, the Scout, Auto and payments-api choosers, the note Scout only reads. It changes nothing., and the Start Scout button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/start-ask-agent-light.webp" alt="New session with the Ask an agent tab selected: a question field reading Find out why webhook redeliveries post a second credit in payments-api and propose a fix, the project ledger-core, the Role Scout and Model Haiku 4.5 choosers, the note Scout only reads. It changes nothing., and the Start Scout button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Start more work in a session
 

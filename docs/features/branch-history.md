@@ -8,10 +8,10 @@ Clean up a branch by hand in the **Commits** section. Drag a commit to move it, 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-light.webp" alt="The Commits section for payments-api hl/ledger-export: seven commits of your own listed Now, with fold and combine controls (Keep title, Keep both, Separate) and a Start from today's main button, next to the four commits the branch becomes After Apply, with a color legend underneath">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-light.webp" alt="The Commits page of the branch hl/fix-duplicate-credit in payments-api: five commits on the graph with You are here, Not pushed marks, the Online copy mark, Based on main, Previous versions 1 and the hint Drag a commit to move it, drop it on another to fold it in">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Safe edits
 
@@ -19,10 +19,10 @@ Clean up a branch by hand in the **Commits** section. Drag a commit to move it, 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-trial-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-trial-light.webp" alt="Planned changes, 5 changes turning 7 commits into 4, with the notice Trying your changes on a temporary copy, Your branch is untouched until this finishes, and a progress bar at Step 3 of 7, Add retries to the export job, above the Apply here only and Apply and update online buttons">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-trial-light.webp" alt="The Commits page of hl/ledger-export while an edit is checked: the notice Trying your changes on a temporary copy, Your branch is untouched until this finishes, and a progress bar at Step 3 of 7, Add retries to the export job, above seven commits and a Push 3 commits button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Conflicting edits
 
@@ -30,10 +30,10 @@ A conflicting edit names the file and leaves the branch as it was. **Rewrite wit
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-conflicts-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-conflicts-light.webp" alt="Planned changes with four changes marked may conflict, and the warning 4 changes do not replay cleanly: webhook.ts is changed by more than one commit, with a Rewrite with an agent button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-conflicts-light.webp" alt="The Commits page with the notice Could not edit the history, The edit conflicts in export.ts, Nothing was changed, with the buttons Rewrite with an agent and Undo and an Add a hint row above the commit list">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Conflicts merged in a copy
 
@@ -41,10 +41,10 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-stopped-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-stopped-light.webp" alt="The notice Nothing was changed: a step does not replay cleanly, Step 3 of 7, Add retries to the export job, conflicts in webhook.ts, Your branch is exactly as it was, with Rewrite with an agent and Dismiss buttons above the list of five planned changes">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-stopped-light.webp" alt="The notice Nothing was changed: a step does not replay cleanly, Step 3 of 7, Add retries to the export job, conflicts in webhook.ts, Your branch is exactly as it was, with Rewrite with an agent and Dismiss buttons above the commit list">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Push with lease and restore
 
@@ -52,10 +52,10 @@ When a step stops on a conflict, the notice names the step and the file, and you
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-light.webp" alt="History rewritten, 7 commits became 4, listing the five changes made, Online copy updated with a safe force push and PR #214 shows the new version, a backup of hl/ledger-export with Copy ref, and the Restore it and Done buttons">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-result-light.webp" alt="The Commits page after local edits: the Force push 7 commits button, Undo and Redo icons, five commits marked edited and Not pushed, and the hint Drag a commit to move it, drop it on another to fold it in">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Backups
 
@@ -63,10 +63,10 @@ Under the graph, **Previous versions N** opens the older histories of the branch
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-backups-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-backups-light.webp" alt="The Commits section for payments-api hl/fix-duplicate-credit with the Backups panel open, one backup, Dedupe webhook retries in the handler from 1d ago, and a Restore previous history button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-backups-light.webp" alt="The Commits page for payments-api hl/fix-duplicate-credit with the Previous versions drawer open: three versions (Before a rebase, Before a split twice), each with its commit count, Show commits and a Reset branch to this version button">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Suggest a message
 

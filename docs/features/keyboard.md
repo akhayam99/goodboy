@@ -12,10 +12,10 @@ A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Shortcuts page in the groups General, Workspaces, Navigate and Views, with Command palette on ⌘K, Report a bug on ⌘I, Back on ⌘[ and Forward on ⌘], and a ⌘⌥ key for each view from Overview to Slack threads">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Shortcuts page in Settings, 105 shortcuts in the groups General, Workspaces, Views and Lists, with Command palette on ⌘K, Search on ⌘F, Report a bug on ⌘I and a ⌘⌥ key for each view from Overview to Slack threads">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Script drawer
 
@@ -23,10 +23,10 @@ Pin the scripts you use and run them from the session. The Scripts pane (the Scr
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-light.webp" alt="The Scripts page with the Check posting drift drawer open on the right: Failed after 12s in ledger-core on nw/fix-settlement-replay, a Command line, the failing vitest output, Run again, Exit 1 and Copy output">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-script-drawer-light.webp" alt="The Scripts pane grouped by project with Services and Tasks, and the Check posting drift output open on the right: Failed after 12s in ledger-core on nw/fix-settlement-replay, the failing vitest output, Run again, Exit 1 and Copy output">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Open in editor
 
@@ -38,7 +38,7 @@ Browse the session folder as a file tree, with a preview of the selected file be
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-explore-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-explore-light.webp" alt="Explore in Harborline: the session folder as a file tree with the notes and exports folders and brief.md, settlement-batches.csv and drift-summary.xlsx, and the northwind-call.md preview on the right with its path, size, Open outside and Copy">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-explore-light.webp" alt="Explore in Harborline: the session folder of payments-api as a file tree with a letter M or A on the files that changed against the base branch, the All files and Changed 7 switch, and the rounding.ts changes on the right with its Preview and Changes tabs and Open">
 </picture>
 
-<sub>Screenshot from Goodboy 0.13.1</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>

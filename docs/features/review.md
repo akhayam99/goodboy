@@ -8,10 +8,10 @@ Turn review comments into commits without writing the fixes yourself. Check the 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="The Comments tab of the Branch page for hl/fix-duplicate-credit, between the tabs Pull request, Comments 9, Files, Commits and Checks, under a strip that reads Fixing 4 comments, 3 need you, 1 working. The list groups the comments as Needs you 4, Working 1, Ready to push 1, Open 1, Done and Left open on GitHub, and the question from omar-t on errorShape.ts:9 is open on the right with the question from the fix run, Answer and Skip">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="The Comments tab of the Branch page for PR #318 with the buttons Fix 1 comment, Push 1 fix and Merge, the strip Fixing 4 comments with Stop and View transcript, and the comments grouped as Needs you 4, Working and Ready to push, each with its state at the right">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Bulk actions
 
@@ -29,10 +29,10 @@ See what each comment needs next. The list groups comments under **Needs you**, 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" width="412" alt="The comment list of the Branch page with the groups Needs you 5 with Accept 2, Working 1, Ready to push 1 with Push 1 and Open 1, then Done 1 and Left open on GitHub 1 folded, each row marked Question, Push failed, To review, Working, Ready or Open">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" width="532" alt="The comment list of the Branch page grouped as Needs you 5, Working 1, Ready to push 1 and Open, each row with its author, age, file and line, and its state at the right: Question for you, Push failed or Fix ready">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Failed drafts
 
@@ -62,10 +62,10 @@ Finish a review with **Push N fixes** in the Branch header. It always covers eve
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The header of the Branch page for PR #318 with its summary line, and under it a confirm: Push 1 to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 2 comments need you first, with Cancel and Push buttons">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The header of the Branch page with its Fix 1 comment, Push 1 fix and Merge buttons, and under it a confirm: Push 2 commits to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 1 comment needs you first, with Cancel and Push buttons">
 </picture>
 
-<sub>Screenshot from Goodboy 0.14.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Review replies in your voice
 
@@ -91,10 +91,10 @@ The **Pull request** entry is the pull request. Its properties come first, group
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of the Branch page for hl/fix-duplicate-credit, between the tabs Pull request, Comments 0, Files 6, Commits 5 and Checks, with the description and its Edit button, the Activity list of pushes, reviews and checks, and a side panel with Status Open, Blocked: 1 check failing, Resolves, Reviewers, Checks, Branch with Rebase on main, and Files changed">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of the Branch page for hl/fix-duplicate-credit, between the tabs Pull request, Comments, Files 6, Commits 3 and Checks 1, with the state Open #318, the base, Checks 1 failing, Readiness Blocked by lint, reviewers, the linked issue, the description with its Edit button and the Activity list">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### One trail to the Branch page
 
@@ -114,10 +114,10 @@ Read the branch against its base in **Files**, unified or split. The changed fil
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Files tab of the Branch page with a diff of ledgerClient.ts and postCredit.ts, the Notes 3 button in the toolbar, and the Your notes drawer open on the right: 3 open notes grouped by file, an open note with Fix, Close and Delete, a note To review with Accept, Skip and Close the note, and Fix 2 at the top">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-diff-light.webp" alt="The Files tab of the Branch page for hl/fix-duplicate-credit with a diff of ledgerClient.ts and postCredit.ts, each file header with Viewed and Comment, and on the right the file list with Next unviewed 6, a filter box and the changed files in a tree with their added and removed lines">
 </picture>
 
-<sub>Screenshot from Goodboy 0.23.0</sub>
+<sub>Screenshot from Goodboy 0.27.0</sub>
 
 ### Write review
 
