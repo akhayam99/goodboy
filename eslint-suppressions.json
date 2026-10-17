@@ -7803,11 +7803,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/DisconnectedWorkspaces.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/OtherWorkspaceRow.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2

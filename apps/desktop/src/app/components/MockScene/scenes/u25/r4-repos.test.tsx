@@ -89,6 +89,7 @@ describe('the repositories entry scenes', () => {
     expect(entry().textContent).toBe('2 repos behind · Diverged');
     const dialog = screen.getByRole('dialog', { name: 'Repositories' });
     expect(within(dialog).getByRole('button', { name: 'Pull all' })).toBeDefined();
+    expect(within(dialog).queryByText('Up to date')).toBeNull();
     expect(within(rowOf('payments-api')).getByRole('button', { name: /^Pull main/ })).toBeDefined();
     expect(within(rowOf('notify-relay')).queryByRole('button', { name: /^Pull/ })).toBeNull();
     expect(within(rowOf('ledger-core')).getByText(/your checkout stays on/)).toBeDefined();
@@ -103,7 +104,11 @@ describe('the repositories entry scenes', () => {
   it('r4-repos-failed shows a quiet failure with Retry', async () => {
     await mount('r4-repos-failed');
     expect(entry().textContent).toBe('Check failed');
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(
+      within(rowOf('payments-api')).getByRole('button', {
+        name: 'Retry the check of payments-api',
+      }),
+    ).toBeDefined();
   });
 
   it('r4-repos-quiet leaves the entry as an icon', async () => {

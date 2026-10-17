@@ -612,9 +612,11 @@ r4-repos-behind
 r4-repos-closed
 r4-repos-dirty
 r4-repos-failed
+r4-repos-mix
 r4-repos-quiet
 r4-sidebar-filter
 r4-sidebar-row-menu
+r4-workspace-switcher
 rail-draft-dot
 rail-flyout
 rail-pinned

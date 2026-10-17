@@ -65,11 +65,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'decorative: the aria-hidden tick inside the issue row button; the row picks the issue',
   },
-  'apps/desktop/src/features/workspace/components/WorkspaceSwitcher/OtherWorkspaceRow.tsx': {
-    count: 1,
-    reason:
-      'second way: the "Open" word repeats the workspace name button beside it, visible at rest',
-  },
   'packages/ui/src/components/ResizeHandle.tsx': {
     count: 1,
     reason: 'decorative: the edge line of a resize handle; the handle itself is always there',

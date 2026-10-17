@@ -66,7 +66,7 @@ export const RepoEntry = ({ workspaceId }: Props) => {
         </Tooltip>
       }
     >
-      <RepoEntryPanel workspaceId={workspaceId} entries={entries} failedCount={facts.failedCount} />
+      <RepoEntryPanel workspaceId={workspaceId} entries={entries} />
     </AnchoredPopover>
   );
 };
