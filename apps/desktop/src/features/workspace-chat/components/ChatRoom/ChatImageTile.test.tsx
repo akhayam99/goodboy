@@ -118,13 +118,9 @@ describe('a chat message with an image', () => {
     await screen.findByAltText('retry-trace.png');
     expect(screen.getAllByAltText('retry-trace.png')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
-    await waitFor(() => expect(screen.getAllByAltText('retry-trace.png')).toHaveLength(2), {
-      timeout: 5000,
-    });
+    expect(screen.getAllByAltText('retry-trace.png')).toHaveLength(2);
     fireEvent.keyDown(document, { key: 'Escape' });
-    await waitFor(() => expect(screen.getAllByAltText('retry-trace.png')).toHaveLength(1), {
-      timeout: 5000,
-    });
+    await waitFor(() => expect(screen.getAllByAltText('retry-trace.png')).toHaveLength(1));
   });
 
   it('shows the missing icon and no preview button when the file is gone', async () => {

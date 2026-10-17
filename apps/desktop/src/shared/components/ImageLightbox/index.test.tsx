@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { registerEscapeLayer } from '@goodboy/ui';
 import { ImageLightbox } from './index';
 
@@ -54,6 +54,13 @@ describe('ImageLightbox', () => {
     });
     expect(onClose).toHaveBeenCalledOnce();
     vi.useRealTimers();
+  });
+
+  it('still closes when Escape lands before the enter frames run', async () => {
+    const onClose = vi.fn();
+    render(<ImageLightbox src="img.png" alt="x" onClose={onClose} />);
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 
   it('frees the page scroll again once it unmounts', () => {

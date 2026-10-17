@@ -18,7 +18,7 @@ export const ImageLightbox = ({ src, alt, onClose, media = 'image' }: Props) => 
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setPhase('open'));
+      requestAnimationFrame(() => setPhase((prev) => (prev === 'enter' ? 'open' : prev)));
     });
     return () => cancelAnimationFrame(id);
   }, []);
