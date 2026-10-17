@@ -118,6 +118,20 @@ describe('the r4 content scenes', () => {
     expect(document.querySelector('[data-list-grid-row][aria-current="true"]')).not.toBeNull();
   });
 
+  it('r4-questions-drawer titles the drawer with the asker and age, the card with the question', async () => {
+    await mount('r4-questions-drawer');
+
+    const drawerTitle = document.querySelector('[data-container="drawer"] h2')?.textContent ?? '';
+    const card = screen.getByRole('article');
+    expect(drawerTitle).toMatch(/^\S.* · \S+/);
+    expect(card.textContent ?? '').not.toContain(drawerTitle);
+    const row = document.querySelector<HTMLElement>('[data-list-grid-row][aria-current="true"]');
+    const question = row?.getAttribute('aria-label')?.split(', ')[0] ?? '';
+    expect(question).not.toBe('');
+    expect(drawerTitle).not.toContain(question);
+    expect(card.textContent ?? '').toContain(question);
+  });
+
   it('r4-overview-title answers a rename for the open session on the Overview title', async () => {
     await mount('r4-overview-title');
     const sessionId = brandId<SessionId>({ value: 'mock-session-mount-rows' });
