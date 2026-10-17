@@ -65,7 +65,7 @@ const linearIssue = ({ id, identifier, title, description, ago }: LinearParams):
   team: { key: 'HBL' },
   priority: 2,
   priorityLabel: 'High',
-  assignee: { name: 'Nadia Petrov' },
+  assignee: { name: 'Harborline QA' },
   project: { name: 'Payments' },
   labels: { nodes: [] },
   updatedAt: isoAgo(ago),

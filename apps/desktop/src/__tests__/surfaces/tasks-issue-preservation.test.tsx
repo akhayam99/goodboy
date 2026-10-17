@@ -87,7 +87,7 @@ describe('SPEC3 9.7 issues and Tasks rows reachable from the new issue pane', ()
     const status = group('State');
     expect(within(status).getByText('In progress')).toBeDefined();
     expect(within(status).getByText('High')).toBeDefined();
-    expect(within(status).getByText('Mara Lindqvist')).toBeDefined();
+    expect(within(status).getByText('Acme Ops')).toBeDefined();
   });
 
   it('keeps the star, the open session of a linked issue and the close control on the header', async () => {

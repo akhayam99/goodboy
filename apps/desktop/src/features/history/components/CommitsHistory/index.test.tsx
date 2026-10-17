@@ -480,7 +480,7 @@ describe('CommitsHistory on a long branch', () => {
     sha: shaAt({ index }),
     shortSha: shaAt({ index }).slice(0, 7),
     subject: `refactor: step ${index} of the ledger batching`,
-    author: 'Theo Varga',
+    author: 'Northwind Ops',
     timestamp: 1_790_000_000 - index * 60,
     pushed: false,
     parentSha: index === COUNT - 1 ? LEDGER_GRAPH.mergeBase.sha : shaAt({ index: index + 1 }),

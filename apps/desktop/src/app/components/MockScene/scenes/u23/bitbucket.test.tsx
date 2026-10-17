@@ -51,7 +51,7 @@ const MEMBERS = [
     uuid: '{rio-k-uuid}',
     accountId: null,
     nickname: 'rio-k',
-    displayName: 'Rio Kato',
+    displayName: 'Cascadia Lead',
     avatarUrl: null,
   },
 ];

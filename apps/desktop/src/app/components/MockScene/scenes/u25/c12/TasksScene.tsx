@@ -32,21 +32,21 @@ const COMMENTS: ReadonlyArray<LinearIssueComment> = [
     body: 'Reproduced with the March ledger: 14,210 rows, the request dies at 30 seconds.',
     createdAt: '2026-10-15T08:10:00Z',
     parent: null,
-    user: { name: 'Tomas Okafor', avatarUrl: null },
+    user: { name: 'Cascadia Dev', avatarUrl: null },
   },
   {
     id: 'hbl-412-c2',
     body: 'Streaming works locally. #418 keeps memory flat at 40 MB.',
     createdAt: '2026-10-15T15:40:00Z',
     parent: { id: 'hbl-412-c1' },
-    user: { name: 'Mara Lindqvist', avatarUrl: null },
+    user: { name: 'Acme Ops', avatarUrl: null },
   },
   {
     id: 'hbl-412-c3',
     body: 'Finance checked the header order on the staging export. Good to ship.',
     createdAt: '2026-10-16T07:55:00Z',
     parent: null,
-    user: { name: 'Priya Natarajan', avatarUrl: null },
+    user: { name: 'Harborline Ops', avatarUrl: null },
   },
 ];
 

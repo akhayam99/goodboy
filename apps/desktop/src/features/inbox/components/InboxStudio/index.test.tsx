@@ -229,7 +229,7 @@ const linearIssue = record({
       url: '',
       state: { name: 'In Progress', type: 'started' },
       team: { key: 'ENG' },
-      assignee: { name: 'Mara Lindqvist' },
+      assignee: { name: 'Acme Ops' },
       updatedAt: '',
     },
     sessionId: null,

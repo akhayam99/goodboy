@@ -69,7 +69,7 @@ type LinearParams = IndexParams & {
 
 const MARA: JiraUser = {
   accountId: 'mock-c12-mara',
-  displayName: 'Mara Lindqvist',
+  displayName: 'Acme Ops',
   emailAddress: null,
   avatarUrls: null,
   active: true,
@@ -91,7 +91,7 @@ export const LEDGER_ISSUE: LinearIssue = {
   priority: 2,
   priorityLabel: 'High',
   assignee: { name: MARA.displayName },
-  creator: { name: 'Tomas Okafor' },
+  creator: { name: 'Cascadia Dev' },
   project: { name: 'Ledger' },
   labels: {
     nodes: [...(HBL_412.labels?.nodes ?? []), ...(HBL_398.labels?.nodes ?? [])],
@@ -198,7 +198,7 @@ const githubRecord = ({ index, minutes }: RecordParams): InboxRecord => {
         state: 'OPEN',
         labels: ['bug'],
         updatedAt: isoAgo({ minutes }),
-        author: 'Tomas Okafor',
+        author: 'Cascadia Dev',
       },
       sessionId: null,
     },

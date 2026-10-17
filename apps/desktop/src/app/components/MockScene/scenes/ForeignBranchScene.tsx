@@ -190,21 +190,21 @@ const LOCAL_BRANCHES = [
 const REMOTE_BRANCHES = [
   {
     name: TEAMMATE_BRANCH,
-    author: 'Priya Okafor',
+    author: 'Northwind Lead',
     sha: PR_SHA,
     timestamp: 1791100000,
     hasLocal: false,
   },
   {
     name: 'acme-ledger-export-csv',
-    author: 'Marco Lindqvist',
+    author: 'Cascadia QA',
     sha: 'b7a6c5d4e3f2',
     timestamp: 1790900000,
     hasLocal: false,
   },
   {
     name: 'cascadia-fx-rounding-spike',
-    author: 'Ines Varga',
+    author: 'Acme Design',
     sha: 'd4c3b2a1f0e9',
     timestamp: 1790500000,
     hasLocal: false,

@@ -28,9 +28,9 @@ const SINGLE_ITEM = 'mock-resolve-item-retry-backoff';
 const BATCH_THREADS = ['PRRT_thread_typo', 'PRRT_thread_retry_constant'] as const;
 const MINUTE = 60_000;
 const AUTHORS: Readonly<Record<string, string>> = {
-  [SINGLE_THREAD]: 'Mara Quint',
-  [BATCH_THREADS[0]]: 'Theo Varga',
-  [BATCH_THREADS[1]]: 'Mara Quint',
+  [SINGLE_THREAD]: 'Acme QA',
+  [BATCH_THREADS[0]]: 'Northwind Ops',
+  [BATCH_THREADS[1]]: 'Acme QA',
 };
 
 const runIdOf = (agentId: AgentId): ProviderRunId => `${agentId}-run` as ProviderRunId;
@@ -118,7 +118,7 @@ const AGENTS: ReadonlyArray<Agent> = [
   resolverAgent({
     id: SINGLE_ID,
     ordinal: 40,
-    name: 'Resolve: Mara Quint on retryPolicy.ts',
+    name: 'Resolve: Acme QA on retryPolicy.ts',
     minutes: 9,
     summary: 'Capped the retry loop and added jitter.',
   }),

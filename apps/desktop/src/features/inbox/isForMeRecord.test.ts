@@ -59,7 +59,7 @@ const linear: InboxRecord = {
       url: '',
       state: { name: 'In progress', type: 'started' },
       team: { key: 'HBL' },
-      assignee: { name: 'Mara Lindqvist' },
+      assignee: { name: 'Acme Ops' },
       updatedAt: '',
     },
     sessionId: null,

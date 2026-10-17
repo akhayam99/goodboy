@@ -40,7 +40,7 @@ export const LEDGER_COMMITS: ReadonlyArray<BranchCommit> = [
   commit({
     sha: LEDGER.f,
     subject: 'Fix typo in CSV header',
-    author: 'Tomas Vey',
+    author: 'Northwind Dev',
     hoursAgo: 1,
     pushed: false,
     parentSha: LEDGER.e,
@@ -48,7 +48,7 @@ export const LEDGER_COMMITS: ReadonlyArray<BranchCommit> = [
   commit({
     sha: LEDGER.e,
     subject: 'wip export tests',
-    author: 'Tomas Vey',
+    author: 'Northwind Dev',
     hoursAgo: 3,
     pushed: false,
     parentSha: LEDGER.x,
@@ -56,7 +56,7 @@ export const LEDGER_COMMITS: ReadonlyArray<BranchCommit> = [
   commit({
     sha: LEDGER.x,
     subject: 'Add debug logging to the export',
-    author: 'Tomas Vey',
+    author: 'Northwind Dev',
     hoursAgo: 4,
     pushed: false,
     parentSha: LEDGER.d,
@@ -80,7 +80,7 @@ export const LEDGER_COMMITS: ReadonlyArray<BranchCommit> = [
   commit({
     sha: LEDGER.b,
     subject: 'Stream rows in batches of 500',
-    author: 'Lena Arkwright',
+    author: 'Harborline Lead',
     hoursAgo: 48,
     pushed: true,
     parentSha: LEDGER.a,
@@ -88,7 +88,7 @@ export const LEDGER_COMMITS: ReadonlyArray<BranchCommit> = [
   commit({
     sha: LEDGER.a,
     subject: 'Add ledger export endpoint',
-    author: 'Lena Arkwright',
+    author: 'Harborline Lead',
     hoursAgo: 49,
     pushed: true,
     parentSha: LEDGER_BASE,
@@ -104,7 +104,7 @@ export const LEDGER_GRAPH: HistoryGraph = {
   mergeBase: {
     sha: LEDGER_BASE,
     subject: 'Release 2.14',
-    author: 'Lena Arkwright',
+    author: 'Harborline Lead',
     timestamp: 1_790_000_000 - 50 * 3600,
   },
   mainHead: '7c21e0a110000000000000000000000000000000',
@@ -112,13 +112,13 @@ export const LEDGER_GRAPH: HistoryGraph = {
     {
       sha: '7c21e0a110000000000000000000000000000000',
       subject: 'Merge #208: Cascadia rounding rules',
-      author: 'Lena Arkwright',
+      author: 'Harborline Lead',
       timestamp: 1_790_000_000 - 4 * 3600,
     },
     {
       sha: '5b90d3e220000000000000000000000000000000',
       subject: 'Rotate Acme sandbox keys',
-      author: 'Tomas Vey',
+      author: 'Northwind Dev',
       timestamp: 1_790_000_000 - 9 * 3600,
     },
     {

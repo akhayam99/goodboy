@@ -28,7 +28,7 @@ const GRAPH: HistoryGraph = {
   mergeBase: {
     sha: CTX_BASE_SHA,
     subject: 'Release 4.8',
-    author: 'Lena Arkwright',
+    author: 'Harborline Lead',
     timestamp: hoursAgo(6),
   },
   mainHead: '2d6f0a4c8e2b6d0f4a8c2e6b0d4f8a2c6e0b4d8f',
@@ -42,7 +42,7 @@ const GRAPH: HistoryGraph = {
     {
       sha: '6b0d4f8a2c6e0b4d8f2a6c0e4b8d2f6a0c4e8b2d',
       subject: 'Rotate Acme sandbox keys',
-      author: 'Tomas Vey',
+      author: 'Northwind Dev',
       timestamp: hoursAgo(3),
     },
   ],

@@ -510,7 +510,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Checks',
-        desc: 'The CI runs of a pull request, or the jobs of the latest GitLab pipeline, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Analyze on a failing check starts the Debugger, which reads the log and proposes a fix, and Start fix hands that proposal to an Implementer. A committed fix reads Fixed, not pushed, and the row, the Debugger drawer and Next each offer Push; after it the check runs again and the card says if it passed or still fails. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
+        desc: 'The CI runs of a pull request, or the jobs of the latest GitLab pipeline, grouped as Failing, Running, Passed and Skipped, with the failing step. Checks, reviewers and review requests are read apart, so a check that cannot be read says why and names the fix, and Merge says Checks unknown. Analyze on a failing check starts the Debugger, which reads the log and proposes a fix; the row then opens its drawer and reads a short state such as Fix proposed, Not pushed or Re-running. Start fix and Push live in the Debugger drawer; after Push the check runs again and the drawer says if it passed or still fails. Whether it can merge reads in plain words, a blocked Merge says why beside it, and Merge and Close confirm under the header.',
       },
       {
         term: 'Push',

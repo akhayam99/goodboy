@@ -31,7 +31,7 @@ const isoAgo = ({ minutes }: { readonly minutes: number }): IsoDateTime =>
 
 const comment = (): PrComment => ({
   id: 'mock-brief-live-comment',
-  author: 'Mara Quint',
+  author: 'Acme QA',
   authorAvatarUrl: null,
   body: "This retries forever on a 429 without any cap, and it keeps hammering the provider after a Retry-After response. Please cap the attempts, back off exponentially, and honor the provider's delay.",
   createdAt: isoAgo({ minutes: 12 }),
