@@ -138,7 +138,7 @@ Each step starts from a short brief instead of the whole previous chat. If the s
 
 ### Open questions
 
-Each question arrives as one card with who asks, whether it is **Blocking**, and numbered answers with the recommended one tagged. Pick with a number key and press **Enter**, or write your own. A blocking question holds its step until you answer or choose **Send as message**. The session's **Questions** page lists them under **Waiting on you** and **Answered**, with the answer in gray; a row opens its card in the drawer, and answering moves to the next one.
+Each question arrives as one card with who asks, whether it is **Blocking**, and numbered answers with the recommended one tagged. Pick with a number key and press **Enter**, or write your own. A blocking question holds its step until you answer or choose **Send as message**. The session's **Questions** page lists them under **Needs you** and **Answered**, with the answer in gray; a row opens its card in the drawer, and answering moves to the next one.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-questions-dark.webp">

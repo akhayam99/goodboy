@@ -163,13 +163,13 @@ describe('the u23 frame scenes', () => {
     expect(within(band).queryByRole('tablist')).toBeNull();
   });
 
-  it('puts the Questions list and detail under the title in one column', async () => {
+  it('puts the Questions list under the title in one column', async () => {
     await renderScene('frame-questions');
 
     const title = await screen.findByRole('heading', { level: 1, name: 'Questions' });
     const column = title.closest('[data-page-column]') as HTMLElement;
     expect(column.getAttribute('data-width')).toBe('column');
-    const queue = await screen.findByRole('region', { name: 'Questions' });
+    const queue = await screen.findByRole('list', { name: 'Questions' });
     const bodyColumn = queue.closest('[data-page-column]') as HTMLElement;
     expect(bodyColumn.getAttribute('data-width')).toBe('column');
     expect(within(bodyColumn).getAllByRole('heading', { level: 2 }).length).toBeGreaterThan(0);

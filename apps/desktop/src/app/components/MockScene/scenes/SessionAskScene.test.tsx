@@ -104,7 +104,7 @@ describe('the session Ask scene', () => {
     expect(within(screen.getByTestId('ask-actions')).getByText('Answer question 1')).toBeDefined();
   });
 
-  it('moves the page beside it when a chip is clicked, and Ask stays open', async () => {
+  it('moves the page beside it when a chip is clicked, and the question keeps Back to Ask', async () => {
     await renderState('answer');
     const answer = await screen.findByTestId('ask-answer');
     const questionChip = answer.querySelector<HTMLElement>('[data-ask-kind="question"] button');
@@ -117,6 +117,14 @@ describe('the session Ask scene', () => {
     });
     expect(useAppStore.getState().activeLens[SESSION.id]).toBe('questions');
     expect(screen.queryByTestId('overview-title')).toBeNull();
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'question',
+      sessionId: SESSION.id,
+      payload: { from: 'ask' },
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to Ask' }));
+    });
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: SESSION.id });
     expect(askDrawer()).toBeDefined();
   });
@@ -142,7 +150,11 @@ describe('the session Ask scene', () => {
         'Stop after 5 attempts, then move the message to the dead-letter queue.',
       ),
     ).toBeDefined();
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask' });
+    expect(useAppStore.getState().drawer).toMatchObject({
+      kind: 'question',
+      payload: { questionId, from: 'ask' },
+    });
+    expect(screen.getByRole('button', { name: 'Back to Ask' })).toBeDefined();
   });
 
   it('opens a plan inside Ask under Back to answer, and Esc goes back', async () => {

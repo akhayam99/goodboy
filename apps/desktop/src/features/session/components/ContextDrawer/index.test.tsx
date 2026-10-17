@@ -268,7 +268,7 @@ describe('ContextDrawer', () => {
 
     expect(
       screen.getByText(
-        'No explanations yet. One lands here when an agent explains a topic you follow.',
+        'No explanations yet. An agent adds one when it explains a topic you follow.',
       ).tagName,
     ).toBe('P');
   });

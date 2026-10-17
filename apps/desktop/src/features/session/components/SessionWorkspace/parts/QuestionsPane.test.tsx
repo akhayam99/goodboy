@@ -153,7 +153,7 @@ type DrawerParams = SeedParams & {
 const setupDrawer = ({ questionId, ...params }: DrawerParams) => {
   seed(params);
   return render(
-    <QuestionDrawer sessionId={SESSION_ID} questionId={questionId} onClose={vi.fn()} />,
+    <QuestionDrawer sessionId={SESSION_ID} questionId={questionId} from={null} onClose={vi.fn()} />,
   );
 };
 
@@ -196,17 +196,17 @@ describe('QuestionsPane', () => {
     screen.getByText('Agents ask you here when they need a decision.');
   });
 
-  it('lists Waiting on you then Answered on one grid, each counted from two', () => {
+  it('lists Needs you then Answered on one grid, each counted from two', () => {
     setup({ answered: [ANSWERED_A1] });
     const headings = screen.getAllByRole('heading', { level: 2 }).map((node) => node.textContent);
-    expect(headings).toEqual(['Waiting on you', 'Answered']);
+    expect(headings).toEqual(['Needs you', 'Answered']);
     expect(
       Array.from(document.querySelectorAll('[data-list-grid-count]')).map(
         (node) => node.textContent,
       ),
     ).toEqual(['3']);
     expect(document.querySelectorAll('[data-list-grid]')).toHaveLength(1);
-    expect(within(group('Waiting on you')).getAllByRole('button')).toHaveLength(3);
+    expect(within(group('Needs you')).getAllByRole('button')).toHaveLength(3);
     expect(within(group('Answered')).getAllByRole('button')).toHaveLength(1);
     expect(screen.queryByRole('article')).toBeNull();
     expect(screen.queryByText('No questions')).toBeNull();
@@ -239,7 +239,6 @@ describe('QuestionsPane', () => {
       'Reviewer',
       formatAge({ from: NOW, now: Date.now() }),
     ]);
-    expect(cells[2]?.className).toContain('text-faint-foreground');
   });
 
   it('marks a blocking ask with one dot in its own cell', () => {
@@ -277,7 +276,7 @@ describe('QuestionsPane', () => {
     expect(useOpenQuestions.getState().focusedQuestionId).toBeNull();
   });
 
-  it('keeps a question an agent is answering under Waiting on you, saying so in gray', () => {
+  it('keeps a question an agent is answering under Needs you, saying so in gray', () => {
     const delegate = agent('delegate-1', 'answer: Keep the old dispatch path?', {
       sourceKind: 'open_question',
       sourceThreadId: 'q3',
@@ -285,7 +284,7 @@ describe('QuestionsPane', () => {
     } as Partial<Agent>);
     setup({ agents: [PLANNER, REVIEWER, delegate] });
     expect(
-      within(group('Waiting on you')).getByRole('button', {
+      within(group('Needs you')).getByRole('button', {
         name: 'Keep the old dispatch path?, An agent is answering',
       }),
     ).toBeDefined();

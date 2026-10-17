@@ -90,7 +90,7 @@ describe('the r4 content scenes', () => {
 
     const title = screen.getByTestId('overview-title');
     expect(title.closest('h1')).not.toBeNull();
-    expect(within(title).getByText('HBL-391').className).toContain('font-mono');
+    expect(within(title).getByText('HBL-391').hasAttribute('data-session-key')).toBe(true);
     expect(screen.queryByRole('heading', { level: 1, name: 'Overview' })).toBeNull();
   });
 
@@ -100,7 +100,7 @@ describe('the r4 content scenes', () => {
     expect(document.querySelectorAll('[data-list-grid]')).toHaveLength(1);
     const grid = document.querySelector<HTMLElement>('[data-list-grid]');
     const groups = Array.from(grid?.querySelectorAll('h2') ?? []).map((node) => node.textContent);
-    expect(groups[0]).toBe('Waiting on you');
+    expect(groups[0]).toBe('Needs you');
     expect(screen.queryByText('No questions')).toBeNull();
     expect(screen.queryByRole('article')).toBeNull();
   });

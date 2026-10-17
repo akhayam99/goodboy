@@ -49,7 +49,9 @@ export const OverviewTitle = ({ session }: Props) => {
       onDoubleClick={canRename ? rename.start : undefined}
     >
       {keys.length === 0 ? null : (
-        <span className="shrink-0 font-mono text-muted-foreground">{keys.join(' ')}</span>
+        <span data-session-key="" className="shrink-0 font-mono text-muted-foreground">
+          {keys.join(' ')}
+        </span>
       )}
       <InlineMarkdown text={title} className="min-w-0 truncate" />
     </span>

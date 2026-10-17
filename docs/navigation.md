@@ -2379,14 +2379,15 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   while it is read). `FirstLapBanner` keeps only the move card, the move in progress
   and the move report, as a `Notice` in the page banner slot (`PaneBannerContext`).
 - **Questions is a list, like Artifacts.** One `ListGrid` (`parts/QuestionsGrid`) with two
-  groups, **Waiting on you** then **Answered**, each counted from two; the grouping is
+  groups, **Needs you** then **Answered**, each counted from two; the grouping is
   `questionGroupsOf` in `questionsLensModel` (a question an agent is answering stays under
-  Waiting on you and says so in gray). A row reads the question, the answer in gray, the
+  Needs you and says so in gray). A row reads the question, the answer in gray, the
   asker's role and the age; a blocking ask is one warning dot in the leading cell. The row
   opens the question in the drawer (`question` drawer kind, `QuestionDrawer`), where the
   card answers, skips, dismisses and undoes; answering moves the drawer to the next
-  waiting question. The shared `EmptyState` shows only when the session has no question
-  at all. Inside the asker's own conversation a question card shows only the question
+  waiting question. Opened from Ask (a question chip, **Answer question N**), the drawer
+  carries **Back to Ask**. The shared `EmptyState` shows only when the session has no
+  question at all. Inside the asker's own conversation a question card shows only the question
   (and Blocking as a dot and a word).
 - **A lens shows one level. A studio is a rail plus a detail.** Inside a lens,
   selecting a card swaps the list for the detail, and the trail or Back is the
@@ -2914,7 +2915,9 @@ suggested questions; each line's mark is a `LineMark` (one text line tall), so
 it centres on the first line of text even when the line wraps; once a thread has
 turns it folds to one row. Then
 **Earlier** threads on a fresh thread, then the turns. An answer chip that
-targets a page navigates (the drawer stays, see above); a chip that targets a
+targets a page navigates (the drawer stays, see above), except a question: it
+opens the Questions page and the question in the drawer under **Back to Ask**
+(`question` drawer, `from: 'ask'`); a chip that targets a
 plan or another artifact opens it inside the drawer under **Back to answer**,
 and Escape goes back before it closes. Buttons come only from verbs the action
 registry offers right now (`askVerb`, `useAskActions`): **Answer question N**

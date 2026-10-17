@@ -109,5 +109,6 @@
   "packages/ui/src/components/RemoteImage/index.tsx": "code",
   "packages/ui/src/components/ReportSheet/index.tsx": "code",
   "packages/ui/src/components/Trail/CrumbMenuRow.tsx": "path",
-  "packages/ui/src/components/ValueToken.tsx": "code"
+  "packages/ui/src/components/ValueToken.tsx": "code",
+  "apps/desktop/src/features/session/components/SessionOverviewPane/OverviewTitle.tsx": "identifier"
 }

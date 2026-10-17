@@ -4,14 +4,17 @@ import type { OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQuestionCard';
-import { questionParts } from '../../../context/components/QuestionsTab/questionParts';
-import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
 import { useQuestionsLens } from '../../hooks/useQuestionsLens';
-import { nextWaitingQuestion, questionRowsOf } from '../SessionWorkspace/parts/questionsLensModel';
+import {
+  nextWaitingQuestion,
+  questionRowTitle,
+  questionRowsOf,
+} from '../SessionWorkspace/parts/questionsLensModel';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly questionId: OpenQuestionId;
+  readonly from: 'ask' | null;
   readonly onClose: () => void;
 };
 
@@ -25,13 +28,14 @@ type QuestionParams = {
   readonly question: OpenQuestion;
 };
 
-export const QuestionDrawer = ({ sessionId, questionId, onClose }: Props) => {
-  const { model, isLoaded } = useQuestionsLens({ sessionId, load: 'when-missing' });
+export const QuestionDrawer = ({ sessionId, questionId, from, onClose }: Props) => {
+  const { model, isLoaded, beginUndo, clearUndo } = useQuestionsLens({
+    sessionId,
+    load: 'when-missing',
+  });
   const openDrawer = useAppStore((state) => state.openDrawer);
   const dismissOpenQuestion = useAppStore((state) => state.dismissOpenQuestion);
   const restoreDismissedOpenQuestion = useAppStore((state) => state.restoreDismissedOpenQuestion);
-  const beginUndo = useOpenQuestions((state) => state.beginUndo);
-  const clearUndo = useOpenQuestions((state) => state.clearUndo);
   const row = useMemo(
     () => questionRowsOf({ model }).find((candidate) => candidate.question.id === questionId),
     [model, questionId],
@@ -42,9 +46,13 @@ export const QuestionDrawer = ({ sessionId, questionId, onClose }: Props) => {
       if (next === null) {
         return;
       }
-      openDrawer({ kind: 'question', sessionId, payload: { questionId: next } });
+      openDrawer({
+        kind: 'question',
+        sessionId,
+        payload: from === null ? { questionId: next } : { questionId: next, from },
+      });
     },
-    [openDrawer, sessionId],
+    [from, openDrawer, sessionId],
   );
 
   const dismiss = async ({ question }: QuestionParams) => {
@@ -57,14 +65,19 @@ export const QuestionDrawer = ({ sessionId, questionId, onClose }: Props) => {
     clearUndo();
   };
 
-  const title =
-    row === undefined ? FALLBACK_TITLE : questionParts({ text: row.question.text }).title;
+  const title = row === undefined ? FALLBACK_TITLE : questionRowTitle({ row });
 
   return (
     <DrawerFrame
       title={title}
       icon={CONCEPT_ICONS.questions}
       iconClassName="text-muted-foreground"
+      {...(from === 'ask' && {
+        back: {
+          label: 'Back to Ask',
+          onBack: () => openDrawer({ kind: 'ask', sessionId, payload: null }),
+        },
+      })}
       onClose={onClose}
     >
       {row === undefined ? (

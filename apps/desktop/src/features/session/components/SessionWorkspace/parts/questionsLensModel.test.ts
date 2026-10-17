@@ -65,7 +65,7 @@ describe('buildQuestionsLens', () => {
     expect(ids(model.answered)).toEqual(['a2', 'a1']);
   });
 
-  it('groups the page into Waiting on you (yours, then an agent answering) and Answered', () => {
+  it('groups the page into Needs you (yours, then an agent answering) and Answered', () => {
     const groups = questionGroupsOf({ model });
     expect(ids(groups.waiting)).toEqual(['q1', 'q3']);
     expect(ids(groups.answered)).toEqual(['q2', 'a2', 'a1']);

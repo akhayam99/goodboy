@@ -253,7 +253,7 @@ describe('Context drawer mark as read', () => {
 });
 
 describe('Context drawer summary', () => {
-  it('reads the summary by section, key line first and the rest collapsed', async () => {
+  it('reads the summary by section, counted from two, key line first and the rest collapsed', async () => {
     act(() => {
       useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, tab: 'summary' });
     });
@@ -265,7 +265,7 @@ describe('Context drawer summary', () => {
     const sections = within(summary)
       .getAllByRole('heading', { level: 3 })
       .map((heading) => heading.textContent);
-    expect(sections).toEqual(['State4', 'Next3', 'Open questions1', 'Learned2']);
+    expect(sections).toEqual(['State4', 'Next3', 'Open questions', 'Learned2']);
 
     const state = within(drawer).getByRole('region', { name: 'State' });
     expect(

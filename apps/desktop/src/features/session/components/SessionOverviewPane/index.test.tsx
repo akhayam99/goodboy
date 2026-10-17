@@ -145,7 +145,7 @@ describe('SessionOverviewPane', () => {
 
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading.textContent).toBe('HL-204Stop retried webhooks posting a second credit');
-    expect(screen.getByText('HL-204').className).toContain('font-mono');
+    expect(screen.getByText('HL-204').hasAttribute('data-session-key')).toBe(true);
     expect(screen.queryByRole('heading', { name: 'Overview' })).toBeNull();
   });
 

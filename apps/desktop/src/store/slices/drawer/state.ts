@@ -87,7 +87,7 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'question';
-      readonly payload: { readonly questionId: OpenQuestionId };
+      readonly payload: { readonly questionId: OpenQuestionId; readonly from?: 'ask' };
     }
   | {
       readonly kind: 'new';

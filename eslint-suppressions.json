@@ -5855,9 +5855,6 @@
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/QuestionsPane.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/SlotHistoryPanel.tsx": {

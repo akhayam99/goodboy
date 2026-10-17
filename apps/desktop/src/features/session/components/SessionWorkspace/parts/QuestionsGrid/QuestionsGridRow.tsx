@@ -1,7 +1,6 @@
 import { ListGridRow, StateDot } from '@goodboy/ui';
-import { questionParts } from '../../../../../context/components/QuestionsTab/questionParts';
 import { AGENT_KIND_META, type AgentKind } from '../../../../agent-kind';
-import type { QuestionRow } from '../questionsLensModel';
+import { questionRowTitle, type QuestionRow } from '../questionsLensModel';
 import { questionAnswerLine } from './questionAnswerLine';
 
 type Props = {
@@ -15,7 +14,7 @@ type Props = {
 const BLOCKING = 'Blocking';
 
 export const QuestionsGridRow = ({ row, askerKind, age, isSelected, onOpen }: Props) => {
-  const title = questionParts({ text: row.question.text }).title;
+  const title = questionRowTitle({ row });
   const isSettled = row.kind !== 'waiting' && row.kind !== 'delegated';
   const isBlocking = row.kind === 'waiting' && row.question.isBlocking;
   const answer = questionAnswerLine({ row });

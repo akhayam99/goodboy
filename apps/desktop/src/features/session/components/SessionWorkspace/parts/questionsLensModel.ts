@@ -1,5 +1,6 @@
 import type { Agent, OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { partitionDelegatedQuestions } from '../../../../context/questionDelegate';
+import { questionParts } from '../../../../context/components/QuestionsTab/questionParts';
 
 type QuestionRowKind = 'waiting' | 'delegated' | 'staged' | 'dismissed' | 'answered';
 
@@ -55,6 +56,13 @@ export const buildQuestionsLens = ({
     blockingCount: waiting.filter((question) => question.isBlocking).length,
   };
 };
+
+type RowParams = {
+  readonly row: QuestionRow;
+};
+
+export const questionRowTitle = ({ row }: RowParams): string =>
+  questionParts({ text: row.question.text }).title;
 
 type ModelParams = {
   readonly model: QuestionsLensModel;

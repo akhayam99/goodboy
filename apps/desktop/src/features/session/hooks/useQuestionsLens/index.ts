@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import type { Agent, SessionId } from '@goodboy/types';
+import type { Agent, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import {
   useAppStore,
   useSessionAnsweredQuestions,
@@ -25,6 +25,10 @@ export type QuestionsLens = {
   readonly isLoaded: boolean;
   readonly hasLoadError: boolean;
   readonly reload: () => void;
+  readonly focusedQuestionId: OpenQuestionId | null;
+  readonly clearFocusedQuestion: () => void;
+  readonly beginUndo: (question: OpenQuestion) => void;
+  readonly clearUndo: () => void;
 };
 
 export const useQuestionsLens = ({ sessionId, load }: Params): QuestionsLens => {
@@ -42,6 +46,10 @@ export const useQuestionsLens = ({ sessionId, load }: Params): QuestionsLens => 
   const loadSessionAnsweredQuestions = useAppStore((state) => state.loadSessionAnsweredQuestions);
   const staged = useOpenQuestions((state) => state.staged);
   const pendingUndo = useOpenQuestions((state) => state.pendingUndo);
+  const focusedQuestionId = useOpenQuestions((state) => state.focusedQuestionId);
+  const clearFocusedQuestion = useOpenQuestions((state) => state.clearFocusedQuestion);
+  const beginUndo = useOpenQuestions((state) => state.beginUndo);
+  const clearUndo = useOpenQuestions((state) => state.clearUndo);
   const dismissed = pendingUndo?.question.sessionId === sessionId ? pendingUndo.question : null;
   const open = useMemo(() => selectOpenQuestions(stored), [stored]);
   const model = useMemo(
@@ -70,5 +78,9 @@ export const useQuestionsLens = ({ sessionId, load }: Params): QuestionsLens => 
     isLoaded,
     hasLoadError,
     reload,
+    focusedQuestionId,
+    clearFocusedQuestion,
+    beginUndo,
+    clearUndo,
   };
 };

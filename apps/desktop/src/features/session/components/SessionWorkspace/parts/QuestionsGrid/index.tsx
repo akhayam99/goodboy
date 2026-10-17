@@ -1,6 +1,7 @@
 import type { Agent, AgentId, OpenQuestionId } from '@goodboy/types';
 import { ListGrid, ListGridGroup } from '@goodboy/ui';
 import { useNow } from '../../../../../../shared/hooks/useNow';
+import { NAMES } from '../../../../../../shared/names';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
 import { classifyAgent, type AgentKind } from '../../../../agent-kind';
 import type { QuestionGroups, QuestionRow } from '../questionsLensModel';
@@ -51,7 +52,7 @@ export const QuestionsGrid = ({ groups, agents, kindOverrides, selectedId, onOpe
   return (
     <ListGrid label="Questions" columns={QUESTIONS_GRID_COLUMNS} isGrouped>
       {groups.waiting.length > 0 ? (
-        <ListGridGroup headingLevel={2} label="Waiting on you" count={groups.waiting.length}>
+        <ListGridGroup headingLevel={2} label={NAMES.needsYou} count={groups.waiting.length}>
           {groups.waiting.map((row) => renderRow({ row }))}
         </ListGridGroup>
       ) : null}

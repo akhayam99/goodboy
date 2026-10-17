@@ -161,6 +161,7 @@ export const DrawerHost = () => {
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           questionId={drawer.payload.questionId}
+          from={drawer.payload.from ?? null}
           onClose={closeDrawer}
         />
       );
