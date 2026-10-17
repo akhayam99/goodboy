@@ -146,6 +146,7 @@ export {
   AUTO_BATCH_MIN_CHILDREN,
   AUTO_DEFAULT_TREE_CAP_USD,
   AUTO_DELEGATION_DEADLINE_MINUTES,
+  AUTO_STALE_DECIDE_MS,
   AUTO_GATES,
   AUTO_GRANT_ALLOWANCE,
   AUTO_LEDGER_CHAR_BUDGET,
@@ -223,10 +224,12 @@ export {
 export {
   AUTO_BLOCK_REASONS,
   AUTO_BLOCK_TEXT,
+  AUTO_STALE_DECIDE_TEXT,
   turnGate,
   type AutoBlockReason,
   type TurnGateParams,
 } from './auto/turnGate';
+export { isAutoGateBlock } from './auto/isAutoGateBlock';
 export { AUTO_REFUSAL_TEXT, describeAutoRefusal, type RefusalChild } from './auto/refusalText';
 export {
   AUTO_CHILD_PROVIDERS,

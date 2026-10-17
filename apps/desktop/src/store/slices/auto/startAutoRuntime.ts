@@ -3,10 +3,24 @@ import { listAutoTreesToRecover, type Database } from '@goodboy/db';
 import { brandId, type AutoDelegationId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
 import { SETTING_AUTO_PLAN_APPROVAL } from '../../../features/settings/settings';
 import { registerAutoDrivePort } from '../../../features/auto/autoDrivePort';
-import { registerAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
+import {
+  currentAutoUserTurnPort,
+  registerAutoUserTurnPort,
+} from '../../../features/auto/autoUserTurnPort';
 import { readAutoTreeLimit } from '../../../features/auto/autoTreeLimit';
-import { registerDelegationDecisionPort } from '../../../features/auto/delegationDecisionPort';
-import { registerTreeStopPort } from '../../../features/auto/treeStopPort';
+import {
+  currentDelegationDecisionPort,
+  registerDelegationDecisionPort,
+} from '../../../features/auto/delegationDecisionPort';
+import { currentTreeRetryPort, registerTreeRetryPort } from '../../../features/auto/treeRetryPort';
+import { currentTreeStopPort, registerTreeStopPort } from '../../../features/auto/treeStopPort';
+import type {
+  AutoBridgeBus,
+  AutoBridgePorts,
+} from '../../../features/auto/bridge/autoBridgeProtocol';
+import { createAutoBridgeClient } from '../../../features/auto/bridge/createAutoBridgeClient';
+import { serveAutoBridge } from '../../../features/auto/bridge/serveAutoBridge';
+import { tauriAutoBridgeBus } from '../../../features/auto/bridge/tauriAutoBridgeBus';
 import { isMainWindow } from '../../../features/workspace/window';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { useAppStore } from '../../store';
@@ -22,6 +36,45 @@ import {
 
 const AUTO_TICK_MS = 15_000;
 
+const NO_RUNTIME = 'Auto is not running in the main window.';
+
+type PortParams<Port> = {
+  readonly port: Port | null;
+};
+
+const requirePort = <Port>({ port }: PortParams<Port>): Port => {
+  if (port === null) {
+    throw new Error(NO_RUNTIME);
+  }
+  return port;
+};
+
+const REGISTERED_PORTS: AutoBridgePorts = {
+  stop: (params) => requirePort({ port: currentTreeStopPort() })(params),
+  retry: (params) => requirePort({ port: currentTreeRetryPort() })(params),
+  userTurn: (params) => requirePort({ port: currentAutoUserTurnPort() })(params),
+  decision: (params) => requirePort({ port: currentDelegationDecisionPort() })(params),
+};
+
+type ForwardParams = {
+  readonly bus: AutoBridgeBus;
+};
+
+const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
+  const client = await createAutoBridgeClient({ bus, newId: () => crypto.randomUUID() });
+  registerTreeStopPort({ port: client.ports.stop });
+  registerTreeRetryPort({ port: client.ports.retry });
+  registerDelegationDecisionPort({ port: client.ports.decision });
+  registerAutoUserTurnPort({ port: client.ports.userTurn });
+  return () => {
+    client.close();
+    registerTreeStopPort({ port: null });
+    registerTreeRetryPort({ port: null });
+    registerDelegationDecisionPort({ port: null });
+    registerAutoUserTurnPort({ port: null });
+  };
+};
+
 const sleep = ({ ms }: SleepParams): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -31,15 +84,19 @@ export type StartAutoRuntimeParams = Readonly<{
   db?: Database;
   isEnabled?: boolean;
   tickMs?: number;
+  bus?: AutoBridgeBus;
+  isMain?: boolean;
 }>;
 
 export const startAutoRuntime = async ({
   db = tauriDatabase,
   isEnabled = AUTO_GATES.isDelegationEnabled,
   tickMs = AUTO_TICK_MS,
+  bus = tauriAutoBridgeBus,
+  isMain = isMainWindow(),
 }: StartAutoRuntimeParams = {}): Promise<() => void> => {
-  if (!isMainWindow()) {
-    return () => undefined;
+  if (!isMain) {
+    return forwardToMain({ bus });
   }
   const getState = useAppStore.getState;
   const holder: { runtime: AutoRuntime | null } = { runtime: null };
@@ -63,7 +120,28 @@ export const startAutoRuntime = async ({
       return outcome.kind === 'idle' && outcome.reason === 'not_owner' ? 'not_owner' : 'stopped';
     },
   });
+  registerTreeRetryPort({
+    port: async ({ treeId }) => {
+      const outcome = await runtimeOf().retry(brandId<AutoTreeId>({ value: treeId }));
+      if (outcome.kind === 'refused') {
+        return { kind: 'refused', message: outcome.message };
+      }
+      if (outcome.kind === 'idle' && outcome.reason === 'not_owner') {
+        return { kind: 'refused', message: 'Another window runs this conversation. Retry there.' };
+      }
+      return { kind: 'retried' };
+    },
+  });
+  const unserve = await serveAutoBridge({
+    bus,
+    ports: REGISTERED_PORTS,
+    onError: (error) => {
+      void getState().reportError({ title: 'Auto could not answer another window', error });
+    },
+  });
   const unregister = (): void => {
+    unserve();
+    registerTreeRetryPort({ port: null });
     registerAutoUserTurnPort({ port: null });
     registerAutoDrivePort({ port: null });
     registerDelegationDecisionPort({ port: null });

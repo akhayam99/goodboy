@@ -1,6 +1,6 @@
 export type DelegationDecision = 'confirm' | 'decline';
 
-type DelegationDecisionResult = 'confirmed' | 'declined' | 'lost';
+export type DelegationDecisionResult = 'confirmed' | 'declined' | 'lost';
 
 type DecisionParams = {
   readonly delegationId: string;

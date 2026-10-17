@@ -37,6 +37,8 @@ const AUTO_ATTACHMENTS_MESSAGE = 'Auto takes images in a message, not other file
 const AUTO_IMAGES_LOST_MESSAGE = 'Auto could not keep the images. Attach them again.';
 const AUTO_MESSAGE_LOST_MESSAGE = 'Auto could not take your message. Send it again in a moment.';
 
+const AUTO_NO_RUNTIME_MESSAGE = 'Auto is not running yet. Send it again in a moment.';
+
 const REFUSED_TITLE = "Auto didn't get your message";
 
 type RefuseParams = {
@@ -82,10 +84,6 @@ export const routeAutoUserTurn = async ({
   if (input.origin !== undefined && input.origin !== 'operator') {
     return null;
   }
-  const port = currentAutoUserTurnPort();
-  if (port === null) {
-    return null;
-  }
   const state = get();
   const agentId = input.agentId ?? state.selectedAgentId[input.sessionId] ?? null;
   if (agentId === null) {
@@ -104,6 +102,10 @@ export const routeAutoUserTurn = async ({
   const session = sessionById(state.sessions, input.sessionId);
   if (session === undefined) {
     return null;
+  }
+  const port = currentAutoUserTurnPort();
+  if (port === null) {
+    return refuse({ get, input, message: AUTO_NO_RUNTIME_MESSAGE });
   }
   const given = input.attachments ?? [];
   if (given.some((attachment) => !attachment.mimeType.startsWith('image/'))) {

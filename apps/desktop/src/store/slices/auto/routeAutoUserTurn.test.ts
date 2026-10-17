@@ -201,10 +201,22 @@ describe('a message typed to an Auto agent', () => {
     expect(reportError).toHaveBeenCalledTimes(1);
   });
 
-  it('is left to the plain turn when there is no Auto door', async () => {
-    const { get } = harness({ agents: [autoRow] });
+  it('refuses the message when there is no Auto door, never sending it as a plain turn', async () => {
+    const { get, reportError, appendTurnEvent } = harness({ agents: [autoRow] });
 
-    expect(await routeAutoUserTurn({ get, input: inputOf() })).toBeNull();
+    await expect(routeAutoUserTurn({ get, input: inputOf() })).rejects.toThrow(
+      'Auto is not running yet. Send it again in a moment.',
+    );
+    expect(reportError).toHaveBeenCalledTimes(1);
+    expect(appendTurnEvent).not.toHaveBeenCalled();
+  });
+
+  it('leaves a plain agent to the plain turn when there is no Auto door', async () => {
+    const { get } = harness({
+      agents: [{ id: CHILD_AGENT, kind: 'implementer', parentAgentId: undefined }],
+    });
+
+    expect(await routeAutoUserTurn({ get, input: inputOf({ agentId: CHILD_AGENT }) })).toBeNull();
   });
 
   it('leaves a delivery, a workflow turn and a continuation to the plain turn', async () => {

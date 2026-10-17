@@ -1,18 +1,13 @@
 import {
   getAutoTree,
-  insertAutoOutboxStatement,
   listAutoDelegations,
   listAutoOutbox,
   listOpenAutoDelegations,
   reconcileAutoReservationStatement,
-  type AutoOutboxRow,
   type AutoPhase,
-  type AutoTree,
-  type NewAutoOutbox,
-  type Statement,
 } from '@goodboy/db';
-import { brandId, type AutoOutboxId } from '@goodboy/types';
 import { applyAutoBlock } from './applyAutoBlock';
+import { requeueStatements } from './requeueStatements';
 import type { AutoTurnEnded } from './ports';
 import type { AgentVerbContext } from './verbContext';
 
@@ -46,30 +41,6 @@ const reconcileTurnCost = async ({ ctx, ended }: ReconcileParams): Promise<void>
     ],
   });
 };
-
-type RequeueParams = {
-  readonly ctx: AgentVerbContext;
-  readonly tree: AutoTree;
-  readonly rows: ReadonlyArray<AutoOutboxRow>;
-};
-
-const requeueStatements = ({ ctx, tree, rows }: RequeueParams): ReadonlyArray<Statement> =>
-  rows.map((row) => {
-    const payload =
-      typeof row.payload === 'object' && row.payload !== null
-        ? { ...row.payload, delivery: undefined, restartOf: row.id }
-        : { restartOf: row.id };
-    const copy: NewAutoOutbox = {
-      id: brandId<AutoOutboxId>({ value: ctx.ports.newId() }),
-      treeId: tree.id,
-      generation: tree.generation,
-      kind: row.kind,
-      joinKey: `redeliver:${row.id}`,
-      payload,
-      nowMs: ctx.now(),
-    };
-    return insertAutoOutboxStatement({ outbox: copy });
-  });
 
 type NextPhaseParams = {
   readonly pendingCount: number;

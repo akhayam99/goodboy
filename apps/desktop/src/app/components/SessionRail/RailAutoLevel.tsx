@@ -7,14 +7,16 @@ import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { sessionTitle } from '../../../features/session/sessionTitle';
 import { useAutoTreeActions } from '../../../features/auto/chat/useAutoTreeActions';
 import { useAutoLevel } from '../../../features/auto/level/useAutoLevel';
-import { RAIL_BUTTON_IDLE, RAIL_NODE_CURRENT, RailButton } from '../SideColumn/RailButton';
+import {
+  RAIL_BUTTON_IDLE,
+  RAIL_NODE_BUTTON,
+  RAIL_NODE_CURRENT,
+  RailButton,
+} from '../SideColumn/RailButton';
 
 type Props = {
   readonly session: Session;
 };
-
-const RAIL_AUTO_BUTTON =
-  'relative flex h-7 w-10 shrink-0 items-center justify-center gap-1 rounded-md motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
 export const RailAutoLevel = ({ session }: Props) => {
   const level = useAutoLevel({ session });
@@ -45,10 +47,12 @@ export const RailAutoLevel = ({ session }: Props) => {
               aria-current={isCurrent ? 'page' : undefined}
               onClick={() => actions.openRow(row)}
               data-rail-auto-role={row.role}
-              className={cn(RAIL_AUTO_BUTTON, isCurrent ? RAIL_NODE_CURRENT : RAIL_BUTTON_IDLE)}
+              className={cn(RAIL_NODE_BUTTON, isCurrent ? RAIL_NODE_CURRENT : RAIL_BUTTON_IDLE)}
             >
               <AgentKindChip kind={row.role} density="glyph" isDecorative />
-              <WorkNode state={row.node} label={row.word} mark={{ kind: 'dot' }} size="sm" />
+              <span data-rail-auto-node="" className="absolute -bottom-0.5 -right-0.5 flex">
+                <WorkNode state={row.node} label={row.word} mark={{ kind: 'dot' }} size="sm" />
+              </span>
             </button>
           </Tooltip>
         );

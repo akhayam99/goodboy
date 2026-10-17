@@ -1,4 +1,5 @@
 import type { Agent, TurnState } from '@goodboy/types';
+import { AUTO_BLOCK_TEXT } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { refusalNoticeOf } from '../../auto/chat/refusalNoticeOf';
@@ -19,6 +20,12 @@ export type AutoTreeLiveParams = Readonly<{
 }>;
 
 const STOP = [TAIL_ACTION.stopAuto];
+
+const RESTING: ReadonlySet<AutoTreeView['tree']['phase']> = new Set([
+  'answering',
+  'done',
+  'finished',
+]);
 
 const HANDS_OVER: ReadonlySet<AutoTreeView['tree']['phase']> = new Set([
   'delegating',
@@ -51,6 +58,32 @@ const pausedAtLimit = ({ view }: ViewParams): TailFacts | null => {
   };
 };
 
+const blocked = ({ view }: ViewParams): TailFacts => {
+  const reason = view.tree.blockedReason;
+  if (reason === AUTO_BLOCK_TEXT.budget) {
+    return {
+      state: 'failed',
+      phrase: `Blocked: ${reason}`,
+      startedAt: null,
+      actions: [TAIL_ACTION.raiseLimit, TAIL_ACTION.changeLimit],
+    };
+  }
+  if (reason === AUTO_BLOCK_TEXT.limit_wall_clock) {
+    return {
+      state: 'failed',
+      phrase: `Blocked: ${reason}`,
+      startedAt: null,
+      actions: [TAIL_ACTION.viewTranscript],
+    };
+  }
+  return {
+    state: 'failed',
+    phrase: reason === null || reason === '' ? 'Blocked' : `Blocked: ${reason}`,
+    startedAt: null,
+    actions: [TAIL_ACTION.retry, TAIL_ACTION.viewTranscript],
+  };
+};
+
 const working = ({ phrase }: PhraseParams): TailFacts => ({
   state: 'working',
   phrase,
@@ -73,15 +106,10 @@ export const autoTreeLive = ({
     return { state: 'stopped', phrase: 'Stopped by you', startedAt: null, actions: [] };
   }
   if (phase === 'blocked') {
-    return {
-      state: 'failed',
-      phrase: 'Blocked, open the chat',
-      startedAt: null,
-      actions: [TAIL_ACTION.viewTranscript],
-    };
+    return blocked({ view });
   }
   const paused = pausedAtLimit({ view });
-  if (paused !== null && phase !== 'done') {
+  if (paused !== null && !RESTING.has(phase)) {
     return paused;
   }
   if (rootTurn?.kind === 'running') {
@@ -94,7 +122,7 @@ export const autoTreeLive = ({
       stopAction: TAIL_ACTION.stopAuto,
     });
   }
-  if (phase === 'deciding' || phase === 'answering') {
+  if (phase === 'deciding') {
     return working({ phrase: 'Deciding what to do next' });
   }
   if (view.pendingRefusal !== null && HANDS_OVER.has(phase)) {

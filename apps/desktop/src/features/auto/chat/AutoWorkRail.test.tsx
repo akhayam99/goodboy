@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { brandId, type IsoDateTime, type ProviderRunId, type TurnState } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import { aDelegation, aPlanRow, aView, FIXTURE_ROOT } from '../testing/autoViewFixtures';
 import { AutoWorkRail } from './AutoWorkRail';
@@ -98,9 +99,19 @@ describe('railRowsOf', () => {
   });
 
   it('says Running while Auto answers, Idle with a gray node when it rests and Done once closed', () => {
-    expect(railRowsOf({ view: aView(), agents: [], rootRouting: ROOT_ROUTING })[0]?.word).toBe(
-      'Running',
-    );
+    const answering = {
+      kind: 'running',
+      runId: brandId<ProviderRunId>({ value: 'run-answer' }),
+      startedAt: brandId<IsoDateTime>({ value: '2026-10-16T09:00:00.000Z' }),
+    } satisfies TurnState;
+    expect(
+      railRowsOf({ view: aView(), agents: [], rootRouting: ROOT_ROUTING, rootTurn: answering })[0]
+        ?.word,
+    ).toBe('Running');
+    expect(railRowsOf({ view: aView(), agents: [], rootRouting: ROOT_ROUTING })[0]).toMatchObject({
+      word: 'Idle',
+      node: 'queued',
+    });
     const idle = railRowsOf({
       view: aView({ phase: 'done' }),
       agents: [],

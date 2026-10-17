@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { formatUsd } from '@goodboy/ui';
+import { Notice, formatUsd } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
@@ -84,6 +84,7 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
 
   const handlers: Partial<Record<TailActionId, () => void>> = {
     stopAuto: () => void actions.stop({ view }),
+    retry: () => void actions.retry({ view }),
     changeApproach: () => void actions.changeApproach({ view }),
     raiseLimit: () => void raise(),
     changeLimit: () =>
@@ -94,8 +95,19 @@ export const AutoTail = ({ sessionId, view, rootAgent }: Props) => {
   const onAction = (id: TailActionId) => handlers[id]?.();
 
   return (
-    <div role="status" aria-live="polite" data-auto-tail="">
-      <TailLine facts={withRaiseLabel({ facts, raisedTo })} onAction={onAction} />
+    <div data-auto-tail="" className="flex flex-col gap-2">
+      <div role="status" aria-live="polite">
+        <TailLine facts={withRaiseLabel({ facts, raisedTo })} onAction={onAction} />
+      </div>
+      {actions.failure === null ? null : (
+        <Notice
+          tone="danger"
+          placement="inline"
+          role="alert"
+          title={actions.failure.title}
+          body={actions.failure.message}
+        />
+      )}
     </div>
   );
 };

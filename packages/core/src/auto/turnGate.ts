@@ -11,12 +11,15 @@ export type AutoBlockReason = (typeof AUTO_BLOCK_REASONS)[number];
 
 export const AUTO_BLOCK_TEXT = {
   limit_turns:
-    'Auto used all the turns it may take in this conversation. Continue to allow a few more.',
+    'Auto used all the turns it may take in this conversation. Retry to allow a few more.',
   limit_no_progress:
-    'Auto answered three times in a row without handing work over or saying anything. Continue to try again.',
+    'Auto answered three times in a row without handing work over or saying anything. Retry to try again.',
   limit_wall_clock: 'This conversation reached its time limit.',
   budget: 'The budget left does not cover another Auto turn. Raise the limit to go on.',
 } as const satisfies Readonly<Record<AutoBlockReason, string>>;
+
+export const AUTO_STALE_DECIDE_TEXT =
+  'Auto stopped answering before it replied. Retry to send the message again.';
 
 export type TurnGateParams = Readonly<{
   turnsUsed: number;

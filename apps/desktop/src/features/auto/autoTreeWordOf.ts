@@ -42,7 +42,7 @@ export const autoTreeWordOf = ({ view, rootTurn }: Params): AutoTreeWord => {
     return { word: 'Needs you', node: 'alert', isLive: false };
   }
   const isRootTurnLive = rootTurn?.kind === 'running' || rootTurn?.kind === 'starting';
-  if (phase === 'done') {
+  if (phase === 'done' || phase === 'answering') {
     return isRootTurnLive ? RUNNING : { word: 'Idle', node: 'queued', isLive: false };
   }
   if (projectAskOf({ view }) !== null || isAutoPlanAwaitingApproval({ view })) {

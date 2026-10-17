@@ -765,7 +765,13 @@ kept.
   on a planned run id; then the turn starts under the first row id as its delivery id,
   and a second transaction accepts the rows. A refused start gives the rows, the
   reservation and the turn count back and blocks the tree with the reason. A claim that
-  dies in between is found again by the delivery id. `settleAutoTurn.ts` picks the next
+  dies in between is found again by the delivery id. A blocked tree writes nothing until
+  something changes: a gate block on an already blocked tree is not written again, only a
+  budget block resumes by itself once the limit covers a turn, and every other block waits
+  for `retryBlockedTree.ts` (Retry, a message from the user, or the recovery after a
+  restart for a block that is not a gate). Retry resets the no progress streak, takes one
+  grant at the turn limit (`AUTO_MAX_GRANTS_PER_TREE`) and refuses past the time limit or
+  the budget. `settleAutoTurn.ts` picks the next
   phase when the turn ends (delegating, waiting, merging, done or answering), puts the
   batch back when the turn failed, and counts a turn with no answer and no work, or whose
   block was refused. The text it delivers (`buildDeliveryMessage.ts`) starts with a digest of the
@@ -791,7 +797,12 @@ kept.
   cancel that fails leaves the tree `stopping`, and a restart resumes it. A late result of
   the old generation is dropped by the fences. A new user message reopens a stopped tree.
 - `enforceDeadlines.ts` cancels a child past its deadline and settles it timed out only
-  after the exit is confirmed; a waiting child needs no process to expire. `recover.ts`
+  after the exit is confirmed; a waiting child needs no process to expire.
+  `expireStaleDecide.ts` handles a tree still `deciding` `AUTO_STALE_DECIDE_MS` (10
+  minutes) after it entered the phase with no live root run: it settles the turn from the
+  run outcome when one is stored, else moves the tree to `blocked` with
+  `AUTO_STALE_DECIDE_TEXT`, reconciles the turn reservation and puts the delivered rows
+  back as pending copies for Retry. A live run is never touched. `recover.ts`
   rebuilds a tree after a restart in the order of the recovery table: claimed rows are
   accepted when the registry holds the run and given back when it does not, a turn or a
   child whose run is gone is closed from what the run left behind (a child with no

@@ -41,7 +41,7 @@ export type DeliverOutcome =
   | Readonly<{ kind: 'accept_pending'; deliveryId: string; runId: string }>
   | Readonly<{
       kind: 'idle';
-      reason: 'not_owner' | 'no_tree' | 'stopped' | 'no_rows' | 'lost_race';
+      reason: 'not_owner' | 'no_tree' | 'stopped' | 'no_rows' | 'lost_race' | 'blocked';
     }>
   | Readonly<{ kind: 'blocked'; reason: string }>;
 
@@ -59,6 +59,9 @@ type BlockParams = {
 };
 
 const blockTree = async ({ ctx, tree, reason }: BlockParams): Promise<DeliverOutcome> => {
+  if (tree.phase === 'blocked') {
+    return { kind: 'idle', reason: 'blocked' };
+  }
   await ctx.scheduler.transition({
     treeId: tree.id,
     expect: { phaseRev: tree.phaseRev, generation: tree.generation, from: [tree.phase] },
@@ -251,6 +254,9 @@ export const deliverNext = async ({
   });
   if (gate !== null) {
     return blockTree({ ctx, tree, reason: AUTO_BLOCK_TEXT[gate] });
+  }
+  if (tree.phase === 'blocked' && tree.blockedReason !== AUTO_BLOCK_TEXT.budget) {
+    return { kind: 'idle', reason: 'blocked' };
   }
   const stored = storedDeliveryOf({ value: primary.payload });
   const text =
