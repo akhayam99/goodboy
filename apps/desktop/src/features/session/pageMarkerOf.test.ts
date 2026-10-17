@@ -8,7 +8,7 @@ describe('pageMarkerOf', () => {
 
     expect(marker?.label).toBe('Experimental');
     expect(marker?.why).toBe(
-      'Auto picks and starts agents on its own, under a limit. Its plan approval setting has no screen yet.',
+      'Auto picks and starts agents on its own, under a limit. Its choices are still being tuned.',
     );
   });
 

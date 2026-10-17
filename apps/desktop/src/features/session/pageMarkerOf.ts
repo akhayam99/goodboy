@@ -8,7 +8,7 @@ export type PageMarker = {
 
 const EXPERIMENTAL: PageMarker = {
   label: 'Experimental',
-  why: 'Auto picks and starts agents on its own, under a limit. Its plan approval setting has no screen yet.',
+  why: 'Auto picks and starts agents on its own, under a limit. Its choices are still being tuned.',
 };
 
 const DEPRECATED: PageMarker = {

@@ -774,8 +774,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   agents (Auto is always on, so it always shows), Artifacts, and Questions last, always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
   Two entries carry a marker: **Auto agents** reads **Experimental** ("Auto
-  picks and starts agents on its own, under a limit. Its plan approval setting
-  has no screen yet.") and, while Auto is shown, **Agents** reads
+  picks and starts agents on its own, under a limit. Its choices are still
+  being tuned.") and, while Auto is shown, **Agents** reads
   **Deprecated** ("Use Start an auto: Auto picks and starts the right agent.
   Agents you start by hand keep working."). the marker is a quiet gray `Chip` right of the label, beside the count, from `pageMarkerOf` (`features/session/pageMarkerOf.ts`), and its why is the row tooltip, after the count
   fact. Start an agent stays available.
