@@ -1374,8 +1374,8 @@ activity yet show the plain overview with its actions.
   the key is bound once per visible session (`useAskOpenShortcut` in
   `SessionWorkspace`), not by the row, so two mounted pages never bind it
   twice.
-- **The Overview header** reads `Overview`. The session title and its rename
-  live on the main sidebar row; Pin and Refresh on the session rail
+- **The Overview header** reads the session title, renamed in place
+  (`SessionOverviewPane/OverviewTitle`, see above) and on the main sidebar row; Pin and Refresh on the session rail
   top row, Archive and Delete at its foot. The header holds
   **New**
   (`OverviewActions`, ⌘N on the Overview, a menu from the `newForm` kind of

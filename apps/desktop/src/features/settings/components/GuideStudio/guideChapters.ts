@@ -121,7 +121,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pinned scripts',
-        desc: 'Pin a script per project from Scripts, at the foot of the session rail, or from the card of the project on Projects. It holds across worktrees and shows under $ in the palette. A project with nothing pinned shows Suggested scripts with a Pin on each.',
+        desc: 'Pin a script per project from Scripts, in the session tools, or from the card of the project on Projects. It holds across worktrees and shows under $ in the palette. A project with nothing pinned shows Suggested scripts with a Pin on each.',
+      },
+      {
+        term: 'Repositories',
+        desc: 'Repositories, beside the workspace switcher in the top bar, says which repos have something to pull, such as 3 behind or Diverged. Goodboy fetches every 5 minutes without moving a local branch. Pull updates one repo, Pull all every repo that can fast-forward, and Settings, General, Repositories sets how often it checks.',
       },
       {
         term: 'Monitoring',
@@ -277,7 +281,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     group: 'task',
     title: 'Sidebar, session rail and panes',
     concept: 'workspace',
-    lead: 'Three places hold everything you move through. The sidebar stays on the workspace, the session rail drills inside one session and keeps its tools at the foot, and the panes open beside the page.',
+    lead: 'Three places hold everything you move through. The sidebar stays on the workspace, the session rail drills inside one session, and the session tools open panes beside the page.',
     points: [
       {
         term: 'Sidebar',
@@ -297,7 +301,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rail',
-        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. Its top row holds the fold button, then Pin, pressed while it is on, and Refresh. Then come its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents with an Experimental chip while Auto is on, Artifacts and Questions. A dot beside a count says something runs, and a warning dot says a question waits. The Projects card is a tree: click a project to fold its branches, and the arrow before a branch to fold its Pull request, Comments, Files with the lines added and removed, and Checks, one click from the session. Each branch starts with its pull request icon in its color, gray for a draft, green when open, amber in the merge queue, violet when merged and red when closed, then its number and one dot for its worst state. A branch that needs you starts open, and the rail remembers what you open. The Linked card lists the work linked to the session. Each card folds from its title and has a + to add. The foot shows what the session spent, against its limit when it has one, and opens the spend and limit; Archive and Delete sit under it; rename the session from its row in the sidebar. Drag the rail's edge to resize it.",
+        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. Its top row holds the fold button, then Pin, pressed while it is on, and Refresh. Then come its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents with an Experimental chip, Artifacts and Questions. A dot beside a count says something runs, and a warning dot says a question waits. The Projects card is a tree: click a project to fold its branches, and the arrow before a branch to fold its Pull request, Comments, Files with the lines added and removed, and Checks, one click from the session. Each branch starts with its pull request icon in its color, gray for a draft, green when open, amber in the merge queue, violet when merged and red when closed, then its number and one dot for its worst state. A branch that needs you starts open, and the rail remembers what you open. The Linked card lists the work linked to the session. Each card folds from its title and has a + to add. The foot shows what the session spent, against its limit when it has one, and opens the spend and limit; Archive and Delete sit under it; rename the session from its Overview title or its row in the sidebar. Drag the rail's edge to resize it.",
       },
       {
         term: 'Levels',
@@ -305,7 +309,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Fold the rail',
-        desc: 'Fold session rail, the button at the top of the rail, shrinks it to the icons of the current level, and Show session rail brings it back. It keeps its own setting, apart from the sidebar. In a narrow window the sidebar folds first and then the rail, so the page keeps room to work; open one by hand and it stays open until the window grows.',
+        desc: 'Fold session rail, the button at the top of the rail, shrinks it to the icons of the current level, and Show session rail brings it back. ⌥⌘B folds it too, and folds the inner column of any other page, such as the chat list. It keeps its own setting, apart from the sidebar. In a narrow window the sidebar folds first and then the rail, so the page keeps room to work; open one by hand and it stays open until the window grows.',
       },
       {
         term: 'Session tools',
@@ -317,7 +321,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Terminal, Explore and Scripts',
-        desc: 'Terminal opens in the worktree of the session, and the picker named Terminal folder in its header switches the folder. Explore browses the files of the session, and a file opens in place with Back to files. Scripts lists the scripts of the project, and an output opens in place with Back to scripts.',
+        desc: 'Terminal opens in the worktree of the session, and the picker named Terminal folder in its header, the project then the branch, switches the folder; ⌘N opens it. Explore browses the files of the session, and a file opens in place with Back to files. Scripts lists the scripts of the project, and an output opens in place with Back to scripts.',
       },
     ],
     links: [],
@@ -343,11 +347,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'New menu',
-        desc: 'New in the Overview header opens a menu: Run a workflow, Orchestrate, Ask an agent, Start Auto while Auto is on, Write a report and Draw a wireframe. Each opens its form in a pane beside the page. Run a workflow and Orchestrate take a goal with Autonomy, Starts and Limit. Ask an agent starts one role with a goal, a role and a model. Write a report and Draw a wireframe draft a document. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
+        desc: 'New in the Overview header opens a menu: Run a workflow, Orchestrate, Ask an agent, Start Auto, Write a report and Draw a wireframe. Each opens its form in a pane beside the page. Run a workflow and Orchestrate take a goal with Autonomy, Starts and Limit. Ask an agent starts one role with a goal, a role and a model. Write a report and Draw a wireframe draft a document. The button is filled when nothing is running, blocked or waiting on a question and Next has nothing to offer.',
       },
       {
         term: 'Overview',
-        desc: 'The Overview reads top to bottom: the goal, then anything a worktree needs you to decide (a closed worktree with Reopen, a failed action with Retry, a stopped rebase, a branch that moved), then Needs you, Next and Activity. Projects and linked work live in the session rail.',
+        desc: 'The Overview is titled with the session name: one click renames it in place, Enter saves and Esc cancels, up to 120 characters. It reads top to bottom: the goal, then anything a worktree needs you to decide (a closed worktree with Reopen, a failed action with Retry, a stopped rebase, a branch that moved), then Needs you, Next and Activity. Projects and linked work live in the session rail.',
       },
       {
         term: 'Next steps',
@@ -355,7 +359,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise limit. Pause run, then Resume run in its place, and Stop run sit in the run header, and Autonomy and Skip step in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
+        desc: 'Opening a run with a fixed list of steps moves the session rail into it: back to Runs, the run title, Overview, every step in order with its sub-agents, Add step, and the limit with what it spent at the foot. The center shows the step you pick as its conversation, and the line at its end says what the run waits for with the one button that moves it on, such as Start step 3, Review plan or Raise limit. The time on a step and on that line counts only the time agents worked, never a wait for you. Pause run, then Resume run in its place, and Stop run sit in the run header, and Autonomy and Skip step in the run menu. An orchestrated run does not step the rail in: it stays on Orchestrated as one page.',
       },
       {
         term: 'Agent suggests',
@@ -375,7 +379,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto',
-        desc: 'Auto is an experimental agent that is always available. Start Auto in the session New menu starts it: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a limit. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself.',
+        desc: 'Auto is an experimental agent that is always available. Start Auto in the session New menu starts it: it answers what it can, hands the rest to child agents of the roles it picks, waits for their results and goes on, all under a limit. Its agents live under Auto agents in the session rail, where each shows its state and the foot says Limit and what is left. You can write to Auto at any time, and Move to Auto hands it an agent you started yourself. When Auto cannot decide its next step it reads Blocked with the reason and Retry, and Stop and Retry work from every window.',
       },
       {
         term: 'Orchestrated or Auto',
@@ -391,7 +395,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Open questions',
-        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions view lists what waits on you, and the same card sits in the transcript. A blocking question holds its step until you answer or choose Send as message, and Let an agent decide hands it to another agent.',
+        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions page lists them under Needs you and Answered, a row opens its card in a drawer, and the same card sits in the transcript. A blocking question holds its step until you answer or choose Send as message, and Let an agent decide hands it to another agent.',
       },
     ],
     links: [{ label: 'Open Workflows', target: { kind: 'studio', studio: { kind: 'workflow' } } }],
@@ -413,7 +417,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context pane',
-        desc: 'Open Context from the foot of the session rail, or with ⌘⌥C, to see the goal, decisions and summary, and Copy context. A dot on Context means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Explanations lists what agents explained about your topics, for you only, with Dismiss and Undo.',
+        desc: 'Open Context from the session tools, or with ⌘⌥C, to see the goal, decisions and summary, and Copy context. A dot on Context means something changed since you last looked, and those changes come first, with Mark as read on the Decisions list. Context updates, at the top, shows the last update with its model and cost, and Update now queues one. Explanations lists what agents explained about your topics, for you only, with Dismiss and Undo.',
       },
       {
         term: 'Visible to',
@@ -486,7 +490,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Comments',
-        desc: "The review threads of the branch and your own notes in one list, each with a chip, Note or On GitHub, and the open one beside the list. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix comments opens a drawer beside the page with every open comment grouped by file. Start fix runs one agent through the ones you check, in its own copy of the branch, and Analyze only leaves its changes as proposals. Each comment ends in Fix proposed, Question, No change or Failed, and Apply 3 fixes, Post 2 replies, Retry and Accept 5 act on many at once, with Undo.",
+        desc: "The review threads of the branch and your own notes in one full list, each with a chip, Note or On GitHub. A row opens the comment in a drawer with the code around the line, its thread, and Fix, Reply and Skip with their keys F, R and S; J and K move to the next or previous comment. Each comment is Working, Needs you, Ready, Couldn't fix or Done, and the list groups by those words with Needs you on top. Fix comments, in the Branch header, opens a drawer beside the page with every open comment grouped by file. Start fix runs one agent through the ones you check, in its own copy of the branch, and Analyze only leaves its changes as proposals. Each comment ends in Fix proposed, Question, No change or Failed, and Apply 3 fixes, Post 2 replies, Retry and Accept 5 act on many at once, with Undo.",
       },
       {
         term: 'Fix run',

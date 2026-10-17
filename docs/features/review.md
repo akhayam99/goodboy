@@ -98,7 +98,7 @@ The **Pull request** entry is the pull request. Its properties come first, group
 
 ### One trail to the Branch page
 
-Every way into a branch, from the palette, a notification, a chat card or the board, opens the same Branch page with the same trail. **Up** goes to the crumb on the left and **Back** walks your history.
+Every way into a branch, from the palette, a notification, a chat card or the board, opens the same Branch page with the session rail stepped into that branch. The rail's back row steps out to the session, and **Back** walks your history.
 
 ### Write it
 

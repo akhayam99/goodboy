@@ -65,7 +65,7 @@
         },
         {
           "title": "How do you want to start?",
-          "text": "A new session draft offers three tabs: pick up a task, run a workflow or ask an agent. It becomes a session only when you press Start.",
+          "text": "A new session draft asks how you want to start: pick up a task, run a workflow, orchestrate or ask an agent. It becomes a session only when you press Start.",
           "group": "Start a task",
           "also": "start tabs",
           "shown": true
@@ -96,7 +96,7 @@
         },
         {
           "title": "Start more work in a session",
-          "text": "New in a session opens one drawer with Run, Agent and Write. Run plans the steps from a goal, Agent starts one role and Write drafts a report or a wireframe.",
+          "text": "New in a session lists Run a workflow, Orchestrate, Ask an agent, Start Auto, Write a report and Draw a wireframe. Each opens its form beside the page.",
           "group": "Start a task",
           "also": "new in a session"
         },
@@ -186,7 +186,7 @@
       "items": [
         {
           "title": "Session overview",
-          "text": "Find the goal, linked issues, projects, cost and the buttons to start an agent on one screen. Each project lists its branches and pull request state.",
+          "text": "The Overview is titled with the session name, renamed in one click, and reads the goal, what needs you, Next and Activity. Projects, branches and their pull request state sit in the session rail beside it.",
           "group": "Overview and activity",
           "main": true
         },
@@ -256,7 +256,7 @@
         },
         {
           "title": "Sidebar",
-          "text": "One column on the left holds Board, Tasks, Chat, Workflows and your sessions, on every screen. Fold it with ⌘B and the icons stay.",
+          "text": "One column on the left holds Sessions, Tasks, Chat, Workflows, Terminal and your sessions, on every screen. An open session adds its own rail with its pages, projects and branches. Fold the sidebar with ⌘B and the icons stay.",
           "group": "Search and navigation",
           "also": "sidebar"
         },
@@ -301,7 +301,7 @@
         },
         {
           "title": "List view",
-          "text": "See every session in one table with aligned columns: key, title, project, signal and last update.",
+          "text": "See every session in one table, grouped by the same stages as the board, with aligned columns: key, title, project, signal and last update.",
           "group": "The board",
           "also": "sessions list",
           "shown": true
@@ -706,7 +706,7 @@
         },
         {
           "title": "Review sources",
-          "text": "Each comment says its host, GitHub, GitLab or Bitbucket. Your notes sit in the same list, marked Note. Reading and replying work everywhere, and resolving works where the host allows it.",
+          "text": "Each comment says its host, GitHub, GitLab or Bitbucket. Your notes sit in the same list, marked Note, and a row opens the comment in a drawer with Fix, Reply and Skip. Reading and replying work everywhere, and resolving works where the host allows it.",
           "group": "Review and resolve on the Branch page",
           "also": "review sources",
           "shown": true
@@ -781,7 +781,7 @@
         },
         {
           "title": "One trail to the Branch page",
-          "text": "Open a branch from the palette, a notification, a chat card or the board and the trail reads the same. Up is the crumb on the left, and Back is history.",
+          "text": "Open a branch from the palette, a notification, a chat card or the board and the session rail steps into the same branch. The back row steps out, and Back is history.",
           "group": "Review and resolve on the Branch page",
           "also": "review layers"
         },
@@ -1382,7 +1382,7 @@
         },
         {
           "title": "Guide",
-          "text": "Learn how Goodboy works in 19 short chapters that follow a task. Open Guide from the palette.",
+          "text": "Learn how Goodboy works in short chapters that follow a task. Open Guide from the palette.",
           "group": "Security, backup and updates",
           "also": "guide"
         },
