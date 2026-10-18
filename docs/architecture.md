@@ -86,6 +86,14 @@ while Goodboy is open is found), then the inherited one, then a static list:
 tries each extension of `PATHEXT` in order, so `claude` finds `claude.exe`
 before `claude.cmd`. Lists are split and joined only by the helpers in
 `apps/desktop/src-tauri/src/platform/paths.rs`, never on a hand-written `:`.
+`command` and `command_with_login_env` start the program by its full path and
+with `CREATE_NO_WINDOW`, so no console window flashes behind the app. A CLI
+installed by npm is a `.cmd` script, and Windows cannot pass an argument with
+a line break, or a command line over 8191 characters, through one: a turn or
+chat that would do so fails before it starts and says to install the native
+build (`batch_argument_problem`). `rust-platform-literals.test.ts` counts
+`Command::new`, shell paths, `:` splits and `HOME` outside `platform/` and
+`path_env.rs`, and the count only falls.
 
 ### Processes Goodboy starts
 

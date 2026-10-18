@@ -1,0 +1,19 @@
+{
+  "apps/desktop/src-tauri/src/app_platform.rs": 2,
+  "apps/desktop/src-tauri/src/artifact_mirror.rs": 2,
+  "apps/desktop/src-tauri/src/editor.rs": 4,
+  "apps/desktop/src-tauri/src/explore.rs": 4,
+  "apps/desktop/src-tauri/src/external_terminal.rs": 6,
+  "apps/desktop/src-tauri/src/folder_signals.rs": 1,
+  "apps/desktop/src-tauri/src/monitor/mod.rs": 1,
+  "apps/desktop/src-tauri/src/monitor/parse.rs": 1,
+  "apps/desktop/src-tauri/src/monitor/watched.rs": 1,
+  "apps/desktop/src-tauri/src/proc/reap.rs": 7,
+  "apps/desktop/src-tauri/src/provider_lifecycle.rs": 3,
+  "apps/desktop/src-tauri/src/providers/fake_cli_tests.rs": 1,
+  "apps/desktop/src-tauri/src/scripts.rs": 1,
+  "apps/desktop/src-tauri/src/sentry.rs": 1,
+  "apps/desktop/src-tauri/src/skills.rs": 1,
+  "apps/desktop/src-tauri/src/storage.rs": 3,
+  "apps/desktop/src-tauri/src/turn/fake_cli_tests.rs": 2
+}

@@ -130,6 +130,36 @@ pub fn find_program_in(
         .find(|candidate| is_executable_file(candidate))
 }
 
+const BATCH_LINE_LIMIT: usize = 8191;
+
+pub fn batch_argument_problem(command: &std::process::Command) -> Option<String> {
+    let program = Path::new(command.get_program());
+    let is_batch = program
+        .extension()
+        .map(|ext| ext.eq_ignore_ascii_case("cmd") || ext.eq_ignore_ascii_case("bat"))
+        .unwrap_or(false);
+    if !is_batch {
+        return None;
+    }
+    let name = program
+        .file_stem()
+        .map(|stem| stem.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let args: Vec<String> = command
+        .get_args()
+        .map(|arg| arg.to_string_lossy().into_owned())
+        .collect();
+    let has_line_break = args.iter().any(|arg| arg.contains(['\r', '\n']));
+    let length: usize =
+        args.iter().map(|arg| arg.len() + 3).sum::<usize>() + program.as_os_str().len();
+    if !has_line_break && length <= BATCH_LINE_LIMIT {
+        return None;
+    }
+    Some(format!(
+        "{name} is installed as a .cmd script, and Windows cannot pass a prompt with line breaks or longer than {BATCH_LINE_LIMIT} characters through one. Install the native build of {name} so it runs as an .exe."
+    ))
+}
+
 #[cfg(any(windows, test))]
 pub fn windows_install_dirs(
     home: &Path,
@@ -306,6 +336,37 @@ mod tests {
         assert!(dirs.contains(&Path::new("local").join("pnpm")));
         assert!(dirs.contains(&home.join(".local").join("bin")));
         assert!(dirs.contains(&home.join("scoop").join("shims")));
+    }
+
+    #[test]
+    fn a_multi_line_prompt_through_a_cmd_script_is_refused_with_the_reason() {
+        let mut command =
+            std::process::Command::new("C:/Users/dana/AppData/Roaming/npm/claude.cmd");
+        command.args(["-p", "first line\nsecond line"]);
+
+        let problem = batch_argument_problem(&command).expect("a problem");
+
+        assert!(problem.starts_with("claude is installed as a .cmd script"));
+        assert!(problem.contains("native build of claude"));
+    }
+
+    #[test]
+    fn a_long_prompt_through_a_cmd_script_is_refused() {
+        let mut command = std::process::Command::new("codex.CMD");
+        command.args(["exec", &"x".repeat(9000)]);
+
+        assert!(batch_argument_problem(&command).is_some());
+    }
+
+    #[test]
+    fn a_short_single_line_prompt_or_an_exe_is_fine() {
+        let mut through_cmd = std::process::Command::new("claude.cmd");
+        through_cmd.args(["-p", "add a test"]);
+        let mut through_exe = std::process::Command::new("claude.exe");
+        through_exe.args(["-p", "first\nsecond"]);
+
+        assert!(batch_argument_problem(&through_cmd).is_none());
+        assert!(batch_argument_problem(&through_exe).is_none());
     }
 
     #[cfg(windows)]

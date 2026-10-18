@@ -57,10 +57,31 @@ pub fn resolved_path() -> &'static str {
 /// `Command::new` whenever the target binary may live outside the minimal
 /// posix path set.
 pub fn command(binary: &str) -> Command {
-    let mut cmd = Command::new(binary);
+    let mut cmd = Command::new(program_for(binary));
     cmd.env("PATH", resolved_path());
+    hide_console(&mut cmd);
     cmd
 }
+
+#[cfg(windows)]
+fn program_for(binary: &str) -> String {
+    which(binary).unwrap_or_else(|| binary.to_string())
+}
+
+#[cfg(not(windows))]
+fn program_for(binary: &str) -> String {
+    binary.to_string()
+}
+
+#[cfg(windows)]
+fn hide_console(cmd: &mut Command) {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    cmd.creation_flags(CREATE_NO_WINDOW);
+}
+
+#[cfg(not(windows))]
+fn hide_console(_cmd: &mut Command) {}
 
 pub fn which(binary: &str) -> Option<String> {
     let extensions = paths::program_extensions();
@@ -79,11 +100,12 @@ pub fn resolved_env() -> &'static [(String, String)] {
 }
 
 pub fn command_with_login_env(binary: &str) -> Command {
-    let mut cmd = Command::new(binary);
+    let mut cmd = Command::new(program_for(binary));
     for (key, value) in resolved_env() {
         cmd.env(key, value);
     }
     cmd.env("PATH", resolved_path());
+    hide_console(&mut cmd);
     cmd
 }
 

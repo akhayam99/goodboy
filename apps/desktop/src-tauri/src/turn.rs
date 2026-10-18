@@ -271,6 +271,9 @@ fn spawn_leased_child(
             .ok_or(TurnError::WriterLeaseNotOwned)?,
         );
     }
+    if let Some(problem) = crate::platform::paths::batch_argument_problem(command) {
+        return Err(TurnError::Io(std::io::Error::other(problem)));
+    }
     let child = command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

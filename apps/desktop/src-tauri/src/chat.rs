@@ -739,8 +739,11 @@ fn spawn_chat_turn(
     let tag = crate::aux_spawn::tag_spawn(&mut command, crate::aux_spawn::SpawnKind::Chat);
     crate::process_group::isolate(&mut command);
     crate::turn::apply_push_block(&mut command);
+    command.args(&prepared.cli);
+    if let Some(problem) = crate::platform::paths::batch_argument_problem(&command) {
+        return Err(std::io::Error::other(problem).into());
+    }
     let mut child = command
-        .args(&prepared.cli)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
