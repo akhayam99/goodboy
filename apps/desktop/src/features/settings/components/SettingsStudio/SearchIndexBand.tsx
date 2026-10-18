@@ -2,7 +2,6 @@ import { useEffect, useMemo } from 'react';
 import type { ProjectId } from '@goodboy/types';
 import { Band, Button, FieldRow, Listbox } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { searchProgressLabel } from '../../../search/components/SearchMode/searchProgressLabel';
 
@@ -75,8 +74,7 @@ export const SearchIndexBand = () => {
     <Band
       inset="content"
       label="Search"
-      hint="What ⌘F finds. The index lives in this app's database and never leaves this computer. Tool output and terminal output are never indexed."
-      icon={<CONCEPT_ICONS.search size={ICON_SIZE.row} aria-hidden />}
+      hint="What ⌘F finds. The index never leaves this Mac."
       headingLevel={2}
     >
       <div className="flex flex-col">

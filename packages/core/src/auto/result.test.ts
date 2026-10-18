@@ -132,4 +132,14 @@ describe('the outcome of a delegation', () => {
     expect(text).toContain('changed files: src/ledger.ts (attempt)');
     expect(text).toContain('cost 0.42 USD (reported)');
   });
+
+  it('leads with the name of the agent when it has one', () => {
+    const text = renderDelegationResult({
+      result: buildDelegationResult(base()),
+      label: 'Implementer 2',
+    });
+    expect(
+      text.startsWith('- Implementer 2 (implementer agent-implementer-1, delegation-1): completed'),
+    ).toBe(true);
+  });
 });

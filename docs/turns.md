@@ -556,7 +556,9 @@ behavior beyond rendering:
   (Auto's deliveries and a child's first brief, origin `delegation`). Every
   reader of the transcript still sees it (resume, the preamble, retry send it
   again as written); only the chat draws it differently, as the collapsed row
-  `auto_delivery`.
+  `auto_delivery`, which keeps the `runId` of its event: under it sit the cards
+  of the child results that run read (`AutoDeliveryResults`, see
+  [auto.md](auto.md), The chat).
 - `operator_text` is display only: the words a user typed to an Auto agent,
   written when Auto takes the message. It is not a provider turn, so nothing
   that resumes or counts turns reads it, and the question ordinals (which count

@@ -149,7 +149,7 @@ describe('main flows on the real store', () => {
       openWizardStep('first-session');
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
-    fireEvent.click(await screen.findByRole('button', { name: /Start Scout/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(startSessionFromDraft).toHaveBeenCalledOnce());
     expect(startSessionFromDraft).toHaveBeenCalledWith({
@@ -305,18 +305,29 @@ describe('main flows on the real store', () => {
   it('walks from the providers page to one provider page', async () => {
     seedSettingsBase();
 
+    const onScopeChange = vi.fn();
     await mountFlow(
       <SettingsStudio
         currentWorkspace={SETTINGS_WORKSPACE}
         focus={{ scope: 'providers' }}
-        onScopeChange={() => undefined}
+        onScopeChange={onScopeChange}
         onClose={() => undefined}
       />,
     );
-    const rail = screen.getByRole('list', { name: 'Providers & models settings' });
+    const rail = screen.getByRole('list', { name: 'Providers and models settings' });
     expect(screen.queryByRole('heading', { name: 'Claude' })).toBeNull();
     fireEvent.click(within(rail).getByRole('button', { name: /Claude/ }));
-    await settle();
+    expect(onScopeChange).toHaveBeenCalledWith({ scope: 'providers', provider: 'anthropic' });
+    cleanup();
+
+    await mountFlow(
+      <SettingsStudio
+        currentWorkspace={SETTINGS_WORKSPACE}
+        focus={{ scope: 'providers', provider: 'anthropic' }}
+        onScopeChange={onScopeChange}
+        onClose={() => undefined}
+      />,
+    );
 
     expect(screen.getByRole('heading', { name: 'Claude' })).toBeDefined();
     expectNoRenderLoop();

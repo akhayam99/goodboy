@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-hero-dark.webp">
-  <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy with the Harborline session Stop retried webhooks posting a second credit open on its Overview: the Projects card lists payments-api and notify-relay with their branches, one branch unfolded to its pull request, comments, files with a diff stat and checks; the Activity timeline interleaves three runs on Claude, Codex and Cursor models; the shared Context drawer shows the decisions that changed; the top bar shows the Repositories entry, provider limits and two sessions that need you" width="880">
+  <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy with the Harborline session Stop retried webhooks posting a second credit open on its Overview: the Folders card lists payments-api and notify-relay with their branches, one branch unfolded to its pull request, comments, files with a diff stat and checks; the Activity timeline interleaves three runs on Claude, Codex and Cursor models; the shared Context drawer shows the decisions that changed; the top bar shows the Repositories entry, provider limits and two sessions that need you" width="880">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

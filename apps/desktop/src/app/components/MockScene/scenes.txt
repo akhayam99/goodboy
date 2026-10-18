@@ -525,6 +525,7 @@ notifications-rail-folded
 onboarding
 onboarding-brand-tile-dark
 onboarding-brand-tile-light
+onboarding-home
 onboarding-home-empty-dark
 onboarding-home-empty-light
 onboarding-home-list-dark
@@ -836,6 +837,8 @@ transcript-long
 transcript-mount
 transcript-width
 turn-override-off
+u26-auto-results-dark
+u26-auto-results-light
 u26-board-archive-confirm
 u26-filter-active
 u26-filter-default
@@ -878,6 +881,13 @@ u26s-monitoring-empty
 u26s-monitoring-hover
 u26s-monitoring-menu
 u26s-monitoring-rows
+u26s-settings-branches
+u26s-settings-general
+u26s-settings-iphone
+u26s-settings-nows
+u26s-settings-pair
+u26s-settings-storage
+u26s-settings-updates
 update-card
 update-card-long-version
 update-card-narrow

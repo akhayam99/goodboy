@@ -104,7 +104,7 @@ const seedBranches = (branches: ReadonlyArray<BranchPatch>) =>
 const renderPage = () =>
   render(
     <ToastProvider>
-      <BranchesPage />
+      <BranchesPage workspaceId={HARBORLINE.id} />
     </ToastProvider>,
   );
 

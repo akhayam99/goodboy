@@ -8,7 +8,6 @@ import { storageWeightByScope } from '../../storageWeightByScope';
 
 type Props = {
   readonly scope: StorageScope;
-  readonly hasRemoved?: boolean;
   readonly onChange: (scope: StorageScope) => void;
 };
 
@@ -33,7 +32,7 @@ const valueToScope = (value: string): StorageScope => {
   return { kind: 'workspace', id: value.slice('workspace:'.length) as WorkspaceId };
 };
 
-export const StorageScopePicker = ({ scope, hasRemoved = true, onChange }: Props) => {
+export const StorageScopePicker = ({ scope, onChange }: Props) => {
   const workspaces = useWorkspaces();
   const currentWorkspace = useCurrentWorkspace();
   const folders = useAppStore((state) => state.storageFolders);
@@ -58,23 +57,17 @@ export const StorageScopePicker = ({ scope, hasRemoved = true, onChange }: Props
     ...otherWorkspaces.map((workspace: Workspace) => ({
       value: workspaceValue(workspace.id),
       label: workspace.name,
-      meta: hasRemoved
-        ? formatBytes({ bytes: weights.byWorkspace.get(workspace.id) ?? 0 })
-        : undefined,
+      meta: formatBytes({ bytes: weights.byWorkspace.get(workspace.id) ?? 0 }),
     })),
-    ...(hasRemoved
-      ? [
-          {
-            value: REMOVED_VALUE,
-            label: 'Removed workspaces',
-            meta: formatBytes({ bytes: weights.removedBytes }),
-          },
-        ]
-      : []),
+    {
+      value: REMOVED_VALUE,
+      label: 'Removed workspaces',
+      meta: formatBytes({ bytes: weights.removedBytes }),
+    },
     {
       value: ALL_VALUE,
       label: 'All workspaces',
-      meta: hasRemoved ? formatBytes({ bytes: allBytes }) : undefined,
+      meta: formatBytes({ bytes: allBytes }),
     },
   ];
 

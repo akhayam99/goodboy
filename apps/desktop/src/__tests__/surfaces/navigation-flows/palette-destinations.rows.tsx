@@ -467,7 +467,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Keyboard shortcuts',
     covers: ['openStudio', 'settings:shortcuts', 'palette:Keyboard shortcuts'],
     open: () => openPalette(/^Keyboard shortcuts/),
-    lands: () => heading('Shortcuts'),
+    lands: () => heading('Keyboard shortcuts'),
   },
   {
     name: 'palette: Guide',

@@ -5,7 +5,6 @@ import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateConfirm } from '../../../updater/components/UpdateConfirm';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../settings/settings';
 import type { UpdateFailure } from '../../../../store/slices/updater/state';
 
@@ -61,9 +60,8 @@ export const UpdatesSection = () => {
   return (
     <Band
       inset="content"
-      label="Updates"
+      label="Version"
       hint="Goodboy looks for a new version every hour."
-      icon={<CONCEPT_ICONS.updates size={ICON_SIZE.row} aria-hidden />}
       headingLevel={2}
     >
       <div className="flex flex-col">

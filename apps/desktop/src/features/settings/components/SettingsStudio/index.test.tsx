@@ -124,12 +124,8 @@ vi.mock('../../../providers/components/ProviderStudio', () => ({
   ProviderSettingsScope: ({
     frame,
   }: {
-    readonly frame: (parts: { nested: ReactNode; detail: ReactNode }) => ReactNode;
-  }) =>
-    frame({
-      nested: <ul aria-label="Providers & models settings" />,
-      detail: <div>Provider settings content</div>,
-    }),
+    readonly frame: (parts: { detail: ReactNode }) => ReactNode;
+  }) => frame({ detail: <div>Provider settings content</div> }),
 }));
 
 vi.mock('./WorkspaceScopePanel', () => ({
@@ -203,16 +199,10 @@ describe('SettingsStudio', () => {
     );
     expect((await screen.findByLabelText('API key')).id).toBe('linear-api-key');
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
-    const tools = screen.getByRole('list', { name: 'Integrations settings' });
-    expect(
-      within(tools)
-        .getByRole('button', { name: /^Linear/ })
-        .getAttribute('aria-current'),
-    ).toBe('true');
     const integrations = within(
       screen.getByRole('navigation', { name: 'Settings scopes' }),
     ).getByRole('button', { name: /^Integrations/ });
-    expect(integrations.getAttribute('aria-current')).toBe('false');
+    expect(integrations.getAttribute('aria-expanded')).toBe('true');
     expect(integrations.textContent).toBe('Integrations');
   });
 
@@ -244,20 +234,40 @@ describe('SettingsStudio', () => {
     ).toEqual(APP_SECTIONS.map((section) => section.label));
     expect(APP_SECTIONS.map((section) => section.id)).toEqual([
       'general',
+      'updates',
       'shortcuts',
-      'backup',
       'storage',
-      'branches',
-      'security-findings',
+      'backup',
+      'iphone',
     ]);
     expect(
       within(items).getByRole('button', { name: 'General' }).getAttribute('aria-current'),
     ).toBe('true');
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
     expect(screen.getByText('Open with')).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Version' })).toBeNull();
   });
 
-  it('lists only App and Providers without a workspace, and lands providers on an account', () => {
+  it('gives Updates its own page with the installed version as its meta', () => {
+    renderApp({ section: 'updates' });
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Updates' })).toBeDefined();
+    expect(document.querySelector('[data-slot="pane-meta"]')?.textContent).toMatch(/^Goodboy /);
+    expect(screen.getByRole('button', { name: "Open What's new" })).toBeDefined();
+  });
+
+  it.each([
+    { section: 'security-findings', page: 'Storage', moved: { scope: 'app', section: 'storage' } },
+    { section: 'branches', page: 'General', moved: { scope: 'workspace', section: 'branches' } },
+  ])('moves the old $section link to its new page', ({ section, page, moved }) => {
+    const onScopeChange = vi.fn();
+    renderApp({ section, onScopeChange });
+
+    expect(screen.getByRole('heading', { level: 1, name: page })).toBeDefined();
+    expect(onScopeChange).toHaveBeenCalledWith(moved);
+  });
+
+  it('says why the workspace groups are empty, and lands providers on an account', () => {
     const { rerender } = render(
       <SettingsStudio
         currentWorkspace={null}
@@ -268,10 +278,13 @@ describe('SettingsStudio', () => {
     );
 
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
-    expect(within(rail).queryByRole('button', { name: /^Workspace/ })).toBeNull();
-    expect(within(rail).queryByRole('button', { name: 'Integrations' })).toBeNull();
-    expect(within(rail).getByRole('button', { name: 'App' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Providers & models' })).toBeDefined();
+    expect(within(rail).queryByRole('list', { name: 'Workspace settings' })).toBeNull();
+    expect(within(rail).queryByRole('button', { name: /^Integrations/ })).toBeNull();
+    expect(within(rail).getByText('Open a workspace to see its settings.')).toBeDefined();
+    expect(within(rail).getByText('Integrations belong to a workspace.')).toBeDefined();
+    expect(
+      within(rail).getByRole('button', { name: 'Providers and models', expanded: false }),
+    ).toBeDefined();
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
 
     rerender(
@@ -285,14 +298,12 @@ describe('SettingsStudio', () => {
     expect(screen.getByText('Provider settings content')).toBeDefined();
     expect(screen.getByRole('list', { name: 'App settings' })).toBeDefined();
     expect(
-      within(screen.getByRole('navigation', { name: /settings scopes/i })).getByRole('list', {
-        name: 'Providers & models settings',
-      }),
+      within(rail).getByRole('button', { name: 'Providers and models', expanded: true }),
     ).toBeDefined();
     expect(screen.getAllByRole('navigation', { name: 'Settings scopes' })).toHaveLength(1);
   });
 
-  it('keeps one rail mounted across scopes, opening Providers only for a page inside it', () => {
+  it('keeps one rail mounted across scopes, opening Providers for a page inside it', () => {
     const { rerender } = renderApp();
     const rail = screen.getByRole('navigation', { name: /settings scopes/i });
 
@@ -307,7 +318,7 @@ describe('SettingsStudio', () => {
 
     expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBe(rail);
     expect(within(rail).getByRole('list', { name: 'App settings' })).toBeDefined();
-    expect(within(rail).getByRole('list', { name: 'Providers & models settings' })).toBeDefined();
+    expect(within(rail).getByRole('list', { name: 'Providers and models settings' })).toBeDefined();
     expect(screen.getByText('Provider settings content')).toBeDefined();
 
     rerender(
@@ -320,7 +331,6 @@ describe('SettingsStudio', () => {
     );
 
     expect(screen.getByRole('navigation', { name: /settings scopes/i })).toBe(rail);
-    expect(within(rail).queryByRole('list', { name: 'Providers & models settings' })).toBeNull();
     expect(screen.queryByText('Provider settings content')).toBeNull();
     expect(within(rail).getByRole('button', { name: 'Storage' }).getAttribute('aria-current')).toBe(
       'true',
@@ -342,7 +352,7 @@ describe('SettingsStudio', () => {
       const flagged = screen.getByRole('navigation', { name: /settings scopes/i });
       expect(within(flagged).getByRole('img', { name: 'Update available' })).toBeDefined();
       expect(
-        within(within(flagged).getByRole('button', { name: /^Providers & models/ })).getByRole(
+        within(within(flagged).getByRole('button', { name: /^Providers and models/ })).getByRole(
           'img',
           { name: 'Claude CLI needs an update' },
         ),
@@ -361,36 +371,35 @@ describe('SettingsStudio', () => {
     try {
       renderApp();
       const rail = screen.getByRole('navigation', { name: /settings scopes/i });
-      const group = within(rail).getByRole('button', { name: /^Providers & models/ });
+      const group = within(rail).getByRole('button', { name: /^Providers and models/ });
 
-      expect(group.textContent).toBe('Providers & models');
+      expect(group.textContent).toBe('Providers and models');
+      expect(group.getAttribute('aria-expanded')).toBe('false');
       expect(within(rail).queryByRole('img')).toBeNull();
-      expect(within(rail).queryByRole('list', { name: 'Providers & models settings' })).toBeNull();
     } finally {
       state.providers = [];
     }
   });
 
-  it('reports rail clicks as focus changes instead of switching on its own', () => {
+  it('reports rail clicks as focus changes, and a fold click as no change at all', () => {
     const onScopeChange = vi.fn();
     renderApp({ onScopeChange });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Providers & models' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Providers and models' }));
     fireEvent.click(screen.getByRole('button', { name: 'Storage' }));
 
-    expect(onScopeChange).toHaveBeenNthCalledWith(1, { scope: 'providers' });
-    expect(onScopeChange).toHaveBeenNthCalledWith(2, { scope: 'app', section: 'storage' });
+    expect(onScopeChange.mock.calls).toEqual([[{ scope: 'app', section: 'storage' }]]);
     expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
   });
 
   it('opens the shortcuts item with the whole list visible', () => {
     renderApp({ section: 'shortcuts' });
 
-    expect(screen.getByRole('heading', { name: 'Shortcuts' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Keyboard shortcuts' })).toBeDefined();
     expect(screen.getByText(`${SHORTCUT_ROW_COUNT} shortcuts`)).toBeDefined();
     expect(screen.getByText('Command palette')).toBeDefined();
     expect(screen.getByText(shortcutGlyphs('lens.agents'))).toBeDefined();
-    expect(screen.queryByRole('button', { name: /keyboard shortcuts/i })).toBeNull();
+    expect(screen.getAllByRole('button', { name: /keyboard shortcuts/i })).toHaveLength(1);
   });
 
   it('groups shortcuts by task and folds the workspace digits into one row', () => {
@@ -485,7 +494,7 @@ describe('SettingsStudio', () => {
       const onScopeChange = vi.fn();
       renderHome(onScopeChange);
 
-      expect(screen.getByRole('heading', { name: 'Backup' })).toBeDefined();
+      expect(screen.getByRole('heading', { name: 'Backup and reset' })).toBeDefined();
       expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'backup' });
     } finally {
       state.lastSettingsFocus = null;
@@ -498,6 +507,19 @@ describe('SettingsStudio', () => {
       renderHome();
 
       expect(screen.getByRole('heading', { name: 'General' })).toBeDefined();
+    } finally {
+      state.lastSettingsFocus = null;
+    }
+  });
+
+  it('opens on the new page when the last visit was an old one', () => {
+    state.lastSettingsFocus = { scope: 'app', section: 'security-findings' };
+    try {
+      const onScopeChange = vi.fn();
+      renderHome(onScopeChange);
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Storage' })).toBeDefined();
+      expect(onScopeChange).toHaveBeenCalledWith({ scope: 'app', section: 'storage' });
     } finally {
       state.lastSettingsFocus = null;
     }
@@ -522,7 +544,7 @@ describe('SettingsStudio', () => {
   it('offers export and import under Backup', () => {
     renderApp({ section: 'backup' });
 
-    expect(screen.getByRole('heading', { name: 'Backup' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Backup and reset' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Export' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Import' })).toBeDefined();
   });

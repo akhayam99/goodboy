@@ -9,7 +9,7 @@ import { useToast } from '../../../../shared/components/Toast';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { branchCount, deletedNotice } from '../../branches/branchCopy';
-import type { BranchScope } from '../../branches/branchScopeOf';
+import type { BranchScope } from '../../branches/branchScope';
 import { storageOwnerMatchesScope } from '../../storageOwnerMatchesScope';
 import {
   classifyBranch,

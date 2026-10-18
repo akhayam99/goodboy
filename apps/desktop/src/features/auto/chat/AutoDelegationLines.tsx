@@ -3,6 +3,7 @@ import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { Button, TruncatedText } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
+import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { artifactLinksOf } from './artifactLinksOf';
 import { AutoPlanAsk } from './AutoPlanAsk';
 import { cardTitleOf } from './cardTitleOf';
@@ -30,6 +31,7 @@ export const AutoDelegationLines = ({
   onOpenArtifact,
 }: Props) => {
   const decision = useDelegationDecision();
+  const labels = autoChildLabelsOf({ delegations: view.delegations });
   return (
     <ul aria-label="Delegations" className="flex min-w-0 flex-col gap-1">
       {delegations.map((delegation) => {
@@ -38,6 +40,8 @@ export const AutoDelegationLines = ({
           childAgent: agents.find((agent) => agent.id === delegation.childAgentId) ?? null,
         });
         const title = cardTitleOf({ card });
+        const label = labels.get(card.childAgentId);
+        const numbered = label === undefined || label === card.roleLabel ? null : label;
         const revision = revisionWordOf({ card });
         const asks = artifactLinksOf({ view, card }).filter(
           (link) => link.approval !== null && link.approval.state !== 'approved',
@@ -45,7 +49,7 @@ export const AutoDelegationLines = ({
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
             <span className="flex h-7 min-w-0 items-center gap-2 text-label">
-              <AgentKindChip kind={card.role} />
+              <AgentKindChip kind={card.role} {...(numbered !== null && { label: numbered })} />
               <TruncatedText className="min-w-0 truncate text-foreground" tooltip={title}>
                 {card.task ?? title}
               </TruncatedText>

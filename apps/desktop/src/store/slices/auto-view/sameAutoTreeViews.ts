@@ -24,6 +24,7 @@ const signatureOf = (view: AutoTreeView): string =>
     ]),
     view.budget,
     view.pendingRefusal,
+    view.deliveredResults.map((result) => [result.runId, result.delegationId, result.outcome]),
   ]);
 
 export const sameAutoTreeViews = ({ first, second }: Params): boolean =>

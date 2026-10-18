@@ -1,29 +1,29 @@
-# Workspace and projects
+# Workspaces and folders
 
-A workspace keeps your repos together, and one session can work across several of them. Each branch an agent works on gets its own worktree, so agents edit in parallel without touching your checkout.
+A workspace keeps your folders together, and one session can work across several of them. Each branch an agent works on gets its own worktree, so agents edit in parallel without touching your checkout.
 
-### Start a project from nothing
+### Start from scratch
 
 Begin with an empty folder and no repository. **Start from scratch**, inside **New workspace**, makes the folder, starts a git repository with a first commit and opens a first session in it. **Publish** later creates a GitHub repository for it, or links one you already have.
 
-### Workspace with several projects
+### Workspace with several folders
 
 Keep your repos together as one workspace, and let one session work across several of them. The **Folders** card of a session lists each repo it touches, with its branch and the size of its changes. A folder gets a branch only when an agent needs to edit it. The **+** on the card adds another workspace folder, or connects a new repo or folder to the workspace from the same list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="The Harborline workspace with one session open: its Projects card lists ledger-core with four branches and notify-relay with two, each branch with its pull request icon, above the Linked issues, next to the Next row with Start and the Activity tabs">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="The Harborline workspace with one session open: its Folders card lists ledger-core with four branches and notify-relay with two, each branch with its pull request icon, above the Linked issues, next to the Next row with Start and the Activity tabs">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
-### Starred projects, descriptions and base branch
+### Starred folders, descriptions and base branch
 
-Point agents at the right repo without naming it. Star a project and give it a one-line description: both go into each agent's brief, and starred projects come first in the pickers. Each repo shows its base branch, read from origin.
+Point agents at the right repo without naming it. Star a folder and give it a one-line description: both go into each agent's brief, and starred folders come first in the pickers. Each repo shows its base branch, read from origin.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-light.webp" alt="The Harborline workspace settings, Projects: Starred 2 with ledger-core and payments-api, each with a one-line description and the base branch main, Other projects 2 with notify-relay and runbooks, the Dev project section with Convert, and a note about a session folder left on disk with Review in Storage">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-light.webp" alt="The Harborline workspace settings, Folders: Starred 2 with ledger-core and payments-api, each with a one-line description and the base branch main, Other projects 2 with notify-relay and runbooks, the Dev project section with Convert, and a note about a session folder left on disk with Review in Storage">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -34,18 +34,18 @@ Let agents edit in parallel without touching your checkout. Each branch gets its
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-light.webp" alt="A session with its Projects card: ledger-core with three branches (fix/le...postings with pull request #418, fix/ledger-...backfill with no pull request and fix/ledge...drift with #412) and notify-relay with fix/noti...backoff #96, and above the card the notice that fix/ledger-reconciliation-statement-backfill in ledger-core is closed and its files are still on disk, with a Reopen button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-light.webp" alt="A session with its Folders card: ledger-core with three branches (fix/le...postings with pull request #418, fix/ledger-...backfill with no pull request and fix/ledge...drift with #412) and notify-relay with fix/noti...backoff #96, and above the card the notice that fix/ledger-reconciliation-statement-backfill in ledger-core is closed and its files are still on disk, with a Reopen button">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
-### Several branches per project
+### Several branches per repo
 
 Work on several branches of one repo in the same session, each in its own worktree. If a worktree ends up on another branch, a card says so and offers **Use this branch here** or **Keep both branches**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-light.webp" alt="The Projects of one session where two branches are not the ones recorded: ledger-core is on another branch and offers Check again and Not now, and notify-relay offers Use this branch here, Keep both branches and Not now">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-light.webp" alt="The Folders card of one session where two branches are not the ones recorded: ledger-core is on another branch and offers Check again and Not now, and notify-relay offers Use this branch here, Keep both branches and Not now">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -54,9 +54,9 @@ Work on several branches of one repo in the same session, each in its own worktr
 
 Jump between workspaces and folders from one search. The current workspace sits on top with its folder count, **Add folder** (the folder picker, a repository or a plain folder, then an undo toast; a folder of another workspace points to its folders), **Manage folders** and its settings. The other workspaces follow in one list: a click switches, the window icon opens one in a new window, and a disconnected workspace keeps its place with **Reconnect**. **New workspace** closes the list and opens the one form. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect** too.
 
-### Repo status across projects
+### Repo status across folders
 
-See which repos have something to pull right next to the workspace switcher. Every 5 minutes Goodboy fetches origin for each repo and compares the local base branch (the project's base branch, else the remote default branch) with its upstream. Fetching never moves a local branch. A repo that is behind puts a dot and **3 behind** on the **Repositories** entry; one whose base branch has commits of its own reads **Diverged**, and its tooltip explains that Goodboy only fast-forwards, so you merge or rebase it yourself. The entry opens one header row (the title, when origin was last checked, **Pull all** once two or more repos can pull, and the refresh icon), then the repos that need attention: behind with **Pull**, diverged with the reason in words, and a failed check with **Retry**. The repos with nothing to pull fold into one quiet line, **18 up to date**, that opens on click. Every row shows its folder in Finder and opens it in the editor in one click, keeps the action column put when it has no **Pull**, and opens its detail in place under the row. A checkout on a feature branch stays there while its base branch moves, a base branch checked out with uncommitted files says so instead of offering **Pull**, and a base branch that would not fast-forward or is checked out in another worktree is skipped. When origin cannot be reached the entry reads **Check failed**, with **Retry** on the row, and no toast. **Settings > General > Repositories** sets how often it checks (Off, 5, 15 or 30 minutes). Several windows on one workspace share one fetch. ⌘K **Pull main in all linked repos** and **Pull <branch> in <repo>** run the same pull, and a toast lists each repo with its branch and the title counts updated, skipped and failed.
+See which repos have something to pull right next to the workspace switcher. Every 5 minutes Goodboy fetches origin for each repo and compares the local base branch (the folder's base branch, else the remote default branch) with its upstream. Fetching never moves a local branch. A repo that is behind puts a dot and **3 behind** on the **Repositories** entry; one whose base branch has commits of its own reads **Diverged**, and its tooltip explains that Goodboy only fast-forwards, so you merge or rebase it yourself. The entry opens one header row (the title, when origin was last checked, **Pull all** once two or more repos can pull, and the refresh icon), then the repos that need attention: behind with **Pull**, diverged with the reason in words, and a failed check with **Retry**. The repos with nothing to pull fold into one quiet line, **18 up to date**, that opens on click. Every row shows its folder in Finder and opens it in the editor in one click, keeps the action column put when it has no **Pull**, and opens its detail in place under the row. A checkout on a feature branch stays there while its base branch moves, a base branch checked out with uncommitted files says so instead of offering **Pull**, and a base branch that would not fast-forward or is checked out in another worktree is skipped. When origin cannot be reached the entry reads **Check failed**, with **Retry** on the row, and no toast. **Settings > General > Repositories** sets how often it checks (Off, 5, 15 or 30 minutes). Several windows on one workspace share one fetch. ⌘K **Pull main in all linked repos** and **Pull <branch> in <repo>** run the same pull, and a toast lists each repo with its branch and the title counts updated, skipped and failed.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-repo-status-dark.webp">
@@ -65,13 +65,13 @@ See which repos have something to pull right next to the workspace switcher. Eve
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
-### Locate moved projects
+### Locate moved folders
 
-If you moved your repos to a new folder, the workspace settings name the projects Goodboy cannot find. **Locate folders** finds them in the parent folder you pick, by their first commit and remote, and repairs the worktrees, with **Undo move**.
+If you moved your repos to a new folder, the workspace settings name the folders Goodboy cannot find. **Locate folders** finds them in the parent folder you pick, by their first commit and remote, and repairs the worktrees, with **Undo move**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-locate-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-locate-light.webp" alt="The Locate moved projects form: Confirm the folders Goodboy should reconnect, ledger-core moved from its old folder to ~/code/harborline/ledger-core, Same repository, and the buttons Cancel, Choose another folder and Move 1 project">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-locate-light.webp" alt="The Locate moved folders form: Confirm the folders Goodboy should reconnect, ledger-core moved from its old folder to ~/code/harborline/ledger-core, Same repository, and the buttons Cancel, Choose another folder and Move 1 folder">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -92,4 +92,4 @@ Rows rest quiet. **Stop** and the **⋯** button live in one fixed cell that fil
 
 ### Copy settings from another workspace
 
-Set up a new workspace by copying another one. **Copy from…** in a settings page menu takes that page's values from another workspace, and **Copy all pages from…** takes them all. You see what changes before anything is saved, and projects, folders and accounts are never copied.
+Set up a new workspace by copying another one. **Copy from…** in a settings page menu takes that page's values from another workspace, and **Copy all pages from…** takes them all. You see what changes before anything is saved, and folders and accounts are never copied.

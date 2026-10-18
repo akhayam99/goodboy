@@ -479,7 +479,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         kind: 'script',
         group: 'script',
         icon: CONCEPT_ICONS.scripts,
-        detail: projectById(projects, script.projectId)?.name ?? 'Project script',
+        detail: projectById(projects, script.projectId)?.name ?? 'Folder script',
         tag: 'Script',
         run: () => {
           if (sessionId === null) {

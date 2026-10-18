@@ -67,6 +67,22 @@ describe('AutoDelegationLines', () => {
     expect(onOpenChild).toHaveBeenCalledWith('agent-impl');
   });
 
+  it('names two agents of one role apart, as their result cards do', () => {
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [
+          aDelegation({ key: 'review-a', role: 'reviewer', state: 'running' }),
+          aDelegation({ key: 'review-b', role: 'reviewer', state: 'running' }),
+        ],
+      }),
+    });
+
+    const lines = screen.getAllByRole('listitem');
+    expect(within(lines[0] ?? document.body).getByText('Reviewer 1')).toBeDefined();
+    expect(within(lines[1] ?? document.body).getByText('Reviewer 2')).toBeDefined();
+  });
+
   it('asks for the plan approval under the Planner line, with the plan one click away', () => {
     const onOpenArtifact = vi.fn();
     renderLines({

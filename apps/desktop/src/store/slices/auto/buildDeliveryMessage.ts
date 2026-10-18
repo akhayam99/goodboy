@@ -19,6 +19,7 @@ import {
   type AutoTree,
   type Database,
 } from '@goodboy/db';
+import { autoChildLabelsOf } from '../../../features/auto/autoChildLabelsOf';
 import { treeArtifacts } from './treeArtifacts';
 import { treeBudget } from './treeBudget';
 
@@ -167,6 +168,7 @@ export const buildDeliveryMessage = async ({
     digestBlock: buildStateDigest({ delegations: digest, nowMs }),
     artifactsBlock: buildArtifactBodiesBlock({ artifacts: bodies }),
     rows: rows.map((row) => ({ id: row.id, payload: row.payload })),
+    childLabels: autoChildLabelsOf({ delegations }),
     isRestart: rows.some((row) => isRestartPayload({ payload: row.payload })),
   });
 };

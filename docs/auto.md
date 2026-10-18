@@ -265,6 +265,27 @@ writing to it reopens it to **Deciding**.
   settles to one quiet line, "Plan v1 · changes asked".
 - **Where a line sits.** A batch goes before the first message sent after it
   settled, and an open batch goes at the end.
+- **Names.** Children of the same role are numbered in the order Auto started
+  them, **Reviewer 1** and **Reviewer 2**, and a role with one child keeps its
+  bare noun (`autoChildLabelsOf`, adopted agents left out of the numbers). The
+  rail row, the delegation line chip, the result card and the delivery text Auto
+  reads all take the name from that one function, so Auto and the screen say the
+  same name.
+- **What the agents reported.** Each child result Auto read for a turn is that
+  child's card, right after the **What Auto was told** row of that turn and
+  before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing
+  `AutoResultCards`): the role glyph, the name, the model
+  with its provider, the state word (`settledStatusOf`, the rail's words) and
+  **Open**, which opens the child pane. The body is the child's own report in
+  `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out
+  child shows its card with its state and no body. The cards read data, never
+  Auto's prose: an accepted `results` row of the outbox keeps the root run that
+  read it (`accepted_run_id`), `readAutoTreeViews` reads those rows as
+  `deliveredResults`, and the delivery row of the transcript (the `auto_delivery`
+  item keeps the `runId` of its event) draws only the results of its own run. A
+  result whose delivery row is not in the transcript is not drawn, never moved
+  to the end, so a late result stays with the turn that read it; a reload and a
+  second window read the same rows.
 - **The tail.** Auto's state is said once, on the tail at the end of the
   conversation (`AutoTail`, phrases from `autoTreeLive`): **Waiting for
   Implementer and Tester** with **Change approach** and **Stop Auto and its
@@ -420,7 +441,12 @@ row, the line goes, and an admitted retry draws its delegation line. The mount o
 (`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
 writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
 one fits (Auto never guesses a write) and `mount_missing` when none does. The refusal counters (`refusals_used`, the limit on refusals)
-move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Every delivery starts with a digest of the tree (open agents
+move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Each result line in a delivery starts with the name the user
+sees on its card ("- Reviewer 2 (reviewer <agent id>, <delegation id>): completed"), and the
+results block says the user sees each result as that card above the reply; the system prompt
+tells Auto never to repeat or paste what an agent said, to name the agent that way and to write
+only what it adds (what the results mean together, where they disagree, the next step, the ask).
+Every delivery starts with a digest of the tree (open agents
 with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
 mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The

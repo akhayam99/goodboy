@@ -23,6 +23,7 @@ export type BuildDeliveryParams = Readonly<{
   digestBlock: string;
   artifactsBlock: string;
   rows: ReadonlyArray<DeliveryRow>;
+  childLabels: ReadonlyMap<string, string>;
   isRestart: boolean;
 }>;
 
@@ -31,17 +32,25 @@ export const AUTO_RESTART_NOTICE =
 
 type ResultsBlockParams = {
   readonly payloads: ReadonlyArray<ResultsPayload>;
+  readonly childLabels: ReadonlyMap<string, string>;
 };
 
-const resultsBlock = ({ payloads }: ResultsBlockParams): string | null => {
+const resultsBlock = ({ payloads, childLabels }: ResultsBlockParams): string | null => {
   if (payloads.length === 0) {
     return null;
   }
   const lines = payloads.flatMap((payload) => [
     `Results of batch ${payload.batchId}:`,
-    ...payload.results.map((result) => renderDelegationResult({ result })),
+    ...payload.results.map((result) => {
+      const label = childLabels.get(result.childAgentId);
+      return renderDelegationResult({ result, ...(label !== undefined && { label }) });
+    }),
   ]);
-  return ['RESULTS FROM YOUR AGENTS', ...lines].join('\n');
+  return [
+    'RESULTS FROM YOUR AGENTS',
+    'The user sees each result below as the card of the agent that made it, with its own report, right above your reply. Name an agent as it is named here.',
+    ...lines,
+  ].join('\n');
 };
 
 type QuestionsBlockParams = {
@@ -140,6 +149,7 @@ export const buildDeliveryText = ({
   digestBlock,
   artifactsBlock,
   rows,
+  childLabels,
   isRestart,
 }: BuildDeliveryParams): string => {
   const results: ResultsPayload[] = [];
@@ -171,7 +181,7 @@ export const buildDeliveryText = ({
     mountsLine,
     digestBlock,
     refusalsBlock({ payloads: refusals }),
-    resultsBlock({ payloads: results }),
+    resultsBlock({ payloads: results, childLabels }),
     artifactsBlock,
     questionsBlock({ payloads: questions }),
     userBlock({ payloads: users }),

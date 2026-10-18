@@ -1,18 +1,15 @@
 import { RefreshCw } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
+import type { WorkspaceId } from '@goodboy/types';
 import { Button } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { branchScopeOf } from '../../branches/branchScopeOf';
-import { resolveStorageScope } from '../../resolveStorageScope';
-import { storageOwnerMatchesScope } from '../../storageOwnerMatchesScope';
-import { StorageScopePicker } from '../StoragePage/StorageScopePicker';
 
-export const BranchesHeaderActions = () => {
-  const storedScope = useAppStore((state) => state.storageScope);
-  const currentWorkspaceId = useAppStore((state) => state.currentWorkspaceId);
-  const setStorageScope = useAppStore((state) => state.setStorageScope);
-  const scope = branchScopeOf({ scope: resolveStorageScope({ storedScope, currentWorkspaceId }) });
+type Props = {
+  readonly workspaceId: WorkspaceId;
+};
+
+export const BranchesHeaderActions = ({ workspaceId }: Props) => {
   const projectIds = useAppStore(
     useShallow((state) =>
       state.projects
@@ -20,7 +17,7 @@ export const BranchesHeaderActions = () => {
           (project) =>
             project.kind === 'repo' &&
             project.disconnectedAt === undefined &&
-            storageOwnerMatchesScope({ ownerWorkspace: project.workspaceId, scope }),
+            project.workspaceId === workspaceId,
         )
         .map((project) => project.id),
     ),
@@ -35,12 +32,9 @@ export const BranchesHeaderActions = () => {
       reportError({ title: "Couldn't read the branches", error }),
     );
   return (
-    <>
-      <StorageScopePicker scope={scope} hasRemoved={false} onChange={setStorageScope} />
-      <Button variant="ghost" size="sm" onClick={onCheck} isBusy={isLoading} busyLabel="Checking">
-        <RefreshCw size={ICON_SIZE.row} aria-hidden />
-        Check again
-      </Button>
-    </>
+    <Button variant="ghost" size="sm" onClick={onCheck} isBusy={isLoading} busyLabel="Checking">
+      <RefreshCw size={ICON_SIZE.row} aria-hidden />
+      Check again
+    </Button>
   );
 };

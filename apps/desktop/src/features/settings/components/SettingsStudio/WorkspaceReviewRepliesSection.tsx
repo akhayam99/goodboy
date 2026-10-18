@@ -3,7 +3,6 @@ import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/
 import { Band, BandStack, Markdown, SectionHeader, SegmentedTabs, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
 import { buildResolutionReplyBody } from '../../../../store/slices/github/buildResolutionReplyBody';
 import {
@@ -96,7 +95,6 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           label="Voice"
           ariaLabel="Voice"
           hint="The tone every reply starts from."
-          icon={<CONCEPT_ICONS.message size={ICON_SIZE.row} aria-hidden />}
           headingLevel={2}
         >
           <WorkspaceFieldRow
@@ -131,7 +129,6 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           label="Templates"
           ariaLabel="Templates"
           hint="What a reply says around the reason."
-          icon={<CONCEPT_ICONS.report size={ICON_SIZE.row} aria-hidden />}
           headingLevel={2}
         >
           <ReplyTemplateField
@@ -164,7 +161,6 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           label="Threads"
           ariaLabel="Threads"
           hint="What happens to a thread after a reply."
-          icon={<CONCEPT_ICONS.comments size={ICON_SIZE.row} aria-hidden />}
           headingLevel={2}
         >
           <WorkspaceFieldRow
@@ -196,7 +192,6 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
           label="Commits"
           ariaLabel="Commits"
           hint="For fixes made to answer a comment."
-          icon={<CONCEPT_ICONS.commits size={ICON_SIZE.row} aria-hidden />}
           headingLevel={2}
         >
           <WorkspaceFieldRow workspaceId={workspaceId} field="resolveCommitStyle" layout="stacked">

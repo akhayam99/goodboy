@@ -133,6 +133,17 @@ describe('buildAutoSystemPrompt', () => {
     );
   });
 
+  it('asks Auto to name the agents of its results instead of repeating their reports', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
+
+    expect(prompt).toContain('as the card of the agent that made it');
+    expect(prompt).toContain('Never repeat or paste what an agent said.');
+    expect(prompt).toContain('Name the agent as the results name it, for example "Reviewer 1"');
+    expect(buildAutoSystemPrompt({ isDelegationEnabled: false })).not.toContain(
+      'Never repeat or paste what an agent said.',
+    );
+  });
+
   it('teaches the MOUNTS line and the mount field, with the field in the example', () => {
     const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
 

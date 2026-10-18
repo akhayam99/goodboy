@@ -393,6 +393,7 @@ const viewOf = ({
   pendingRefusal = null,
 }: ViewParams): AutoTreeView => ({
   pendingRefusal,
+  deliveredResults: [],
   tree: {
     ...aTree({ phase, capUsd: 10 }),
     id: TREE_ID,

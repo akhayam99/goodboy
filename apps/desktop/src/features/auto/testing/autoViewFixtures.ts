@@ -9,7 +9,11 @@ import {
   type AutoTreeId,
   type SessionId,
 } from '@goodboy/types';
-import type { AutoPendingRefusal, AutoTreeView } from '../../../store/slices/auto-view/state';
+import type {
+  AutoDeliveredResult,
+  AutoPendingRefusal,
+  AutoTreeView,
+} from '../../../store/slices/auto-view/state';
 
 export const FIXTURE_NOW = Date.UTC(2026, 9, 13, 12, 4, 0);
 export const FIXTURE_SESSION = brandId<SessionId>({ value: 'session-harborline' });
@@ -155,6 +159,7 @@ type ViewParams = {
   readonly reservedUsd?: number;
   readonly capUsd?: number;
   readonly pendingRefusal?: AutoPendingRefusal | null;
+  readonly deliveredResults?: ReadonlyArray<AutoDeliveredResult>;
 };
 
 export const aView = ({
@@ -165,8 +170,10 @@ export const aView = ({
   reservedUsd = 0,
   capUsd = 10,
   pendingRefusal = null,
+  deliveredResults = [],
 }: ViewParams = {}): AutoTreeView => ({
   pendingRefusal,
+  deliveredResults,
   tree: aTree({ phase, capUsd }),
   delegations,
   artifacts,

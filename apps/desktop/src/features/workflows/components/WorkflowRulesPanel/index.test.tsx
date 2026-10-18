@@ -189,13 +189,13 @@ describe('WorkflowRulesPanel', () => {
     expect(savedRules()[0]).toMatchObject({ spendLimitUsd: 25, spendLimitMode: 'pause' });
   });
 
-  it('opens Providers & models from the providers band', () => {
+  it('opens Providers and models from the providers band', () => {
     const received: Array<unknown> = [];
     const listener = (event: Event) => received.push((event as CustomEvent).detail);
     window.addEventListener('goodboy:open-settings', listener);
     panel();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open Providers & models' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open Providers and models' }));
     window.removeEventListener('goodboy:open-settings', listener);
 
     expect(received).toEqual([{ scope: 'providers', section: undefined }]);

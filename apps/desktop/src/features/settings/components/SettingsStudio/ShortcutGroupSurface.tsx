@@ -1,14 +1,4 @@
-import {
-  AppWindow,
-  Command,
-  Compass,
-  List,
-  ListChecks,
-  PanelsTopLeft,
-  type LucideIcon,
-} from 'lucide-react';
 import { KeyHint, Band } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
 import { shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import type { ShortcutGroup } from '../../../../shared/keyboard/registry';
@@ -27,31 +17,16 @@ const GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
   window: 'Window',
 };
 
-const GROUP_ICON: Readonly<Record<ShortcutGroup, LucideIcon>> = {
-  general: Command,
-  workspaces: CONCEPT_ICONS.workspace,
-  navigate: Compass,
-  session: CONCEPT_ICONS.sessions,
-  views: PanelsTopLeft,
-  lists: List,
-  selection: ListChecks,
-  review: CONCEPT_ICONS.review,
-  diff: CONCEPT_ICONS.diff,
-  window: AppWindow,
-};
-
 type Props = {
   readonly group: ShortcutGroup;
 };
 
 export const ShortcutGroupSurface = ({ group }: Props) => {
-  const Icon = GROUP_ICON[group];
   const sharedWhere = groupWhere({ group });
   return (
     <Band
       inset="content"
       label={GROUP_LABEL[group]}
-      icon={<Icon size={ICON_SIZE.row} aria-hidden />}
       hint={sharedWhere ?? undefined}
       headingLevel={3}
     >

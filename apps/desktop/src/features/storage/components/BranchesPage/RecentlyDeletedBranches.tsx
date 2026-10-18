@@ -8,7 +8,7 @@ import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useToast } from '../../../../shared/components/Toast';
 import { useNow } from '../../../../shared/hooks/useNow';
-import type { BranchScope } from '../../branches/branchScopeOf';
+import type { BranchScope } from '../../branches/branchScope';
 import { useRecentlyDeletedBranches } from '../../useRecentlyDeletedBranches';
 import { DeletedBranchRow } from './DeletedBranchRow';
 

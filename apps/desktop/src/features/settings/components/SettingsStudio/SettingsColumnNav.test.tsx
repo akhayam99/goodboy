@@ -8,8 +8,8 @@ import { settingsDirectory, type SettingsStatus } from './settingsDirectory';
 
 const STATUS: SettingsStatus = {
   subtitles: {
-    generalText: undefined,
-    generalTone: undefined,
+    updatesText: undefined,
+    updatesTone: undefined,
     storageText: 'Almost full',
     storageTone: 'warning',
     securityFindingsText: undefined,
@@ -47,8 +47,6 @@ const mount = () => {
   return { onBack, onOpen };
 };
 
-const NO_SLOT = { providers: () => undefined, tools: () => undefined };
-
 const mountWithRail = () =>
   render(
     <SettingsColumnNav
@@ -58,8 +56,7 @@ const mountWithRail = () =>
           scope="app"
           pageKey="app:general"
           groups={GROUPS}
-          nestedSlot={NO_SLOT}
-          onNestedClosed={vi.fn()}
+          workspaceName="Harborline"
           onSelect={vi.fn()}
           isInColumn
         />
@@ -87,35 +84,41 @@ describe('SettingsColumnNav', () => {
     ).toBeTruthy();
   });
 
-  it('draws the groups in order, each row as one line of text', () => {
+  it('heads the groups with four quiet labels and folds the two long lists', () => {
     mountWithRail();
     const nav = screen.getByRole('navigation', { name: 'Settings scopes' });
-    const labels = new Set(
-      GROUPS.flatMap((group) => [group.label, ...group.pages.map((page) => page.label)]),
-    );
 
-    const rows = within(nav).getAllByRole('button');
-    expect(rows.length).toBeGreaterThan(GROUPS.length);
-    expect(rows.filter((row) => !labels.has(row.textContent ?? ''))).toEqual([]);
-    expect(GROUPS.map((group) => group.label)).toEqual([
-      'App',
-      'Workspace',
-      'Providers & models',
-      'Integrations',
-    ]);
     expect(
       within(nav)
-        .getAllByRole('button')
-        .filter((row) => GROUPS.some((group) => group.label === row.textContent))
-        .map((row) => row.textContent),
-    ).toEqual(['App', 'Workspace', 'Providers & models', 'Integrations']);
+        .getAllByRole('heading', { level: 2 })
+        .map((heading) => heading.textContent),
+    ).toEqual(['App', 'Workspace · Harborline', 'Providers and models', 'Integrations']);
+    expect(within(nav).queryByRole('button', { name: 'App' })).toBeNull();
+    expect(within(nav).queryByRole('button', { name: /^Workspace/ })).toBeNull();
+    expect(
+      within(nav)
+        .getAllByRole('button', { expanded: false })
+        .map((fold) => fold.textContent),
+    ).toEqual(['Providers and models', 'Integrations']);
+  });
+
+  it('draws every page row as one line of text', () => {
+    mountWithRail();
+    const nav = screen.getByRole('navigation', { name: 'Settings scopes' });
+    const labels = new Set(GROUPS.flatMap((group) => group.pages.map((page) => page.label)));
+
+    const rows = within(nav)
+      .getAllByRole('listitem')
+      .map((item) => item.textContent ?? '');
+    expect(rows.length).toBeGreaterThan(10);
+    expect(rows.filter((row) => !labels.has(row))).toEqual([]);
   });
 
   it('names a dot by the sentence that used to sit under the row', () => {
     mountWithRail();
     const nav = screen.getByRole('navigation', { name: 'Settings scopes' });
 
-    const providers = within(nav).getByRole('button', { name: /^Providers & models/ });
+    const providers = within(nav).getByRole('button', { name: /^Providers and models/ });
     expect(
       within(providers).getByRole('img', { name: 'Claude is about to run out' }),
     ).toBeDefined();

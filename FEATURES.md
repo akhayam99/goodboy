@@ -4,14 +4,16 @@ The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai
 
 Most pictures follow one team and one task. Harborline keeps three repos, payments-api, ledger-core and notify-relay, and issue HBL-412 says retried webhooks post a second credit. The pictures show that fix from the first brief to pull request #318.
 
-<a id="welcome-to-goodboy"></a><a id="provider-connection"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
+<a id="welcome-to-goodboy"></a><a id="your-agents"></a><a id="provider-connection"></a><a id="your-first-workspace"></a><a id="home"></a><a id="one-page-per-provider"></a><a id="update-the-provider-cli"></a><a id="permissions-for-each-provider"></a><a id="integrations"></a><a id="about-you"></a><a id="settings-home"></a><a id="settings"></a>
 
 ## Set up
 
-Get from install to a first agent. Connect a provider, check what it can do, link your tools and tell agents who you are.
+Get from install to a first agent. Check the agents on this Mac, make a workspace from your folders, link your tools and tell agents who you are.
 
 - Welcome to Goodboy
-- Provider connection
+- Your agents
+- Your first workspace
+- Home
 - Integrations
 
 [More on set up](docs/features/setup.md)
@@ -68,18 +70,18 @@ Find any session, message, plan or action, and reach it from the keyboard. One s
 
 [More on search and navigation](docs/features/search.md)
 
-<a id="start-a-project-from-nothing"></a><a id="workspace-with-several-projects"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a>
+<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a>
 
-## Workspace and projects
+## Workspaces and folders
 
-A workspace keeps your repos together, and one session can work across several of them. Each branch an agent works on gets its own worktree, so agents edit in parallel without touching your checkout.
+A workspace keeps your folders together, and one session can work across several of them. Each branch an agent works on gets its own worktree, so agents edit in parallel without touching your checkout.
 
-- Workspace with several projects
+- Workspace with several folders
 - Worktrees
-- Repo status across projects
+- Repo status across folders
 - Monitoring
 
-[More on workspace and projects](docs/features/workspace.md)
+[More on workspaces and folders](docs/features/workspace.md)
 
 <a id="rewrite-history"></a><a id="safe-apply"></a><a id="conflict-prediction"></a><a id="conflicts-merged-in-a-copy"></a><a id="push-with-lease-and-restore"></a><a id="backups"></a><a id="suggest-a-message"></a><a id="bring-them-into-the-plan"></a><a id="rebase-on-main"></a><a id="after-a-pull-request-merges"></a><a id="shape-the-history"></a><a id="safe-edits"></a><a id="conflicting-edits"></a>
 

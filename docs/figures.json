@@ -219,9 +219,17 @@
     "version": "0.27.1",
     "recipe": "--scene 'settings-workspace&section=profile&brand=1' --window 1280x700 --wait 8000"
   },
+  "features/setup-agents": {
+    "version": "0.27.1",
+    "recipe": "--scene 'onboarding&step=agents&brand=1' --window 1280x640 --wait 8000"
+  },
   "features/setup-cli-update": {
     "version": "0.27.1",
     "recipe": "--scene 'settings-providers&provider=anthropic&cli=old&brand=1' --scroll '[aria-label=\"Account\"]' --window 1280x800 --wait 8000"
+  },
+  "features/setup-home": {
+    "version": "0.27.1",
+    "recipe": "--scene 'onboarding-home&state=list&brand=1' --window 1280x600 --wait 8000"
   },
   "features/setup-integrations": {
     "version": "0.27.1",
@@ -231,17 +239,17 @@
     "version": "0.27.1",
     "recipe": "--scene 'settings-providers&provider=codex&brand=1' --window 1280x1100 --clip 264,533,1000,280 --wait 8000"
   },
-  "features/setup-provider-connection": {
-    "version": "0.27.1",
-    "recipe": "--scene 'onboarding&step=1&brand=1' --window 1280x800 --wait 8000"
-  },
   "features/setup-provider-page": {
     "version": "0.27.1",
     "recipe": "--scene 'settings-providers&provider=anthropic&brand=1' --window 1280x800 --wait 8000"
   },
   "features/setup-welcome": {
     "version": "0.27.1",
-    "recipe": "--scene 'onboarding&step=0&brand=1' --window 1280x600 --wait 8000"
+    "recipe": "--scene 'onboarding&step=welcome&brand=1' --window 1280x600 --wait 8000"
+  },
+  "features/setup-workspace": {
+    "version": "0.27.1",
+    "recipe": "--scene 'onboarding&step=workspace&brand=1' --window 1280x600 --wait 8000"
   },
   "features/start-ask-agent": {
     "version": "0.27.1",

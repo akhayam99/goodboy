@@ -4,16 +4,20 @@ import { TOOL_CATALOG } from '../../toolCatalog';
 import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
 import { useToolConnections } from '../../useToolConnections';
 import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
-import { ToolsRail } from './ToolsRail';
 import { ToolDetailPanel } from './ToolDetailPanel';
+
+type DefaultToolParams = {
+  readonly tool: IntegrationGlyphProvider;
+};
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly initialFocus?: IntegrationGlyphProvider;
   readonly frame: ScopeFrame;
+  readonly onDefaultTool?: (params: DefaultToolParams) => void;
 };
 
-export const ToolSettingsScope = ({ workspaceId, initialFocus, frame }: Props) => {
+export const ToolSettingsScope = ({ workspaceId, initialFocus, frame, onDefaultTool }: Props) => {
   const { integrations, connected, github, githubIdentity } = useToolConnections({ workspaceId });
   const [focused, setFocused] = useState<IntegrationGlyphProvider | null>(initialFocus ?? null);
   useEffect(() => setFocused(initialFocus ?? null), [initialFocus]);
@@ -28,19 +32,11 @@ export const ToolSettingsScope = ({ workspaceId, initialFocus, frame }: Props) =
   useEffect(() => {
     if (focused === null && selected !== null) {
       setFocused(selected);
+      onDefaultTool?.({ tool: selected });
     }
-  }, [focused, selected]);
+  }, [focused, selected, onDefaultTool]);
 
   return frame({
-    nested: (
-      <ToolsRail
-        focusedId={selected}
-        onSelect={setFocused}
-        integrations={integrations}
-        connected={connected}
-        githubIdentity={githubIdentity}
-      />
-    ),
     detail:
       selected === null ? null : (
         <ToolDetailPanel

@@ -29,7 +29,7 @@ type SubtitleParams = EntriesParams & {
   readonly provider: IntegrationGlyphProvider;
 };
 
-export const toolRailSubtitle = ({
+const toolRailSubtitle = ({
   provider,
   integrations,
   connected,

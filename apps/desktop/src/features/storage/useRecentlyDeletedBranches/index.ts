@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import type { DeletedBranch, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../store';
-import type { BranchScope } from '../branches/branchScopeOf';
+import type { BranchScope } from '../branches/branchScope';
 
 type Params = {
   readonly scope: BranchScope;

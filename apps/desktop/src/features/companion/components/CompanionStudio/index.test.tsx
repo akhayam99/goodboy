@@ -61,11 +61,9 @@ describe('CompanionStudio', () => {
     mocks.enrolledCount = 1;
     render(<CompanionStudio onClose={() => undefined} />);
 
-    expect(await screen.findByText('1 paired device')).toBeTruthy();
+    expect(await screen.findByText('1 paired iPhone')).toBeTruthy();
     expect(
-      screen.getByText(
-        'A paired phone can send messages, start agents and workflows, and merge pull requests.',
-      ),
+      screen.getByText('A paired iPhone can send messages, start agents and merge pull requests.'),
     ).toBeTruthy();
     expect(screen.queryByTestId('pairing-qr')).toBeNull();
 
@@ -103,7 +101,7 @@ describe('CompanionStudio', () => {
     mocks.enrolledCount = 1;
     const onClose = vi.fn();
     render(<CompanionStudio onClose={onClose} />);
-    await screen.findByText('1 paired device');
+    await screen.findByText('1 paired iPhone');
 
     fireEvent.click(screen.getByRole('button', { name: /Close pairing/ }));
 
@@ -119,6 +117,6 @@ describe('CompanionStudio', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(invokedCommands()).not.toContain('bridge_revoke');
-    expect(screen.getByText('1 paired device')).toBeTruthy();
+    expect(screen.getByText('1 paired iPhone')).toBeTruthy();
   });
 });

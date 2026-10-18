@@ -6,6 +6,8 @@ import { useAppStore } from '../../../../store';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { pageKeys } from '../../pageKeys';
 import { usePageChangedCount } from '../../hooks/usePageChangedCount';
+import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
+import { folderMetaOf } from './folderMetaOf';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 import { WorkspacePageBody } from './WorkspacePageBody';
 import { WorkspaceSettingsFlow, type FlowMode } from './WorkspaceSettingsFlow';
@@ -24,6 +26,7 @@ export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, request
   const entry = workspacePageEntry({ page });
   const ownsSettings = pageKeys({ page }).length > 0;
   const changedCount = usePageChangedCount({ workspaceId, page });
+  const folderMeta = useAppStore((s) => folderMetaOf({ projects: s.projects, workspaceId }));
   const [flow, setFlow] = useState<{
     readonly page: WorkspacePage;
     readonly scope: WorkspacePage | 'all';
@@ -86,20 +89,27 @@ export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, request
       key={page}
       animationClassName={SETTINGS_PANE_ENTRY}
       title={entry.label}
-      actions={menu}
+      meta={page === 'projects' ? folderMeta : undefined}
+      actions={
+        page === 'branches' ? (
+          <>
+            {storageWorkspacePages({ workspaceId }).branches.actions}
+            {menu}
+          </>
+        ) : (
+          menu
+        )
+      }
       subheader={
-        <div className="flex flex-col gap-3">
-          <p className="text-label text-muted-foreground">{entry.hint}</p>
-          {openFlow === null ? null : (
-            <WorkspaceSettingsFlow
-              key={`${openFlow.scope}:${openFlow.mode}`}
-              workspaceId={workspaceId}
-              scope={openFlow.scope}
-              mode={openFlow.mode}
-              onClose={() => setFlow(null)}
-            />
-          )}
-        </div>
+        openFlow === null ? undefined : (
+          <WorkspaceSettingsFlow
+            key={`${openFlow.scope}:${openFlow.mode}`}
+            workspaceId={workspaceId}
+            scope={openFlow.scope}
+            mode={openFlow.mode}
+            onClose={() => setFlow(null)}
+          />
+        )
       }
     >
       <WorkspacePageBody

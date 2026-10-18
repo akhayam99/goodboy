@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import userEvent from '@testing-library/user-event';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
@@ -11,14 +10,10 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ToolSettingsScope } from '.';
+import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
 import type { ScopeFrameParts } from '../../../settings/components/SettingsStudio/types';
 
-const plainFrame = ({ nested, detail }: ScopeFrameParts) => (
-  <>
-    {nested}
-    {detail}
-  </>
-);
+const plainFrame = ({ detail }: ScopeFrameParts) => <>{detail}</>;
 import { TrackerStudioLinks } from '../TrackerStudioLinks';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -172,18 +167,6 @@ afterEach(() => {
 });
 
 describe('ToolSettingsScope', () => {
-  it('renders every tool in footer order', async () => {
-    await act(async () => {
-      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
-    });
-    const rail = screen.getByRole('list', { name: 'Integrations settings' });
-    expect(
-      within(rail)
-        .getAllByRole('button')
-        .map((row) => row.textContent),
-    ).toEqual(['GitHub', 'GitLab', 'Bitbucket', 'Linear', 'Jira', 'Sentry', 'Slack']);
-  });
-
   it.each([
     { tool: 'linear', label: 'Linear', field: 'API key', id: 'linear-api-key' },
     { tool: 'jira', label: 'Jira', field: 'Site', id: 'jira-site' },
@@ -191,11 +174,20 @@ describe('ToolSettingsScope', () => {
     { tool: 'bitbucket', label: 'Bitbucket', field: 'Personal API key', id: 'bitbucket-token' },
     { tool: 'sentry', label: 'Sentry', field: 'Auth token', id: 'sentry-token' },
     { tool: 'slack', label: 'Slack', field: 'User token', id: 'slack-token' },
-  ])('focuses the $tool form from the rail', async ({ label, field, id }) => {
+  ] satisfies ReadonlyArray<{
+    tool: IntegrationGlyphProvider;
+    label: string;
+    field: string;
+    id: string;
+  }>)('focuses the $tool form when the rail opens it', async ({ tool, label, field, id }) => {
+    const view = await act(async () =>
+      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />),
+    );
     await act(async () => {
-      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
+      view.rerender(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus={tool} />,
+      );
     });
-    fireEvent.click(screen.getByRole('button', { name: label }));
     expect(screen.getByLabelText(field).id).toBe(id);
     expect(screen.getByLabelText(field)).toBe(document.activeElement);
     expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([label]);
@@ -208,7 +200,6 @@ describe('ToolSettingsScope', () => {
       );
     });
     expect(screen.getByLabelText('User token')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Slack' }).getAttribute('aria-current')).toBe('true');
   });
 
   it('shows the connected identity and confirms disconnect', async () => {
@@ -323,16 +314,21 @@ describe('ToolSettingsScope', () => {
     },
   );
 
-  it('defaults to the first unconnected tool after GitHub resolves', async () => {
+  it('defaults to the first unconnected tool after GitHub resolves and names it once', async () => {
     github.mode = 'gh-cli';
     github.user = 'Ada';
+    const onDefaultTool = vi.fn();
     await act(async () => {
-      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
+      render(
+        <ToolSettingsScope
+          frame={plainFrame}
+          workspaceId={WORKSPACE_ID}
+          onDefaultTool={onDefaultTool}
+        />,
+      );
     });
     await waitFor(() => expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat'));
-    expect(screen.getByRole('button', { name: 'GitLab' }).getAttribute('aria-current')).toBe(
-      'true',
-    );
+    expect(onDefaultTool.mock.calls).toEqual([[{ tool: 'gitlab' }]]);
   });
 
   it.each([undefined, 'linear'] satisfies ReadonlyArray<'linear' | undefined>)(
@@ -355,11 +351,6 @@ describe('ToolSettingsScope', () => {
       expect(screen.queryByRole('heading')).toBeNull();
       expect(screen.queryByLabelText('Personal API key')).toBeNull();
       expect(screen.queryByLabelText('API key')).toBeNull();
-      expect(
-        within(screen.getByRole('list', { name: 'Integrations settings' }))
-          .getAllByRole('button')
-          .every((button) => button.getAttribute('aria-current') !== 'true'),
-      ).toBe(true);
       await act(async () => resolveStatus({ mode: 'gh-cli', user: 'Ada', scoped: false }));
       const field =
         initialFocus === 'linear'
@@ -446,9 +437,7 @@ describe('ToolSettingsScope', () => {
     });
     expect(await screen.findByText('Connected as Ada through the gh CLI')).toBeDefined();
     expect(screen.getByText('Run gh auth logout to sign out')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'GitHub Ada' }).getAttribute('aria-current')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('heading', { name: 'GitHub' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Disconnect GitHub' })).toBeNull();
     expect(screen.queryByLabelText('Personal API key')).toBeNull();
   });
@@ -509,21 +498,6 @@ describe('ToolSettingsScope', () => {
     expect(invoke).toHaveBeenCalledTimes(2);
     expect(invoke).toHaveBeenCalledWith('gh_status', { workspaceId: WORKSPACE_ID });
     expect(invoke).toHaveBeenCalledWith('gh_status', {});
-  });
-
-  it('reaches a connection form using the keyboard', async () => {
-    const user = userEvent.setup();
-    await act(async () => {
-      render(
-        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
-      );
-    });
-    await screen.findByRole('button', { name: 'Use a different key' });
-    screen.getByRole('button', { name: 'GitHub' }).focus();
-    await user.tab();
-    await user.keyboard('{Enter}');
-    expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat');
-    expect(screen.getByLabelText('Personal API key')).toBe(document.activeElement);
   });
 
   it.each([false, true])('routes tracker links with connection state %s', async (isConnected) => {

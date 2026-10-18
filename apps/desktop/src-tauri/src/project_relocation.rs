@@ -9,15 +9,15 @@ use crate::worktree_writer::{acquire_lease, release_lease, WriterLeases};
 
 #[derive(Debug, Error)]
 pub enum ProjectRelocationError {
-    #[error("project folder changed since it was checked")]
+    #[error("the folder changed since it was checked")]
     StaleRoot,
-    #[error("the selected folder is already linked to another project")]
+    #[error("another folder already uses the selected path")]
     ProjectCollision,
     #[error("a session folder already uses the destination path")]
     WorktreeCollision,
     #[error("an agent is writing in this repository")]
     WriterActive,
-    #[error("project not found")]
+    #[error("folder not found")]
     ProjectNotFound,
     #[error("relocation not found or already undone")]
     RelocationNotFound,
@@ -488,6 +488,10 @@ mod tests {
 
         assert!(matches!(error, ProjectRelocationError::ProjectCollision));
         assert_eq!(
+            error.to_string(),
+            "another folder already uses the selected path"
+        );
+        assert_eq!(
             connection
                 .query_row(
                     "SELECT root_path FROM projects WHERE id = 'project'",
@@ -504,6 +508,24 @@ mod tests {
                 .expect("count reads"),
             0
         );
+    }
+
+    #[test]
+    fn says_folder_and_never_project_in_what_the_user_reads() {
+        let messages = [
+            ProjectRelocationError::StaleRoot,
+            ProjectRelocationError::ProjectCollision,
+            ProjectRelocationError::WorktreeCollision,
+            ProjectRelocationError::WriterActive,
+            ProjectRelocationError::ProjectNotFound,
+            ProjectRelocationError::RelocationNotFound,
+            ProjectRelocationError::DatabaseUnavailable,
+        ]
+        .map(|error| error.to_string());
+
+        assert!(messages.iter().all(|message| !message.contains("project")));
+        assert_eq!(messages[0], "the folder changed since it was checked");
+        assert_eq!(messages[4], "folder not found");
     }
 
     #[test]

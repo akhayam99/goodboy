@@ -820,11 +820,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/app/components/MockScene/scenes/audit/OnboardingScene.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/app/components/MockScene/scenes/audit/ReviewModesScene.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -4652,16 +4647,6 @@
       "count": 6
     }
   },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProvidersRail.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProvidersRail.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/providers/components/ProviderStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 8
@@ -4669,7 +4654,7 @@
   },
   "apps/desktop/src/features/providers/components/ProviderStudio/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/features/providers/hooks/useProviderStanding/index.test.ts": {

@@ -56,10 +56,7 @@ export const WelcomeStep = ({ isLocked, onStart }: Props) => {
         >
           Welcome to Goodboy
         </h2>
-        <p
-          className="welcome-rise max-w-[470px] text-read text-muted-foreground"
-          style={delay(340)}
-        >
+        <p className="welcome-rise text-balance text-read text-muted-foreground" style={delay(340)}>
           Run coding agents side by side on your own repositories. Each task gets its own branch,
           and nothing is pushed until you say so.
         </p>

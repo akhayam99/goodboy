@@ -8,7 +8,7 @@ export type WorkspacePage =
   | 'projects'
   | 'profile'
   | 'general'
-  | 'after-merge'
+  | 'branches'
   | typeof REVIEW_REPLIES_SECTION_ID
   | typeof PERMISSIONS_SECTION_ID
   | 'skills';
@@ -19,7 +19,6 @@ type WorkspacePageEntry = {
   readonly id: WorkspacePage;
   readonly label: string;
   readonly concept: keyof typeof CONCEPT_ICONS;
-  readonly hint: string;
 };
 
 const ALL_WORKSPACE_PAGES = [
@@ -27,43 +26,36 @@ const ALL_WORKSPACE_PAGES = [
     id: 'projects',
     label: NAMES.folders,
     concept: 'projectRepo',
-    hint: 'The repositories and folders agents work in.',
   },
   {
     id: 'profile',
     label: 'About you',
     concept: 'profile',
-    hint: 'What agents should know about you.',
   },
   {
     id: 'general',
     label: 'New sessions',
     concept: 'terminal',
-    hint: 'Defaults for every new session.',
   },
   {
-    id: 'after-merge',
-    label: 'After merge',
-    concept: 'merge',
-    hint: 'What happens once a pull request lands.',
+    id: 'branches',
+    label: NAMES.branches,
+    concept: 'branch',
   },
   {
     id: REVIEW_REPLIES_SECTION_ID,
     label: NAMES.repliesAndCommits,
     concept: 'resolve',
-    hint: 'How replies are written and how fixes are committed.',
   },
   {
     id: PERMISSIONS_SECTION_ID,
     label: 'Permissions',
     concept: 'approval',
-    hint: 'How much agents may do without asking.',
   },
   {
     id: 'skills',
     label: 'Skills',
     concept: 'skills',
-    hint: 'Instructions agents can load on demand.',
   },
 ] as const satisfies ReadonlyArray<WorkspacePageEntry>;
 
@@ -73,16 +65,17 @@ export const WORKSPACE_PAGES: ReadonlyArray<WorkspacePageEntry> = ALL_WORKSPACE_
 
 const DEFAULT_WORKSPACE_PAGE: WorkspacePage = 'projects';
 
-const SECTION_ALIASES: Readonly<Record<string, WorkspacePage>> = {
-  [DEV_PROJECT_SECTION_ID]: 'projects',
-};
+const SECTION_ALIASES: ReadonlyMap<string, WorkspacePage> = new Map<string, WorkspacePage>([
+  [DEV_PROJECT_SECTION_ID, 'projects'],
+  ['after-merge', 'branches'],
+]);
 
 export const workspacePageOf = ({ section }: { readonly section?: string }): WorkspacePage => {
   if (section === undefined) {
     return DEFAULT_WORKSPACE_PAGE;
   }
   const page = WORKSPACE_PAGES.find((entry) => entry.id === section);
-  return page?.id ?? SECTION_ALIASES[section] ?? DEFAULT_WORKSPACE_PAGE;
+  return page?.id ?? SECTION_ALIASES.get(section) ?? DEFAULT_WORKSPACE_PAGE;
 };
 
 export const workspacePageEntry = ({ page }: { readonly page: WorkspacePage }) =>

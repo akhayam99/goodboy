@@ -119,7 +119,7 @@ describe('the policy and failure scenes', () => {
 
     const band = screen.getByRole('region', { name: 'Providers' });
     expect(within(band).getByText('When a provider is out')).toBeDefined();
-    expect(within(band).getByRole('button', { name: 'Open Providers & models' })).toBeDefined();
+    expect(within(band).getByRole('button', { name: 'Open Providers and models' })).toBeDefined();
     expect(within(band).queryAllByRole('switch')).toEqual([]);
   });
 

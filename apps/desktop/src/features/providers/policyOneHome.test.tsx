@@ -147,7 +147,7 @@ describe('the provider policy has one home', () => {
 
     const band = screen.getByRole('region', { name: 'Providers' });
     expect(within(band).queryAllByRole('switch')).toEqual([]);
-    expect(within(band).getByRole('button', { name: 'Open Providers & models' })).toBeDefined();
+    expect(within(band).getByRole('button', { name: 'Open Providers and models' })).toBeDefined();
     expect(within(band).getByTestId('rules-policy-summary').textContent).toBe(
       'Claude, Codex · Cursor as backup',
     );

@@ -7,7 +7,6 @@ import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BranchTemplateField } from './BranchTemplateField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
@@ -89,7 +88,6 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         inset="content"
         label="Branches and comments"
         ariaLabel="Branches and comments"
-        icon={<CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden />}
         headingLevel={2}
       >
         <WorkspaceFieldRow
@@ -148,7 +146,6 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
         label="Agents"
 
         ariaLabel="Agents"
-        icon={<CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />}
         headingLevel={2}
       >
         <WorkspaceFieldRow

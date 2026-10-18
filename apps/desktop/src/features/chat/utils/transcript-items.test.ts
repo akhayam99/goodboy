@@ -704,6 +704,7 @@ describe('reduceTranscript handoff', () => {
     ]);
 
     expect(items.map((item) => item.kind)).toEqual(['auto_delivery', 'assistant_text']);
+    expect(items[0]).toMatchObject({ kind: 'auto_delivery', runId: RUN });
   });
 
   it('draws the operator words once, as a bubble, beside the hidden delivery', () => {

@@ -38,16 +38,16 @@ describe('railSubtitles', () => {
       workspaceId: null,
     });
 
-    expect(subtitles.generalText).toBe('Update available');
-    expect(subtitles.generalTone).toBe('info');
+    expect(subtitles.updatesText).toBe('Update available');
+    expect(subtitles.updatesTone).toBe('info');
   });
 
   it('reports no rows needing attention when nothing does', () => {
     const subtitles = railSubtitles({ state: baseState, workspaceId: null, nowMs: NOW_MS });
 
     expect(subtitles).toEqual({
-      generalText: undefined,
-      generalTone: undefined,
+      updatesText: undefined,
+      updatesTone: undefined,
       storageText: undefined,
       storageTone: undefined,
       securityFindingsText: undefined,

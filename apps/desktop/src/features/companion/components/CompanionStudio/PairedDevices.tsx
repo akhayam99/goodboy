@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Smartphone, Unplug } from 'lucide-react';
-import { Button, ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
+import { Button, ConfirmPopover } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { pluralize } from '../../../../shared/utils/pluralize';
 
 type Props = {
   readonly enrolled: number;
@@ -14,21 +15,15 @@ export const PairedDevices = ({ enrolled, revoking, onRevoke, onPairAnother }: P
   const [isConfirming, setIsConfirming] = useState(false);
 
   return (
-    <div className="flex w-full flex-col items-center gap-3">
-      <span
-        className={cn(
-          'inline-flex items-center gap-1 rounded-full',
-          tintClasses('success').bg,
-          'px-3 py-0.5 text-meta font-semibold text-success',
-        )}
-      >
-        <span aria-hidden className="size-1.5 rounded-full bg-success" />
-        {enrolled} paired {enrolled === 1 ? 'device' : 'devices'}
-      </span>
-      <p className="max-w-[18rem] text-center text-meta text-muted-foreground">
-        A paired phone can send messages, start agents and workflows, and merge pull requests.
-      </p>
-      <div className="flex items-center gap-2">
+    <div className="flex w-full items-center gap-3">
+      <Smartphone size={ICON_SIZE.control} aria-hidden className="shrink-0 text-muted-foreground" />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="text-row text-foreground">{pluralize(enrolled, 'paired iPhone')}</span>
+        <span className="text-meta text-muted-foreground">
+          A paired iPhone can send messages, start agents and merge pull requests.
+        </span>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
         {onPairAnother !== undefined && (
           <Button variant="secondary" size="sm" onClick={onPairAnother}>
             <Smartphone size={ICON_SIZE.row} aria-hidden /> Pair another device

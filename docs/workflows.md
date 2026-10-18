@@ -164,7 +164,7 @@ order, each with one line of copy at most.
 - **Limit**: a switch, the amount per run and what happens at the limit, pause
   or warn
 - **Providers**: a row **When a provider is out** with the policy in one line
-  ("Claude, Codex · Cursor as backup") and a link, **Open Providers & models**.
+  ("Claude, Codex · Cursor as backup") and a link, **Open Providers and models**.
   It holds no switch and lists no provider: the order and the **Send new steps
   to the provider with the most room** option live in Settings > Providers &
   models, the one home of the provider policy
@@ -218,7 +218,7 @@ With the rule on (the run's copy, `spreadByHeadroom`):
 With the rule off nothing changes. Workspaces that existed before 0.16.0 start
 with it off (m217); new workspaces start with it on. The switch is the
 **Send new steps to the provider with the most room** option of the policy popover in
-Settings > Providers & models, with one sentence under it: with it off, "New
+Settings > Providers and models, with one sentence under it: with it off, "New
 steps follow the provider order."; with it on and a provider passed, where the
 next step goes and how full the passed one is, and otherwise that steps of one
 run can land on different providers (`nextStepPick`, `spreadSentence`).

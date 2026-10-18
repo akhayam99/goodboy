@@ -4,7 +4,7 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 ### Security findings
 
-Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show in **Settings**, **App**, **Security findings**. **Not a secret** dismisses one and **Flag again** brings it back.
+Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show at the end of **Settings**, **App**, **Storage**, under **Security findings**. **Not a secret** dismisses one and **Flag again** brings it back.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-findings-dark.webp">
