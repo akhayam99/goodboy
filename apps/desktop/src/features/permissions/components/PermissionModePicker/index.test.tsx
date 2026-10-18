@@ -44,6 +44,12 @@ describe('PermissionModePicker', () => {
     expect(screen.getByText('Ask first')).toBeDefined();
   });
 
+  it('keeps the mode name for assistive tech and an icon when the label collapses', () => {
+    render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
+    const trigger = screen.getByRole('button', { name: 'Permission mode: Ask first' });
+    expect(trigger.querySelector('svg')).not.toBeNull();
+  });
+
   it('offers four modes and leaves out do not ask', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     openPicker();

@@ -49,7 +49,11 @@ export const ComposerRoutingPicker = ({ routing }: Props) => {
         routing.referenceModel,
         routing.referenceProvider,
       )}`}
-      budget={<ProviderUsagePill provider={routing.effectiveProvider} />}
+      budget={
+        <span className="inline-flex shrink-0 @max-lg:hidden">
+          <ProviderUsagePill provider={routing.effectiveProvider} />
+        </span>
+      }
       onChange={routing.onSelectRoute}
       onVerbosity={routing.setVerbosity}
       onReset={routing.onResetTurnOverride}

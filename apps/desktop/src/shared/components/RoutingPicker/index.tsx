@@ -177,7 +177,11 @@ export const RoutingPicker = ({
       role="dialog"
       ariaLabel={ariaLabel ?? 'model routing'}
       className="flex max-h-[calc(100vh-1rem)] flex-col bg-subtle"
-      anchorClassName={cn('flex items-center gap-1', variant === 'field' && 'w-full')}
+      anchorClassName={cn(
+        'flex items-center gap-1',
+        variant === 'field' && 'w-full',
+        variant === 'pill' && 'min-w-0',
+      )}
       trigger={
         <>
           <Tooltip
@@ -189,7 +193,7 @@ export const RoutingPicker = ({
                   : `${summary}. Click to change.`
             }
             shortcut={disabled ? undefined : shortcut}
-            anchorClassName={variant === 'field' ? 'w-full' : undefined}
+            anchorClassName={variant === 'field' ? 'w-full' : 'min-w-0'}
           >
             <button
               type="button"
@@ -201,7 +205,7 @@ export const RoutingPicker = ({
               className={cn(
                 'items-center gap-2 text-label transition-colors',
                 variant === 'pill'
-                  ? 'inline-flex rounded-full px-3 py-0.5'
+                  ? 'inline-flex min-w-0 whitespace-nowrap rounded-full px-3 py-0.5 @max-sm:px-2'
                   : 'flex w-full rounded-md border px-2 py-2 text-left',
                 variant === 'field' &&
                   (open
@@ -224,7 +228,10 @@ export const RoutingPicker = ({
                   <TriggerLabel provider={routing.provider} label={triggerLabel} />
                 )}
                 {isPinned ? (
-                  <span data-routing-pinned="" className="shrink-0 text-faint-foreground">
+                  <span
+                    data-routing-pinned=""
+                    className="shrink-0 text-faint-foreground @max-lg:hidden"
+                  >
                     · pinned
                   </span>
                 ) : null}

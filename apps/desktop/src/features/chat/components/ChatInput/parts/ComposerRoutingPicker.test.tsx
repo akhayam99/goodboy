@@ -60,6 +60,18 @@ describe('the composer model chip', () => {
     expect(trigger().textContent).not.toContain('pinned');
   });
 
+  it('keeps the model and the pin in the accessible name whatever the toolbar hides', () => {
+    render(
+      <ComposerRoutingPicker
+        routing={routingOn({ modelId: 'claude-sonnet-5', isOverridden: true })}
+      />,
+    );
+
+    expect(trigger().getAttribute('aria-label')).toContain('Sonnet 5');
+    expect(trigger().getAttribute('aria-label')).toContain('pinned');
+    expect(trigger().querySelector('svg')).not.toBeNull();
+  });
+
   it('names the picked model and offers the reset when the turn is overridden', () => {
     render(
       <ComposerRoutingPicker
