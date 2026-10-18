@@ -408,8 +408,24 @@ describe('the repositories entry in the top bar', () => {
     });
   });
 
-  it('is absent from a workspace without repositories', async () => {
-    useAppStore.setState({ projects: [], currentWorkspaceId: WORKSPACE });
+  it('is absent from a workspace whose folders have no git', async () => {
+    useAppStore.setState({
+      projects: [
+        aProject({
+          workspaceId: WORKSPACE,
+          name: 'acme-notes',
+          kind: 'folder',
+          rootPath: '/mock/Documents/acme-notes',
+        }),
+        aProject({
+          workspaceId: WORKSPACE,
+          name: 'acme-web',
+          kind: 'folder',
+          rootPath: '/mock/Code/acme-web',
+        }),
+      ],
+      currentWorkspaceId: WORKSPACE,
+    });
     render(
       <ToastProvider>
         <RepoEntry workspaceId={WORKSPACE} />

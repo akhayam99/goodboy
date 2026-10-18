@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { pageCountWordOf, type CountedPageId, type PageCountFacts } from './pageCountWord';
 
 const COUNTED_PAGE_IDS = [
+  'files',
   'runs',
   'orchestrated',
   'agents',
@@ -12,6 +13,7 @@ const COUNTED_PAGE_IDS = [
 ] as const satisfies ReadonlyArray<CountedPageId>;
 
 const QUIET: PageCountFacts = {
+  changedFiles: 0,
   runs: 0,
   runningRuns: 0,
   waitingRuns: 0,
@@ -82,12 +84,18 @@ describe('pageCountWordOf', () => {
     );
   });
 
+  it('reads Changes as the files changed in a plain folder', () => {
+    expect(wordOf('files', { changedFiles: 4 })).toBe('4 files');
+    expect(wordOf('files', { changedFiles: 1 })).toBe('1 file');
+  });
+
   it('reads Questions as the number open', () => {
     expect(wordOf('questions', { openQuestions: 2 })).toBe('2 open');
   });
 
   it('puts the noun last and never a bare number', () => {
     const everything: PageCountFacts = {
+      changedFiles: 4,
       runs: 4,
       runningRuns: 0,
       waitingRuns: 0,

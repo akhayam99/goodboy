@@ -174,8 +174,6 @@ describe('the u26 session page intro scenes', () => {
   );
 
   it.each([
-    ['u26-rail-marker-agents-light', SESSION_PAGE_MARKER_WHY.agents],
-    ['u26-rail-marker-agents-dark', SESSION_PAGE_MARKER_WHY.agents],
     ['u26-rail-marker-auto-light', SESSION_PAGE_MARKER_WHY.auto],
     ['u26-rail-marker-auto-dark', SESSION_PAGE_MARKER_WHY.auto],
   ] as const)('%s opens the marker tooltip with its words', async (name, why) => {

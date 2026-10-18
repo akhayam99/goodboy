@@ -62,7 +62,6 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
     taskIdentifiers,
     mountId: plannedMountId,
     requestId,
-    slug,
     branch,
   }: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult> => {
     const trimmedReason = reason.trim();
@@ -141,6 +140,9 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
         mountIds: adopted.map((mount) => mount.mountId),
       };
     }
+    if (project.kind === 'folder') {
+      return { status: 'in-place', mountIds: [] };
+    }
     const mountId = plannedMountId ?? (crypto.randomUUID() as MountId);
     const mount = await withMountLock({
       key: `session:${sessionId}`,
@@ -156,7 +158,6 @@ export const ensureProjectMounted = (set: SetFn, get: GetFn) => {
           reason: trimmedReason,
           parallelIndex: allocated.reduce((max, row) => Math.max(max, row.parallelIndex), 0) + 1,
           ...(taskIdentifiers === undefined ? {} : { taskIdentifiers }),
-          ...(slug === undefined ? {} : { slug }),
           ...(branch === undefined ? {} : { branch }),
         });
       },

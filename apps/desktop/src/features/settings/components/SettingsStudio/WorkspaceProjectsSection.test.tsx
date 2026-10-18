@@ -50,6 +50,12 @@ const { state, repoMocks } = vi.hoisted(() => {
       terminalFolderOverrides: noFolderOverrides(),
       loadTerminalWorkspaceFolder: vi.fn(async () => undefined),
       setTerminalWorkspaceFolder: vi.fn(async () => undefined),
+      folderPurpose: {},
+      folderVersionsStatus: {},
+      folderHistorySizes: {},
+      setFolderPurpose: vi.fn(async () => 'documents'),
+      loadFolderHistorySize: vi.fn(async () => undefined),
+      prepareFolderVersions: vi.fn(async () => undefined),
     },
     repoMocks: {
       validateGitRepo: vi.fn(async () => ({

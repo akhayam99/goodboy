@@ -88,7 +88,6 @@ describe.each(REASONS)('a Bitbucket session says %s the same way on every surfac
         getSelectedIds={() => []}
         onClearSelection={noop}
         onModifierClick={noop}
-        onToggleSelect={noop}
         onSelect={noop}
         onRowEnter={noop}
         onRowLeave={noop}

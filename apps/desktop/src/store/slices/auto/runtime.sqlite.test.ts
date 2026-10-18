@@ -210,6 +210,42 @@ describe('the whole round trip of a delegation', () => {
     expect(await phaseOf(world)).toBe('deciding');
   });
 
+  it('keeps the readable cause of a refused kickoff on the failed row', async () => {
+    const world = await makeRuntimeWorld();
+    await userSays({ world, id: 'outbox-user-1', text: 'ship the ledger export' });
+    world.state.ports.setChildOutcome({
+      kind: 'refused',
+      reason: 'kickoff_failed',
+      message: 'the branch mount changed before the turn could start',
+    });
+    await autoDelegates({ world, spec: { children: [TWO_WRITERS.children[0]] } });
+    await autoTurnEnds({ world });
+
+    const delegations = await listAutoDelegations({
+      db: world.state.world.db,
+      treeId: world.treeId,
+    });
+    expect(delegations[0]?.reason).toBe(
+      'kickoff_failed: the branch mount changed before the turn could start',
+    );
+  });
+
+  it('keeps the readable cause when the child agent could not be created', async () => {
+    const world = await makeRuntimeWorld();
+    await userSays({ world, id: 'outbox-user-1', text: 'ship the ledger export' });
+    world.state.ports.setEnsureFailure(new Error('the agents table is locked'));
+    await autoDelegates({ world, spec: { children: [TWO_WRITERS.children[0]] } });
+    await autoTurnEnds({ world });
+
+    const delegations = await listAutoDelegations({
+      db: world.state.world.db,
+      treeId: world.treeId,
+    });
+    expect(delegations[0]?.outcome).toBe('failed');
+    expect(delegations[0]?.reason).toBe('kickoff_failed: the agents table is locked');
+    expect(world.state.ports.childTurns).toHaveLength(0);
+  });
+
   it('settles a child whose writer lease stayed busy as failed with that reason', async () => {
     const world = await makeRuntimeWorld();
     await userSays({ world, id: 'outbox-user-1', text: 'ship the ledger export' });

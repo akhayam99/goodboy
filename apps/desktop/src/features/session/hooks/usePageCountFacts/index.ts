@@ -58,6 +58,7 @@ export const usePageCountFacts = ({ session }: Params): PageCountFacts => {
   const autoViews = useAppStore((s) => s.autoTreeViews[sessionId] ?? NO_AUTO_VIEWS);
   const attachedRuns = useAttachedWorkflowRuns({ session });
   const orchestrating = useAppStore((s) => s.orchestratingWorkflowRuns);
+  const changedFiles = useAppStore((s) => s.sessionFolderSummary[sessionId]?.counts.fileCount ?? 0);
 
   return useMemo(() => {
     const resolvers = selectResolverAgentIds({ agents, kindOverride });
@@ -86,6 +87,7 @@ export const usePageCountFacts = ({ session }: Params): PageCountFacts => {
     const runs = session.workflowRuns.filter((run) => run.discardedAt == null);
     const orchestrated = runs.filter((run) => run.executionMode === 'dynamic');
     return {
+      changedFiles,
       runs: runs.length - orchestrated.length,
       runningRuns: countDots({ isOrchestrated: false, shown: RUNNING_DOTS }),
       waitingRuns: countDots({ isOrchestrated: false, shown: WAITING_DOTS }),
@@ -101,6 +103,7 @@ export const usePageCountFacts = ({ session }: Params): PageCountFacts => {
       openQuestions: selectOpenQuestions(openQuestions).length,
     };
   }, [
+    changedFiles,
     openQuestions,
     agents,
     kindOverride,

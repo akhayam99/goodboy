@@ -1,6 +1,7 @@
 import {
   brandId,
   type BootstrapPhase,
+  type FolderPurpose,
   type IsoDateTime,
   type OverrideSettings,
   type Project,
@@ -18,7 +19,8 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { CommandError } from '../../../shared/lib/invokeCommand';
-import { initRepo, projectFolderCreate, validateGitRepo } from '../../../shared/lib/repo';
+import { projectFolderCreate, validateGitRepo } from '../../../shared/lib/repo';
+import { makeFirstCommit } from '../../../shared/lib/folderGit';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
 import {
   bootstrapPhaseKey,
@@ -26,6 +28,8 @@ import {
   serializeBootstrapPhase,
 } from '../bootstrap/phase';
 import { projectById } from '../projects/projectIndex';
+import { folderPurposeKey } from '../folder-purpose/folderPurposeKey';
+import { prepareLinkedFolder } from '../file-versions/prepareLinkedFolder';
 import { refuseAdoptionWhileAgentsRun } from '../projects/refuseAdoptionWhileAgentsRun';
 import { nowIso } from '../project-mounts/nowIso';
 import { folderName, trimTrailingSeparators } from '../terminal/terminalOwner';
@@ -39,7 +43,7 @@ export type NewWorkspaceFolder =
       readonly rootPath: string;
       readonly defaultBranch: string | null;
     }
-  | { readonly kind: 'plain'; readonly rootPath: string }
+  | { readonly kind: 'plain'; readonly rootPath: string; readonly purpose?: FolderPurpose }
   | { readonly kind: 'git-init'; readonly rootPath: string }
   | { readonly kind: 'scratch'; readonly parentPath: string; readonly name: string };
 
@@ -66,6 +70,7 @@ type PreparedFolder = {
   readonly kind: Project['kind'];
   readonly baseBranch: string | null;
   readonly isScratch: boolean;
+  readonly purpose: FolderPurpose | null;
 };
 
 const EMPTY_OVERRIDES: OverrideSettings = {
@@ -109,6 +114,7 @@ const resumeScratchFolder = async ({
     kind: 'repo',
     baseBranch: check.defaultBranch,
     isScratch: true,
+    purpose: null,
   };
 };
 
@@ -124,6 +130,7 @@ const createScratchFolder = async ({
       kind: 'repo',
       baseBranch: created.branch,
       isScratch: true,
+      purpose: null,
     };
   } catch (error) {
     if (error instanceof CommandError && error.kind === ALREADY_EXISTS) {
@@ -145,16 +152,24 @@ const prepareFolder = async ({ folder }: PrepareParams): Promise<PreparedFolder>
         kind: 'repo',
         baseBranch: folder.defaultBranch,
         isScratch: false,
+        purpose: null,
       };
     case 'plain':
-      return { rootPath: folder.rootPath, kind: 'folder', baseBranch: null, isScratch: false };
-    case 'git-init': {
-      const initialized = await initRepo({ path: folder.rootPath });
       return {
-        rootPath: initialized.rootPath,
-        kind: 'repo',
-        baseBranch: initialized.branch,
+        rootPath: folder.rootPath,
+        kind: 'folder',
+        baseBranch: null,
         isScratch: false,
+        purpose: folder.purpose ?? null,
+      };
+    case 'git-init': {
+      const committed = await makeFirstCommit({ path: folder.rootPath, include: [] });
+      return {
+        rootPath: committed.rootPath,
+        kind: 'repo',
+        baseBranch: committed.branch,
+        isScratch: false,
+        purpose: null,
       };
     }
     case 'scratch':
@@ -237,6 +252,11 @@ type FirstLap = {
   readonly phase: BootstrapPhase;
 };
 
+type ChosenPurpose = {
+  readonly projectId: ProjectId;
+  readonly purpose: FolderPurpose;
+};
+
 export const createWorkspaceWithFolders = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
@@ -283,6 +303,7 @@ export const createWorkspaceWithFolders = (set: SetFn, get: GetFn) => {
     const kept: Project[] = [];
     const inserted: Project[] = [];
     const firstLaps: FirstLap[] = [];
+    const purposes: ChosenPurpose[] = [];
     for (const folder of prepared) {
       if ([...kept, ...inserted].some((row) => row.rootPath === folder.rootPath)) {
         continue;
@@ -297,26 +318,43 @@ export const createWorkspaceWithFolders = (set: SetFn, get: GetFn) => {
       if (folder.isScratch) {
         firstLaps.push({ projectId: project.id, phase: freshBootstrapPhase(now) });
       }
+      if (folder.purpose !== null) {
+        purposes.push({ projectId: project.id, purpose: folder.purpose });
+      }
     }
 
     await insertWorkspaceWithProjects({
       db: tauriDatabase,
       workspace: isNewWorkspace ? workspace : null,
       projects: inserted,
-      settings: firstLaps.map(({ projectId, phase }) => ({
-        key: bootstrapPhaseKey(projectId),
-        value: serializeBootstrapPhase(phase),
-      })),
+      settings: [
+        ...firstLaps.map(({ projectId, phase }) => ({
+          key: bootstrapPhaseKey(projectId),
+          value: serializeBootstrapPhase(phase),
+        })),
+        ...purposes.map(({ projectId, purpose }) => ({
+          key: folderPurposeKey({ projectId }),
+          value: purpose,
+        })),
+      ],
     });
 
     const projects = [...kept, ...inserted];
     const projectIds = new Set<ProjectId>(projects.map((project) => project.id));
     const phases = Object.fromEntries(firstLaps.map(({ projectId, phase }) => [projectId, phase]));
+    const chosen = Object.fromEntries(
+      purposes.map(({ projectId, purpose }) => [projectId, purpose]),
+    );
     set((state) => ({
       workspaces: [workspace, ...state.workspaces.filter((item) => item.id !== workspaceId)],
       projects: [...projects, ...state.projects.filter((item) => !projectIds.has(item.id))],
       bootstrapPhase: { ...state.bootstrapPhase, ...phases },
+      folderPurpose: { ...state.folderPurpose, ...chosen },
     }));
+
+    for (const project of inserted) {
+      prepareLinkedFolder({ get, project });
+    }
 
     if (isNewWorkspace) {
       await seedWorkflowLibrary({ db: tauriDatabase }, workspaceId).catch((error: unknown) =>

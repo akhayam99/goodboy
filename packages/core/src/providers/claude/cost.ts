@@ -1,4 +1,5 @@
 import type { ModelPrice, ProviderUsage } from '@goodboy/types';
+import { computeLeveledCostUsd } from '../priceLevels';
 
 const FABLE_PRICE: ModelPrice = {
   inputPerMtok: 10,
@@ -39,7 +40,12 @@ const HAIKU_55_PRICE: ModelPrice = {
   inputPerMtok: 0.1,
   outputPerMtok: 0.5,
   cachedInputPerMtok: 0.01,
-  assumed: true,
+  aboveLevel: {
+    aboveInputTokens: 100_000,
+    inputPerMtok: 0.5,
+    outputPerMtok: 2.5,
+    cachedInputPerMtok: 0.05,
+  },
 };
 
 export const CLAUDE_PRICES: Record<string, ModelPrice> = {
@@ -74,11 +80,5 @@ type Params = {
 };
 
 export const computeCostUsd = ({ usage, model }: Params): number => {
-  const price = priceFor(model);
-  return (
-    (usage.inputTokens * price.inputPerMtok) / 1_000_000 +
-    (usage.cachedInputTokens * (price.cachedInputPerMtok ?? price.inputPerMtok)) / 1_000_000 +
-    ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
-    (usage.outputTokens * price.outputPerMtok) / 1_000_000
-  );
+  return computeLeveledCostUsd({ usage, price: priceFor(model), isCacheInInput: false });
 };

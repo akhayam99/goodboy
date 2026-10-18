@@ -1,8 +1,9 @@
 import { UndoToastBridge } from './app/components/UndoToastBridge';
-import { Fragment, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { BootSplash } from './app/components/BootSplash';
+import { BootSplashExit } from './app/components/BootSplash/BootSplashExit';
 import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
 import { useAppShortcuts } from './app/hooks/useAppShortcuts';
@@ -79,7 +80,9 @@ export const App = () => {
   const newerDatabase = useAppStore((s) => s.newerDatabase);
   const restoreNewerDatabaseBackup = useAppStore((s) => s.restoreNewerDatabaseBackup);
   const quitApp = useAppStore((s) => s.quitApp);
-  const [splashFinished, setSplashFinished] = useState(false);
+  const [splashStage, setSplashStage] = useState<'running' | 'leaving' | 'gone'>('running');
+  const finishSplash = useCallback(() => setSplashStage('leaving'), []);
+  const removeSplash = useCallback(() => setSplashStage('gone'), []);
   const currentWorkspace = useCurrentWorkspace();
   const currentWorkspaceId = currentWorkspace?.id ?? null;
   const workspaceProjectRoot = useAppStore((s) =>
@@ -237,7 +240,7 @@ export const App = () => {
   const deferredRenderedIds = useDeferredValue(renderedSessionIds);
   const deferredActiveId = useDeferredValue(currentSession?.id ?? null);
 
-  if (!hydrated || !splashFinished) {
+  if (!hydrated || splashStage === 'running') {
     return (
       <BootSplash
         phase={bootPhase}
@@ -247,10 +250,12 @@ export const App = () => {
         onRetry={retryHydrate}
         onRestoreBackup={restoreNewerDatabaseBackup}
         onQuit={() => void quitApp()}
-        onFinished={() => setSplashFinished(true)}
+        onFinished={finishSplash}
       />
     );
   }
+
+  const splashExit = splashStage === 'leaving' ? <BootSplashExit onDone={removeSplash} /> : null;
 
   if (isWorkspaceLauncherBranch) {
     return (
@@ -262,6 +267,7 @@ export const App = () => {
           <LastCrashBridge />
           <Fragment key="layers">{layers}</Fragment>
         </ObjectMenuProvider>
+        {splashExit}
       </ToastProvider>
     );
   }
@@ -351,6 +357,7 @@ export const App = () => {
         />
         <Fragment key="layers">{layers}</Fragment>
       </ObjectMenuProvider>
+      {splashExit}
     </ToastProvider>
   );
 };

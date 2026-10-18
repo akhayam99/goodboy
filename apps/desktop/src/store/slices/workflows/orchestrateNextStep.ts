@@ -672,6 +672,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         roleDefaults,
         stepsUsed: workflow.steps.length,
         isModelMetadataEnabled: true,
+        isModelPickEnabled: run.rulesSnapshot?.canOrchestratorPickModel === true,
         ...(run.spendLimitUsd != null && {
           spendLimitUsd: run.spendLimitUsd,
           spentUsd: spentUsdForRun({ get, sessionId, run }),
@@ -830,6 +831,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           session,
           role: proposed.role,
           fields: proposed,
+          isModelPickEnabled: run.rulesSnapshot?.canOrchestratorPickModel === true,
           promptText: proposed.promptPrefix,
           emittingProvider: routing.providerId,
           defaultProvider,

@@ -118,7 +118,7 @@ const checksOf = ({
     if (counts.running > 0) {
       return 'pending';
     }
-    return counts.passed > 0 ? 'green' : 'none';
+    return counts.passed + counts.skipped > 0 ? 'green' : 'none';
   }
   if (pr?.checks === 'failure') {
     return 'failing';

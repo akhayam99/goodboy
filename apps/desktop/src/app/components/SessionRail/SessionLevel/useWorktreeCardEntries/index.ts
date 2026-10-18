@@ -3,6 +3,7 @@ import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import type { EntryDiffStat } from '../../../../../features/branch/worktreeEntryFacts';
+import { mountPullRequestView } from '../../../../../features/review/mountPullRequestView';
 import { mountReviewGithub } from '../../../../../features/review/mountReviewGithub';
 import { worktreeCardEntriesOf, type WorktreeCardEntry } from '../worktreeCardEntriesOf';
 
@@ -21,6 +22,14 @@ export const useWorktreeCardEntries = ({
     mountReviewGithub({ state, sessionId, mountId: row.mountId }),
   );
   const items = useAppStore((state) => state.sessionResolveQueueItems[sessionId] ?? EMPTY_ARRAY);
+  const view = useAppStore((state) =>
+    mountPullRequestView({
+      state,
+      sessionId,
+      mountId: row.mountId,
+      prNumber: row.request?.number ?? null,
+    }),
+  );
   return useMemo(
     () =>
       worktreeCardEntriesOf({
@@ -28,7 +37,8 @@ export const useWorktreeCardEntries = ({
         github,
         threads: items.map((entry) => entry.thread),
         diff,
+        view,
       }),
-    [row, github, items, diff],
+    [row, github, items, diff, view],
   );
 };

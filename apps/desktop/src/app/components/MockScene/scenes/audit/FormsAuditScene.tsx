@@ -1,10 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { PageColumn } from '@goodboy/ui';
-import type { ProjectId, SessionBudget, Skill, Workspace, WorkflowRun } from '@goodboy/types';
+import type { ProjectId, SessionBudget, Skill, WorkflowRun } from '@goodboy/types';
 import { CreatePrPanel } from '../../../../../features/integrations/github/components/PullRequest/CreatePrPanel';
 import { CreateMrForm } from '../../../../../features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm';
 import { NewWorkspaceForm } from '../../../../../shared/components/NewWorkspaceForm';
-import { ConvertWorkspaceFlow } from '../../../../../features/workspace/components/ConvertWorkspaceFlow';
 import { SkillsPanel } from '../../../../../features/skills/components/SkillsPanel';
 import { CreateAgentPopover } from '../../../../../features/session/components/CreateAgentPopover';
 import { RunSpendLimitPopover } from '../../../../../features/workflows/components/RunSpendLimitPopover';
@@ -28,7 +27,6 @@ const FORM_KEYS = [
   'pr',
   'mr',
   'link',
-  'convert',
   'skills',
   'agent',
   'spend-run',
@@ -94,9 +92,6 @@ const PROJECTS = [
   },
 ] as unknown as ReadonlyArray<ReturnType<typeof useAppStore.getState>['projects'][number]>;
 
-const workspaceOf = (): Workspace | null =>
-  useAppStore.getState().workspaces.find((workspace) => workspace.id === WORKSPACE_ID) ?? null;
-
 const renderForm = ({ form }: { form: FormKey }): ReactNode => {
   switch (form) {
     case 'pr':
@@ -117,15 +112,6 @@ const renderForm = ({ form }: { form: FormKey }): ReactNode => {
           <NewWorkspaceForm mode="new" onCreated={noop} />
         </PageColumn>
       );
-    case 'convert': {
-      const workspace = workspaceOf();
-      const project = PROJECTS[0];
-      return workspace === null || project === undefined ? null : (
-        <PageColumn className="flex flex-col gap-6 py-8">
-          <ConvertWorkspaceFlow workspaceId={workspace.id} project={project} onClose={noop} />
-        </PageColumn>
-      );
-    }
     case 'skills':
       return (
         <PageColumn className="flex flex-col gap-6 py-8">

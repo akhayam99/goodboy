@@ -190,7 +190,13 @@ export type {
 } from './message';
 export type { ProviderName, ProviderRun, ProviderRunStatus } from './provider';
 export { isProviderName, PROVIDER_NAMES } from './provider';
-export type { ProviderUsage, StoppedProcess, TurnEvent, UserTurnSentVia } from './adapter';
+export type {
+  ProviderUsage,
+  RequestUsage,
+  StoppedProcess,
+  TurnEvent,
+  UserTurnSentVia,
+} from './adapter';
 export type {
   AgentHandoff,
   HandoffDraft,
@@ -220,6 +226,7 @@ export type {
   ModelDescriptor,
   ModelFamily,
   ModelPrice,
+  ModelPriceLevel,
   ModelTier,
   ProviderConnectionState,
   ProviderHealthStanding,
@@ -545,6 +552,23 @@ export type {
 export type { LinkedRemote, PublishOutcome, PublishStep } from './publish';
 export type { RemoteProbe } from './remote-probe';
 export type { ChildRepo, GitRepoCheck, GitRepoErrorKind } from './repo-check';
+export type {
+  FolderCodeMarker,
+  FolderFileKind,
+  FolderPurpose,
+  FolderSignals,
+  FolderSignalsErrorKind,
+} from './folder';
+export type {
+  FirstCommit,
+  FirstCommitAuthor,
+  FirstCommitEntry,
+  FirstCommitEntryKind,
+  FirstCommitPlan,
+  FirstCommitStart,
+  FolderGitProbe,
+  FolderGitProbeState,
+} from './folderGit';
 export type {
   PrReviewDraft,
   ReviewDraftOrigin,

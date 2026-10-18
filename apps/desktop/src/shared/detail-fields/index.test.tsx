@@ -255,7 +255,7 @@ describe('the pull request registry', () => {
     });
 
     expect(facts.map((fact) => fact.label)).toEqual(['Status', 'Review', 'Branch', 'Checks']);
-    expect(stateLabel(facts[0]?.node)).toBe('In review');
+    expect(stateLabel(facts[0]?.node)).toBe('Open');
     expect(facts.slice(1).map((fact) => nodeText(fact.node))).toEqual([
       'Changes requested',
       'ak/refactor-detail-anatomy › main',

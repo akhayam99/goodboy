@@ -41,6 +41,7 @@ export const AUTO_REFUSAL_TEXT = {
   not_paused: 'That agent is not waiting for an answer.',
   no_run: 'There is no turn to attach this to.',
   retry_unavailable: 'That agent cannot be retried right now.',
+  role_lacks_shell: 'That role has no shell, so it cannot run the commands of the task.',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;
 
 export type RefusalChild = Readonly<{

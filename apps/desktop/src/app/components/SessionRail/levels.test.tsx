@@ -13,7 +13,7 @@ vi.mock('../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { aWorkflowRun, anAgent } from '@goodboy/types/testing';
+import { aProject, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import { innerColumnStore } from '@goodboy/ui';
 import type { IsoDateTime, Session, StepId, Workflow, WorkflowId } from '@goodboy/types';
 import {
@@ -36,6 +36,7 @@ import {
   sessionOf,
 } from '../../../features/workspace/testing/sessionColumn';
 import { brandedId } from '../../../features/history/testing/brandedId';
+import { testTurn } from '../../../features/file-versions/testing/testTurn';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { useCurrentSession } from '../../../store';
 import type { AppStore } from '../../../store/store';
@@ -43,6 +44,7 @@ import type { ColumnActions } from '../SideColumn/columnDoors';
 import type { ColumnPlace } from '../SideColumn/columnPlace';
 import { SideColumn } from '../SideColumn';
 import { SessionFrame } from './SessionFrame';
+import { CARD_INSET } from './SessionLevel/railInset';
 
 let useAppStore: StoryStore;
 
@@ -188,7 +190,7 @@ describe('the main sidebar beside the session rail', () => {
       'Overview',
       'Runs',
       'Orchestrated',
-      'AgentsDeprecated',
+      'Agents',
       'Auto agentsExperimental',
       'Artifacts',
       'Questions',
@@ -322,12 +324,39 @@ describe('the session level pages', () => {
     ).toBe('warning');
   });
 
-  it('shows File versions and no Projects in a branchless session', () => {
+  it('shows Changes and a Folder group in a plain folder session', async () => {
     seed({ isBranchless: true });
+    const acmeNotes = aProject({
+      workspaceId: harborline.id,
+      name: 'acme-notes',
+      rootPath: '/mock/Documents/acme-notes',
+      kind: 'folder',
+    });
+    useAppStore.setState({
+      projects: [acmeNotes],
+      folderPurpose: { [acmeNotes.id]: 'documents' },
+      sessionProjectMounts: { [openId]: [] },
+    });
+    stubStoryInvoke({
+      file_versions_folder_list_turns: [
+        testTurn({
+          runId: 'run-memo',
+          folderPath: acmeNotes.rootPath,
+          changes: [{ relativePath: 'launch-memo.md' }, { relativePath: 'faq.md' }],
+        }),
+      ],
+    });
     mountColumn();
 
-    expect(pages().getByRole('button', { name: /^File versions/ })).toBeDefined();
+    const folder = within(sessionLayer()).getByRole('group', { name: 'Folder' });
+    expect(within(folder).getByText('acme-notes')).toBeDefined();
+    expect(within(folder).getByText('Documents · edits in place')).toBeDefined();
     expect(within(sessionLayer()).queryByRole('group', { name: 'Folders' })).toBeNull();
+    await vi.waitFor(() => {
+      const changes = pages().getByRole('button', { name: /^Changes/ });
+      expect(changes.querySelector('[data-page-value="files"]')?.textContent).toBe('2');
+    });
+    expect(pages().queryByRole('button', { name: /File versions/ })).toBeNull();
   });
 });
 
@@ -409,6 +438,43 @@ describe('the session level projects and linked work', () => {
 
     const key = sessionLayer().querySelector('[data-linked-key]');
     expect(key?.textContent).toBe('PAYMENTS-API-3F2');
+  });
+
+  it('gives the Folders card and the Linked card the same side padding, from one constant', () => {
+    seed();
+    const payments = mountOf({ session: open, project: paymentsApi });
+    useAppStore.setState({
+      sessionProjectMounts: { [openId]: [payments] },
+      sessionExternalTasks: {
+        [openId]: [
+          {
+            sessionId: openId,
+            provider: 'linear',
+            externalId: 'ext-nw-142',
+            identifier: 'NW-142',
+            title: 'Retry webhook deliveries on a 502',
+            url: 'https://linear.app/northwind/issue/NW-142',
+            createdAt: brandedId<IsoDateTime>({ value: '2026-10-05T09:00:00.000Z' }),
+          },
+        ],
+      },
+    });
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({}),
+      worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+      detect_editors: () => [],
+    });
+    mountColumn();
+
+    const cards = Array.from(sessionLayer().querySelectorAll<HTMLElement>('[data-level-card]'));
+    expect(cards.map((card) => card.getAttribute('data-level-card'))).toEqual(
+      expect.arrayContaining(['Folders', 'Linked']),
+    );
+    const folders = within(sessionLayer()).getByRole('group', { name: 'Folders' });
+    const linked = within(sessionLayer()).getByRole('group', { name: 'Linked' });
+    expect(folders.getAttribute('data-level-card')).toBe('Folders');
+    expect(linked.getAttribute('data-level-card')).toBe('Linked');
+    expect(CARD_INSET).toBe('px-2 py-1');
   });
 
   it('lists a pull request once: a worktree that owns it hides the same number from Linked', () => {

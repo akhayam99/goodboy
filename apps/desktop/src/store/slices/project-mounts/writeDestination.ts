@@ -22,7 +22,7 @@ type WriteDestinationRoot = Readonly<{
   projectId: ProjectId;
   projectName: string;
   path: string;
-  branch: string;
+  branch: string | null;
 }>;
 
 export type WriteDestination =
@@ -79,7 +79,9 @@ export const writeDestinationLabel = (destination: WriteDestination): string => 
     return 'session scratch folder';
   }
   if (destination.kind === 'root') {
-    return `${destination.projectName} / project folder / ${destination.branch}`;
+    return destination.branch === null
+      ? destination.projectName
+      : `${destination.projectName} / project folder / ${destination.branch}`;
   }
   if (!destination.hasGit) {
     return `${destination.projectName} / working folder / no git`;

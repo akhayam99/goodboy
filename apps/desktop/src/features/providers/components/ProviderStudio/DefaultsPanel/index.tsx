@@ -20,6 +20,8 @@ import { useChatDefaultModel } from '../../../../../shared/hooks/useChatDefaultM
 import { ChatModelRow } from './ChatModelRow';
 import { RoleRow } from './RoleRow';
 import { TaskModelRow } from './TaskModelRow';
+import { ClassifyRequestsRow } from './ClassifyRequestsRow';
+import { OrchestratorModelPickRow } from './OrchestratorModelPickRow';
 import { ProvidersInOrder } from './ProvidersInOrder';
 import { PinnedOffLine } from './PinnedOffLine';
 import { SavedModelsNotice } from './SavedModelsNotice';
@@ -158,6 +160,12 @@ export const DefaultsPanel = ({ workspaceId, scopeLabel = null, focusSection }: 
         ) : (
           <ProvidersInOrder workspaceId={workspaceId} />
         )}
+      </section>
+
+      <section aria-label="Choosing models" className="flex flex-col gap-1">
+        <Eyebrow label="Choosing models" />
+        <OrchestratorModelPickRow workspaceId={workspaceId} />
+        <ClassifyRequestsRow />
       </section>
 
       <section aria-label="Chat" className="flex flex-col gap-2">

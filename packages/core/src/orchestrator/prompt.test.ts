@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildOrchestratorUserPrompt, ORCHESTRATOR_SYSTEM_PROMPT } from './prompt';
+import {
+  buildOrchestratorUserPrompt,
+  ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT,
+  ORCHESTRATOR_SYSTEM_PROMPT,
+} from './prompt';
 import type { OrchestratorInput, OrchestratorModelOption } from './types';
 
 const option = (overrides: Partial<OrchestratorModelOption> = {}): OrchestratorModelOption => ({
@@ -23,7 +27,30 @@ const input = (overrides: Partial<OrchestratorInput> = {}): OrchestratorInput =>
   modelMenu: [],
   roleDefaults: [],
   stepsUsed: 0,
+  isModelPickEnabled: true,
   ...overrides,
+});
+
+describe('buildOrchestratorUserPrompt without the model pick rule', () => {
+  it('names no model, no menu and no role default, and asks for the difficulty', () => {
+    const prompt = buildOrchestratorUserPrompt(
+      input({
+        isModelPickEnabled: false,
+        modelMenu: [option({ provider: 'codex', model: 'gpt-6.1-sol', label: 'GPT-6.1 Sol' })],
+        roleDefaults: [
+          { role: 'implementer', provider: 'anthropic', model: 'sonnet-5.5', effort: 'medium' },
+        ],
+      }),
+    );
+
+    expect(prompt).not.toContain('gpt-6.1-sol');
+    expect(prompt).not.toContain('Available models');
+    expect(prompt).not.toContain('Role defaults');
+    expect(prompt).toContain('the app picks the model and effort of every step');
+    expect(prompt).toContain('Name taskType and difficulty for the work itself');
+    expect(prompt).toContain('Steps used: 0');
+    expect(prompt).toContain('Completed steps');
+  });
 });
 
 describe('buildOrchestratorUserPrompt', () => {
@@ -272,24 +299,46 @@ describe('ORCHESTRATOR_SYSTEM_PROMPT', () => {
     expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('hard cap');
   });
 
-  it('asks for a provider qualified pick on every step it opens', () => {
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('pick the model for every next step yourself');
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('Use provider and model exactly as listed');
+  it('asks for a provider qualified pick on every step it opens once the rule is on', () => {
+    expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain(
+      'pick the model for every next step yourself',
+    );
+    expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain(
+      'Use provider and model exactly as listed',
+    );
+    expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain('"provider":"...","model":"..."');
   });
 
-  it('treats a model outside the role defaults as a normal choice', () => {
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+  it('treats a model outside the role defaults as a normal choice once the rule is on', () => {
+    expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain(
       'a model outside the role defaults is a normal choice',
     );
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+    expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain(
       'The role defaults are the fallback for a step you decline to route',
     );
   });
 
-  it('claims no capability the list did not give it', () => {
-    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain(
+  it('claims no capability the list did not give it once the rule is on', () => {
+    expect(ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT).toContain(
       'It says nothing about how good a model is at anything',
     );
+  });
+
+  it('states the difficulty of a step and leaves the model to the app by default', () => {
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('Routing: you do not pick models');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('difficulty, one of light, standard, heavy');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('never name provider, model or effort');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('pick the model for every next step');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).not.toContain('"provider":"..."');
+    expect(ORCHESTRATOR_SYSTEM_PROMPT).toContain('"difficulty":"standard"');
+  });
+
+  it('keeps every flow and language rule in both routing modes', () => {
+    for (const prompt of [ORCHESTRATOR_SYSTEM_PROMPT, ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT]) {
+      expect(prompt).toContain('treat that estimate as your own soft cap');
+      expect(prompt).toContain('reason is written for the operator');
+      expect(prompt).toContain('<<run-summary>>');
+    }
   });
 
   it('gives reason an operator facing contract', () => {

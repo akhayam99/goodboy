@@ -28,6 +28,12 @@ export const RoleHowItRuns = ({ label, facts }: Props) => (
         <span className="w-fit rounded-sm bg-subtle px-2">{facts.auto.label}</span>
         <span className={NOTE}>{facts.autoReason}</span>
       </dd>
+      {facts.bySize === null ? null : (
+        <>
+          <dt className={TERM}>By step size</dt>
+          <dd className={VALUE}>{facts.bySize}</dd>
+        </>
+      )}
       <dt className={TERM}>Splits</dt>
       <dd className={VALUE}>
         <span>{facts.split.headline}</span>

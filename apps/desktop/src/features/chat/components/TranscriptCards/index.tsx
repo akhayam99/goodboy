@@ -16,6 +16,7 @@ import { HandoffBlock } from '../HandoffBlock';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { ToolCallCard } from '../ToolCallCard';
+import { TurnChangesCard } from '../TurnChangesCard';
 import { TurnFooter } from '../TurnFooter';
 import { AssistantText } from './AssistantText';
 import { AutoDeliveryResults } from './AutoDeliveryResults';
@@ -116,13 +117,16 @@ const TranscriptCardImpl = ({
       );
     case 'usage':
       return (
-        <TurnFooter
-          item={item}
-          sessionId={sessionId}
-          agentId={agentId}
-          outcome={turnOutcome}
-          startedAt={turnStartedAt}
-        />
+        <>
+          {sessionId === null ? null : <TurnChangesCard sessionId={sessionId} runId={item.runId} />}
+          <TurnFooter
+            item={item}
+            sessionId={sessionId}
+            agentId={agentId}
+            outcome={turnOutcome}
+            startedAt={turnStartedAt}
+          />
+        </>
       );
     case 'error': {
       const errorRunId = item.runId;

@@ -86,9 +86,9 @@ const mount = () => {
 
 const titlesOnScreen = (): ReadonlyArray<string> =>
   screen
-    .getAllByRole('button')
+    .getAllByRole('option')
     .filter((button) => button.hasAttribute('data-select-id'))
-    .map((button) => button.lastElementChild?.textContent ?? '');
+    .map((button) => button.firstElementChild?.textContent ?? '');
 
 const openMenu = () => {
   fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
@@ -144,20 +144,20 @@ describe('the Sessions filter popover', () => {
     mount();
     const menu = openMenu();
     fireEvent.click(within(menu).getByRole('combobox', { name: 'Sort' }));
-    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
-      'Needs you first',
-      'Alphabetical',
-      'Last activity',
-      'Created',
-    ]);
+    expect(
+      screen
+        .getAllByRole('option')
+        .filter((option) => !option.hasAttribute('data-select-id'))
+        .map((option) => option.textContent),
+    ).toEqual(['Needs you first', 'Alphabetical', 'Last activity', 'Created']);
     fireEvent.keyDown(window, { key: 'Escape' });
     fireEvent.click(within(filterDialog()).getByRole('combobox', { name: 'Group' }));
-    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
-      'None',
-      'PR state',
-      'Stage',
-      'Folder',
-    ]);
+    expect(
+      screen
+        .getAllByRole('option')
+        .filter((option) => !option.hasAttribute('data-select-id'))
+        .map((option) => option.textContent),
+    ).toEqual(['None', 'PR state', 'Stage', 'Folder']);
   });
 
   it('closes on Escape and returns focus to its button', () => {
@@ -362,10 +362,10 @@ describe('group', () => {
     closeMenu();
     const done = screen.getByRole('button', { name: 'Done' });
     expect(done.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('button', { name: 'Ledger export speedup' })).toBeNull();
+    expect(screen.queryByRole('option', { name: 'Ledger export speedup' })).toBeNull();
     fireEvent.click(done);
     expect(done.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Ledger export speedup' })).toBeDefined();
+    expect(screen.getByRole('option', { name: 'Ledger export speedup' })).toBeDefined();
   });
 
   it('returns to one flat list on None', () => {
@@ -422,7 +422,7 @@ describe('show archived', () => {
       'Spike: batch settle',
     ]);
     expect(
-      screen.getByRole('button', { name: 'Legacy hook cleanup' }).getAttribute('data-node-kind'),
+      screen.getByRole('option', { name: 'Legacy hook cleanup' }).getAttribute('data-node-kind'),
     ).toBe('archived');
   });
 

@@ -193,9 +193,50 @@ const resolveLock = ({
   });
 };
 
+type SizedParams = {
+  readonly kindDefault: WorkflowModelPick | null;
+  readonly roleDefault: WorkflowModelPick | null;
+  readonly availability: WorkflowRoutingAvailabilitySnapshot;
+};
+
+type SizedReasonParams = {
+  readonly profile: WorkflowTaskProfile;
+  readonly pick: WorkflowModelPick;
+};
+
+const sizedReason = ({ profile, pick }: SizedReasonParams): string => {
+  const work = profile.difficulty === 'unknown' ? 'this work' : `${profile.difficulty} work`;
+  const basis =
+    profile.basis === 'heuristic'
+      ? ' That difficulty is a heuristic estimate read off the step text, not something the agent stated.'
+      : '';
+  return `Auto sized the step by its difficulty and picked ${pick.provider}/${pick.model} for ${work}.${basis}`;
+};
+
+const sizedPick = ({
+  kindDefault,
+  roleDefault,
+  availability,
+}: SizedParams): WorkflowModelPick | null => {
+  if (kindDefault === null || roleDefault !== null) {
+    return null;
+  }
+  const status = workflowRoutingAvailability({
+    pick: kindDefault,
+    snapshot: availability,
+    isExplicit: false,
+  });
+  if (status.kind !== 'available') {
+    return null;
+  }
+  return { ...kindDefault, effort: normalizeAutomaticEffort({ pick: kindDefault }).effort };
+};
+
 type RecoveryParams = {
   readonly cause: WorkflowRoutingUnavailableCause;
   readonly unavailablePick: WorkflowModelPick | null;
+  readonly kindDefault: WorkflowModelPick | null;
+  readonly roleDefault: WorkflowModelPick | null;
   readonly profile: WorkflowTaskProfile;
   readonly proposal: WorkflowRoutingProposal | null;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
@@ -205,11 +246,23 @@ type RecoveryParams = {
 const resolveRecovery = ({
   cause,
   unavailablePick,
+  kindDefault,
+  roleDefault,
   profile,
   proposal,
   availability,
   contextEstimate,
 }: RecoveryParams): WorkflowRoutingResolution => {
+  const sized = sizedPick({ kindDefault, roleDefault, availability });
+  if (sized !== null) {
+    return readyDecision({
+      pick: sized,
+      source: 'kind_default',
+      reason: `${CAUSE_SENTENCE[cause]} ${sizedReason({ profile, pick: sized })}`,
+      proposal,
+      adjustment: cause,
+    });
+  }
   const recommendation = recommendWorkflowModel({
     candidates: workflowModelCandidates({ availability }),
     profile,
@@ -233,16 +286,30 @@ const resolveRecovery = ({
 };
 
 type DeterministicParams = {
+  readonly kindDefault: WorkflowModelPick | null;
+  readonly roleDefault: WorkflowModelPick | null;
   readonly profile: WorkflowTaskProfile;
   readonly availability: WorkflowRoutingAvailabilitySnapshot;
   readonly contextEstimate: number | null;
 };
 
 const resolveDeterministic = ({
+  kindDefault,
+  roleDefault,
   profile,
   availability,
   contextEstimate,
 }: DeterministicParams): WorkflowRoutingResolution => {
+  const sized = sizedPick({ kindDefault, roleDefault, availability });
+  if (sized !== null) {
+    return readyDecision({
+      pick: sized,
+      source: 'kind_default',
+      reason: sizedReason({ profile, pick: sized }),
+      proposal: null,
+      adjustment: 'none',
+    });
+  }
   const recommendation = recommendWorkflowModel({
     candidates: workflowModelCandidates({ availability }),
     profile,
@@ -366,6 +433,8 @@ export const resolveWorkflowRouting = ({
     return resolveRecovery({
       cause: status.cause,
       unavailablePick: pick,
+      kindDefault,
+      roleDefault,
       profile,
       proposal: emitted,
       availability,
@@ -376,6 +445,8 @@ export const resolveWorkflowRouting = ({
     return resolveRecovery({
       cause: 'unknown_model',
       unavailablePick: null,
+      kindDefault,
+      roleDefault,
       profile,
       proposal: null,
       availability,
@@ -383,7 +454,13 @@ export const resolveWorkflowRouting = ({
     });
   }
   if (missingProposal === 'deterministic_pick') {
-    return resolveDeterministic({ profile, availability, contextEstimate });
+    return resolveDeterministic({
+      kindDefault,
+      roleDefault,
+      profile,
+      availability,
+      contextEstimate,
+    });
   }
   return resolveFallback({ roleDefault, sessionDefault, kindDefault, availability });
 };

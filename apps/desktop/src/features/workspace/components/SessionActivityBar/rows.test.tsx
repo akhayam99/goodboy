@@ -50,11 +50,11 @@ afterEach(() => {
 
 const titlesOnScreen = (): ReadonlyArray<string> =>
   screen
-    .getAllByRole('button')
+    .getAllByRole('option')
     .filter((button) => button.hasAttribute('data-select-id'))
-    .map((button) => button.lastElementChild?.textContent ?? '');
+    .map((button) => button.firstElementChild?.textContent ?? '');
 
-const rowOf = (title: string): HTMLElement => screen.getByRole('button', { name: title });
+const rowOf = (title: string): HTMLElement => screen.getByRole('option', { name: title });
 
 const mergedPr = (): PullRequestState => ({
   number: 304,
@@ -101,13 +101,15 @@ describe('a session row', () => {
     return renderBar();
   };
 
-  it('is one line: the title and nothing else', () => {
+  it('is one line: the title, space, then the state and nothing else', () => {
     mount();
     for (const session of all) {
       const row = rowOf(session.goal);
       expect(row.children).toHaveLength(2);
-      expect(row.lastElementChild?.textContent).toBe(session.goal);
+      expect(row.firstElementChild?.textContent).toBe(session.goal);
+      expect(row.lastElementChild?.hasAttribute('data-row-state')).toBe(true);
     }
+    expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByTestId('session-progress')).toBeNull();
     expect(screen.queryByTestId('session-row-trailing')).toBeNull();
   });
@@ -172,7 +174,7 @@ describe('a session row', () => {
     seedColumn({ store: useAppStore, sessions: all });
     renderBar();
     const first = screen
-      .getAllByRole('button')
+      .getAllByRole('option')
       .find((button) => button.hasAttribute('data-select-id'));
     first?.focus();
     fireEvent.keyDown(first as HTMLElement, { key: 'ArrowDown' });

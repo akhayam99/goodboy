@@ -45,14 +45,12 @@ type Params = {
 
 type PathParams = {
   readonly project: Project;
-  readonly slug: string;
   readonly mountId: MountId;
-  readonly folderName: string | undefined;
 };
 
-const targetPathFor = ({ project, slug, mountId, folderName }: PathParams): string => {
+const targetPathFor = ({ project, mountId }: PathParams): string => {
   if (project.kind !== 'repo') {
-    return `${project.rootPath}/sessions/${folderName ?? slug}`;
+    return project.rootPath;
   }
   return `${project.rootPath}/.goodboy/worktrees/${mountDirName({ mountId })}`;
 };
@@ -127,7 +125,7 @@ export const mountPlan = ({
     branch,
     adoptedBranch: project.kind === 'repo' ? adoptedBranch : null,
     baseBranch: project.kind === 'repo' ? (project.baseBranch ?? null) : null,
-    targetPath: targetPathFor({ project, slug, mountId, folderName: seed?.folderName }),
+    targetPath: targetPathFor({ project, mountId }),
     takenBranches,
   };
 };

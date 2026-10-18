@@ -11,7 +11,7 @@ import { seedIntros, type IntroPage } from './introsSeed';
 type Props = {
   readonly page: IntroPage;
   readonly isEmpty: boolean;
-  readonly hoverMarker?: 'agents' | 'auto';
+  readonly hoverMarker?: 'auto';
   readonly theme?: 'dark' | 'light';
 };
 

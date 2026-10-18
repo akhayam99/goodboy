@@ -21,7 +21,7 @@ describe('defaultChatModel', () => {
   it('keeps a Codex chat on the mid tier line, never on the expensive one', () => {
     const codex = defaultChatModel({ connected: ['codex'] });
     expect(codex.model).toBe(
-      latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Terra' })[0]?.key,
+      latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Sol' })[0]?.key,
     );
   });
 
@@ -30,7 +30,7 @@ describe('defaultChatModel', () => {
       defaultChatModel({ connected: ['anthropic', 'codex'], workspaceDefaultProvider: 'codex' }),
     ).toEqual({
       provider: 'codex',
-      model: latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Terra' })[0]?.key,
+      model: latestInGroup({ provider: 'codex', group: 'GPT', checkpoint: 'Sol' })[0]?.key,
     });
   });
 

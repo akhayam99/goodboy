@@ -784,7 +784,7 @@ describe('cluster child routing lifecycle', () => {
     });
     for (const args of [light, heavy]) {
       const decision = args.routingDecision as WorkflowRoutingDecision;
-      expect(decision.source).toBe('heuristic');
+      expect(decision.source).toBe('kind_default');
       expect(decision.proposal).toBeNull();
       expect(args.routingLock).toBeUndefined();
     }
@@ -887,7 +887,7 @@ describe('cluster child routing lifecycle', () => {
     const updates = routingUpdates();
     expect(updates).toHaveLength(1);
     expect(updates[0]?.id).toBe('child-1');
-    expect(updates[0]?.routingDecision.source).toBe('heuristic');
+    expect(updates[0]?.routingDecision.source).toBe('kind_default');
     expect(updates[0]?.routingDecision.adjustment).toBe('disconnected');
     expect(updates[0]?.providerOverride).toBe('anthropic');
     expect(updates[0]?.routingLock).toBeNull();

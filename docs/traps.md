@@ -510,6 +510,31 @@ fails silently at runtime.
   must read the marker through it. A second reader that tests `.goodboy.is_file()`
   broke file versions in every plain-folder turn from #1533 until it was fixed. Build
   test session folders with `session_dir_create_blocking`, never by hand.
+- Saved versions of a plain folder keep their before copies where file
+  versions always kept them, `file-versions/<session-id>/<version-id>-<name>`
+  with a `file_versions` row. Everything new (the first copy, the index, staged
+  runs, turn manifests) lives in `folder-versions/`, which older builds never
+  read. A new place or name for the before copies is a new on-disk format and a
+  minor release. Nothing is ever written inside the user's folder: a restore
+  writes a temporary file next to its target and renames it over. A staged run
+  is finished at startup only when it is not live and older than a minute; a
+  second window booting while a turn runs must not finish that turn early.
+- `inPlaceFoldersOf` answers where an agent may write now: unmounted projects
+  of kind `folder`. It is not the history of a session. Tracking a folder with
+  git turns it into a repo, and its old sessions still own saved turns there, so
+  every view of past changes (Changes, the turn card, the turn list load) goes
+  through `historyFoldersOf` and `historyCandidatesOf`, which keep a repo that
+  holds turns of the session. Reading history through the writable selector
+  loses it silently on conversion.
+- The materialize bridge hands a plain folder to the agent only when the
+  session holds that folder's saved copy (`holdsFolderCapture`, kept by
+  `createFolderSnapshotPort`). A turn that started on a repository mount has no
+  writer lease or saved copy on the folder, so it is refused with a pointer to
+  the next turn.
+- Unlinking a plain folder forgets its first copy and staging. It refuses while
+  a turn is open on the folder: `removeProject` reads `isTurnOpen` before it
+  unlinks, and `forget_folder` returns `FolderBusy` under the folder lock, so a
+  turn started in another window keeps its staging.
 
 ## Traps in the toolchain
 
@@ -605,6 +630,14 @@ fails silently at runtime.
   `URL.createObjectURL` (the composer chip, the workspace chat bubble) is a
   broken box without `blob:`, with only a console error. `csp-img-src.test.ts`
   pins the rule; widen no other directive for an image.
+- Three frames paint before the splash: the native window, the `index.html`
+  shell, then React. Each must paint the same chrome, so `backgroundColor` in
+  `tauri.conf.json` is the dark chrome (`#0e1012`, never the old gray) and the
+  shell restates the `styles.css` chrome, primary and 6% cover strength as
+  literals, because the stylesheet is not loaded yet. Change a token and
+  `boot-shell-paints-the-chrome.test.ts` fails until `index.html` follows. The
+  window is created hidden and shown by `useRevealWindow` after first paint;
+  never show it in Rust setup again, or light users see dark first.
 
 ## History stashes are shared across worktrees
 
@@ -676,3 +709,4 @@ Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegat
 - `useAutoTreeActions.stop` stops the live children and the root agent turn by turn. The tree phase is written by the scheduler, not by this button; once the tree stop of the runtime exists, replace the body and keep the name.
 - A mock scene that shows an Auto chat must give every agent a `lastViewedAt` after its `lastFinishedAt`; otherwise the chat marks it viewed on every render of the real store.
 - History: Claude refuses a Bash command holding a variable, even if the allow list names it ("A variable in this command can't be checked before it runs"). That is why the old Auto bridge confinement used an absolute path and not `$GOODBOY_BIN`. Auto no longer holds any Bash rule, but the lesson stands for any future allow rule: a read-only command such as `ls` proves nothing about confinement, because Claude allows it without a rule, so probe with a command that writes.
+- An Auto child that fails to start must say why. `launchChildren` settles it with `code: message` (`kickoff_failed: <the error>`), never the bare code; the row and Auto's next message read that text. Do not drop `outcome.message` when you add a refusal. A `rewriter` agent needs a `historyRewriters` copy binding, so a delegated one always throws in `leaseTurnWriter`: admission refuses it instead of creating a child that can never start.

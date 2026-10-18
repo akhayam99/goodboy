@@ -64,6 +64,7 @@ export const RunStepDraft = ({
     role: draft.role,
     provider: resolvedProvider,
     roleModels: workspaceRoleModels,
+    size: draft.size,
   });
   const patch = (next: Partial<StepDraft>) => setDraft((current) => ({ ...current, ...next }));
 

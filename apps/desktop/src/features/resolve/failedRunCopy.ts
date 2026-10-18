@@ -34,7 +34,7 @@ const ROW_ACTION_VERB: Record<ResolveRowAction, string> = {
   review: 'Review',
   retry: NAMES.retry,
   retry_reply: 'Post the reply again',
-  open_github: 'Open on GitHub',
+  open_github: 'Open',
   resume: 'Resume',
 };
 

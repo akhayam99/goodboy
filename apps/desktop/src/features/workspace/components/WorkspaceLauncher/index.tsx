@@ -12,7 +12,7 @@ import {
   cn,
   useEscapeLayer,
 } from '@goodboy/ui';
-import type { Workspace, WorkspaceId } from '@goodboy/types';
+import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BrandTile } from '../../../../shared/components/BrandTile';
@@ -25,7 +25,7 @@ import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdatePill } from '../../../updater/components/UpdatePill';
 import { useSetupResume } from '../../../onboarding/useSetupResume';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
-import { hasOnlyPlainFolders } from '../../hasOnlyPlainFolders';
+import { useFolderFacesOnFocus } from '../../hooks/useFolderFacesOnFocus';
 import { openNewWorkspace } from '../../openNewWorkspace';
 import { useIsMainWindow } from '../../useIsMainWindow';
 import { LauncherEmpty } from './LauncherEmpty';
@@ -35,11 +35,6 @@ import { useHomeFolder } from './useHomeFolder';
 type Props = {
   readonly isCreating: boolean;
   readonly onCloseCreate: () => void;
-  readonly onOfferRepo: () => void;
-};
-
-type CreatedParams = {
-  readonly workspaceId: WorkspaceId;
 };
 
 const SEARCH_FROM = 5;
@@ -49,7 +44,7 @@ const LOCKUP_TILE_PX = 40;
 const openSettingsHome = () =>
   window.dispatchEvent(new CustomEvent('goodboy:open-settings', { detail: { scope: 'home' } }));
 
-export const WorkspaceLauncher = ({ isCreating, onCloseCreate, onOfferRepo }: Props) => {
+export const WorkspaceLauncher = ({ isCreating, onCloseCreate }: Props) => {
   const workspaces = useWorkspaces();
   const projects = useAppStore((s) => s.projects);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
@@ -59,6 +54,7 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate, onOfferRepo }: Pr
   const home = useHomeFolder();
   const isInMainWindow = useIsMainWindow();
   const setup = useSetupResume({ isMainWindow: isInMainWindow });
+  useFolderFacesOnFocus();
   const [query, setQuery] = useState('');
   const hasSearch = workspaces.length >= SEARCH_FROM;
   const view = isCreating ? 'new' : workspaces.length === 0 ? 'empty' : 'list';
@@ -88,13 +84,6 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate, onOfferRepo }: Pr
 
   const openNewWindow = (workspace: Workspace) => {
     void openWorkspace({ id: workspace.id, title: workspace.name, target: 'new-window' });
-  };
-
-  const onCreated = ({ workspaceId }: CreatedParams) => {
-    onCloseCreate();
-    if (hasOnlyPlainFolders({ projects: useAppStore.getState().projects, workspaceId })) {
-      onOfferRepo();
-    }
   };
 
   const openFirstMatch = () => {
@@ -172,7 +161,7 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate, onOfferRepo }: Pr
       <NewWorkspaceForm
         mode="new"
         titleRole="title"
-        onCreated={onCreated}
+        onCreated={onCloseCreate}
         onCancel={onCloseCreate}
         backLabel="Cancel"
       />

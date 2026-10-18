@@ -12,7 +12,7 @@ const usage: ProviderUsage = {
 
 describe('computeCodexCostUsd', () => {
   it('prices Astra input and output at the standard rates', () => {
-    expect(CODEX_PRICES['gpt-6-astra']).toEqual({
+    expect(CODEX_PRICES['gpt-6-astra']).toMatchObject({
       inputPerMtok: 10,
       outputPerMtok: 50,
       cachedInputPerMtok: 1,
@@ -39,7 +39,7 @@ describe('computeCodexCostUsd', () => {
   });
 
   it('prices GPT-6.1 Sol at 2 and 10 per million with cached input at 0.10', () => {
-    expect(CODEX_PRICES['gpt-6.1-sol']).toEqual({
+    expect(CODEX_PRICES['gpt-6.1-sol']).toMatchObject({
       inputPerMtok: 2,
       outputPerMtok: 10,
       cachedInputPerMtok: 0.1,

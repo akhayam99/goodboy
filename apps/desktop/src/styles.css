@@ -654,6 +654,7 @@ html[data-theme='light'] {
   --dropdown-bottom-inset: 36px;
   --app-backdrop-strength: 3;
   --app-backdrop-scale: 1;
+  --app-backdrop-cover-strength: 6;
   --app-backdrop: radial-gradient(
     ellipse 70% 90% at 0% 0%,
     color-mix(
@@ -663,10 +664,20 @@ html[data-theme='light'] {
     ),
     transparent
   );
+  --app-backdrop-cover: radial-gradient(
+    ellipse 70% 90% at 0% 0%,
+    color-mix(
+      in oklab,
+      var(--color-primary)
+        calc(var(--app-backdrop-cover-strength) * var(--app-backdrop-scale) * 1%),
+      transparent
+    ),
+    transparent
+  );
 }
 
 html[data-theme='light'] {
-  --app-backdrop-scale: 1;
+  --app-backdrop-scale: 2.5;
 }
 
 html {
@@ -739,6 +750,11 @@ body {
 @utility bg-backdrop {
   background-color: var(--color-chrome);
   background-image: var(--app-backdrop);
+}
+
+@utility bg-backdrop-cover {
+  background-color: var(--color-chrome);
+  background-image: var(--app-backdrop-cover);
 }
 
 @utility bg-selected {
@@ -992,14 +1008,6 @@ dialog[open]::backdrop {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .welcome-entrance .welcome-tile [data-brand-tile] {
-    animation: welcome-tile-in 360ms cubic-bezier(0.2, 0, 0, 1) both;
-  }
-
-  .welcome-entrance .welcome-tile [data-brand-tile] > span {
-    animation: welcome-mark-in 360ms cubic-bezier(0.2, 0, 0, 1) both;
-  }
-
   .welcome-entrance .welcome-splash-word {
     animation: welcome-word-out 120ms ease-out both;
   }
@@ -1012,29 +1020,9 @@ dialog[open]::backdrop {
     animation: welcome-rise 200ms cubic-bezier(0.2, 0, 0, 1) 520ms both;
   }
 
-  .wizard-step-in .welcome-entrance .welcome-tile [data-brand-tile],
-  .wizard-step-in .welcome-entrance .welcome-tile [data-brand-tile] > span,
   .wizard-step-in .welcome-entrance .welcome-splash-word,
   .wizard-step-in .welcome-entrance .welcome-rise {
     animation: none;
-  }
-
-  @keyframes welcome-tile-in {
-    from {
-      background-color: transparent;
-    }
-    to {
-      background-color: var(--color-brand);
-    }
-  }
-
-  @keyframes welcome-mark-in {
-    from {
-      color: var(--color-primary);
-    }
-    to {
-      color: white;
-    }
   }
 
   @keyframes welcome-word-out {

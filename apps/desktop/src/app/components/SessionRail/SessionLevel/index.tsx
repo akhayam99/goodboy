@@ -6,6 +6,7 @@ import { useSessionPageLens } from '../../../../features/session/hooks/useSessio
 import { currentSignOf } from '../../../../features/workspace/components/SessionActivityBar/currentSign';
 import { SessionPages } from '../../../../features/workspace/components/SessionActivityBar/SessionPages';
 import { useCardPages } from '../../../../features/workspace/hooks/useCardPages';
+import { LevelFolder } from './LevelFolder';
 import { LevelLinked } from './LevelLinked';
 import { LevelProjects } from './LevelProjects';
 import { RAIL_INSET } from './railInset';
@@ -36,7 +37,11 @@ export const SessionLevel = ({ session, isActive }: Props) => {
             <SessionPages session={session} pages={pages} facts={facts} sign={sign} />
           </div>
           <div data-level-cards="" className="flex flex-col gap-2">
-            {isBranchless ? null : <LevelProjects session={session} isActive={isActive} />}
+            {isBranchless ? (
+              <LevelFolder session={session} />
+            ) : (
+              <LevelProjects session={session} isActive={isActive} />
+            )}
             <LevelLinked session={session} isActive={isActive} />
           </div>
         </div>

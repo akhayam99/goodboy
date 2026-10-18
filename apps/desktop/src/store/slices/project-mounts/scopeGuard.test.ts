@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type {
+  FolderPurpose,
   IsoDateTime,
   MountId,
   Project,
@@ -9,6 +10,7 @@ import type {
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 import { buildScopeGuard } from './scopeGuard';
 
 const NOW = '2026-08-22T00:00:00.000Z' as IsoDateTime;
@@ -573,5 +575,99 @@ describe('buildScopeGuard during the first lap', () => {
 
   it('keeps a read only role read only', () => {
     expect(guard(false)).toContain('does not cover changing project files');
+  });
+});
+
+describe('buildScopeGuard for a plain folder that works in place', () => {
+  const acmeNotes = buildProject({
+    id: brandId<ProjectId>({ value: 'project-acme-notes' }),
+    name: 'acme-notes',
+    rootPath: '/tmp/Documents/acme-notes',
+    kind: 'folder',
+  });
+  const acmeResearch = buildProject({
+    id: brandId<ProjectId>({ value: 'project-acme-research' }),
+    name: 'acme-research',
+    rootPath: '/tmp/Documents/acme-research',
+    kind: 'folder',
+  });
+  type FolderGuardCase = {
+    readonly canWrite: boolean;
+    readonly purpose?: FolderPurpose | null;
+    readonly projects?: ReadonlyArray<Project>;
+  };
+  const guard = ({ canWrite, purpose = null, projects = [acmeNotes] }: FolderGuardCase) =>
+    buildScopeGuard({
+      workingDir: acmeNotes.rootPath,
+      projects,
+      mounts: [],
+      isBridgeServing: true,
+      isSessionDirScope: false,
+      inPlaceFolders: projects
+        .filter((project) => project.kind === 'folder')
+        .map((folder) => ({ folder, purpose: folder.id === acmeNotes.id ? purpose : null })),
+      canWrite,
+    });
+
+  it('tags the turn folder-scope and names the folder it writes in', () => {
+    const text = guard({ canWrite: true });
+
+    expect(text.startsWith('[folder-scope]')).toBe(true);
+    expect(text.endsWith('[/folder-scope]')).toBe(true);
+    expect(text).toContain('starting in: /tmp/Documents/acme-notes');
+    expect(text).toContain('- acme-notes (folder) at /tmp/Documents/acme-notes');
+    expect(text).toContain('works in place: this session reads and writes it directly');
+  });
+
+  it('keeps every write inside the folder, shell commands and links included', () => {
+    const text = guard({ canWrite: true });
+
+    expect(text).toContain('ALL writes MUST resolve inside the folders this session works in');
+    expect(text).toContain(
+      'every shell command that creates, changes, moves, renames or deletes a file (cp, mv, rm, mkdir, touch, sed -i, tee, a redirect such as > or >>',
+    );
+    expect(text).toContain('not a parent folder, not a sibling folder, not your home folder');
+    expect(text).toContain('not a temporary folder you then copy from');
+    expect(text).toContain('NEVER follow a symbolic link that leads outside the folder');
+  });
+
+  it('never invites git, a mount or a session folder', () => {
+    const text = guard({ canWrite: true });
+
+    expect(text).toContain('Do not run git init or git clone, and do not create a .git folder');
+    expect(text).not.toContain('session directory');
+    expect(text).not.toContain('NEVER write to a project root');
+    expect(text).not.toContain('<<materialize:');
+    expect(text).not.toContain('mount fork');
+  });
+
+  it('keeps Office and PDF files read only in a Documents folder, and only there', () => {
+    expect(guard({ canWrite: true, purpose: 'documents' })).toContain(
+      'acme-notes holds documents. Edit Markdown and plain text files there. Word, PDF, Pages, Keynote, Numbers, Excel and PowerPoint files are read only',
+    );
+    expect(guard({ canWrite: true, purpose: 'code' })).not.toContain('holds documents');
+    expect(guard({ canWrite: true, purpose: 'code' })).toContain('(folder, code project)');
+  });
+
+  it('lists every folder of the workspace when the session writes in several', () => {
+    const text = guard({ canWrite: true, projects: [acmeNotes, acmeResearch] });
+
+    expect(text).toContain('This session works in place in these folders:');
+    expect(text).toContain('- acme-research (folder) at /tmp/Documents/acme-research');
+  });
+
+  it('offers mounts only for a repository in the same workspace', () => {
+    const text = guard({ canWrite: true, projects: [acmeNotes, app] });
+
+    expect(text).toContain('<<materialize:');
+    expect(text).toContain('- app (repo) root: /tmp/app | NOT materialized');
+  });
+
+  it('keeps a turn without the folder lease read only', () => {
+    const text = guard({ canWrite: false });
+
+    expect(text).toContain(READ_ONLY_ROLE);
+    expect(text).toContain('do not change, create or delete any file in it');
+    expect(text).not.toContain('ALL writes MUST resolve');
   });
 });

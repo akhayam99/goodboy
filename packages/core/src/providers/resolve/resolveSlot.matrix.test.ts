@@ -62,9 +62,10 @@ type AutoParams = {
 
 const curated = ({ slot, provider }: AutoParams) => {
   const [first] = AUTO_DEFAULTS[provider][slot.id];
+  const isAgentPreselect = slot.kind === 'task' && (slot.id === 'pr_draft' || slot.id === 'rebase');
   return {
     model: first?.key,
-    effort: first?.effort ?? (slot.kind === 'role' ? 'medium' : null),
+    effort: isAgentPreselect ? null : (first?.effort ?? (slot.kind === 'role' ? 'medium' : null)),
   };
 };
 

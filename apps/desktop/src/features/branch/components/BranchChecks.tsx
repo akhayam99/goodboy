@@ -3,8 +3,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, EmptyState, PageColumn } from '@goodboy/ui';
 import type { PrCheckRun, SessionId } from '@goodboy/types';
-import { ExternalLink } from 'lucide-react';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { hostIconOf } from '../../../shared/hostIconOf';
 import { openUrl } from '../../../shared/lib/editor';
 import { useAppStore } from '../../../store';
 import { selectedReviewEntryOf } from '../../../store/slices/review-source/activeReviewSource';
@@ -116,6 +116,7 @@ export const BranchChecks = ({ sessionId }: Props) => {
   const stateNotice = () => {
     if (view.kind === 'host') {
       const label = REVIEW_SOURCE_LABEL[view.host];
+      const HostLogo = hostIconOf({ host: view.host });
       const url = view.url;
       return (
         <EmptyState
@@ -125,9 +126,14 @@ export const BranchChecks = ({ sessionId }: Props) => {
           description={`Goodboy doesn't read ${label} ${HOST_NOUN[view.host]} yet.`}
           action={
             url === null ? undefined : (
-              <Button variant="ghost" size="sm" onClick={() => void openUrl(url)}>
-                View on {label}
-                <ExternalLink size={ICON_SIZE.row} aria-hidden />
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={`View on ${label}`}
+                onClick={() => void openUrl(url)}
+              >
+                <HostLogo size={ICON_SIZE.row} aria-hidden />
+                View
               </Button>
             )
           }
@@ -200,7 +206,7 @@ export const BranchChecks = ({ sessionId }: Props) => {
           }
           checks={view.kind === 'ready' ? view.checks : []}
           fallbackUrl={fallbackUrl}
-          hostLabel={REVIEW_SOURCE_LABEL[isPortHost ? host.kind : 'github']}
+          host={isPortHost ? host.kind : 'github'}
           isLoading={view.kind === 'loading'}
           onOpenUrl={(url) => void openUrl(url)}
         />

@@ -73,7 +73,7 @@ type LabelParams = {
 
 export const lensLabelFor = ({ lens, isBranchless }: LabelParams): string => {
   if (lens === 'files' && isBranchless) {
-    return 'File versions';
+    return 'Changes';
   }
   return LENS_LABEL[lens];
 };

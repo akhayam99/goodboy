@@ -31,14 +31,8 @@ describe('SESSION_PAGE_INTRO', () => {
     expect(line).not.toMatch(/\b(I|we|our|let's)\b/i);
   });
 
-  it('says what the Deprecated marker on Agents says', () => {
-    const marker = pageMarkerOf({ pageId: 'agents', isAutoShown: true });
-
-    expect(marker?.why).toContain(SESSION_PAGE_INTRO.agents[1].split('. ')[1]);
-  });
-
   it('says what the Experimental marker on Auto agents says', () => {
-    const marker = pageMarkerOf({ pageId: 'auto', isAutoShown: true });
+    const marker = pageMarkerOf({ pageId: 'auto' });
 
     expect(marker?.why).toContain(SESSION_PAGE_INTRO.auto[1].split('. ')[1]);
     expect(SESSION_PAGE_INTRO.auto[1]).toContain('under a limit');

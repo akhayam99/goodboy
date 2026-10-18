@@ -6,6 +6,12 @@ A workspace keeps your folders together, and one session can work across several
 
 Begin with an empty folder and no repository. **Start from scratch**, inside **New workspace**, makes the folder, starts a git repository with a first commit and opens a first session in it. **Publish** later creates a GitHub repository for it, or links one you already have.
 
+### Track a folder with git later
+
+Start in a plain code folder and add git when you want it. When you pick a folder, Goodboy asks whether it is a **Code project** or **Documents**, preselected from what it holds, and you can change it later in Settings, Folders. A code folder can be tracked with git right at Create. **Track with git** in Settings, Folders shows the first commit before it happens: what goes in, dependency and build folders left out until you tick them back in, and files that look like secrets, which always stay out and go to `.gitignore`. Nothing leaves your Mac until **Publish to GitHub**. Git you set up outside the app is noticed when the window comes back: a code folder moves to branches between turns and offers **Keep editing in place**, and a documents folder asks first.
+
+A plain folder is edited in place by one session at a time, and the next one waits its turn; reading is never blocked. **Plain folders** in Settings, Folders lists each one with its face, the saved versions it uses and a switch between Code project and Documents. Office files and PDFs are read, never rewritten, in a documents folder. What each turn changed is under **Changes** in the session rail, and it stays there when you later track the folder with git. Unlinking a folder waits while an agent is writing in it.
+
 ### Workspace with several folders
 
 Keep your repos together as one workspace, and let one session work across several of them. The **Folders** card of a session lists each repo it touches, with its branch and the size of its changes. A folder gets a branch only when an agent needs to edit it. The **+** on the card adds another workspace folder, or connects a new repo or folder to the workspace from the same list.

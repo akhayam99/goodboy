@@ -250,7 +250,7 @@ describe('StageBoardCard selection', () => {
     const onModifierClick = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onModifierClick={onModifierClick} />);
     const card = cardTitle();
-    expect(card.getAttribute('aria-keyshortcuts')).toBe('Alt+Enter Shift+F10');
+    expect(card.getAttribute('aria-keyshortcuts')).toBe('Alt+Enter Shift+Enter Shift+F10');
     fireEvent.keyDown(card, { key: 'Enter', altKey: true });
     expect(onModifierClick).toHaveBeenCalledWith(SESSION_ID, expect.anything());
     expect(nav.selectCard).not.toHaveBeenCalled();
@@ -335,11 +335,11 @@ describe('StageBoardCard one signal', () => {
   });
 
   it.each([
-    ['opened', false, 'In review'],
+    ['opened', false, 'Open'],
     ['opened', true, 'Draft'],
     ['merged', false, 'Merged'],
     ['closed', false, 'Closed'],
-  ])('maps GitLab %s with draft %s to the %s token', (mrState, draft, word) => {
+  ])('maps GitLab %s with draft %s to the %s word', (mrState, draft, word) => {
     state.sessionGitlabMr = { [SESSION_ID]: { mr: mergeRequest({ state: mrState, draft }) } };
     render(<StageBoardCard session={session} nav={nav} />);
     expect(

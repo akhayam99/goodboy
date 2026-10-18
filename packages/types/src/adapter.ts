@@ -3,12 +3,20 @@ import type { MessageAttachment } from './message';
 import type { PermissionScope } from './permission';
 import type { ProviderId } from './provider-registry';
 
+export type RequestUsage = {
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly cachedInputTokens: number;
+  readonly cacheCreationInputTokens: number;
+};
+
 export type ProviderUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly cacheCreationInputTokens?: number;
   readonly contextTokens?: number;
+  readonly largeRequests?: ReadonlyArray<RequestUsage>;
   readonly estimatedCostUsd: number;
 };
 

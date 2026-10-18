@@ -1,3 +1,4 @@
+import { isSizeMovingRung } from '@goodboy/core';
 import { SegmentedTabs } from '@goodboy/ui';
 import type { EffortLevel, ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../engine';
@@ -51,7 +52,13 @@ export const StepModelFields = ({
     model: recommendedModel,
     effort,
   });
-  const followPick = [routingNameText(followLabel), ...followLabel.detail].join(' · ');
+  const sizeNote =
+    step.size !== null && isSizeMovingRung({ slot: step.role, size: step.size })
+      ? `sized for a ${step.size === 'large' ? 'large' : 'small'} step`
+      : null;
+  const followPick = [routingNameText(followLabel), ...followLabel.detail, sizeNote]
+    .filter((part): part is string => part !== null)
+    .join(' · ');
 
   return (
     <>

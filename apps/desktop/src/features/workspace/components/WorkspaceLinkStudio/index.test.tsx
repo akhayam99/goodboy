@@ -21,7 +21,7 @@ vi.mock('@tauri-apps/api/path', () => ({ homeDir: vi.fn(async () => '/mock') }))
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { GitRepoCheck, Project } from '@goodboy/types';
-import { aProject, aWorkspace } from '@goodboy/types/testing';
+import { aFolderSignals, aProject, aWorkspace } from '@goodboy/types/testing';
 import {
   importStore,
   resetStoryStore,
@@ -35,6 +35,7 @@ import { WorkspaceLinkStudio } from './index';
 
 const ACME_WEB = '/mock/Code/acme-web';
 const NOTES = '/mock/Code/acme-notes';
+const SITE = '/mock/Code/acme-site';
 
 const CHECKS: Readonly<Record<string, GitRepoCheck>> = {
   [ACME_WEB]: {
@@ -44,6 +45,14 @@ const CHECKS: Readonly<Record<string, GitRepoCheck>> = {
     defaultBranch: 'main',
     error: null,
     errorKind: null,
+  },
+  [SITE]: {
+    isRepo: false,
+    rootPath: null,
+    resolvedPath: SITE,
+    defaultBranch: null,
+    error: 'not a git repository',
+    errorKind: 'not_a_repository',
   },
   [NOTES]: {
     isRepo: false,
@@ -85,6 +94,10 @@ beforeEach(async () => {
     validate_git_repo: (args: unknown) => CHECKS[pathOf(args)] ?? null,
     scan_child_repos: [],
     repo_identity: { rootCommits: [], remoteUrl: null },
+    read_folder_signals: (args: unknown) =>
+      pathOf(args) === SITE
+        ? aFolderSignals({ path: SITE, markers: ['package.json'], counts: { source: 40 } })
+        : aFolderSignals({ path: pathOf(args), counts: { markdown: 12 } }),
   });
   createWorkspaceWithFolders
     .mockReset()
@@ -98,9 +111,18 @@ beforeEach(async () => {
             rootPath: 'rootPath' in folder ? folder.rootPath : folder.parentPath,
           }),
         );
+        const purposes = Object.fromEntries(
+          folders.flatMap((folder, index) => {
+            const project = projects[index];
+            return folder.kind === 'plain' && folder.purpose !== undefined && project !== undefined
+              ? [[project.id, folder.purpose]]
+              : [];
+          }),
+        );
         useAppStore.setState((state) => ({
           workspaces: [workspace, ...state.workspaces],
           projects: [...projects, ...state.projects],
+          folderPurpose: { ...state.folderPurpose, ...purposes },
         }));
         return { workspace, projects, movedSessionCount: 0 };
       },
@@ -125,7 +147,7 @@ const createFrom = async ({ path }: PathParams) => {
 
 describe('WorkspaceLinkStudio', () => {
   it('mounts the one form on a page surface titled New workspace, never a dialog', () => {
-    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} />);
 
     expect(screen.getByRole('banner', { name: 'New workspace' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'New workspace' })).toBeDefined();
@@ -134,14 +156,14 @@ describe('WorkspaceLinkStudio', () => {
   });
 
   it('sits between the bars like every studio inside the shell', () => {
-    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
+    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} />);
 
     expect(container.firstElementChild?.className).not.toContain('inset-0');
   });
 
   it('closes the page on escape', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio onClose={onClose} />);
 
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
@@ -150,7 +172,7 @@ describe('WorkspaceLinkStudio', () => {
 
   it('creates the picked folder as a workspace, opens it and closes', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio onClose={onClose} />);
 
     await createFrom({ path: ACME_WEB });
 
@@ -163,7 +185,7 @@ describe('WorkspaceLinkStudio', () => {
 
   it('never opens setup, even when setup was never finished', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio onClose={onClose} />);
 
     await createFrom({ path: ACME_WEB });
 
@@ -171,23 +193,39 @@ describe('WorkspaceLinkStudio', () => {
     expect(onOpenWizard).not.toHaveBeenCalled();
   });
 
-  it('offers a repository right after a plain folder without git lands', async () => {
-    const onOfferRepo = vi.fn();
-    render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
+  it('lands a plain code folder without git and asks nothing more, the pick row already offered git', async () => {
+    const onClose = vi.fn();
+    const openStudio = vi.fn();
+    useAppStore.setState({ openStudio });
+    render(<WorkspaceLinkStudio onClose={onClose} />);
+
+    await createFrom({ path: SITE });
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(createWorkspaceWithFolders.mock.lastCall?.[0].folders).toEqual([
+      { kind: 'plain', rootPath: SITE, purpose: 'code' },
+    ]);
+    expect(openStudio).not.toHaveBeenCalled();
+  });
+
+  it('opens a documents folder in its workspace', async () => {
+    const onClose = vi.fn();
+    render(<WorkspaceLinkStudio onClose={onClose} />);
 
     await createFrom({ path: NOTES });
 
-    await waitFor(() => expect(onOfferRepo).toHaveBeenCalledOnce());
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(createWorkspaceWithFolders.mock.lastCall?.[0].folders).toEqual([
+      { kind: 'plain', rootPath: NOTES, purpose: 'documents' },
+    ]);
   });
 
-  it('leaves a git folder alone instead of offering it a repository', async () => {
-    const onOfferRepo = vi.fn();
+  it('closes after a git folder lands', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={onOfferRepo} />);
+    render(<WorkspaceLinkStudio onClose={onClose} />);
 
     await createFrom({ path: ACME_WEB });
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(onOfferRepo).not.toHaveBeenCalled();
   });
 });

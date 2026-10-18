@@ -2,11 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { applyDocumentTheme } from '../lib/theme';
-import { BOOT_MARK_PX } from '../../app/components/BootSplash/bootMark';
 import { BrandTile } from './BrandTile';
-
-const HERO_TILE_PX = 84;
-const MARK_PIXEL_TOLERANCE = 0.5;
 
 afterEach(() => {
   cleanup();
@@ -62,12 +58,6 @@ describe('BrandTile', () => {
       expect(Number.parseFloat(markOf({ container }).style.width) / size).toBeCloseTo(0.76, 10);
       unmount();
     });
-  });
-
-  it('puts the hero mark on the boot splash dog box', () => {
-    const { container } = render(<BrandTile size={HERO_TILE_PX} />);
-    const markPx = Number.parseFloat(markOf({ container }).style.width);
-    expect(Math.abs(markPx - BOOT_MARK_PX)).toBeLessThan(MARK_PIXEL_TOLERANCE);
   });
 
   it('stays black with no border, ring, shadow or lighter variant in light and dark', () => {

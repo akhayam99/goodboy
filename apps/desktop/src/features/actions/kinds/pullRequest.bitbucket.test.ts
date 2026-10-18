@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PullRequestState, SessionId } from '@goodboy/types';
+import { BitbucketIcon } from '@goodboy/ui';
 import { matrixOf } from '../../../__tests__/helpers/actionMatrix';
 import { PULL_REQUEST_KIND } from './pullRequest';
 import { pullRequestFacts, type PullRequestFacts } from './pullRequestFacts';
@@ -54,13 +55,14 @@ describe('pull request on Bitbucket', () => {
     ]);
   });
 
-  it('names the host in the open action', () => {
+  it('writes no host word in the open action and keeps it in the accessible name', () => {
     const open = definitions.find((definition) => definition.id === 'pullRequest.openOnGithub');
     const label = open?.label;
 
-    expect(typeof label === 'function' ? label({ facts: facts() }) : label).toBe(
-      'Open on Bitbucket',
-    );
+    expect(typeof label === 'function' ? label({ facts: facts() }) : label).toBe('Open');
+    expect(open?.shortLabel?.({ facts: facts() })).toBe('Open');
+    expect(open?.ariaLabel?.({ facts: facts() })).toBe('Open on Bitbucket');
+    expect(open?.iconOf?.({ facts: facts() })).toBe(BitbucketIcon);
   });
 
   it('keeps Merge enabled while the host gives no mergeability', () => {

@@ -15,11 +15,16 @@ import { readTurnStream } from './readTurnStream';
 import { finalizeTurnStream } from './finalizeTurnStream';
 import { recoverTurnFailure } from './recoverTurnFailure';
 import { closeTurnCapture } from './closeTurnCapture';
+import { discardInPlaceCapture } from './discardInPlaceCapture';
 import { settleTurn } from './settleTurn';
 import { continueOnRequestedMount } from './continueOnRequestedMount';
 import { haltRunawayWorkflowAgent } from './haltRunawayWorkflowAgent';
 import { noticeAutoOfChildTurn } from '../auto/noticeAutoOfChildTurn';
 import { routeAutoUserTurn } from '../auto/routeAutoUserTurn';
+
+type DiscardParams = Readonly<{
+  error: unknown;
+}>;
 
 type RunOnceParams = Readonly<{
   input: SendTurnInput;
@@ -43,14 +48,25 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       return leased.result;
     }
     const startCtx = { ...leaseCtx, ...leased.value };
-    const started = await startTurnRun({ set, get, ctx: startCtx });
+    const discardUnspawned = async ({ error }: DiscardParams): Promise<never> => {
+      await discardInPlaceCapture({ capture: startCtx.inPlaceCapture });
+      throw error;
+    };
+    const started = await startTurnRun({ set, get, ctx: startCtx }).catch((error: unknown) =>
+      discardUnspawned({ error }),
+    );
     if (started.isDone) {
+      await discardInPlaceCapture({ capture: startCtx.inPlaceCapture });
       return started.result;
     }
     const promptCtx = { ...startCtx, ...started.value };
-    const prompt = await buildTurnPrompt({ get, ctx: promptCtx });
+    const prompt = await buildTurnPrompt({ get, ctx: promptCtx }).catch((error: unknown) =>
+      discardUnspawned({ error }),
+    );
     const spawnCtx = { ...promptCtx, ...prompt };
-    const spawn = await buildTurnSpawn({ set, get, lease, ctx: spawnCtx });
+    const spawn = await buildTurnSpawn({ set, get, lease, ctx: spawnCtx }).catch((error: unknown) =>
+      discardUnspawned({ error }),
+    );
     const ctx = { ...spawnCtx, ...spawn };
     input.onStarted?.();
     try {

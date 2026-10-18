@@ -81,7 +81,7 @@ const keysIn = (container: HTMLElement) =>
 
 const rowOf = (name: RegExp): HTMLElement => {
   const row = screen
-    .getAllByRole('button', { name })
+    .getAllByRole('option', { name })
     .find((button) => button.hasAttribute('data-select-id'));
   if (row === undefined) {
     throw new Error(`no session row ${name}`);

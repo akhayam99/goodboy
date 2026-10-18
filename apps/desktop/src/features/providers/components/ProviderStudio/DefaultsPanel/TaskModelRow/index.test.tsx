@@ -52,6 +52,15 @@ describe('TaskModelRow', () => {
     }
   });
 
+  it('reads the model Auto runs on the closed trigger, not the word Auto', () => {
+    renderRow({ preference: null, onChange: vi.fn() });
+
+    const trigger = screen.getByRole('button', { name: /^Step summaries routing:/ });
+
+    expect(trigger.textContent).toContain('Haiku 5.5');
+    expect(trigger.textContent).not.toBe('Auto');
+  });
+
   it('keeps a local provider choice while the task runs on automatic', () => {
     const onChange = vi.fn<(preference: TaskModelPreference | null) => void>();
     renderRow({ preference: null, onChange });
@@ -86,7 +95,7 @@ describe('TaskModelRow', () => {
         task="summarizer"
         label="Step summaries"
         help="writes the step summary"
-        preference={{ providerId: 'gemini', model: 'gemini-3.1-pro' }}
+        preference={{ providerId: 'gemini', model: 'gemini-3.1-pro', effort: 'medium' }}
         connectedProviderIds={['anthropic', 'gemini']}
         disabled={false}
         onChange={onChange}

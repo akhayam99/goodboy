@@ -16,7 +16,6 @@ const ALLOWED: Readonly<Record<string, number>> = {
   'features/integrations/jira/JiraStudio/useJiraIssues.ts': 1,
   'features/integrations/linear/LinearStudio/useLinearIssues.ts': 1,
   'features/search/grammar.ts': 1,
-  'features/settings/components/SettingsStudio/WorkspaceDevProjectBand.tsx': 1,
   'store/slices/sessions/deleteTask.ts': 1,
   'store/slices/turn/resolveSkillPrompt.ts': 1,
   'store/slices/turn/turnHelpers.ts': 1,

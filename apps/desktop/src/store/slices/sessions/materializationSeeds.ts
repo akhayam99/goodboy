@@ -5,7 +5,6 @@ export type SessionMaterializationSeed = {
   readonly sessionSlug?: string;
   readonly existingBranch?: string;
   readonly fallbackRef?: string;
-  readonly folderName?: string;
 };
 
 const seeds = new Map<SessionId, SessionMaterializationSeed>();

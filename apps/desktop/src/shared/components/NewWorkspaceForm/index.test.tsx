@@ -21,8 +21,8 @@ vi.mock('@tauri-apps/api/path', () => ({ homeDir: vi.fn(async () => '/mock') }))
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { describeProjectAdoption } from '@goodboy/db';
-import type { GitRepoCheck } from '@goodboy/types';
-import { aProject, aWorkspace } from '@goodboy/types/testing';
+import type { FolderSignals, GitRepoCheck } from '@goodboy/types';
+import { aFolderSignals, aProject, aWorkspace } from '@goodboy/types/testing';
 import {
   importStore,
   resetStoryStore,
@@ -39,6 +39,10 @@ const ACME_WEB = '/mock/Code/acme-web';
 const HARBORLINE = '/mock/Code/harborline';
 const DOCS = '/mock/Code/acme-docs';
 const DENIED = '/mock/Documents/acme-web';
+const SITE = '/mock/Code/acme-site';
+const RESEARCH = '/mock/Documents/acme-research';
+const NORTHWIND_ROOT = '/mock/Code/northwind';
+const HANDBOOK = `${NORTHWIND_ROOT}/handbook`;
 const NORTHWIND = aWorkspace({ name: 'Northwind', slug: 'northwind' });
 const PAYMENTS = aProject({
   workspaceId: NORTHWIND.id,
@@ -77,6 +81,16 @@ const CHECKS: Readonly<Record<string, GitRepoCheck>> = {
   [ACME_WEB]: repoAt({ path: ACME_WEB, branch: 'main' }),
   [HARBORLINE]: plainAt({ path: HARBORLINE }),
   [DOCS]: plainAt({ path: DOCS }),
+  [SITE]: plainAt({ path: SITE }),
+  [RESEARCH]: plainAt({ path: RESEARCH }),
+  [HANDBOOK]: {
+    isRepo: true,
+    rootPath: NORTHWIND_ROOT,
+    resolvedPath: HANDBOOK,
+    defaultBranch: 'main',
+    error: null,
+    errorKind: null,
+  },
   [DENIED]: {
     isRepo: false,
     rootPath: null,
@@ -93,6 +107,35 @@ const CHILDREN: Readonly<Record<string, ReadonlyArray<unknown>>> = {
     { name: 'ledger-core', path: `${HARBORLINE}/ledger-core`, defaultBranch: 'main' },
     { name: 'notify-relay', path: `${HARBORLINE}/notify-relay`, defaultBranch: 'develop' },
   ],
+};
+
+const SIGNALS: Readonly<Record<string, FolderSignals>> = {
+  [DOCS]: aFolderSignals({ path: DOCS, counts: { markdown: 86, pdf: 12 } }),
+  [SITE]: aFolderSignals({ path: SITE, markers: ['package.json'], counts: { source: 214 } }),
+  [RESEARCH]: aFolderSignals({
+    path: RESEARCH,
+    counts: { video: 520, pdf: 120 },
+    totalBytes: 38 * 1024 * 1024 * 1024,
+  }),
+};
+
+const FIRST_COMMIT_PLAN = {
+  rootPath: SITE,
+  start: 'no_git',
+  branch: 'main',
+  author: { name: 'Dana Reyes', email: 'dana@acme.test', isFallback: false },
+  entries: [
+    {
+      key: 'src',
+      kind: 'included',
+      files: 214,
+      sample: [],
+      isLeftOut: false,
+      canToggle: false,
+      ignore: null,
+    },
+  ],
+  hasIgnoreFile: false,
 };
 
 const pathOf = (args: unknown): string =>
@@ -123,6 +166,9 @@ beforeEach(async () => {
     scan_child_repos: (args: unknown) => CHILDREN[pathOf(args)] ?? [],
     repo_identity: { rootCommits: [], remoteUrl: null },
     open_privacy_settings: null,
+    read_folder_signals: (args: unknown) =>
+      SIGNALS[pathOf(args)] ?? aFolderSignals({ path: pathOf(args) }),
+    folder_git_first_commit_plan: FIRST_COMMIT_PLAN,
   });
   createWorkspaceWithFolders
     .mockReset()
@@ -216,20 +262,99 @@ describe('NewWorkspaceForm', () => {
     expect(screen.getByText('2 folders')).toBeDefined();
   });
 
-  it('explains a plain folder and offers git init on Create', async () => {
+  it('asks what a plain folder is for, preselects Documents and never says git', async () => {
     renderFirstRun();
     await chooseFolder({ path: DOCS });
 
-    expect(screen.getByText('Plain folder')).toBeDefined();
-    fireEvent.click(
-      screen.getByRole('checkbox', {
-        name: 'Make it a git repository on Create',
-      }),
-    );
+    const row = within(screen.getByRole('list', { name: 'Folders' }));
+    expect(row.getByText('Looks like documents: 86 Markdown files and 12 PDFs')).toBeDefined();
+    const faces = row.getByRole('tablist', { name: 'What acme-docs is for' });
+    expect(
+      within(faces)
+        .getByRole('tab', { name: /Documents/ })
+        .getAttribute('aria-selected'),
+    ).toBe('true');
+    expect(row.getAllByText('Documents')).toHaveLength(2);
+    expect(row.queryByRole('checkbox')).toBeNull();
+    const codeCard = within(faces).getByRole('tab', { name: /Code project/ });
+    expect(row.queryAllByText(/\bgit\b/i).filter((node) => !codeCard.contains(node))).toEqual([]);
+    expect(
+      screen.getByText(
+        'Agents edit files in place. Each turn is saved first, so you can restore it.',
+      ),
+    ).toBeDefined();
     click(/create workspace/i);
 
     await waitFor(() => expect(createWorkspaceWithFolders).toHaveBeenCalled());
-    expect(lastRequest().folders).toEqual([{ kind: 'git-init', rootPath: DOCS }]);
+    expect(lastRequest().folders).toEqual([
+      { kind: 'plain', rootPath: DOCS, purpose: 'documents' },
+    ]);
+  });
+
+  it('offers git to a code folder, unticked, and says how many files go in', async () => {
+    renderFirstRun();
+    await chooseFolder({ path: SITE });
+
+    expect(screen.getByText('Looks like code: a package.json and 214 source files')).toBeDefined();
+    expect(screen.getByText('No git yet')).toBeDefined();
+    const track = screen.getByRole('checkbox', {
+      name: 'Track it with git when the workspace is created',
+    });
+    expect(track).toHaveProperty('checked', false);
+    fireEvent.click(track);
+
+    expect(
+      await screen.findByText(
+        '214 files go in the first commit. Dependencies, build output and secrets stay out.',
+      ),
+    ).toBeDefined();
+    click(/create workspace/i);
+    await waitFor(() => expect(createWorkspaceWithFolders).toHaveBeenCalled());
+    expect(lastRequest().folders).toEqual([{ kind: 'git-init', rootPath: SITE }]);
+  });
+
+  it('switches the face on the row and drops the git box for Documents', async () => {
+    renderFirstRun();
+    await chooseFolder({ path: SITE });
+
+    fireEvent.click(screen.getByRole('tab', { name: /Documents/ }));
+
+    expect(screen.queryByRole('checkbox', { name: /Track it with git/ })).toBeNull();
+    expect(
+      screen.getByText(
+        'Agents edit Markdown and text files. Word, PDF, Pages and Keynote files stay read only.',
+      ),
+    ).toBeDefined();
+  });
+
+  it('asks the whole repository or only this folder for a folder inside a repository', async () => {
+    renderFirstRun();
+    await chooseFolder({ path: HANDBOOK });
+
+    expect(screen.getByText('handbook is inside the git repository northwind.')).toBeDefined();
+    const scope = screen.getByRole('tablist', { name: 'What agents work on in handbook' });
+    expect(
+      within(scope)
+        .getByRole('tab', { name: /The whole repository/ })
+        .getAttribute('aria-selected'),
+    ).toBe('true');
+    fireEvent.click(within(scope).getByRole('tab', { name: /Only this folder/ }));
+    click(/create workspace/i);
+
+    await waitFor(() => expect(createWorkspaceWithFolders).toHaveBeenCalled());
+    expect(lastRequest()).toMatchObject({
+      name: 'Handbook',
+      folders: [{ kind: 'plain', rootPath: HANDBOOK, purpose: 'documents' }],
+    });
+  });
+
+  it('says before Create what a very large folder keeps no versions of', async () => {
+    renderFirstRun();
+    await chooseFolder({ path: RESEARCH });
+
+    expect(screen.getByText('Looks like documents: 640 files, most of them video')).toBeDefined();
+    expect(screen.getByText('acme-research holds 38 GB, mostly video.')).toBeDefined();
+    expect(screen.getByText(/Goodboy keeps versions of files under 15 MB/)).toBeDefined();
   });
 
   it('names why macOS refused a folder, keeps Create off and offers the three ways out', async () => {

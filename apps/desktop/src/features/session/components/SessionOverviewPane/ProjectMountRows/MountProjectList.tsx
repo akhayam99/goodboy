@@ -73,7 +73,6 @@ export const MountProjectList = ({
           ? {}
           : {
               mountId: preflight.mountId,
-              slug: preflight.slug,
               ...(preflight.branch === null ? {} : { branch: preflight.branch }),
             }),
       });

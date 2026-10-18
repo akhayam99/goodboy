@@ -6,7 +6,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { folderCountLabel } from '../../folderCountLabel';
+import { workspaceFaceLabel } from '../../workspaceFaceLabel';
 import { workspaceFolderPath } from '../../workspaceFolderPath';
 import { WorkspaceTile } from '../WorkspaceSwitcher/WorkspaceTile';
 
@@ -22,7 +22,11 @@ export const WorkspaceRow = ({ workspace, home, onOpen, onOpenNewWindow, onDisco
   const now = useNow(30_000);
   const hasUnread = useWorkspaceHasUnread(workspace.id);
   const folders = useAppStore((state) =>
-    folderCountLabel({ projects: state.projects, workspaceId: workspace.id }),
+    workspaceFaceLabel({
+      projects: state.projects,
+      workspaceId: workspace.id,
+      folderPurpose: state.folderPurpose,
+    }),
   );
   const path = useAppStore((state) =>
     workspaceFolderPath({ projects: state.projects, workspaceId: workspace.id, home }),

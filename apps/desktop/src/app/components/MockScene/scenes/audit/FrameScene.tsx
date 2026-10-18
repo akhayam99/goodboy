@@ -10,12 +10,14 @@ const VIEW = sceneParam({ key: 'view' }) ?? 'board';
 const CONTEXT = frameContextOf({ value: sceneParam({ key: 'ctx' }) });
 
 type BootView = {
-  readonly phase: 'detecting-cli' | 'error';
+  readonly phase: 'pending' | 'detecting-cli' | 'restoring-session' | 'error';
   readonly error: string | null;
 };
 
 const BOOT_VIEWS: Readonly<Record<string, BootView>> = {
+  'boot-start': { phase: 'pending', error: null },
   boot: { phase: 'detecting-cli', error: null },
+  'boot-end': { phase: 'restoring-session', error: null },
   'boot-error': {
     phase: 'error',
     error: 'migration m162 failed: no such column: answer_delivered_at',

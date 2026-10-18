@@ -131,6 +131,7 @@ const sharedChain = ({ role, fields, promptText }: OracleParams) =>
     session: SESSION,
     role,
     fields,
+    isModelPickEnabled: true,
     promptText,
     emittingProvider: 'anthropic',
     defaultProvider: 'anthropic',
@@ -206,6 +207,13 @@ beforeEach(async () => {
   });
 });
 
+const clearRoleModels = () =>
+  useAppStore.setState({
+    workspaceOverrides: {
+      [WORKSPACE.id]: { ...EMPTY_OVERRIDES, defaultProviderId: 'anthropic' },
+    },
+  });
+
 describe('the routing chain shared by the orchestrator and Auto', () => {
   it.each(CASES)('gives $name the same outcome as the chain it was lifted from', (testCase) => {
     const expected = legacyChain(testCase);
@@ -218,6 +226,67 @@ describe('the routing chain shared by the orchestrator and Auto', () => {
     const outcome = sharedChain(CASES[0]!);
 
     expect(['ready', 'blocked']).toContain(outcome.resolution.kind);
+  });
+
+  it('drops the provider, model and effort a step names while the model pick rule is off', () => {
+    clearRoleModels();
+    const outcome = resolveProposedRouting({
+      state: state(),
+      sessionId: SESSION.id,
+      session: { ...SESSION, modelOverride: undefined },
+      role: 'reviewer',
+      fields: {
+        provider: 'anthropic',
+        model: 'claude-opus-5-5',
+        effort: 'high',
+        taskType: 'review',
+        difficulty: 'heavy',
+      },
+      isModelPickEnabled: false,
+      promptText: 'review the notify-relay change',
+      emittingProvider: 'anthropic',
+      defaultProvider: 'anthropic',
+      modelMenu: orchestratorModelPool({
+        availability: availabilityOf(),
+        hidden: selectHiddenModels({ state: state() }),
+      }),
+      roleModels: null,
+      providerPool: null,
+      availability: availabilityOf(),
+    });
+
+    expect(outcome.parsedProposal).toEqual({
+      kind: 'missing',
+      profile: { taskType: 'review', difficulty: 'heavy', basis: 'agent' },
+    });
+    expect(outcome.resolution.kind).toBe('ready');
+    if (outcome.resolution.kind === 'ready') {
+      expect(outcome.resolution.decision.source).toBe('kind_default');
+      expect(outcome.resolution.decision.proposal).toBeNull();
+    }
+  });
+
+  it('sizes a role on Auto by the difficulty the step names', () => {
+    clearRoleModels();
+    const run = (difficulty: 'light' | 'heavy') =>
+      resolveProposedRouting({
+        state: state(),
+        sessionId: SESSION.id,
+        session: SESSION,
+        role: 'implementer',
+        fields: { taskType: 'implementation', difficulty },
+        isModelPickEnabled: false,
+        promptText: 'implement the ledger-core export',
+        emittingProvider: 'anthropic',
+        defaultProvider: 'anthropic',
+        modelMenu: [],
+        roleModels: null,
+        providerPool: null,
+        availability: availabilityOf(),
+      }).picks.kindDefault;
+
+    expect(run('light')).toMatchObject({ model: 'haiku-5.5', effort: 'medium' });
+    expect(run('heavy')).toMatchObject({ model: 'sonnet-5.5', effort: 'high' });
   });
 
   it('keeps the proposal out when it leaves the role set', () => {

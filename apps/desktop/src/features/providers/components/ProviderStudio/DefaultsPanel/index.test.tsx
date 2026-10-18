@@ -197,14 +197,12 @@ const TASK_LABELS = [
   'Prose polish',
   'Agent naming',
   'Workflow orchestrator',
-  'Scribe',
   'History rewriter',
 ];
 
 const SONNET_TASK_LABELS: ReadonlySet<string> = new Set([
   'Plan drafting',
   'Workflow orchestrator',
-  'Scribe',
   'History rewriter',
 ]);
 

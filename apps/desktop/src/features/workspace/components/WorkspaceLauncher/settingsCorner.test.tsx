@@ -33,7 +33,7 @@ describe('WorkspaceLauncher settings corner', () => {
     const opened: Array<unknown> = [];
     const onOpen = (event: Event) => opened.push(settingsOverlayFromEvent(event));
     window.addEventListener('goodboy:open-settings', onOpen);
-    render(<WorkspaceLauncher isCreating={false} onCloseCreate={vi.fn()} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLauncher isCreating={false} onCloseCreate={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: /^Open settings/ }));
 

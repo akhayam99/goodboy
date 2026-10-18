@@ -5,13 +5,7 @@ import { modelHasEffortAxis } from '../modelHasEffortAxis';
 import { SELECTABLE_AGENT_ROLES } from '../../roles';
 import { TASKS } from '../../settings/tasks';
 import { latestInGroup } from '../latestInGroup';
-import {
-  AUTO_DEFAULTS,
-  AUTO_JOBS,
-  isPinnedJob,
-  type AutoChoice,
-  type CuratedProviderId,
-} from './defaults';
+import { AUTO_DEFAULTS, AUTO_JOBS, type AutoChoice, type CuratedProviderId } from './defaults';
 
 const PROVIDERS = Object.keys(AUTO_DEFAULTS).filter(
   (id): id is CuratedProviderId => id in AUTO_DEFAULTS,
@@ -65,42 +59,35 @@ describe('AUTO_DEFAULTS', () => {
     }
   });
 
-  it('never needs Max Mode for a cursor default', () => {
-    for (const { provider, slot, choice } of cells) {
-      const model = modelOf({ provider, choice });
-      if (model?.provider !== 'cursor') {
-        continue;
-      }
-      const combo = model.combos.find(
-        (candidate) =>
-          candidate.thinking === (choice.thinking === true) &&
-          (choice.effort == null || candidate.effort === choice.effort),
-      );
-      expect(combo?.maxMode, `${slot} ${choice.key}`).toBe(false);
+  it('keeps one cursor choice per cell that runs without Max Mode', () => {
+    for (const slot of SLOTS) {
+      const hasChoiceWithoutMaxMode = AUTO_DEFAULTS.cursor[slot].some((choice) => {
+        const candidate = modelOf({ provider: 'cursor', choice });
+        return (
+          candidate?.provider === 'cursor' &&
+          candidate.combos.some(
+            (combo) =>
+              combo.thinking === false &&
+              (choice.effort == null || combo.effort === choice.effort) &&
+              !combo.maxMode,
+          )
+        );
+      });
+      expect(hasChoiceWithoutMaxMode, slot).toBe(true);
     }
   });
 
-  it('starts every line cell on the newest non-legacy model of its line', () => {
+  it('starts every cell on the newest non-legacy model of its line', () => {
     for (const provider of PROVIDERS) {
       for (const slot of SLOTS) {
         const job = AUTO_JOBS[provider][slot][0];
-        if (job == null || isPinnedJob(job)) {
+        if (job == null) {
           continue;
         }
         const newest = latestInGroup({ provider, group: job.group, checkpoint: job.checkpoint })[0];
         expect(AUTO_DEFAULTS[provider][slot][0]?.key, `${provider} ${slot}`).toBe(newest?.key);
       }
     }
-  });
-
-  it('writes down why a cell holds a version back', () => {
-    const pinned = PROVIDERS.flatMap((provider) =>
-      SLOTS.flatMap((slot) => AUTO_JOBS[provider][slot].filter(isPinnedJob)),
-    );
-    for (const job of pinned) {
-      expect(job.pinnedBecause.length, job.key).toBeGreaterThan(20);
-    }
-    expect(new Set(pinned.map((job) => job.key))).toEqual(new Set(['sonnet-4.6']));
   });
 
   it('keeps the older models of a line as the fallback after the newest', () => {

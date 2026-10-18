@@ -10,7 +10,7 @@ afterEach(cleanup);
 describe('PullRequestChip', () => {
   it('renders an icon variant with aria-label including state', () => {
     render(<PullRequestChip state="open" />);
-    expect(screen.getByLabelText(/in review/i)).toBeDefined();
+    expect(screen.getByLabelText(/open/i)).toBeDefined();
   });
 
   it('shows the number with badge variant', () => {

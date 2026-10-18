@@ -1,5 +1,10 @@
-const OVERLAY_SELECTOR =
-  '[data-dropdown-portal], [role="dialog"], [role="menu"], [role="listbox"], [role="alertdialog"]';
+const OVERLAY_SELECTOR = [
+  '[data-dropdown-portal]',
+  '[role="dialog"]',
+  '[role="menu"]',
+  '[role="listbox"]:not([aria-multiselectable="true"])',
+  '[role="alertdialog"]',
+].join(', ');
 
 type Params = Record<never, never>;
 

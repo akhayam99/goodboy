@@ -127,6 +127,7 @@ export const TaskModelRow = ({
           ...(limitReason !== AUTO_RECOMMENDATION_COPY.reason && { reason: limitReason }),
         }}
         recommendationKind="auto"
+        autoTrigger="resolved"
         overridden={preference != null}
         onReset={() => onChange(null)}
         resetLabel="Back to Auto"

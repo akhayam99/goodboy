@@ -2,6 +2,8 @@ import { createUndoSlice } from './slices/undo';
 import { undoInitialState } from './slices/undo/state';
 import { createBootstrapSlice } from './slices/bootstrap';
 import { bootstrapInitialState } from './slices/bootstrap/state';
+import { createFolderPurposeSlice } from './slices/folder-purpose';
+import { folderPurposeInitialState } from './slices/folder-purpose/state';
 import { createResolveSlice } from './slices/resolve';
 import { createReviewNavigationSlice } from './slices/review-navigation';
 import { createReviewBulkSlice } from './slices/review-bulk';
@@ -220,6 +222,7 @@ export type AppStore = AppState &
   ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createArtifactCommentsSlice> &
   ReturnType<typeof createBootstrapSlice> &
+  ReturnType<typeof createFolderPurposeSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createReviewBulkSlice> &
@@ -381,6 +384,7 @@ export const initialState: AppState = {
   reviewSubmission: {},
   ...permissionsInitialState,
   ...bootstrapInitialState,
+  ...folderPurposeInitialState,
   ...resolveInitialState,
   ...reviewNavigationInitialState,
   ...reviewBulkInitialState,
@@ -451,6 +455,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createAgentsSlice({ set, get }),
   ...createAgentQueueSlice({ set, get }),
   ...createBootstrapSlice({ set, get }),
+  ...createFolderPurposeSlice({ set, get }),
   ...createResolveSlice({ set, get }),
   ...createReviewNavigationSlice({ set, get }),
   ...createReviewBulkSlice({ set, get }),

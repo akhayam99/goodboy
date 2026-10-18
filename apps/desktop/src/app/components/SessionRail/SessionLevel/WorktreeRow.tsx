@@ -1,17 +1,15 @@
 import { useId, useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { PULL_REQUEST_NOUNS } from '@goodboy/core';
 import { IconButton, Reveal, SelectableRow, StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BranchName } from '../../../../features/branch/components/BranchHeader/BranchName';
+import { branchRowFactsOf } from '../../../../features/branch/branchRowFactsOf';
 import { pullRequestStateToneOf } from '../../../../features/branch/pullRequestStateToneOf';
-import { pullRequestStateWordOf } from '../../../../features/branch/pullRequestStateWordOf';
 import { switchBranchMount } from '../../../../features/branch/switchBranchMount';
 import type { EntryDiffStat } from '../../../../features/branch/worktreeEntryFacts';
 import { useTaskDropState } from '../../../../features/session/hooks/useTaskDropState';
-import { requestStateOf } from './requestStateOf';
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';
 import { useWorktreeCardEntries } from './useWorktreeCardEntries';
 import { useWorktreeRowState } from './useWorktreeRowState';
@@ -82,11 +80,18 @@ export const WorktreeRow = ({
     [entries, isOpen],
   );
   const state = useWorktreeRowState({ sessionId, row, status, shownByEntries });
-  const requestState = requestStateOf({ request });
+  const facts = branchRowFactsOf({
+    branch: row.branch,
+    mountName: row.mountName,
+    request,
+    checks: null,
+    behind: null,
+    conflicts: null,
+  });
+  const requestState = facts.state;
   const mark = pullRequestStateToneOf({ state: requestState });
   const StateIcon = mark.icon;
-  const number =
-    request === null ? '' : `${PULL_REQUEST_NOUNS[request.provider].numberPrefix}${request.number}`;
+  const number = facts.number ?? '';
   const isDropTarget = row.branch !== '' && row.isAttached && !row.isFinished;
   const dropState = useTaskDropState({ target: { projectId: row.projectId, branch: row.branch } });
   const isDragLive = isDropTarget && dropState !== 'idle';
@@ -107,13 +112,7 @@ export const WorktreeRow = ({
         <SelectableRow
           selected={isShown}
           ariaCurrent={isShown ? 'page' : undefined}
-          ariaLabel={[
-            row.projectName,
-            branch,
-            number,
-            pullRequestStateWordOf({ state: requestState }),
-            state.reason,
-          ]
+          ariaLabel={[row.projectName, branch, number, facts.stateWord, state.reason]
             .filter((part) => part !== null && part !== '')
             .join(', ')}
           {...(path !== null && {

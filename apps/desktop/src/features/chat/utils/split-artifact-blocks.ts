@@ -1,4 +1,4 @@
-import { scanArtifactBlocks, type ArtifactScanState } from '@goodboy/core';
+import { locateArtifactSpans, scanArtifactBlocks, type ArtifactScanState } from '@goodboy/core';
 import type { ArtifactKind } from '@goodboy/types';
 
 const KNOWN_KINDS: ReadonlySet<string> = new Set<ArtifactKind>(['plan', 'report', 'wireframe']);
@@ -65,7 +65,12 @@ export const splitArtifactText = ({ text, scan = null }: SplitParams): SplitArti
   const segments: ArtifactTextSegment[] = [];
   let cursor = 0;
 
-  for (const span of scanned.spans) {
+  const spans =
+    scanned.spans.length === 0 && text.includes('<<artifact')
+      ? locateArtifactSpans(text).filter((span) => span.complete)
+      : scanned.spans;
+
+  for (const span of spans) {
     if (span.start > cursor) {
       segments.push({ kind: 'prose', text: text.slice(cursor, span.start - 1) });
     }

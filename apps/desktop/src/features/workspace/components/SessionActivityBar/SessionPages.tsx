@@ -25,15 +25,13 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
     onOpened?.();
   };
 
-  const isAutoShown = pages.some((page) => page.id === 'auto');
-
   return (
     <ul aria-label="Pages" className="flex flex-col" data-testid="session-pages">
       {pages.map((page) => {
         const Icon = page.icon;
         const isCurrent = sign === page.id;
         const slot = pageSlotOf({ page: page.count, facts });
-        const marker = pageMarkerOf({ pageId: page.id, isAutoShown });
+        const marker = pageMarkerOf({ pageId: page.id });
         const count = (
           <span
             data-page-value={page.id}
@@ -59,13 +57,12 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
                 <Tooltip content={marker.why} side="right">
                   <span className="flex shrink-0">
                     <Chip
-                      tone="neutral"
+                      tone="warning"
                       kind="state"
                       emphasis="subtle"
                       bordered={false}
                       label={marker.label}
                       testId={`page-marker-${page.id}`}
-                      className="text-faint-foreground"
                     />
                   </span>
                 </Tooltip>

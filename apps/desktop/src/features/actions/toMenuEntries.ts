@@ -43,6 +43,7 @@ export const toMenuEntries = ({ actions, env, run, onPreview }: Params): Readonl
         kind: 'item',
         key: action.id,
         label: action.label,
+        ariaLabel: action.ariaLabel,
         icon: action.icon,
         iconClassName: action.iconClassName,
         hint: action.shortcut === null ? null : shortcutGlyphs(action.shortcut),

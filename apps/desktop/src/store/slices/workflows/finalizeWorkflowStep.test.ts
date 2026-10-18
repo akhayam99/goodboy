@@ -179,6 +179,7 @@ describe('finalizeWorkflowStep output summary', () => {
     expect(summarizeStepOutputSpy).toHaveBeenCalledWith({
       providerId: 'anthropic',
       model: 'haiku-5.5',
+      effort: 'low',
       invokeFn: expect.any(Function),
       output: 'raw assistant output',
       workingDir: '/tmp/worktree',

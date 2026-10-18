@@ -32,7 +32,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 [More on starting a task](docs/features/start.md)
 
-<a id="session-overview"></a><a id="refresh-a-session"></a><a id="activity"></a><a id="next"></a><a id="time-left"></a><a id="file-versions"></a>
+<a id="session-overview"></a><a id="refresh-a-session"></a><a id="activity"></a><a id="next"></a><a id="time-left"></a><a id="changes"></a><a id="file-versions"></a>
 
 ## Overview and activity
 
@@ -70,7 +70,7 @@ Find any session, message, plan or action, and reach it from the keyboard. One s
 
 [More on search and navigation](docs/features/search.md)
 
-<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a>
+<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a>
 
 ## Workspaces and folders
 

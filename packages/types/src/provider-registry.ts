@@ -29,11 +29,19 @@ export type ModelFamily =
 
 export type ModelCostTier = 'cheap' | 'mid' | 'expensive';
 
+export type ModelPriceLevel = {
+  readonly aboveInputTokens: number;
+  readonly inputPerMtok: number;
+  readonly outputPerMtok: number;
+  readonly cachedInputPerMtok?: number;
+};
+
 export type ModelPrice = {
   readonly inputPerMtok: number;
   readonly outputPerMtok: number;
   readonly cachedInputPerMtok?: number;
   readonly assumed?: true;
+  readonly aboveLevel?: ModelPriceLevel;
 };
 
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;

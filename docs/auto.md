@@ -12,9 +12,8 @@ alone to agents of the right role, with a model it picks for each. It waits for
 their results, reads them and goes on. It is always on and stays labelled
 **Experimental**: the **Auto agents** entry of the session rail carries the
 marker beside its count, the marker's tooltip says why, and there is no switch to turn
-it off. The **Agents** entry reads **Deprecated** beside its count: Auto
-starts agents of the role it picks (`AUTO_ROLE_WHEN`), and agents started by
-hand keep working.
+it off. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
+agents started by hand keep working.
 
 ## Status
 
@@ -312,7 +311,8 @@ writing to it reopens it to **Deciding**.
   provider, **Reserved up to** while it works and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
-  `DelegationResult`) and its tail (`autoChildLive`: its live line with **Stop
+  `DelegationResult`; the summary is markdown through the shared `Markdown`,
+  with any artifact block dropped by `splitArtifactText`) and its tail (`autoChildLive`: its live line with **Stop
   agent**, **Failed: ...** or **Stopped** with **Retry through Auto**, or
   **Returned to Auto**). **Open full** puts the child in the center with the
   Auto level kept and its row selected; there the notice reads the same and
@@ -398,7 +398,10 @@ cannot join without one): diagnosing a failure goes to an Investigator, tests to
 about code to Docs, code changes and their commits to an Implementer, the pull request to a
 Scribe, a failing check to a CI fixer, the commit history of the branch to a Rewriter. Scribe, CI
 fixer and Rewriter are writers (m232 widens the role CHECK of `auto_delegations`; Rust
-`WRITER_ROLES` holds them). A Scribe child writes `<<pr-title>>` and `<<pr-body>>` and never runs
+`WRITER_ROLES` holds them). A Rewriter child cannot start: its turn needs the copy the History flow
+prepares (`leaseTurnWriter` throws without a `historyRewriters` binding), so `resolveDelegateChild`
+refuses the role with `spec_invalid` before any agent exists and tells Auto to hand the user to the
+History flow or use an Implementer. A Scribe child writes `<<pr-title>>` and `<<pr-body>>` and never runs
 gh: when it ends completed, `finishAttempt` calls the `publishScribePullRequest` port, which goes
 through `resumeScribePullRequest` and `openScribePullRequest`, the path the Branch page uses
 (draft, the repository's base, never a second request when the branch already has one). The
@@ -409,6 +412,19 @@ itself; when it reports what happens next it describes a hand over and names the
 an implementer to reinstall the dependencies"), never an action of its own. The brief of every
 writer child carries `AUTO_DEPENDENCIES_RULE`: install missing dependencies with the project's
 package manager in its own mount, never link or copy `node_modules` from another checkout.
+
+Only a writer role has a shell; Scout, Planner, Investigator and Reviewer run with `Read,Grep,Glob`
+(`READ_ONLY_ROLES` in `cli_args.rs`). `packages/core/src/auto/roleTools.ts` holds that fact for Auto:
+each role line of the prompt says whether the role has a shell, and the prompt rule says a task that
+runs a command goes only to a role that does. `resolveDelegateChild` enforces it: a read-only role
+whose task or done-when line names a command (`git log`, `git ls-remote`, `pnpm test`, "run the
+tests") is refused with `role_lacks_shell`, the message lists the roles that can run commands, and
+nothing is written, so Auto chooses again in its next turn. There is no read-only shell role yet:
+a read-only check goes to a writer role with "read only, change nothing" in the task. A child that
+ends blocked and says it had no shell tool gets the reason `missing_tool` (not `declared_blocked`),
+and its result carries the line that tells Auto to hand the same task once to a role that can run
+commands instead of reporting the block as the answer. The reroute is Auto's own next hand over,
+checked by the same refusal, not a second child started by the harness.
 
 `parseAutoBlock` (`packages/core/src/auto/autoBlock.ts`) reads only the settled text of a turn that
 ended ok: it takes the last complete block, strips code fences, escapes raw line breaks in strings

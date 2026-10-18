@@ -72,10 +72,15 @@ const automaticTaskPick = ({ task, auto }: AutomaticParams): AutoPick => {
   return pick;
 };
 
-const preferenceOfPick = (pick: AutoPick): TaskModelPreference => ({
+type PickPreferenceParams = {
+  readonly task: AuxTaskId;
+  readonly pick: AutoPick;
+};
+
+const preferenceOfPick = ({ task, pick }: PickPreferenceParams): TaskModelPreference => ({
   providerId: pick.provider,
   model: pick.model,
-  ...(pick.effort != null && { effort: pick.effort }),
+  ...(pick.effort != null && !AGENT_PRESELECT_TASKS.has(task) && { effort: pick.effort }),
 });
 
 export const preferredTaskModel = ({
@@ -164,7 +169,7 @@ export const traceTaskModel = ({ task, preferences, auto }: TraceParams): TaskMo
         ];
   const pick = automaticTaskPick({ task, auto });
   return {
-    model: preferenceOfPick(pick),
+    model: preferenceOfPick({ task, pick }),
     via: 'auto',
     pick,
     skipped: [...skipped, ...fallbackSkipped],

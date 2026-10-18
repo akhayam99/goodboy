@@ -1,5 +1,7 @@
+import { answerWithoutEditing } from './answerWithoutEditing';
 import { cancelCurrentTurn } from './cancelCurrentTurn';
 import { cancelTurnConfirmed } from './cancelTurnConfirmed';
+import { cancelWriterWait } from './cancelWriterWait';
 import { continueStoppedAgent } from './continueStoppedAgent';
 import { resumeStoppedAgents } from './resumeStoppedAgents';
 import { requestContextUpdate } from './requestContextUpdate';
@@ -12,6 +14,8 @@ export const createTurnSlice = ({ set, get }: SliceDeps) => {
     sendTurn: sendTurn(set, get),
     cancelCurrentTurn: cancelCurrentTurn(set, get),
     cancelTurnConfirmed: cancelTurnConfirmed(set, get),
+    cancelWriterWait: cancelWriterWait({ get }),
+    answerWithoutEditing: answerWithoutEditing({ get }),
     continueStoppedAgent: continueStoppedAgent(get),
     resumeStoppedAgents: resumeStoppedAgents(get),
     retrySummarizer: retrySummarizer(set, get),

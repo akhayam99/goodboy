@@ -16,6 +16,7 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { repoIdentity, validateGitRepo } from '../../../shared/lib/repo';
+import { prepareLinkedFolder } from '../file-versions/prepareLinkedFolder';
 import type { GetFn, SetFn } from './types';
 
 export type ProjectAttachConflict = {
@@ -138,6 +139,7 @@ export const addProject = (set: SetFn, get: GetFn) => {
             reconnected,
           ],
         }));
+        prepareLinkedFolder({ get, project: reconnected });
         return { kind: 'linked', project: reconnected };
       }
       throw new Error(`${existing.name} is already linked to this workspace`);
@@ -169,6 +171,7 @@ export const addProject = (set: SetFn, get: GetFn) => {
     };
     await insertProject({ db: tauriDatabase, project });
     set((state) => ({ projects: [...state.projects, project] }));
+    prepareLinkedFolder({ get, project });
     return { kind: 'linked', project };
   };
 };

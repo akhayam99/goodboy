@@ -36,6 +36,7 @@ import {
   mergeabilityNoteOf,
 } from '../../review/prMergeReadiness';
 import { FOLLOW_LABEL } from '../../../shared/lib/followToast';
+import { hostIconOf } from '../../../shared/hostIconOf';
 import { isOverlayDrawerOpen } from '../../../shared/hooks/useFollowToast';
 import { isTargetShown } from '../../../shared/hooks/useFollowToast/isTargetShown';
 import { branchPlace } from '../../../store/slices/navigation/place';
@@ -226,9 +227,11 @@ const openPrLens = ({
 const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = [
   {
     id: 'pullRequest.openOnGithub',
-    label: ({ facts }) => `Open on ${hostLabel({ facts })}`,
-    shortLabel: ({ facts }) => hostLabel({ facts }),
+    label: 'Open',
+    shortLabel: () => 'Open',
+    ariaLabel: ({ facts }) => `Open on ${hostLabel({ facts })}`,
     icon: ExternalLink,
+    iconOf: ({ facts }) => hostIconOf({ host: facts.host }),
     group: 'open',
     when: hasPr,
     slot: () => 'secondary',

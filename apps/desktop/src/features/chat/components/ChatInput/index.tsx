@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { cn, PageColumn, tintClasses } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
@@ -24,6 +23,7 @@ import { composerView } from './composerView';
 import { focusComposerTextarea } from './focusComposerTextarea';
 import { ComposerAttachmentChips } from './parts/ComposerAttachmentChips';
 import { ComposerCliGate } from './parts/ComposerCliGate';
+import { WriterWaitBand } from '../WriteDestinationControl/WriterWaitBand';
 import { ComposerDispatchError } from './parts/ComposerDispatchError';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { PromptDropOverlay } from '../../../../shared/components/PromptField/PromptDropOverlay';
@@ -45,9 +45,6 @@ export const ChatInput = ({
 }: Props) => {
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session });
-  const isWaitingForWriter = useAppStore(
-    (s) => selectedAgentId !== null && s.agentWriterWait[selectedAgentId] !== undefined,
-  );
   const autoViews = useAutoTreeViews({ sessionId: session.id });
   const isAutoChild =
     selectedAgentId !== null &&
@@ -230,6 +227,7 @@ export const ChatInput = ({
               provider={routing.effectiveProvider}
               modelId={routing.effectiveModelId}
             />
+            <WriterWaitBand sessionId={session.id} agentId={selectedAgentId} />
             <ComposerAttachmentChips attachments={attachments} onRemove={removeAttachment} />
             <div className="relative" ref={wrapperRef}>
               {popoverOpen ? (
@@ -282,12 +280,6 @@ export const ChatInput = ({
             />
           </div>
         </div>
-        {isWaitingForWriter ? (
-          <p className="px-1 text-meta text-faint-foreground">
-            Waiting for the writer. Another agent is writing in this folder, and this turn starts
-            when it is done. Stop cancels the wait.
-          </p>
-        ) : null}
         {showsDeliveryChoice ? (
           <p className="px-1 text-meta text-faint-foreground">
             Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and

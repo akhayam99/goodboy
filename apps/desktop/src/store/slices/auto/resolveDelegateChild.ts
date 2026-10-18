@@ -1,6 +1,9 @@
 import {
   AUTO_DELEGATION_DEADLINE_MINUTES,
+  canAutoRoleRunCommands,
   composeDelegationKickoff,
+  doesTaskNeedCommands,
+  roleCannotRunCommandsMessage,
   isUserPayload,
   parseAutoDelegationRole,
   pickAutoMount,
@@ -261,6 +264,25 @@ export const resolveDelegateChild = async ({
   const role = revise === null ? child.role : revise.role;
   if (role === null) {
     return refuse({ slot, code: 'spec_invalid', message: 'the child needs a role' });
+  }
+  if (role === 'rewriter') {
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message:
+        'a History rewriter only runs from the History flow of the branch, in a copy that flow prepares, so Auto cannot start one. Nothing was started. Tell the user to rewrite the history from the branch, or hand the commit changes to an implementer.',
+    });
+  }
+  if (
+    revise === null &&
+    !canAutoRoleRunCommands({ role }) &&
+    doesTaskNeedCommands({ text: [child.task, child.doneWhen ?? ''].join('\n') })
+  ) {
+    return refuse({
+      slot,
+      code: 'role_lacks_shell',
+      message: roleCannotRunCommandsMessage({ role }),
+    });
   }
   const picked = pickAutoMount({
     role,

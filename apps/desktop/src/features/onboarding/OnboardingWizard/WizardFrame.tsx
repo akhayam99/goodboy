@@ -147,7 +147,7 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
         data-testid="wizard-backdrop"
         data-state={isCover ? 'shown' : 'hidden'}
         className={cn(
-          'pointer-events-none absolute inset-0 -z-10 bg-[image:var(--app-backdrop)] motion-safe:transition-opacity motion-safe:duration-200',
+          'pointer-events-none absolute inset-0 -z-10 bg-backdrop-cover motion-safe:transition-opacity motion-safe:duration-200',
           isCover ? 'opacity-100' : 'opacity-0',
         )}
       />

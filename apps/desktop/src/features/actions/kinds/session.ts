@@ -10,6 +10,7 @@ import {
   GitBranch,
   Link,
   Link2,
+  ListChecks,
   Pencil,
   Pin,
   PinOff,
@@ -30,6 +31,7 @@ import { createAgentEventName } from '../../session/createAgentEventName';
 import { refreshSession } from '../../session/refreshSession';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
+import { requestSelect } from '../selectRequest';
 import { ALL_CHOICES_ID } from '../types';
 import type {
   ActionChoice,
@@ -256,7 +258,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: CONCEPT_ICONS.review,
     group: 'open',
     shortcut: 'lens.review',
-    when: isLive,
+    when: ({ facts }) => isLive({ facts }) && !facts.isBranchless,
     run: ({ facts, env }) =>
       env.getState().navigate({ to: branchPlace({ sessionId: facts.sessionId, tab: 'comments' }) }),
   },
@@ -266,8 +268,17 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     icon: CONCEPT_ICONS.diff,
     group: 'open',
     shortcut: 'lens.files',
-    when: isLive,
+    when: ({ facts }) => isLive({ facts }) && !facts.isBranchless,
     blockedReason: ({ facts }) => (facts.hasMount ? null : NO_MOUNT_REASON),
+    run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'files' }),
+  },
+  {
+    id: 'session.changes',
+    label: 'Changes',
+    icon: CONCEPT_ICONS.diff,
+    group: 'open',
+    shortcut: 'lens.files',
+    when: ({ facts }) => isLive({ facts }) && facts.isBranchless,
     run: ({ facts, env }) => openLens({ env, sessionId: facts.sessionId, lens: 'files' }),
   },
   {
@@ -298,6 +309,19 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
       dispatchAfterNavigation({
         name: RENAME_REQUEST_EVENT,
         detail: { objectKey, anchorKey: SESSION_HEADER_ANCHOR },
+      });
+    },
+  },
+  {
+    id: 'session.select',
+    label: 'Select',
+    icon: ListChecks,
+    group: 'act',
+    when: ({ viewing }) => viewing?.kind === 'selection',
+    run: ({ facts, env }) => {
+      requestSelect({
+        objectKey: sessionObjectKey({ sessionId: facts.sessionId }),
+        anchorKey: env.anchorKey,
       });
     },
   },

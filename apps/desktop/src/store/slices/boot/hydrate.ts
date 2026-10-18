@@ -22,6 +22,9 @@ import {
 } from '../../../features/settings/settings';
 import { reconcileGhostAgents } from '../sessions/reconcileSessionRuns';
 import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVersions';
+import { createFolderSnapshotPort } from '../file-versions/createFolderSnapshotPort';
+import { startFolderVersions } from '../file-versions/startFolderVersions';
+import { inPlaceSnapshot } from '../turn/inPlaceSnapshot';
 import { applyQaDecidingPreview } from '../workflows/applyQaDecidingPreview';
 import { adoptLegacyIntegrationSecrets } from '../integrations/adoptLegacyIntegrationSecrets';
 import { drainAuditRetryQueue } from './auditRetryQueue';
@@ -63,6 +66,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         await runDbMigrations();
         await hydrateOnboardingFromDb();
         await get().hydrateBootstrapPhases();
+        await get().hydrateFolderPurposes();
         await get().hydrateChangelogSeen();
         await get().hydrateCliRequirements();
         void get()
@@ -161,6 +165,8 @@ export const hydrate = (set: SetFn, get: GetFn) => {
             body: formatError(error),
           });
         }
+        inPlaceSnapshot.install({ port: createFolderSnapshotPort({ set, get }) });
+        void startFolderVersions({ set, get, nowMs: Date.now() });
 
         await reconcileGhostAgents().catch(() => 0);
         await applyQaDecidingPreview({ set }).catch(() => {});

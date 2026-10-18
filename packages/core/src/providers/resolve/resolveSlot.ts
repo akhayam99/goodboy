@@ -10,7 +10,8 @@ import {
   providerStanding,
   unusableReason,
 } from '../autoRouting/providerCandidates';
-import { autoPassedOver, type AutoContext } from '../autoRouting/resolveAuto';
+import type { AutoContext } from '../autoRouting/autoTypes';
+import { autoPassedOver } from '../autoRouting/modelForStep';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '../provider-preference';
 import {
   resolveRoleChoice,
@@ -202,6 +203,7 @@ type AutoSkipsParams = {
   readonly provider: ProviderId;
   readonly model: string;
   readonly atLimit: ReadonlyArray<ProviderId>;
+  readonly size?: StepSize | null;
 };
 
 const autoSkips = ({
@@ -210,6 +212,7 @@ const autoSkips = ({
   provider,
   model,
   atLimit,
+  size,
 }: AutoSkipsParams): ReadonlyArray<ResolveSkip> => {
   const preferred = policyDefaultProvider(auto);
   const standing = providerStanding({ provider: preferred, context: auto });
@@ -228,6 +231,7 @@ const autoSkips = ({
     }));
   const passed = autoPassedOver({
     slot,
+    size,
     pick: { provider, model, effort: null, step: 'curated' },
     context: auto,
   }).map((item): ResolveSkip => ({
@@ -245,9 +249,10 @@ type RoleParams = {
   readonly preference: RoleModelPreference | null;
   readonly source: LayerName | null;
   readonly auto: AutoContext;
+  readonly size: StepSize | null;
 };
 
-const roleOutcome = ({ slot, routing, preference, source, auto }: RoleParams): Outcome => {
+const roleOutcome = ({ slot, routing, preference, source, auto, size }: RoleParams): Outcome => {
   const base = {
     provider: routing.provider,
     model: routing.model,
@@ -284,6 +289,7 @@ const roleOutcome = ({ slot, routing, preference, source, auto }: RoleParams): O
         provider: routing.provider,
         model: routing.model,
         atLimit,
+        size,
       }),
     ],
   };
@@ -368,6 +374,7 @@ const layerOutcome = ({ slot, merged, source, auto, size }: LayerParams): Outcom
       preference: merged.roleModels?.[slot.id] ?? null,
       source,
       auto,
+      size,
     });
   }
   const trace = traceTaskModel({ task: slot.id, preferences: merged.taskModels, auto });

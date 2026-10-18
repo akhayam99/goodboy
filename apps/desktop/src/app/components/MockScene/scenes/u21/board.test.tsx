@@ -90,8 +90,8 @@ describe('the u21 board scenes', () => {
     const archived = lane('archived');
     expect(done.parentElement).toBe(archived.parentElement);
     expect(Array.from(done.parentElement?.children ?? [])).toEqual([done, archived]);
-    expect(within(done).getAllByRole('checkbox').length).toBeGreaterThan(2);
-    expect(within(archived).getAllByRole('checkbox').length).toBeGreaterThan(2);
+    expect(within(done).getAllByRole('button', { pressed: false }).length).toBeGreaterThan(2);
+    expect(within(archived).getAllByRole('button', { pressed: false }).length).toBeGreaterThan(2);
     expect(screen.getByTestId('board-scene-frame').style.width).toBe('1200px');
   });
 

@@ -13,7 +13,7 @@ export type ChatModelChoice = {
 
 const CHAT_LINE: Readonly<Record<ChatProviderId, ModelLine>> = {
   anthropic: { group: 'Sonnet' },
-  codex: { group: 'GPT', checkpoint: 'Terra' },
+  codex: { group: 'GPT', checkpoint: 'Sol' },
 };
 
 const PREFERRED_CHAT_PROVIDER: ChatProviderId = 'anthropic';

@@ -1,7 +1,7 @@
 {
   "apps/desktop/src/App.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/__tests__/a11y/smoke.test.tsx": {
@@ -2695,9 +2695,6 @@
   "apps/desktop/src/features/chat/components/WriteDestinationControl/useWriteDestination/index.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    },
-    "react-hooks/exhaustive-deps": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/chat/hooks/useElapsedMs/index.test.ts": {
@@ -5640,11 +5637,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/FilesPane.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/IntegrationPane/FocusedTaskBody.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -7376,7 +7368,7 @@
       "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 5
+      "count": 4
     }
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionPages.tsx": {
@@ -7385,9 +7377,6 @@
     }
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/bulkSelection.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    },
     "@typescript-eslint/naming-convention": {
       "count": 1
     }
@@ -7395,9 +7384,6 @@
   "apps/desktop/src/features/workspace/components/SessionActivityBar/index.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/menu.test.tsx": {
@@ -7476,7 +7462,7 @@
       "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 9
+      "count": 8
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -12429,7 +12415,7 @@
   },
   "packages/core/src/orchestrator/client.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
+      "count": 3
     }
   },
   "packages/core/src/orchestrator/parser.ts": {
@@ -12486,11 +12472,6 @@
   "packages/core/src/planner/prompt.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
-    }
-  },
-  "packages/core/src/providers/autoRouting/defaults.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "packages/core/src/providers/aux-output.ts": {

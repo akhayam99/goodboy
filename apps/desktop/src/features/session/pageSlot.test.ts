@@ -4,6 +4,7 @@ import type { PageCountFacts } from './pageCountWord';
 import { pageSlotOf } from './pageSlot';
 
 const QUIET: PageCountFacts = {
+  changedFiles: 0,
   runs: 0,
   runningRuns: 0,
   waitingRuns: 0,

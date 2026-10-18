@@ -16,7 +16,6 @@ export type EnsureProjectMountedInput = {
   readonly taskIdentifiers?: ReadonlyArray<string>;
   readonly mountId?: MountId;
   readonly requestId?: string;
-  readonly slug?: string;
   readonly branch?: string;
 };
 
@@ -26,7 +25,8 @@ export type EnsureProjectMountedResult =
       createdMountId: MountId;
       mountIds: ReadonlyArray<MountId>;
     }>
-  | Readonly<{ status: 'already-mounted'; mountIds: ReadonlyArray<MountId> }>;
+  | Readonly<{ status: 'already-mounted'; mountIds: ReadonlyArray<MountId> }>
+  | Readonly<{ status: 'in-place'; mountIds: ReadonlyArray<MountId> }>;
 
 export type ForkMountInput = {
   readonly sessionId: SessionId;

@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { clearMaterializationBatch } from '../project-mounts/materializationGate';
 import { flushTurnEvents } from '../transcripts/buffer';
 import { finalizeTurnFileVersionCapture } from '../file-versions/captureTurnFileVersions';
@@ -11,8 +12,13 @@ type Params = Readonly<{
 
 export const closeTurnCapture = async ({ get, ctx }: Params) => {
   const { sessionId } = ctx.input;
-  const { workingDir, runId, notifySnapshotFailure, turnFileVersionCapture } = ctx;
+  const { workingDir, runId, notifySnapshotFailure, turnFileVersionCapture, inPlaceCapture } = ctx;
   flushTurnEvents();
+  if (inPlaceCapture !== null) {
+    await inPlaceCapture.finalize().catch(async (error: unknown) => {
+      await notifySnapshotFailure({ stage: 'finalize', message: formatError(error) });
+    });
+  }
   if (turnFileVersionCapture != null) {
     await finalizeTurnFileVersionCapture({
       sessionId,

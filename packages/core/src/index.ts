@@ -359,6 +359,14 @@ export {
   type AutoDelegationRole,
   type AutoWriterRole,
 } from './auto/roles';
+export {
+  AUTO_COMMAND_ROLES,
+  canAutoRoleRunCommands,
+  doesTaskNeedCommands,
+  isMissingShellText,
+  rerouteHintOf,
+  roleCannotRunCommandsMessage,
+} from './auto/roleTools';
 
 export {
   ROLE_REGISTRY,
@@ -394,6 +402,7 @@ export {
   parseArtifactEnvelope,
   parseLegacyPlanMarkers,
   scanArtifactBlocks,
+  locateArtifactSpans,
   type ArtifactCaptureError,
   type ArtifactCaptureErrorCode,
   type ArtifactCaptureResult,
@@ -638,6 +647,14 @@ export {
   isCuratedProvider,
   type CuratedProviderId,
 } from './providers/autoRouting/defaults';
+export { isSizeMovingRung } from './providers/autoRouting/slotRungs';
+export {
+  classifyRequest,
+  type ClassifiedRole,
+  type RequestClassification,
+  type RequestClassifierResult,
+  type RequestDifficulty,
+} from './classifier/requestClassifier';
 export { workflowModelProfile } from './providers/workflowModelProfiles';
 export { latestInGroup, type ModelLine } from './providers/latestInGroup';
 

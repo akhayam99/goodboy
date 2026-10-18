@@ -1,8 +1,9 @@
-import { Checkbox, Chip, ICON_SIZE } from '@goodboy/ui';
+import { Chip, ICON_SIZE } from '@goodboy/ui';
+import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
 import { CONCEPT_ICONS } from '../conceptIcons';
 import { ConflictNotice } from './ConflictNotice';
 import type { PlainFolder } from './folderEntry';
-import { FolderNotice } from './FolderNotice';
+import { FolderFaceChoice } from './FolderFaceChoice';
 import type { FolderRowContext } from './folderRowContext';
 import { FolderRowFrame } from './FolderRowFrame';
 import { tildePath } from './tildePath';
@@ -29,7 +30,18 @@ export const PlainFolderRow = ({
     isDimmed={!folder.isIncluded}
     lead={lead}
     trailing={trailing}
-    meta={<Chip tone="neutral" shape="badge" bordered={false} label="Plain folder" />}
+    meta={
+      <Chip
+        tone="neutral"
+        shape="badge"
+        bordered={false}
+        label={
+          folder.purpose === null
+            ? FOLDER_FACE_COPY.plainChip
+            : FOLDER_FACE_COPY[folder.purpose].chip
+        }
+      />
+    }
     notice={
       folder.conflict !== null ? (
         <ConflictNotice
@@ -42,19 +54,7 @@ export const PlainFolderRow = ({
           onLeave={() => draft.leave({ path: folder.path })}
         />
       ) : folder.isIncluded ? (
-        <FolderNotice
-          tone="info"
-          title="Not a git repository."
-          body="Agents can edit files here, with no branches or pull requests."
-          actions={
-            <Checkbox
-              label="Make it a git repository on Create"
-              checked={folder.isGitInit}
-              disabled={isBusy}
-              onChange={(isGitInit) => draft.setGitInit({ path: folder.path, isGitInit })}
-            />
-          }
-        />
+        <FolderFaceChoice folder={folder} draft={draft} isBusy={isBusy} />
       ) : null
     }
   />

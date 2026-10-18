@@ -1,6 +1,6 @@
 # Storage
 
-Free disk space and clean up branches, with what is safe to remove spelled out. Goodboy tells you why each folder or branch exists and what removing it costs, so you can clear space without guessing.
+Free disk space and clean up branches, with what is safe to remove spelled out. Goodboy tells you why each folder or branch exists and what removing it costs, so you can clear space without guessing. **Transcripts and app data** at the foot of the page also counts the **Saved versions** of the files agents changed in your folders, which go by themselves 30 days after each session ends.
 
 ### Worktree folders
 

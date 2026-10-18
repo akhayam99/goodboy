@@ -10,6 +10,7 @@ const STATS: StorageStats = {
   archivedTranscriptBytes: 40,
   snapshotBytes: 10,
   snapshotCount: 1,
+  savedVersionsBytes: 5,
   appDataFolder: null,
   diskFreeBytes: null,
   checkedAt: 0,
@@ -36,7 +37,7 @@ describe('storageTotalBytes', () => {
         summary: SUMMARY,
         isScoped: false,
       }),
-    ).toBe(1 + 2 + 4 + 8 + 110 + 40 + 1000);
+    ).toBe(1 + 2 + 4 + 8 + 115 + 40 + 1000);
   });
 
   it('leaves shared app data out of a scoped total', () => {

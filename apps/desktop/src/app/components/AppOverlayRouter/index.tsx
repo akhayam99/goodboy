@@ -83,7 +83,6 @@ type Props = {
   readonly deleteTargetSession: Session | null;
   readonly palette: PaletteRequest | null;
   readonly closePalette: () => void;
-  readonly offerWorkspaceRepo: () => void;
   readonly closeDeleteConfirm: () => void;
 };
 
@@ -96,7 +95,6 @@ type StudioParams = {
   readonly onOpenChangelogScreen: (params: { readonly screen: ChangelogScreen }) => void;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
-  readonly offerWorkspaceRepo: () => void;
   readonly placement?: StudioPlacement;
   readonly settingsColumnSlot?: HTMLElement | null;
 };
@@ -114,7 +112,6 @@ const renderStudio = ({
   onOpenChangelogScreen,
   currentWorkspace,
   workspaceProjectRoot,
-  offerWorkspaceRepo,
   settingsColumnSlot = null,
   isInColumnShell,
 }: RenderParams): ReactNode => {
@@ -133,7 +130,7 @@ const renderStudio = ({
     case 'guide':
       return <GuideStudio onClose={close} />;
     case 'addWorkspace':
-      return <WorkspaceLinkStudio onClose={close} onOfferRepo={offerWorkspaceRepo} />;
+      return <WorkspaceLinkStudio onClose={close} />;
     case 'workflow':
       return currentWorkspace === null ? null : (
         <WorkflowStudio workspaceId={currentWorkspace.id} onClose={close} />
@@ -198,7 +195,6 @@ export const AppStudio = ({
   onOpenChangelogScreen,
   currentWorkspace,
   workspaceProjectRoot,
-  offerWorkspaceRepo,
   placement = 'cover',
   settingsColumnSlot = null,
 }: Omit<StudioParams, 'overlay'> & { readonly overlay: StudioPlace | null }) => {
@@ -224,7 +220,6 @@ export const AppStudio = ({
         onOpenChangelogScreen,
         currentWorkspace,
         workspaceProjectRoot,
-        offerWorkspaceRepo,
         settingsColumnSlot,
         isInColumnShell,
       })}
@@ -245,7 +240,6 @@ export const AppOverlayRouter = ({
   deleteTargetSession,
   palette,
   closePalette,
-  offerWorkspaceRepo,
   closeDeleteConfirm,
 }: Props) => {
   const isInMainWindow = useIsMainWindow();
@@ -261,16 +255,11 @@ export const AppOverlayRouter = ({
           onOpenChangelogScreen={onOpenChangelogScreen}
           currentWorkspace={currentWorkspace}
           workspaceProjectRoot={null}
-          offerWorkspaceRepo={offerWorkspaceRepo}
         />
       ) : null;
     return (
       <Suspense fallback={null}>
-        <WorkspaceLauncher
-          isCreating={overlay?.kind === 'addWorkspace'}
-          onCloseCreate={close}
-          onOfferRepo={offerWorkspaceRepo}
-        />
+        <WorkspaceLauncher isCreating={overlay?.kind === 'addWorkspace'} onCloseCreate={close} />
         <AppScopeOverlays studio={launcherStudio} palette={palette} closePalette={closePalette} />
         <OnboardingWizard isMainWindow={isInMainWindow} />
       </Suspense>

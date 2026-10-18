@@ -55,7 +55,7 @@ export const ObjectSelectionBar = ({
           {
             id: action.id,
             label: action.shortLabel,
-            ariaLabel: action.label,
+            ariaLabel: action.ariaLabel ?? action.label,
             title: action.blockedReason ?? action.label,
             icon: <Icon size={ICON_SIZE.row} aria-hidden />,
             tone: action.confirm?.role === 'danger' ? 'danger' : 'neutral',

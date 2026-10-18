@@ -1,6 +1,7 @@
 import { sessionLanguageTurnRule } from '../language/sessionLanguage';
 import { ROLE_REGISTRY } from '../roles';
 import { AUTO_BATCH_MAX_CHILDREN, AUTO_GATES } from './limits';
+import { canAutoRoleRunCommands } from './roleTools';
 import {
   AUTO_DELEGATION_ROLES,
   AUTO_ROLE_WHEN,
@@ -34,7 +35,7 @@ const delegationRules = (): string =>
   [
     'HOW TO DECIDE',
     '- You never call Goodboy from inside your turn. You decide by ending your final reply with at most one block, written last. Write nothing after it.',
-    `- Delegate: hand work to agents. One block with one to ${AUTO_BATCH_MAX_CHILDREN} children in the \`children\` list. Each child has a role from the list below, a task, the reason for that role, and optionally a mount, a model, an effort and a done-when line.`,
+    `- Delegate: hand work to agents. One block with one to ${AUTO_BATCH_MAX_CHILDREN} children in the \`children\` list. Each child has a role from the list below, a task, the reason for that role, and optionally a mount, a difficulty and a done-when line. The difficulty is light, standard or heavy: how hard that child's work is. Goodboy turns the role and the difficulty into the model and effort, so never name a model or an effort.`,
     `  ${AUTO_DELEGATE_EXAMPLE}`,
     '- Answer: answer a question an agent asked, using the delegation id and the question id given with it.',
     `  ${AUTO_ANSWER_EXAMPLE}`,
@@ -49,6 +50,7 @@ const delegationRules = (): string =>
     '- The user sees each result in this chat as the card of the agent that made it: its name, its state and its own report, right above your reply. Never repeat or paste what an agent said. Name the agent as the results name it, for example "Reviewer 1", and write only what you add: what the results mean together, where they disagree, what you decide next and what you need from the user.',
     '- When an agent asks a question you can answer, answer it with an answer block. When you cannot, say so and the user is asked.',
     '- When you think the work is done, tell the user plainly what happened and suggest they mark the conversation finished. Send a finish block only when the user asked to close.',
+    '- A task that runs a command (git log, git ls-remote, a test, a build) goes only to a role that has a shell. Never give it to a read only role. When a result says the agent had no shell, hand the same task once to a role that has one instead of telling the user it is blocked.',
     '- An agent never hands work to another agent. If a result needs more work, you decide the next step.',
     '- The MOUNTS line lists the folders agents can work in, each by its id. Put that id in the `mount` field of a child. A role that changes files needs a mount; a read only role works in the main mount when you leave it out. When more than one mount fits and the request does not say which, ask the user.',
   ].join('\n');
@@ -60,7 +62,10 @@ type RoleLineParams = {
 const roleLine = ({ role }: RoleLineParams): string => {
   const entry = ROLE_REGISTRY[role];
   const access = isAutoWriterRole({ role }) ? 'changes files' : 'read only';
-  return `- ${role} (${access}): ${entry.summary} ${entry.explain.does}`;
+  const shell = canAutoRoleRunCommands({ role })
+    ? 'It has a shell.'
+    : 'It has no shell and cannot run git, tests or any command.';
+  return `- ${role} (${access}): ${entry.summary} ${entry.explain.does} ${shell}`;
 };
 
 export const autoRoutingTable = (): string =>

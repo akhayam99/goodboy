@@ -58,6 +58,8 @@ export const FailedRun = ({
   const transcript = useTranscript(attempt?.agentId ?? null);
   const step = useMemo(() => lastRunStep({ items: reduceTranscript(transcript) }), [transcript]);
   const isRun = rowState.failedStep === 'run' || rowState.failedStep === null;
+  const openAction = actions.find((action) => action.id === 'reviewComment.openOnGithub');
+  const OpenLogo = openAction?.icon;
   const canRetryReply = actions.some((action) => action.id === 'reviewComment.postReplyNow');
   const canOpenTranscript = actions.some((action) => action.id === 'reviewComment.transcript');
   const sentence = rowState.sentence;
@@ -124,8 +126,10 @@ export const FailedRun = ({
                 size="sm"
                 variant="primary"
                 isBusy={isBusy}
+                aria-label={openAction?.ariaLabel ?? undefined}
                 onClick={() => onRun('reviewComment.openOnGithub')}
               >
+                {OpenLogo === undefined ? null : <OpenLogo size={ICON_SIZE.control} aria-hidden />}
                 {failedVerbOf({ action: rowState.action })}
               </Button>
             )}

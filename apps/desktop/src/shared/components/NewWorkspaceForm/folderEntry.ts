@@ -1,4 +1,4 @@
-import type { ProjectId, WorkspaceId } from '@goodboy/types';
+import type { FolderPurpose, FolderSignals, ProjectId, WorkspaceId } from '@goodboy/types';
 
 export type MoveChoice = 'ask' | 'move' | 'leave';
 
@@ -21,16 +21,24 @@ type FolderBase = {
   readonly isIncluded: boolean;
 };
 
+export type RepositoryScope = 'repository' | 'folder';
+
 export type RepositoryFolder = FolderBase & {
   readonly kind: 'repository';
   readonly defaultBranch: string | null;
   readonly snappedFrom: string | null;
+  readonly scope: RepositoryScope;
   readonly conflict: FolderConflict | null;
 };
 
 export type PlainFolder = FolderBase & {
   readonly kind: 'plain';
+  readonly purpose: FolderPurpose | null;
+  readonly preselected: FolderPurpose | null;
+  readonly signals: FolderSignals | null;
+  readonly isSignalsUnreadable: boolean;
   readonly isGitInit: boolean;
+  readonly firstCommitFiles: number | null;
   readonly conflict: FolderConflict | null;
 };
 

@@ -100,6 +100,16 @@ const RULES = [
     why: 'the window backdrop is painted once, on the app shell (or the levels scene that stands in for it), behind the top bar and the sidebar column',
   },
   {
+    pattern: /(?<![\w-])bg-backdrop-cover(?![\w-])/,
+    allow: [
+      'apps/desktop/src/app/components/BootSplash/BootCover.tsx',
+      'apps/desktop/src/app/components/BootSplash/index.tsx',
+      'apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx',
+      'apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx',
+    ],
+    why: 'the 6% cover backdrop paints the boot splash, its error screens and the Welcome cover that follows, so the handoff has no seam; the app shell stays on the 3% backdrop',
+  },
+  {
     pattern: /\bduration-\[/,
     allow: NO_ALLOW,
     why: 'durations use the numeric scale, never an arbitrary value',

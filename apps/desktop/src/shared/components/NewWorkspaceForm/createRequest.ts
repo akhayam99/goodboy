@@ -21,6 +21,10 @@ export const createRequest = ({ folders }: Params): CreateRequest => {
     if (folder.kind === 'unreadable') {
       continue;
     }
+    if (folder.kind === 'repository' && folder.scope === 'folder' && folder.snappedFrom !== null) {
+      created.push({ kind: 'plain', rootPath: folder.snappedFrom, purpose: 'documents' });
+      continue;
+    }
     if (folder.conflict !== null) {
       if (folder.conflict.choice === 'move') {
         moves.push({
@@ -38,7 +42,15 @@ export const createRequest = ({ folders }: Params): CreateRequest => {
       });
       continue;
     }
-    created.push({ kind: folder.isGitInit ? 'git-init' : 'plain', rootPath: folder.path });
+    if (folder.purpose === 'code' && folder.isGitInit) {
+      created.push({ kind: 'git-init', rootPath: folder.path });
+      continue;
+    }
+    created.push({
+      kind: 'plain',
+      rootPath: folder.path,
+      ...(folder.purpose !== null && { purpose: folder.purpose }),
+    });
   }
   return { folders: created, moves };
 };

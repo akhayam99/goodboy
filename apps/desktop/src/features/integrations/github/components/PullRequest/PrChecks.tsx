@@ -1,8 +1,9 @@
 import { Fragment, type ReactNode } from 'react';
 import type { PrCheckRun } from '@goodboy/types';
 import { Button, EmptyState, Skeleton, TEXT_ROLE, cn } from '@goodboy/ui';
-import { ExternalLink } from 'lucide-react';
+import { REVIEW_SOURCE_LABEL, type ReviewSourceKind } from '@goodboy/core';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { hostIconOf } from '../../../../../shared/hostIconOf';
 import { CheckRunRow, type CheckRunRowParts } from './CheckRunRow';
 
 type RenderCheckRowParams = {
@@ -17,7 +18,7 @@ type Props = {
   readonly renderCheckRow?: RenderCheckRow;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly fallbackUrl: string;
-  readonly hostLabel: string;
+  readonly host: ReviewSourceKind;
   readonly isLoading?: boolean;
   readonly onOpenUrl: (url: string) => void;
 };
@@ -30,10 +31,11 @@ export const PrChecks = ({
   renderCheckRow,
   checks,
   fallbackUrl,
-  hostLabel,
+  host,
   isLoading = false,
   onOpenUrl,
 }: Props) => {
+  const HostLogo = hostIconOf({ host });
   if (isLoading && checks.length === 0) {
     return (
       <div className="flex flex-col gap-2 px-2">
@@ -55,9 +57,14 @@ export const PrChecks = ({
         title="No checks yet"
         description="No checks have reported on this pull request."
         action={
-          <Button variant="ghost" size="sm" onClick={() => onOpenUrl(fallbackUrl)}>
-            View on {hostLabel}
-            <ExternalLink size={ICON_SIZE.row} aria-hidden />
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={`View on ${REVIEW_SOURCE_LABEL[host]}`}
+            onClick={() => onOpenUrl(fallbackUrl)}
+          >
+            <HostLogo size={ICON_SIZE.row} aria-hidden />
+            View
           </Button>
         }
       />

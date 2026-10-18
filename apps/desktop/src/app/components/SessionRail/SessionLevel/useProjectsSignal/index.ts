@@ -4,6 +4,7 @@ import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import { entryAriaLabel } from '../../../../../features/branch/entryAriaLabel';
+import { mountPullRequestView } from '../../../../../features/review/mountPullRequestView';
 import { mountReviewGithub } from '../../../../../features/review/mountReviewGithub';
 import { commentsWaitingOf } from '../commentsWaitingOf';
 import { worktreeCardEntriesOf } from '../worktreeCardEntriesOf';
@@ -27,6 +28,18 @@ export const useProjectsSignal = ({ sessionId, rows, statuses }: Params): Worktr
       rows.map((row) => mountReviewGithub({ state, sessionId, mountId: row.mountId })),
     ),
   );
+  const views = useAppStore(
+    useShallow((state) =>
+      rows.map((row) =>
+        mountPullRequestView({
+          state,
+          sessionId,
+          mountId: row.mountId,
+          prNumber: row.request?.number ?? null,
+        }),
+      ),
+    ),
+  );
   const items = useAppStore((state) => state.sessionResolveQueueItems[sessionId] ?? EMPTY_ARRAY);
   return useMemo(() => {
     const threads = items.map((entry) => entry.thread);
@@ -36,6 +49,7 @@ export const useProjectsSignal = ({ sessionId, rows, statuses }: Params): Worktr
         github: githubs[index] ?? null,
         threads,
         diff: null,
+        view: views[index] ?? null,
       });
       return [
         worktreeRowStateFor({
@@ -60,5 +74,5 @@ export const useProjectsSignal = ({ sessionId, rows, statuses }: Params): Worktr
       states.find((state) => state.tone === 'warning') ??
       QUIET
     );
-  }, [githubs, items, rows, statuses, waiting]);
+  }, [githubs, items, rows, statuses, views, waiting]);
 };

@@ -53,6 +53,63 @@ describe('roleRunFacts', () => {
     expect(reviewer.split.note).toBe(ROLE_REGISTRY.reviewer.explain.splitNote);
   });
 
+  it('names what a small, a normal and a large step run, read off the same engine call', () => {
+    const sizedOf = (role: AgentRole) => ({
+      small: resolveSlot({
+        slot: { kind: 'role', id: role },
+        context: { defaultProvider: 'anthropic' },
+        size: 'small',
+      }),
+      large: resolveSlot({
+        slot: { kind: 'role', id: role },
+        context: { defaultProvider: 'anthropic' },
+        size: 'large',
+      }),
+    });
+    const implementer = roleRunFacts({
+      role: 'implementer',
+      auto: autoOf({ role: 'implementer', defaultProvider: 'anthropic' }),
+      sized: sizedOf('implementer'),
+      isParallelOn: true,
+    });
+
+    expect(implementer.bySize).toBe(
+      'Auto sizes it by the step: small Haiku 5.5 Medium, normal Sonnet 5.5 Medium, large Sonnet 5.5 High.',
+    );
+  });
+
+  it('says a role that the step size does not move runs the same on every size', () => {
+    const custom = roleRunFacts({
+      role: 'custom',
+      auto: autoOf({ role: 'custom', defaultProvider: 'anthropic' }),
+      sized: {
+        small: resolveSlot({
+          slot: { kind: 'role', id: 'custom' },
+          context: { defaultProvider: 'anthropic' },
+          size: 'small',
+        }),
+        large: resolveSlot({
+          slot: { kind: 'role', id: 'custom' },
+          context: { defaultProvider: 'anthropic' },
+          size: 'large',
+        }),
+      },
+      isParallelOn: true,
+    });
+
+    expect(custom.bySize).toBe('Auto runs it on Sonnet 5.5 Medium whatever the size of the step.');
+  });
+
+  it('leaves the size line out without sized picks', () => {
+    const scout = roleRunFacts({
+      role: 'scout',
+      auto: autoOf({ role: 'scout', defaultProvider: 'anthropic' }),
+      isParallelOn: true,
+    });
+
+    expect(scout.bySize).toBeNull();
+  });
+
   it('says a generalist never splits and that a role is picked instead', () => {
     const custom = roleRunFacts({
       role: 'custom',

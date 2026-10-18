@@ -77,6 +77,24 @@ type CommandFailureParams = {
 const commandFailure = ({ kind, message }: CommandFailureParams): Error =>
   Object.assign(new Error(message), { kind });
 
+type FirstCommitArgs = {
+  readonly args: { readonly path: string; readonly include: ReadonlyArray<string> };
+};
+
+type PrepareArgs = {
+  readonly args: { readonly folderPath: string; readonly folderId?: string };
+};
+
+const readyStatus = ({ args }: PrepareArgs) => ({
+  folderPath: args.folderPath,
+  isReady: true,
+  isTurnOpen: false,
+  fileCount: 12,
+  keptBytes: 4096,
+  skipped: [],
+  method: 'clone',
+});
+
 const acmeRows = () =>
   countOf({ sql: 'SELECT COUNT(*) AS count FROM workspaces WHERE id = ?', params: [ACME] });
 
@@ -116,6 +134,7 @@ beforeEach(async () => {
 
 describe('createWorkspaceWithFolders', () => {
   it('writes the workspace and its folders once, with the default branch, then shows them', async () => {
+    stubStoryInvoke({ file_versions_folder_prepare: readyStatus });
     const created = await useAppStore.getState().createWorkspaceWithFolders({
       workspaceId: ACME,
       name: 'Acme web',
@@ -143,6 +162,92 @@ describe('createWorkspaceWithFolders', () => {
     expect(
       useAppStore.getState().projects.filter((project) => project.workspaceId === ACME),
     ).toHaveLength(2);
+  });
+
+  it('starts the first copy of a plain folder after Create, never of a repository', async () => {
+    const prepared: string[] = [];
+    stubStoryInvoke({
+      file_versions_folder_prepare: (params: PrepareArgs) => {
+        prepared.push(params.args.folderPath);
+        return readyStatus(params);
+      },
+    });
+
+    const created = await useAppStore.getState().createWorkspaceWithFolders({
+      workspaceId: ACME,
+      name: 'Acme notes',
+      folders: [
+        { kind: 'plain', rootPath: '/Users/me/Documents/acme-notes', purpose: 'documents' },
+        { kind: 'repository', rootPath: '/Users/me/Code/acme-web', defaultBranch: 'main' },
+      ],
+      moves: [],
+    });
+
+    const notes = created.projects.find((project) => project.kind === 'folder');
+    await vi.waitFor(() =>
+      expect(
+        notes === undefined ? null : useAppStore.getState().folderVersionsStatus[notes.id],
+      ).toMatchObject({ kind: 'ready' }),
+    );
+    expect(prepared).toEqual(['/Users/me/Documents/acme-notes']);
+  });
+
+  it('keeps the workspace when the first copy fails and marks the folder to retry', async () => {
+    stubStoryInvoke({
+      file_versions_folder_prepare: () => {
+        throw commandFailure({ kind: 'io', message: 'disk full' });
+      },
+    });
+
+    const created = await useAppStore.getState().createWorkspaceWithFolders({
+      workspaceId: ACME,
+      name: 'Acme notes',
+      folders: [
+        { kind: 'plain', rootPath: '/Users/me/Documents/acme-notes', purpose: 'documents' },
+      ],
+      moves: [],
+    });
+
+    const notes = created.projects[0];
+    await vi.waitFor(() =>
+      expect(
+        notes === undefined ? null : useAppStore.getState().folderVersionsStatus[notes.id],
+      ).toMatchObject({ kind: 'failed' }),
+    );
+    expect(await acmeRows()).toBe(1);
+  });
+
+  it('forgets the first copy when the plain folder is removed, after the removal', async () => {
+    const forgotten: string[] = [];
+    stubStoryInvoke({
+      file_versions_folder_prepare: readyStatus,
+      file_versions_folder_forget: ({ args }: PrepareArgs) => {
+        forgotten.push(args.folderPath);
+      },
+    });
+    const created = await useAppStore.getState().createWorkspaceWithFolders({
+      workspaceId: ACME,
+      name: 'Acme notes',
+      folders: [
+        { kind: 'plain', rootPath: '/Users/me/Documents/acme-notes', purpose: 'documents' },
+      ],
+      moves: [],
+    });
+    const notes = created.projects[0];
+    if (notes === undefined) {
+      throw new Error('expected the acme-notes folder');
+    }
+    await vi.waitFor(() =>
+      expect(useAppStore.getState().folderVersionsStatus[notes.id]).toMatchObject({
+        kind: 'ready',
+      }),
+    );
+
+    await useAppStore.getState().removeProject({ projectId: notes.id });
+
+    expect(forgotten).toEqual(['/Users/me/Documents/acme-notes']);
+    expect(useAppStore.getState().folderVersionsStatus[notes.id]).toBeUndefined();
+    expect(useAppStore.getState().projects.some((project) => project.id === notes.id)).toBe(false);
   });
 
   it('leaves no workspace when a folder insert fails, and Retry creates it once', async () => {
@@ -173,12 +278,14 @@ describe('createWorkspaceWithFolders', () => {
     ).toBe(2);
   });
 
-  it('runs git init before any database write, and a git failure writes nothing', async () => {
+  it('makes the first commit before any database write, and a git failure writes nothing', async () => {
     const seen: number[] = [];
+    const included: Array<ReadonlyArray<string>> = [];
     stubStoryInvoke({
-      repo_init: async ({ path }: { readonly path: string }) => {
+      folder_git_make_first_commit: async ({ args }: FirstCommitArgs) => {
         seen.push(await acmeRows());
-        return { rootPath: path, remoteUrl: '', branch: 'main' };
+        included.push(args.include);
+        return { rootPath: args.path, branch: 'main', commit: 'a1b2c3d', files: 214 };
       },
     });
 
@@ -190,12 +297,16 @@ describe('createWorkspaceWithFolders', () => {
     });
 
     expect(seen).toEqual([0]);
+    expect(included).toEqual([[]]);
     expect(await acmeRows()).toBe(1);
+    expect(
+      useAppStore.getState().projects.find((project) => project.workspaceId === ACME)?.kind,
+    ).toBe('repo');
   });
 
   it("shows git's own message and writes nothing when git init fails", async () => {
     stubStoryInvoke({
-      repo_init: () => {
+      folder_git_make_first_commit: () => {
         throw commandFailure({ kind: 'git', message: 'git failed: fatal: cannot write to .git' });
       },
     });

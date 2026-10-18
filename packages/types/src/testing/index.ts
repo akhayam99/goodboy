@@ -1,3 +1,4 @@
+export { aFolderSignals } from './aFolderSignals';
 export { aProject } from './aProject';
 export { aSession } from './aSession';
 export { aWorkflowRun } from './aWorkflowRun';

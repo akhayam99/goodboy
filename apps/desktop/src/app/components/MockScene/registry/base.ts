@@ -183,6 +183,12 @@ import { ScribeProposalTranscriptScene } from '../scenes/ScribeProposalTranscrip
 import { FixRunScene } from '../scenes/FixRunScene';
 import { CrashReportScene } from '../scenes/audit/ReportScenes';
 import { BrandTileScene } from '../scenes/onboarding/BrandTileScene';
+import { WriterWaitScene } from '../scenes/nogit/WriterWaitScene';
+import { NOGIT_CHANGES_SCENES } from '../scenes/nogit/changesScenes';
+import { GitLaterScene, type GitLaterState } from '../scenes/nogit/GitLaterScene';
+import { PickScene, type PickSceneState } from '../scenes/nogit/PickScene';
+import { FoldersScene, type FoldersSceneState } from '../scenes/nogit/FoldersScene';
+import { SplashScene } from '../scenes/onboarding/SplashScene';
 import { SetupMenuScene } from '../scenes/onboarding/SetupMenuScene';
 import {
   NewWorkspaceScene,
@@ -246,6 +252,10 @@ const ONBOARDING_SCENES: Readonly<Record<string, ComponentType>> = Object.fromEn
     render: ({ theme }) => createElement(BrandTileScene, { theme }),
   }),
   ...themed({
+    id: 'onboarding-splash',
+    render: ({ theme }) => createElement(SplashScene, { theme }),
+  }),
+  ...themed({
     id: 'onboarding-setup-menu',
     render: ({ theme }) => createElement(SetupMenuScene, { theme }),
   }),
@@ -265,6 +275,43 @@ const ONBOARDING_SCENES: Readonly<Record<string, ComponentType>> = Object.fromEn
     themed({
       id: `onboarding-home-${state}`,
       render: ({ theme }) => createElement(HomeScene, { state, theme }),
+    }),
+  ),
+]);
+
+const GIT_LATER_STATES: ReadonlyArray<GitLaterState> = [
+  'none',
+  'review',
+  'tracked',
+  'detected',
+  'empty',
+];
+
+const PICK_STATES: ReadonlyArray<PickSceneState> = ['code', 'docs', 'inside', 'big'];
+
+const FOLDERS_STATES: ReadonlyArray<FoldersSceneState> = ['home', 'settings'];
+
+const NOGIT_SCENES: Readonly<Record<string, ComponentType>> = Object.fromEntries([
+  ...themed({
+    id: 'u26-nogit-writer-wait',
+    render: ({ theme }) => createElement(WriterWaitScene, { theme }),
+  }),
+  ...GIT_LATER_STATES.flatMap((state) =>
+    themed({
+      id: `u26-nogit-git-later-${state}`,
+      render: ({ theme }) => createElement(GitLaterScene, { state, theme }),
+    }),
+  ),
+  ...PICK_STATES.flatMap((state) =>
+    themed({
+      id: `u26-nogit-pick-${state}`,
+      render: ({ theme }) => createElement(PickScene, { state, theme }),
+    }),
+  ),
+  ...FOLDERS_STATES.flatMap((state) =>
+    themed({
+      id: `u26-nogit-folders-${state}`,
+      render: ({ theme }) => createElement(FoldersScene, { state, theme }),
     }),
   ),
 ]);
@@ -458,4 +505,6 @@ export const BASE_SCENES = {
   'space-diff-comment': SpaceDiffCommentScene,
   'crash-report': CrashReportScene,
   ...ONBOARDING_SCENES,
+  ...NOGIT_SCENES,
+  ...NOGIT_CHANGES_SCENES,
 };

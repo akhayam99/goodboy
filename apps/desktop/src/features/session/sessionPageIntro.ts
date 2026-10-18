@@ -1,4 +1,3 @@
-import { NAMES } from '../../shared/names';
 import type { Page } from './pageRegistry';
 
 const HAND_STARTED_KEEP_RUNNING = 'Agents you start by hand keep running.';
@@ -29,6 +28,5 @@ export const SESSION_PAGE_INTRO = {
 } as const satisfies Readonly<Record<IntroPage, IntroLines>>;
 
 export const SESSION_PAGE_MARKER_WHY = {
-  agents: `${NAMES.startAuto} on ${NAMES.autoAgents}. ${HAND_STARTED_KEEP_RUNNING}`,
   auto: `Auto starts agents on its own. ${AUTO_STILL_TUNED}`,
 } as const;

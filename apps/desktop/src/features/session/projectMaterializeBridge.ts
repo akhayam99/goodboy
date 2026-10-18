@@ -8,6 +8,7 @@ import {
   proposeMaterialization,
   runMaterializationBatch,
 } from '../../store/slices/project-mounts/materializationGate';
+import { holdsFolderCapture } from '../../store/slices/file-versions/activeFolderCaptures';
 import { useAppStore } from '../../store/store';
 import { findMountById } from '../../store/slices/project-mounts/findMountById';
 import { recoverSoleMount } from '../../store/slices/project-mounts/recoverSoleMount';
@@ -83,6 +84,15 @@ export const executeMaterializeRequest = async ({
           projectId,
           reason,
         });
+        if (outcome.status === 'in-place') {
+          if (!holdsFolderCapture({ sessionId, folderPath: project.rootPath })) {
+            return {
+              ok: false,
+              error: `${project.name} is a plain folder and this turn did not start in it, so nothing written there would be saved. Do not write in it now. The owner can send the next turn with ${project.name} as its destination.`,
+            };
+          }
+          return { ok: true, mountPath: project.rootPath, branch: '' };
+        }
         if (outcome.status === 'created') {
           budget.immediateProjectIds.add(project.id);
         }

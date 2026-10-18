@@ -63,6 +63,7 @@ export type StorageStats = {
   readonly archivedTranscriptBytes: number;
   readonly snapshotBytes: number;
   readonly snapshotCount: number;
+  readonly savedVersionsBytes: number;
   readonly appDataFolder: string | null;
   readonly diskFreeBytes: number | null;
   readonly checkedAt: number;

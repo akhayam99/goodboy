@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import type { ProviderId } from '@goodboy/types';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import { TriggerSeparator } from './TriggerSeparator';
@@ -22,21 +21,21 @@ export const TriggerLabel = ({ provider, label, prefix }: Props) => {
         aria-hidden
       />
       {prefix === undefined ? null : (
-        <>
-          <span data-routing-prefix="" className="shrink-0 text-foreground">
+        <span className="flex shrink-0 items-center gap-2 @max-md:hidden">
+          <span data-routing-prefix="" className="text-foreground">
             {prefix}
           </span>
           <TriggerSeparator />
-        </>
+        </span>
       )}
-      <span className="min-w-0 truncate font-sans font-medium text-foreground">
+      <span className="min-w-0 truncate font-sans font-medium text-foreground @max-sm:hidden">
         {routingNameText(label)}
       </span>
       {label.detail.map((segment) => (
-        <Fragment key={segment}>
+        <span key={segment} className="flex shrink-0 items-center gap-2 @max-md:hidden">
           <TriggerSeparator />
-          <span className="shrink-0 text-muted-foreground">{segment}</span>
-        </Fragment>
+          <span className="text-muted-foreground">{segment}</span>
+        </span>
       ))}
     </>
   );

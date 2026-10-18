@@ -90,7 +90,7 @@ export const FileVersionsPane = ({ sessionId, sessionDir, onClose }: Props) => {
 
   return (
     <PaneShell
-      title="File versions"
+      title="Changes"
       actions={
         <>
           {deleteAllArmed ? (

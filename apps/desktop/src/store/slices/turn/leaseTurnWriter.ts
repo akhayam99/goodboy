@@ -1,5 +1,8 @@
 import { getAgentById } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
+import { brandId, type ProviderRunId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { kindWritesFiles } from '../../../features/session/agent-kind';
 import {
   acquireWorktreeWriter,
   cancelWorktreeWriter,
@@ -15,6 +18,7 @@ import { releaseTurnWriteSet } from './releaseTurnWriteSet';
 import { resolveTurnWritableRoots } from './resolveTurnWritableRoots';
 import { turnWriteSet } from './turnWriteSet';
 import { isConfinedWriterRole } from './isConfinedWriterRole';
+import { inPlaceSnapshot, type InPlaceSnapshotParams } from './inPlaceSnapshot';
 import type { PreparedTurn } from './prepareTurn';
 import type { RoutedTurn } from './routeTurn';
 
@@ -25,6 +29,19 @@ type Params = Readonly<{
   ctx: WithInput & PreparedTurn & RoutedTurn;
 }>;
 
+const FOLDER_LIST = new Intl.ListFormat('en', { type: 'conjunction' });
+
+const beginInPlaceSnapshot = async ({ sessionId, runId, folders }: InPlaceSnapshotParams) => {
+  try {
+    return await inPlaceSnapshot.begin({ sessionId, runId, folders });
+  } catch (error) {
+    const names = FOLDER_LIST.format(folders.map((folder) => folder.name));
+    throw new Error(
+      `Couldn't save ${names} before this turn, so the agent did not start. ${formatError(error)}`,
+    );
+  }
+};
+
 export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
   const { sessionId, override } = ctx.input;
   const {
@@ -34,6 +51,7 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
     turnMountId,
     turnMountRevision,
     copyPath,
+    inPlaceFolders,
     activeAgentId,
     resolvedPrompt,
     provider,
@@ -109,18 +127,34 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
       lease.holder = activeAgentId;
     }
   }
-  const { writableRoots, isolatedCopyPath } = await resolveTurnWritableRoots({
+  const resolvedRoots = await resolveTurnWritableRoots({
     get,
     sessionId,
     workingDir: ctx.workingDir,
     rewriterCopyPath: rewriterCopy?.copyPath ?? null,
     copyPath,
   });
+  const { isolatedCopyPath } = resolvedRoots;
+  const isIsolatedTurn = isResolverTurn || rewriterCopy !== null || copyPath !== null;
+  const isInPlaceWriter =
+    !isIsolatedTurn &&
+    inPlaceFolders.length > 0 &&
+    (ctx.input.confinedRole === undefined
+      ? kindWritesFiles({ kind: turnAgentKind })
+      : isConfinedWriterRole({ role: ctx.input.confinedRole }));
+  const writableRoots = isInPlaceWriter
+    ? Array.from(
+        new Set([
+          ...resolvedRoots.writableRoots,
+          ...inPlaceFolders
+            .map((folder) => folder.rootPath)
+            .filter((rootPath) => rootPath !== ctx.workingDir),
+        ]),
+      )
+    : resolvedRoots.writableRoots;
   const isWriteSetTurn =
-    isConfinedWriterRole({ role: ctx.input.confinedRole }) &&
-    !isResolverTurn &&
-    rewriterCopy === null &&
-    copyPath === null;
+    !isIsolatedTurn && (isConfinedWriterRole({ role: ctx.input.confinedRole }) || isInPlaceWriter);
+  let isReadOnlyAnswer = false;
   if (isWriteSetTurn) {
     await releaseTurnWriteSet({ get, sessionId, lease });
     const acquisition = await acquireTurnWriteSet({
@@ -137,7 +171,16 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
     if (acquisition === 'timed_out') {
       return turnDone({ result: { blockedOverBudget: false, isWriterLeaseDenied: true } });
     }
+    isReadOnlyAnswer = acquisition === 'read_only';
   }
+  const hasFolderLease = isInPlaceWriter && !isReadOnlyAnswer;
+  const reservedRunId = hasFolderLease
+    ? (ctx.input.runId ?? brandId<ProviderRunId>({ value: crypto.randomUUID() }))
+    : null;
+  const inPlaceCapture =
+    reservedRunId === null
+      ? null
+      : await beginInPlaceSnapshot({ sessionId, runId: reservedRunId, folders: inPlaceFolders });
   const writeSetLease =
     lease.writeSetHolder === null || lease.writeSet.length === 0
       ? undefined
@@ -158,8 +201,12 @@ export const leaseTurnWriter = async ({ set, get, lease, ctx }: Params) => {
       isCopyTurn,
       writerLease,
       writeSetLease,
-      writableRoots,
+      writableRoots: isReadOnlyAnswer ? [] : writableRoots,
       isolatedCopyPath,
+      isReadOnlyAnswer,
+      hasFolderLease,
+      reservedRunId,
+      inPlaceCapture,
     },
   });
 };

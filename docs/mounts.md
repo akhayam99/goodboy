@@ -53,8 +53,16 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   `isValidBranchName` in `@goodboy/core` is tested against
   (`branch-name.fixture.json`), so a name the ref rules refuse fails before
   anything is created.
-- A folder mount is a plain directory at `<project-root>/sessions/<name>`.
-  Folder projects always keep their directory; no Goodboy action deletes it.
+- A plain folder gets no mount and no session folder. A new session writes in
+  the folder itself: its turns get a write destination of kind `root` with no
+  branch, one session writes in a folder at a time under the write set lease,
+  and the guard keeps every write inside it ([turns.md](turns.md#where-a-turn-writes)).
+  `ensureProjectMounted` answers `in-place` for a folder project and
+  `createProjectMount` refuses one, so no path cuts a `sessions/` folder.
+- A session made before 0.27.3 that already has a folder mount at
+  `<project-root>/sessions/<name>` keeps it and keeps writing there: moving an
+  agent's earlier output into the user's files would be a write nobody asked
+  for. Folder projects always keep that directory; no Goodboy action deletes it.
 
 ## The first lap and the bootstrap move
 
@@ -92,6 +100,43 @@ project folder is untouched until the copy is verified:
 
 A crash leaves the phase at `moving`; the next start verifies the copy and
 finishes, or undoes it. A second move is not possible: the phase ends at `done`.
+
+## Git later
+
+A plain folder gets git only when you ask, or when git shows up by itself.
+
+- **Track with git** (Settings, Projects, the Git band) reads a first commit
+  plan first, read only: `folder_git_first_commit_plan`
+  (`src-tauri/src/folder_git.rs`) lists what `git add` would take through a
+  scratch git dir outside the folder, so the folder's own `.gitignore` and
+  git's global excludes count, and groups it into what goes in, dependency and
+  build folders left out by default (they can be ticked back in), and files
+  that look like secrets (`.env*`, `*.pem`, `*.key`, `id_rsa` and the like),
+  which are always left out and never offered. Goodboy's own `.goodboy` and
+  old `sessions/` folders stay out too.
+- `Make the first commit` (`folder_git_make_first_commit`) runs `git init` on
+  `main` (an empty repository keeps its branch), writes the left out paths to
+  `.gitignore`, checks git really ignores them, stages, refuses if a staged
+  path still looks like a secret, and commits as git's own identity, or as
+  `Goodboy <goodboy@localhost>` when git has none, the same fallback the
+  first lap uses. Any failure removes the new `.git` and restores
+  `.gitignore` (or the index of an empty repository). No remote is set.
+- `convertProjectToRepo` takes the folder's write lease first, so the commit
+  never runs while a session writes in place; the error names that session.
+  The project becomes `repo` only after the commit and `validate_git_repo`
+  resolved. New sessions then cut their branch from local `main`, which works
+  with no `origin` (`worktree/create.rs` falls back to the local branch).
+- **Publish to GitHub** on a repository with no remote is the first lap's
+  `PublishPanel` and `publishFirstLap`: create on GitHub or link an address,
+  then push `main`.
+- Git set up outside the app is noticed by `probeFolderGit`
+  (`folder_git_probe`, read only) on workspace open, on window focus, when a
+  turn ends and when the Git band opens (`useFolderGitProbe`). A code folder with commits becomes `repo` by itself,
+  only while no session holds its write lease, and the band says so with
+  `Keep editing in place`. A documents folder, or a folder inside another
+  repository, keeps writing in place and asks once. The answer to keep
+  editing in place is one settings row, `folder.git.<project-id>` =
+  `in-place`, and the probe leaves that folder alone after it.
 
 ## Hiding .goodboy from git
 

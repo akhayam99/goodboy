@@ -33,7 +33,7 @@ export const PULL_REQUEST_PRESENTATION = {
   },
   open: {
     icon: GitPullRequest,
-    label: 'In review',
+    label: 'Open',
     reason: 'waiting for a reviewer',
     textClass: 'text-success',
     tone: 'success',

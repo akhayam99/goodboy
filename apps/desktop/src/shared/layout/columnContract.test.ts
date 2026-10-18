@@ -100,6 +100,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     files: [
       'features/session/components/SessionWorkspace/parts/FilesPane.tsx',
       'features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx',
+      'features/session/components/SessionWorkspace/parts/ChangesPane/index.tsx',
     ],
   },
   ArtifactStudio: {

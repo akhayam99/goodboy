@@ -98,7 +98,7 @@ export const PullRequestProperties = ({
               {counts !== null &&
               counts.failing === 0 &&
               counts.running === 0 &&
-              counts.passed > 0 ? (
+              counts.passed + counts.skipped > 0 ? (
                 <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
               ) : null}
               <span className="min-w-0 truncate text-foreground">{checksText}</span>

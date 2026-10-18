@@ -1,5 +1,6 @@
 import { draftFolders } from './draftFolders';
 import type { FolderEntry, FolderProblem } from './folderEntry';
+import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
 
 type Params = {
   readonly folders: ReadonlyArray<FolderEntry>;
@@ -22,7 +23,13 @@ export const createBlock = ({ folders, name }: Params): string | null => {
     if (folder.kind === 'unreadable') {
       return PROBLEM_REASON[folder.problem];
     }
+    if (folder.kind === 'repository' && folder.scope === 'folder') {
+      continue;
+    }
     if (folder.conflict === null) {
+      if (folder.kind === 'plain' && folder.purpose === null) {
+        return FOLDER_FACE_COPY.pickBlock;
+      }
       continue;
     }
     if (folder.conflict.choice === 'ask') {

@@ -166,6 +166,14 @@ const startTurn = async ({
   }
 };
 
+type ReasonParams = {
+  readonly code: string;
+  readonly message: string;
+};
+
+const reasonOf = ({ code, message }: ReasonParams): string =>
+  message.trim() === '' ? code : `${code}: ${message.trim()}`;
+
 const launchOne = async (params: LaunchOneParams): Promise<void> => {
   const { ctx, tree, delegation } = params;
   const role = delegationRoleOf({ delegation });
@@ -185,13 +193,13 @@ const launchOne = async (params: LaunchOneParams): Promise<void> => {
       sessionId: tree.sessionId,
       parentAgentId: tree.rootAgentId,
     });
-  } catch {
-    await fail('kickoff_failed');
+  } catch (error) {
+    await fail(reasonOf({ code: 'kickoff_failed', message: formatError(error) }));
     return;
   }
   const outcome = await startTurn({ ...params, attempt, role, target });
   if (outcome.kind === 'refused') {
-    await fail(outcome.reason);
+    await fail(reasonOf({ code: outcome.reason, message: outcome.message }));
     return;
   }
   const marked = await ctx.scheduler.markAttemptRunning({

@@ -18,10 +18,10 @@ describe('the session level pages', () => {
     ]);
   });
 
-  it('add File versions after Overview in a branchless session', () => {
+  it('add Changes after Overview in a branchless session', () => {
     expect(columnPagesOf({ isBranchless: true }).map((page) => page.label)).toEqual([
       'Overview',
-      'File versions',
+      'Changes',
       'Runs',
       'Orchestrated',
       'Agents',

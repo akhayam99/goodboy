@@ -95,7 +95,7 @@ describe('empty states', () => {
   it('Home: no workspace yet, one New workspace door', () => {
     const onNew = vi.fn();
     window.addEventListener('goodboy:add-workspace', onNew);
-    render(<WorkspaceLauncher isCreating={false} onCloseCreate={vi.fn()} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLauncher isCreating={false} onCloseCreate={vi.fn()} />);
     screen.getByRole('heading', { name: 'No workspace yet' });
     fireEvent.click(screen.getByRole('button', { name: 'New workspace' }));
     window.removeEventListener('goodboy:add-workspace', onNew);

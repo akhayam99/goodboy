@@ -41,7 +41,7 @@ const sessionList = (): HTMLElement => {
 
 const rowTitles = (root: HTMLElement): ReadonlyArray<string> =>
   Array.from(root.querySelectorAll('button[data-select-id]')).map(
-    (row) => row.lastElementChild?.textContent ?? '',
+    (row) => row.firstElementChild?.textContent ?? '',
   );
 
 const groupOf = (name: RegExp): HTMLElement => {
@@ -97,7 +97,7 @@ describe('the pinned sessions scene', () => {
 
   const rowOf = (title: string): HTMLElement => {
     const row = Array.from(sessionList().querySelectorAll('button[data-select-id]')).find(
-      (candidate) => candidate.lastElementChild?.textContent === title,
+      (candidate) => candidate.firstElementChild?.textContent === title,
     );
     if (!(row instanceof HTMLElement)) {
       throw new Error(`the list has no row ${title}`);

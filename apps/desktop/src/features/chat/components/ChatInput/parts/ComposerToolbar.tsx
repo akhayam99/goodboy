@@ -38,41 +38,43 @@ export const ComposerToolbar = ({
   onSend,
   onSendNow,
 }: Props) => (
-  <div className="flex h-8 items-center justify-between gap-2 px-3 pb-2">
-    <div className="flex items-center gap-2">
-      <ComposerPlusMenu
-        disabled={isBlocked}
-        onAttachFiles={() => fileInputRef.current?.click()}
-        onInsertPrefix={onInsertPrefix}
+  <div data-composer-toolbar="" className="@container min-w-0">
+    <div className="flex h-8 min-w-0 items-center justify-between gap-2 px-3 pb-2">
+      <div className="flex shrink-0 items-center gap-2">
+        <ComposerPlusMenu
+          disabled={isBlocked}
+          onAttachFiles={() => fileInputRef.current?.click()}
+          onInsertPrefix={onInsertPrefix}
+        />
+        {hasPermissionPicker ? (
+          <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
+        ) : null}
+        {attachmentCount > 0 && (
+          <span className="whitespace-nowrap text-meta text-faint-foreground">
+            {attachmentCount} {attachmentCount === 1 ? 'file' : 'files'}
+          </span>
+        )}
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ATTACHMENT_ACCEPT}
+        multiple
+        aria-label="Attach files"
+        tabIndex={-1}
+        className="hidden"
+        onChange={onFileInputChange}
       />
-      {hasPermissionPicker ? (
-        <PermissionModePicker session={session} activeProvider={routing.effectiveProvider} />
-      ) : null}
-      {attachmentCount > 0 && (
-        <span className="text-meta text-faint-foreground">
-          {attachmentCount} {attachmentCount === 1 ? 'file' : 'files'}
-        </span>
-      )}
-    </div>
-    <input
-      ref={fileInputRef}
-      type="file"
-      accept={ATTACHMENT_ACCEPT}
-      multiple
-      aria-label="Attach files"
-      tabIndex={-1}
-      className="hidden"
-      onChange={onFileInputChange}
-    />
-    <div className="flex items-center gap-2">
-      <ComposerRoutingPicker routing={routing} />
-      <SendControl
-        isRunning={isRunning}
-        canSend={canSend}
-        sendDisabledTitle={sendDisabledTitle}
-        onSend={onSend}
-        onSendNow={onSendNow}
-      />
+      <div className="flex min-w-0 items-center gap-2">
+        <ComposerRoutingPicker routing={routing} />
+        <SendControl
+          isRunning={isRunning}
+          canSend={canSend}
+          sendDisabledTitle={sendDisabledTitle}
+          onSend={onSend}
+          onSendNow={onSendNow}
+        />
+      </div>
     </div>
   </div>
 );

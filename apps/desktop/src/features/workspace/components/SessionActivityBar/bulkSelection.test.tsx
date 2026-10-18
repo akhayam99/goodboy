@@ -19,6 +19,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { sessionObjectKey } from '../../../actions/kinds/session';
+import { requestSelect } from '../../../actions/selectRequest';
 import { harborline, renderBar, seedColumn, sessionOf } from '../../testing/sessionColumn';
 
 let useAppStore: StoryStore;
@@ -44,7 +46,15 @@ const three = sessionOf({ goal: 'x', lastOpenedAt: '2026-10-06T07:00:00.000Z' })
 const archivedOne = sessionOf({ goal: 'archived one' });
 
 const rows = (): ReadonlyArray<HTMLElement> =>
-  screen.getAllByRole('button').filter((button) => button.hasAttribute('data-select-id'));
+  screen.getAllByRole('option').filter((option) => option.hasAttribute('data-select-id'));
+
+const rowAt = (index: number): HTMLElement => {
+  const row = rows()[index];
+  if (row === undefined) {
+    throw new Error(`no session row at ${index}`);
+  }
+  return row;
+};
 
 const mount = (
   options: { readonly archived?: boolean; readonly onSelectSession?: () => void } = {},
@@ -71,36 +81,93 @@ const showArchived = () => {
 const selected = (count: number) => screen.getByRole('toolbar', { name: `${count} selected` });
 
 describe('bulk selection in the session list', () => {
-  it('carries selection on the row and on a checkbox that is not a tab stop', () => {
+  it('draws no checkbox anywhere and carries the selection on the option', () => {
     mount();
-    const box = screen.getByRole('checkbox', { name: 'Select one' });
-    expect(box.getAttribute('aria-checked')).toBe('false');
-    expect(box.getAttribute('tabindex')).toBe('-1');
-    expect(rows()[0]?.getAttribute('aria-keyshortcuts')).toBe('Alt+Enter Alt+Space Shift+F10');
-  });
-
-  it('starts a selection from the row checkbox without opening the session', () => {
-    const onSelectSession = vi.fn();
-    mount({ onSelectSession });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select one' }));
-    expect(onSelectSession).not.toHaveBeenCalled();
-    expect(selected(1)).toBeDefined();
-    expect(screen.getByRole('checkbox', { name: 'Select one' }).getAttribute('aria-checked')).toBe(
-      'true',
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(rows()[0]?.getAttribute('aria-selected')).toBe('false');
+    expect(rows()[0]?.getAttribute('aria-keyshortcuts')).toBe(
+      'Alt+Enter Alt+Space Shift+Enter Shift+F10',
     );
   });
 
-  it('extends the selection to a range on a shift-click of a checkbox', () => {
+  it('lists the rows in a multiselectable listbox of options', () => {
     mount();
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select one' }));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select x' }), { shiftKey: true });
+    const list = screen.getByRole('listbox');
+    expect(list.getAttribute('aria-multiselectable')).toBe('true');
+    expect(within(list).getAllByRole('option')).toHaveLength(3);
+  });
+
+  it('says how to select more while nothing is selected, and drops the hint once something is', () => {
+    mount();
+    expect(screen.getByText('Shift click for a range, Option click to add one')).toBeDefined();
+    fireEvent.click(rowAt(0), { altKey: true });
+    expect(screen.queryByText('Shift click for a range, Option click to add one')).toBeNull();
+  });
+
+  it('starts a selection from an Option click without opening the session', () => {
+    const onSelectSession = vi.fn();
+    mount({ onSelectSession });
+    fireEvent.click(rowAt(0), { altKey: true });
+    expect(onSelectSession).not.toHaveBeenCalled();
+    expect(selected(1)).toBeDefined();
+    expect(rows()[0]?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('announces the count politely as sessions join the selection', () => {
+    mount();
+    fireEvent.click(rowAt(0), { altKey: true });
+    fireEvent.click(rowAt(1), { metaKey: true });
+    const dock = selected(2).closest('[aria-live]');
+    expect(dock?.getAttribute('aria-live')).toBe('polite');
+    expect(dock?.textContent).toContain('2 selected');
+  });
+
+  it('extends the selection to a range with Shift Enter from the keyboard', () => {
+    const onSelectSession = vi.fn();
+    mount({ onSelectSession });
+    fireEvent.keyDown(rowAt(0), { key: 'Enter', altKey: true });
+    fireEvent.keyDown(rowAt(2), { key: 'Enter', shiftKey: true });
+    expect(onSelectSession).not.toHaveBeenCalled();
     expect(selected(3)).toBeDefined();
+  });
+
+  it('extends the selection one row at a time with Shift and the arrow keys', () => {
+    mount();
+    const first = rowAt(0);
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowDown', shiftKey: true });
+    expect(selected(2)).toBeDefined();
+    expect(document.activeElement).toBe(rows()[1]);
+    fireEvent.keyDown(rowAt(1), { key: 'ArrowDown', shiftKey: true });
+    expect(selected(3)).toBeDefined();
+    fireEvent.keyDown(rowAt(2), { key: 'ArrowUp', shiftKey: true });
+    expect(selected(2)).toBeDefined();
+  });
+
+  it('moves focus without selecting on a plain arrow key', () => {
+    mount();
+    const first = rowAt(0);
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(rows()[1]);
+    expect(screen.queryByRole('toolbar')).toBeNull();
+  });
+
+  it('selects the row a Select menu item names, and only that row', () => {
+    mount();
+    const anchorKey = `sidebar:${two.id}`;
+    act(() => {
+      requestSelect({ objectKey: sessionObjectKey({ sessionId: two.id }), anchorKey });
+    });
+    expect(selected(1)).toBeDefined();
+    expect(rows()[1]?.getAttribute('aria-selected')).toBe('true');
+    expect(rows()[0]?.getAttribute('aria-selected')).toBe('false');
   });
 
   it('selects from the keyboard with alt and Enter', () => {
     const onSelectSession = vi.fn();
     mount({ onSelectSession });
-    fireEvent.keyDown(rows()[0] as HTMLElement, { key: 'Enter', altKey: true });
+    fireEvent.keyDown(rowAt(0), { key: 'Enter', altKey: true });
     expect(onSelectSession).not.toHaveBeenCalled();
     expect(selected(1)).toBeDefined();
   });
@@ -108,7 +175,7 @@ describe('bulk selection in the session list', () => {
   it('selects from the keyboard with alt and Space, matching aria-keyshortcuts', () => {
     const onSelectSession = vi.fn();
     mount({ onSelectSession });
-    fireEvent.keyDown(rows()[0] as HTMLElement, { key: ' ', altKey: true });
+    fireEvent.keyDown(rowAt(0), { key: ' ', altKey: true });
     expect(onSelectSession).not.toHaveBeenCalled();
     expect(selected(1)).toBeDefined();
   });
@@ -116,26 +183,26 @@ describe('bulk selection in the session list', () => {
   it('selects from the row body when a modifier key is held instead of opening the session', () => {
     const onSelectSession = vi.fn();
     mount({ onSelectSession });
-    fireEvent.click(screen.getByRole('button', { name: 'one' }), { metaKey: true });
+    fireEvent.click(screen.getByRole('option', { name: 'one' }), { metaKey: true });
     expect(onSelectSession).not.toHaveBeenCalled();
     expect(selected(1)).toBeDefined();
   });
 
   it('extends the selection to a range on shift-click of the rows', () => {
     mount();
-    fireEvent.click(rows()[0] as HTMLElement, { altKey: true });
-    fireEvent.click(rows()[2] as HTMLElement, { shiftKey: true });
+    fireEvent.click(rowAt(0), { altKey: true });
+    fireEvent.click(rowAt(2), { shiftKey: true });
     expect(selected(3)).toBeDefined();
   });
 
-  it('toggles aria-pressed and hides the bulk bar when the last selection is removed', () => {
+  it('toggles aria-selected and hides the bulk bar when the last selection is removed', () => {
     mount();
-    const row = () => rows()[0] as HTMLElement;
-    expect(row().getAttribute('aria-pressed')).toBe('false');
+    const row = () => rowAt(0);
+    expect(row().getAttribute('aria-selected')).toBe('false');
     fireEvent.click(row(), { altKey: true });
-    expect(row().getAttribute('aria-pressed')).toBe('true');
+    expect(row().getAttribute('aria-selected')).toBe('true');
     fireEvent.click(row(), { altKey: true });
-    expect(row().getAttribute('aria-pressed')).toBe('false');
+    expect(row().getAttribute('aria-selected')).toBe('false');
     expect(screen.queryByRole('toolbar')).toBeNull();
   });
 
@@ -149,9 +216,9 @@ describe('bulk selection in the session list', () => {
     const onSelectSession = vi.fn();
     mount({ archived: true, onSelectSession });
     showArchived();
-    fireEvent.click(screen.getByRole('button', { name: 'archived one' }));
+    fireEvent.click(screen.getByRole('option', { name: 'archived one' }));
     expect(onSelectSession).toHaveBeenCalledWith(archivedOne.id);
-    expect(screen.getByRole('button', { name: 'archived one' }).getAttribute('aria-pressed')).toBe(
+    expect(screen.getByRole('option', { name: 'archived one' }).getAttribute('aria-selected')).toBe(
       'false',
     );
     expect(screen.queryByRole('toolbar')).toBeNull();
@@ -160,7 +227,7 @@ describe('bulk selection in the session list', () => {
   it('selects an archived session together with the live ones and offers the right verbs', () => {
     mount({ archived: true });
     showArchived();
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select archived one' }));
+    fireEvent.click(screen.getByRole('option', { name: 'archived one' }), { altKey: true });
     const bar = selected(1);
     expect(within(bar).getByRole('button', { name: 'Restore 1 session' })).toBeDefined();
   });
@@ -168,7 +235,7 @@ describe('bulk selection in the session list', () => {
   it('drops the selection of a session that leaves the list', () => {
     mount({ archived: true });
     showArchived();
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Select archived one' }));
+    fireEvent.click(screen.getByRole('option', { name: 'archived one' }), { altKey: true });
     act(() => {
       useAppStore.getState().setSessionViewPrefs({
         workspaceId: harborline.id,

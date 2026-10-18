@@ -166,7 +166,7 @@ export const HomeScene = ({ state, theme }: Props) => {
   }
   return (
     <div className="h-screen w-screen overflow-hidden bg-background text-foreground">
-      <WorkspaceLauncher isCreating={state === 'new'} onCloseCreate={noop} onOfferRepo={noop} />
+      <WorkspaceLauncher isCreating={state === 'new'} onCloseCreate={noop} />
     </div>
   );
 };

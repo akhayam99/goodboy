@@ -274,7 +274,7 @@ export const ROLE_REGISTRY = {
     description: 'write pull request text, commit messages and changelog entries from the diff',
     explain: {
       does: 'Writes pull request text, commit messages and changelog entries from the diff.',
-      autoReason: 'Balanced model. It writes from the diff, so it needs clarity more than depth.',
+      autoReason: 'Light model. It writes from the diff, so it needs clarity more than depth.',
       splitNote: 'One text is one run.',
       launchNote: 'Nothing.',
     },
@@ -349,7 +349,7 @@ export const ROLE_REGISTRY = {
       'you are a repository documentation agent. write and update repository documentation, READMEs, changelogs, and docstrings. never produce session reports or other report artifacts. ALLOWED: editing documentation files and documentation text. FORBIDDEN: editing production logic, writing tests, implementing features, creating plans, or writing reports.',
     explain: {
       does: 'Writes and updates repository documentation. Never writes reports.',
-      autoReason: 'Low effort. The docs follow code that has already changed.',
+      autoReason: 'Light model. The docs follow code that has already changed.',
       splitNote: 'One pass over the docs is one run.',
       launchNote: 'Nothing.',
     },

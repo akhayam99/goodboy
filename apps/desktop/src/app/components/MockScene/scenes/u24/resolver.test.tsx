@@ -56,9 +56,11 @@ const mount = async (name: string): Promise<Element> => {
 };
 
 describe('the resolver scenes', () => {
-  it('registers both scenes for the capture', () => {
+  it('registers the four scenes for the capture', () => {
     expect(Object.keys(U24_RESOLVER_SCENES).sort()).toEqual([
       'models-anthropic-on',
+      'models-anthropic-sized',
+      'models-anthropic-tasks',
       'models-codex-only',
     ]);
     expect(MOCK_SCENES['models-codex-only']).toBe(U24_RESOLVER_SCENES['models-codex-only']);
@@ -87,6 +89,36 @@ describe('the resolver scenes', () => {
       document.querySelectorAll<HTMLElement>('[data-role-summary]'),
     ).filter((summary) => summary.textContent === 'Opus 5.5');
     expect(summaries.length).toBe(4);
+  });
+
+  it('models-anthropic-sized opens Implementer and reads what each step size runs', async () => {
+    await mount('models-anthropic-sized');
+
+    expect(
+      screen.queryByText(
+        'Auto sizes it by the step: small Haiku 5.5 Medium, normal Sonnet 5.5 Medium, large Sonnet 5.5 High.',
+      ),
+    ).not.toBeNull();
+  });
+
+  it('models-anthropic-tasks names Haiku 5.5 on the closed trigger of a writing task', async () => {
+    await mount('models-anthropic-tasks');
+
+    const section = screen.getByRole('region', { name: 'Background tasks' });
+    const trigger = Array.from(section.querySelectorAll('button')).find(
+      (button) => button.getAttribute('aria-label')?.startsWith('Agent naming routing:') === true,
+    );
+
+    expect(trigger?.textContent).toContain('Haiku 5.5');
+    expect(trigger?.textContent).toContain('Low');
+  });
+
+  it('models-anthropic-on names the model Auto runs on every background task row', async () => {
+    await mount('models-anthropic-on');
+
+    expect(screen.queryByText('Choosing models')).not.toBeNull();
+    expect(screen.queryByText('Models in workflows')).not.toBeNull();
+    expect(screen.queryByText('Typed requests')).not.toBeNull();
   });
 
   it.each(Object.keys(U24_RESOLVER_SCENES))(

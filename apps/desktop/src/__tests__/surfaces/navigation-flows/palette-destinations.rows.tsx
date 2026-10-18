@@ -446,7 +446,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       },
       async () =>
         expect(
-          (await screen.findAllByRole('button', { name: /^Untitled session$/ }, WAIT)).length,
+          (await screen.findAllByRole('option', { name: /^Untitled session$/ }, WAIT)).length,
         ).toBeGreaterThan(0),
       async () => expect(await screen.findByTestId('session-tools')).toBeDefined(),
     ),

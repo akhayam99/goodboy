@@ -20,6 +20,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
+import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
+
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
@@ -251,6 +253,27 @@ const baseState = (): State => {
     emitNotification: vi.fn(async () => undefined),
     maybeAutoAdvanceWorkflow: vi.fn(async () => undefined),
   };
+};
+
+const modelPickState = (): State => {
+  const state = baseState();
+  const base = session();
+  state['sessions'] = [
+    {
+      ...base,
+      workflowRuns: [
+        {
+          ...base.workflowRuns[0]!,
+          rulesSnapshot: {
+            ...DEFAULT_WORKFLOW_RULES,
+            spreadByHeadroom: false,
+            canOrchestratorPickModel: true,
+          },
+        },
+      ],
+    },
+  ];
+  return state;
 };
 
 type SpendParams = {
@@ -706,7 +729,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const state = baseState();
+    const state = modelPickState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -724,7 +747,7 @@ describe('orchestrateNextStep', () => {
       usage: NO_USAGE,
       decision: { action: 'done', reason: 'all set' },
     });
-    const state = baseState();
+    const state = modelPickState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -758,7 +781,7 @@ describe('orchestrateNextStep', () => {
         '<</orchestrator>>',
       ].join('\n'),
     );
-    const { set, get } = harness(baseState());
+    const { set, get } = harness(modelPickState());
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
@@ -787,7 +810,7 @@ describe('orchestrateNextStep', () => {
     const menuLines = prompt
       .split('\n')
       .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
-    expect(menuLines).toHaveLength(17);
+    expect(menuLines).toHaveLength(16);
     expect(menuLines.some((line) => line.startsWith('anthropic/sonnet-4.5 '))).toBe(false);
     for (const line of menuLines) {
       expect(line).toContain('unassessed');
@@ -808,7 +831,7 @@ describe('orchestrateNextStep', () => {
       usage: NO_USAGE,
       decision: { action: 'done', reason: 'all set' },
     });
-    const state = baseState();
+    const state = modelPickState();
     state['providerCooldowns'] = { codex: Date.now() + 60_000 };
     const { set, get } = harness(state);
 
@@ -822,7 +845,7 @@ describe('orchestrateNextStep', () => {
       usage: NO_USAGE,
       decision: { action: 'done', reason: 'all set' },
     });
-    const state = baseState();
+    const state = modelPickState();
     const base = session();
     state['sessions'] = [
       { ...base, workflowRuns: [{ ...base.workflowRuns[0]!, providerPool: ['codex'] }] },
@@ -852,7 +875,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const state = baseState();
+    const state = modelPickState();
     const base = session();
     state['sessions'] = [
       { ...base, workflowRuns: [{ ...base.workflowRuns[0]!, providerPool: ['codex'] }] },
@@ -882,7 +905,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const state = baseState();
+    const state = modelPickState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -920,7 +943,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const { set, get } = harness(baseState());
+    const { set, get } = harness(modelPickState());
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
@@ -954,7 +977,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const { set, get } = harness(baseState());
+    const { set, get } = harness(modelPickState());
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
 
@@ -982,7 +1005,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const state = baseState();
+    const state = modelPickState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -1010,7 +1033,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const state = baseState();
+    const state = modelPickState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -1021,10 +1044,52 @@ describe('orchestrateNextStep', () => {
       selected: { provider: string; model: string };
     };
 
-    expect(decision.source).toBe('heuristic');
+    expect(decision.source).toBe('kind_default');
     expect(decision.adjustment).toBe('unknown_model');
-    expect(['anthropic', 'codex']).toContain(decision.selected.provider);
-    expect(decision.selected.model).not.toBe('gpt-9-imaginary');
+    expect(decision.selected).toMatchObject({
+      provider: 'anthropic',
+      model: AUTO_DEFAULTS.anthropic.implementer[0]?.key,
+    });
+  });
+
+  it('ignores the model a step names while the model pick rule is off and sizes it by difficulty', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'A small edit.',
+        step: {
+          name: 'Implement',
+          role: 'implementer',
+          promptPrefix: 'Rename the helper.',
+          provider: 'anthropic',
+          model: 'opus-5',
+          effort: 'max',
+          taskType: 'implementation',
+          difficulty: 'light',
+        },
+      },
+    });
+    const { set, get } = harness(baseState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).toHaveBeenCalledWith(expect.objectContaining({ isModelPickEnabled: false }));
+    expect(savedStep().routingDecision).toMatchObject({ proposal: null });
+    expect(savedStep().routingDecision).not.toMatchObject({ source: 'agent' });
+    expect(savedStep().routingDecision).not.toMatchObject({ selected: { model: 'opus-5' } });
+  });
+
+  it('passes the opt-in rule to the decision', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: { action: 'done', reason: 'all set' },
+    });
+    const { set, get } = harness(modelPickState());
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy).toHaveBeenCalledWith(expect.objectContaining({ isModelPickEnabled: true }));
   });
 
   it('keeps the step reason about the work, not about routing', async () => {
@@ -1041,7 +1106,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const state = baseState();
+    const state = modelPickState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -1066,7 +1131,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const state = baseState();
+    const state = modelPickState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -1096,7 +1161,7 @@ describe('orchestrateNextStep', () => {
         },
       },
     });
-    const state = baseState();
+    const state = modelPickState();
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);

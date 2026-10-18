@@ -64,6 +64,7 @@ export type ChecksCounts = {
   readonly failing: number;
   readonly running: number;
   readonly passed: number;
+  readonly skipped: number;
 };
 
 export const checksCountsOf = ({ checks }: Params): ChecksCounts => {
@@ -72,7 +73,8 @@ export const checksCountsOf = ({ checks }: Params): ChecksCounts => {
   return {
     failing: sizeOf('failing'),
     running: sizeOf('running'),
-    passed: sizeOf('passed') + sizeOf('skipped'),
+    passed: sizeOf('passed'),
+    skipped: sizeOf('skipped'),
   };
 };
 
@@ -107,5 +109,8 @@ export const checksWordOf = ({ runs }: WordParams): string | null => {
   if (counts.running > 0) {
     return `${counts.running} running`;
   }
-  return counts.passed > 0 ? `${counts.passed} passed` : null;
+  if (counts.passed > 0) {
+    return `${counts.passed} passed`;
+  }
+  return counts.skipped > 0 ? `${counts.skipped} skipped` : null;
 };

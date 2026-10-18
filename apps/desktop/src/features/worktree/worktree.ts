@@ -237,32 +237,6 @@ export const worktreeWriterStatus = async ({
   );
 };
 
-export type CreateSessionDirArgs = {
-  readonly basePath: string;
-  readonly slug: string;
-  readonly directoryName?: string;
-  readonly sessionId: SessionId;
-  readonly workspaceId: WorkspaceId;
-};
-
-export const createSessionDir = async ({
-  basePath,
-  slug,
-  directoryName,
-  sessionId,
-  workspaceId,
-}: CreateSessionDirArgs): Promise<CreatedWorktree> => {
-  return invokeCommand<CreatedWorktree>('session_dir_create', {
-    args: {
-      basePath,
-      slug,
-      ...(directoryName != null ? { directoryName } : {}),
-      sessionId,
-      workspaceId,
-    },
-  });
-};
-
 type RemoveSessionDirectoryParams = {
   readonly basePath: string;
   readonly path: string;

@@ -1,10 +1,16 @@
 import type { ModelPrice, ProviderUsage } from '@goodboy/types';
+import { computeLeveledCostUsd } from '../priceLevels';
 
 export const GEMINI_PRICES: Readonly<Record<string, ModelPrice>> = {
   'gemini-3.1-pro': {
     inputPerMtok: 2,
     outputPerMtok: 12,
     cachedInputPerMtok: 0.2,
+    aboveLevel: {
+      aboveInputTokens: 200_000,
+      inputPerMtok: 4,
+      outputPerMtok: 18,
+    },
   },
   'gemini-3.8-flash': {
     inputPerMtok: 0.75,
@@ -35,11 +41,5 @@ export const computeGeminiCostUsd = ({ usage, model, override }: Params): number
     return 0;
   }
 
-  const billableInput = Math.max(0, usage.inputTokens - usage.cachedInputTokens);
-  return (
-    (billableInput * price.inputPerMtok) / 1_000_000 +
-    (usage.cachedInputTokens * (price.cachedInputPerMtok ?? price.inputPerMtok)) / 1_000_000 +
-    ((usage.cacheCreationInputTokens ?? 0) * price.inputPerMtok * 1.25) / 1_000_000 +
-    (usage.outputTokens * price.outputPerMtok) / 1_000_000
-  );
+  return computeLeveledCostUsd({ usage, price, isCacheInInput: true });
 };

@@ -4,12 +4,13 @@ import { nowIso } from '../project-mounts/nowIso';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart, ensureTurnStartWindow, isTurnStartCancelled } from './turnStartWindow';
 import type { GetFn, SetFn, TurnLease } from './types';
+import { readOnlyAnswers } from './readOnlyAnswers';
 import { writerWaiters } from './writerWaiters';
 
 const WRITER_POLL_MS = 1000;
 const WRITER_WAIT_LIMIT_MS = 30 * 60 * 1000;
 
-export type WriteSetAcquisition = 'granted' | 'cancelled' | 'timed_out';
+export type WriteSetAcquisition = 'granted' | 'cancelled' | 'timed_out' | 'read_only';
 
 type Params = Readonly<{
   set: SetFn;
@@ -66,6 +67,7 @@ export const acquireTurnWriteSet = async ({
     hold(first);
     return 'granted';
   }
+  readOnlyAnswers.take({ agentId });
   ensureTurnStartWindow({ agentId });
   const previous: TurnState = get().agentTurnState[agentId] ?? {
     kind: 'idle',
@@ -87,6 +89,10 @@ export const acquireTurnWriteSet = async ({
         claimTurnStart({ agentId });
         leave();
         return 'cancelled';
+      }
+      if (readOnlyAnswers.take({ agentId })) {
+        leave();
+        return 'read_only';
       }
       if (Date.now() >= deadline) {
         leave();

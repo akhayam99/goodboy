@@ -56,11 +56,14 @@ so above raised the lift is `shadow-lg` plus `border`. On the nesting axis
 The window backdrop is step 0 plus one glow: `bg-backdrop` paints `chrome`
 under `--app-backdrop`, a radial of `primary` from the top-left corner (the
 website accent hue). `--app-backdrop-strength` is its alpha in percent, 3 by
-default, a faint glow over chrome (0 turns it off); light mode keeps the
-same strength (`--app-backdrop-scale: 1`). Only `AppShell` (and the c02 levels scene that stands in for it) paints it,
+default, a faint glow over chrome (0 turns it off); light mode scales it by
+`--app-backdrop-scale: 2.5` (3% sidebar becomes 7.5%, the 6% cover 15%) so the glow
+reads on the light chrome as it does on the dark one. Only `AppShell` (and the c02 levels scene that stands in for it) paints it,
 under the top bar and
 the left column; the sheet, the session rail and every drawer stay opaque and
-flat. Mock scenes preview a strength with `?backdrop=<n>`.
+flat. Mock scenes preview a strength with `?backdrop=<n>`. The boot splash and
+the Welcome cover that follows it paint `bg-backdrop-cover` instead: the same
+radial at `--app-backdrop-cover-strength` (6), so the handoff has no seam.
 
 `drawer` sits beside the page surface, not on the ladder: a right drawer is its
 own container next to the sheet and is painted one step quieter than
@@ -2470,7 +2473,7 @@ update only themselves.
   a state that holds and is alive: the centre dot of a running
   `WorkNode` that carries no step number, the head of a running `WorkNode`'s
   progress arc (which then replaces the centre dot), a running tool icon or
-  scout dot, a running session's `ToneBar`, and the boot splash status. On the
+  scout dot, a running session's `ToneBar`. On the
   rail it sits inside the `spin-border` ring, or on the arc, so the pair reads
   as one running state, not two claims. The bar for another lasting-state
   animation is high.

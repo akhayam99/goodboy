@@ -213,6 +213,7 @@ type DraftCount = {
   readonly expandId: string;
   readonly isExpanded: boolean;
   readonly summary: GroupSummary;
+  readonly slotAt?: string;
 };
 
 type Draft = DraftRow | DraftDay | DraftMore | DraftCount;
@@ -1167,6 +1168,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
         expandId: fold.expandId,
         isExpanded: fold.isExpanded,
         summary: fold.summary,
+        ...(fold.isExpanded || fold.newestAt === null ? {} : { slotAt: fold.newestAt }),
       },
     });
     if (!fold.isExpanded) {
@@ -1229,9 +1231,32 @@ type LaneFacts = {
   readonly answered: number;
   readonly hasOpen: boolean;
   readonly contextTotals: DecisionTotals;
+  readonly newestAt: string | null;
 };
 
-const NO_LANE_FACTS: LaneFacts = { rows: 0, answered: 0, hasOpen: false, contextTotals: {} };
+const NO_LANE_FACTS: LaneFacts = {
+  rows: 0,
+  answered: 0,
+  hasOpen: false,
+  contextTotals: {},
+  newestAt: null,
+};
+
+const newerOf = ({
+  first,
+  second,
+}: {
+  readonly first: string | null;
+  readonly second: string | null;
+}): string | null => {
+  if (first === null) {
+    return second;
+  }
+  if (second === null) {
+    return first;
+  }
+  return first.localeCompare(second) >= 0 ? first : second;
+};
 
 const NO_LANES: ReadonlyMap<string, LaneFacts> = new Map();
 
@@ -1302,8 +1327,10 @@ const laneFactsByRootId = ({
     }
     const current = facts.get(root) ?? NO_LANE_FACTS;
     const questions = entry.kind === 'question' ? entry.questions : [];
+    const isShown = isLaneEntryShown({ entry, context });
     facts.set(root, {
-      rows: current.rows + (isLaneEntryShown({ entry, context }) ? 1 : 0),
+      rows: current.rows + (isShown ? 1 : 0),
+      newestAt: isShown ? newerOf({ first: current.newestAt, second: entry.at }) : current.newestAt,
       answered:
         current.answered + questions.filter((question) => question.status === 'answered').length,
       hasOpen: current.hasOpen || questions.some((question) => question.status === 'open'),
@@ -1334,6 +1361,7 @@ const isRunChildShown = ({
 
 type RunFold = BranchFold & {
   readonly summary: GroupSummary;
+  readonly newestAt: string | null;
 };
 
 const runFoldOf = ({
@@ -1352,11 +1380,15 @@ const runFoldOf = ({
   if (!isFinished || rowState.ask != null || rowState.phase === 'failed') {
     return null;
   }
-  const rows =
-    entry.children.filter((child) => isRunChildShown({ child, context })).length + lane.rows;
+  const shownChildren = entry.children.filter((child) => isRunChildShown({ child, context }));
+  const rows = shownChildren.length + lane.rows;
   if (rows === 0) {
     return null;
   }
+  const newestAt = shownChildren.reduce<string | null>(
+    (newest, child) => newerOf({ first: newest, second: child.at }),
+    lane.newestAt,
+  );
   const steps = stepAgentsOf({ entry }).filter(
     (agent) => agent.status !== 'pending' && agent.status !== 'skipped',
   ).length;
@@ -1369,6 +1401,7 @@ const runFoldOf = ({
       answered: lane.answered,
       contextText: decisionCountsText({ payload: lane.contextTotals }),
     }),
+    newestAt,
   };
 };
 
@@ -1701,6 +1734,24 @@ const withMembersAboveOrigin = ({
   return drafts;
 };
 
+const foldedSlotIndexOf = ({
+  drafts,
+  slotAt,
+  originIndex,
+}: {
+  readonly drafts: ReadonlyArray<Draft>;
+  readonly slotAt: string | undefined;
+  readonly originIndex: number;
+}): number => {
+  if (slotAt === undefined || originIndex === -1) {
+    return originIndex;
+  }
+  const olderIndex = drafts.findIndex(
+    (draft) => draft.kind === 'row' && draft.at !== null && draft.at.localeCompare(slotAt) < 0,
+  );
+  return olderIndex === -1 ? originIndex : Math.min(olderIndex, originIndex);
+};
+
 const withCountRows = ({
   drafts,
   counts,
@@ -1745,8 +1796,11 @@ const withCountRows = ({
         draft.groupId !== null &&
         isInSubtree({ groupId: draft.groupId, rootId: count.groupId }),
     );
+    const originIndex = placed.findIndex((draft) => draft.id === originRowId);
     const anchorIndex =
-      topIndex === -1 ? placed.findIndex((draft) => draft.id === originRowId) : topIndex;
+      topIndex === -1
+        ? foldedSlotIndexOf({ drafts: placed, slotAt: count.slotAt, originIndex })
+        : topIndex;
     if (anchorIndex === -1) {
       continue;
     }

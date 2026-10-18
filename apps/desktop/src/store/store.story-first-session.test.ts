@@ -103,7 +103,6 @@ describe('story: a first-run user opens their workspace and starts a session', (
     expect(state.currentSessionId).toBeNull();
     expect(state.openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(storySpies.createSessionDir).not.toHaveBeenCalled();
     expect(recordedEventKinds()).toEqual([]);
   });
 

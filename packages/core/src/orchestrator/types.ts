@@ -86,6 +86,7 @@ export type OrchestratorInput = {
   readonly roleDefaults: ReadonlyArray<OrchestratorRoleDefault>;
   readonly stepsUsed: number;
   readonly isModelMetadataEnabled?: boolean;
+  readonly isModelPickEnabled?: boolean;
   readonly spendLimitUsd?: number;
   readonly spentUsd?: number;
 };

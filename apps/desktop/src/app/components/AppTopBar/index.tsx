@@ -2,6 +2,7 @@ import type { ProviderId } from '@goodboy/types';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
 import { RepoEntry } from '../../../features/workspace/components/RepoEntry';
+import { FolderGitWatch } from '../../../features/workspace/components/FolderGitWatch';
 import { useCurrentWorkspace } from '../../../store';
 import type { RunningScript } from '../../../features/scripts/hooks/useRunningScripts';
 import { ColumnToggleButton } from '../SideColumn/ColumnToggleButton';
@@ -38,7 +39,10 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, si
             <WorkspaceIdentityRow />
           </div>
           {workspace === null || workspace === undefined ? null : (
-            <RepoEntry workspaceId={workspace.id} />
+            <>
+              <FolderGitWatch workspaceId={workspace.id} />
+              <RepoEntry workspaceId={workspace.id} />
+            </>
           )}
         </div>
 

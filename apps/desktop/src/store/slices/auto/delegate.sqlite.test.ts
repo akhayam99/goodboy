@@ -171,12 +171,53 @@ describe('the delegate command', () => {
     expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
   });
 
-  it('admits a Scribe, a CI fixer and a Rewriter as writers on the mount they name', async () => {
+  it('refuses a Rewriter before any agent exists, naming what to do instead', async () => {
     const state = await setup();
     const outcome = await run(
       state,
       delegateCommand({
-        children: ['scribe', 'ci-fixer', 'rewriter'].map((role) => ({
+        children: [
+          {
+            role: 'rewriter',
+            task: 'squash the fixup commits of ledger-core',
+            reason: 'tidy the history',
+            mount: 'mount-ledger-core',
+          },
+        ],
+      }),
+    );
+    expect(outcome).toMatchObject({ isOk: false, code: 'spec_invalid' });
+    expect(JSON.stringify(outcome)).toContain('History flow');
+    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
+    expect(state.ports.ensuredChildren).toHaveLength(0);
+  });
+
+  it('refuses a Rewriter that also needs a shell with the History refusal first', async () => {
+    const state = await setup();
+    const outcome = await run(
+      state,
+      delegateCommand({
+        children: [
+          {
+            role: 'rewriter',
+            task: 'Run git rebase on ledger-core and squash the fixup commits.',
+            reason: 'tidy the history',
+            mount: 'mount-ledger-core',
+          },
+        ],
+      }),
+    );
+    expect(outcome).toMatchObject({ isOk: false, code: 'spec_invalid' });
+    expect(JSON.stringify(outcome)).toContain('History flow');
+    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
+  });
+
+  it('admits a Scribe and a CI fixer as writers on the mount they name', async () => {
+    const state = await setup();
+    const outcome = await run(
+      state,
+      delegateCommand({
+        children: ['scribe', 'ci-fixer'].map((role) => ({
           role,
           task: `${role} work on ledger-core`,
           reason: 'the role for this work',
@@ -186,7 +227,7 @@ describe('the delegate command', () => {
     );
     expect(outcome.isOk).toBe(true);
     const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
-    expect(rows.map((row) => row.role)).toEqual(['scribe', 'ci-fixer', 'rewriter']);
+    expect(rows.map((row) => row.role)).toEqual(['scribe', 'ci-fixer']);
     for (const row of rows) {
       expect(row.target).toMatchObject({ mountId: 'mount-ledger-core', mountSource: 'named' });
       expect(String(row.request['kickoff'])).toContain('You change files, only in the mount');
@@ -202,6 +243,55 @@ describe('the delegate command', () => {
     );
     const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
     expect(rows[0]?.target).toMatchObject({ mountId: 'mount-ledger-core', mountSource: 'primary' });
+  });
+
+  it('refuses a read only role for a task that runs commands, then admits the reroute to a writer', async () => {
+    const state = await setup();
+    const task = 'Run git log and git ls-remote on ledger-core and compare the heads.';
+    const refused = await run(
+      state,
+      delegateCommand({
+        children: [{ role: 'investigator', task, reason: 'a check of the branch' }],
+      }),
+    );
+    expect(refused).toMatchObject({ isOk: false, code: 'role_lacks_shell' });
+    expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
+    const rerouted = await run(
+      state,
+      delegateCommand(
+        {
+          children: [
+            {
+              role: 'implementer',
+              task: `${task} Read only: change nothing.`,
+              reason: 'the check runs git, which needs a shell',
+              mount: 'mount-ledger-core',
+            },
+          ],
+        },
+        'request-2',
+      ),
+    );
+    expect(rerouted).toMatchObject({ isOk: true });
+    const rows = await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE });
+    expect(rows.map((row) => row.role)).toEqual(['implementer']);
+  });
+
+  it('keeps a read only role for a task that only reads', async () => {
+    const state = await setup();
+    const outcome = await run(
+      state,
+      delegateCommand({
+        children: [
+          {
+            role: 'investigator',
+            task: 'Explain why the ledger total is off by one in the export.',
+            reason: 'a diagnosis',
+          },
+        ],
+      }),
+    );
+    expect(outcome.isOk).toBe(true);
   });
 
   it('refuses a role outside the closed list and a spec that is not json', async () => {

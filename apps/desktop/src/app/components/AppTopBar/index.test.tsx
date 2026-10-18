@@ -87,6 +87,10 @@ vi.mock('../../../features/workspace/components/RepoEntry', () => ({
   RepoEntry: () => <span data-testid="repo-entry" />,
 }));
 
+vi.mock('../../../features/workspace/components/FolderGitWatch', () => ({
+  FolderGitWatch: () => null,
+}));
+
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];

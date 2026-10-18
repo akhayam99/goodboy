@@ -47,6 +47,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
     currentUnavailable === null
       ? current.promise
       : `${currentUnavailable}. Runs as ${modeCopyOf({ mode: runsAs }).label}`;
+  const tooltipLabel = `${current.label}. ${triggerLabel}`;
   const CurrentIcon = current.icon;
 
   const onPick = (mode: ClaudePermissionMode) => {
@@ -61,7 +62,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
       ariaLabel="Permission mode"
       className="rounded-lg border-0 bg-subtle py-2 ring-1 ring-border-soft"
       trigger={
-        <Tooltip content={triggerLabel} shortcut="session.permissions" isSuppressed={open}>
+        <Tooltip content={tooltipLabel} shortcut="session.permissions" isSuppressed={open}>
           <Chip
             tone="neutral"
             bordered={false}
@@ -70,7 +71,8 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             onClick={toggle}
             hasPopup="dialog"
             expanded={open}
-            className="gap-2 bg-subtle px-3 py-0.5 hover:bg-hover hover:opacity-100"
+            ariaLabel={`Permission mode: ${current.label}`}
+            className="gap-2 whitespace-nowrap bg-subtle px-3 py-0.5 hover:bg-hover hover:opacity-100 @max-sm:px-2"
             icon={
               <CurrentIcon
                 size={ICON_SIZE.row}
@@ -78,9 +80,13 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
                 className={tintClasses(current.tone).icon}
               />
             }
-            label={<span className="text-foreground">{current.label}</span>}
+            label={<span className="text-foreground @max-sm:hidden">{current.label}</span>}
             trailing={
-              <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-faint-foreground" />
+              <ChevronDown
+                size={ICON_SIZE.row}
+                aria-hidden
+                className="text-faint-foreground @max-sm:hidden"
+              />
             }
           />
         </Tooltip>

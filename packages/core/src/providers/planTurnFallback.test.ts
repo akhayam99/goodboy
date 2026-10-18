@@ -160,7 +160,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'not-a-catalog-key',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.6-terra' },
+    expected: { provider: 'codex', model: 'gpt-6.1-sol' },
   },
   {
     name: 'an account usage limit on Astra lands on the strongest anthropic implementer',

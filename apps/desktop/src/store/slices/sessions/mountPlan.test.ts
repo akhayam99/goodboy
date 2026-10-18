@@ -75,7 +75,7 @@ describe('mountPlan', () => {
     expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
-  it('leaves branch and base empty for a folder project and targets the sessions dir', () => {
+  it('leaves branch and base empty for a folder project and targets the folder itself', () => {
     const folder = { ...repoProject, kind: 'folder', rootPath: '/notes' } satisfies Project;
     const plan = mountPlan({
       state: stateWith({ projects: [folder] }),
@@ -86,7 +86,7 @@ describe('mountPlan', () => {
 
     expect(plan?.branch).toBeNull();
     expect(plan?.baseBranch).toBeNull();
-    expect(plan?.targetPath).toBe('/notes/sessions/ship-the-rebase-row');
+    expect(plan?.targetPath).toBe('/notes');
   });
 
   it('reports the branches already taken by other live sessions', () => {
@@ -118,7 +118,7 @@ describe('mountPlan', () => {
     expect(plan?.targetPath).toMatch(SHORT_WORKTREE_PATH);
   });
 
-  it('truncates a folder path at the backend budget, not at forty characters', () => {
+  it('keeps a folder slug whole at the backend budget, not at forty characters', () => {
     const folder = { ...repoProject, kind: 'folder', rootPath: '/notes' } satisfies Project;
     rememberMaterializationSeed({ sessionId: SID, seed: { sessionSlug: 'a'.repeat(45) } });
 
@@ -129,7 +129,8 @@ describe('mountPlan', () => {
       mountId: MID,
     });
 
-    expect(plan?.targetPath).toBe(`/notes/sessions/${'a'.repeat(45)}`);
+    expect(plan?.slug).toBe('a'.repeat(45));
+    expect(plan?.targetPath).toBe('/notes');
   });
 
   it('falls back to a session slug the backend would not rewrite', () => {

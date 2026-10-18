@@ -100,7 +100,6 @@ describe('MountProjectList', () => {
         projectId: PID,
         reason: 'added manually by the user',
         mountId: MID,
-        slug: 'ship-it',
         branch: 'ak/ship-it',
       }),
     );

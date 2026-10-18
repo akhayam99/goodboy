@@ -48,7 +48,7 @@ pub(crate) fn create_project_folder(
         ));
     }
     std::fs::create_dir(&folder)?;
-    match init_repo_at(&folder.to_string_lossy(), None) {
+    match init_repo_at(&folder.to_string_lossy()) {
         Ok(initialized) => Ok(initialized),
         Err(error) => {
             discard_new_folder(&folder);

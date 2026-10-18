@@ -23,6 +23,7 @@ import type { GetFn, SetFn, SendTurnInput, TurnPhaseValue } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { projectById } from '../projects/projectIndex';
 import { selectFirstLapProject } from '../bootstrap/firstLap';
+import { inPlaceFoldersOf } from '../project-mounts/inPlaceFoldersOf';
 import { turnDone, turnReady } from './turnPhase';
 import { NOT_BLOCKED } from './notBlocked';
 
@@ -124,6 +125,14 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
     rewriterCopy === null && copyPath === null && activeMount === undefined
       ? selectFirstLapProject({ state: before, sessionId })
       : null;
+  const inPlaceFolders =
+    rewriterCopy === null &&
+    copyPath === null &&
+    activeMount === undefined &&
+    firstLapProject === null
+      ? inPlaceFoldersOf({ state: before, sessionId })
+      : [];
+  const inPlaceFolder = inPlaceFolders[0] ?? null;
   const workingDir =
     rewriterCopy !== null
       ? rewriterCopy.copyPath
@@ -133,7 +142,9 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
           ? activeMount.worktreePath
           : firstLapProject !== null
             ? firstLapProject.rootPath
-            : await scratchDirPrepare({ sessionId });
+            : inPlaceFolder !== null
+              ? inPlaceFolder.rootPath
+              : await scratchDirPrepare({ sessionId });
   const isPlainSessionDir =
     activeMount !== undefined && isBranchlessSession({ branch: activeMount.branch });
   if (isPlainSessionDir) {
@@ -171,16 +182,26 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       [activeAgentId]: resolveWriteDestination({
         mount: activeMount ?? null,
         projectName: turnDestinationProjectName,
-        scratchPath: activeMount === undefined && firstLapProject === null ? workingDir : null,
+        scratchPath:
+          activeMount === undefined && firstLapProject === null && inPlaceFolder === null
+            ? workingDir
+            : null,
         root:
-          firstLapProject === null
-            ? null
-            : {
+          firstLapProject !== null
+            ? {
                 projectId: firstLapProject.id,
                 projectName: firstLapProject.name,
                 path: firstLapProject.rootPath,
                 branch: 'main',
-              },
+              }
+            : inPlaceFolder !== null
+              ? {
+                  projectId: inPlaceFolder.id,
+                  projectName: inPlaceFolder.name,
+                  path: inPlaceFolder.rootPath,
+                  branch: null,
+                }
+              : null,
       }),
     },
   }));
@@ -224,8 +245,9 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
             rewriterCopy === null &&
             copyPath === null &&
             activeMount === undefined &&
-            firstLapProject === null,
-          ...(firstLapProject !== null &&
+            firstLapProject === null &&
+            inPlaceFolder === null,
+          ...((firstLapProject !== null || inPlaceFolder !== null) &&
             attachmentInputs.length > 0 && {
               attachmentDir: await scratchDirPrepare({ sessionId }),
             }),
@@ -346,6 +368,7 @@ export const prepareTurn = async ({ set, get, input }: Params) => {
       turnMountRevision,
       copyPath,
       firstLapProject,
+      inPlaceFolders,
       workingDir,
       now,
       activeAgentId,

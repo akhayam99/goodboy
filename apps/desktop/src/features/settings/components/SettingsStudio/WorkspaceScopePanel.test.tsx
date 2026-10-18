@@ -384,8 +384,51 @@ describe('copy from another workspace', () => {
   });
 });
 
-describe('dev project', () => {
-  it('converts a plain folder inline on Projects, never in a dialog', () => {
+describe('track with git', () => {
+  it('opens the first commit review inline on Projects, never in a dialog', async () => {
+    stubStoryInvoke({
+      set_workspace_overrides: null,
+      get_workspace_overrides: () => EMPTY_OVERRIDES,
+      file_versions_folder_size: ({
+        args,
+      }: {
+        readonly args: { readonly folderPath: string };
+      }) => ({
+        folderPath: args.folderPath,
+        isReady: true,
+        fileCount: 4,
+        keptBytes: 12_000,
+        versionBytes: 0,
+        versionCount: 0,
+        capBytes: 1024 * 1024 * 1024,
+      }),
+      folder_git_probe: ({ path }: { readonly path: string }) => ({
+        path,
+        state: 'none',
+        rootPath: null,
+        branch: null,
+        commitCount: 0,
+        remoteUrl: null,
+      }),
+      folder_git_first_commit_plan: () => ({
+        rootPath: '/work/harborline/runbooks',
+        start: 'no_git',
+        branch: 'main',
+        author: { name: 'Dana Reyes', email: 'dana@acme.dev', isFallback: false },
+        hasIgnoreFile: false,
+        entries: [
+          {
+            key: '.',
+            kind: 'included',
+            files: 4,
+            sample: ['Makefile', 'deploy.sh', 'rollback.sh'],
+            isLeftOut: false,
+            canToggle: false,
+            ignore: null,
+          },
+        ],
+      }),
+    });
     useAppStore.setState({
       projects: [
         aProject({
@@ -397,16 +440,15 @@ describe('dev project', () => {
         }),
       ],
     });
-    renderPage({ section: 'dev-project' });
+    renderPage({ section: 'track-with-git' });
 
-    const region = screen.getByRole('region', { name: 'Turn this into a git repository' });
+    const region = await screen.findByRole('region', { name: 'Track runbooks with git' });
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(
-      within(region).getByText(/Git starts tracking \/work\/harborline\/runbooks/),
-    ).toBeDefined();
+    await within(region).findByText('4 files in the first commit');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
-    expect(screen.queryByRole('region', { name: 'Turn this into a git repository' })).toBeNull();
+    fireEvent.click(within(region).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('region', { name: 'Track runbooks with git' })).toBeNull();
+    screen.getByRole('button', { name: 'Track with git' });
     act(() => undefined);
   });
 });

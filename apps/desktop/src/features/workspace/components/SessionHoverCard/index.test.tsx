@@ -130,7 +130,7 @@ const mount = () => {
   return renderBar();
 };
 
-const rowOf = (title: string) => screen.getByRole('button', { name: title });
+const rowOf = (title: string) => screen.getByRole('option', { name: title });
 
 const rest = (ms: number) => {
   act(() => {
