@@ -21,8 +21,8 @@ vi.mock('@tauri-apps/api/path', () => ({ homeDir: vi.fn(async () => '/mock') }))
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { countRunningAdoptionAgents, describeProjectAdoption } from '@goodboy/db';
-import type { GitRepoCheck, WorkspaceId } from '@goodboy/types';
-import { aProject, aWorkspace } from '@goodboy/types/testing';
+import type { FolderSignals, GitRepoCheck, WorkspaceId } from '@goodboy/types';
+import { aFolderSignals, aProject, aWorkspace } from '@goodboy/types/testing';
 import {
   importStore,
   resetStoryStore,
@@ -39,6 +39,10 @@ const ACME_WEB = '/mock/Code/acme-web';
 const HARBORLINE = '/mock/Code/harborline';
 const DOCS = '/mock/Code/acme-docs';
 const DENIED = '/mock/Documents/acme-web';
+const SITE = '/mock/Code/acme-site';
+const EMPTY = '/mock/Code/acme-empty';
+const NORTHWIND_ROOT = '/mock/Code/northwind';
+const HANDBOOK = `${NORTHWIND_ROOT}/handbook`;
 const NORTHWIND = aWorkspace({ name: 'Northwind', slug: 'northwind' });
 const PAYMENTS = aProject({
   workspaceId: NORTHWIND.id,
@@ -98,6 +102,16 @@ const CHECKS: Readonly<Record<string, GitRepoCheck>> = {
     branch: 'develop',
   }),
   [DOCS]: plainAt({ path: DOCS }),
+  [SITE]: plainAt({ path: SITE }),
+  [EMPTY]: plainAt({ path: EMPTY }),
+  [HANDBOOK]: {
+    isRepo: true,
+    rootPath: NORTHWIND_ROOT,
+    resolvedPath: HANDBOOK,
+    defaultBranch: 'main',
+    error: null,
+    errorKind: null,
+  },
   [DENIED]: {
     isRepo: false,
     rootPath: null,
@@ -116,6 +130,12 @@ const CHILDREN: Readonly<Record<string, ReadonlyArray<unknown>>> = {
   ],
 };
 
+const SIGNALS: Readonly<Record<string, FolderSignals>> = {
+  [DOCS]: aFolderSignals({ path: DOCS, counts: { markdown: 86, pdf: 12 } }),
+  [SITE]: aFolderSignals({ path: SITE, markers: ['package.json'], counts: { source: 214 } }),
+  [EMPTY]: aFolderSignals({ path: EMPTY }),
+};
+
 let useAppStore: StoryStore;
 const createWorkspaceWithFolders = vi.fn();
 const openWorkspace = vi.fn();
@@ -130,6 +150,8 @@ const stubFolders = (overrides: Readonly<Record<string, unknown>> = {}) =>
     validate_git_repo: (args: unknown) => CHECKS[pathOf(args)] ?? plainAt({ path: pathOf(args) }),
     scan_child_repos: (args: unknown) => CHILDREN[pathOf(args)] ?? [],
     repo_identity: { rootCommits: [], remoteUrl: null },
+    read_folder_signals: (args: unknown) =>
+      SIGNALS[pathOf(args)] ?? aFolderSignals({ path: pathOf(args), counts: { markdown: 3 } }),
     ...overrides,
   });
 
@@ -239,16 +261,117 @@ describe('useWorkspaceDraft', () => {
     expect(result.current.name).toBe('Acme web');
   });
 
-  it('offers git init on a plain folder and sends it only when checked', async () => {
+  it('preselects the face from what a plain folder holds and sends it with Create', async () => {
     dialog.picks = [DOCS];
     const { result } = draftHook();
     await act(() => result.current.choose());
 
-    expect(result.current.folders).toMatchObject([{ kind: 'plain', isGitInit: false }]);
-    act(() => result.current.setGitInit({ path: DOCS, isGitInit: true }));
+    expect(result.current.folders).toMatchObject([
+      { kind: 'plain', purpose: 'documents', preselected: 'documents', isGitInit: false },
+    ]);
     await act(() => result.current.create());
 
-    expect(lastRequest().folders).toEqual([{ kind: 'git-init', rootPath: DOCS }]);
+    expect(lastRequest().folders).toEqual([
+      { kind: 'plain', rootPath: DOCS, purpose: 'documents' },
+    ]);
+  });
+
+  it('sends git init only for a code folder with the box ticked, and counts the first commit', async () => {
+    stubFolders({
+      folder_git_first_commit_plan: {
+        rootPath: SITE,
+        start: 'no_git',
+        branch: 'main',
+        author: { name: 'Dana Reyes', email: 'dana@acme.test', isFallback: false },
+        entries: [
+          {
+            key: 'src',
+            kind: 'included',
+            files: 214,
+            sample: [],
+            isLeftOut: false,
+            canToggle: false,
+            ignore: null,
+          },
+          {
+            key: 'node_modules',
+            kind: 'dependencies',
+            files: 900,
+            sample: [],
+            isLeftOut: true,
+            canToggle: true,
+            ignore: 'node_modules/',
+          },
+        ],
+        hasIgnoreFile: false,
+      },
+    });
+    dialog.picks = [SITE];
+    const { result } = draftHook();
+    await act(() => result.current.choose());
+    expect(result.current.folders).toMatchObject([{ purpose: 'code' }]);
+
+    act(() => result.current.setGitInit({ path: SITE, isGitInit: true }));
+    await waitFor(() =>
+      expect(result.current.folders).toMatchObject([{ isGitInit: true, firstCommitFiles: 214 }]),
+    );
+    await act(() => result.current.create());
+    expect(lastRequest().folders).toEqual([{ kind: 'git-init', rootPath: SITE }]);
+
+    act(() => result.current.setPurpose({ path: SITE, purpose: 'documents' }));
+    expect(result.current.folders).toMatchObject([{ purpose: 'documents', isGitInit: false }]);
+    await act(() => result.current.create());
+    expect(lastRequest().folders).toEqual([
+      { kind: 'plain', rootPath: SITE, purpose: 'documents' },
+    ]);
+  });
+
+  it('preselects nothing for an empty folder and asks what it is for before Create', async () => {
+    dialog.picks = [EMPTY];
+    const { result } = draftHook();
+    await act(() => result.current.choose());
+
+    expect(result.current.folders).toMatchObject([{ purpose: null }]);
+    expect(result.current.block).toBe('Pick what this folder is for.');
+    await act(() => result.current.create());
+    expect(createWorkspaceWithFolders).not.toHaveBeenCalled();
+
+    act(() => result.current.setPurpose({ path: EMPTY, purpose: 'code' }));
+    expect(result.current.block).toBeNull();
+  });
+
+  it('keeps the subfolder when Only this folder is picked inside a repository', async () => {
+    dialog.picks = [HANDBOOK];
+    const { result } = draftHook();
+    await act(() => result.current.choose());
+
+    expect(result.current.folders).toMatchObject([
+      { kind: 'repository', path: NORTHWIND_ROOT, snappedFrom: HANDBOOK, scope: 'repository' },
+    ]);
+    expect(result.current.name).toBe('Northwind');
+    act(() => result.current.setScope({ path: NORTHWIND_ROOT, scope: 'folder' }));
+    expect(result.current.name).toBe('Handbook');
+    await act(() => result.current.create());
+
+    expect(lastRequest().folders).toEqual([
+      { kind: 'plain', rootPath: HANDBOOK, purpose: 'documents' },
+    ]);
+  });
+
+  it('asks what a folder is for when its contents cannot be read', async () => {
+    stubFolders({
+      read_folder_signals: () => {
+        throw new Error('Operation not permitted');
+      },
+    });
+    dialog.picks = [DOCS];
+    const { result } = draftHook();
+    await act(() => result.current.choose());
+
+    expect(result.current.folders).toMatchObject([
+      { kind: 'plain', purpose: null, signals: null, isSignalsUnreadable: true },
+    ]);
+    expect(result.current.block).toBe('Pick what this folder is for.');
   });
 
   it('keeps Create off for a folder macOS refused and re-reads the same path on Try again', async () => {

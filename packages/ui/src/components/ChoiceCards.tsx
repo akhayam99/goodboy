@@ -9,9 +9,10 @@ import { moveTabFocus } from './tabListKeys';
 
 export type ChoiceCardsProps<T extends string = string> = {
   readonly options: ReadonlyArray<SegmentedTabOption<T>>;
-  readonly value: T;
+  readonly value: T | null;
   readonly onChange: (value: T) => void;
   readonly ariaLabel: string;
+  readonly isHintWrapped?: boolean;
   readonly className?: string;
 };
 
@@ -20,9 +21,17 @@ export const ChoiceCards = <T extends string>({
   value,
   onChange,
   ariaLabel,
+  isHintWrapped = false,
   className,
 }: ChoiceCardsProps<T>) => {
   const tablistRef = useRef<HTMLDivElement>(null);
+  const focusIndex =
+    value === null
+      ? Math.max(
+          0,
+          options.findIndex((option) => option.disabled !== true),
+        )
+      : options.findIndex((option) => option.value === value);
 
   return (
     <div
@@ -52,7 +61,7 @@ export const ChoiceCards = <T extends string>({
             type="button"
             role="tab"
             aria-selected={isActive}
-            tabIndex={isActive ? 0 : -1}
+            tabIndex={index === focusIndex ? 0 : -1}
             disabled={option.disabled}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => moveTabFocus({ event, index, options, tablistRef, onChange })}
@@ -79,7 +88,14 @@ export const ChoiceCards = <T extends string>({
                 {option.badge}
               </span>
               {option.hint != null && (
-                <span className="truncate text-meta text-muted-foreground">{option.hint}</span>
+                <span
+                  className={cn(
+                    'text-meta text-muted-foreground',
+                    isHintWrapped ? 'break-words' : 'truncate',
+                  )}
+                >
+                  {option.hint}
+                </span>
               )}
             </span>
             {isActive && (

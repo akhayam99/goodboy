@@ -26,7 +26,7 @@ export type SegmentedTabsSize = 'xs' | 'sm' | 'md';
 
 export type Props<T extends string = string> = {
   readonly options: ReadonlyArray<SegmentedTabOption<T>>;
-  readonly value: T;
+  readonly value: T | null;
   readonly onChange: (value: T) => void;
   readonly size?: SegmentedTabsSize;
   readonly variant?: 'pill' | 'card';
@@ -91,6 +91,13 @@ export const SegmentedTabs = <T extends string>({
   }
 
   const step = size === 'xs' ? 'xs' : 'sm';
+  const focusIndex =
+    value === null
+      ? Math.max(
+          0,
+          options.findIndex((option) => option.disabled !== true),
+        )
+      : options.findIndex((option) => option.value === value);
   const gridStyle: CSSProperties | undefined = fill
     ? { gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }
     : undefined;
@@ -141,7 +148,7 @@ export const SegmentedTabs = <T extends string>({
               type="button"
               role="tab"
               aria-selected={isActive}
-              tabIndex={isActive ? 0 : -1}
+              tabIndex={index === focusIndex ? 0 : -1}
               disabled={option.disabled}
               onClick={() => onChange(option.value)}
               onKeyDown={(event) => moveTabFocus({ event, index, options, tablistRef, onChange })}

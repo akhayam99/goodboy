@@ -53,7 +53,7 @@ const copyOf = ({ mode, targetName }: CopyParams) => {
     case 'first-run':
       return {
         title: 'Your first workspace',
-        lede: 'A workspace is what you work on: one repository, or a folder that holds several. Agents read and edit files only inside its folders.',
+        lede: 'A workspace is what you work on: a repository, a folder of repositories, or a folder of documents. Agents read and edit files only inside its folders.',
       };
     case 'new':
       return {

@@ -3,6 +3,7 @@ import { useAppStore } from '../../../../store';
 import { resolveStorageScope } from '../../resolveStorageScope';
 import { ArtifactSection } from './ArtifactSection';
 import { OtherToolsSection } from './OtherToolsSection';
+import { SavedVersionsSection } from './SavedVersionsSection';
 import { StorageHistory } from './StorageHistory';
 import { WorktreeSection } from './WorktreeSection';
 
@@ -23,6 +24,7 @@ export const StoragePage = () => {
     <div className="flex flex-col gap-8">
       <WorktreeSection scope={scope} />
       <ArtifactSection scope={scope} />
+      <SavedVersionsSection scope={scope} />
       <StorageHistory />
       <OtherToolsSection />
     </div>

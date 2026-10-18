@@ -62,7 +62,7 @@ describe('new workspace scenes', () => {
 
   it('explains a plain folder', async () => {
     await mount({ state: 'plain' });
-    expect(screen.getByText('Not a git repository.')).toBeDefined();
+    expect(screen.getByText('Looks like documents: 24 Markdown files and 6 PDFs')).toBeDefined();
   });
 
   it('asks before moving a folder another workspace holds', async () => {

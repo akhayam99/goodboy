@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { InvokeArgs } from '@tauri-apps/api/core';
 import {
   brandId,
+  type FolderSignals,
   type GitRepoCheck,
   type Project,
   type ProjectId,
@@ -91,6 +92,31 @@ type PathParams = {
   readonly path: string;
 };
 
+const ACME_DOCS_SIGNALS: FolderSignals = {
+  path: ACME_DOCS,
+  markers: [],
+  counts: {
+    markdown: 24,
+    text: 0,
+    pdf: 6,
+    word: 0,
+    pages: 0,
+    keynote: 0,
+    numbers: 0,
+    excel: 0,
+    powerpoint: 0,
+    image: 0,
+    video: 0,
+    audio: 0,
+    source: 0,
+    other: 0,
+  },
+  totalFiles: 30,
+  totalBytes: 18_000_000,
+  entriesRead: 30,
+  isTruncated: false,
+};
+
 const plainAt = ({ path }: PathParams): GitRepoCheck => ({
   isRepo: false,
   rootPath: null,
@@ -167,6 +193,8 @@ const answerFor =
         return pathOf(payload) === HARBORLINE ? HARBORLINE_REPOS : [];
       case 'repo_identity':
         return { rootCommits: [], remoteUrl: null };
+      case 'read_folder_signals':
+        return pathOf(payload) === ACME_DOCS ? ACME_DOCS_SIGNALS : null;
       default:
         return null;
     }

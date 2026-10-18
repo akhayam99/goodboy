@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { brandId, type ProjectId, type WorkspaceId } from '@goodboy/types';
+import { brandId, type FolderPurpose, type ProjectId, type WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
@@ -9,10 +9,12 @@ import { useNewProject, type NewProjectModel } from '../../../hooks/useNewProjec
 import { SETTING_NEW_PROJECT_PARENT } from '../../../../features/settings/settings';
 import { nameFromFolder } from '../../../../features/workspace/nameFromFolder';
 import { folderName } from '../../../../store/slices/terminal/terminalOwner';
+import { firstCommitPlan } from '../../../lib/folderGit';
+import { firstCommitCount } from '../../../../features/workspace/components/TrackWithGitFlow/firstCommitCount';
 import { createBlock } from '../createBlock';
 import { createRequest } from '../createRequest';
 import { draftFolders } from '../draftFolders';
-import type { FolderEntry, FoundSummary, MoveChoice } from '../folderEntry';
+import type { FolderEntry, FoundSummary, MoveChoice, RepositoryScope } from '../folderEntry';
 import type { NewWorkspaceMode } from '../newWorkspaceMode';
 import { readFolder } from '../readFolder';
 
@@ -67,6 +69,16 @@ type GitInitParams = {
   readonly isGitInit: boolean;
 };
 
+type PurposeParams = {
+  readonly path: string;
+  readonly purpose: FolderPurpose;
+};
+
+type ScopeParams = {
+  readonly path: string;
+  readonly scope: RepositoryScope;
+};
+
 type FirstLapParams = {
   readonly projectId: ProjectId;
 };
@@ -98,6 +110,8 @@ export type WorkspaceDraft = {
   readonly remove: (params: PathParams) => void;
   readonly toggle: (params: PathParams) => void;
   readonly setGitInit: (params: GitInitParams) => void;
+  readonly setPurpose: (params: PurposeParams) => void;
+  readonly setScope: (params: ScopeParams) => void;
   readonly decide: (params: ChoiceParams) => void;
   readonly leave: (params: PathParams) => void;
   readonly startScratch: () => void;
@@ -149,6 +163,7 @@ export const useWorkspaceDraft = ({
 }: Params): WorkspaceDraft => {
   const createWorkspaceWithFolders = useAppStore((state) => state.createWorkspaceWithFolders);
   const previewProjectAdoption = useAppStore((state) => state.previewProjectAdoption);
+  const scanFolderSignals = useAppStore((state) => state.scanFolderSignals);
   const checkReconnectCandidate = useAppStore((state) => state.checkReconnectCandidate);
   const reconnectMovedProject = useAppStore((state) => state.reconnectMovedProject);
   const addWorkspace = useAppStore((state) => state.addWorkspace);
@@ -176,14 +191,19 @@ export const useWorkspaceDraft = ({
   const pickRef = useRef(0);
 
   const isScratch = draft.stage === 'scratch';
+  const only = draft.folders.length === 1 ? draft.folders[0] : undefined;
+  const namingPath =
+    only?.kind === 'repository' && only.scope === 'folder' && only.snappedFrom !== null
+      ? only.snappedFrom
+      : draft.sourcePath;
   const isAdding = mode === 'add';
   const derivedName = isScratch
     ? scratch.folderPath === null
       ? ''
       : nameFromFolder({ path: scratch.folderPath })
-    : draft.sourcePath === null
+    : namingPath === null
       ? ''
-      : nameFromFolder({ path: draft.sourcePath });
+      : nameFromFolder({ path: namingPath });
   const name = isAdding
     ? (targetName ?? '')
     : isScratch
@@ -211,6 +231,7 @@ export const useWorkspaceDraft = ({
         pick,
         workspaceId,
         preview: previewProjectAdoption,
+        scan: scanFolderSignals,
       });
       const single = reading.entries.length === 1 ? reading.entries[0] : undefined;
       const candidate =
@@ -298,15 +319,63 @@ export const useWorkspaceDraft = ({
       }),
     }));
 
-  const setGitInit = ({ path, isGitInit }: GitInitParams) =>
+  const changePlain = ({ path, change }: Omit<UpdateParams, 'folders'>) =>
     setDraft((current) => ({
       ...current,
-      folders: updateFolder({
-        folders: current.folders,
-        path,
-        change: (folder) => (folder.kind === 'plain' ? { ...folder, isGitInit } : folder),
-      }),
+      folders: updateFolder({ folders: current.folders, path, change }),
     }));
+
+  const countFirstCommit = async ({ path }: PathParams) => {
+    try {
+      const plan = await firstCommitPlan({ path });
+      const files = firstCommitCount({ plan, included: [] });
+      changePlain({
+        path,
+        change: (folder) =>
+          folder.kind === 'plain' && folder.isGitInit
+            ? { ...folder, firstCommitFiles: files }
+            : folder,
+      });
+    } catch (cause) {
+      await reportError({
+        title: `Couldn't count the files of ${folderName({ path }) ?? path}`,
+        error: cause,
+        severity: 'warning',
+      });
+    }
+  };
+
+  const setGitInit = ({ path, isGitInit }: GitInitParams) => {
+    changePlain({
+      path,
+      change: (folder) =>
+        folder.kind === 'plain' ? { ...folder, isGitInit, firstCommitFiles: null } : folder,
+    });
+    if (isGitInit) {
+      void countFirstCommit({ path });
+    }
+  };
+
+  const setPurpose = ({ path, purpose }: PurposeParams) =>
+    changePlain({
+      path,
+      change: (folder) =>
+        folder.kind === 'plain'
+          ? {
+              ...folder,
+              purpose,
+              isGitInit: purpose === 'code' && folder.isGitInit,
+              firstCommitFiles: purpose === 'code' ? folder.firstCommitFiles : null,
+            }
+          : folder,
+    });
+
+  const setScope = ({ path, scope }: ScopeParams) =>
+    changePlain({
+      path,
+      change: (folder) =>
+        folder.kind === 'repository' && folder.snappedFrom !== null ? { ...folder, scope } : folder,
+    });
 
   const decide = ({ path, choice }: ChoiceParams) =>
     setDraft((current) => ({
@@ -421,7 +490,7 @@ export const useWorkspaceDraft = ({
     folders: draft.folders,
     found: draft.found,
     reconnectOffer: draft.reconnect,
-    sourceName: folderName({ path: draft.sourcePath }),
+    sourceName: folderName({ path: namingPath }),
     name,
     setName: setEditedName,
     folderCount,
@@ -438,6 +507,8 @@ export const useWorkspaceDraft = ({
     remove,
     toggle,
     setGitInit,
+    setPurpose,
+    setScope,
     decide,
     leave: remove,
     startScratch,

@@ -1,8 +1,9 @@
-import { Info, Lock, Plus } from 'lucide-react';
+import { Lock, Plus } from 'lucide-react';
 import { Button, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../conceptIcons';
+import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
+import { draftFolders } from './draftFolders';
 import { FolderRow } from './FolderRow';
-import { tildePath } from './tildePath';
 import type { WorkspaceDraft } from './useWorkspaceDraft';
 
 type Props = {
@@ -16,8 +17,10 @@ const FoundIcon = CONCEPT_ICONS.explore;
 
 export const FolderRows = ({ draft, home, destinationName, isBusy }: Props) => {
   const isMulti = draft.folders.length > 1;
-  const only = draft.folders.length === 1 ? draft.folders[0] : undefined;
-  const snappedFrom = only?.kind === 'repository' ? only.snappedFrom : null;
+  const isInPlace = draftFolders({ folders: draft.folders }).every(
+    (folder) =>
+      folder.kind === 'plain' || (folder.kind === 'repository' && folder.scope === 'folder'),
+  );
   const repositoryCount = draft.found?.repositoryCount ?? 0;
   const repositories = repositoryCount === 1 ? '1 repository' : `${repositoryCount} repositories`;
   return (
@@ -26,13 +29,6 @@ export const FolderRows = ({ draft, home, destinationName, isBusy }: Props) => {
         <p className="flex items-center gap-1 text-label text-muted-foreground">
           <FoundIcon size={ICON_SIZE.row} aria-hidden className="text-primary" />
           Found {repositories} in {draft.found.parentName}.
-        </p>
-      )}
-      {snappedFrom === null || only === undefined ? null : (
-        <p className="flex items-center gap-1 text-label text-muted-foreground">
-          <Info size={ICON_SIZE.row} aria-hidden className="text-primary" />
-          {tildePath({ path: snappedFrom, home })} is inside {only.name}, so the workspace uses the
-          whole repository.
         </p>
       )}
       <ul
@@ -66,7 +62,7 @@ export const FolderRows = ({ draft, home, destinationName, isBusy }: Props) => {
         <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-meta text-faint-foreground">
           <Lock size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="truncate">
-            Agents work on their own branch. Nothing is pushed until you ask.
+            {isInPlace ? FOLDER_FACE_COPY.inPlaceTrust : FOLDER_FACE_COPY.branchTrust}
           </span>
         </span>
       </div>

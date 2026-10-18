@@ -1,9 +1,11 @@
 import { GitBranch } from 'lucide-react';
 import { Chip, ICON_SIZE } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../conceptIcons';
+import { FOLDER_FACE_COPY } from '../../../features/workspace/folderFaceCopy';
 import { ConflictNotice } from './ConflictNotice';
 import type { RepositoryFolder } from './folderEntry';
 import type { FolderRowContext } from './folderRowContext';
+import { InsideRepositoryChoice } from './InsideRepositoryChoice';
 import { FolderRowFrame } from './FolderRowFrame';
 import { tildePath } from './tildePath';
 
@@ -21,40 +23,68 @@ export const RepositoryRow = ({
   isBusy,
   lead,
   trailing,
-}: Props) => (
-  <FolderRowFrame
-    name={folder.name}
-    path={tildePath({ path: folder.path, home })}
-    icon={<RepoIcon size={ICON_SIZE.hero} strokeWidth={1.6} aria-hidden />}
-    isDimmed={!folder.isIncluded}
-    lead={lead}
-    trailing={trailing}
-    meta={
-      <>
-        <Chip tone="neutral" shape="badge" bordered={false} label="Git" />
-        {folder.defaultBranch === null ? null : (
+}: Props) => {
+  const isOnlyFolder = folder.scope === 'folder' && folder.snappedFrom !== null;
+  const conflict =
+    folder.conflict === null || isOnlyFolder ? null : (
+      <ConflictNotice
+        name={folder.name}
+        conflict={folder.conflict}
+        destinationName={destinationName}
+        isBusy={isBusy}
+        onMove={() => draft.decide({ path: folder.path, choice: 'move' })}
+        onUndo={() => draft.decide({ path: folder.path, choice: 'ask' })}
+        onLeave={() => draft.leave({ path: folder.path })}
+      />
+    );
+  const inside =
+    folder.snappedFrom === null || !folder.isIncluded ? null : (
+      <InsideRepositoryChoice
+        folder={folder}
+        snappedFrom={folder.snappedFrom}
+        draft={draft}
+        isBusy={isBusy}
+      />
+    );
+  return (
+    <FolderRowFrame
+      name={folder.name}
+      path={tildePath({ path: folder.path, home })}
+      icon={<RepoIcon size={ICON_SIZE.hero} strokeWidth={1.6} aria-hidden />}
+      isDimmed={!folder.isIncluded}
+      lead={lead}
+      trailing={trailing}
+      meta={
+        isOnlyFolder ? (
           <Chip
             tone="neutral"
             shape="badge"
             bordered={false}
-            icon={<GitBranch size={ICON_SIZE.row} aria-hidden />}
-            label={folder.defaultBranch}
+            label={FOLDER_FACE_COPY.documents.chip}
           />
-        )}
-      </>
-    }
-    notice={
-      folder.conflict === null ? null : (
-        <ConflictNotice
-          name={folder.name}
-          conflict={folder.conflict}
-          destinationName={destinationName}
-          isBusy={isBusy}
-          onMove={() => draft.decide({ path: folder.path, choice: 'move' })}
-          onUndo={() => draft.decide({ path: folder.path, choice: 'ask' })}
-          onLeave={() => draft.leave({ path: folder.path })}
-        />
-      )
-    }
-  />
-);
+        ) : (
+          <>
+            <Chip tone="neutral" shape="badge" bordered={false} label="Git" />
+            {folder.defaultBranch === null ? null : (
+              <Chip
+                tone="neutral"
+                shape="badge"
+                bordered={false}
+                icon={<GitBranch size={ICON_SIZE.row} aria-hidden />}
+                label={folder.defaultBranch}
+              />
+            )}
+          </>
+        )
+      }
+      notice={
+        inside === null && conflict === null ? null : (
+          <div className="flex flex-col gap-2">
+            {inside}
+            {conflict}
+          </div>
+        )
+      }
+    />
+  );
+};

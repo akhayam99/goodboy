@@ -2,6 +2,7 @@ import type { GitRepoCheck, WorkspaceId } from '@goodboy/types';
 import { scanChildRepos, validateGitRepo } from '../../lib/repo';
 import { folderName } from '../../../store/slices/terminal/terminalOwner';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
+import type { FolderSignalsRead } from '../../../store/slices/folder-purpose/state';
 import { folderConflictOf } from './folderConflictOf';
 import type { FolderEntry, FolderProblem, FoundSummary } from './folderEntry';
 
@@ -10,11 +11,16 @@ type PreviewParams = {
   readonly rootPath: string;
 };
 
+type ScanParams = {
+  readonly path: string;
+};
+
 type Params = {
   readonly path: string;
   readonly pick: number;
   readonly workspaceId: WorkspaceId;
   readonly preview: (params: PreviewParams) => Promise<ProjectAttachConflict | null>;
+  readonly scan: (params: ScanParams) => Promise<FolderSignalsRead | null>;
 };
 
 export type FolderReading = {
@@ -74,9 +80,26 @@ const withConflict = async ({
 type ReadParams = {
   readonly path: string;
   readonly pick: number;
+  readonly scan: Params['scan'];
 };
 
-const readEntries = async ({ path, pick }: ReadParams): Promise<FolderReading> => {
+type SignalsOutcome = {
+  readonly read: FolderSignalsRead | null;
+  readonly isUnreadable: boolean;
+};
+
+const readSignals = async ({
+  path,
+  scan,
+}: ScanParams & Pick<ReadParams, 'scan'>): Promise<SignalsOutcome> => {
+  try {
+    return { read: await scan({ path }), isUnreadable: false };
+  } catch {
+    return { read: null, isUnreadable: true };
+  }
+};
+
+const readEntries = async ({ path, pick, scan }: ReadParams): Promise<FolderReading> => {
   const check = await validateGitRepo(path);
   const resolved = check.resolvedPath ?? path;
   const problem = problemOf({ check });
@@ -109,6 +132,7 @@ const readEntries = async ({ path, pick }: ReadParams): Promise<FolderReading> =
           isIncluded: true,
           defaultBranch: check.defaultBranch,
           snappedFrom: check.rootPath === resolved ? null : resolved,
+          scope: 'repository',
           conflict: null,
         },
       ],
@@ -127,11 +151,13 @@ const readEntries = async ({ path, pick }: ReadParams): Promise<FolderReading> =
         isIncluded: true,
         defaultBranch: child.defaultBranch,
         snappedFrom: null,
+        scope: 'repository',
         conflict: null,
       })),
       found: { parentName: nameOf({ path: resolved }), repositoryCount: children.length },
     };
   }
+  const { read, isUnreadable } = await readSignals({ path: resolved, scan });
   return {
     sourcePath: resolved,
     entries: [
@@ -141,7 +167,12 @@ const readEntries = async ({ path, pick }: ReadParams): Promise<FolderReading> =
         name: nameOf({ path: resolved }),
         pick,
         isIncluded: true,
+        purpose: read?.preselected ?? null,
+        preselected: read?.preselected ?? null,
+        signals: read?.signals ?? null,
+        isSignalsUnreadable: isUnreadable,
         isGitInit: false,
+        firstCommitFiles: null,
         conflict: null,
       },
     ],
@@ -154,8 +185,9 @@ export const readFolder = async ({
   pick,
   workspaceId,
   preview,
+  scan,
 }: Params): Promise<FolderReading> => {
-  const reading = await readEntries({ path, pick });
+  const reading = await readEntries({ path, pick, scan });
   const entries = await Promise.all(
     reading.entries.map((entry) => withConflict({ entry, workspaceId, preview })),
   );

@@ -11,6 +11,7 @@ import { useProjectGitStatuses } from '../../../workspace/hooks/useProjectGitSta
 import { LocateMovedProjects } from '../../../workspace/components/LocateMovedProjects';
 import { ProjectScriptsField } from '../../../scripts';
 import { WorkspaceTerminalFolderRow } from './WorkspaceTerminalFolderRow';
+import { FolderFacesBand } from './FolderFacesBand';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -75,6 +76,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
         rowBadge={({ project }) => <SentryLinkedBadge project={project} />}
         editorScripts={({ project }) => <ProjectScriptsField project={project} />}
       />
+      <FolderFacesBand workspaceId={workspaceId} />
     </section>
   );
 };

@@ -21,7 +21,7 @@ vi.mock('@tauri-apps/api/path', () => ({ homeDir: vi.fn(async () => '/mock') }))
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type GitRepoCheck, type IsoDateTime, type WorkspaceId } from '@goodboy/types';
-import { aProject, aWorkspace } from '@goodboy/types/testing';
+import { aFolderSignals, aProject, aWorkspace } from '@goodboy/types/testing';
 import {
   importStore,
   resetStoryStore,
@@ -85,21 +85,10 @@ const onOpenWizard = vi.fn();
 type RenderParams = {
   readonly isCreating?: boolean;
   readonly onCloseCreate?: () => void;
-  readonly onOfferRepo?: () => void;
 };
 
-const renderHome = ({
-  isCreating = false,
-  onCloseCreate = vi.fn(),
-  onOfferRepo = vi.fn(),
-}: RenderParams = {}) =>
-  render(
-    <WorkspaceLauncher
-      isCreating={isCreating}
-      onCloseCreate={onCloseCreate}
-      onOfferRepo={onOfferRepo}
-    />,
-  );
+const renderHome = ({ isCreating = false, onCloseCreate = vi.fn() }: RenderParams = {}) =>
+  render(<WorkspaceLauncher isCreating={isCreating} onCloseCreate={onCloseCreate} />);
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -127,6 +116,7 @@ beforeEach(async () => {
     validate_git_repo: NOTES_CHECK,
     scan_child_repos: [],
     repo_identity: { rootCommits: [], remoteUrl: null },
+    read_folder_signals: aFolderSignals({ path: NOTES, counts: { markdown: 12 } }),
   });
   useAppStore.setState({
     workspaces: [HARBORLINE, NORTHWIND],
@@ -163,6 +153,33 @@ describe('Home', () => {
 
     expect(await screen.findByText('3 folders · ~/Code/harborline')).toBeDefined();
     expect(screen.queryByText(/project/i)).toBeNull();
+  });
+
+  it('says the face of a one folder workspace instead of 1 folder', async () => {
+    const acmeNotes = aWorkspace({ name: 'Acme notes', slug: 'acme-notes' });
+    const acmeWeb = aWorkspace({ name: 'Acme web', slug: 'acme-web' });
+    const notes = aProject({
+      workspaceId: acmeNotes.id,
+      name: 'acme-notes',
+      kind: 'folder',
+      rootPath: '/mock/Documents/acme-notes',
+    });
+    const web = aProject({
+      workspaceId: acmeWeb.id,
+      name: 'acme-web',
+      kind: 'folder',
+      rootPath: '/mock/Code/acme-web',
+    });
+    useAppStore.setState({
+      workspaces: [HARBORLINE, acmeNotes, acmeWeb],
+      projects: [...HARBORLINE_FOLDERS, notes, web],
+      folderPurpose: { [notes.id]: 'documents', [web.id]: 'code' },
+    });
+    renderHome();
+
+    expect(await screen.findByText('Documents · ~/Documents/acme-notes')).toBeDefined();
+    expect(screen.getByText('Code, no git yet · ~/Code/acme-web')).toBeDefined();
+    expect(screen.getByText('3 folders · ~/Code/harborline')).toBeDefined();
   });
 
   it('opens a workspace from its row', () => {
@@ -228,10 +245,9 @@ describe('Home', () => {
     expect(onCloseCreate).toHaveBeenCalledTimes(2);
   });
 
-  it('creates in place, closes the form and offers a repository to a plain folder', async () => {
+  it('creates in place, closes the form for a plain code folder and asks nothing more', async () => {
     const onCloseCreate = vi.fn();
-    const onOfferRepo = vi.fn();
-    renderHome({ isCreating: true, onCloseCreate, onOfferRepo });
+    renderHome({ isCreating: true, onCloseCreate });
 
     dialog.picks = [NOTES];
     fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
@@ -239,8 +255,31 @@ describe('Home', () => {
     fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
 
     await waitFor(() => expect(onCloseCreate).toHaveBeenCalledOnce());
-    expect(onOfferRepo).toHaveBeenCalledOnce();
     expect(onOpenWizard).not.toHaveBeenCalled();
+  });
+
+  it('lands a documents workspace in the workspace, never on the git band', async () => {
+    createWorkspaceWithFolders.mockImplementation(
+      async ({ workspaceId, name }: CreateWorkspaceWithFoldersParams) => {
+        const workspace = aWorkspace({ id: workspaceId, name });
+        const notes = aProject({ workspaceId, kind: 'folder', rootPath: NOTES });
+        useAppStore.setState((state) => ({
+          workspaces: [workspace, ...state.workspaces],
+          projects: [notes, ...state.projects],
+          folderPurpose: { ...state.folderPurpose, [notes.id]: 'documents' },
+        }));
+        return { workspace, projects: [notes], movedSessionCount: 0 };
+      },
+    );
+    const onCloseCreate = vi.fn();
+    renderHome({ isCreating: true, onCloseCreate });
+
+    dialog.picks = [NOTES];
+    fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
+    await screen.findByRole('list', { name: 'Folders' });
+    fireEvent.click(screen.getByRole('button', { name: /create workspace/i }));
+
+    await waitFor(() => expect(onCloseCreate).toHaveBeenCalledOnce());
   });
 
   it('shows the search field from five workspaces on, never with four', () => {
