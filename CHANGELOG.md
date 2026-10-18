@@ -12,6 +12,87 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.2
+
+Setup is one guided flow, every surface says folder, and the session rail, rebase, Settings and update card get a pass.
+
+### New
+
+#### Setup in four steps
+<!-- gb area=app -->
+
+Welcome shows the Goodboy tile, then four steps: Agents, Tools, Workspace and First session. Setup pauses and resumes, and Home offers Resume setup while it is unfinished.
+
+Agents are checked one by one, with sign in and install in place. One New workspace form covers repositories and plain folders.
+
+#### Home with one New workspace door
+<!-- gb area=app -->
+
+Home shows the Goodboy lockup and one New workspace door, also on ⌘N. Each workspace row says how many folders it holds.
+
+#### Rebase all
+<!-- gb area=sessions -->
+
+A rebase conflict asks in place. Rebase all rebases the clean branches with git and hands only the conflicted ones to one Auto run, with an opt-in to tidy commits.
+
+### Improved
+
+#### Folder instead of project
+<!-- gb area=app -->
+
+Every surface says folder for a Goodboy folder. Search and the palette still find the old words.
+
+#### Session rail and sidebar
+<!-- gb area=sessions -->
+
+The plus on the Folders card connects a folder, and the plus on a folder row makes a branch or worktree. Sessions and Monitoring carry a dot instead of top bar banners, and Impact is back in the sidebar.
+
+The Sessions filter is rebuilt. Archive asks first, with one confirm for many sessions, and keeps agents running. Long branch names are cut at the end.
+
+#### Next and Activity
+<!-- gb area=inbox -->
+
+Next no longer repeats what Activity offers, and Activity icons match their concepts. Runs, Orchestrated, Agents and Auto agents explain themselves in two lines.
+
+#### Auto results under the turn that read them
+<!-- gb area=agents -->
+
+Each child's result sits in that child's card, under the turn that read it.
+
+#### Guide and Settings
+<!-- gb area=settings -->
+
+The Guide opens on chapter pages, with search. Settings is a tree with App, Workspace, Providers and models and Integrations, and iPhone pairing now sits in Settings.
+
+#### Search and the palette
+<!-- gb area=app -->
+
+⌘K and ⌘F are compact.
+
+#### One update card
+<!-- gb area=app -->
+
+Updates use one card, and the version pill stays on one line. What's new shows dates.
+
+#### Rows with their actions
+<!-- gb area=app -->
+
+Notification, commit, storage and branch rows show their actions where they belong. The macOS menu bar and the Goodboy menu are rebuilt.
+
+#### Provider and integration pages
+<!-- gb area=providers -->
+
+Provider and integration pages have one menu, and their dots only mean needs you.
+
+#### Newer models and corrected prices
+<!-- gb area=providers -->
+
+Haiku 5.5, GPT-6 Luna and Sol, and the current Cursor, Gemini, OpenRouter and opencode rows are listed, with corrected prices and context windows.
+
+### Fixed
+
+- File versions read the session marker again. <!-- gb area=sessions -->
+
 ## Goodboy v0.27.1
 
 Every start reads one verb, a finished orchestrated run takes a hint to keep going, and a question opens the agent that asked it.
