@@ -76,6 +76,11 @@ vi.mock('../../store', () => {
     loadDetectedEditors: vi.fn(async () => undefined),
     loadDetectedBrowsers: vi.fn(async () => undefined),
     reportError: vi.fn(),
+    storageStats: null,
+    storageFolders: [],
+    storageRoots: [],
+    storageArtifacts: [],
+    storageScope: null,
     ...storeSeed.current,
   });
   return {

@@ -25,7 +25,7 @@
         },
         {
           "title": "Your agents",
-          "text": "Goodboy finds the coding agents already on this Mac and says what each one needs: a sign in, an install or a look at why it cannot start. One ready agent is enough.",
+          "text": "Goodboy finds the coding agents already on this Mac. Each one shows what it needs: a sign in, an install or a look at why it cannot start. One ready agent is enough.",
           "group": "Set up",
           "main": true
         },
