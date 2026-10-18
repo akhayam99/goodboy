@@ -1,76 +1,47 @@
-import { Check } from 'lucide-react';
-import { ROW_INTERACTIVE, cn, tintClasses, Tooltip } from '@goodboy/ui';
-import { openWizardStep, type OnboardingStepId } from '../onboarding-store';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { StepMark } from './StepMark';
 
 type Props = {
-  readonly id: OnboardingStepId;
   readonly title: string;
-  readonly why: string;
-  readonly done: boolean;
+  readonly detail: string;
+  readonly isDone: boolean;
+  readonly actionLabel: string;
+  readonly onOpen: (() => void) | null;
 };
 
-export const StepRow = ({ id, title, why, done }: Props) => {
-  const actionByStep: Partial<Record<OnboardingStepId, () => void>> = {
-    provider: () =>
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-settings', { detail: { scope: 'providers' } }),
-      ),
-    project: () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace')),
-    codeHost: () => openWizardStep('code-host'),
-    taskManager: () => openWizardStep('tasks'),
-    firstSession: () => window.dispatchEvent(new CustomEvent('goodboy:new-session')),
-    profile: () =>
-      window.dispatchEvent(
-        new CustomEvent('goodboy:open-settings', {
-          detail: { scope: 'workspace', section: 'profile' },
-        }),
-      ),
-  };
-  const action = actionByStep[id];
-  const activate = () => action?.();
+const ROW_CLASS = 'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left';
 
-  return (
-    <Tooltip content={why}>
-      <li className="rounded-md">
-        {done || action === undefined ? (
-          <span
-            className={cn(
-              'flex items-center gap-2 px-2 py-1 text-meta',
-              done ? 'text-faint-foreground' : 'text-foreground',
-            )}
-          >
-            <span
-              aria-hidden
-              className={cn(
-                'inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border',
-                done
-                  ? cn('border-success', tintClasses('success').bg, 'text-success')
-                  : 'border-border-soft bg-transparent',
-              )}
-            >
-              {done ? <Check size={ICON_SIZE.mark} aria-hidden /> : null}
-            </span>
-            <span className={cn('truncate', done && 'line-through decoration-1')}>{title}</span>
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={activate}
-            aria-label={`Set up ${title}`}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-chip text-foreground focus-visible:ring-primary',
-              ROW_INTERACTIVE,
-            )}
-          >
-            <span
-              aria-hidden
-              className="inline-flex size-3.5 shrink-0 items-center justify-center rounded-full border border-border-soft bg-transparent"
-            />
-            <span className="truncate">{title}</span>
-          </button>
-        )}
+export const StepRow = ({ title, detail, isDone, actionLabel, onOpen }: Props) => {
+  const text = (
+    <span className="flex min-w-0 flex-1 flex-col">
+      <span
+        className={cn('truncate text-row', isDone ? 'text-muted-foreground' : 'text-foreground')}
+      >
+        {title}
+      </span>
+      <span className="truncate text-meta text-faint-foreground">{detail}</span>
+    </span>
+  );
+  if (isDone || onOpen === null) {
+    return (
+      <li data-state={isDone ? 'done' : 'open'} className={ROW_CLASS}>
+        <StepMark isDone={isDone} />
+        {text}
       </li>
-    </Tooltip>
+    );
+  }
+  return (
+    <li data-state="open">
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`${actionLabel} ${title}`}
+        className={cn(ROW_CLASS, ROW_INTERACTIVE)}
+      >
+        <StepMark isDone={false} />
+        {text}
+        <span className="shrink-0 text-label text-primary">{actionLabel}</span>
+      </button>
+    </li>
   );
 };

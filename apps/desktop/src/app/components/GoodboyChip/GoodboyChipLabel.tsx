@@ -41,9 +41,7 @@ export const GoodboyChipLabel = ({
     return (
       <>
         <span className="font-semibold text-foreground">Setup</span>
-        <span className="tabular-nums text-faint-foreground">
-          {progress.completedCount} of {progress.totalCount}
-        </span>
+        <span className="tabular-nums text-faint-foreground">{progress.setup.count}</span>
       </>
     );
   }

@@ -1847,17 +1847,28 @@ before anything moves, so Settings stays open under it.
   deletes the record. `LastCrashBridge` claims the record, so only one window
   shows it.
 
-First-run setup is a full-screen wizard in one shell that never moves: a top
-bar with a labelled stepper (Provider, Project, Code host, Tasks, First
-session) and Skip setup, a body that starts at the same line on every step,
-and the form actions inline at the end of the step (Back, Skip for now and
-the primary, right-aligned, no divider). Steps crossfade in place (240 ms,
-80 ms of opacity with reduced motion); the actions are disabled while they do. Welcome says what the five
-steps take. Provider needs one usable route (a CLI login, a saved key or
+First-run setup is a full-screen wizard in one shell that never moves: a header
+with the lockup (a 22 px `BrandTile` and the word, absent on Welcome, where the
+hero is the lockup), a labelled four-step stepper (Agents, Workspace, Tools
+marked Optional, First session) and Set up later at the right; one 600 px
+column whose title starts at the same line on every step; and the form actions
+inline at the end of the step (Back, Skip for now and the primary,
+right-aligned, no divider). Steps crossfade in one grid cell (240 ms, 80 ms of
+opacity with reduced motion); the actions are disabled while they do. Escape
+goes through the escape stack: an open inner layer closes first, else setup
+goes back one step; on Welcome and on the first step of a resume it does
+nothing, and it never ends setup. Set up later writes `onboarding.wizard =
+later`; entering a step writes `onboarding.step`. A relaunch with setup still
+open reopens at that step (`resumeStep` falls back to Workspace when the step
+needs a workspace that is gone), in the main window only, on the no-workspace
+and the launcher branch alike; the Goodboy menu offers Resume setup while it is
+paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
+`nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
+`finish` and `setBusy`. Provider needs one usable route (a CLI login, a saved key or
 OpenCode's free models). Project picks one folder, with or without version
 control, names the workspace after its parent folder and finds the
-repositories inside one. Code host is skipped by itself when no project is a
-repository. Code host and Tasks can be skipped; Sentry, Slack and the rest
+repositories inside one. Tools holds Code host and Tasks on one step and never leaves the stepper;
+with no repository it shows Tasks only. Tools can be skipped; Sentry, Slack and the rest
 live in Settings › Integrations. There is no permissions question: every
 workspace starts on Full access. The last step offers the same three ways as
 a new session, with Start an agent picked and three starters: Start Scout
@@ -1866,10 +1877,15 @@ starter as its focus, and Scout running. Pick up a task and Run a workflow
 close the wizard on the new session draft with that choice picked. Either
 way the draft carries the project picked in the Project step, so the session
 lands in it. With no
-issue source at all, Pick up a task says so and leads back to Code host. The checklist has six
-items (provider, project, code host, task manager, first session, profile); a
-skipped code host or task manager reopens its own step, and the first session
-ticks when an agent finishes a turn, not when a session row exists.
+issue source at all, Pick up a task says so and leads back to Code host. The checklist in the
+Goodboy menu has the stepper's four rows, counted by `setupProgress()` in
+`features/onboarding/setupProgress.ts`, the one function the chip and the menu
+read ("Setup · 2 of 4"). About you is not counted: it is suggested under Next
+once the first session is done. While setup is open or paused a row resumes
+setup at its step; once setup is done Tools reopens its own step. Tools ticks
+when the user moves past it or connects a code host or task source, and the
+first session ticks when an agent finishes a turn, not when a session row
+exists. Old checklist ids map to the four on hydrate.
 
 ## Auto in the shell
 

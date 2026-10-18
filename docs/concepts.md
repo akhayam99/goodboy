@@ -53,21 +53,58 @@ A few rules are always true:
 The app follows the life of a task. First the task itself. Then the tools it
 comes from and goes back to. Then the code it produces. The chat comes last.
 
-## Workspaces and projects
+## Workspaces and folders
 
-A **workspace** is named after what you work on, not after a folder on disk.
-It holds your profile, your connected tools, one or more projects and every
-session.
+A **workspace** holds your profile, your connected tools, one or more folders
+and every session. The screen calls what it holds a **folder**; the code, the
+database and the technical docs call it a **project** (`Project`, the
+`projects` table).
 
-A **project** is one place where code or files live. It has a root folder on
-disk, and it is one of two kinds:
+A folder is one place where code or files live. It has a root path on disk,
+and it is one of two kinds:
 
 - A git repository, kind `repo`
 - A plain folder, kind `folder`
 
-Each project belongs to one workspace only. It keeps only what is specific to
+Each folder belongs to one workspace only. It keeps only what is specific to
 that place. That means its scripts, its own settings and, if you want, its own
 connection to a tool.
+
+**The name.** A new workspace is named after the folder you picked, never its
+parent: dashes and underscores become spaces and the first letter is a
+capital, so `~/Code/acme-web` becomes "Acme web" and `ledger_core` becomes
+"Ledger core". One function does it, `nameFromFolder`
+(`features/workspace/nameFromFolder.ts`), for setup, Open a folder and Start
+from scratch alike. The folder keeps its name on disk (`acme-web`), and you can
+rename the workspace in place.
+
+**Detection is read only.** `validate_git_repo` and `scan_child_repos`
+(`src-tauri/src/repo.rs`) write nothing. A failed check says why in
+`errorKind`: `not_found`, `permission_denied` (a folder macOS will not let
+Goodboy open), `not_a_directory`, `not_a_repository` or `git_failed`. Each
+repository also reports its `defaultBranch`, read on disk only: the branch
+`origin/HEAD` points at, else the current branch, else none (a detached HEAD).
+It is stored as the folder's `baseBranch`.
+
+**One write on Create.** `createWorkspaceWithFolders`
+(`store/slices/workspaces/`) takes the workspace id the form made beforehand,
+the name, the folders and the folders to move here. In this order:
+
+1. It refuses a move while agents run in that folder (the message names the
+   count and the other workspace), and a folder another workspace holds,
+   before touching the disk.
+2. It runs `git init` for a plain folder you chose to track, or creates the
+   folder for Start from scratch, before any database write. A git failure
+   writes nothing and shows git's own message.
+3. It writes the workspace, every folder and the first-lap phase of a new
+   folder in one transaction (`insertWorkspaceWithProjects`). A failed insert
+   leaves no row.
+4. Only then the store shows them, and the moves run through `adoptProject`,
+   which refuses on its own while agents run there.
+
+Retry is safe: the workspace id and the `root_path UNIQUE` column (m119) make a
+second try reuse what the first one left, and a scratch folder the first try
+created is picked up instead of refused.
 
 The new-workspace form offers **Start from a project** and **A workspace with
 several projects**, and the empty screen adds **Start a new project**. They set
@@ -1511,9 +1548,12 @@ task up again in Goodboy.
 
 ### Vocabulary rules
 
-- Each word has one meaning. **workspace** is the container, **project** is
-  the repo or folder, **session** is the goal, **agent** is the chat.
-- No screen may use a different word for any of these four
+- Each word has one meaning. **workspace** is the container, **folder** is
+  what it holds on screen (a repository or a plain folder; `project` in code),
+  **session** is the goal, **agent** is the chat.
+- No screen may use a different word for any of these four. The surfaces that
+  create, add or list what a workspace holds say folder; the in-session and
+  settings surfaces still say project until they move too
 - Internal words stay in code and technical docs. The screen says the word the
   user already knows from git, the file system or the rest of the app:
 

@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { AnchoredPopover, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { collapse } from '../../../features/onboarding/onboarding-store';
+import { collapse, hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
+import { useIsMainWindow } from '../../hooks/useIsMainWindow';
 import { useOnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../features/changelog/hooks/useInstalledVersion';
 import { openReportSheet } from '../../../features/bug-report/openReportSheet';
@@ -63,14 +64,26 @@ export const GoodboyChip = ({
     updaterStatus === 'downloading' ||
     updaterStatus === 'ready' ||
     isQueued;
-  const isSetupOpen = !progress.finished && progress.hasProjects && !progress.isDone;
+  const isSetupOpen = !progress.isFinished && progress.hasProjects && !progress.setup.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
   const shouldAutoOpen =
     isPrimary &&
-    !progress.finished &&
-    progress.wizardDone &&
-    progress.completed.has('firstSession') &&
-    !progress.collapsed;
+    !progress.isFinished &&
+    progress.isWizardDone &&
+    progress.completed.has('first-session') &&
+    !progress.isCollapsed;
+  const isInMainWindow = useIsMainWindow();
+
+  useEffect(() => {
+    if (!isPrimary || isInMainWindow) {
+      return;
+    }
+    const onFocus = () => {
+      void hydrateOnboardingFromDb();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [isPrimary, isInMainWindow]);
 
   useEffect(() => {
     if (!shouldAutoOpen) {
@@ -140,8 +153,10 @@ export const GoodboyChip = ({
         <GoodboyMenu
           version={version}
           progress={progress}
+          isMainWindow={isInMainWindow}
           hasUpdate={hasUpdate}
           hasDraft={hasDraft}
+          onLeave={close}
           onReport={leaveFor({ action: () => openReportSheet() })}
           onOpenGuide={leaveFor({ action: onOpenGuide })}
           onPairDevice={leaveFor({

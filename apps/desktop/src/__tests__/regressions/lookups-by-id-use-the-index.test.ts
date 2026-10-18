@@ -15,7 +15,6 @@ const ALLOWED: Readonly<Record<string, number>> = {
   'features/integrations/gitlab/MergeRequest/useGitlabIssues.ts': 1,
   'features/integrations/jira/JiraStudio/useJiraIssues.ts': 1,
   'features/integrations/linear/LinearStudio/useLinearIssues.ts': 1,
-  'features/onboarding/OnboardingWizard/WizardFrame.tsx': 1,
   'features/search/grammar.ts': 1,
   'features/settings/components/SettingsStudio/WorkspaceDevProjectBand.tsx': 1,
   'features/workspace/components/WorkspaceLinkStudio/index.tsx': 1,

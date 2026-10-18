@@ -2,6 +2,7 @@ import type { Project, Workspace, WorkspaceId } from '@goodboy/types';
 import { deleteSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { projectFolderCreate } from '../../../shared/lib/repo';
+import { nameFromFolder } from '../../../features/workspace/nameFromFolder';
 import type { GetFn, SetFn } from '../../slice-types';
 import { bootstrapPhaseKey } from './phase';
 
@@ -31,7 +32,10 @@ export const createNewProject = (set: SetFn, get: GetFn) => {
   return async ({ parentPath, name }: Input): Promise<NewProject> => {
     const trimmedName = name.trim();
     const created = await projectFolderCreate({ parentPath, name: trimmedName });
-    const workspace = await get().addWorkspace({ rootPath: created.rootPath, name: trimmedName });
+    const workspace = await get().addWorkspace({
+      rootPath: created.rootPath,
+      name: nameFromFolder({ path: created.rootPath }),
+    });
     const project = projectOfWorkspace(get().projects, workspace.id);
     if (project === undefined) {
       throw new Error('the new project was not registered');

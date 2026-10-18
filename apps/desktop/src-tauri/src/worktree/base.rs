@@ -75,7 +75,7 @@ pub(super) fn normalized_base(base: Option<&str>) -> Option<&str> {
         .filter(|candidate| !candidate.is_empty())
 }
 
-pub(super) fn resolve_origin_head(cwd: &Path) -> Option<String> {
+pub(crate) fn resolve_origin_head(cwd: &Path) -> Option<String> {
     git(cwd, &["symbolic-ref", "refs/remotes/origin/HEAD"])
         .ok()
         .map(|output| output.trim().to_string())

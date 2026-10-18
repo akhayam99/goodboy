@@ -1,40 +1,44 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Stepper, stepAnnouncement } from './Stepper';
-import { WIZARD_STEPS } from './wizardSteps';
 
 afterEach(cleanup);
 
+const statesOf = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll('[data-state]')).map((node) =>
+    node.getAttribute('data-state'),
+  );
+
 describe('Stepper', () => {
-  it('labels the five numbered steps and marks done, current and later', () => {
-    const { container } = render(<Stepper current="code-host" steps={WIZARD_STEPS} />);
-    const steps = container.querySelectorAll('[data-state]');
-    expect(steps).toHaveLength(5);
-    expect(steps[1]?.getAttribute('data-state')).toBe('done');
-    expect(steps[2]?.getAttribute('data-state')).toBe('current');
-    expect(steps[2]?.getAttribute('aria-current')).toBe('step');
-    expect(steps[3]?.getAttribute('data-state')).toBe('later');
-    expect(screen.getByText('Code host')).toBeDefined();
-    expect(screen.getByText('First session')).toBeDefined();
+  it('labels the four steps and marks done, current and later', () => {
+    const { container } = render(<Stepper current="tools" />);
+    expect(statesOf(container)).toEqual(['done', 'done', 'current', 'later']);
+    expect(container.querySelector('[aria-current="step"]')?.textContent).toContain('Tools');
+    ['Agents', 'Workspace', 'Tools', 'First session'].forEach((label) => {
+      expect(screen.getByText(label)).toBeDefined();
+    });
+  });
+
+  it('says Tools is optional and keeps it there', () => {
+    const { container } = render(<Stepper current="agents" />);
+    expect(screen.getByText('Optional')).toBeDefined();
+    expect(statesOf(container)).toHaveLength(4);
   });
 
   it('shows every step as later on Welcome, so the top bar never pops in', () => {
-    const { container } = render(<Stepper current="welcome" steps={WIZARD_STEPS} />);
-    const states = Array.from(container.querySelectorAll('[data-state]')).map((node) =>
-      node.getAttribute('data-state'),
-    );
-    expect(states).toEqual(['later', 'later', 'later', 'later', 'later']);
+    const { container } = render(<Stepper current="welcome" />);
+    expect(statesOf(container)).toEqual(['later', 'later', 'later', 'later']);
   });
 
-  it('announces the position for screen readers', () => {
-    expect(stepAnnouncement({ current: 'code-host', steps: WIZARD_STEPS })).toBe(
-      'Step 3 of 5, Code host',
-    );
-    expect(stepAnnouncement({ current: 'welcome', steps: WIZARD_STEPS })).toBe('');
+  it('draws a check on a done step and the number on the others', () => {
+    const { container } = render(<Stepper current="workspace" />);
+    const nodes = Array.from(container.querySelectorAll('li > span:first-child'));
+    expect(nodes[0]?.querySelector('svg')).not.toBeNull();
+    expect(nodes.slice(1).map((node) => node.textContent)).toEqual(['2', '3', '4']);
   });
 
-  it('counts only the steps it is given', () => {
-    const steps = ['welcome', 'providers', 'project', 'tasks', 'first-session'] as const;
-    expect(stepAnnouncement({ current: 'tasks', steps })).toBe('Step 3 of 4, Tasks');
+  it('announces the position out of four for screen readers', () => {
+    expect(stepAnnouncement({ current: 'tools' })).toBe('Step 3 of 4, Tools');
+    expect(stepAnnouncement({ current: 'welcome' })).toBe('');
   });
 });

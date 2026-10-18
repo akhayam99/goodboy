@@ -5,6 +5,7 @@ import { WorkspaceLauncher } from '../../../features/workspace/components/Worksp
 import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
+import { useIsMainWindow } from '../../hooks/useIsMainWindow';
 import type { InboxStudioFocus, StudioPlace } from '../../../store';
 import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import { StudioFrame } from '../StudioFrame';
@@ -261,6 +262,7 @@ export const AppOverlayRouter = ({
   offerWorkspaceRepo,
   closeDeleteConfirm,
 }: Props) => {
+  const isInMainWindow = useIsMainWindow();
   if (isWorkspaceLauncherBranch) {
     const launcherStudio =
       overlay !== null && isAppScopeOverlay({ overlay }) ? (
@@ -289,6 +291,7 @@ export const AppOverlayRouter = ({
           <WorkspaceLauncher />
         )}
         <AppScopeOverlays studio={launcherStudio} palette={palette} closePalette={closePalette} />
+        <OnboardingWizard isMainWindow />
       </Suspense>
     );
   }
@@ -303,7 +306,7 @@ export const AppOverlayRouter = ({
           onClose={closeDeleteConfirm}
         />
       ) : null}
-      <OnboardingWizard />
+      <OnboardingWizard isMainWindow={isInMainWindow} />
     </Suspense>
   );
 };

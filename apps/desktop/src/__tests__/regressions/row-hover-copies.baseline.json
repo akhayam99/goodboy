@@ -8,7 +8,6 @@
   "features/integrations/jira/AssigneePicker.tsx": 1,
   "features/integrations/jira/TransitionMenu.tsx": 1,
   "features/integrations/slack/ThreadReactions/index.tsx": 1,
-  "features/onboarding/OnboardingWizard/WizardFrame.tsx": 1,
   "features/resolve/components/FixRunSummary/FixRunThreads.tsx": 1,
   "features/resolve/components/FixRunSummary/index.tsx": 1,
   "features/resolve/components/ReviewFlow/AnswersPanel/AnswerCard.tsx": 1,

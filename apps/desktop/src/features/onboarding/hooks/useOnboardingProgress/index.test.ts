@@ -2,7 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OnboardingStepId } from '../../onboarding-store';
 
-type Workspace = { id: string; profile?: { roles: ReadonlyArray<string> } };
+type Workspace = { id: string; name?: string; profile?: { roles: ReadonlyArray<string> } };
 
 let completed: Array<OnboardingStepId> = [];
 const workspaces: Array<Workspace> = [];
@@ -10,8 +10,9 @@ let currentWorkspaceId: string | null = null;
 let workspaceIntegrations: Record<string, Array<{ provider: string }>> = {};
 let sessionPhaseRuns: Record<string, Array<{ status: string }>> = {};
 let agentTurnState: Record<string, { kind: string }> = {};
-let providers: Array<{ connection: string }> = [];
+let providers: Array<{ id: string; connection: string }> = [];
 let projects: Array<{ workspaceId: string }> = [];
+let wizardState = 'done';
 let githubStatus: { mode: string } | null = null;
 
 const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
@@ -19,23 +20,12 @@ const { markStepCompleteMock, ghStatusMock } = vi.hoisted(() => ({
   ghStatusMock: vi.fn(async () => ({ scoped: false }) as unknown),
 }));
 
-const { STEPS } = vi.hoisted(() => ({
-  STEPS: [
-    { id: 'provider', title: 'x', why: 'x' },
-    { id: 'project', title: 'x', why: 'x' },
-    { id: 'codeHost', title: 'x', why: 'x' },
-    { id: 'taskManager', title: 'x', why: 'x' },
-    { id: 'firstSession', title: 'x', why: 'x' },
-    { id: 'profile', title: 'x', why: 'x' },
-  ],
-}));
-
 vi.mock('../../onboarding-store', () => ({
-  ONBOARDING_STEPS: STEPS,
+  ONBOARDING_PROGRESS_EVENT: 'goodboy:onboarding-progress',
   getCompleted: () => completed,
+  getWizardState: () => wizardState,
   isCollapsed: () => false,
   isFinished: () => false,
-  isWizardDone: () => true,
   markStepComplete: markStepCompleteMock,
 }));
 
@@ -57,8 +47,9 @@ vi.mock('../../../../store', () => ({
   useWorkspaces: () => workspaces,
 }));
 
-function reset() {
+const reset = () => {
   completed = [];
+  wizardState = 'done';
   workspaces.length = 0;
   currentWorkspaceId = null;
   workspaceIntegrations = {};
@@ -70,7 +61,7 @@ function reset() {
   markStepCompleteMock.mockReset();
   ghStatusMock.mockReset();
   ghStatusMock.mockResolvedValue({ scoped: false });
-}
+};
 
 import { useOnboardingProgress } from './index';
 
@@ -78,62 +69,75 @@ describe('useOnboardingProgress', () => {
   beforeEach(reset);
   afterEach(reset);
 
-  it('marks the provider and the project once they exist', () => {
+  it('marks Agents and Workspace once an agent is ready and a folder is linked', () => {
     workspaces.push({ id: 'w1' });
-    providers = [{ connection: 'connected' }];
+    providers = [{ id: 'anthropic', connection: 'connected' }];
     projects = [{ workspaceId: 'w1' }];
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('provider');
-    expect(markStepCompleteMock).toHaveBeenCalledWith('project');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('agents');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('workspace');
   });
 
-  it('marks codeHost when GitLab or Bitbucket is connected for the workspace', () => {
+  it('describes each row with what is ready', () => {
+    workspaces.push({ id: 'w1', name: 'Harborline' });
+    providers = [{ id: 'anthropic', connection: 'connected' }];
+    projects = [{ workspaceId: 'w1' }, { workspaceId: 'w1' }, { workspaceId: 'w1' }];
+    const { result } = renderHook(() => useOnboardingProgress());
+    expect(result.current.details).toEqual({
+      agents: 'Claude is ready',
+      workspace: 'Harborline, 3 folders',
+      tools: 'Optional',
+      'first-session': 'Ask Scout about the code',
+    });
+  });
+
+  it('marks Tools when GitLab or Bitbucket is connected for the workspace', () => {
     workspaces.push({ id: 'w1' });
     workspaceIntegrations = { w1: [{ provider: 'bitbucket' }] };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
   });
 
-  it('marks codeHost once gh status reports a scoped token', async () => {
+  it('marks Tools once gh status reports a scoped token', async () => {
     workspaces.push({ id: 'w1' });
     ghStatusMock.mockResolvedValue({ scoped: true });
     renderHook(() => useOnboardingProgress());
-    await waitFor(() => expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost'));
+    await waitFor(() => expect(markStepCompleteMock).toHaveBeenCalledWith('tools'));
   });
 
-  it('marks codeHost when gh is signed in on this Mac', () => {
+  it('marks Tools when gh is signed in on this Mac', () => {
     workspaces.push({ id: 'w1' });
     githubStatus = { mode: 'cli' };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('codeHost');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
   });
 
-  it.each(['linear', 'jira'])('marks taskManager when %s is connected', (provider) => {
+  it.each(['linear', 'jira'])('marks Tools when %s is connected', (provider) => {
     workspaces.push({ id: 'w1' });
     workspaceIntegrations = { w1: [{ provider }] };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('taskManager');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('tools');
   });
 
   it('does not count Sentry or Slack as a task manager', () => {
     workspaces.push({ id: 'w1' });
     workspaceIntegrations = { w1: [{ provider: 'sentry' }, { provider: 'slack' }] };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('taskManager');
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('tools');
   });
 
   it('leaves the first session open while an agent only exists', () => {
     sessionPhaseRuns = { s1: [{ status: 'running' }] };
     agentTurnState = { a1: { kind: 'running' } };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('firstSession');
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('first-session');
   });
 
   it('ticks the first session once an agent finishes a turn', () => {
     sessionPhaseRuns = { s1: [{ status: 'running' }] };
     agentTurnState = { a1: { kind: 'idle' } };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).toHaveBeenCalledWith('firstSession');
+    expect(markStepCompleteMock).toHaveBeenCalledWith('first-session');
   });
 
   it('ticks the profile only once it holds something', () => {
@@ -146,20 +150,32 @@ describe('useOnboardingProgress', () => {
   });
 
   it('skips already-completed steps and never re-queries gh status', () => {
-    completed = ['codeHost'];
+    completed = ['tools'];
     workspaces.push({ id: 'w1' });
     workspaceIntegrations = { w1: [{ provider: 'gitlab' }] };
     renderHook(() => useOnboardingProgress());
-    expect(markStepCompleteMock).not.toHaveBeenCalledWith('codeHost');
+    expect(markStepCompleteMock).not.toHaveBeenCalledWith('tools');
     expect(ghStatusMock).not.toHaveBeenCalled();
   });
 
-  it('reports completed count and total', () => {
-    completed = ['provider', 'project'];
+  it('counts the four setup steps through setupProgress, About you left out', () => {
+    completed = ['agents', 'workspace', 'profile'];
     const { result } = renderHook(() => useOnboardingProgress());
-    expect(result.current.completedCount).toBe(2);
-    expect(result.current.totalCount).toBe(6);
-    expect(result.current.isDone).toBe(false);
-    expect(result.current.wizardDone).toBe(true);
+    expect(result.current.setup.count).toBe('2 of 4');
+    expect(result.current.setup.isDone).toBe(false);
+    expect(result.current.isWizardDone).toBe(true);
+  });
+
+  it('suggests About you only after the first session', () => {
+    completed = ['first-session'];
+    const { result } = renderHook(() => useOnboardingProgress());
+    expect(result.current.suggestsProfile).toBe(true);
+  });
+
+  it('reads a paused setup', () => {
+    wizardState = 'later';
+    const { result } = renderHook(() => useOnboardingProgress());
+    expect(result.current.wizard).toBe('later');
+    expect(result.current.isWizardDone).toBe(false);
   });
 });

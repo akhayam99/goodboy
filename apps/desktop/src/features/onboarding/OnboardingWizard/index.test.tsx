@@ -6,9 +6,16 @@ import type { IsoDateTime, Project, ProjectId, Workspace, WorkspaceId } from '@g
 import type { OnboardingWizardState } from './useOnboardingWizard';
 import type { FolderPick } from './steps/ProjectStep';
 
-const { hookState, finishWizard, storeActions, repoLib, tools, firstSession } = vi.hoisted(() => ({
+const { hookState, setupStore, storeActions, repoLib, tools, firstSession } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
-  finishWizard: vi.fn(),
+  setupStore: {
+    finishWizard: vi.fn(async () => undefined),
+    pauseWizard: vi.fn(async () => undefined),
+    enterWizardStep: vi.fn<(params: { readonly step: string }) => Promise<void>>(
+      async () => undefined,
+    ),
+    markStepComplete: vi.fn(),
+  },
   storeActions: {
     createWorkspace: vi.fn(),
     renameWorkspace: vi.fn(),
@@ -65,16 +72,32 @@ vi.mock('./useStepTransition', () => ({
     removeOutgoing: () => undefined,
   }),
 }));
-vi.mock('../onboarding-store', () => ({ finishWizard }));
+vi.mock('../onboarding-store', () => setupStore);
 vi.mock('./Stepper', () => ({
-  Stepper: ({ current, steps }: { current: string; steps: ReadonlyArray<string> }) => (
-    <div data-testid="stepper">{`${current}/${steps.join(',')}`}</div>
-  ),
+  Stepper: ({ current }: { current: string }) => <div data-testid="stepper">{current}</div>,
 }));
 vi.mock('./steps/WelcomeStep', () => ({ WelcomeStep: () => <div data-testid="WelcomeStep" /> }));
-vi.mock('./steps/ProvidersStep', () => ({
-  ProvidersStep: () => <div data-testid="ProvidersStep" />,
-}));
+vi.mock('./steps/ProvidersStep', async () => {
+  const { useState } = await import('react');
+  const { useEscapeLayer } = await import('@goodboy/ui');
+  const InnerPanel = ({ onClose }: { onClose: () => void }) => {
+    useEscapeLayer(onClose);
+    return <div data-testid="inner-panel" />;
+  };
+  return {
+    ProvidersStep: () => {
+      const [isPanelOpen, setIsPanelOpen] = useState(false);
+      return (
+        <div data-testid="ProvidersStep">
+          <button type="button" onClick={() => setIsPanelOpen(true)}>
+            open panel
+          </button>
+          {isPanelOpen ? <InnerPanel onClose={() => setIsPanelOpen(false)} /> : null}
+        </div>
+      );
+    },
+  };
+});
 vi.mock('./steps/ProjectStep', () => ({
   ProjectStep: ({
     name,
@@ -202,8 +225,11 @@ const project = ({ kind }: { readonly kind: Project['kind'] }): Project => ({
   updatedAt: STAMP,
 });
 
+const closeWizard = vi.fn();
+
 const baseState: OnboardingWizardState = {
-  open: true,
+  isOpen: true,
+  close: closeWizard,
   mode: 'full',
   start: null,
   providersConnected: 0,
@@ -231,7 +257,8 @@ const setHook = (partial: Partial<OnboardingWizardState>) =>
   Object.assign(hookState, baseState, partial);
 
 beforeEach(() => {
-  finishWizard.mockClear();
+  Object.values(setupStore).forEach((spy) => spy.mockClear());
+  closeWizard.mockClear();
   firstSession.startFirstScout.mockReset().mockResolvedValue(undefined);
   firstSession.handOffFirstSession.mockReset();
   Object.assign(hookState, baseState);
@@ -274,44 +301,128 @@ afterEach(() => {
 });
 
 import { OnboardingWizard } from './index';
-import { workspaceNameFor } from './folderNames';
 
 const click = (name: RegExp) => fireEvent.click(screen.getByRole('button', { name }));
+const pressEscape = () => fireEvent.keyDown(window, { key: 'Escape' });
+const stepOf = () => screen.getByRole('dialog').getAttribute('data-step');
 
 describe('OnboardingWizard', () => {
   it('renders nothing when closed', () => {
-    setHook({ open: false });
+    setHook({ isOpen: false });
     const { container } = render(<OnboardingWizard />);
     expect(container.firstChild).toBeNull();
   });
 
-  it('opens on Welcome with the stepper already there and a way out', () => {
-    render(<OnboardingWizard />);
+  it('opens on Welcome with the stepper, no lockup, and Set up later', () => {
+    const { container } = render(<OnboardingWizard />);
     expect(screen.getByTestId('WelcomeStep')).toBeDefined();
-    expect(screen.getByTestId('stepper').textContent).toBe(
-      'welcome/welcome,providers,project,code-host,tasks,first-session',
-    );
+    expect(screen.getByTestId('stepper').textContent).toBe('welcome');
+    expect(container.querySelector('[data-brand-tile]')).toBeNull();
     expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
-    expect(screen.getByRole('button', { name: /^skip setup$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^set up later$/i })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: 'Goodboy setup' })).toBeDefined();
   });
 
-  it('lets a returning user skip setup before a workspace exists', async () => {
+  it('draws the lockup in the header on every step after Welcome', () => {
+    const { container } = render(<OnboardingWizard />);
+    click(/get started/i);
+    const header = container.querySelector('header');
+    expect(header?.querySelector('[data-brand-tile]')).not.toBeNull();
+    expect(header?.textContent).toContain('Goodboy');
+  });
+
+  it('lets a returning user set setup aside before a workspace exists', () => {
     vi.useFakeTimers();
     render(<OnboardingWizard />);
-    click(/skip setup/i);
+    click(/set up later/i);
     vi.advanceTimersByTime(250);
-    expect(finishWizard).toHaveBeenCalledOnce();
+    expect(setupStore.pauseWizard).toHaveBeenCalledOnce();
+    expect(setupStore.finishWizard).not.toHaveBeenCalled();
+    expect(hookState.close).toHaveBeenCalledOnce();
   });
 
-  it('closes on Escape even before a workspace exists', () => {
+  it('pauses at the current step on Set up later', () => {
     vi.useFakeTimers();
     render(<OnboardingWizard />);
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    click(/get started/i);
+    expect(setupStore.enterWizardStep).toHaveBeenLastCalledWith({ step: 'agents' });
+    click(/set up later/i);
     vi.advanceTimersByTime(250);
-    expect(finishWizard).toHaveBeenCalledOnce();
+    expect(setupStore.pauseWizard).toHaveBeenCalledOnce();
   });
 
-  it('keeps Continue disabled on the provider step until one is connected', () => {
+  it('keeps setup open on Escape at Welcome', () => {
+    vi.useFakeTimers();
+    render(<OnboardingWizard />);
+    pressEscape();
+    vi.advanceTimersByTime(250);
+    expect(screen.getByTestId('WelcomeStep')).toBeDefined();
+    expect(setupStore.finishWizard).not.toHaveBeenCalled();
+    expect(setupStore.pauseWizard).not.toHaveBeenCalled();
+    expect(hookState.close).not.toHaveBeenCalled();
+  });
+
+  it('goes back one step on Escape and never ends setup', () => {
+    vi.useFakeTimers();
+    setHook({ providersConnected: 1 });
+    render(<OnboardingWizard />);
+    click(/get started/i);
+    click(/^continue$/i);
+    expect(stepOf()).toBe('workspace');
+    pressEscape();
+    expect(stepOf()).toBe('agents');
+    pressEscape();
+    expect(stepOf()).toBe('welcome');
+    pressEscape();
+    vi.advanceTimersByTime(250);
+    expect(stepOf()).toBe('welcome');
+    expect(setupStore.finishWizard).not.toHaveBeenCalled();
+    expect(hookState.close).not.toHaveBeenCalled();
+  });
+
+  it('closes the innermost open thing on Escape before going back', () => {
+    render(<OnboardingWizard />);
+    click(/get started/i);
+    click(/open panel/i);
+    expect(screen.getByTestId('inner-panel')).toBeDefined();
+    pressEscape();
+    expect(screen.queryByTestId('inner-panel')).toBeNull();
+    expect(stepOf()).toBe('agents');
+    pressEscape();
+    expect(stepOf()).toBe('welcome');
+  });
+
+  it('writes each step on entering it, never Welcome', () => {
+    setHook({ providersConnected: 1 });
+    render(<OnboardingWizard />);
+    expect(setupStore.enterWizardStep).not.toHaveBeenCalled();
+    click(/get started/i);
+    click(/^continue$/i);
+    expect(setupStore.enterWizardStep.mock.calls.map(([params]) => params)).toEqual([
+      { step: 'agents' },
+      { step: 'workspace' },
+    ]);
+  });
+
+  it('keeps every step in one 600 px column', async () => {
+    setHook(readyState({ kind: 'repo' }));
+    render(<OnboardingWizard />);
+    const classes = [screen.getByTestId('wizard-column').className];
+    click(/get started/i);
+    classes.push(screen.getByTestId('wizard-column').className);
+    click(/^continue$/i);
+    classes.push(screen.getByTestId('wizard-column').className);
+    click(/^continue$/i);
+    await waitFor(() => expect(stepOf()).toBe('tools'));
+    classes.push(screen.getByTestId('wizard-column').className);
+    click(/skip for now/i);
+    expect(stepOf()).toBe('first-session');
+    classes.push(screen.getByTestId('wizard-column').className);
+    expect(new Set(classes).size).toBe(1);
+    expect(classes[0]).toContain('max-w-[600px]');
+  });
+
+  it('keeps Continue disabled on the agents step until one is connected', () => {
     render(<OnboardingWizard />);
     click(/get started/i);
     const next = screen.getByRole('button', { name: /^continue$/i }) as HTMLButtonElement;
@@ -319,8 +430,36 @@ describe('OnboardingWizard', () => {
     expect(screen.getByText(/connect one provider to continue/i)).toBeDefined();
   });
 
-  describe('project step', () => {
-    const reachProject = () => {
+  describe('resume', () => {
+    it('reopens at the saved step with the steps before it behind Back', () => {
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'setup', start: 'tools' });
+      render(<OnboardingWizard />);
+      expect(stepOf()).toBe('tools');
+      expect(screen.getByTestId('stepper').textContent).toBe('tools');
+      expect(setupStore.enterWizardStep).toHaveBeenCalledWith({ step: 'tools' });
+      click(/^back$/i);
+      expect(stepOf()).toBe('workspace');
+    });
+
+    it('stays on the first resumed step on Escape', () => {
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'setup', start: 'agents' });
+      render(<OnboardingWizard />);
+      pressEscape();
+      expect(stepOf()).toBe('agents');
+      expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
+    });
+
+    it('marks Tools done once the user moves past it', () => {
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'setup', start: 'tools' });
+      render(<OnboardingWizard />);
+      click(/skip for now/i);
+      expect(setupStore.markStepComplete).toHaveBeenCalledWith('tools');
+      expect(stepOf()).toBe('first-session');
+    });
+  });
+
+  describe('workspace step', () => {
+    const reachWorkspace = () => {
       setHook({ providersConnected: 1 });
       render(<OnboardingWizard />);
       click(/get started/i);
@@ -328,11 +467,11 @@ describe('OnboardingWizard', () => {
       expect(screen.getByTestId('ProjectStep')).toBeDefined();
     };
 
-    it('creates the workspace from the parent folder and links the picked repository', async () => {
-      reachProject();
+    it('names the workspace after the picked folder, never its parent', async () => {
+      reachWorkspace();
       click(/pick folder/i);
       await waitFor(() => expect(storeActions.addProject).toHaveBeenCalled());
-      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Northwind' });
+      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Ledger core' });
       expect(storeActions.addProject).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
         rootPath: '/Users/me/code/northwind/ledger-core',
@@ -348,7 +487,7 @@ describe('OnboardingWizard', () => {
         resolvedPath: '/Users/me/notes/research-notes',
         error: null,
       });
-      reachProject();
+      reachWorkspace();
       click(/pick folder/i);
       await waitFor(() => expect(storeActions.addProject).toHaveBeenCalled());
       expect(storeActions.addProject).toHaveBeenCalledWith({
@@ -369,7 +508,7 @@ describe('OnboardingWizard', () => {
         { name: 'ledger-core', path: '/Users/me/code/northwind/ledger-core' },
         { name: 'payments-api', path: '/Users/me/code/northwind/payments-api' },
       ]);
-      reachProject();
+      reachWorkspace();
       click(/pick folder/i);
       await waitFor(() => expect(screen.getByTestId('detection-count').textContent).toBe('2'));
       expect(storeActions.addProject).not.toHaveBeenCalled();
@@ -386,7 +525,18 @@ describe('OnboardingWizard', () => {
       });
     });
 
-    it('renames the workspace on Continue only when the name changed, then goes to Code host', async () => {
+    it('keeps the step and shows the cause when a pick fails, then retries', async () => {
+      repoLib.validateGitRepo.mockRejectedValueOnce(new Error('Permission denied'));
+      reachWorkspace();
+      click(/pick folder/i);
+      await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Permission'));
+      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
+      click(/pick folder/i);
+      await waitFor(() => expect(storeActions.addProject).toHaveBeenCalledOnce());
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('renames the workspace on Continue only when the name changed, then goes to Tools', async () => {
       setHook(readyState({ kind: 'repo' }));
       render(<OnboardingWizard />);
       click(/get started/i);
@@ -396,6 +546,7 @@ describe('OnboardingWizard', () => {
       });
       click(/^continue$/i);
       await waitFor(() => expect(screen.getByTestId('CodeHostStep')).toBeDefined());
+      expect(stepOf()).toBe('tools');
       expect(storeActions.renameWorkspace).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
         name: 'Northwind Labs',
@@ -403,31 +554,34 @@ describe('OnboardingWizard', () => {
     });
   });
 
-  describe('code host and tasks', () => {
-    const reachCodeHost = async ({ kind }: { readonly kind: Project['kind'] }) => {
+  describe('tools', () => {
+    const reachTools = async ({ kind }: { readonly kind: Project['kind'] }) => {
       setHook(readyState({ kind }));
       render(<OnboardingWizard />);
       click(/get started/i);
       click(/^continue$/i);
       click(/^continue$/i);
-      await waitFor(() => expect(screen.queryByTestId('ProjectStep')).toBeNull());
+      await waitFor(() => expect(stepOf()).toBe('tools'));
     };
 
-    it('skips Code host by itself when the project is not a git folder', async () => {
-      await reachCodeHost({ kind: 'folder' });
+    it('holds the code host and the task sources on one step', async () => {
+      await reachTools({ kind: 'repo' });
+      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
       expect(screen.getByTestId('TasksStep')).toBeDefined();
-      expect(screen.getByTestId('stepper').textContent).not.toContain('code-host');
       expect(screen.queryByRole('button', { name: /tasks back to code host/i })).toBeNull();
     });
 
-    it('lets Code host and Tasks be skipped, then lands on the first session', async () => {
-      await reachCodeHost({ kind: 'repo' });
-      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
+    it('keeps the Tools step for a plain folder, with only the task sources', async () => {
+      await reachTools({ kind: 'folder' });
+      expect(screen.queryByTestId('CodeHostStep')).toBeNull();
+      expect(screen.getByTestId('TasksStep')).toBeDefined();
+    });
+
+    it('lets Tools be skipped, then lands on the first session', async () => {
+      await reachTools({ kind: 'repo' });
       expect(
         (screen.getByRole('button', { name: /^continue$/i }) as HTMLButtonElement).disabled,
       ).toBe(true);
-      click(/skip for now/i);
-      expect(screen.getByTestId('TasksStep')).toBeDefined();
       click(/skip for now/i);
       expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
       expect(screen.getByTestId('issue-source').textContent).toBe('no');
@@ -435,17 +589,10 @@ describe('OnboardingWizard', () => {
 
     it('continues without Skip once a code host is connected', async () => {
       tools.connected.github = true;
-      await reachCodeHost({ kind: 'repo' });
+      await reachTools({ kind: 'repo' });
       expect(screen.queryByRole('button', { name: /skip for now/i })).toBeNull();
       click(/^continue$/i);
-      expect(screen.getByTestId('TasksStep')).toBeDefined();
-    });
-
-    it('goes back to Code host from the tasks step', async () => {
-      await reachCodeHost({ kind: 'repo' });
-      click(/skip for now/i);
-      click(/tasks back to code host/i);
-      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
+      expect(stepOf()).toBe('first-session');
     });
   });
 
@@ -456,21 +603,23 @@ describe('OnboardingWizard', () => {
       click(/get started/i);
       click(/^continue$/i);
       click(/^continue$/i);
-      await waitFor(() => expect(screen.getByTestId('CodeHostStep')).toBeDefined());
-      click(/skip for now/i);
+      await waitFor(() => expect(stepOf()).toBe('tools'));
       click(/skip for now/i);
       expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
     };
 
-    it('starts Scout with the prompt in a real session, then closes the wizard', async () => {
+    it('starts Scout with the prompt in a real session, then finishes setup', async () => {
       await reachFirstSession();
       click(/start scout/i);
-      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
+      await waitFor(() => expect(setupStore.finishWizard).toHaveBeenCalledOnce(), {
+        timeout: 1000,
+      });
       expect(firstSession.startFirstScout).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
         projectId: 'project-1',
         prompt: 'Explain how ledger-core is organized',
       });
+      expect(hookState.close).toHaveBeenCalledOnce();
     });
 
     it('hands a workflow start to the new session after the wizard closes', async () => {
@@ -479,7 +628,7 @@ describe('OnboardingWizard', () => {
       await waitFor(() => expect(firstSession.handOffFirstSession).toHaveBeenCalled(), {
         timeout: 1000,
       });
-      expect(finishWizard).toHaveBeenCalledOnce();
+      expect(setupStore.finishWizard).toHaveBeenCalledOnce();
       expect(firstSession.handOffFirstSession).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
         projectId: 'project-1',
@@ -487,10 +636,10 @@ describe('OnboardingWizard', () => {
       });
     });
 
-    it('takes the empty task source back to Code host', async () => {
+    it('takes the empty task source back to Tools', async () => {
       await reachFirstSession();
       click(/^back to code host$/i);
-      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
+      expect(stepOf()).toBe('tools');
     });
 
     it('keeps Back right-aligned beside the step action', async () => {
@@ -504,40 +653,43 @@ describe('OnboardingWizard', () => {
       await reachFirstSession();
       expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
       click(/skip, open the board/i);
-      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
-    });
-  });
-
-  describe('action row', () => {
-    it('ends each step with Back and the primary inline, never in a footer bar', async () => {
-      tools.connected.linear = true;
-      setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tasks' });
-      const { container } = render(<OnboardingWizard />);
-      const done = screen.getByRole('button', { name: /^done$/i });
-      expect(done.closest('[data-slot="form-actions"]')).not.toBeNull();
-      expect(container.querySelector('footer')).toBeNull();
-      click(/^done$/i);
-      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
+      await waitFor(() => expect(setupStore.finishWizard).toHaveBeenCalledOnce(), {
+        timeout: 1000,
+      });
     });
   });
 
   describe('single step', () => {
-    it('opens one step with no stepper and closes with Done', async () => {
+    it('ends each step with Back and the primary inline, never in a footer bar', async () => {
       tools.connected.linear = true;
-      setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tasks' });
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tools' });
+      const { container } = render(<OnboardingWizard />);
+      const done = screen.getByRole('button', { name: /^done$/i });
+      expect(done.closest('[data-slot="form-actions"]')).not.toBeNull();
+      expect(container.querySelector('footer')).toBeNull();
+    });
+
+    it('opens one step with no stepper, closes with Done and writes no setup state', async () => {
+      tools.connected.linear = true;
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tools' });
       render(<OnboardingWizard />);
       expect(screen.getByTestId('TasksStep')).toBeDefined();
       expect(screen.queryByTestId('stepper')).toBeNull();
+      expect(setupStore.enterWizardStep).not.toHaveBeenCalled();
       click(/^done$/i);
-      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
+      await waitFor(() => expect(hookState.close).toHaveBeenCalledOnce(), { timeout: 1000 });
+      expect(setupStore.finishWizard).not.toHaveBeenCalled();
+      expect(setupStore.markStepComplete).not.toHaveBeenCalled();
     });
-  });
-});
 
-describe('workspaceNameFor', () => {
-  it('names the workspace after the parent folder', () => {
-    expect(workspaceNameFor({ rootPath: '/Users/me/code/northwind/ledger-core' })).toBe(
-      'Northwind',
-    );
+    it('closes a single step on Escape', () => {
+      vi.useFakeTimers();
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tools' });
+      render(<OnboardingWizard />);
+      pressEscape();
+      vi.advanceTimersByTime(250);
+      expect(hookState.close).toHaveBeenCalledOnce();
+      expect(setupStore.pauseWizard).not.toHaveBeenCalled();
+    });
   });
 });

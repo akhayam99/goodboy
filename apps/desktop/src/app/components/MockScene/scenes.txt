@@ -523,6 +523,8 @@ notifications-rail-folded
 onboarding
 onboarding-brand-tile-dark
 onboarding-brand-tile-light
+onboarding-setup-menu-dark
+onboarding-setup-menu-light
 open-question-prose
 open-questions
 overview-branch-tasks

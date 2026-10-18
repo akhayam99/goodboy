@@ -544,6 +544,7 @@ export type {
 } from './bootstrap';
 export type { LinkedRemote, PublishOutcome, PublishStep } from './publish';
 export type { RemoteProbe } from './remote-probe';
+export type { ChildRepo, GitRepoCheck, GitRepoErrorKind } from './repo-check';
 export type {
   PrReviewDraft,
   ReviewDraftOrigin,

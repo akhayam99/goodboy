@@ -8,7 +8,7 @@ import type {
   ResolveCommitStyle,
   WorkspaceId,
 } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
 import {
   REPLY_SETTING_COLUMNS,
   overridesFromRow,
@@ -91,13 +91,17 @@ type InsertProjectParams = {
   readonly project: Project;
 };
 
-export const insertProject = async ({ db, project }: InsertProjectParams): Promise<void> => {
+type ProjectStatementParams = {
+  readonly project: Project;
+};
+
+export const insertProjectStatement = ({ project }: ProjectStatementParams): PlainStatement => {
   const createdAt = Date.parse(project.createdAt);
   const updatedAt = Date.parse(project.updatedAt);
   const lastAccessedAt =
     project.lastAccessedAt === undefined ? updatedAt : Date.parse(project.lastAccessedAt);
-  await db.execute(
-    `INSERT INTO projects (
+  return {
+    sql: `INSERT INTO projects (
        id, workspace_id, name, root_path, default_provider_id,
        default_branch_prefix, created_at, updated_at, disconnected_at,
        default_verbosity, last_accessed_at, provider_bindings, parallel_agents, kind,
@@ -105,7 +109,7 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
        description, starred_at, root_commit, remote_url, identity_checked_at,
        ${REPLY_SETTING_COLUMNS}, after_merge, default_branch_template
      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
+    params: [
       project.id,
       project.workspaceId,
       project.name,
@@ -138,7 +142,12 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
       project.overrides.afterMerge,
       project.overrides.defaultBranchTemplate,
     ],
-  );
+  };
+};
+
+export const insertProject = async ({ db, project }: InsertProjectParams): Promise<void> => {
+  const { sql, params } = insertProjectStatement({ project });
+  await db.execute(sql, params);
 };
 
 type UpdateProjectIdentityParams = {

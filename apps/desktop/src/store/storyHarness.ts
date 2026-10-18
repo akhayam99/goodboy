@@ -596,6 +596,8 @@ export const storyDbStubs = () => ({
   insertProject: vi.fn(async () => undefined),
   reconnectProject: vi.fn(async () => undefined),
   describeProjectAdoption: vi.fn(async () => null),
+  countRunningAdoptionAgents: vi.fn(async () => 0),
+  insertWorkspaceWithProjects: vi.fn(async () => undefined),
   moveProjectToWorkspace: vi.fn(async () => ({
     movedSessionCount: 0,
     ambiguousSessionCount: 0,

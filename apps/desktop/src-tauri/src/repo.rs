@@ -14,6 +14,16 @@ const FALLBACK_AUTHOR_NAME: &str = "Goodboy";
 const FALLBACK_AUTHOR_EMAIL: &str = "goodboy@localhost";
 const DEFAULT_BRANCH: &str = "main";
 
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum GitRepoErrorKind {
+    NotFound,
+    PermissionDenied,
+    NotADirectory,
+    NotARepository,
+    GitFailed,
+}
+
 #[derive(Debug, Serialize)]
 pub struct GitRepoCheck {
     #[serde(rename = "isRepo")]
@@ -22,7 +32,28 @@ pub struct GitRepoCheck {
     pub root_path: Option<String>,
     #[serde(rename = "resolvedPath")]
     pub resolved_path: Option<String>,
+    #[serde(rename = "defaultBranch")]
+    pub default_branch: Option<String>,
     pub error: Option<String>,
+    #[serde(rename = "errorKind")]
+    pub error_kind: Option<GitRepoErrorKind>,
+}
+
+impl GitRepoCheck {
+    fn failed(
+        resolved_path: Option<String>,
+        kind: GitRepoErrorKind,
+        message: String,
+    ) -> GitRepoCheck {
+        GitRepoCheck {
+            is_repo: false,
+            root_path: None,
+            resolved_path,
+            default_branch: None,
+            error: Some(message),
+            error_kind: Some(kind),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -116,25 +147,71 @@ pub async fn validate_git_repo(path: String) -> GitRepoCheck {
     let fallback_path = path.clone();
     tauri::async_runtime::spawn_blocking(move || validate_git_repo_blocking(path))
         .await
-        .unwrap_or_else(|error| GitRepoCheck {
-            is_repo: false,
-            root_path: None,
-            resolved_path: None,
-            error: Some(format!(
-                "git repository check failed for {fallback_path}: {error}"
-            )),
+        .unwrap_or_else(|error| {
+            GitRepoCheck::failed(
+                None,
+                GitRepoErrorKind::GitFailed,
+                format!("git repository check failed for {fallback_path}: {error}"),
+            )
         })
 }
 
+fn folder_problem(candidate: &Path, path: &str) -> Option<(GitRepoErrorKind, String)> {
+    let metadata = match std::fs::metadata(candidate) {
+        Ok(found) => found,
+        Err(error) => return Some(access_problem(&error, path)),
+    };
+    if !metadata.is_dir() {
+        return Some((
+            GitRepoErrorKind::NotADirectory,
+            format!("not a folder: {path}"),
+        ));
+    }
+    match std::fs::read_dir(candidate) {
+        Ok(_) => None,
+        Err(error) => Some(access_problem(&error, path)),
+    }
+}
+
+fn access_problem(error: &std::io::Error, path: &str) -> (GitRepoErrorKind, String) {
+    match error.kind() {
+        std::io::ErrorKind::PermissionDenied => (
+            GitRepoErrorKind::PermissionDenied,
+            format!("permission denied: {path}"),
+        ),
+        std::io::ErrorKind::NotFound => (
+            GitRepoErrorKind::NotFound,
+            format!("path does not exist: {path}"),
+        ),
+        std::io::ErrorKind::NotADirectory => (
+            GitRepoErrorKind::NotADirectory,
+            format!("not a folder: {path}"),
+        ),
+        _ => (GitRepoErrorKind::NotFound, format!("{path}: {error}")),
+    }
+}
+
+pub(crate) fn local_default_branch(root: &Path) -> Option<String> {
+    crate::worktree::resolve_origin_head(root)
+        .or_else(|| crate::worktree::current_branch_name(root))
+}
+
 fn validate_git_repo_blocking(path: String) -> GitRepoCheck {
-    let candidate = Path::new(&path);
-    if !candidate.is_dir() {
-        return GitRepoCheck {
-            is_repo: false,
-            root_path: None,
-            resolved_path: None,
-            error: Some(format!("path does not exist: {path}")),
-        };
+    let check = check_folder(&path);
+    let default_branch = check
+        .root_path
+        .as_deref()
+        .and_then(|root| local_default_branch(Path::new(root)));
+    GitRepoCheck {
+        default_branch,
+        ..check
+    }
+}
+
+fn check_folder(path: &str) -> GitRepoCheck {
+    let candidate = Path::new(path);
+    if let Some((kind, message)) = folder_problem(candidate, path) {
+        return GitRepoCheck::failed(None, kind, message);
     }
     let resolved_path = std::fs::canonicalize(candidate)
         .map(|found| found.to_string_lossy().into_owned())
@@ -146,21 +223,19 @@ fn validate_git_repo_blocking(path: String) -> GitRepoCheck {
     {
         Ok(out) => out,
         Err(err) => {
-            return GitRepoCheck {
-                is_repo: false,
-                root_path: None,
+            return GitRepoCheck::failed(
                 resolved_path,
-                error: Some(err.to_string()),
-            };
+                GitRepoErrorKind::GitFailed,
+                err.to_string(),
+            );
         }
     };
     if !output.status.success() {
-        return GitRepoCheck {
-            is_repo: false,
-            root_path: None,
+        return GitRepoCheck::failed(
             resolved_path,
-            error: Some("not a git repository".to_string()),
-        };
+            GitRepoErrorKind::NotARepository,
+            "not a git repository".to_string(),
+        );
     }
     let root = String::from_utf8(output.stdout)
         .unwrap_or_default()
@@ -168,14 +243,16 @@ fn validate_git_repo_blocking(path: String) -> GitRepoCheck {
         .to_string();
     GitRepoCheck {
         is_repo: true,
+        default_branch: None,
         root_path: Some(root),
         resolved_path,
         error: None,
+        error_kind: None,
     }
 }
 
 pub(crate) fn is_inside_repo(path: &Path) -> bool {
-    validate_git_repo_blocking(path.to_string_lossy().into_owned())
+    check_folder(&path.to_string_lossy())
         .root_path
         .is_some_and(|found| !found.is_empty())
 }
@@ -184,6 +261,8 @@ pub(crate) fn is_inside_repo(path: &Path) -> bool {
 pub struct ChildRepo {
     pub name: String,
     pub path: String,
+    #[serde(rename = "defaultBranch")]
+    pub default_branch: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -398,6 +477,7 @@ fn scan_child_repos_blocking(path: String) -> Vec<ChildRepo> {
         }
         repos.push(ChildRepo {
             name,
+            default_branch: local_default_branch(&resolved),
             path: resolved.to_string_lossy().into_owned(),
         });
     }
@@ -530,7 +610,7 @@ fn blank_status(state: &'static str) -> WorkspaceGitStatus {
 }
 
 pub(crate) fn is_repo_root(root: &Path) -> bool {
-    let check = validate_git_repo_blocking(root.to_string_lossy().into_owned());
+    let check = check_folder(&root.to_string_lossy());
     let Some(toplevel) = check.root_path.filter(|found| !found.is_empty()) else {
         return false;
     };
@@ -620,7 +700,7 @@ pub(crate) fn init_repo_at(
 }
 
 pub(crate) fn repo_state(root: &Path) -> Result<RepoState, RepoInitError> {
-    let check = validate_git_repo_blocking(root.to_string_lossy().into_owned());
+    let check = check_folder(&root.to_string_lossy());
     let Some(toplevel) = check.root_path.filter(|found| !found.is_empty()) else {
         if root.join(".git").exists() {
             return Err(RepoInitError::AlreadyRepo(
@@ -1383,5 +1463,145 @@ mod tests {
             super::MovedProjectVerdict::SameNameUnconfirmed
         );
         std::fs::remove_dir_all(parent).unwrap();
+    }
+    fn committed_repo(name: &str, branch: &str) -> std::path::PathBuf {
+        let root = test_root(name);
+        git_run(&root, &["init", "-b", branch]);
+        git_run(&root, &["config", "user.email", "test@example.com"]);
+        git_run(&root, &["config", "user.name", "test"]);
+        git_run(&root, &["config", "commit.gpgsign", "false"]);
+        std::fs::write(root.join("ledger.txt"), "ledger").unwrap();
+        git_run(&root, &["add", "--", "ledger.txt"]);
+        git_run(&root, &["commit", "-m", "ledger"]);
+        root
+    }
+
+    fn check_of(path: &std::path::Path) -> super::GitRepoCheck {
+        super::validate_git_repo_blocking(path.to_string_lossy().into_owned())
+    }
+
+    #[test]
+    fn names_the_reason_a_folder_cannot_be_read() {
+        let root = test_root("check-reasons");
+        let file = root.join("notes.md");
+        std::fs::write(&file, "hello").unwrap();
+
+        let missing = check_of(&root.join("gone"));
+        let not_a_folder = check_of(&file);
+        let plain = check_of(&root);
+
+        assert_eq!(missing.error_kind, Some(super::GitRepoErrorKind::NotFound));
+        assert_eq!(
+            not_a_folder.error_kind,
+            Some(super::GitRepoErrorKind::NotADirectory)
+        );
+        assert_eq!(
+            plain.error_kind,
+            Some(super::GitRepoErrorKind::NotARepository)
+        );
+        assert!(plain.resolved_path.is_some());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn reports_a_folder_it_may_not_open_as_permission_denied() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = test_root("check-denied");
+        let locked = root.join("locked");
+        std::fs::create_dir_all(&locked).unwrap();
+        std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o000)).unwrap();
+        let is_enforced = std::fs::read_dir(&locked).is_err();
+
+        let denied = check_of(&locked);
+
+        std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+        if is_enforced {
+            assert_eq!(
+                denied.error_kind,
+                Some(super::GitRepoErrorKind::PermissionDenied)
+            );
+            assert!(!denied.is_repo);
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn reads_the_default_branch_from_origin_head_first() {
+        let root = committed_repo("branch-origin-head", "feature-rounding");
+        git_run(
+            &root,
+            &[
+                "remote",
+                "add",
+                "origin",
+                "https://example.com/acme/ledger-core.git",
+            ],
+        );
+        git_run(&root, &["update-ref", "refs/remotes/origin/trunk", "HEAD"]);
+        git_run(
+            &root,
+            &[
+                "symbolic-ref",
+                "refs/remotes/origin/HEAD",
+                "refs/remotes/origin/trunk",
+            ],
+        );
+
+        let check = check_of(&root);
+
+        assert!(check.is_repo);
+        assert_eq!(check.default_branch.as_deref(), Some("trunk"));
+        assert_eq!(check.error_kind, None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn falls_back_to_the_current_branch_without_origin_head() {
+        let root = committed_repo("branch-head", "develop");
+        let unborn = test_root("branch-unborn");
+        git_run(&unborn, &["init", "-b", "main"]);
+
+        assert_eq!(check_of(&root).default_branch.as_deref(), Some("develop"));
+        assert_eq!(check_of(&unborn).default_branch.as_deref(), Some("main"));
+        std::fs::remove_dir_all(root).unwrap();
+        std::fs::remove_dir_all(unborn).unwrap();
+    }
+
+    #[test]
+    fn reports_no_default_branch_on_a_detached_head() {
+        let root = committed_repo("branch-detached", "main");
+        git_run(&root, &["checkout", "--detach"]);
+
+        let check = check_of(&root);
+
+        assert!(check.is_repo);
+        assert_eq!(check.default_branch, None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn scan_reports_each_child_default_branch() {
+        let root = test_root("scan-branches");
+        let ledger = committed_repo("scan-branches-ledger", "trunk");
+        std::fs::rename(&ledger, root.join("ledger-core")).unwrap();
+        let notify = root.join("notify-relay");
+        std::fs::create_dir_all(&notify).unwrap();
+        git_run(&notify, &["init", "-b", "main"]);
+
+        let found = super::scan_child_repos_blocking(root.to_string_lossy().into_owned());
+
+        let branches: Vec<(&str, Option<&str>)> = found
+            .iter()
+            .map(|repo| (repo.name.as_str(), repo.default_branch.as_deref()))
+            .collect();
+        assert_eq!(
+            branches,
+            vec![
+                ("ledger-core", Some("trunk")),
+                ("notify-relay", Some("main"))
+            ]
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

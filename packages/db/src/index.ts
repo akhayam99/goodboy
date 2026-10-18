@@ -55,6 +55,7 @@ export {
   upsertWorkspaceProfile,
 } from './queries/workspace';
 export { mergeWorkspaces } from './queries/workspace-merge';
+export { insertWorkspaceWithProjects } from './queries/workspace-create';
 export {
   insertProject,
   getProjectById,
@@ -92,6 +93,7 @@ export {
 } from './queries/deleted-branch';
 export { listGoodboyBranches, type GoodboyBranch } from './queries/goodboy-branch';
 export {
+  countRunningAdoptionAgents,
   describeProjectAdoption,
   moveProjectToWorkspace,
   type ProjectAdoptionInfo,

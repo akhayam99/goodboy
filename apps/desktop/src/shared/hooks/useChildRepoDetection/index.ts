@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { scanChildRepos, validateGitRepo, type ChildRepo } from '../../lib/repo';
+import type { ChildRepo } from '@goodboy/types';
+import { scanChildRepos, validateGitRepo } from '../../lib/repo';
 
 export type DetectedChildRepos = {
   readonly parentPath: string;

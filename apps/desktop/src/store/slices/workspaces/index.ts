@@ -1,6 +1,7 @@
 import { addWorkspace } from './addWorkspace';
 import { checkReconnectCandidate } from './checkReconnectCandidate';
 import { createWorkspace } from './createWorkspace';
+import { createWorkspaceWithFolders } from './createWorkspaceWithFolders';
 import { disconnectWorkspace } from './disconnectWorkspace';
 import { loadDisconnectedWorkspaces } from './loadDisconnectedWorkspaces';
 import { mergeWorkspaces } from './mergeWorkspaces';
@@ -18,6 +19,7 @@ export const createWorkspacesSlice = ({ set, get }: SliceDeps) => {
     addWorkspace: addWorkspace(set, get),
     checkReconnectCandidate: checkReconnectCandidate(get),
     createWorkspace: createWorkspace(set, get),
+    createWorkspaceWithFolders: createWorkspaceWithFolders(set, get),
     disconnectWorkspace: disconnectWorkspace(set, get),
     loadDisconnectedWorkspaces: loadDisconnectedWorkspaces(set),
     reconnectMovedProject: reconnectMovedProject(set, get),

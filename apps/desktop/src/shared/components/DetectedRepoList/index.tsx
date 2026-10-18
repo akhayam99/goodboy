@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FolderGit2 } from 'lucide-react';
 import { Button, Checkbox } from '@goodboy/ui';
-import type { ChildRepo } from '../../lib/repo';
+import type { ChildRepo } from '@goodboy/types';
 import { ICON_SIZE } from '../conceptIcons';
 
 export type KnownRepo = {

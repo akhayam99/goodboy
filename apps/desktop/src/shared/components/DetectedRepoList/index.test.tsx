@@ -5,8 +5,8 @@ import { DetectedRepoList } from './index';
 afterEach(cleanup);
 
 const REPOS = [
-  { name: 'api', path: '/repos/parent/api' },
-  { name: 'web', path: '/repos/parent/web' },
+  { name: 'api', path: '/repos/parent/api', defaultBranch: 'main' },
+  { name: 'web', path: '/repos/parent/web', defaultBranch: 'main' },
 ];
 
 describe('DetectedRepoList', () => {

@@ -181,9 +181,12 @@ import { ScribeProposalTranscriptScene } from '../scenes/ScribeProposalTranscrip
 import { FixRunScene } from '../scenes/FixRunScene';
 import { CrashReportScene } from '../scenes/audit/ReportScenes';
 import { BrandTileScene } from '../scenes/onboarding/BrandTileScene';
+import { SetupMenuScene } from '../scenes/onboarding/SetupMenuScene';
 
 const OnboardingBrandTileDarkScene = () => createElement(BrandTileScene, { theme: 'dark' });
 const OnboardingBrandTileLightScene = () => createElement(BrandTileScene, { theme: 'light' });
+const OnboardingSetupMenuDarkScene = () => createElement(SetupMenuScene, { theme: 'dark' });
+const OnboardingSetupMenuLightScene = () => createElement(SetupMenuScene, { theme: 'light' });
 
 export const BASE_SCENES = {
   workspace: WorkspaceScene,
@@ -375,4 +378,6 @@ export const BASE_SCENES = {
   'crash-report': CrashReportScene,
   'onboarding-brand-tile-dark': OnboardingBrandTileDarkScene,
   'onboarding-brand-tile-light': OnboardingBrandTileLightScene,
+  'onboarding-setup-menu-dark': OnboardingSetupMenuDarkScene,
+  'onboarding-setup-menu-light': OnboardingSetupMenuLightScene,
 };

@@ -1,9 +1,7 @@
 import { ExternalLink, Heart, Smartphone } from 'lucide-react';
-import { Button, Divider, Eyebrow, XIcon } from '@goodboy/ui';
-import { finish } from '../../../features/onboarding/onboarding-store';
+import { Divider, XIcon } from '@goodboy/ui';
 import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
-import { ChecklistBody } from '../../../features/onboarding/SetupChecklist/ChecklistBody';
-import { CompletedBody } from '../../../features/onboarding/SetupChecklist/CompletedBody';
+import { SetupSection } from '../../../features/onboarding/SetupChecklist/SetupSection';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { NAMES } from '../../../shared/names';
@@ -14,8 +12,10 @@ import { UpdateNotice } from './UpdateNotice';
 type Props = {
   readonly version: string | null;
   readonly progress: OnboardingProgress;
+  readonly isMainWindow: boolean;
   readonly hasUpdate: boolean;
   readonly hasDraft: boolean;
+  readonly onLeave: () => void;
   readonly onReport: () => void;
   readonly onOpenGuide: () => void;
   readonly onPairDevice: () => void;
@@ -28,8 +28,10 @@ type Props = {
 export const GoodboyMenu = ({
   version,
   progress,
+  isMainWindow,
   hasUpdate,
   hasDraft,
+  onLeave,
   onReport,
   onOpenGuide,
   onPairDevice,
@@ -38,7 +40,7 @@ export const GoodboyMenu = ({
   onSponsor,
   onFollowX,
 }: Props) => {
-  const showsSetup = !progress.finished && progress.hasProjects;
+  const showsSetup = !progress.isFinished && progress.hasProjects;
 
   return (
     <>
@@ -47,6 +49,9 @@ export const GoodboyMenu = ({
       </header>
       <Divider />
       <div className="flex flex-col gap-2 py-2">
+        {showsSetup ? (
+          <SetupSection progress={progress} isMainWindow={isMainWindow} onLeave={onLeave} />
+        ) : null}
         <ul className="flex flex-col">
           <MenuRow
             icon={<CONCEPT_ICONS.reportIssue size={ICON_SIZE.row} aria-hidden />}
@@ -64,23 +69,6 @@ export const GoodboyMenu = ({
           <div className="px-2">
             <UpdateNotice />
           </div>
-        ) : null}
-        {showsSetup && progress.isDone ? (
-          <div className="flex flex-col gap-2 px-3">
-            <CompletedBody />
-          </div>
-        ) : null}
-        {showsSetup && !progress.isDone ? (
-          <section aria-label="Setup" className="flex flex-col gap-2 px-2">
-            <Eyebrow
-              label={`Setup · ${progress.completedCount} of ${progress.totalCount}`}
-              className="px-2"
-            />
-            <ChecklistBody progress={progress} />
-            <Button variant="ghost" size="sm" onClick={() => finish()} className="self-end">
-              Skip setup
-            </Button>
-          </section>
         ) : null}
         <ul className="flex flex-col">
           <MenuRow

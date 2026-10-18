@@ -83,12 +83,12 @@ export const wizardActions = ({
   switch (step) {
     case 'welcome':
       return actions({ primary: cta({ label: 'Get started', action: 'next' }) });
-    case 'providers':
+    case 'agents':
       return actions({
         primary: cta({ label: 'Continue', action: 'next', disabled: providersConnected === 0 }),
         hint: providersConnected === 0 ? PROVIDER_GATE_HINT : null,
       });
-    case 'project':
+    case 'workspace':
       return actions({
         primary: cta({
           label: 'Continue',
@@ -97,10 +97,12 @@ export const wizardActions = ({
             busy || !hasWorkspace || projectCount === 0 || workspaceName.trim().length === 0,
         }),
       });
-    case 'code-host':
-      return optionalStep({ isConnected: codeHostConnected, isLastStep, busy });
-    case 'tasks':
-      return optionalStep({ isConnected: taskSourceConnected, isLastStep, busy });
+    case 'tools':
+      return optionalStep({
+        isConnected: codeHostConnected || taskSourceConnected,
+        isLastStep,
+        busy,
+      });
     case 'first-session':
       return actions({
         primary: null,

@@ -7,7 +7,7 @@ import {
   type WorkspaceId,
   type WorkspaceProfile,
 } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
 import {
   REPLY_SETTING_COLUMNS,
   overridesFromRow,
@@ -123,20 +123,26 @@ type InsertWorkspaceParams = {
   readonly workspace: Workspace;
 };
 
-export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams): Promise<void> => {
+type WorkspaceStatementParams = {
+  readonly workspace: Workspace;
+};
+
+export const insertWorkspaceStatement = ({
+  workspace,
+}: WorkspaceStatementParams): PlainStatement => {
   const createdAt = Date.parse(workspace.createdAt);
   const updatedAt = Date.parse(workspace.updatedAt);
   const lastAccessedAt =
     workspace.lastAccessedAt === undefined ? updatedAt : Date.parse(workspace.lastAccessedAt);
-  await db.execute(
-    `INSERT INTO workspaces (
+  return {
+    sql: `INSERT INTO workspaces (
        id, name, slug, default_provider_id,
        default_branch_prefix, default_verbosity, provider_bindings,
        task_models, role_models, parallel_agents, provider_pool, workflow_rules, created_at, updated_at,
        deleted_at, disconnected_at, last_accessed_at, attribution_footer,
        default_permission_mode, ${REPLY_SETTING_COLUMNS}, default_branch_template
      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
+    params: [
       workspace.id,
       workspace.name,
       workspace.slug,
@@ -167,7 +173,12 @@ export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams):
       ...replySettingValues({ overrides: workspace.overrides }),
       workspace.overrides.defaultBranchTemplate,
     ],
-  );
+  };
+};
+
+export const insertWorkspace = async ({ db, workspace }: InsertWorkspaceParams): Promise<void> => {
+  const { sql, params } = insertWorkspaceStatement({ workspace });
+  await db.execute(sql, params);
   if (workspace.profile === undefined) {
     return;
   }

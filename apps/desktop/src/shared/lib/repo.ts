@@ -6,19 +6,14 @@ import type {
   BootstrapClearReport,
   BootstrapPrepared,
   BootstrapRecoverState,
+  ChildRepo,
   FastForwardResult,
+  GitRepoCheck,
   LinkedRemote,
   PublishOutcome,
   RemoteProbe,
   WorkspaceGitStatus,
 } from '@goodboy/types';
-
-export type GitRepoCheck = {
-  readonly isRepo: boolean;
-  readonly rootPath: string | null;
-  readonly resolvedPath: string | null;
-  readonly error: string | null;
-};
 
 export const validateGitRepo = async (path: string): Promise<GitRepoCheck> => {
   return invokeCommand<GitRepoCheck>('validate_git_repo', { path });
@@ -157,11 +152,6 @@ export const repoBaseDivergence = async ({
     workspaceId,
     projectId,
   });
-};
-
-export type ChildRepo = {
-  readonly name: string;
-  readonly path: string;
 };
 
 type ScanChildReposParams = {
