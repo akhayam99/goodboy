@@ -8,6 +8,7 @@ import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { formatInteger } from '../../../../shared/utils/formatInteger';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
+import { appDataBytesOf } from '../../appDataBytesOf';
 
 const PRUNE_CONFIRM =
   'Deletes the streamed transcript of every archived session: tool calls, streaming output, subagent activity. Final messages stay. This cannot be undone.';
@@ -60,7 +61,7 @@ export const StorageHistory = () => {
     >
       <SectionHeader
         label={`Transcripts and app data · ${formatBytes({
-          bytes: stats.archivedTranscriptBytes + stats.databaseBytes + stats.snapshotBytes,
+          bytes: stats.archivedTranscriptBytes + appDataBytesOf({ stats }),
         })}`}
         icon={<HistoryIcon size={ICON_SIZE.row} aria-hidden />}
       />
@@ -98,6 +99,18 @@ export const StorageHistory = () => {
               </Button>
             )}
           />
+        </BandRow>
+        <BandRow>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-row text-foreground">Saved versions</span>
+            <span className="text-meta text-faint-foreground">
+              Files as they were before each agent turn in your folders. Kept until 30 days after
+              each session ends.
+            </span>
+          </span>
+          <span className="text-meta tabular-nums text-muted-foreground">
+            {formatBytes({ bytes: stats.savedVersionsBytes })}
+          </span>
         </BandRow>
         <BandRow>
           <span className="flex min-w-0 flex-1 flex-col">

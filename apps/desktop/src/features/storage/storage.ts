@@ -5,6 +5,7 @@ export type AppDataUsage = {
   readonly databaseBytes: number;
   readonly snapshotBytes: number;
   readonly snapshotCount: number;
+  readonly savedVersionsBytes: number;
 };
 
 export const appDataUsage = async (): Promise<AppDataUsage> =>

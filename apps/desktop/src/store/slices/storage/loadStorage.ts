@@ -32,6 +32,7 @@ const EMPTY_APP_DATA: AppDataUsage = {
   databaseBytes: 0,
   snapshotBytes: 0,
   snapshotCount: 0,
+  savedVersionsBytes: 0,
 };
 
 const toStorageRoot = (root: WorktreeRoot): StorageRoot => ({
@@ -113,6 +114,7 @@ export const loadStorage = (set: SetFn, get: GetFn) => {
           archivedTranscriptBytes: transcripts.payloadBytes,
           snapshotBytes: appData.snapshotBytes,
           snapshotCount: appData.snapshotCount,
+          savedVersionsBytes: appData.savedVersionsBytes,
           appDataFolder: appData.folder === '' ? null : appData.folder,
           diskFreeBytes: freeBytes,
           checkedAt: Date.now(),

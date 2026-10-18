@@ -7,6 +7,16 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
+pub(crate) mod folder_commands;
+mod folder_prune;
+mod folder_restore;
+mod folder_store;
+#[cfg(test)]
+mod folder_tests;
+mod folder_turns;
+
+pub(crate) use folder_prune::saved_versions_bytes_blocking;
+
 const FILE_VERSIONS_DIR: &str = "file-versions";
 const STAGING_DIR: &str = "staging";
 const MANIFEST_FILE: &str = "manifest.json";
@@ -46,6 +56,16 @@ pub enum FileVersionsError {
     StoredCopyMissing,
     #[error("manifest contains duplicate relative path")]
     DuplicateRelativePath,
+    #[error("folder not found")]
+    FolderNotFound,
+    #[error("this folder cannot keep saved versions")]
+    FolderRefused,
+    #[error("a turn is writing in this folder")]
+    FolderBusy,
+    #[error("that turn has no saved changes")]
+    TurnMissing,
+    #[error("the first copy was cancelled")]
+    Cancelled,
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("json error: {0}")]
@@ -73,6 +93,11 @@ impl FileVersionsError {
             FileVersionsError::UnexpectedStagingEntry => "unexpected_staging_entry",
             FileVersionsError::StoredCopyMissing => "stored_copy_missing",
             FileVersionsError::DuplicateRelativePath => "duplicate_relative_path",
+            FileVersionsError::FolderNotFound => "folder_not_found",
+            FileVersionsError::FolderRefused => "folder_refused",
+            FileVersionsError::FolderBusy => "folder_busy",
+            FileVersionsError::TurnMissing => "turn_missing",
+            FileVersionsError::Cancelled => "cancelled",
             FileVersionsError::Io(_) => "io",
             FileVersionsError::Json(_) => "json",
         }

@@ -362,6 +362,7 @@ export const seedSettingsBase = (): void => {
       archivedTranscriptBytes: 96_468_992,
       snapshotBytes: 213_909_504,
       snapshotCount: 2,
+      savedVersionsBytes: 18_874_368,
       appDataFolder: '/mock/goodboy',
       diskFreeBytes: 65_498_251_264,
       checkedAt: Date.parse(SETTINGS_NOW),

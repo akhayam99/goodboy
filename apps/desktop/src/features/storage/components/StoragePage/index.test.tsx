@@ -124,6 +124,9 @@ const freshPlan = orphanArtifact('fresh', {
 
 beforeEach(() => {
   Object.assign(state, {
+    projects: [],
+    folderHistorySizes: {},
+    loadFolderHistorySize: vi.fn(async () => undefined),
     storageArtifacts: [unusedReport, openedReport, freshPlan],
     storageDeletingArtifacts: {},
     openStorageArtifact: vi.fn(async () => undefined),
@@ -136,6 +139,7 @@ beforeEach(() => {
       archivedTranscriptBytes: 212 * 1024 ** 2,
       snapshotBytes: 204 * 1024 ** 2,
       snapshotCount: 2,
+      savedVersionsBytes: 18_874_368,
       appDataFolder: '/app-data',
       diskFreeBytes: 61 * 1024 ** 3,
       checkedAt: NOW,

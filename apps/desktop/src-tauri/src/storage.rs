@@ -275,6 +275,8 @@ pub struct AppDataUsage {
     pub snapshot_bytes: u64,
     #[serde(rename = "snapshotCount")]
     pub snapshot_count: u32,
+    #[serde(rename = "savedVersionsBytes")]
+    pub saved_versions_bytes: u64,
 }
 
 fn file_bytes(path: &Path) -> u64 {
@@ -306,6 +308,10 @@ pub(crate) fn app_data_usage_blocking(db_path: &Path) -> AppDataUsage {
             .map(|snapshot| file_bytes(Path::new(snapshot)))
             .sum(),
         snapshot_count: u32::try_from(snapshots.len()).unwrap_or(u32::MAX),
+        saved_versions_bytes: db_path
+            .parent()
+            .map(crate::file_versions::saved_versions_bytes_blocking)
+            .unwrap_or(0),
     }
 }
 
@@ -510,6 +516,24 @@ mod tests {
         assert!(usage.database_bytes >= 5100);
         assert!(usage.snapshot_bytes >= 3000);
         assert_eq!(usage.snapshot_count, 1);
+        assert_eq!(usage.saved_versions_bytes, 0);
+    }
+
+    #[test]
+    fn app_data_usage_counts_saved_versions_of_sessions_and_folders() {
+        let root = temp_root("saved-versions");
+        let db = root.join("goodboy.db");
+        std::fs::write(&db, vec![1u8; 10]).unwrap();
+        let session = root.join("file-versions").join("session-1");
+        std::fs::create_dir_all(&session).unwrap();
+        std::fs::write(session.join("copy-launch-memo.md"), vec![1u8; 4096]).unwrap();
+        let mirror = root.join("folder-versions").join("key").join("mirror");
+        std::fs::create_dir_all(&mirror).unwrap();
+        std::fs::write(mirror.join("faq.md"), vec![1u8; 4096]).unwrap();
+
+        let usage = app_data_usage_blocking(&db);
+
+        assert!(usage.saved_versions_bytes >= 8192);
     }
 
     #[cfg(unix)]
