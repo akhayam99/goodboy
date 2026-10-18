@@ -27,7 +27,7 @@ describe('searchChapters', () => {
   });
 
   it('finds a chapter by the screen it links to', () => {
-    expect(hits('open security findings')).toEqual(['storage']);
+    expect(hits('open branches')).toEqual(['commits', 'storage']);
   });
 
   it('finds the rail, the tools and the rebase prompt by their names', () => {

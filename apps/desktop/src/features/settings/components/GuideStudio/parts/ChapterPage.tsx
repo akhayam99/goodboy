@@ -44,7 +44,7 @@ export const ChapterPage = ({ chapter, previous, next, flash, onOpen, onGo }: Pr
         <Notice tone="info" placement="inline" title={chapter.note.term} body={chapter.note.desc} />
       )}
       {chapter.points.length > 0 ? (
-        <div data-guide-points="" className="flex flex-col gap-5">
+        <div data-guide-points="" className="flex flex-col gap-6">
           {chapter.points.map((point) => (
             <GuidePoint
               key={point.term}

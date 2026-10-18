@@ -146,7 +146,7 @@ describe('GuideStudio', () => {
   it('opens a chapter hit without a flash', () => {
     render(<GuideStudio onClose={vi.fn()} />);
 
-    fireEvent.change(search(), { target: { value: 'open security findings' } });
+    fireEvent.change(search(), { target: { value: 'storage and cleanup' } });
     fireEvent.click(
       within(screen.getByRole('list', { name: 'Guide results' })).getByRole('button', {
         name: 'Storage and cleanup, Chapter',
@@ -172,7 +172,9 @@ describe('GuideStudio', () => {
 
     fireEvent.click(chapterButton('Providers and limits'));
     fireEvent.click(
-      within(page('Providers and limits')).getByRole('button', { name: 'Open Providers & models' }),
+      within(page('Providers and limits')).getByRole('button', {
+        name: 'Open Providers and models',
+      }),
     );
 
     expect(useAppStore.getState().appStudio).toEqual({

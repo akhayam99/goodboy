@@ -144,7 +144,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'One page per provider',
-        desc: 'Providers & models, in Settings, has a page per provider with usage, the models in your picker, permissions and your account. Test connection makes a real account call.',
+        desc: `${NAMES.providersAndModels}, in Settings, has a page per provider with usage, the models in your picker, permissions and your account. Test connection makes a real account call.`,
       },
       {
         term: 'Usage in the top bar',
@@ -173,7 +173,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: 'Open Providers & models',
+        label: `Open ${NAMES.providersAndModels}`,
         target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'providers' } } },
       },
       {
@@ -525,10 +525,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
     links: [
       {
-        label: 'Open After merge',
+        label: `Open ${NAMES.branches}`,
         target: {
           kind: 'studio',
-          studio: { kind: 'settings', focus: { scope: 'workspace', section: 'after-merge' } },
+          studio: { kind: 'settings', focus: { scope: 'workspace', section: 'branches' } },
         },
       },
     ],
@@ -654,12 +654,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'The picker in the page header cleans up this workspace, other workspaces, removed ones or all of them.',
       },
       {
-        term: 'Branches',
-        desc: 'Branches, in Settings, opens on the ones Safe to delete. Recently deleted restores a branch you removed.',
-      },
-      {
-        term: 'After a merge',
-        desc: 'After merge, in workspace settings, picks Ask first, Delete on this Mac or Also on origin. A branch with later commits or uncommitted changes is left alone.',
+        term: NAMES.branches,
+        desc: 'Workspace, Branches starts with After merge: Ask first, Delete on this Mac or Also on origin, and a branch with later commits is left alone. Then the branches safe to delete, and Recently deleted restores one.',
       },
       {
         term: 'Other tools',
@@ -667,7 +663,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Security findings',
-        desc: 'Saving a script checks it for keys and tokens on your Mac. Not a secret dismisses a finding, and Flag again brings it back.',
+        desc: 'The last section of Storage. Saving a script checks it for keys and tokens on your Mac; Not a secret dismisses a finding, and Flag again brings it back.',
       },
     ],
     links: [
@@ -679,17 +675,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         },
       },
       {
-        label: 'Open Branches',
+        label: `Open ${NAMES.branches}`,
         target: {
           kind: 'studio',
-          studio: { kind: 'settings', focus: { scope: 'app', section: 'branches' } },
-        },
-      },
-      {
-        label: 'Open Security findings',
-        target: {
-          kind: 'studio',
-          studio: { kind: 'settings', focus: { scope: 'app', section: 'security-findings' } },
+          studio: { kind: 'settings', focus: { scope: 'workspace', section: 'branches' } },
         },
       },
     ],
@@ -702,11 +691,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Settings rail',
-        desc: 'Settings, or ⌘,, opens on the page you used last. The rail lists App, Workspace, Providers & models and Integrations, Search settings finds any setting, and a dot marks a page that needs you.',
+        desc: `Settings, or ⌘,, opens on the page you used last. The rail groups App, Workspace, ${NAMES.providersAndModels} and Integrations, and the last two fold. Search settings finds any setting, and a dot marks a page that needs you.`,
       },
       {
         term: 'Copy and restore',
         desc: 'Copy from another workspace, or Restore defaults, previews every change before it applies. A field that differs from its default has a dot and a Reset.',
+      },
+      {
+        term: 'App pages',
+        desc: `General, Updates, ${NAMES.keyboardShortcuts}, Storage, ${NAMES.backupAndReset} and ${NAMES.iphone}, where ${NAMES.pairIphone} shows the code the phone scans.`,
       },
       {
         term: 'Open with',
@@ -714,7 +707,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Export and import',
-        desc: 'Backup exports in groups such as workspaces and workflows, and Never included lists what stays behind, keys first. Import shows what it adds before writing and never deletes.',
+        desc: `${NAMES.backupAndReset} exports in groups such as workspaces and workflows, and Never included lists what stays behind, keys first. Import shows what it adds before writing and never deletes.`,
       },
       {
         term: 'Backup before a data update',
@@ -727,7 +720,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         target: { kind: 'studio', studio: { kind: 'settings', focus: { scope: 'home' } } },
       },
       {
-        label: 'Open Backup',
+        label: `Open ${NAMES.backupAndReset}`,
         target: {
           kind: 'studio',
           studio: { kind: 'settings', focus: { scope: 'app', section: 'backup' } },
@@ -747,7 +740,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Check for Updates',
-        desc: 'In the Goodboy menu of the macOS menu bar, it looks for an update now.',
+        desc: 'In the Goodboy menu of the macOS menu bar, or Check now on Settings, App, Updates, it looks for an update now.',
       },
       {
         term: NAMES.whatsNew,
