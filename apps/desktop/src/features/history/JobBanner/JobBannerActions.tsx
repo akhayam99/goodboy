@@ -161,10 +161,23 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
           {dismiss}
         </>
       );
+    case 'auto-resolving':
+      return (
+        <>
+          {agentId === null ? null : (
+            <Button size="sm" variant="ghost" onClick={controls.seeWhatItDid}>
+              Open Auto
+            </Button>
+          )}
+          {dismiss}
+        </>
+      );
+    case 'auto-done':
     case 'result-differs':
     case 'blocked':
     case 'failed':
       return dismiss;
+    case 'conflict':
     case 'checking':
     case 'replaying':
     case 'checking-result':

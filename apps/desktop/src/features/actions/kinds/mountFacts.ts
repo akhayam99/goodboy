@@ -42,11 +42,18 @@ export type MountFacts = {
   readonly isDiverged: boolean;
   readonly onlyOnline: ReadonlyArray<OnlineCommit> | null;
   readonly isRebasing: boolean;
+  readonly rebaseConflict: MountRebaseConflict | null;
+  readonly autoBlockedReason: string | null;
   readonly comments: number;
   readonly canStartTurnsHere: boolean;
   readonly isScribeWriting: boolean;
   readonly blockers: ReadonlyArray<string>;
   readonly editors: ReadonlyArray<MountEditor>;
+};
+
+export type MountRebaseConflict = {
+  readonly isWithAuto: boolean;
+  readonly count: number;
 };
 
 type MountEditor = {
@@ -103,6 +110,8 @@ type Params = {
   readonly blockers: ReadonlyArray<string>;
   readonly editors: ReadonlyArray<MountEditor>;
   readonly onlyOnline: ReadonlyArray<OnlineCommit> | null;
+  readonly rebaseConflict: MountRebaseConflict | null;
+  readonly autoBlockedReason: string | null;
 };
 
 export const mountFacts = ({
@@ -128,6 +137,8 @@ export const mountFacts = ({
   blockers,
   editors,
   onlyOnline,
+  rebaseConflict,
+  autoBlockedReason,
 }: Params): MountFacts => {
   const ahead = status === null ? 0 : (distanceAhead({ distance: status.mainDistance }) ?? 0);
   const pushState = status === null ? null : branchPushStateOf({ status });
@@ -159,6 +170,8 @@ export const mountFacts = ({
     isDiverged: upstreamBehind !== null && upstreamBehind > 0,
     onlyOnline,
     isRebasing: status?.inProgress === 'rebase',
+    rebaseConflict,
+    autoBlockedReason,
     comments,
     canStartTurnsHere,
     isScribeWriting,

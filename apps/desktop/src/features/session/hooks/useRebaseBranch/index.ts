@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AgentId, MountId, SessionId, WorktreeStatus } from '@goodboy/types';
+import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import { useToast } from '../../../../shared/components/Toast';
@@ -20,7 +20,6 @@ type RunParams = {
 type Result = {
   readonly canRebase: boolean;
   readonly isRunning: boolean;
-  readonly rewriterId: AgentId | null;
   readonly run: (params: RunParams) => Promise<void>;
 };
 
@@ -45,7 +44,6 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
   });
   const isRebaseRun = run !== null && run.origin === 'rebase';
   const isRunning = isStarting || (isRebaseRun && isHistoryRunActive({ phase: run.phase }));
-  const rewriterId = isRebaseRun && run.phase === 'rewriting' ? run.agentId : null;
   const behindMain = status != null ? distanceBehind({ distance: status.mainDistance }) : null;
   const canRebase = sessionId != null && behindMain != null && behindMain > 0;
 
@@ -65,14 +63,6 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
         });
         return;
       }
-      if (outcome === 'rewriting') {
-        showToast({
-          kind: 'info',
-          title: 'Rebase needs a merge',
-          message:
-            'History rewriter is merging a conflict in a copy. Your branch moves only when the result checks out.',
-        });
-      }
     } catch (failure) {
       void reportError({ title: REBASE_FAILURE_TITLE, error: failure, sessionId });
     } finally {
@@ -80,5 +70,5 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
     }
   };
 
-  return { canRebase, isRunning, rewriterId, run: start };
+  return { canRebase, isRunning, run: start };
 };

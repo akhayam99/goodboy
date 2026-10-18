@@ -19,6 +19,7 @@ import type { RunPlanResult } from '../../../store/slices/plans/types';
 import { SUGGESTION_KINDS, type SessionSuggestion, type SuggestionKind } from '../types';
 
 const { storeState, spies, fixable } = vi.hoisted(() => {
+  const noRebaseAllRuns: Record<string, { readonly phase: string } | undefined> = {};
   const ensureProjectMounted = vi.fn(async () => undefined);
   const recordSessionEvent = vi.fn(async () => undefined);
   const setSessionActiveProject = vi.fn(async () => undefined);
@@ -89,6 +90,7 @@ const { storeState, spies, fixable } = vi.hoisted(() => {
     },
     storeState: {
       sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      rebaseAllRuns: noRebaseAllRuns,
       sessionPhaseRuns: phaseRuns,
       mountGithub: {} as Record<string, unknown>,
       mountGitlabMr: {} as Record<string, unknown>,
@@ -351,7 +353,7 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.isBusy).toBe(true);
   });
 
-  it('opens the Commits page of the first rebase target from the primary', async () => {
+  it('opens the branch picker for two or more behind branches instead of only the first', async () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -386,13 +388,42 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    actions.primary?.run();
+    expect(actions.primary?.shouldOpenPicker).toBe(true);
+    expect(actions.primary?.shortLabel).toBe('Rebase');
+    await actions.primary?.run();
 
-    await vi.waitFor(() =>
-      expect(spies.openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/tmp/web-first'),
-    );
+    expect(spies.openRewriteHistory).not.toHaveBeenCalled();
     expect(spies.rebaseRun).not.toHaveBeenCalled();
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
+  });
+
+  it('marks the picker primary busy while a rebase of several branches runs', () => {
+    storeState.rebaseAllRuns = { [SESSION_ID]: { phase: 'running' } };
+    const target = {
+      id: 'mount:mount-web',
+      mountId: WEB_MOUNT_ID,
+      projectId: WEB_ID,
+      projectName: 'web',
+      branch: 'feature/web-first',
+      worktreePath: '/tmp/web-first',
+      baseBranch: 'main',
+      behind: 7,
+      dirtyCount: 0,
+    };
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'rebase-project:session-1',
+        kind: 'rebase-project',
+        payload: {
+          targets: [target, { ...target, id: 'mount:second', mountId: WEB_SECOND_MOUNT_ID }],
+        },
+      },
+    });
+
+    expect(actions.primary?.label).toBe('Rebasing');
+    expect(actions.primary?.isDisabled).toBe(true);
+    storeState.rebaseAllRuns = {};
   });
 
   it('ignores completed mounts when polling and choosing the behind status', () => {

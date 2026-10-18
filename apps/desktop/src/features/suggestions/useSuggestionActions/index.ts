@@ -8,6 +8,7 @@ import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../sto
 import { branchPlace } from '../../../store/slices/navigation/place';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { startRebaseTarget } from '../startRebaseTarget';
+import { REBASE_ALL_MIN_BRANCHES } from '../../history/behindBranchesOf';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { usePlanRunToast } from '../../plans/usePlanRun';
 import type { AgentKind, AgentKindRouting } from '../../session/agent-kind';
@@ -47,6 +48,7 @@ type SuggestionAction = {
   readonly run: () => Promise<void>;
   readonly requiresConfirm?: boolean;
   readonly runsOn?: SuggestionRunsOn;
+  readonly shouldOpenPicker?: boolean;
 };
 
 type SuggestionRunsOn = {
@@ -136,6 +138,10 @@ export const useSuggestionActions = ({
     status: behind?.status ?? null,
   });
 
+  const isRebaseAllRunning = useAppStore(
+    (state) => state.rebaseAllRuns[sessionId]?.phase === 'running',
+  );
+
   const threadIds = useFixableThreadIds({ sessionId });
 
   const openFixPanel = async (): Promise<void> => {
@@ -203,6 +209,20 @@ export const useSuggestionActions = ({
     }
     if (suggestion.kind === 'rebase-project') {
       const firstTarget = suggestion.payload.targets[0] ?? null;
+      if (suggestion.payload.targets.length >= REBASE_ALL_MIN_BRANCHES) {
+        return {
+          primary: {
+            label: isRebaseAllRunning ? 'Rebasing' : 'Choose branches to rebase',
+            shortLabel: isRebaseAllRunning ? 'Rebasing' : 'Rebase',
+            isDisabled: isRebaseAllRunning,
+            isBusy: isRebaseAllRunning,
+            failureTitle: REBASE_FAILURE_TITLE,
+            shouldOpenPicker: true,
+            run: async () => undefined,
+          },
+          onDismiss: null,
+        };
+      }
       return {
         primary: {
           label: rebase.isRunning ? 'Rebasing' : 'Open rebase',

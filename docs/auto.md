@@ -127,6 +127,30 @@ end first." while the agent works.
   Auto has not read yet, and bumps the tree revision. It waits for the turn of the
   agent to end. The Auto agent stays in the session.
 
+## Rebase conflicts
+
+A rebase on main is plain git and never starts Auto. When it stops on a
+conflict or a commit hook, the run keeps `rebaseConflict` (the onto ref, the
+base, the head before the rebase) and the stop keeps the files
+(`store/slices/history/rebaseBranch.ts`); the prompt asks the person. **Resolve
+with Auto** (`mount.resolveRebaseWithAuto`) calls `resolveRebaseWithAuto`
+(`store/slices/rebaseAll/resolveRebaseWithAuto.ts`): it starts one Auto agent
+with `spawnAgent` and `kindOverride: 'auto'`, the route the workspace picks for
+the role, and the goal `rebaseAutoGoal` writes, so the goal goes through the
+Auto user turn port and, from another window, over the bridge. The goal names
+each branch, its worktree, the onto ref and the conflicted files, tells Auto to
+hand each branch to one agent that writes in that worktree, to ask the person
+only when a conflict is ambiguous, to run `git rebase --abort` on a branch it
+cannot finish, and never to push. The hint of **Add a hint** ends the goal. The
+run is marked as handed (`autoAgentId`) only once Auto took the goal and only
+when the run is still the one that was asked, so an answer that lands after
+**Abort rebase** changes nothing. **Rebase all** (`store/slices/rebaseAll/rebaseAll.ts`)
+rebases each branch with git first and hands every conflicted branch to the
+same single Auto run; with **Also tidy commits with Auto** on, the goal also
+lists every rebased branch to tidy, locally, after its rebase. **Resolve with
+Auto** reads why when no provider can run Auto
+(`autoUnavailableReason`).
+
 ## Talking to Auto
 
 A message typed in the composer of an Auto agent is not a plain turn either. The

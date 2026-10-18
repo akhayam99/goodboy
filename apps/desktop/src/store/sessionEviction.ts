@@ -131,6 +131,7 @@ export const SESSION_EVICTION = [
   { key: 'workflowDrafts', keyedBy: 'session', evictOn: 'delete' },
   { key: 'newDrawerDrafts', keyedBy: 'session', evictOn: 'delete' },
   { key: 'startHints', keyedBy: 'session', evictOn: 'delete' },
+  { key: 'rebaseAllRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'artifactDrafts', keyedBy: 'session', evictOn: 'delete' },
   { key: 'sessionFileVersions', keyedBy: 'session', evictOn: 'delete' },
   { key: 'sessionFileVersionsLoading', keyedBy: 'session', evictOn: 'delete' },

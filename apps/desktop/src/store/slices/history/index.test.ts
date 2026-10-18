@@ -403,15 +403,47 @@ describe('rebase on main', () => {
     expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
   });
 
-  it('never applies or pushes a replay whose check failed, even without a conflict', async () => {
+  it('stops on a predicted conflict and asks, with no trial, no push and no agent', async () => {
     const { slice, read } = harness();
     engine.predictHistoryPlan.mockResolvedValue({
       isSupported: true,
-      steps: [{ sha: 'a1', outcome: 'conflict', files: ['ledger.ts'], newSha: null }],
+      steps: [
+        { sha: 'a1', outcome: 'clean', files: [], newSha: 'n1' },
+        { sha: 'b2', outcome: 'conflict', files: ['ledger.ts', 'postings.ts'], newSha: null },
+      ],
       head: null,
       isTreeEqual: false,
       changedFiles: [],
     });
+
+    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
+      'conflict',
+    );
+    expect(engine.tryHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.prepareHistoryRewrite).not.toHaveBeenCalled();
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+    expect(read().spawnAgent).not.toHaveBeenCalled();
+    expect(read().historyRuns[MOUNT_ID]).toMatchObject({
+      phase: 'stopped',
+      stop: {
+        reason: 'conflict',
+        files: ['ledger.ts', 'postings.ts'],
+        sha: 'b2',
+        message:
+          '2 files conflict with main. ledger.ts and 1 more. Nothing changed on your branch.',
+      },
+      rebaseConflict: {
+        ontoRef: 'origin/main',
+        baseBranch: 'main',
+        head: 'head-sha',
+        autoAgentId: null,
+      },
+    });
+  });
+
+  it('never keeps a plan replay whose check failed', async () => {
+    const { slice, read } = harness();
     engine.prepareHistoryRewrite.mockResolvedValue({
       head: 'replayed-head',
       map: [],
@@ -429,13 +461,6 @@ describe('rebase on main', () => {
       },
     });
 
-    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
-      'stopped',
-    );
-    expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('unverified');
-    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
-    expect(engine.pushWithLease).not.toHaveBeenCalled();
-
     await slice.startHistoryRewriter({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
@@ -445,6 +470,7 @@ describe('rebase on main', () => {
     });
     expect(read().historyRuns[MOUNT_ID]?.phase).toBe('stopped');
     expect(read().historyRuns[MOUNT_ID]?.result).toBeNull();
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
   });
 
   it('removes the conflicted copy when the rewriter cannot start or cannot be told', async () => {
@@ -548,51 +574,64 @@ describe('rebase on main', () => {
     expect(onAccepted).not.toHaveBeenCalled();
   });
 
-  it('hands a predicted conflict to the hidden history rewriter working in a copy', async () => {
+  it('stops on a conflict the trial found, removes its copy and starts no agent', async () => {
     const { slice, read } = harness();
     engine.predictHistoryPlan.mockResolvedValue({
-      isSupported: true,
-      steps: [{ sha: 'a1', outcome: 'conflict', files: ['src/ledger/postings.ts'], newSha: null }],
+      isSupported: false,
+      steps: [],
       head: null,
       isTreeEqual: false,
       changedFiles: [],
     });
-    engine.prepareHistoryRewrite.mockResolvedValue({
+    engine.tryHistoryPlan.mockResolvedValue({
       head: null,
       map: [],
       isTreeEqual: false,
       changedFiles: [],
       stop: { sha: 'a1', index: 0, kind: 'merge', files: ['src/ledger/postings.ts'], message: '' },
       copyPath: '/tmp/goodboy-history-copy',
-      order: [
-        { sha: 'a1', verb: 'pick', message: 'Guard the settlement batch' },
-        { sha: 'b2', verb: 'pick', message: 'Retry duplicate events' },
-      ],
+      order: [],
+      check: null,
     });
 
     await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
-      'rewriting',
+      'conflict',
     );
 
-    expect(engine.tryHistoryPlan).not.toHaveBeenCalled();
-    expect(read().spawnAgent).toHaveBeenCalledWith(
-      SESSION_ID,
-      expect.objectContaining({ name: 'History rewriter', kindOverride: 'rewriter' }),
+    expect(engine.discardHistoryCopy).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      copyPath: '/tmp/goodboy-history-copy',
+    });
+    expect(engine.prepareHistoryRewrite).not.toHaveBeenCalled();
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(read().spawnAgent).not.toHaveBeenCalled();
+    expect(read().sendTurn).not.toHaveBeenCalled();
+    expect(read().historyRuns[MOUNT_ID]?.stop).toMatchObject({
+      reason: 'conflict',
+      files: ['src/ledger/postings.ts'],
+    });
+  });
+
+  it('asks on a hook that stopped the trial, the same way as on a conflict', async () => {
+    const { slice, read } = harness();
+    engine.predictHistoryPlan.mockResolvedValue(null);
+    engine.tryHistoryPlan.mockResolvedValue({
+      head: null,
+      map: [],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: { sha: 'a1', index: 0, kind: 'hook', files: [], message: 'lint failed' },
+      copyPath: null,
+      order: [],
+      check: null,
+    });
+
+    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
+      'conflict',
     );
-    expect(read().spawnAgent).toHaveBeenCalledWith(
-      SESSION_ID,
-      expect.not.objectContaining({ mountId: expect.anything() }),
-    );
-    expect(
-      rewriterCopyFor({ state: read(), sessionId: SESSION_ID, agentId: AGENT_ID })?.copyPath,
-    ).toBe('/tmp/goodboy-history-copy');
-    expect(read().historyRuns[MOUNT_ID]?.phase).toBe('rewriting');
-    expect(read().sendTurn).toHaveBeenCalledWith(
-      expect.objectContaining({
-        agentId: AGENT_ID,
-        content: expect.stringContaining('postings.ts'),
-      }),
-    );
+    expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('hook');
+    expect(read().historyRuns[MOUNT_ID]?.rebaseConflict?.autoAgentId).toBeNull();
+    expect(read().spawnAgent).not.toHaveBeenCalled();
   });
 
   it('applies what the rewriter settled once the engine checks it out', async () => {
@@ -1688,38 +1727,6 @@ describe('the job of a rebase', () => {
       phase: 'stopped',
       backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
       stop: { reason: 'push-failed', message: 'pre-push hook declined' },
-    });
-  });
-
-  it('stops with no provider when the conflict has nobody to go to', async () => {
-    const { slice, read, spawnAgent } = harness();
-    spawnConfig.provider = '';
-    engine.predictHistoryPlan.mockResolvedValue({
-      isSupported: true,
-      steps: [{ sha: 'a1', outcome: 'conflict', files: ['webhook.ts'], newSha: null }],
-      head: null,
-      isTreeEqual: false,
-      changedFiles: [],
-    });
-    engine.prepareHistoryRewrite.mockResolvedValue({
-      head: null,
-      map: [],
-      isTreeEqual: false,
-      changedFiles: [],
-      stop: { sha: 'a1', index: 0, kind: 'merge', files: ['webhook.ts'], message: '' },
-      copyPath: '/tmp/goodboy-history-copy',
-      order: [],
-      check: null,
-    });
-
-    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
-      'stopped',
-    );
-
-    expect(spawnAgent).not.toHaveBeenCalled();
-    expect(read().historyRuns[MOUNT_ID]?.stop).toMatchObject({
-      reason: 'no-provider',
-      files: ['webhook.ts'],
     });
   });
 

@@ -818,6 +818,13 @@ u26-intros-orchestrated
 u26-intros-orchestrated-empty
 u26-intros-runs
 u26-intros-runs-empty
+u26-rebase-all-idle-dark
+u26-rebase-all-running-dark
+u26-rebase-all-running-light
+u26-rebase-conflict-dark
+u26-rebase-conflict-light
+u26-rebase-picker-dark
+u26-rebase-picker-light
 u26s-explore-drawer
 u26s-explore-empty
 u26s-explore-nomount

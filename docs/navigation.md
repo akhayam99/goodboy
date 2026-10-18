@@ -3617,10 +3617,11 @@ menus); there are no worktree tabs. Every rewrite takes the shown
 mount's `mountId`, never the active mount. `Rebase on main` replays the
 branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads
-`Rebase on main · N conflicts`, and only then
-the hidden History rewriter merges the edits in a throwaway copy. The branch
-moves only after the engine checks the result, with a backup ref and a push
-with lease.
+`Rebase on main · N conflicts`. A conflict stops the rebase with the branch as
+it was and asks inline (`RebaseConflictPrompt`): **Resolve with Auto**, **Open
+terminal here** or **Abort rebase**; no agent starts by itself. A clean rebase
+moves the branch only after the engine checks the result, with a backup ref and
+a push with lease.
 
 The Commits tab draws the branch as a graph (`history_graph`): a grey main
 trunk, your branch leaving it at the real fork point, one

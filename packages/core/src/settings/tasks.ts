@@ -53,7 +53,7 @@ export const TASKS: ReadonlyArray<{
   {
     id: 'rebase',
     label: 'History rewriter',
-    description: 'Rewrites commits when you rebase or clean up history.',
+    description: 'Merges the conflicts of a history clean-up in a copy.',
   },
   {
     id: 'recheck',

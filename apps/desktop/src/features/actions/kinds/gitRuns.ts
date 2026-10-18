@@ -119,14 +119,6 @@ export const rebaseMount = async ({
   baseBranch,
 }: MountParams & StatusParams): Promise<ActionRunOutcome> => {
   const outcome = await env.getState().rebaseBranch({ sessionId, mountId });
-  if (outcome === 'rewriting') {
-    env.showToast({
-      kind: 'info',
-      title: 'Rebase needs a merge',
-      message:
-        'History rewriter is merging a conflict in a copy. Your branch moves only when the result checks out.',
-    });
-  }
   await refreshWorktreeStatus({ worktreePath, baseBranch });
   return outcome === 'rebased' ? 'done' : 'unchanged';
 };

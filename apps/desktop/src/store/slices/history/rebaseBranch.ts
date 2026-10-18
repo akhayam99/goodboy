@@ -1,10 +1,13 @@
 import type { HistoryPlanArgs, HistoryRebasePlan } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import {
+  discardHistoryCopy,
   predictHistoryPlan,
   readRebasePlan,
   tryHistoryPlan,
 } from '../../../features/history/historyEngine';
+import { rebaseConflictMessageOf } from '../../../features/history/rebaseConflictLine';
+import { predictedConflictOf } from './predictedConflictOf';
 import { assertCleanTree } from './assertCleanTree';
 import { DirtyTreeError } from './DirtyTreeError';
 import { historyTargetOf } from './historyTargetOf';
@@ -26,6 +29,12 @@ export const rebasePlanArgs = ({ worktreePath, rebase }: PlanParams): HistoryPla
   steps: rebase.commits.map((commit) => ({ sha: commit.sha, verb: 'pick' as const })),
   onto: rebase.onto,
 });
+
+type ConflictParams = {
+  readonly files: ReadonlyArray<string>;
+  readonly sha: string | null;
+  readonly isHook: boolean;
+};
 
 export const rebaseBranch = (set: SetFn, get: GetFn) => {
   return async ({
@@ -87,6 +96,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
         pendingMove: undefined,
         dirtyChoice: undefined,
         savedStash: undefined,
+        rebaseConflict: undefined,
         carriedCount: 0,
       },
     });
@@ -137,52 +147,85 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
     if (get().historyRuns[mountId] !== requestRun) {
       return 'stopped';
     }
-    const isConflictPredicted =
-      prediction !== null && prediction.isSupported && prediction.head === null;
-    if (!isConflictPredicted) {
-      setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'trying' } });
-      requestRun = get().historyRuns[mountId];
-      const trial = await tryHistoryPlan(plan).catch((error: unknown) => formatError(error));
-      if (get().historyRuns[mountId] !== requestRun) {
-        return 'stopped';
-      }
-      if (typeof trial === 'string') {
-        return stopWith({ reason: 'failed', message: trial, files: [], sha: null });
-      }
-      if (trial.stop === null && trial.head !== null && trial.check?.isPassed === false) {
-        return stopWith({
-          reason: 'unverified',
-          message: `The rebase on the copy did not match the branch: ${trial.check.problems.join(' ')} Nothing was changed.`,
-          files: trial.check.unexpectedFiles,
-          sha: null,
-        });
-      }
-      if (trial.stop === null && trial.head !== null) {
-        const applied = await get().applyHistoryRewrite({
-          sessionId,
-          mountId,
-          origin,
-          planId: null,
-          newHead: trial.head,
-          expectedHead: plan.head,
-          map: trial.map,
-          shouldPush: true,
-          byAgent: false,
-          identity: identityOf({ target }),
-        });
-        return applied === 'stopped' || applied === 'busy' ? applied : 'rebased';
-      }
+    const conflictWith = ({ files, sha, isHook }: ConflictParams): Promise<RebaseBranchOutcome> => {
+      const baseBranch = target.baseBranch ?? rebase.ontoRef;
+      setHistoryRun({
+        set,
+        sessionId,
+        mountId,
+        origin,
+        patch: {
+          rebaseConflict: {
+            ontoRef: rebase.ontoRef,
+            baseBranch,
+            head: rebase.head,
+            autoAgentId: null,
+          },
+        },
+      });
+      return stopWith({
+        reason: isHook ? 'hook' : 'conflict',
+        message: rebaseConflictMessageOf({ files, baseBranch, isHook }),
+        files,
+        sha,
+      }).then((outcome) => (outcome === 'stopped' ? 'conflict' : outcome));
+    };
+    const predicted = predictedConflictOf({ prediction });
+    if (predicted !== null) {
+      return conflictWith({ files: predicted.files, sha: predicted.sha, isHook: false });
     }
-    const started = await get().startHistoryRewriter({
+    setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'trying' } });
+    requestRun = get().historyRuns[mountId];
+    const trial = await tryHistoryPlan(plan).catch((error: unknown) => formatError(error));
+    if (get().historyRuns[mountId] !== requestRun) {
+      return 'stopped';
+    }
+    if (typeof trial === 'string') {
+      return stopWith({ reason: 'failed', message: trial, files: [], sha: null });
+    }
+    if (trial.stop !== null) {
+      if (trial.copyPath !== null) {
+        await discardHistoryCopy({
+          worktreePath: target.worktreePath,
+          copyPath: trial.copyPath,
+        }).catch((error: unknown) =>
+          get().reportError({ title: "Couldn't remove the rebase copy", error, sessionId }),
+        );
+      }
+      return conflictWith({
+        files: trial.stop.files,
+        sha: trial.stop.sha,
+        isHook: trial.stop.kind === 'hook',
+      });
+    }
+    if (trial.head === null) {
+      return stopWith({
+        reason: 'failed',
+        message: 'The rebase on the copy made no result. Nothing was changed.',
+        files: [],
+        sha: null,
+      });
+    }
+    if (trial.check?.isPassed === false) {
+      return stopWith({
+        reason: 'unverified',
+        message: `The rebase on the copy did not match the branch: ${trial.check.problems.join(' ')} Nothing was changed.`,
+        files: trial.check.unexpectedFiles,
+        sha: null,
+      });
+    }
+    const applied = await get().applyHistoryRewrite({
       sessionId,
       mountId,
-      plan,
       origin,
       planId: null,
+      newHead: trial.head,
+      expectedHead: plan.head,
+      map: trial.map,
+      shouldPush: true,
+      byAgent: false,
+      identity: identityOf({ target }),
     });
-    if (started === 'rewriting') {
-      return 'rewriting';
-    }
-    return started === 'stopped' || started === 'busy' ? started : 'rebased';
+    return applied === 'stopped' || applied === 'busy' ? applied : 'rebased';
   };
 };

@@ -4,6 +4,7 @@ import type { Session } from '@goodboy/types';
 import { useActionControls } from '../../../../features/actions/useActionControls';
 import { worktreeLevelSlot } from '../../../../features/branch/worktreeLevelSlot';
 import { useRebaseJob } from '../../../../features/history/useRebaseJob';
+import { RebaseConflictPrompt } from '../../../../features/history/components/RebaseConflictPrompt';
 import { WorktreeIdentityRow } from './WorktreeIdentityRow';
 import { WorktreeStatusLine } from './WorktreeStatusLine';
 import { useWorktreeTarget } from './useWorktreeTarget';
@@ -48,6 +49,11 @@ export const WorktreeLevel = ({ session }: Props) => {
           />
         </div>
       )}
+      {rebase?.job.state === 'conflict' ? (
+        <div data-rebase-conflict="" className="flex shrink-0 flex-col px-2">
+          <RebaseConflictPrompt sessionId={session.id} worktreePath={worktree.mountPath} />
+        </div>
+      ) : null}
       <ScrollFade className="min-h-0 flex-1">
         <div
           ref={attachHost}

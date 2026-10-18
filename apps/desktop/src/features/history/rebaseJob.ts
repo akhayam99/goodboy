@@ -2,6 +2,12 @@ import { isHistoryRunActive } from '../../store/slices/history/isHistoryRunActiv
 import type { HistoryRun } from '../../store/slices/history/types';
 import { historyStopCause } from './historyStopCause';
 import { pushErrorLine } from './pushErrorLine';
+import { rebaseConflictOf } from './rebaseConflictOf';
+import {
+  conflictFilesLabelOf,
+  rebaseConflictLineOf,
+  rebaseConflictTitleOf,
+} from './rebaseConflictLine';
 
 export type RebaseJobState =
   | 'choosing'
@@ -24,6 +30,9 @@ export type RebaseJobState =
   | 'push-failed'
   | 'fixing-push'
   | 'blocked'
+  | 'conflict'
+  | 'auto-resolving'
+  | 'auto-done'
   | 'failed';
 
 export type RebaseJobTone = 'info' | 'ok' | 'warn' | 'danger';
@@ -46,6 +55,8 @@ type Params = {
   readonly baseBranch: string;
   readonly commitCount: number | null;
   readonly dirtyCount: number | null;
+  readonly behind?: number | null;
+  readonly isRebasingHere?: boolean;
 };
 
 type Copy = {
@@ -88,18 +99,6 @@ const pushFailureLine = ({ reason, message }: PushFailureLineParams): string => 
   return historyStopCause({ reason, message }) === 'hook stopped the push'
     ? 'A pre-push hook stopped it.'
     : 'The online copy was not updated.';
-};
-
-type FilesLabelOfParams = {
-  readonly files: ReadonlyArray<string>;
-};
-
-const filesLabelOf = ({ files }: FilesLabelOfParams): string => {
-  const [first] = files;
-  if (first === undefined) {
-    return 'the conflict';
-  }
-  return files.length === 1 ? first : `${first} and ${files.length - 1} more`;
 };
 
 type DirtyTitleOfParams = {
@@ -240,6 +239,9 @@ const WORDS: Readonly<Record<RebaseJobState, string>> = {
   'push-failed': 'Stopped',
   'fixing-push': 'Fixing',
   blocked: 'Stopped',
+  conflict: 'Conflict',
+  'auto-resolving': 'Auto',
+  'auto-done': 'Done',
   failed: 'Stopped',
 };
 
@@ -295,7 +297,7 @@ const copyOf = ({
       return {
         tone: 'info',
         title: running,
-        line: `History rewriter is merging ${filesLabelOf({ files: stop?.files ?? [] })} in a copy`,
+        line: `History rewriter is merging ${conflictFilesLabelOf({ files: stop?.files ?? [] })} in a copy`,
       };
     case 'checking-result':
       return { tone: 'info', title: running, line: 'Checking the result against your branch' };
@@ -333,7 +335,7 @@ const copyOf = ({
       return {
         tone: 'warn',
         title: 'History rewriter needs you',
-        line: `It could not merge ${filesLabelOf({ files: stop?.files ?? [] })}.`,
+        line: `It could not merge ${conflictFilesLabelOf({ files: stop?.files ?? [] })}.`,
       };
     case 'no-provider':
       return {
@@ -376,6 +378,31 @@ const copyOf = ({
         line: firstLineOf({ text: message }),
         detail: detailOf({ text: message }),
       };
+    case 'conflict': {
+      const conflict = rebaseConflictOf({ run });
+      const facts = {
+        files: conflict?.files ?? [],
+        baseBranch: conflict?.baseBranch ?? baseBranch,
+        isHook: conflict?.isHook ?? false,
+      };
+      return {
+        tone: 'warn',
+        title: rebaseConflictTitleOf(facts),
+        line: rebaseConflictLineOf(facts),
+      };
+    }
+    case 'auto-resolving':
+      return {
+        tone: 'info',
+        title: `Auto is rebasing ${projectName} on ${baseBranch}`,
+        line: 'It asks you in the session when a conflict is not clear.',
+      };
+    case 'auto-done':
+      return {
+        tone: 'ok',
+        title: `Rebased on ${baseBranch}`,
+        line: 'Auto resolved the conflict. Push when the branch looks right.',
+      };
     case 'failed':
       return {
         tone: 'danger',
@@ -392,9 +419,22 @@ const copyOf = ({
 
 type RebaseJobStateOfParams = {
   readonly run: HistoryRun;
+  readonly behind: number | null;
+  readonly isRebasingHere: boolean;
 };
 
-const rebaseJobStateOf = ({ run }: RebaseJobStateOfParams): RebaseJobState => {
+const rebaseJobStateOf = ({
+  run,
+  behind,
+  isRebasingHere,
+}: RebaseJobStateOfParams): RebaseJobState => {
+  const conflict = rebaseConflictOf({ run });
+  if (conflict !== null && conflict.autoAgentId === null) {
+    return 'conflict';
+  }
+  if (conflict !== null) {
+    return behind === 0 && !isRebasingHere ? 'auto-done' : 'auto-resolving';
+  }
   if (run.phase === 'choosing' || run.phase === 'restore-conflict' || run.phase === 'set-aside') {
     return run.phase;
   }
@@ -419,9 +459,16 @@ export const rebaseJobOf = (params: Params): RebaseJob | null => {
   ) {
     return null;
   }
-  const state = rebaseJobStateOf({ run });
+  const state = rebaseJobStateOf({
+    run,
+    behind: params.behind ?? null,
+    isRebasingHere: params.isRebasingHere ?? false,
+  });
   const copy = copyOf({ ...params, state });
-  const isRunning = isHistoryRunActive({ phase: run.phase }) || state === 'fixing-push';
+  const isRunning =
+    isHistoryRunActive({ phase: run.phase }) ||
+    state === 'fixing-push' ||
+    state === 'auto-resolving';
   return {
     state,
     tone: copy.tone,

@@ -40,7 +40,7 @@ The row above the provider chips is one component with two meanings.
   orchestrator pills read that answer from `useResolution`, so they name the same
   model; when a pin is skipped, the row's muted line says why through
   `explainResolution` (see `docs/providers.md`, Defaults internals). The background
-  rows are named for the agent they drive: **History rewriter** (rebase and history
+  rows are named for the agent they drive: **History rewriter** (history
   clean-up) and **Scribe** (the title and body of a pull or merge request)
 - **Launching popovers** (Start an agent, Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that

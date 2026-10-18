@@ -10,6 +10,7 @@ import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { NextStepMenu } from './NextStepMenu';
 import { NextStepRunsOn } from './NextStepRunsOn';
 import { NextStepTile } from './NextStepTile';
+import { NextStepRebasePicker } from './NextStepRebasePicker';
 import { NEXT_STEP_CELLS, NEXT_STEP_GRID } from './nextStepGrid';
 
 const BAND_TONE: Record<NextStepBand, 'warning' | 'info' | 'primary' | 'neutral'> = {
@@ -53,11 +54,13 @@ export const NextStepRow = ({
   const [isConfirming, setIsConfirming] = useState(false);
   const [routingOverride, setRoutingOverride] = useState<AgentKindRouting | null>(null);
   const [previewKind, setPreviewKind] = useState<AgentKind | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   useEffect(() => {
     setIsConfirming(false);
     setRoutingOverride(null);
     setPreviewKind(null);
+    setIsPickerOpen(false);
   }, [suggestion.id]);
 
   const isAutoOn = useIsAutoOn();
@@ -102,7 +105,12 @@ export const NextStepRow = ({
         aria-label={visibleLabel === primary.label ? undefined : primary.label}
         disabled={primary.isDisabled || (isChoicePending && !isPending)}
         isBusy={isPending}
+        aria-expanded={primary.shouldOpenPicker === true ? isPickerOpen : undefined}
         onClick={() => {
+          if (primary.shouldOpenPicker === true) {
+            setIsPickerOpen((isOpen) => !isOpen);
+            return;
+          }
           if (shouldConfirm) {
             setIsConfirming(true);
             return;
@@ -114,68 +122,80 @@ export const NextStepRow = ({
       </Button>
     );
 
-  return (
-    <div
-      data-testid={`next-step-${suggestion.id}`}
-      className={cn(NEXT_STEP_GRID, compact ? 'py-1' : 'py-2')}
-    >
-      <NextStepTile agentKind={shownKind} fallbackIcon={Icon} tone={tone} />
-      <span data-column="text" className={NEXT_STEP_CELLS.text}>
-        <span className="truncate text-row text-foreground">{suggestion.title}</span>
-        {!compact && suggestion.detail != null && (
-          <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
-        )}
-        {!compact && runsOn !== null && (
-          <NextStepRunsOn
-            sessionId={suggestion.sessionId}
-            kind={runsOn.kind}
-            override={routingOverride}
-            onChange={setRoutingOverride}
-            disabled={isPending}
-          />
-        )}
-      </span>
-      <span data-column="primary" className={NEXT_STEP_CELLS.primary}>
-        {primary != null && shouldConfirm ? (
-          <ConfirmPopover
-            role={CONFIRM_ROLE[suggestion.kind] ?? 'primary'}
-            icon={<Icon size={ICON_SIZE.row} aria-hidden />}
-            title={`${primary.label}?`}
-            description={suggestion.title}
-            confirmLabel={primary.label}
-            isOpen={isConfirming}
-            anchorClassName="flex w-full min-w-0 items-center"
-            onConfirm={runPrimary}
-            onCancel={() => setIsConfirming(false)}
-            trigger={() => primaryButton}
-          />
-        ) : (
-          primaryButton
-        )}
-      </span>
-      <span
-        data-column="not-now"
-        aria-hidden={isActionBusy}
-        className={cn(NEXT_STEP_CELLS.notNow, isActionBusy ? 'opacity-0' : 'opacity-100')}
-      >
-        <Button
-          size="sm"
-          variant="ghost"
-          className="w-full min-w-0"
-          disabled={isActionBusy}
-          onClick={onNotNow}
-        >
-          Not now
-        </Button>
-      </span>
-      <NextStepMenu
-        target={menuTarget}
-        pendingChoiceIds={pendingChoiceIds}
-        isHeld={primary?.isDisabled === true || isPending || isChoicePending}
-        isDisabled={isActionBusy}
-        onPreview={setPreviewKind}
-        trackChoice={trackChoice}
+  const picker =
+    isPickerOpen && suggestion.kind === 'rebase-project' ? (
+      <NextStepRebasePicker
+        sessionId={suggestion.sessionId}
+        targets={suggestion.payload.targets}
+        onClose={() => setIsPickerOpen(false)}
       />
-    </div>
+    ) : null;
+
+  return (
+    <>
+      <div
+        data-testid={`next-step-${suggestion.id}`}
+        className={cn(NEXT_STEP_GRID, compact ? 'py-1' : 'py-2')}
+      >
+        <NextStepTile agentKind={shownKind} fallbackIcon={Icon} tone={tone} />
+        <span data-column="text" className={NEXT_STEP_CELLS.text}>
+          <span className="truncate text-row text-foreground">{suggestion.title}</span>
+          {!compact && suggestion.detail != null && (
+            <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
+          )}
+          {!compact && runsOn !== null && (
+            <NextStepRunsOn
+              sessionId={suggestion.sessionId}
+              kind={runsOn.kind}
+              override={routingOverride}
+              onChange={setRoutingOverride}
+              disabled={isPending}
+            />
+          )}
+        </span>
+        <span data-column="primary" className={NEXT_STEP_CELLS.primary}>
+          {primary != null && shouldConfirm ? (
+            <ConfirmPopover
+              role={CONFIRM_ROLE[suggestion.kind] ?? 'primary'}
+              icon={<Icon size={ICON_SIZE.row} aria-hidden />}
+              title={`${primary.label}?`}
+              description={suggestion.title}
+              confirmLabel={primary.label}
+              isOpen={isConfirming}
+              anchorClassName="flex w-full min-w-0 items-center"
+              onConfirm={runPrimary}
+              onCancel={() => setIsConfirming(false)}
+              trigger={() => primaryButton}
+            />
+          ) : (
+            primaryButton
+          )}
+        </span>
+        <span
+          data-column="not-now"
+          aria-hidden={isActionBusy}
+          className={cn(NEXT_STEP_CELLS.notNow, isActionBusy ? 'opacity-0' : 'opacity-100')}
+        >
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full min-w-0"
+            disabled={isActionBusy}
+            onClick={onNotNow}
+          >
+            Not now
+          </Button>
+        </span>
+        <NextStepMenu
+          target={menuTarget}
+          pendingChoiceIds={pendingChoiceIds}
+          isHeld={primary?.isDisabled === true || isPending || isChoicePending}
+          isDisabled={isActionBusy}
+          onPreview={setPreviewKind}
+          trackChoice={trackChoice}
+        />
+      </div>
+      {picker}
+    </>
   );
 };

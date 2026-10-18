@@ -198,7 +198,7 @@ muted line under the label says so, printed by `explainResolution` through
 `resolutionNote` (`Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.`). A task
 row (`TaskModelRow`) carries the same chip and the same line from the same hook. The
 two background rows that name an agent say which one: **History rewriter** (task
-`rebase`, "Rewrites commits when you rebase or clean up history.") and **Scribe** (task
+`rebase`, "Merges the conflicts of a history clean-up in a copy.") and **Scribe** (task
 `pr_draft`, "Writes the title and body of a pull or merge request."). Their ids did
 not change. When some agents pin only
 models that cannot run, a line under the page title counts them (`With Codex as the only

@@ -617,8 +617,9 @@ pick it when you start the agent.
 - **PR reviewer** opens a session that reviews someone else's pull request
 - **Resolve** starts from the **Review** lens and fixes review comments
 - **History rewriter** is hidden: nobody picks it. Goodboy starts it only
-  when replaying a branch history hits a conflict git cannot settle alone
-  (a rebase on main, or a Rewrite history plan). It works in a throwaway
+  when a Rewrite history plan hits a conflict git cannot settle alone and
+  you press **Rewrite with an agent**. A rebase on main never starts it: a
+  conflict there stops and asks, and **Resolve with Auto** hands it to Auto. It works in a throwaway
   copy of the branch, never in a mount. Its turn carries a git config that
   points `origin` at a push URL that always fails, it has no GitHub token and
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or

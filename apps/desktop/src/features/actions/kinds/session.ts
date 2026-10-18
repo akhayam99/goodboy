@@ -15,7 +15,7 @@ import {
   PinOff,
   Rocket,
 } from 'lucide-react';
-import type { Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
+import type { MountId, Session, SessionId, SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
@@ -42,11 +42,16 @@ import { linkedIssueSources } from '../../../store/slices/issue-briefs/linkedIss
 import { writeGoalFromWorkEvent } from '../../../store/slices/issue-briefs/writeGoalFromWorkEvent';
 import { NAMES } from '../../../shared/names';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
+import { behindBranchesOf } from '../../history/behindBranchesOf';
+import { SESSION_REBASE_ACTIONS } from './sessionRebaseActions';
 
 export type SessionFacts = {
   readonly session: Session;
   readonly sessionId: SessionId;
   readonly title: string;
+  readonly behindMountIds: ReadonlyArray<MountId>;
+  readonly rebaseAllRunId: string | null;
+  readonly isRebaseAllRunning: boolean;
   readonly isArchived: boolean;
   readonly isPinned: boolean;
   readonly isRefreshing: boolean;
@@ -482,6 +487,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
       dispatchAfterNavigation({ name: writeGoalFromWorkEvent({ sessionId: facts.sessionId }) });
     },
   },
+  ...SESSION_REBASE_ACTIONS,
 ];
 
 const findSession = ({
@@ -521,6 +527,11 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
         0,
       sessionId: target.sessionId,
       title: sessionTitle({ session }),
+      behindMountIds: behindBranchesOf({ state, sessionId: target.sessionId }).map(
+        (branch) => branch.mountId,
+      ),
+      rebaseAllRunId: state.rebaseAllRuns[target.sessionId]?.id ?? null,
+      isRebaseAllRunning: state.rebaseAllRuns[target.sessionId]?.phase === 'running',
       isArchived: session.archivedAt != null,
       isPinned: pinIndex !== -1,
       isRefreshing: state.sessionSyncing[target.sessionId] === true,
