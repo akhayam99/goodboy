@@ -1265,7 +1265,7 @@
         },
         {
           "title": "Keyboard shortcuts, back and forward",
-          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts, ⌘[ and ⌘] move through history, and the Mac menu bar carries the same keys.",
+          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts. ⌘[ and ⌘] move through history. The Mac menu bar carries the same keys.",
           "group": "Keyboard and terminal",
           "main": true
         },
