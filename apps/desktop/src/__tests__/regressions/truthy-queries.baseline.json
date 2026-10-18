@@ -11,7 +11,6 @@
   "apps/desktop/src/features/chat/components/RoutingIndicator/index.test.tsx": 2,
   "apps/desktop/src/features/chat/components/TranscriptCards/DecisionNoteRow.test.tsx": 2,
   "apps/desktop/src/features/chat/components/TranscriptCards/index.test.tsx": 2,
-  "apps/desktop/src/features/companion/components/CompanionStudio/index.test.tsx": 3,
   "apps/desktop/src/features/integrations/bitbucket/BitbucketStudio/usePrVerbs/index.test.tsx": 1,
   "apps/desktop/src/features/search/components/SearchMode/index.test.tsx": 4,
   "apps/desktop/src/features/session/components/AgentLane/index.test.tsx": 6,

@@ -9,8 +9,8 @@ import {
   type BridgeStatus,
   type QrInfo,
 } from '../../bridge';
-import { PairedDevices } from '../CompanionStudio/PairedDevices';
-import { PairingCode } from '../CompanionStudio/PairingCode';
+import { PairedDevices } from './PairedDevices';
+import { PairingCode } from './PairingCode';
 
 const STATUS_POLL_MS = 3_000;
 
@@ -196,7 +196,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
               <div className="flex flex-col items-center gap-3">
                 <PairingCode
                   info={info}
-                  loading={isLoading}
+                  isLoading={isLoading}
                   error={error}
                   remaining={remaining}
                   total={total}
@@ -219,7 +219,7 @@ export const IphonePage = ({ animationClassName, onStopFailed }: Props) => {
         </>
       ) : (
         <Band inset="content" label="Paired iPhones" ariaLabel="Paired iPhones" headingLevel={2}>
-          <PairedDevices enrolled={enrolled} revoking={isRevoking} onRevoke={revoke} />
+          <PairedDevices enrolled={enrolled} isRevoking={isRevoking} onRevoke={revoke} />
         </Band>
       )}
     </PaneShell>

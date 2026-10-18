@@ -12,15 +12,15 @@ const BAR_TONE_CLASS = {
 
 type Props = {
   readonly info: QrInfo | null;
-  readonly loading: boolean;
+  readonly isLoading: boolean;
   readonly error: string | null;
   readonly remaining: number;
   readonly total: number;
   readonly onMint: () => void;
 };
 
-export const PairingCode = ({ info, loading, error, remaining, total, onMint }: Props) => {
-  if (loading && info === null) {
+export const PairingCode = ({ info, isLoading, error, remaining, total, onMint }: Props) => {
+  if (isLoading && info === null) {
     return (
       <div
         className="flex flex-col items-center gap-3"
@@ -71,9 +71,7 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
               style={{ width: `${(Math.min(remaining, total) / total) * 100}%` }}
             />
           </div>
-          <span className="text-meta font-semibold tabular-nums text-muted-foreground">
-            Expires in {remaining}s
-          </span>
+          <span className="text-meta text-muted-foreground">Expires in {remaining}s</span>
         </div>
       </div>
 

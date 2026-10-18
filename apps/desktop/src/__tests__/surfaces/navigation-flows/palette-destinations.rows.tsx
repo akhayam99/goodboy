@@ -452,10 +452,13 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: Pair your iPhone',
-    covers: ['openStudio', 'studio:companion', 'palette:Pair your iPhone'],
+    covers: ['openStudio', 'studio:settings', 'settings:iphone', 'palette:Pair your iPhone'],
     door: 'palette',
     open: () => openPalette(/^Pair your iPhone/),
-    lands: () => studio('Pair device'),
+    lands: both(
+      () => settingsColumn(),
+      () => heading('iPhone'),
+    ),
   },
   {
     name: 'palette: Report a bug',

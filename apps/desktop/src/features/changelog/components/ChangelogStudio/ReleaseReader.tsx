@@ -19,7 +19,7 @@ export const ReleaseReader = ({
   onOpenScreen,
   action,
 }: Props) => (
-  <PaneShell scroll="body" title={`Goodboy ${release.version}`} actions={action}>
+  <PaneShell page="release" scroll="body" title={`Goodboy ${release.version}`} actions={action}>
     <ReleaseBody
       release={release}
       dateLabel={dateLabel}

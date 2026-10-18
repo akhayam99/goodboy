@@ -28,7 +28,6 @@ const studioPlace = ({ studio }: { readonly studio: StudioKind }): ColumnPlace =
     case 'impact':
       return 'impact';
     case 'guide':
-    case 'companion':
     case 'addWorkspace':
     case 'changelog':
     case 'notifications':

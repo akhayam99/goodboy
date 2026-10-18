@@ -107,9 +107,6 @@ vi.mock('../../features/worktree/worktree', () => ({
   worktreeSnapshot: vi.fn(),
 }));
 vi.mock('../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
-vi.mock('../../features/companion/components/CompanionStudio', () => ({
-  CompanionStudio: () => null,
-}));
 vi.mock('../../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));

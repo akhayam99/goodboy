@@ -44,6 +44,14 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     prop: 'page="guideChapter"',
   },
   {
+    page: 'whatsNew',
+    files: ['features/changelog/components/ChangelogStudio/CatchUpReader.tsx'],
+  },
+  {
+    page: 'release',
+    files: ['features/changelog/components/ChangelogStudio/ReleaseReader.tsx'],
+  },
+  {
     page: 'impact',
     files: [
       'features/impact/components/ImpactStudio/OverviewPanel.tsx',
@@ -103,6 +111,8 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   monitoring: 'column',
   notifications: 'column',
   guide: 'column',
+  whatsNew: 'column',
+  release: 'column',
   impact: 'column',
   overview: 'column',
   runs: 'column',
@@ -139,7 +149,6 @@ const TITLE_ROW_IMPORT = /\bPaneTitleRow\b/;
 const SKELETON_BODY_OF: Readonly<Record<keyof typeof STUDIO_META, string>> = {
   settings: 'rows',
   guide: 'prose',
-  companion: 'cards',
   addWorkspace: 'rows',
   workflow: 'rows',
   inbox: 'rows',

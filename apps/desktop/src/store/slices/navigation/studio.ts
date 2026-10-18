@@ -14,7 +14,6 @@ export type InboxStudioFocus = {
 export type StudioPlace =
   | { readonly kind: 'settings'; readonly focus: SettingsFocus }
   | { readonly kind: 'guide' }
-  | { readonly kind: 'companion' }
   | { readonly kind: 'addWorkspace' }
   | { readonly kind: 'workflow' }
   | { readonly kind: 'inbox'; readonly focus: InboxStudioFocus | null }
@@ -56,7 +55,6 @@ export const studioKey = ({ studio }: KeyParams): string => {
     case 'addWorkspace':
       return 'add-workspace';
     case 'guide':
-    case 'companion':
     case 'changelog':
     case 'notifications':
     case 'monitoring':

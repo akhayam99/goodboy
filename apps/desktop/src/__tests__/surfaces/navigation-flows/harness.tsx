@@ -575,7 +575,6 @@ export const installNavigationHooks = (): void => {
       import('../../../features/impact/components/ImpactStudio'),
       import('../../../features/changelog/components/ChangelogStudio'),
       import('../../../features/notifications/components/NotificationsStudio'),
-      import('../../../features/companion/components/CompanionStudio'),
       import('../../../features/workspace-chat/components/ChatStudio'),
     ]);
   }, STORE_IMPORT_TIMEOUT_MS);

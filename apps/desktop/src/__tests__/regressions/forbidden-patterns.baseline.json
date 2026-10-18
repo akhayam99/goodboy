@@ -306,8 +306,6 @@
     "apps/desktop/src/features/chat/components/RightSizeCard/index.tsx": 2,
     "apps/desktop/src/features/chat/components/RoutingIndicator/index.tsx": 1,
     "apps/desktop/src/features/chat/components/SkillInvocationCard/index.tsx": 1,
-    "apps/desktop/src/features/companion/components/CompanionStudio/PairedDevices.tsx": 1,
-    "apps/desktop/src/features/companion/components/CompanionStudio/PairingCode.tsx": 1,
     "apps/desktop/src/features/context/components/ContextPanel/strips/GoalAttachmentsStrip.tsx": 1,
     "apps/desktop/src/features/diff/components/DiffView/CommentThread.tsx": 1,
     "apps/desktop/src/features/diff/components/DiffView/FileHeader.tsx": 1,

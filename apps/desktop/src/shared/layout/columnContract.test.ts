@@ -32,7 +32,6 @@ const FIXED_PX_ALLOWLIST: ReadonlySet<string> = new Set([
 
 const CENTRED_ALLOWLIST: ReadonlySet<string> = new Set([
   'features/workspace/components/StageBoard/index.tsx',
-  'features/companion/components/CompanionStudio/index.tsx',
 ]);
 
 const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
@@ -159,7 +158,6 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
     'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx',
   ],
   guide: ['features/settings/components/GuideStudio/parts/ChapterPage.tsx'],
-  companion: ['features/companion/components/CompanionStudio/index.tsx'],
   addWorkspace: ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
   workflow: ['features/workflows/components/WorkflowsPanel/index.tsx'],
   inbox: ['features/inbox/components/InboxStudio/index.tsx'],
@@ -192,7 +190,7 @@ const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
 
 const COLUMN_ROOT = /<(PaneShell|PageColumn|PageSkeleton|FormPage)\b/;
 
-const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['companion', 'addWorkspace']);
+const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['addWorkspace']);
 
 const FULL_BLEED_PLACES: ReadonlySet<string> = new Set(['studio terminal']);
 

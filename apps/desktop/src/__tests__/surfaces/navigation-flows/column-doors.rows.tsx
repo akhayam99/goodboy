@@ -11,6 +11,7 @@ import {
   clickButton,
   heading,
   openPalette,
+  settingsColumn,
   settle,
   useAppStore,
   visible,
@@ -283,13 +284,16 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'column: goodboy chip to pair your iPhone',
-    covers: ['studio:companion'],
+    covers: ['studio:settings', 'scope:app', 'settings:iphone'],
     door: 'visible',
     open: async () => {
       await clickButton(/^Goodboy: setup/);
       await clickButton(/^Pair your iPhone/);
     },
-    lands: () => studio('Pair device'),
+    lands: both(
+      () => settingsColumn(),
+      () => heading('iPhone'),
+    ),
   },
   {
     name: 'column: report a bug opens the sheet',

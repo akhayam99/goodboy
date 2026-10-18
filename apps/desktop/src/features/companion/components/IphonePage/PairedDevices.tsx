@@ -6,12 +6,11 @@ import { pluralize } from '../../../../shared/utils/pluralize';
 
 type Props = {
   readonly enrolled: number;
-  readonly revoking: boolean;
+  readonly isRevoking: boolean;
   readonly onRevoke: () => Promise<void>;
-  readonly onPairAnother?: () => void;
 };
 
-export const PairedDevices = ({ enrolled, revoking, onRevoke, onPairAnother }: Props) => {
+export const PairedDevices = ({ enrolled, isRevoking, onRevoke }: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
 
   return (
@@ -23,19 +22,14 @@ export const PairedDevices = ({ enrolled, revoking, onRevoke, onPairAnother }: P
           A paired iPhone can send messages, start agents and merge pull requests.
         </span>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
-        {onPairAnother !== undefined && (
-          <Button variant="secondary" size="sm" onClick={onPairAnother}>
-            <Smartphone size={ICON_SIZE.row} aria-hidden /> Pair another device
-          </Button>
-        )}
+      <div className="flex shrink-0 items-center">
         <ConfirmPopover
           role="danger"
           icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
           title="Disconnect all paired devices?"
           description="Each phone must scan a new code to reconnect."
           confirmLabel="Disconnect"
-          isBusy={revoking}
+          isBusy={isRevoking}
           isOpen={isConfirming}
           onConfirm={async () => {
             await onRevoke();

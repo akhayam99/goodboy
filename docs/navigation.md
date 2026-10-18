@@ -1836,7 +1836,8 @@ still. Its popover leads with Report a bug (with ⌘I, and Draft saved
 when a draft waits), then the version and release notes, the update, the setup
 checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
 your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
-iPhone the pairing studio, so neither waits behind the palette. Every
+iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
+`{ scope: 'app', section: 'iphone' }`), so neither waits behind the palette. Every
 studio keeps a door you can see: the flow table in
 `__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
 `door` of `visible` or `palette`, and `studio-doors.test.ts` fails when a studio
@@ -2071,7 +2072,7 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 ## Studios
 
 Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
-the guide, pairing, Add workspace) render in the shell's studio slot, which
+the guide, Add workspace) render in the shell's studio slot, which
 covers the content area only, beside the column, as its own sheet; the page
 title is its one header (no title band). The column stays live, so another door or a session row is
 one click away. **Settings is the one studio that takes the column**, in
@@ -2121,16 +2122,17 @@ one is open at a time.
   (`STUDIO_META[kind].skeleton`, drawn through `PageSkeleton` on the page's header
   inset and measure): `rows` (Tasks, Workflows, Monitoring, Notifications, Settings,
   Add workspace), `prose` (the guide, What's new), `room` (Chat), `terminal` and
-  `cards` (Impact, pairing), with a rail skeleton where the page has a rail. With no
+  `cards` (Impact), with a rail skeleton where the page has a rail. With no
   studio open, no frame node exists, so nothing covers the page.
 - **One title per page; the band holds no title.** `StudioBand` never draws a
   crumb title, an icon or a subtitle; the page `h1` is the one title.
   `STUDIO_META[kind].close` places Close: `none` for the sidebar door pages
   (Tasks, Chat, Workflows, Terminal, Impact, Monitoring: no band, no Close, the
-  top bar Back and Escape leave them), `header` for Notifications and the guide
-  (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
-  action of the page title row), `band` for the rest (Settings over the window,
-  What's new, pairing, Add workspace), whose 40px band holds only Close
+  top bar Back and Escape leave them), `header` for Notifications, the guide and
+  What's new (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
+  action of the page title row, and the band holds it only until a page header
+  claims it), `band` for the rest (Settings over the window, Add workspace),
+  whose 40px band holds only Close
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not

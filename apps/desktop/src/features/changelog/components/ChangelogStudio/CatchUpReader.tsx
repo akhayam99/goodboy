@@ -10,6 +10,7 @@ type Props = {
 
 export const CatchUpReader = ({ catchUp, dates, installedVersion }: Props) => (
   <PaneShell
+    page="whatsNew"
     scroll="body"
     title="What's new"
     meta={`Since ${catchUp.fromVersion} · ${catchUp.releases.length} releases`}

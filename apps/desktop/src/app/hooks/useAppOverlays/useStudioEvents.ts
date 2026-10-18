@@ -3,6 +3,7 @@ import { CHANGELOG_STUDIO_EVENT } from '../../../features/changelog/changelogStu
 import { IMPACT_STUDIO_EVENT } from '../../../features/impact/openImpactStudio';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../../features/notifications/studioEvent';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
+import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
 import { useAppStore } from '../../../store';
 import {
   eventValue,
@@ -55,7 +56,7 @@ export const useStudioEvents = ({ open, goTo, close, openPalette }: Params) => {
       [IMPACT_STUDIO_EVENT, (event) => via(event)({ overlay: impactOverlayFromEvent(event) })],
       ['goodboy:open-inbox', openInbox],
       ['goodboy:add-workspace', () => open({ overlay: { kind: 'addWorkspace' } })],
-      ['goodboy:open-pair-device', () => open({ overlay: { kind: 'companion' } })],
+      ['goodboy:open-pair-device', () => open({ overlay: IPHONE_SETTINGS_PLACE })],
       ['goodboy:open-workflow-studio', (event) => via(event)({ overlay: { kind: 'workflow' } })],
       [CHANGELOG_STUDIO_EVENT, (event) => via(event)({ overlay: { kind: 'changelog' } })],
       [OPEN_COMMAND_PALETTE_EVENT, () => openPalette()],

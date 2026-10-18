@@ -1679,10 +1679,10 @@ adds no top padding; outside both, a bare page keeps 12px above.
 title, a crumb of its own, an icon or a subtitle: the page `h1` is the one
 title. `STUDIO_META[kind].close` says where Close lives. A sidebar door page
 (`none`: Tasks, Chat, Workflows, Terminal, Impact, Monitoring) has no band and no Close; the top bar
-Back and Escape leave it. A closable overlay (`header`: Notifications, Guide) has no band either: `StudioFrame` hands its Close button
+Back and Escape leave it. A closable overlay (`header`: Notifications, Guide, What's new) has no band either: `StudioFrame` hands its Close button
 to the page through `PaneActionsContext`, so `PaneShell` draws it as the last
-action of the title row. The other overlays (`band`: Settings over the window,
-What's new, Pair device, Add workspace) keep a 40px band that holds only
+action of the title row; until a page header claims it, the band holds it. The other overlays (`band`: Settings over the window,
+Add workspace) keep a 40px band that holds only
 Close. A band also appears when the body hands it a trail (`StudioTrail`, the
 workflow editor and the Settings crumbs) or a header accessory, and only then is
 the body `UnderTrailContext`. The bandless pages, the Board and Settings included,

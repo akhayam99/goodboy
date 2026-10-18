@@ -287,8 +287,8 @@ A page with no entry fails typecheck. Four frame types:
 | split  | Chat, Guide, What's new, Tasks, Notifications, Branch                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
 
 `frameGeometryOf({ page })` returns the type, the space above the title (the 12px
-header inset, or the 40px band on What's new and a release), the title row
-(32px), the title centre (28px, 56px under a band), the drawer row (28px) and
+header inset; no page sits under a 40px band now that every Close is on the title row), the title row
+(32px), the title centre (28px), the drawer row (28px) and
 `titleLeft` read from the type.
 `STUDIO_META[kind].page` names the page of a studio and `frameTierOf` gives the tier its band
 draws at; a test fails when the two disagree.

@@ -2811,21 +2811,6 @@
       "count": 24
     }
   },
-  "apps/desktop/src/features/companion/components/CompanionStudio/PairedDevices.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/companion/components/CompanionStudio/PairingCode.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/companion/components/CompanionStudio/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/companion/mobileConfinement.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 12

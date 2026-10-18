@@ -42,7 +42,6 @@ const Body = ({ subtitle, isEscapeEnabled = true }: BodyProps) => (
 const STUDIO_KINDS: ReadonlyArray<StudioKind> = [
   'settings',
   'guide',
-  'companion',
   'addWorkspace',
   'workflow',
   'inbox',
@@ -173,6 +172,7 @@ describe('StudioFrame', () => {
   it.each([
     ['notifications', 'Close notifications'],
     ['guide', 'Close guide'],
+    ['changelog', "Close what's new"],
   ] as const)('puts Close as the last action of the %s page header', (kind, label) => {
     const { container } = render(
       <StudioFrame kind={kind} onClose={() => undefined}>
@@ -344,33 +344,47 @@ describe('StudioFrame grid', () => {
     },
   );
 
-  it.each(['changelog'] as const)(
-    'draws the %s band in the detail beside the rail, on the column of its title',
-    (kind) => {
-      const { container } = render(
-        <StudioFrame kind={kind} onClose={() => undefined}>
-          <div className="flex">
-            <aside aria-label="Rail" />
-            <StudioDetail>
-              <PaneShell title="Studio title">
-                <p>body</p>
-              </PaneShell>
-            </StudioDetail>
-          </div>
-        </StudioFrame>,
-      );
+  it('puts the release Close on its title row in the detail beside the rail, with no band', () => {
+    const { container } = render(
+      <StudioFrame kind="changelog" onClose={() => undefined}>
+        <div className="flex">
+          <aside aria-label="Rail" />
+          <StudioDetail>
+            <PaneShell title="Goodboy 0.27.2">
+              <p>body</p>
+            </PaneShell>
+          </StudioDetail>
+        </div>
+      </StudioFrame>,
+    );
 
-      const band = screen.getByRole('banner');
-      const detail = container.querySelector('[data-studio-detail]');
-      const rail = screen.getByRole('complementary', { name: 'Rail' });
-      const bandColumn = band.querySelector('[data-page-column]');
-      const titleColumn = screen.getByRole('heading', { level: 1 }).closest('[data-page-column]');
-      expect(detail?.contains(band)).toBe(true);
-      expect(rail.contains(band)).toBe(false);
-      expect(bandColumn?.getAttribute('data-width')).toBe(titleColumn?.getAttribute('data-width'));
-      expect(detail?.firstElementChild).toBe(band);
-    },
-  );
+    const close = screen.getByRole('button', { name: "Close what's new" });
+    const rail = screen.getByRole('complementary', { name: 'Rail' });
+    const titleRow = screen
+      .getByRole('heading', { level: 1, name: 'Goodboy 0.27.2' })
+      .closest('[data-slot="pane-header"]');
+    expect(container.querySelector('[data-studio-band]')).toBeNull();
+    expect(titleRow?.contains(close)).toBe(true);
+    expect(rail.contains(close)).toBe(false);
+  });
+
+  it("falls back to the band Close in the detail while What's new shows no page header", () => {
+    const { container } = render(
+      <StudioFrame kind="changelog" onClose={() => undefined}>
+        <div className="flex">
+          <aside aria-label="Rail" />
+          <StudioDetail>
+            <p>loading releases</p>
+          </StudioDetail>
+        </div>
+      </StudioFrame>,
+    );
+
+    const band = screen.getByRole('banner');
+    expect(screen.getAllByRole('button', { name: "Close what's new" })).toHaveLength(1);
+    expect(band.contains(screen.getByRole('button', { name: "Close what's new" }))).toBe(true);
+    expect(container.querySelector('[data-studio-detail]')?.firstElementChild).toBe(band);
+  });
 
   it('keeps Close at the right edge of the band column, with no crumb of its own', () => {
     render(

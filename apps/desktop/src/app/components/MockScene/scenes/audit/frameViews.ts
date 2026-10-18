@@ -1,5 +1,6 @@
 import type { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useAppStore } from '../../../../../store';
+import { installIphoneIpc } from '../u26s/settingsTree/installIphoneIpc';
 
 type Openers = ReturnType<typeof useAppOverlays>;
 
@@ -65,6 +66,7 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
       openers.openAddWorkspace();
       return;
     case 'pair':
+      installIphoneIpc({ enrolledCount: 1 });
       fire({ name: 'goodboy:open-pair-device' });
       return;
     case 'palette':

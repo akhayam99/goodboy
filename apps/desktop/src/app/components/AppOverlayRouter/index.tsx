@@ -69,11 +69,6 @@ const MonitoringStudio = lazy(() =>
     default: module.MonitoringStudio,
   })),
 );
-const CompanionStudio = lazy(() =>
-  import('../../../features/companion/components/CompanionStudio').then((module) => ({
-    default: module.CompanionStudio,
-  })),
-);
 
 type Props = {
   readonly overlay: StudioPlace | null;
@@ -137,8 +132,6 @@ const renderStudio = ({
       );
     case 'guide':
       return <GuideStudio onClose={close} />;
-    case 'companion':
-      return <CompanionStudio onClose={close} />;
     case 'addWorkspace':
       return <WorkspaceLinkStudio onClose={close} onOfferRepo={offerWorkspaceRepo} />;
     case 'workflow':
