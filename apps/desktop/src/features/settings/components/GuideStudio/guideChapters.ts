@@ -81,7 +81,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Turn',
-        desc: 'One message from you and the answer, and each turn adds to what the model reads, so later turns cost more.',
+        desc: 'One message from you and the answer, which adds to what the model reads.',
       },
       {
         term: 'Worktree and branch',
@@ -137,6 +137,48 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     ],
   },
   {
+    id: 'plain-folders',
+    group: 'daily',
+    title: 'Folders without git',
+    lead: 'Agents edit a folder without git in place, and every change can be put back.',
+    points: [
+      {
+        term: 'Code or Documents',
+        desc: 'Picking a folder asks what it is for. Change it later in Settings, Folders.',
+      },
+      {
+        term: 'One writer at a time',
+        desc: 'One session writes in a folder at a time. The next waits its turn.',
+      },
+      {
+        term: 'Changes',
+        desc: "The session rail lists each turn's files. Restore a file or a whole turn, then Undo restore if you change your mind.",
+      },
+      {
+        term: 'Saved versions',
+        desc: 'Each writing turn saves what it may change first, for 30 days after the session ends.',
+      },
+      {
+        term: 'Track it with git',
+        desc: 'Add git for branches and pull requests. The first commit is shown before it happens.',
+      },
+      {
+        term: 'Git set up outside',
+        desc: 'Code folders move to branches between turns. Documents folders ask first.',
+      },
+    ],
+    links: [
+      {
+        label: `Open ${NAMES.folders}`,
+        target: {
+          kind: 'studio',
+          studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
+        },
+      },
+      { label: NAMES.newWorkspace, target: { kind: 'studio', studio: { kind: 'addWorkspace' } } },
+    ],
+  },
+  {
     id: 'providers',
     group: 'daily',
     title: 'Providers and limits',
@@ -156,7 +198,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Auto in Models',
-        desc: 'The model setting, not the Auto agent: each role runs on the newest model of its line, and Models shows the pick. A model turned off in the picker is left out.',
+        desc: 'The model setting, not the Auto agent: each role runs on a rung of one ladder per provider, moved by step size. Models shows the pick. A model turned off is left out.',
       },
       {
         term: 'Fallback',
@@ -190,7 +232,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Four ways to start',
-        desc: 'One selector holds Pick up a task, Run a workflow, Run an orchestrator and Start an agent, and a line under it says what each does. Esc closes the draft, asking first if you wrote something.',
+        desc: 'One selector holds Pick up a task, Run a workflow, Run an orchestrator and Start an agent. Esc closes the draft, asking first if you wrote something.',
       },
       {
         term: 'Pick up a task',
@@ -239,11 +281,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Archive',
-        desc: 'Asks first and says when agents still run: they keep running, since Archive only puts the session away. Branches, worktrees and history stay on disk.',
+        desc: 'Asks first and says when agents still run: they keep running. Branches, worktrees and history stay on disk.',
       },
       {
         term: 'Select many',
-        desc: 'Tick, lasso or ⌘A cards, then Archive, Restore or Delete them from the bar at the bottom. Archive asks once for all of them.',
+        desc: 'Shift or Option click, or Select in a row menu, then Archive, Restore or Delete from the bar.',
       },
       {
         term: 'Now chip',
@@ -251,7 +293,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Top bar',
-        desc: "The Now chip, the providers, today's spend, the theme button and the bell sit on the right. Today's spend opens Impact on Spend.",
+        desc: "The Now chip, providers, today's spend, theme button and bell sit on the right; spend opens Impact on Spend.",
       },
     ],
     links: [{ label: 'Go to the board', target: { kind: 'board' } }],
@@ -265,7 +307,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session, then Sessions, Tasks, Chat, Workflows, Terminal, Impact and Monitoring, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down. ⌘B folds it.',
+        desc: 'New session, then Sessions, Tasks, Chat, Workflows, Terminal, Impact and Monitoring, your sessions, Settings and the Goodboy row. An amber dot says sessions need you, or on Monitoring that a pinned port is down.',
       },
       {
         term: 'Session rows',
@@ -277,7 +319,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rail',
-        desc: 'Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions, with counts; Auto agents reads Experimental and Agents Deprecated. Then the Folders card, a tree of folders and branches, and the Linked card.',
+        desc: 'Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions, with counts; Auto agents reads Experimental. Then the Folders card, a tree of folders and branches, and the Linked card.',
       },
       {
         term: 'Rail foot and +',
@@ -351,7 +393,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Orchestrated or Auto',
-        desc: 'Orchestrated is not Auto: the orchestrator only picks the next step of a workflow and you steer with hints. Auto is one agent that delegates to children, and only Auto carries the Experimental marker.',
+        desc: 'Orchestrated is not Auto: the orchestrator only picks the next step and you steer with hints. Auto is one agent that delegates to children, and only Auto carries the Experimental marker.',
       },
       {
         term: 'Autonomy and pause',
@@ -508,7 +550,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rebase',
-        desc: 'Rebase on the status line moves a branch that is behind onto the latest base with git alone, no agent and no tokens, and sets your uncommitted files aside and back.',
+        desc: 'Rebase on the status line moves a branch that is behind onto the latest base with git alone, no tokens, and sets your uncommitted files aside and back.',
       },
       {
         term: 'A rebase conflict asks',
@@ -561,7 +603,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Wireframes',
-        desc: 'Before drawing, two scouts read your code, one for screens and one for data. Compare two versions side by side and restore any of them.',
+        desc: 'Before drawing, two scouts read your code, one for screens and one for data. Compare two versions side by side.',
       },
       {
         term: 'Revisions',
@@ -574,7 +616,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'impact',
     group: 'daily',
     title: 'Impact',
-    lead: 'What got done and what it cost, over 7 days, 30 days or All time, behind a door in the sidebar.',
+    lead: 'What got done and what it cost, over 7 days, 30 days or All time.',
     points: [
       {
         term: 'Overview',
@@ -590,7 +632,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Spend',
-        desc: "What each provider, model and session cost, deleted sessions included. A provider's page holds its Monthly limit, where Save limit and Remove limit act on that provider only.",
+        desc: "What each provider, model and session cost, deleted sessions included. A provider's Monthly limit has Save limit and Remove limit for that provider only.",
       },
       {
         term: 'How cost is counted',
@@ -608,7 +650,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'monitoring',
     group: 'daily',
     title: 'Monitoring',
-    lead: 'The ports in use on this Mac, who opened them and how to stop them, behind a door in the sidebar, on macOS and Linux.',
+    lead: 'The ports in use on this Mac, who opened them and how to stop them, on macOS and Linux.',
     points: [
       {
         term: 'Four groups',
@@ -620,7 +662,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rows',
-        desc: 'Rows rest quiet. Stop and the ⋯ menu fill one cell when you rest on a row, and a right click opens the same menu: Open in browser, Pin, Hide and Copy address.',
+        desc: 'Stop and the ⋯ menu fill one cell when you rest on a row, and a right click opens the same menu: Open in browser, Pin, Hide and Copy address.',
       },
       {
         term: 'Stop',
@@ -827,7 +869,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Output tokens',
-        desc: 'What the model writes back, text plus tool calls. The most expensive kind.',
+        desc: 'What the model writes back, text plus tool calls.',
       },
       {
         term: 'Context window',
@@ -852,7 +894,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Light models for looking around',
-        desc: 'A light model can search, list and summarize at a fraction of the price. Move up when the reasoning gets hard.',
+        desc: 'A light model can search, list and summarize at a fraction of the price.',
       },
     ],
     links: [],

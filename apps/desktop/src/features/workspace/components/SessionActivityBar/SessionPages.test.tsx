@@ -25,6 +25,7 @@ import { sessionOf } from '../../testing/sessionColumn';
 import { SessionPages } from './SessionPages';
 
 const FACTS: PageCountFacts = {
+  changedFiles: 0,
   runs: 0,
   runningRuns: 0,
   waitingRuns: 0,
@@ -60,20 +61,20 @@ const renderPages = () =>
   );
 
 describe('the session rail page row tooltips', () => {
-  it('opens the Deprecated tooltip on the marker alone, with no count in it', async () => {
-    renderPages();
-    fireEvent.mouseEnter(screen.getByTestId('page-marker-agents'));
-
-    const tooltip = await screen.findByRole('tooltip');
-    expect(tooltip.textContent).toBe(SESSION_PAGE_MARKER_WHY.agents);
-    expect(tooltip.textContent).not.toMatch(/\d/);
-  });
-
-  it('opens the Experimental tooltip on the Auto agents marker', async () => {
+  it('opens the Experimental tooltip on the marker alone, with no count in it', async () => {
     renderPages();
     fireEvent.mouseEnter(screen.getByTestId('page-marker-auto'));
 
-    expect((await screen.findByRole('tooltip')).textContent).toBe(SESSION_PAGE_MARKER_WHY.auto);
+    const tooltip = await screen.findByRole('tooltip');
+    expect(tooltip.textContent).toBe(SESSION_PAGE_MARKER_WHY.auto);
+    expect(tooltip.textContent).not.toMatch(/\d/);
+  });
+
+  it('marks Auto agents Experimental and leaves Agents unmarked', () => {
+    renderPages();
+
+    expect(screen.getByTestId('page-marker-auto').textContent).toBe('Experimental');
+    expect(screen.queryByTestId('page-marker-agents')).toBeNull();
   });
 
   it('keeps the count on its own short tooltip', async () => {

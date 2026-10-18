@@ -101,6 +101,7 @@ describe('the chapter list', () => {
       ['What is Goodboy', 'Words'],
       [
         'Workspaces and folders',
+        'Folders without git',
         'Providers and limits',
         'New session',
         'Board',
@@ -123,12 +124,13 @@ describe('the chapter list', () => {
         GUIDE_CHAPTERS.filter((chapter) => chapter.group === group).map(() => group),
       ),
     );
-    expect(new Set(GUIDE_CHAPTERS.map((chapter) => chapter.id)).size).toBe(24);
+    expect(new Set(GUIDE_CHAPTERS.map((chapter) => chapter.id)).size).toBe(25);
   });
 
-  it('keeps the slot after Workspaces and folders for the chapter on folders without git', () => {
+  it('puts the chapter on folders without git right after Workspaces and folders', () => {
     const ids = GUIDE_CHAPTERS.map((chapter) => chapter.id);
-    expect(ids.indexOf('providers')).toBe(ids.indexOf('folders') + 1);
+    expect(ids.indexOf('plain-folders')).toBe(ids.indexOf('folders') + 1);
+    expect(ids.indexOf('providers')).toBe(ids.indexOf('plain-folders') + 1);
   });
 });
 
@@ -220,9 +222,7 @@ describe('the shell chapter', () => {
     columnPagesOf({ isBranchless: false, hasAutoAgents: true }).forEach((page) =>
       expect(rail).toContain(page.label),
     );
-    [NAMES.folders, 'Linked', 'Experimental', 'Deprecated'].forEach((word) =>
-      expect(rail).toContain(word),
-    );
+    [NAMES.folders, 'Linked', 'Experimental'].forEach((word) => expect(rail).toContain(word));
   });
 
   it('puts both adds on the rows they act on and the spend on one line with Archive and Delete', () => {

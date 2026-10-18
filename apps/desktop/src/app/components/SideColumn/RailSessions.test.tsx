@@ -246,7 +246,7 @@ describe('the open session on the rail', () => {
       'Overview',
       'Runs',
       'Orchestrated',
-      'AgentsDeprecated',
+      'Agents',
       'Auto agentsExperimental',
       'Artifacts',
       'Questions',

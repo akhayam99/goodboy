@@ -79,6 +79,21 @@ describe('activity run scene', () => {
     }
   });
 
+  it('keeps the finished run count row under the same row whether it is folded or open', () => {
+    const countId = 'count:run:mock-run-workflow-run-webhook-idempotency';
+    const rowBefore = ({ items }: { readonly items: ReadonlyArray<TimelineStreamItem> }) => {
+      const index = items.findIndex((item) => item.id === countId);
+      return items[index - 1]?.id ?? null;
+    };
+
+    const folded = streamOfScene({ expandAll: false });
+    const opened = streamOfScene({ expandAll: true });
+
+    expect(folded.items.some((item) => item.id === countId)).toBe(true);
+    expect(rowBefore({ items: folded.items })).not.toBeNull();
+    expect(rowBefore({ items: folded.items })).toBe(rowBefore({ items: opened.items }));
+  });
+
   it('folds the finished run to one count row and leaves the live run open', () => {
     const { items } = streamOfScene({ expandAll: false });
     const counts = items.flatMap((item) => (item.kind === 'count' ? [item.expandId] : []));
