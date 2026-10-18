@@ -147,6 +147,28 @@ const storyInvokeHandlers = {
   integration_credential_forget: null,
   file_versions_list_staged_snapshots: { runs: [], skipped: [] },
   file_versions_purge_session: null,
+  file_versions_folder_list_staged: [],
+  file_versions_folder_sessions: [],
+  file_versions_folder_status: {
+    folderPath: '',
+    isReady: true,
+    isTurnOpen: false,
+    fileCount: 0,
+    keptBytes: 0,
+    skipped: [],
+    method: null,
+  },
+  file_versions_folder_begin: {
+    runId: '',
+    wasReady: true,
+    copied: 0,
+    method: null,
+    skipped: [],
+    recovered: [],
+  },
+  file_versions_folder_finalize: { sessionId: '', runId: '', turn: null, kept: [] },
+  file_versions_folder_discard: true,
+  file_versions_folder_list_turns: [],
   chat_attachments_prune: 0,
   qa_deciding_workflow_runs: [],
   workspace_script_list_live: [],
@@ -373,7 +395,6 @@ export const storySpies = {
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
   createWorktree: vi.fn(),
-  createSessionDir: vi.fn(),
   sessionDirExists: vi.fn(async (_args: unknown) => true),
   scratchDirPrepare: vi.fn(async (_args: unknown) => '/tmp/goodboy-root/scratch/session-story'),
   scratchDirRemove: vi.fn(async (_args: unknown) => undefined),
@@ -506,12 +527,6 @@ export const resetStorySpies = () => {
   storySpies.createWorktree.mockImplementation(async () => ({
     worktreePath: '/tmp/app/.goodboy/worktrees/goal-12345678',
     branchName: 'goodboy/goal-12345678',
-    slug: 'goal-12345678',
-    reused: false,
-  }));
-  storySpies.createSessionDir.mockImplementation(async () => ({
-    worktreePath: '/tmp/app/sessions/goal-12345678',
-    branchName: '',
     slug: 'goal-12345678',
     reused: false,
   }));
@@ -850,7 +865,6 @@ export const plansModuleMock = () => ({
 
 export const worktreeModuleMock = () => ({
   createWorktree: (args: unknown) => storySpies.createWorktree(args),
-  createSessionDir: (args: unknown) => storySpies.createSessionDir(args),
   removeWorktree: (repoPath: string, worktreePath: string) =>
     storySpies.removeWorktree(repoPath, worktreePath),
   removeWorktreeChecked: (args: { repoPath: string; worktreePath: string }) =>

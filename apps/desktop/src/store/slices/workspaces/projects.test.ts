@@ -480,7 +480,8 @@ describe('workspace and project slices', () => {
       resolvedPath: '/repos/plain',
       error: 'not a git repository',
     });
-    const store = harness({ workspaces: [workspace()] });
+    const prepareFolderVersions = vi.fn(async () => undefined);
+    const store = harness({ workspaces: [workspace()], prepareFolderVersions });
 
     const created = await addProject(
       store.set,
@@ -496,6 +497,7 @@ describe('workspace and project slices', () => {
     }
     expect(created.project.kind).toBe('folder');
     expect(h.insertProject).toHaveBeenCalledOnce();
+    expect(prepareFolderVersions).toHaveBeenCalledWith({ folder: created.project });
   });
 
   it('persists a container profile and updates the cached workspace', async () => {

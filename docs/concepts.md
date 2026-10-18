@@ -96,15 +96,92 @@ the name, the folders and the folders to move here. In this order:
 2. It runs `git init` for a plain folder you chose to track, or creates the
    folder for Start from scratch, before any database write. A git failure
    writes nothing and shows git's own message.
-3. It writes the workspace, every folder and the first-lap phase of a new
-   folder in one transaction (`insertWorkspaceWithProjects`). A failed insert
-   leaves no row.
+3. It writes the workspace, every folder, the first-lap phase of a new
+   folder and the face of a plain folder in one transaction
+   (`insertWorkspaceWithProjects`). A failed insert leaves no row.
 4. Only then the store shows them, and the moves run through `adoptProject`,
    which refuses on its own while agents run there.
 
 Retry is safe: the workspace id and the `root_path UNIQUE` column (m119) make a
 second try reuse what the first one left, and a scratch folder the first try
 created is picked up instead of refused.
+
+**The two faces of a plain folder.** A plain folder is either a **Code
+project** or **Documents** (`FolderPurpose`, `'code' | 'documents'`, in
+`packages/types/src/folder.ts`). The face is one settings row per folder,
+`folder.purpose.<project id>`, the same pattern as `bootstrap.phase.<project id>`:
+no column and no migration. A repository has no face. The
+`store/slices/folder-purpose/` slice owns it:
+
+- `hydrateFolderPurposes()` loads every row at boot into `folderPurpose`,
+  keyed by project id, and skips a row it cannot read. Call it again on window
+  focus to pick up a face another window saved.
+- `loadFolderPurpose({ projectId })` reads one row fresh, for a turn at send
+  time.
+- `setFolderPurpose({ projectId, purpose })` writes the row with a compare and
+  swap (a lost race reads again once, then gives up with an error) and changes
+  the store only after the write resolved. A failure keeps the old face.
+- `createWorkspaceWithFolders` takes `purpose` on a `plain` folder and writes
+  its row in the Create transaction.
+
+The face is preselected from a read only look at the folder.
+`read_folder_signals` (`src-tauri/src/folder_signals.rs`) lists the top two
+levels, at most 2,000 entries, never follows a link and skips hidden entries
+and dependency or build folders (`node_modules`, `target`, `dist`, `build`,
+and the like). It returns the code markers it saw (`package.json`,
+`Cargo.toml`, `pyproject.toml`, `go.mod`, `Gemfile`, `pom.xml`, `Makefile`,
+an Xcode project and a few more), a count per file kind (Markdown, text, PDF,
+Word, Pages, Keynote, Numbers, Excel, PowerPoint, image, video, audio, source,
+other), the total files and bytes it saw, and `isTruncated` when it stopped at
+the cap. These counts are the only source for a line such as "86 Markdown
+files". `scanFolderSignals({ path })` runs it and keeps only the newest answer
+per path: an older scan that answers late returns `null` and changes nothing.
+
+`folderPurposeOf` (`features/workspace/folderPurposeOf.ts`) is the one
+preselect rule. A code marker means Code project. Otherwise the folder's source
+files are weighed against its document and media files, and the larger side
+wins. An empty folder or a tie preselects nothing, and Create asks what the
+folder is for.
+
+The new workspace form asks on the plain folder row (`FolderFaceChoice` in
+`shared/components/NewWorkspaceForm/`): one line of what the scan saw
+(`folderSignalsLine`, the only owner of "86 Markdown files"), then Code project
+or Documents. Code offers **Track it with git when the workspace is created**,
+unticked; ticked, Create makes the first commit through
+`folder_git_make_first_commit` with dependencies, build output and secrets
+left out, and the row says how many files go in (`firstCommitCount` over the
+read only plan). Documents says what agents edit and what stays read only, and
+the trust line under the list says agents edit in place. A folder over 2 GB
+(`largeFolderOf`) says that files over 15 MB keep no versions. A folder inside
+a repository asks **The whole repository** (today's snap to the root) or
+**Only this folder**, which creates the subfolder as a Documents folder and
+names the workspace after it. A scan that fails leaves no preselection and the
+row says it could not look inside. All copy of the faces lives in one table,
+`features/workspace/folderFaceCopy.ts`, and the Documents half is held free of
+git words by `documents-copy-has-no-git-words.test.ts`.
+
+A plain folder starts its first copy of saved versions right after it is
+added, at Create and through `addProject` (`prepareLinkedFolder`, in the
+background; a failure marks the folder failed and Folders settings offers
+Retry), and `removeProject` forgets that copy once the folder is removed. Home
+names a one folder workspace by its face (`workspaceFaceLabel`), and Folders
+settings switches it (the Plain folders band, [navigation.md](navigation.md)).
+Storage lists the saved versions of each plain folder in scope
+(`SavedVersionsSection`).
+
+A session that edits a plain folder in place shows the face where it works:
+the rail's **Folder** card names the folder and what agents do there
+("Documents · edits in place", "No git yet · edits in place"), the Overview
+opens on a folder card (where agents write, what is saved before each turn,
+the changes so far from `turnChanges`, and the read only kinds of a Documents
+folder, `SessionOverviewPane/FolderCard.tsx`), and each writing turn in the
+chat ends in a card with Review changes and Restore turn
+(`features/chat/components/TurnChangesCard/`). The git verbs are not
+registered for a session without a branch: Comments (`session.review`) and
+Files (`session.diff`) leave the menus and the palette, and **Changes**
+(`session.changes`) opens the Changes page in their place. The Documents copy
+says no git word, held by
+`__tests__/regressions/documents-copy-has-no-git-words.test.ts`.
 
 Every door says **New workspace** (Home, the switcher, the palette, the
 Goodboy menu, the menu bar) and opens one form with no shape to choose; **Start
@@ -222,14 +299,18 @@ after you deleted the session still counts.
 
 A new session starts with no folder, no worktree and no branch. A turn that
 runs before anything is mounted writes to a scratch folder,
-`~/.goodboy/scratch/<session-id>`.
+`~/.goodboy/scratch/<session-id>`, unless the workspace holds a plain folder.
 
-A project joins the session when Goodboy **materializes** it. That means it
-gets its own working copy inside the session, called a **mount**:
+A plain folder (a folder project, no git) is never copied. Its sessions work
+in the folder itself, and one session writes there at a time: a second
+session that wants to write waits for the first one and can still read and
+answer meanwhile. Nothing Goodboy makes lands inside the folder. Sessions made
+before 0.27.3 that already write in a `<project-root>/sessions/<name>` folder
+keep it.
 
-- A repo project gets a git worktree under the repository's own
-  `.goodboy/worktrees/`
-- A folder project gets a plain folder under `<project-root>/sessions/`
+A repo project joins the session when Goodboy **materializes** it. That means
+it gets its own working copy inside the session, called a **mount**: a git
+worktree under the repository's own `.goodboy/worktrees/`.
 
 [mounts.md](mounts.md) owns the layout and the mount lifecycle.
 
@@ -371,7 +452,10 @@ state or action, the model that ran, time and cost. It reads newest first like
 a git graph, with the lanes of a run drawn beside it. What happens inside a
 finished launch folds into a count row on its lane: the steps and subagents of
 a run, the questions it answered, and the plans, reports, wireframes and
-learnings it produced, listed behind "N outputs" above the launch. The Log holds the facts: plans, reports, wireframes and learnings
+learnings it produced, listed behind "N outputs" above the launch. A run's
+count row stands where its newest folded row would read, so opening or
+folding the run never moves it, even when another run's rows fall between
+the run's rows in time (`foldedSlotIndexOf` in `buildTimelineStream.ts`). The Log holds the facts: plans, reports, wireframes and learnings
 made without a launch, Context, branch and worktree events, link events (an
 unlink carries **Re-link**), pull request events and session archive and
 restore. It is flat, newest first, one muted row per fact, with a search box on
@@ -1034,7 +1118,7 @@ opens the panel for the fixable pick and `Apply 3 fixes` applies the pick to rev
 a batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box, a document: ⌘Enter sends, Enter
 adds a line, Esc cancels, and Preview shows the markdown. Clicking the reply edits it in place.
 `…` in the drawer header also offers Stop drafting, Resolve, Open in Files, Agent
-transcript, Open on GitHub and Copy link, and shows only with two or more of them. Apply fix and Skip move the drawer to the
+transcript, Open (the host logo, named Open on GitHub) and Copy link, and shows only with two or more of them. Apply fix and Skip move the drawer to the
 next open comment. Apply fix never talks to GitHub: it marks the comment for the
 push and, for a fix, lands the commit on the local branch. The actions are the
 `review` and `reviewComment` kinds of the action registry
@@ -1155,7 +1239,7 @@ for this session`, else `Resolver default`); launching does not turn the
   the comment fold into one line above (`Attempt 1 · Sonnet 5.5 · Medium ·
 failed`) that opens to their reasons. A failed delivery after the run has no
   button on the comment: the Branch header reads `Retry N`, and the push
-  result there offers `Sync and try again`. The comment keeps `Open on GitHub`
+  result there offers `Sync and try again`. The comment keeps `Open` (the host logo, named `Open on GitHub`)
   when Goodboy could not confirm the reply landed
 - A fix run is one agent in its own copy of the branch, so it never fights the
   branch you are on. Separate runs go up to four at a time (the session limit)
@@ -1798,7 +1882,10 @@ Other identifiers:
   JSON object body, and repairs raw newlines, stray quotes and smart quotes in
   it. It also reads a block wrapped in a plain or `json` code fence
   (`packages/core/src/artifacts/envelopeBody.ts`,
-  `packages/core/src/artifacts/locateArtifactBlocks.ts`).
+  `packages/core/src/artifacts/locateArtifactBlocks.ts`). The transcript hides
+  that same block, fence lines included: `splitArtifactText` falls back to
+  `locateArtifactSpans` when the strict scan finds none, and only for a block
+  that reached its close line, so a quoted open marker stays text.
 - A review conversation is a `resolve_threads` row. A fix attempt is a
   `resolve_attempts` row.
 

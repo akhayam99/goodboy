@@ -80,8 +80,6 @@ pub enum RepoInitError {
     AlreadyRepo(String),
     #[error("this folder is already inside the git repository at {0}. open that repository as the workspace instead")]
     NestedRepo(String),
-    #[error("not a usable git remote url: {0}")]
-    InvalidRemote(String),
     #[error("{0} is not a usable folder name")]
     InvalidName(String),
     #[error("{0} already exists")]
@@ -104,7 +102,6 @@ impl RepoInitError {
             RepoInitError::DirNotFound(_) => "dir_not_found",
             RepoInitError::AlreadyRepo(_) => "already_repo",
             RepoInitError::NestedRepo(_) => "nested_repo",
-            RepoInitError::InvalidRemote(_) => "invalid_remote",
             RepoInitError::InvalidName(_) => "invalid_name",
             RepoInitError::AlreadyExists(_) => "already_exists",
             RepoInitError::IgnoreNotApplied(_) => "ignore_not_applied",
@@ -113,13 +110,6 @@ impl RepoInitError {
             RepoInitError::Io(_) => "io",
         }
     }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct RepoInitArgs {
-    pub path: String,
-    #[serde(rename = "remoteUrl")]
-    pub remote_url: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -657,21 +647,6 @@ fn is_supported_authority(authority: &str) -> bool {
 }
 
 #[tauri::command]
-pub async fn repo_init_with_remote(args: RepoInitArgs) -> Result<InitializedRepo, RepoInitError> {
-    tauri::async_runtime::spawn_blocking(move || repo_init_with_remote_blocking(args))
-        .await
-        .map_err(|error| RepoInitError::Io(std::io::Error::other(error.to_string())))?
-}
-
-fn repo_init_with_remote_blocking(args: RepoInitArgs) -> Result<InitializedRepo, RepoInitError> {
-    let remote_url = args.remote_url.trim().to_string();
-    if !is_supported_remote_url(&remote_url) {
-        return Err(RepoInitError::InvalidRemote(args.remote_url.clone()));
-    }
-    init_repo_at(&args.path, Some(&remote_url))
-}
-
-#[tauri::command]
 pub async fn repo_init(path: String) -> Result<InitializedRepo, RepoInitError> {
     tauri::async_runtime::spawn_blocking(move || repo_init_blocking(path))
         .await
@@ -679,13 +654,10 @@ pub async fn repo_init(path: String) -> Result<InitializedRepo, RepoInitError> {
 }
 
 fn repo_init_blocking(path: String) -> Result<InitializedRepo, RepoInitError> {
-    init_repo_at(&path, None)
+    init_repo_at(&path)
 }
 
-pub(crate) fn init_repo_at(
-    path: &str,
-    remote_url: Option<&str>,
-) -> Result<InitializedRepo, RepoInitError> {
+pub(crate) fn init_repo_at(path: &str) -> Result<InitializedRepo, RepoInitError> {
     let root = PathBuf::from(path.trim());
     if !root.is_dir() {
         return Err(RepoInitError::DirNotFound(path.to_string()));
@@ -694,8 +666,8 @@ pub(crate) fn init_repo_at(
 
     match repo_state(&root)? {
         RepoState::Nested(toplevel) => Err(RepoInitError::NestedRepo(toplevel)),
-        RepoState::AtRoot => adopt_repo(&root, remote_url),
-        RepoState::Absent => create_repo(&root, remote_url),
+        RepoState::AtRoot => adopt_repo(&root),
+        RepoState::Absent => create_repo(&root),
     }
 }
 
@@ -716,30 +688,27 @@ pub(crate) fn repo_state(root: &Path) -> Result<RepoState, RepoInitError> {
     Ok(RepoState::Nested(toplevel))
 }
 
-fn create_repo(root: &Path, remote_url: Option<&str>) -> Result<InitializedRepo, RepoInitError> {
+fn create_repo(root: &Path) -> Result<InitializedRepo, RepoInitError> {
     let snapshot = GitignoreSnapshot::capture(root);
     run_git(root, &["init"])?;
-    match scaffold_repo(root, remote_url) {
+    match scaffold_repo(root) {
         Ok(()) => Ok(InitializedRepo {
             root_path: root.to_string_lossy().into_owned(),
-            remote_url: remote_url.unwrap_or_default().to_string(),
+            remote_url: String::new(),
             branch: DEFAULT_BRANCH.to_string(),
         }),
         Err(err) => Err(undo_creation(root, &snapshot, err)),
     }
 }
 
-fn scaffold_repo(root: &Path, remote_url: Option<&str>) -> Result<(), RepoInitError> {
+fn scaffold_repo(root: &Path) -> Result<(), RepoInitError> {
     run_git(root, &["symbolic-ref", "HEAD", "refs/heads/main"])?;
     apply_ignore_entries(root)?;
     commit_ignore_file(root)?;
-    if let Some(url) = remote_url {
-        run_git(root, &["remote", "add", "origin", url])?;
-    }
     Ok(())
 }
 
-fn adopt_repo(root: &Path, remote_url: Option<&str>) -> Result<InitializedRepo, RepoInitError> {
+fn adopt_repo(root: &Path) -> Result<InitializedRepo, RepoInitError> {
     if !has_commit(root) {
         let snapshot = GitignoreSnapshot::capture(root);
         if let Err(err) = apply_ignore_entries(root) {
@@ -748,19 +717,9 @@ fn adopt_repo(root: &Path, remote_url: Option<&str>) -> Result<InitializedRepo, 
         run_git(root, &["symbolic-ref", "HEAD", "refs/heads/main"])?;
         commit_ignore_file(root)?;
     }
-    let origin = match current_origin(root) {
-        Some(existing) => Some(existing),
-        None => match remote_url {
-            Some(url) => {
-                run_git(root, &["remote", "add", "origin", url])?;
-                Some(url.to_string())
-            }
-            None => None,
-        },
-    };
     Ok(InitializedRepo {
         root_path: root.to_string_lossy().into_owned(),
-        remote_url: origin.unwrap_or_default(),
+        remote_url: current_origin(root).unwrap_or_default(),
         branch: current_branch(root),
     })
 }
@@ -945,8 +904,7 @@ fn run_git(cwd: &Path, args: &[&str]) -> Result<String, RepoInitError> {
 #[cfg(test)]
 mod tests {
     use super::{
-        is_supported_remote_url, project_git_status_blocking, repo_init_with_remote_blocking,
-        RepoInitArgs, RepoInitError,
+        init_repo_at, is_supported_remote_url, project_git_status_blocking, RepoInitError,
     };
     use crate::worktree::{GitDistance, GitWorkingTree};
 
@@ -982,14 +940,12 @@ mod tests {
             .success()
     }
 
-    fn convert(
-        root: &std::path::Path,
-        remote_url: &str,
-    ) -> Result<super::InitializedRepo, RepoInitError> {
-        repo_init_with_remote_blocking(RepoInitArgs {
-            path: root.to_string_lossy().into_owned(),
-            remote_url: remote_url.to_string(),
-        })
+    fn convert(root: &std::path::Path) -> Result<super::InitializedRepo, RepoInitError> {
+        init_repo_at(&root.to_string_lossy())
+    }
+
+    fn add_origin(root: &std::path::Path, url: &str) {
+        git_run(root, &["remote", "add", "origin", url]);
     }
 
     #[test]
@@ -1000,13 +956,9 @@ mod tests {
         std::fs::create_dir_all(root.join("sessions").join("plan-1")).unwrap();
         std::fs::write(root.join("sessions").join("plan-1").join(".goodboy"), "{}").unwrap();
 
-        let created = convert(&root, "https://github.com/acme/widgets.git").unwrap();
+        let created = convert(&root).unwrap();
 
         assert_eq!(created.branch, "main");
-        assert_eq!(
-            git_output(&root, &["config", "--get", "remote.origin.url"]),
-            "https://github.com/acme/widgets.git"
-        );
         assert_eq!(git_output(&root, &["ls-files"]), ".gitignore");
         assert!(git_output(&root, &["status", "--porcelain"]).contains("?? notes.md"));
         std::fs::remove_dir_all(root).unwrap();
@@ -1017,7 +969,7 @@ mod tests {
         let root = test_root("repo-init-ignore");
         std::fs::write(root.join(".gitignore"), "node_modules\n").unwrap();
 
-        convert(&root, "git@gitlab.com:acme/widgets.git").unwrap();
+        convert(&root).unwrap();
 
         let ignore = std::fs::read_to_string(root.join(".gitignore")).unwrap();
         let lines: Vec<&str> = ignore.lines().collect();
@@ -1048,7 +1000,8 @@ mod tests {
     #[test]
     fn plain_init_adopts_an_existing_repository_and_keeps_its_remote() {
         let root = test_root("repo-init-plain-adopt");
-        convert(&root, "https://github.com/acme/widgets.git").unwrap();
+        convert(&root).unwrap();
+        add_origin(&root, "https://github.com/acme/widgets.git");
 
         let adopted = super::repo_init_blocking(root.to_string_lossy().into_owned()).unwrap();
 
@@ -1080,7 +1033,7 @@ mod tests {
         let root = test_root("repo-init-existing");
         std::fs::create_dir_all(root.join(".git")).unwrap();
 
-        let err = convert(&root, "https://github.com/acme/widgets.git").unwrap_err();
+        let err = convert(&root).unwrap_err();
 
         assert!(matches!(err, RepoInitError::AlreadyRepo(_)));
         std::fs::remove_dir_all(root).unwrap();
@@ -1097,7 +1050,7 @@ mod tests {
         let nested = root.join("notes");
         std::fs::create_dir_all(&nested).unwrap();
 
-        let err = convert(&nested, "https://github.com/acme/widgets.git").unwrap_err();
+        let err = convert(&nested).unwrap_err();
 
         assert!(matches!(err, RepoInitError::NestedRepo(_)));
         assert!(!nested.join(".git").exists());
@@ -1108,9 +1061,10 @@ mod tests {
     #[test]
     fn adopts_a_repository_a_failed_conversion_left_behind() {
         let root = test_root("repo-init-adopt");
-        convert(&root, "https://github.com/acme/widgets.git").unwrap();
+        convert(&root).unwrap();
+        add_origin(&root, "https://github.com/acme/widgets.git");
 
-        let adopted = convert(&root, "https://github.com/acme/other.git").unwrap();
+        let adopted = convert(&root).unwrap();
 
         assert_eq!(adopted.remote_url, "https://github.com/acme/widgets.git");
         assert_eq!(adopted.branch, "main");
@@ -1133,9 +1087,9 @@ mod tests {
             .output()
             .unwrap();
 
-        let adopted = convert(&root, "https://github.com/acme/widgets.git").unwrap();
+        let adopted = convert(&root).unwrap();
 
-        assert_eq!(adopted.remote_url, "https://github.com/acme/widgets.git");
+        assert_eq!(adopted.remote_url, "");
         assert_eq!(
             git_output(&root, &["ls-tree", "--name-only", "HEAD"]),
             ".gitignore"
@@ -1149,7 +1103,7 @@ mod tests {
         let root = test_root("repo-init-unignored");
         std::fs::write(root.join(".gitignore"), "/sessions/\n!/sessions/\n").unwrap();
 
-        let err = convert(&root, "https://github.com/acme/widgets.git").unwrap_err();
+        let err = convert(&root).unwrap_err();
 
         assert!(matches!(err, RepoInitError::IgnoreNotApplied(_)));
         assert!(!root.join(".git").exists());
@@ -1167,22 +1121,11 @@ mod tests {
         std::os::unix::fs::symlink(root.join("missing").join("target"), root.join(".gitignore"))
             .unwrap();
 
-        let err = convert(&root, "https://github.com/acme/widgets.git").unwrap_err();
+        let err = convert(&root).unwrap_err();
 
         assert!(matches!(err, RepoInitError::Io(_)));
         assert!(!root.join(".git").exists());
         assert!(std::fs::symlink_metadata(root.join(".gitignore")).is_err());
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn refuses_a_remote_url_it_cannot_hand_to_git() {
-        let root = test_root("repo-init-remote");
-
-        let err = convert(&root, "--upload-pack=touch /tmp/pwned").unwrap_err();
-
-        assert!(matches!(err, RepoInitError::InvalidRemote(_)));
-        assert!(!root.join(".git").exists());
         std::fs::remove_dir_all(root).unwrap();
     }
 
