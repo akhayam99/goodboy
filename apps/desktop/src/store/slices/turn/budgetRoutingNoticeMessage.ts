@@ -16,7 +16,7 @@ const causeFor = ({ reason }: { readonly reason: BudgetRoutingReason }): string 
     case 'fallback-threshold':
       return 'is past its budget threshold';
     case 'fallback-budget':
-      return 'is over its monthly cap';
+      return 'is over its monthly limit';
     case 'fallback-disconnected':
       return 'is not reachable right now';
     case 'fallback-cooldown':

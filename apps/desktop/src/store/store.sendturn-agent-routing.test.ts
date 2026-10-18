@@ -2744,7 +2744,7 @@ describe('sendTurn, budget routing notice', () => {
       fallbackFrom: 'anthropic',
     });
 
-    expect(messages).toContain('anthropic is over its monthly cap. running this turn on cursor.');
+    expect(messages).toContain('anthropic is over its monthly limit. running this turn on cursor.');
     expect(messages.join(' ')).not.toContain('threshold');
   });
 

@@ -77,7 +77,7 @@ export const TurnsTable = ({
   );
 
   return (
-    <StudioWidget label="turns" action={action}>
+    <StudioWidget label="Turns" action={action}>
       {sorted.length === 0 ? (
         <EmptyState
           size="section"
@@ -92,12 +92,12 @@ export const TurnsTable = ({
             <table className={cn('w-full min-w-[36rem] text-left text-label', STRIPED_TABLE)}>
               <thead className="text-eyebrow text-faint-foreground">
                 <tr>
-                  <th className="px-2 py-2">type</th>
-                  <th className="px-2 py-2">model</th>
-                  {showSession ? <th className="px-2 py-2">session</th> : null}
-                  <th className="px-2 py-2 text-right">in</th>
-                  <th className="px-2 py-2 text-right">out</th>
-                  <th className="px-2 py-2 text-right">cost</th>
+                  <th className="px-2 py-2">Type</th>
+                  <th className="px-2 py-2">Model</th>
+                  {showSession ? <th className="px-2 py-2">Session</th> : null}
+                  <th className="px-2 py-2 text-right">In</th>
+                  <th className="px-2 py-2 text-right">Out</th>
+                  <th className="px-2 py-2 text-right">Cost</th>
                   <th className="w-5 px-2 py-2">
                     <span className="sr-only">Open session</span>
                   </th>

@@ -276,16 +276,18 @@ describe('ImpactStudio on the real database', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Spend' }));
 
-    await waitFor(() => expect(screen.getAllByText('$5.50').length).toBeGreaterThanOrEqual(3));
+    await waitFor(() => expect(screen.getByText(/^7 days · .* · \$5\.50 spent$/)).toBeDefined());
     within(screen.getByRole('button', { name: /^Spend today/ })).getByText('$5.50');
   });
 
   it('links the Spend tab, and only it, to how cost is counted', async () => {
     renderStudio();
-    expect(screen.queryByRole('button', { name: 'How cost is counted' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'How cost is counted, in the Guide' })).toBeNull();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Spend' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'How cost is counted' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'How cost is counted, in the Guide' }),
+    );
 
     expect(useAppStore.getState().appStudio).toEqual({ kind: 'guide' });
     expect(peekGuideChapter()).toBe('tokens');

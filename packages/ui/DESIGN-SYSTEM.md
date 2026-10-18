@@ -379,7 +379,9 @@ within 1px.
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
 own row under the figure, never beside the label. A row of cards that carry
-deltas passes `reservesDeltaRow` so the figures sit on one baseline.
+deltas passes `reservesDeltaRow` so the figures sit on one baseline. A card with
+`onClick` is the button: it carries no arrow, tints on hover and takes
+`FOCUS_RING`.
 
 The `html` root stays 15px while any `rem` remains. `body` and `#root` are
 14/20, so text with no class lands on the body role instead of 15/23.25.

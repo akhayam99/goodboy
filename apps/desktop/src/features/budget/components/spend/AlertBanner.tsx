@@ -19,10 +19,10 @@ const alertTitle = ({ alert }: AlertMessageParams): string => {
   switch (alert.kind) {
     case 'provider-exceeded':
     case 'session-exceeded':
-      return `${who} exceeded its cap`;
+      return `${who} is over its limit`;
     case 'provider-threshold':
     case 'session-threshold':
-      return `${who} is nearing its cap`;
+      return `${who} is close to its limit`;
     default: {
       const exhaustive: never = alert.kind;
       return exhaustive;
@@ -48,7 +48,7 @@ export const AlertBanner = ({ alerts, onDismiss }: Props) => {
             placement="banner"
             title={alertTitle({ alert })}
             body={
-              <span className="tabular-nums">{`${formatUsd(alert.currentUsd)} of ${formatUsd(alert.capUsd)}`}</span>
+              <span className="tabular-nums">{`${formatUsd(alert.currentUsd)} of ${formatUsd(alert.capUsd)} limit`}</span>
             }
             actions={
               <IconButton

@@ -16,6 +16,7 @@ import {
 import { spendSources } from '../../../../shared/utils/spendSources';
 import type { ProviderSpendEntry } from '../../../../store';
 import type { SessionSpend, WorkspaceTurn } from '../../components/spend/lib';
+import { totalUsd } from '../../spendFigures';
 import { useBudgetData, type BudgetData } from '../useBudgetData';
 
 type Params = {
@@ -25,11 +26,7 @@ type Params = {
 type SaveProviderCapParams = {
   readonly provider: ProviderName;
   readonly capUsd: number;
-};
-
-type SaveProviderThresholdParams = {
-  readonly provider: ProviderName;
-  readonly thresholdPct: number;
+  readonly thresholdPct?: number;
 };
 
 type RemoveProviderCapParams = {
@@ -49,12 +46,12 @@ export type WorkspaceSpend = {
   readonly data: BudgetData;
   readonly dismissAlert: (alertId: string) => void;
   readonly saveProviderCap: (params: SaveProviderCapParams) => Promise<void>;
-  readonly saveProviderThreshold: (params: SaveProviderThresholdParams) => Promise<void>;
   readonly removeProviderCap: (params: RemoveProviderCapParams) => Promise<void>;
 };
 
 const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>;
 const EMPTY_STATUSES = {} as const;
+const DEFAULT_THRESHOLD_PCT = 80;
 
 export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   const sessions = useSessions();
@@ -82,7 +79,7 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   }, [currentWorkspaceId, refreshProviderSpendBreakdown]);
 
   const saveProviderCap = useCallback(
-    async ({ provider, capUsd }: SaveProviderCapParams) => {
+    async ({ provider, capUsd, thresholdPct }: SaveProviderCapParams) => {
       const existing = rules.find((rule) => rule.provider === provider) ?? null;
       const next: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'> =
         existing === null
@@ -90,23 +87,14 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
               provider,
               period: 'monthly',
               capUsd,
-              alertThresholdPct: 80,
+              alertThresholdPct: thresholdPct ?? DEFAULT_THRESHOLD_PCT,
               extraTokensBudget: null,
             }
-          : { ...existing, capUsd };
-      await saveBudgetRule(next);
-      await refreshBreakdown();
-    },
-    [refreshBreakdown, rules, saveBudgetRule],
-  );
-
-  const saveProviderThreshold = useCallback(
-    async ({ provider, thresholdPct }: SaveProviderThresholdParams) => {
-      const existing = rules.find((rule) => rule.provider === provider) ?? null;
-      if (existing === null) {
-        return;
-      }
-      const next: BudgetRule = { ...existing, alertThresholdPct: thresholdPct };
+          : {
+              ...existing,
+              capUsd,
+              alertThresholdPct: thresholdPct ?? existing.alertThresholdPct,
+            };
       await saveBudgetRule(next);
       await refreshBreakdown();
     },
@@ -156,7 +144,7 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
         .map(({ sessionId, goal, isDeleted, records }) => ({
           sessionId,
           goal,
-          spentUsd: records.reduce((sum, record) => sum + record.estimatedCostUsd, 0),
+          spentUsd: totalUsd({ records }),
           turnCount: records.filter((record) => record.kind === 'turn').length,
           isCurrent: sessionId === currentSessionId,
           isDeleted,
@@ -166,14 +154,15 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   );
 
   const providers = useMemo<ReadonlyArray<ProviderBudgetEntry>>(() => {
-    const spendByProvider = new Map<string, number>();
-    for (const turn of turns) {
-      const current = spendByProvider.get(turn.record.provider) ?? 0;
-      spendByProvider.set(turn.record.provider, current + turn.record.estimatedCostUsd);
-    }
     return storedProviders.map((entry) => {
-      const spentUsd = spendByProvider.get(entry.provider) ?? 0;
-      return { ...entry, spentUsd, budget: budgetStatuses[entry.provider] ?? null };
+      const records = turns
+        .filter((turn) => turn.record.provider === entry.provider)
+        .map((turn) => turn.record);
+      return {
+        ...entry,
+        spentUsd: totalUsd({ records }),
+        budget: budgetStatuses[entry.provider] ?? null,
+      };
     });
   }, [budgetStatuses, storedProviders, turns]);
 
@@ -193,7 +182,6 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
     data,
     dismissAlert,
     saveProviderCap,
-    saveProviderThreshold,
     removeProviderCap,
   };
 };

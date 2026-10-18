@@ -193,6 +193,15 @@ or closed.
 What you did in a session stays counted after the session leaves the board.
 Impact, the Spend tab and the spend chip in the top bar all count it.
 
+Every spend number on screen comes from one function, `spendFigures`
+(`features/budget/spendFigures.ts`), and each figure names its window: the
+Impact header says the range it spent over (7 days, 30 days or all time), the
+provider page says this month (the UTC calendar month, from the provider
+status, with the limit, what is left and the reset date), and the top bar chip
+says today. A provider row, a session row and a model row sum their own records
+through `totalUsd` in the same file. The overview empty state says what fills
+it in one line, whatever was spent today.
+
 | How it goes away                      | What happens to its rows                                                                          | What Impact keeps                                     |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | You delete it in Goodboy              | transcript, file versions, slots, decisions and images are freed; the row stays with `deleted_at` | sessions, spend, pull requests, reviews and durations |
@@ -945,8 +954,8 @@ count is a count of comments, never of agents:
   you changed the reply
 - **Couldn't fix**: the box under the comment says why in one sentence, from the
   cause recorded on the attempt (`resolve_attempts.failure_cause`, m225): the fix
-  didn't start, the provider stopped the run, every provider is over its spend
-  cap, you stopped it (shown as Stopped), the app closed while it was working, it
+  didn't start, the provider stopped the run, every provider is over its
+  limit, you stopped it (shown as Stopped), the app closed while it was working, it
   conflicts with a fix you accepted before, the worktree is gone, or the fix
   couldn't be saved from its copy of the branch. A comment written before m225
   reads "Cause not recorded". A failed run also shows the last command it ran
@@ -1482,7 +1491,7 @@ and budgets, and turn each one on or off per session. Goodboy decides where
 each piece of work goes.
 
 - When a provider passes its budget limit, the work moves to the next one. You
-  pick the limit, and it starts at 80% of the cap.
+  pick the limit, and it warns at 80% of it.
 - Quick tasks go to fast, cheap models. Hard design work goes to the best model
   you have.
 - Each workflow step picks its model by role, level and cost. A model you pin
@@ -1509,12 +1518,12 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
   only warns, with an alert before you reach them
 - **Ask**: every answer is recorded as telemetry kind `ask` on its session
   (m227). It counts in the session cost, today's spend, provider budgets and
-  the session cap alert, and shows as its own **Ask** row in the session
-  spend. It never counts toward a run's cap, which sums only that
+  the session limit alert, and shows as its own **Ask** row in the session
+  spend. It never counts toward a run's limit, which sums only that
   run's agents
 
-Caps steer where work goes. They never lock you out. When every provider is
-over its cap, the message box tells you. You can still send the turn on the
+Limits steer where work goes. They never lock you out. When every provider is
+over its limit, the message box tells you. You can still send the turn on the
 provider you picked.
 
 ## Skills
@@ -1596,8 +1605,11 @@ task up again in Goodboy.
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - **Models** is the Providers page that sets what each role runs on (it was
-  Defaults). **Limit** is the most a run or a session may spend (it was Spend
-  cap), **Limits** the backup group that holds them (it was Spend caps), **Copy context** the drawer button, **Context window**
+  Defaults). **Limit** is the most a provider, a run or a session may spend,
+  said the same in the provider panel (Monthly limit, Save limit, Remove limit),
+  the alerts and the run defaults (it was Spend cap and cap), **Limits** the
+  backup group that holds them (it was Spend caps). Notifications written before
+  the change keep their stored text, and the `budget-cap` kind id stays, **Copy context** the drawer button, **Context window**
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
 - **Add a plain folder** and **Add existing** put a folder or a repository

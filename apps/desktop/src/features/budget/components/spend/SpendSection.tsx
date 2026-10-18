@@ -23,16 +23,16 @@ type Props = {
   readonly onRetryTelemetry: () => void;
 };
 
-type CapLabelParams = {
+type LimitLabelParams = {
   readonly entry: ProviderBudgetEntry;
 };
 
-const capLabel = ({ entry }: CapLabelParams): string => {
+const limitLabel = ({ entry }: LimitLabelParams): string => {
   const { budget } = entry;
   if (budget === null || budget.capUsd === null) {
-    return 'no cap';
+    return 'No limit';
   }
-  return `${formatUsd(budget.capUsd)} cap · ${budgetPctUsed({ status: budget })}% used this month`;
+  return `${formatUsd(budget.capUsd)} limit · ${budgetPctUsed({ status: budget })}% used this month`;
 };
 
 export const SpendSection = ({
@@ -56,7 +56,7 @@ export const SpendSection = ({
       <SectionHeader
         label="Spend"
         icon={<CONCEPT_ICONS.budget size={ICON_SIZE.control} aria-hidden />}
-        hint="Caps count the whole month, across workspaces."
+        hint="Limits count the whole month, across workspaces."
         headingLevel={2}
       />
       <ErrorStrip label="limits" error={rulesResult.error} onRetry={onRetryRules} />
@@ -68,19 +68,19 @@ export const SpendSection = ({
       />
       {isLoading && providers.length === 0 ? <PanelLoading label="Loading budget data" /> : null}
       {hasAlerts ? (
-        <StudioWidget label="alerts">
+        <StudioWidget label="Alerts">
           <AlertBanner alerts={alerts} onDismiss={onDismissAlert} />
         </StudioWidget>
       ) : null}
       {providers.length > 0 ? (
-        <StudioWidget label="by provider" hint="share of workspace total">
+        <StudioWidget label="By provider" hint="Share of the workspace total.">
           <div className="flex flex-col gap-3">
             {providers.map((entry) => (
               <SpendBar
                 key={entry.provider}
                 label={providerLabel({ provider: entry.provider })}
                 valueLabel={formatUsd(entry.spentUsd)}
-                metaLabel={capLabel({ entry })}
+                metaLabel={limitLabel({ entry })}
                 pct={totalSpend > 0 ? entry.spentUsd / totalSpend : 0}
                 icon={<ProviderIcon provider={entry.provider} size={ICON_SIZE.control} />}
                 onClick={() => onSelectProvider(entry.provider)}

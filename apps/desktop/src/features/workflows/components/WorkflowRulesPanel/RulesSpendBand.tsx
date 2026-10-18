@@ -28,7 +28,7 @@ export const RulesSpendBand = ({ rules, onChange }: Props) => {
   return (
     <Band label={NAMES.spendCap} ariaLabel={NAMES.spendCap} headingLevel={3}>
       <BandRow>
-        <span className="min-w-0 flex-1 text-row text-foreground">Cap what a run can spend</span>
+        <span className="min-w-0 flex-1 text-row text-foreground">Limit what a run can spend</span>
         <Switch
           label={<span className="sr-only">{NAMES.spendCap}</span>}
           checked={isOn}

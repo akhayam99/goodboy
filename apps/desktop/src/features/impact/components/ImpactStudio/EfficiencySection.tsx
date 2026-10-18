@@ -61,21 +61,21 @@ export const EfficiencySection = ({
         <PanelLoading label="Loading impact metrics" />
       ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="cache hit ratio" value={`${Math.round(overallHitRatio * 100)}%`} />
-        <StatCard label="cached input" value={formatTokens(totalCached)} />
+        <StatCard label="Cache hit ratio" value={`${Math.round(overallHitRatio * 100)}%`} />
+        <StatCard label="Cached input" value={formatTokens(totalCached)} />
         <StatCard
-          label="turns / agent"
+          label="Turns per agent"
           value={stats === null ? 'n/a' : String(stats.median)}
           hint={stats === null ? undefined : `p90 ${stats.p90}`}
         />
         <StatCard
-          label="right-size accepted"
+          label="Right-size accepted"
           value={nudgeTotal > 0 ? `${Math.round((accepted / nudgeTotal) * 100)}%` : 'n/a'}
           hint={`${nudgeTotal} nudges`}
         />
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <StudioWidget label="cache reuse by provider" hint="cached input divided by input tokens">
+        <StudioWidget label="Cache reuse by provider" hint="Cached input divided by input tokens.">
           <div className="flex flex-col gap-2">
             {cache?.map((entry) => (
               <div key={entry.provider} className="flex flex-col gap-1">
@@ -93,13 +93,13 @@ export const EfficiencySection = ({
             ))}
           </div>
         </StudioWidget>
-        <StudioWidget label="context growth per turn" hint="latest 40 measured turns">
+        <StudioWidget label="Context growth per turn" hint="Latest 40 measured turns.">
           <Sparkline
             values={context?.map((point) => point.contextTokens) ?? []}
             formatMaximum={(maximum) => `${formatInteger(maximum)} tokens`}
           />
         </StudioWidget>
-        <StudioWidget label="turn distribution" hint={`${stats?.agents ?? 0} agents`}>
+        <StudioWidget label="Turn distribution" hint={`${stats?.agents ?? 0} agents`}>
           {stats !== null && turnData !== null ? (
             <TurnHistogram buckets={turnData} median={stats.median} maxAgents={stats.maxAgents} />
           ) : (
@@ -111,7 +111,7 @@ export const EfficiencySection = ({
             />
           )}
         </StudioWidget>
-        <StudioWidget label="right-size nudges" hint="outcomes after a routing suggestion">
+        <StudioWidget label="Right-size nudges" hint="Outcomes after a routing suggestion.">
           <div className="flex flex-col gap-1">
             {nudgeData?.map((entry) => (
               <div key={entry.outcome ?? 'pending'} className="flex items-center gap-3 text-label">

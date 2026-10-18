@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
-import { ArrowRight } from 'lucide-react';
 import { cn } from '../cn';
+import { FOCUS_RING } from '../focusRing';
 import { tintClasses, type Tone } from '../tint';
 import { Eyebrow } from './Eyebrow';
-import { ICON_SIZE } from '../iconSize';
 
 export type StatCardProps = {
   readonly value: string;
@@ -75,9 +74,6 @@ export const StatCard = ({
           </div>
         ) : null}
       </div>
-      {onClick ? (
-        <ArrowRight size={ICON_SIZE.control} aria-hidden className="text-muted-foreground" />
-      ) : null}
     </>
   );
 
@@ -93,7 +89,7 @@ export const StatCard = ({
       <button
         type="button"
         onClick={onClick}
-        className={cn(shell, 'text-left motion-safe:transition-colors hover:bg-hover')}
+        className={cn(shell, 'text-left motion-safe:transition-colors hover:bg-hover', FOCUS_RING)}
       >
         {body}
       </button>

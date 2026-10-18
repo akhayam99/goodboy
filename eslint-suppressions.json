@@ -2049,16 +2049,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/budget/components/spend/CapEditor.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/budget/components/spend/CapEditor.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/budget/components/spend/ModelTable.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -3158,11 +3148,6 @@
     },
     "@typescript-eslint/no-floating-promises": {
       "count": 8
-    }
-  },
-  "apps/desktop/src/features/impact/components/ImpactStudio/OverviewEmpty.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
     }
   },
   "apps/desktop/src/features/impact/components/ImpactStudio/TrendStatCard.tsx": {

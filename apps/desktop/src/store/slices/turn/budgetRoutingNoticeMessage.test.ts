@@ -20,7 +20,7 @@ describe('budgetRoutingNoticeMessage', () => {
       reason: 'fallback-budget',
     });
 
-    expect(message).toBe('anthropic is over its monthly cap. running this turn on gemini.');
+    expect(message).toBe('anthropic is over its monthly limit. running this turn on gemini.');
   });
 
   it('reads the two cases differently', () => {

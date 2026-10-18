@@ -11,6 +11,7 @@ import type {
   TurnState,
   WorkspaceId,
 } from '@goodboy/types';
+import { spendFigures } from '../../../features/budget/spendFigures';
 import { isTurnStateLive } from '../../../features/session/agent-lifecycle';
 import { useAppStore } from '../../store';
 import { useProjectFilteredSessions } from '../sessionFilters/selectors';
@@ -450,22 +451,14 @@ export const useWorkspaceRollup = (
   const dormant = useDormantSpend();
   return useMemo(() => {
     const countOf = (key: string) => groups.find((g) => g.key === key)?.sessions.length ?? 0;
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const cutoff = startOfDay.getTime();
-    let todaySpend = 0;
-    for (const source of spendSources({ sessions, telemetryMap: sessionTelemetry, dormant })) {
-      for (const rec of source.records) {
-        if (Date.parse(rec.recordedAt) < cutoff) {
-          continue;
-        }
-        todaySpend += rec.estimatedCostUsd;
-      }
-    }
+    const records = spendSources({ sessions, telemetryMap: sessionTelemetry, dormant }).flatMap(
+      (source) => source.records,
+    );
+    const figures = spendFigures({ records, nowMs: Date.now(), sinceMs: null });
     return {
       attentionCount: countOf('attention'),
       runningCount: countOf('running'),
-      todaySpend,
+      todaySpend: figures.today.usd,
     };
   }, [dormant, groups, sessionTelemetry, sessions]);
 };

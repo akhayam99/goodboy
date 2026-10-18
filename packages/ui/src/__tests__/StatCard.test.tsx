@@ -60,4 +60,14 @@ describe('StatCard layout', () => {
 
     expect(container.querySelector('[data-stat-delta]')).toBeNull();
   });
+
+  it('makes a clickable card the button, with no resting arrow and a focus ring', () => {
+    const { container } = render(
+      <StatCard label="Sessions" value="38" onClick={() => undefined} />,
+    );
+
+    const button = screen.getByRole('button');
+    expect(button.className).toContain('focus-visible:ring-2');
+    expect(container.querySelector('svg')).toBeNull();
+  });
 });

@@ -802,6 +802,9 @@ u26s-explore-drawer
 u26s-explore-empty
 u26s-explore-nomount
 u26s-explore-rows
+u26s-impact-empty
+u26s-impact-overview
+u26s-impact-spend
 update-card
 update-card-long-version
 update-card-narrow

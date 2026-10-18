@@ -157,10 +157,10 @@ describe('Impact studio spend scopes', () => {
 
     const [claudeRow] = screen.getAllByRole('button', { name: /claude/i });
     fireEvent.click(claudeRow!);
-    expect(screen.getByText(/total spend/i)).toBeDefined();
+    expect(screen.getByText(/spent, 30 days/i)).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Spend', selected: true })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'All spend' }));
-    expect(screen.queryByText(/total spend/i)).toBeNull();
+    expect(screen.queryByText(/spent, 30 days/i)).toBeNull();
   });
 
   it('anchors a session inside spend from its row', () => {
@@ -173,8 +173,8 @@ describe('Impact studio spend scopes', () => {
   it('opens the provider panel when the studio is asked for a provider scope', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
-    expect(screen.getByText(/total spend/i)).toBeDefined();
-    expect(screen.getByLabelText(/monthly cap/i)).toBeDefined();
+    expect(screen.getByText(/spent, 30 days/i)).toBeDefined();
+    expect(screen.getByLabelText('Monthly limit')).toBeDefined();
   });
 
   it('opens the session panel when the studio is asked for a session scope', () => {
@@ -186,11 +186,11 @@ describe('Impact studio spend scopes', () => {
     expect(screen.getByRole('tab', { name: 'Recent' })).toBeDefined();
   });
 
-  it('authors a new provider cap via saveBudgetRule', () => {
+  it('authors a new provider limit via saveBudgetRule', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
-    fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '50' } });
-    fireEvent.click(screen.getByRole('button', { name: /set cap/i }));
+    fireEvent.change(screen.getByLabelText('Monthly limit'), { target: { value: '50' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save limit' }));
     expect(state.saveBudgetRule).toHaveBeenCalledWith({
       provider: 'anthropic',
       period: 'monthly',
@@ -201,7 +201,7 @@ describe('Impact studio spend scopes', () => {
     expect(state.deleteBudgetRule).not.toHaveBeenCalled();
   });
 
-  it('edits an existing provider cap under the same rule identity', async () => {
+  it('edits an existing provider limit under the same rule identity', async () => {
     state.budgetRules = [
       {
         id: 'rule-1',
@@ -215,8 +215,8 @@ describe('Impact studio spend scopes', () => {
     ];
     renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
-    fireEvent.change(screen.getByLabelText(/monthly cap/i), { target: { value: '25' } });
-    fireEvent.click(screen.getByRole('button', { name: /update cap/i }));
+    fireEvent.change(screen.getByLabelText('Monthly limit'), { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save limit' }));
     await Promise.resolve();
     expect(state.deleteBudgetRule).not.toHaveBeenCalled();
     expect(state.saveBudgetRule).toHaveBeenCalledWith({
@@ -244,10 +244,10 @@ describe('Impact studio spend scopes', () => {
     ];
     renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
-    fireEvent.change(screen.getByLabelText('alert threshold percent'), {
+    fireEvent.change(screen.getByLabelText('Warn at percent of the limit'), {
       target: { value: '60' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /update threshold/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save limit' }));
     await Promise.resolve();
     expect(state.deleteBudgetRule).not.toHaveBeenCalled();
     expect(state.saveBudgetRule).toHaveBeenCalledWith({
@@ -261,7 +261,7 @@ describe('Impact studio spend scopes', () => {
     });
   });
 
-  it('removes a provider cap via deleteBudgetRule after the popover confirm', () => {
+  it('removes a provider limit via deleteBudgetRule after the popover confirm', () => {
     state.budgetRules = [
       {
         id: 'rule-1',
@@ -275,10 +275,10 @@ describe('Impact studio spend scopes', () => {
     ];
     renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /remove/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove limit' }));
     expect(state.deleteBudgetRule).not.toHaveBeenCalled();
     fireEvent.click(
-      within(screen.getByRole('dialog', { name: /^Remove the .*10.* cap\?$/ })).getByRole(
+      within(screen.getByRole('dialog', { name: /^Remove the .*10.* limit\?$/ })).getByRole(
         'button',
         {
           name: /remove/i,
@@ -329,7 +329,7 @@ describe('Impact studio spend scopes', () => {
     expect(screen.queryByText('approx')).toBeNull();
   });
 
-  it('marks the unpriced model row and names how many turns a cap would miss', () => {
+  it('marks the unpriced model row and names how many turns a limit would miss', () => {
     const now = new Date().toISOString();
     state.sessionTelemetry = {
       'session-1': [
@@ -341,13 +341,13 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'codex' } });
 
     expect(
-      screen.getByText('No price for 1 of 3 turns, so a cap cannot include them'),
+      screen.getByText('No price for 1 of 3 turns, so a limit cannot include them'),
     ).toBeDefined();
     expect(screen.getAllByText('unpriced')).toHaveLength(1);
     expect(screen.queryByText('approx')).toBeNull();
   });
 
-  it('marks an approximate model row without calling it unpriced or warning about the cap', () => {
+  it('marks an approximate model row without calling it unpriced or warning about the limit', () => {
     const now = new Date().toISOString();
     state.sessionTelemetry = {
       'session-1': [
@@ -397,7 +397,7 @@ describe('Impact studio spend scopes', () => {
     renderStudio({ initialScope: { kind: 'provider', provider: 'opencode' } });
 
     expect(
-      screen.getByText('No price for 2 of 3 turns, so a cap cannot include them'),
+      screen.getByText('No price for 2 of 3 turns, so a limit cannot include them'),
     ).toBeDefined();
   });
 

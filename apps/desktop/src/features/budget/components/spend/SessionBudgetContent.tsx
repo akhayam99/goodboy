@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { StatCard, formatUsd, formatUsdPrecise, Tooltip } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { totalUsd } from '../../spendFigures';
 import { SpendLimitRow } from '../SessionSpendPopover/SpendLimitRow';
 import { ModelTable } from './ModelTable';
 import { TurnsTable } from './TurnsTable';
@@ -21,19 +22,18 @@ export const SessionBudgetContent = ({ sessionId, turns, onOpenSession }: Props)
   const records = useMemo(() => turns.map((turn) => turn.record), [turns]);
   const models = useMemo(() => buildModelBreakdown(records), [records]);
   const turnCosts = useMemo(() => chronologicalTurnCosts(records), [records]);
-  const totalUsd = records.reduce((sum, record) => sum + record.estimatedCostUsd, 0);
-  const contextUsd = records.reduce(
-    (sum, record) => (record.kind === 'summarizer' ? sum + record.estimatedCostUsd : sum),
-    0,
-  );
+  const sessionUsd = totalUsd({ records });
+  const contextUsd = totalUsd({
+    records: records.filter((record) => record.kind === 'summarizer'),
+  });
   const turnCount = records.filter((record) => record.kind === 'turn').length;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-3 gap-3">
-        <Tooltip content={formatUsdPrecise(totalUsd)}>
+        <Tooltip content={formatUsdPrecise(sessionUsd)}>
           <div>
-            <StatCard label="Session spend" value={formatUsd(totalUsd)} />
+            <StatCard label="Session spend" value={formatUsd(sessionUsd)} />
           </div>
         </Tooltip>
         <Tooltip content={formatUsdPrecise(contextUsd)}>
@@ -45,17 +45,17 @@ export const SessionBudgetContent = ({ sessionId, turns, onOpenSession }: Props)
       </div>
       <SpendLimitRow
         sessionId={sessionId}
-        totalUsd={totalUsd}
+        totalUsd={sessionUsd}
         limit={limit}
         isEditing={isEditing}
         onEditingChange={setIsEditing}
       />
-      <StudioWidget label="by model">
+      <StudioWidget label="By model">
         <ModelTable entries={models} formatSpent={formatUsd} />
       </StudioWidget>
       {onOpenSession !== undefined ? (
         <>
-          <StudioWidget label="cost per turn">
+          <StudioWidget label="Cost per turn">
             <Sparkline values={turnCosts} />
           </StudioWidget>
           <TurnsTable turns={turns} showSession={false} onOpenSession={onOpenSession} />
