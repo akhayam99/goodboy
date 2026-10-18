@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import {
   importStore,
   resetStoryStore,
@@ -15,6 +15,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../../../../../../store/storyHarness';
+import { canTestConnection } from './canTestConnection';
 import { ConnectionTest } from './index';
 
 let store: StoryStore;
@@ -27,56 +28,68 @@ beforeEach(async () => {
 });
 afterEach(cleanup);
 
-it('disables the button while testing, then shows a failure and retries', async () => {
-  const info = store.getState().providers.find((provider) => provider.id === 'cursor');
+const infoOf = ({ id }: { readonly id: 'cursor' | 'gemini' }) => {
+  const info = store.getState().providers.find((provider) => provider.id === id);
   if (info === undefined) {
-    throw new Error('Missing Cursor');
+    throw new Error(`Missing ${id}`);
   }
-  let finish: (value: unknown) => void = () => undefined;
-  stubStoryInvoke({
-    provider_test_connection: () =>
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-  });
-  const onReauth = vi.fn();
+  return info;
+};
+
+it('holds no button of its own, only the row and the result of the last test', () => {
   render(
-    <ConnectionTest info={info} onReauth={onReauth}>
+    <ConnectionTest info={infoOf({ id: 'cursor' })}>
       <span>Signed in</span>
     </ConnectionTest>,
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Test connection' }));
-  expect(screen.getByRole('button', { name: 'Testing...' }).hasAttribute('disabled')).toBe(true);
-  await act(async () => {
-    await Promise.resolve();
-    await Promise.resolve();
+
+  expect(screen.getByText('Signed in')).toBeDefined();
+  expect(screen.queryByRole('button')).toBeNull();
+});
+
+it('shows a failure with the first line only, then the answer time after a good test', async () => {
+  const info = infoOf({ id: 'cursor' });
+  render(
+    <ConnectionTest info={info}>
+      <span>Signed in</span>
+    </ConnectionTest>,
+  );
+  stubStoryInvoke({
+    provider_test_connection: {
+      ok: false,
+      millis: 50,
+      detail: 'Not logged in\nPrivate diagnostic',
+    },
   });
   await act(async () => {
-    finish({ ok: false, millis: 50, detail: 'Not logged in\nPrivate diagnostic' });
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
   });
   expect(screen.getByText('Cursor did not accept the call: Not logged in.')).toBeDefined();
   expect(screen.queryByText(/Private diagnostic/)).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
-  expect(onReauth).toHaveBeenCalledOnce();
+  expect(screen.queryByRole('button')).toBeNull();
+
   stubStoryInvoke({
     provider_test_connection: { ok: true, millis: 800, detail: 'Models answered' },
   });
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'Test connection' }));
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
   });
   expect(screen.getByText('Cursor answered in 0.8 s.')).toBeDefined();
 });
 
-it('leaves the test button out for providers without an account call', () => {
-  const info = store.getState().providers.find((provider) => provider.id === 'gemini');
-  if (info === undefined) {
-    throw new Error('Missing Gemini');
-  }
+it('knows which providers have an account call to test', () => {
+  expect(canTestConnection({ providerId: 'anthropic' })).toBe(true);
+  expect(canTestConnection({ providerId: 'codex' })).toBe(true);
+  expect(canTestConnection({ providerId: 'cursor' })).toBe(true);
+  expect(canTestConnection({ providerId: 'gemini' })).toBe(false);
+});
+
+it('shows no result line for a provider without an account call', () => {
   render(
-    <ConnectionTest info={info} onReauth={vi.fn()}>
+    <ConnectionTest info={infoOf({ id: 'gemini' })}>
       <span>Signed in</span>
     </ConnectionTest>,
   );
-  expect(screen.queryByRole('button', { name: 'Test connection' })).toBeNull();
-  expect(screen.getByRole('button', { name: 'History' })).toBeDefined();
+
+  expect(screen.queryByRole('status')).toBeNull();
 });

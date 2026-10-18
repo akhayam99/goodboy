@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderId } from '@goodboy/types';
 import type { SettingsFocus } from '../../settingsFocus';
 import { settingsPaletteEntries } from '../../settingsPaletteEntries';
+import { QUIET_TOOL_HEALTH } from '../../../../__tests__/helpers/quietToolHealth';
 import { resolveSettingsFocus } from './resolveSettingsFocus';
 import {
   settingsDirectory,
@@ -10,6 +11,8 @@ import {
   type SettingsGroup,
   type SettingsStatus,
 } from './settingsDirectory';
+
+const QUIET_HEALTH = QUIET_TOOL_HEALTH;
 
 const STATUS: SettingsStatus = {
   subtitles: {
@@ -32,8 +35,20 @@ const STATUS: SettingsStatus = {
     },
   ],
   tools: [
-    { tool: 'linear', label: 'Linear', subtitle: 'Not connected', isConnected: false },
-    { tool: 'slack', label: 'Slack', subtitle: 'Not connected', isConnected: false },
+    {
+      tool: 'linear',
+      label: 'Linear',
+      subtitle: 'Not connected',
+      isConnected: false,
+      health: QUIET_HEALTH,
+    },
+    {
+      tool: 'slack',
+      label: 'Slack',
+      subtitle: 'Not connected',
+      isConnected: false,
+      health: QUIET_HEALTH,
+    },
   ],
 };
 

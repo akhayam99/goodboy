@@ -6,7 +6,7 @@ export type IntegrationFacts = {
   readonly disconnectDescription: string;
   readonly onOpenTasks: (() => void) | null;
   readonly onCheck: (() => Promise<void>) | null;
-  readonly onDisconnect: () => Promise<void>;
+  readonly onDisconnect: (() => Promise<void>) | null;
 };
 
 export const INTEGRATION_KIND: ObjectKindDefinition<IntegrationActionTarget, IntegrationFacts> = {
@@ -38,7 +38,7 @@ export const INTEGRATION_KIND: ObjectKindDefinition<IntegrationActionTarget, Int
       icon: Unplug,
       group: 'danger',
       pendingLabel: () => 'Disconnecting',
-      when: () => true,
+      when: ({ facts }) => facts.onDisconnect !== null,
       confirm: ({ facts }) => ({
         title: `Disconnect ${facts.label}?`,
         description: facts.disconnectDescription,
@@ -46,7 +46,7 @@ export const INTEGRATION_KIND: ObjectKindDefinition<IntegrationActionTarget, Int
         role: 'danger',
       }),
       run: async ({ facts }) => {
-        await facts.onDisconnect();
+        await facts.onDisconnect?.();
       },
     },
   ],

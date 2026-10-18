@@ -18,8 +18,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'property picker: sets the assignee value from the control that shows it',
   'features/integrations/linear/LinearStateMenu.tsx':
     'property picker: sets the state value from the control that shows it',
-  'features/providers/components/ProviderStudio/ProviderPage/ProviderPageBody.tsx':
-    'settings control, not an object in the map',
   'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx':
     'settings page menu (Restore defaults, Copy from), page chrome',
   'features/wireframes/components/WireframeViewer/RevisionPicker.tsx':

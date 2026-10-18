@@ -3394,11 +3394,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/integrations/components/IntegrationConnectedRow/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/integrations/components/IntegrationCredentialPicker/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 7

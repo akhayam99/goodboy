@@ -114,7 +114,10 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
-  useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (store: typeof state) => T) => selector(state), {
+    getState: () => state,
+    subscribe: () => () => undefined,
+  }),
   useSessions: () => [],
   useWorkspaces: () => [],
   useCurrentWorkspace: () => null,

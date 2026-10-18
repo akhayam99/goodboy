@@ -2,6 +2,7 @@ import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
+import type { ToolHealth } from '../../../integrations/toolHealthOf';
 import type { ToolRailEntry } from '../../../integrations/toolRailEntries';
 import type { ProviderRailStatus } from '../../../providers/providerRailStatus';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
@@ -210,6 +211,17 @@ const providersGroup = (params: Params): SettingsGroup => ({
   pages: providerPages(params),
 });
 
+type ToolAttentionParams = {
+  readonly health: ToolHealth;
+};
+
+const toolAttention = ({ health }: ToolAttentionParams): SettingsAttention | null => {
+  if (health.signal === 'none' || health.reason === null) {
+    return null;
+  }
+  return { text: health.reason, tone: health.signal === 'danger' ? 'danger' : 'warning' };
+};
+
 const toolsGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   ...scopeMeta('tools'),
   place: workspaceName ?? 'This workspace',
@@ -218,7 +230,7 @@ const toolsGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   pages: status.tools.map((entry): SettingsPage => ({
     key: `tool:${entry.tool}`,
     label: entry.label,
-    attention: null,
+    attention: toolAttention({ health: entry.health }),
     target: { scope: 'tools', tool: entry.tool },
   })),
 });

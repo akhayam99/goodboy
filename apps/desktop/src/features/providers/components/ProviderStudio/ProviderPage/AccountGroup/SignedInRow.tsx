@@ -1,77 +1,56 @@
-import { Button, ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
-import { LogIn, Unplug } from 'lucide-react';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { Chip } from '@goodboy/ui';
+import { useShallow } from 'zustand/react/shallow';
+import { useAppStore } from '../../../../../../store/store';
+import { useNow } from '../../../../../../shared/hooks/useNow';
+import { useProviderHealth } from '../../../../../../shared/hooks/useProviderHealth';
+import { ObjectActionVerb } from '../../../../../actions/ObjectActionVerb';
+import { providerAccountChip } from '../../../../providerAccountChip';
+import { checkedLine } from '../../../../providerHealthCopy';
 import { ConnectionTest } from './ConnectionTest';
 import type { AccountGroupProps } from './types';
 
-const dangerTint = tintClasses('danger');
+const CLOCK_MS = 60_000;
 
-type IdentityParams = { readonly identity: string | null; readonly planLabel: string | null };
-
-const identityLine = ({ identity, planLabel }: IdentityParams): string => {
-  const who = identity ?? 'Connected';
-  return planLabel === null ? who : `${who} · ${planLabel} plan`;
+type SublineParams = {
+  readonly planLabel: string | null;
+  readonly checked: string | null;
 };
 
-export const SignedInRow = ({
-  info,
-  planLabel,
-  canReauth,
-  confirm,
-  onConfirmChange,
-  onReauth,
-  onConfirmReauth,
-  onDisconnect,
-}: AccountGroupProps) => {
+const subline = ({ planLabel, checked }: SublineParams): string | null => {
+  const parts = [planLabel === null ? null : `${planLabel} plan`, checked].filter(
+    (part): part is string => part !== null,
+  );
+  return parts.length === 0 ? null : parts.join(' · ');
+};
+
+export const SignedInRow = ({ info, planLabel, target }: AccountGroupProps) => {
+  const health = useProviderHealth({ providerId: info.id });
+  const nowMs = useNow(CLOCK_MS);
+  const state = useAppStore(
+    useShallow((store) => ({
+      cliRequirements: store.cliRequirements,
+      providerHealth: store.providerHealth,
+    })),
+  );
+  const isTestFailed = useAppStore(
+    (store) => store.providerConnectionTests[info.id]?.result?.isOk === false,
+  );
+  const chip = providerAccountChip({ provider: info, state, nowMs });
+  const detail = subline({ planLabel, checked: checkedLine({ health, nowMs }) });
+  const isSignInNeeded = chip?.isSignInNeeded === true || isTestFailed;
+
   return (
-    <ConnectionTest info={info} onReauth={onReauth}>
-      <span className="w-28 shrink-0 text-muted-foreground">Signed in</span>
-      <span className="min-w-0 flex-1 truncate text-foreground">
-        {identityLine({ identity: info.identity, planLabel })}
-      </span>
-      {canReauth ? (
-        <ConfirmPopover
-          role="alert"
-          icon={<LogIn size={ICON_SIZE.row} aria-hidden />}
-          title={`Sign in to ${info.label} again?`}
-          description={`Signing in again signs you out of ${info.label} first.`}
-          confirmLabel="Sign in again"
-          isOpen={confirm === 'reauth'}
-          onConfirm={() => {
-            onConfirmChange('none');
-            onConfirmReauth();
-          }}
-          onCancel={() => onConfirmChange('none')}
-          trigger={() => (
-            <Button variant="secondary" size="sm" onClick={onReauth}>
-              Sign in again
-            </Button>
-          )}
-        />
-      ) : null}
-      <ConfirmPopover
-        role="alert"
-        icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-        title={`Disconnect ${info.label}?`}
-        description="Signs the CLI out on this machine. Connect again to sign back in."
-        confirmLabel="Disconnect"
-        isOpen={confirm === 'disconnect'}
-        onConfirm={() => {
-          onConfirmChange('none');
-          onDisconnect();
-        }}
-        onCancel={() => onConfirmChange('none')}
-        trigger={() => (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onConfirmChange('disconnect')}
-            className={cn('text-danger', dangerTint.hoverBg, 'hover:text-danger')}
-          >
-            Disconnect
-          </Button>
+    <ConnectionTest info={info}>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-foreground">
+          {info.identity === null ? 'Connected' : `Signed in as ${info.identity}`}
+        </span>
+        {detail === null ? null : (
+          <span className="truncate text-meta text-muted-foreground">{detail}</span>
         )}
-      />
+      </span>
+      {chip === null ? null : <Chip tone={chip.tone} size="xs" label={chip.label} />}
+      {isSignInNeeded ? <ObjectActionVerb target={target} actionId="provider.reauth" /> : null}
     </ConnectionTest>
   );
 };

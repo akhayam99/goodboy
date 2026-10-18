@@ -43,7 +43,7 @@ works. Add it under **API keys**.
 If the install asks for your password, click the terminal on the card and type it.
 A global npm install can need `sudo` when nvm does not manage your Node.
 
-**Disconnect:** click **Disconnect**, then **Confirm**. This removes the token from
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. This removes the token from
 your machine only. Your Anthropic account stays as it is.
 
 ## Cursor
@@ -60,7 +60,7 @@ your machine only. Your Anthropic account stays as it is.
 You stay signed in until you sign out. If Goodboy does not find `cursor-agent` after
 the install, restart Goodboy so it sees the new `PATH`.
 
-**Disconnect:** **Disconnect**, then **Confirm**. This removes the token from your
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. This removes the token from your
 machine, and you can sign back in any time.
 
 ## Codex
@@ -79,7 +79,7 @@ signs you back in, so cancelling halfway leaves you signed out.
 Codex saves your sign-in in `~/.codex/auth.json`. You can also set `OPENAI_API_KEY`
 in your shell, or add a key under **API keys**. Either way, Codex shows as connected.
 
-**Disconnect:** **Disconnect**, then **Confirm**. This deletes `~/.codex/auth.json`.
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. This deletes `~/.codex/auth.json`.
 Your OpenAI plan stays as it is.
 
 ## Gemini
@@ -97,7 +97,7 @@ Gemini runs through Antigravity (`agy`), the app that replaces the Gemini CLI.
 You sign in to Antigravity inside its own app, so the card has no **Connect** button.
 Rather use a key? Add a Gemini API key under **API keys** instead.
 
-**Disconnect:** **Disconnect**, then **Confirm**. Goodboy deletes
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. Goodboy deletes
 `~/.gemini/antigravity-cli/`. Your Google account stays as it is.
 
 ## OpenCode
@@ -112,7 +112,7 @@ key. Sign in to your OpenCode account to get more.
 3. A terminal with a menu appears on the card. Pick the provider and sign in
 4. When the login ends, Goodboy checks your sign-in again
 
-**Disconnect:** **Disconnect**, then **Confirm**, then pick the account to remove.
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**, then pick the account to remove.
 
 ## OpenRouter and Moonshot
 
@@ -275,8 +275,10 @@ Each provider page in **Settings > Providers and models** has four groups, in th
 same order for every provider: **Usage**, **Models in the picker**,
 **Permissions** and **Account**. The header carries the plan (`Team plan`), the
 Account group the signed-in account and the CLI version (`Claude CLI 2.1.282`), and
-the header menu holds **Check again**, **Sign in again**, **Sign out** and **Copy CLI
-path**. A provider that is not connected shows only its connect card.
+the header menu holds **Check again**, **Sign in again**, **History**, **Copy CLI
+path** and, after a line, **Disconnect**. The menu reads the provider kind of the
+action registry (`useProviderTarget`, `kinds/provider.ts`), so no button in the page
+repeats a verb. A provider that is not connected shows only its connect card.
 
 - **Usage**: one row per window the provider reported (5 hours, the week, a
   model's week), with the share used and the reset. The header says when the
@@ -308,7 +310,14 @@ path**. A provider that is not connected shows only its connect card.
   reason, or `Not available` with the mode it runs as instead), whether it
   follows Allow and Deny rules (only Claude does), and that role limits are
   asked, not locked. It reads `modeSupport` in `@goodboy/core`
-- **Account**: who is signed in with the plan, one CLI row (`Claude CLI 2.1.282`, in
+- **Account**: who is signed in (`Signed in as dana@harborline.dev`), the plan and
+  when the server last confirmed it (`Pro plan · checked 3m ago`), and one state chip
+  (`Working`, `Not confirmed`, `Update needed`, `Signed out`). The chip comes from
+  `providerAccountChip`, which asks the same `providerRailStatus` as the rail dot but
+  leaves the usage window to the notice and the dot, so a provider that is nearly out
+  stays `Working`. The row holds no button, except **Sign in again** while the
+  sign-in has expired or the last connection test failed. Under it sit one CLI row
+  (`Claude CLI 2.1.282`, in
   the same place on every CLI provider), and **Use an API key instead of your
   plan**, which opens the API keys. When a model needs a newer CLI, the update
   notice (`CliUpdateNotice`) sits right under the Account rows, below that CLI row.
@@ -316,25 +325,29 @@ path**. A provider that is not connected shows only its connect card.
   and notice under its connect card (`AccountGroup/CliGroup`), and an `update`
   deep link starts the update there too.
   Keys you already have show directly, with the workspace credentials under them
-- The provider's row in the rail turns warning from 80% of a window and danger
-  when the provider is out, with the reason under its name
+- The provider's row in the rail carries a dot only when the provider needs you,
+  and the dot's tooltip and accessible name are the reason: it turns warning from 80%
+  of a window and when the provider is out, and danger on an error. A provider that
+  works shows no dot, never a green one
 
-## Test the connection and read its history
+## Check the connection and read its history
 
-On Claude, Codex and Cursor, **Test connection** in Account makes a real account
-call with a 15-second deadline. It shows the elapsed time on success or the first
-line of the error with **Sign in again**. An authentication refusal counts as one
+**Check again** in the header menu refreshes the providers and, on Claude, Codex and
+Cursor, makes a real account call with a 15-second deadline (the page and the rail
+read the result). The row shows the elapsed time on success or the first line of the
+error, with **Sign in again** on the row. An authentication refusal counts as one
 refusal in the existing provider breaker; a passing call confirms the account.
 The command is `provider_test_connection` in `src-tauri/src/providers/test_connection.rs`.
 
-**History** opens beside its button and shows the newest 20 changes since Goodboy
-started, with relative times and absolute times in tooltips. It reads the existing
-health ring through the [Account history control](../apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx); each change uses the existing standing log.
+**History** in the header menu opens a panel under the Account rows and shows the
+newest 20 changes since Goodboy started, with relative times and absolute times in
+tooltips. **Hide history**, Escape or choosing History again closes it. It reads the
+existing health ring through the [Account history panel](../apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx); each change uses the existing standing log.
 
 The probe lock in `store/slices/providers/probeLock.ts` allows one status, usage,
 limits or connection test per provider. Calls of the same kind join; other kinds
-wait. Automatic checks skip a provider with a live agent turn. Test connection
-and **Check again** wait for that turn. Each window owns its queue and history.
+wait. Automatic checks skip a provider with a live agent turn. **Check again**
+waits for that turn. Each window owns its queue and history.
 Codex limits in `refreshCodexLimits` read the latest rollout first and ask the
 app server only when that reading is missing, invalid or older than five minutes.
 
@@ -343,7 +356,7 @@ app server only when that reading is missing, invalid or older than five minutes
 Each provider uses one account at a time, and the card shows which one. That account
 pays for every turn.
 
-1. Click **Disconnect** and **Confirm**
+1. Choose **Disconnect** in the page menu and **Confirm**
 2. Click **Connect** and sign in with the other account
 3. Choose **Check again** in the page menu and check the account in the header before you continue
 

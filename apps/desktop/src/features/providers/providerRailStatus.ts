@@ -15,6 +15,7 @@ type Params = {
   readonly state: Pick<AppStore, 'cliRequirements'> &
     Partial<Pick<AppStore, 'providerLimits' | 'providerHealth'>>;
   readonly nowMs?: number;
+  readonly isLimitIgnored?: boolean;
 };
 
 const QUIET: ProviderRailStatus = { subtitle: undefined, tone: undefined };
@@ -39,15 +40,28 @@ const limitStatus = ({ provider, state, nowMs = Date.now() }: Params): ProviderR
   return QUIET;
 };
 
-const connectedStatus = ({ provider, state, nowMs }: Params): ProviderRailStatus => {
+const connectedStatus = ({
+  provider,
+  state,
+  nowMs,
+  isLimitIgnored = false,
+}: Params): ProviderRailStatus => {
   const health = state.providerHealth?.[provider.id as ProviderId];
   if (health !== undefined && health.standing === 'connected' && !health.evidence.serverAccepted) {
     return NOT_CONFIRMED;
   }
+  if (isLimitIgnored) {
+    return QUIET;
+  }
   return limitStatus({ provider, state, ...(nowMs !== undefined && { nowMs }) });
 };
 
-export const providerRailStatus = ({ provider, state, nowMs }: Params): ProviderRailStatus => {
+export const providerRailStatus = ({
+  provider,
+  state,
+  nowMs,
+  isLimitIgnored,
+}: Params): ProviderRailStatus => {
   const isOutdated =
     provider.connection !== 'missing' &&
     outdatedCliModels({
@@ -77,7 +91,12 @@ export const providerRailStatus = ({ provider, state, nowMs }: Params): Provider
     case 'cannot_check':
       return CANNOT_CHECK;
     case 'connected':
-      return connectedStatus({ provider, state, ...(nowMs !== undefined && { nowMs }) });
+      return connectedStatus({
+        provider,
+        state,
+        ...(nowMs !== undefined && { nowMs }),
+        ...(isLimitIgnored !== undefined && { isLimitIgnored }),
+      });
     case 'unknown':
       return QUIET;
   }

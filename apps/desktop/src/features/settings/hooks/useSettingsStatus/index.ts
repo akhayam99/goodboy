@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store';
 import type { AppStore } from '../../../../store/store';
 import { TOOL_ORDER, toolRailEntries } from '../../../integrations/toolRailEntries';
 import { useToolConnections } from '../../../integrations/useToolConnections';
+import { useToolSecrets } from '../../../integrations/useToolSecrets';
 import { orderProviders } from '../../../providers/orderProviders';
 import { providerRailStatus } from '../../../providers/providerRailStatus';
 import {
@@ -38,6 +39,7 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
     })),
   );
   const { integrations, connected, githubIdentity } = useToolConnections({ workspaceId });
+  const secrets = useToolSecrets({ integrations, checkedAtMs: nowMs });
   const connectedKey = TOOL_ORDER.map((tool) => connected[tool]).join();
 
   const subtitles = useMemo(
@@ -54,8 +56,8 @@ export const useSettingsStatus = ({ workspaceId }: Params): SettingsStatus => {
     [state, nowMs],
   );
   const tools = useMemo(
-    () => toolRailEntries({ integrations, connected, githubIdentity }),
-    [integrations, connectedKey, githubIdentity],
+    () => toolRailEntries({ integrations, connected, githubIdentity, secrets }),
+    [integrations, connectedKey, githubIdentity, secrets],
   );
 
   return useMemo(() => ({ subtitles, providers, tools }), [subtitles, providers, tools]);

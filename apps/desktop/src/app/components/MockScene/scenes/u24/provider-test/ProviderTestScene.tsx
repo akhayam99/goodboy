@@ -86,14 +86,25 @@ export const ProviderTestScene = () => {
       if (scene !== 'providerhistory') {
         return;
       }
-      const trigger = Array.from(document.querySelectorAll('button')).find(
-        (button) => button.textContent === 'History',
-      );
-      trigger?.click();
+      document
+        .querySelector<HTMLButtonElement>('button[aria-label="More Cursor actions"]')
+        ?.click();
     }, 500);
+    const choose = window.setTimeout(() => {
+      if (scene !== 'providerhistory') {
+        return;
+      }
+      const item = Array.from(document.querySelectorAll('[role="menuitem"]')).find(
+        (candidate) => candidate.textContent === 'History',
+      );
+      if (item instanceof HTMLElement) {
+        item.click();
+      }
+    }, 700);
     return () => {
       window.clearTimeout(open);
       window.clearTimeout(history);
+      window.clearTimeout(choose);
     };
   }, [scene]);
   if (!isReady) {

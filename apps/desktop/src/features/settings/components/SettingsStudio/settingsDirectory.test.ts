@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { QUIET_TOOL_HEALTH } from '../../../../__tests__/helpers/quietToolHealth';
 import { toolRailEntries } from '../../../integrations/toolRailEntries';
-import { settingsDirectory, type SettingsStatus } from './settingsDirectory';
+import { foldAttentionOf, settingsDirectory, type SettingsStatus } from './settingsDirectory';
 
 const MAX_ROW_CHARACTERS = 24;
 
@@ -132,12 +133,66 @@ describe('settings rail rows', () => {
     };
     const status: SettingsStatus = {
       ...QUIET_STATUS,
-      tools: toolRailEntries({ integrations: [], connected, githubIdentity: null }),
+      tools: toolRailEntries({ integrations: [], connected, githubIdentity: null, secrets: {} }),
     };
     expect(
       settingsDirectory({ workspaceName: 'Acme', status })
         .find((group) => group.scope === 'tools')
         ?.pages.map((page) => page.label),
     ).toEqual(['GitHub', 'GitLab', 'Bitbucket', 'Linear', 'Jira', 'Sentry', 'Slack']);
+  });
+
+  it('puts a danger dot on an integration whose key is missing and none on healthy ones', () => {
+    const status: SettingsStatus = {
+      ...QUIET_STATUS,
+      tools: [
+        {
+          tool: 'linear',
+          label: 'Linear',
+          subtitle: 'Mara Quint · harborline',
+          isConnected: true,
+          health: { signal: 'danger', chip: 'Key missing', reason: 'Key missing on this Mac' },
+        },
+        {
+          tool: 'jira',
+          label: 'Jira',
+          subtitle: 'harborline.atlassian.net',
+          isConnected: true,
+          health: QUIET_TOOL_HEALTH,
+        },
+      ],
+    };
+    const tools = settingsDirectory({ workspaceName: 'Acme', status }).find(
+      (group) => group.scope === 'tools',
+    );
+
+    expect(tools?.pages.map((page) => page.attention)).toEqual([
+      { text: 'Key missing on this Mac', tone: 'danger' },
+      null,
+    ]);
+    expect(tools === undefined ? null : foldAttentionOf({ group: tools })).toEqual({
+      text: 'Key missing on this Mac',
+      tone: 'danger',
+    });
+  });
+
+  it('shows no dot on a fold of connected and healthy integrations', () => {
+    const status: SettingsStatus = {
+      ...QUIET_STATUS,
+      tools: [
+        {
+          tool: 'linear',
+          label: 'Linear',
+          subtitle: 'Mara Quint · harborline',
+          isConnected: true,
+          health: QUIET_TOOL_HEALTH,
+        },
+      ],
+    };
+    const tools = settingsDirectory({ workspaceName: 'Acme', status }).find(
+      (group) => group.scope === 'tools',
+    );
+
+    expect(tools === undefined ? null : foldAttentionOf({ group: tools })).toBeNull();
   });
 });

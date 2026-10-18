@@ -67,16 +67,17 @@ describe('the provider health scene', () => {
   it('confirmed shows the account and when the server last confirmed it', async () => {
     await mount('confirmed');
 
-    expect(
-      screen.getByText(/Signed in as mara\.quint@harborline\.dev\. Confirmed 2m ago/),
-    ).toBeDefined();
+    expect(screen.getByText('Signed in as mara.quint@harborline.dev')).toBeDefined();
+    expect(screen.getByText(/checked 2m ago/)).toBeDefined();
+    expect(screen.getByText('Working')).toBeDefined();
     expect(screen.queryByText(/refused your last/)).toBeNull();
   });
 
-  it('local says the sign-in is only on this Mac', async () => {
+  it('local says the sign-in is not confirmed by the provider', async () => {
     await mount('local');
 
-    expect(screen.getByText(/Signed in on this Mac\. Not confirmed by Cursor\./)).toBeDefined();
+    expect(screen.getByText('Not confirmed')).toBeDefined();
+    expect(screen.queryByText(/checked [0-9j]/)).toBeNull();
   });
 
   it('cannotcheck keeps the page and says what it last knew', async () => {

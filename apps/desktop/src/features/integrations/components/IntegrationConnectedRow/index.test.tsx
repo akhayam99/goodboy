@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { IntegrationCredentialId } from '@goodboy/types';
+import { credentialIdOf } from '../../../../__tests__/helpers/brandedIds';
 import { IntegrationConnectedRow } from '.';
 
 const secret = vi.hoisted(() => ({ has: true }));
@@ -88,16 +89,46 @@ describe('IntegrationConnectedRow', () => {
 describe('a connection whose key left the keychain', () => {
   it('says the key is gone instead of claiming a healthy connection', async () => {
     secret.has = false;
-    renderRow({ credentialId: 'cred-1' as IntegrationCredentialId });
+    renderRow({ credentialId: credentialIdOf({ value: 'cred-1' }) });
 
     await waitFor(() => expect(screen.getByText(/missing from this Mac/i)).toBeDefined());
     expect(screen.getByText('Connected as Ada Lovelace')).toBeDefined();
   });
 
   it('stays quiet while the key is where it should be', async () => {
-    renderRow({ credentialId: 'cred-1' as IntegrationCredentialId });
+    renderRow({ credentialId: credentialIdOf({ value: 'cred-1' }) });
 
     await waitFor(() => expect(screen.getByText('Connected as Ada Lovelace')).toBeDefined());
     expect(screen.queryByText(/missing from this Mac/i)).toBeNull();
+  });
+});
+
+describe('a row whose disconnect lives in the page header', () => {
+  const renderHeaderRow = ({ credentialId }: { readonly credentialId?: IntegrationCredentialId }) =>
+    render(
+      <IntegrationConnectedRow
+        provider="linear"
+        primary="Connected as Ada Lovelace"
+        secondary="linear.app/acme"
+        {...(credentialId != null ? { credentialId } : {})}
+        disconnectDescription="Disconnects this project."
+        hasHeaderDisconnect
+        onDisconnect={vi.fn(async () => undefined)}
+      />,
+    );
+
+  it('holds no button', () => {
+    renderHeaderRow({});
+
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('shows one Key missing chip and no second sentence about it', async () => {
+    secret.has = false;
+    renderHeaderRow({ credentialId: credentialIdOf({ value: 'cred-1' }) });
+
+    expect(await screen.findByText('Key missing')).toBeDefined();
+    expect(screen.queryByText(/missing from this Mac/i)).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 });

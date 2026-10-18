@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { integrationCredentialHasSecret } from '../credentials';
+import { useCredentialRecheck } from '../useCredentialRecheck';
 
 export type CredentialSecretState = 'unknown' | 'present' | 'missing';
 
@@ -10,6 +11,7 @@ type Params = {
 
 export const useCredentialSecret = ({ credentialId }: Params): CredentialSecretState => {
   const [state, setState] = useState<CredentialSecretState>('unknown');
+  const recheck = useCredentialRecheck();
 
   useEffect(() => {
     if (credentialId == null) {
@@ -34,7 +36,7 @@ export const useCredentialSecret = ({ credentialId }: Params): CredentialSecretS
     return () => {
       isCancelled = true;
     };
-  }, [credentialId]);
+  }, [credentialId, recheck]);
 
   return state;
 };

@@ -81,7 +81,7 @@ See which permission modes a provider can honor before you pick one, from **Read
 
 ### Integrations
 
-Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page, and see the account behind each. A folder can use a different account than its workspace. Keys stay in your system credential store.
+Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page, and see the account behind each. A folder can use a different account than its workspace. Keys stay in your system credential store. The left list shows a dot only on an integration that needs you, for example a key that left this Mac's keychain, with the reason as its tooltip. A page menu holds **Open in Tasks**, **Check again** and **Disconnect**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-integrations-dark.webp">

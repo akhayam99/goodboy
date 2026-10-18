@@ -2,15 +2,22 @@ import { useShallow } from 'zustand/react/shallow';
 import type { LinearIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
+import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import { LinearConnectSteps } from './LinearConnectSteps';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly onConnected?: () => void;
   readonly shouldAutoFocus?: boolean;
+  readonly hasHeaderDisconnect?: boolean;
 };
 
-export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
+export const LinearFormBody = ({
+  workspaceId,
+  onConnected,
+  shouldAutoFocus = false,
+  hasHeaderDisconnect = false,
+}: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const linear = integrations.find((i) => i.provider === 'linear') ?? null;
   const linearConfig = linear ? (linear.config as LinearIntegrationConfig) : null;
@@ -23,7 +30,8 @@ export const LinearFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         credentialId={linear?.credentialId ?? null}
         primary={`Connected as ${linearConfig?.viewerName}`}
         secondary={`linear.app/${linearConfig?.workspaceUrlKey}`}
-        disconnectDescription="Disconnects this workspace from the Linear personal API key. The key stays saved for your other workspaces."
+        disconnectDescription={disconnectDescriptionOf({ provider: 'linear' })}
+        hasHeaderDisconnect={hasHeaderDisconnect}
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'linear' })}
       />
     );

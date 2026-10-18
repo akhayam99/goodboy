@@ -59,14 +59,14 @@ describe('provider test scenes', () => {
   it('shows the answered result', async () => {
     await mount({ id: 'providertest-ok' });
     expect(screen.getByText('Cursor answered in 0.8 s.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Test connection' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Test connection' })).toBeNull();
   });
   it('shows refusal recovery', async () => {
     await mount({ id: 'providertest-refused' });
     expect(screen.getByText(/Cursor did not accept the call: Not logged in/)).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Sign in again' }).length).toBeGreaterThan(0);
   });
-  it('opens the history next to its trigger', async () => {
+  it('opens the history from the header menu', async () => {
     await mount({ id: 'providerhistory' });
     expect(screen.getByRole('region', { name: 'Cursor connection history' })).toBeDefined();
     expect(screen.getByText('Test connection passed')).toBeDefined();

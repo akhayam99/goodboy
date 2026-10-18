@@ -1,37 +1,47 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ProviderDisplayInfo } from '../../../providers';
 
-const { state } = vi.hoisted(() => ({
-  state: {
-    providerConnect: { anthropic: { phase: 'idle' }, codex: { phase: 'idle' } } as Record<
-      string,
-      { phase: string }
-    >,
-    connectProvider: vi.fn(async () => undefined),
-    logoutProvider: vi.fn(async () => undefined),
-    refreshProviders: vi.fn(async () => undefined),
-    providers: [] as ReadonlyArray<unknown>,
-    providerCredentials: [] as ReadonlyArray<{ providerId: string }>,
-    authResults: { anthropic: { state: 'connected', identity: 'dev@acme.test', plan: 'team' } },
-    providerLimits: {} as Record<string, unknown>,
-    workspaces: [] as ReadonlyArray<never>,
-    currentWorkspaceId: null as string | null,
-    cliRequirements: [] as ReadonlyArray<unknown>,
-    providerLifecycle: {
-      anthropic: { phase: 'idle', action: null, runId: null, errorTail: null },
-      codex: { phase: 'idle', action: null, runId: null, errorTail: null },
+const { state } = vi.hoisted(() => {
+  const providerConnectionTests: Record<string, unknown> = {};
+  const providerHealth: Record<string, unknown> = {};
+  return {
+    state: {
+      providerConnect: { anthropic: { phase: 'idle' }, codex: { phase: 'idle' } } as Record<
+        string,
+        { phase: string }
+      >,
+      connectProvider: vi.fn(async () => undefined),
+      logoutProvider: vi.fn(async () => undefined),
+      refreshProviders: vi.fn(async () => undefined),
+      providers: [] as ReadonlyArray<unknown>,
+      providerCredentials: [] as ReadonlyArray<{ providerId: string }>,
+      authResults: { anthropic: { state: 'connected', identity: 'dev@acme.test', plan: 'team' } },
+      providerLimits: {} as Record<string, unknown>,
+      workspaces: [] as ReadonlyArray<never>,
+      currentWorkspaceId: null as string | null,
+      cliRequirements: [] as ReadonlyArray<unknown>,
+      providerLifecycle: {
+        anthropic: { phase: 'idle', action: null, runId: null, errorTail: null },
+        codex: { phase: 'idle', action: null, runId: null, errorTail: null },
+      },
+      agentTurnState: {},
+      runRouting: {},
+      updateProviderCli: vi.fn(async () => undefined),
+      providerConnectionTests,
+      testProviderConnection: vi.fn(async () => undefined),
+      providerHealth,
     },
-    agentTurnState: {},
-    runRouting: {},
-    updateProviderCli: vi.fn(async () => undefined),
-  },
-}));
+  };
+});
 
 vi.mock('../../../../../store', () => ({
-  useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (store: typeof state) => T) => selector(state), {
+    getState: () => state,
+    subscribe: () => () => undefined,
+  }),
 }));
 
 vi.mock('../../../../../shared/components/Toast', () => ({
@@ -125,9 +135,9 @@ describe('ProviderPage', () => {
   it('carries only the plan in the header meta and the account in the account group', () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
 
-    expect(screen.getByText('Team plan')).toBeDefined();
-    expect(screen.queryByText(/Signed in as/)).toBeNull();
-    expect(screen.getByText('dev@acme.test · Team plan')).toBeDefined();
+    expect(screen.getAllByText('Team plan')).toHaveLength(2);
+    expect(screen.getByText('Signed in as dev@acme.test')).toBeDefined();
+    expect(screen.queryByText(/Confirmed/)).toBeNull();
   });
 
   it('says what each mode does on this cli', () => {
@@ -140,10 +150,35 @@ describe('ProviderPage', () => {
     expect(rows).toContain('RulesNot followedOnly Claude follows Allow and Deny rules.');
   });
 
-  it('signs the provider out only after the row confirm', () => {
+  it('names the verbs of the header menu from the provider kind, Disconnect last', () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Check again',
+      'Sign in again',
+      'History',
+      'Copy CLI path',
+      'Disconnect',
+    ]);
+  });
+
+  it('holds no button in the account row', () => {
+    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+
+    const account = within(screen.getByRole('region', { name: 'Account' }));
+    expect(account.queryByRole('button', { name: 'Disconnect' })).toBeNull();
+    expect(account.queryByRole('button', { name: 'Sign in again' })).toBeNull();
+    expect(account.queryByRole('button', { name: 'Test connection' })).toBeNull();
+    expect(account.queryByRole('button', { name: 'History' })).toBeNull();
+  });
+
+  it('signs the provider out only after the confirm in the header menu', () => {
+    render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Disconnect' }));
     expect(state.logoutProvider).not.toHaveBeenCalled();
 
     const confirm = screen.getByRole('group', { name: 'Disconnect Claude?' });
@@ -151,13 +186,35 @@ describe('ProviderPage', () => {
     expect(state.logoutProvider).toHaveBeenCalledWith('anthropic');
   });
 
-  it('opens the sign out confirm from the header menu', () => {
+  it('opens and hides the history from the header menu', () => {
+    state.providerHealth = {
+      anthropic: { standing: 'connected', events: [], evidence: { serverAccepted: true } },
+    };
+    try {
+      render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
+      expect(screen.queryByRole('region', { name: 'Claude connection history' })).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
+      fireEvent.click(screen.getByRole('menuitem', { name: 'History' }));
+      expect(screen.getByRole('region', { name: 'Claude connection history' })).toBeDefined();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Hide history' }));
+      expect(screen.queryByRole('region', { name: 'Claude connection history' })).toBeNull();
+    } finally {
+      state.providerHealth = {};
+    }
+  });
+
+  it('checks again by refreshing the providers and testing the connection', async () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Check again' }));
+    });
 
-    expect(screen.getByRole('group', { name: 'Disconnect Claude?' })).toBeDefined();
+    expect(state.refreshProviders).toHaveBeenCalledWith({ isFresh: true });
+    expect(state.testProviderConnection).toHaveBeenCalledWith({ providerId: 'anthropic' });
   });
 
   it('shows only the connect card while the provider is not connected', () => {
@@ -173,20 +230,23 @@ describe('ProviderPage', () => {
     expect(screen.queryByRole('region', { name: 'Account' })).toBeNull();
   });
 
-  it('cancels back to the account actions', () => {
+  it('cancels the disconnect and keeps the provider signed in', () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Disconnect' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(state.logoutProvider).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Sign in again' })).toBeDefined();
   });
 
-  it('signs claude in again straight away', () => {
+  it('signs claude in again straight away', async () => {
     render(<ProviderPage info={info} autoConnect={false} autoUpdate={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More Claude actions' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Sign in again' }));
+    });
 
     expect(state.connectProvider).toHaveBeenCalledWith('anthropic');
   });
@@ -195,7 +255,8 @@ describe('ProviderPage', () => {
     const codex = { ...info, id: 'codex', label: 'Codex', binary: 'codex' } as ProviderDisplayInfo;
     render(<ProviderPage info={codex} autoConnect={false} autoUpdate={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More Codex actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Sign in again' }));
     expect(state.connectProvider).not.toHaveBeenCalled();
     const confirm = screen.getByRole('group', { name: 'Sign in to Codex again?' });
     expect(screen.getByText('Signing in again signs you out of Codex first.')).toBeDefined();

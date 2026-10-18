@@ -654,6 +654,10 @@ filesystem write lock. Cleanup failure retains the stash instead of repeating re
 
 The New drawer keeps the Start button in a sticky host at the end of its body (`actionsHost` in `NewDrawerBody`), not in the `DrawerFrame` `dock` slot: a dock is a footer bar and `forbidden-patterns` fails the build on it. The Run, Agent and Write panels portal their actions into that host through `Docked`, so each panel must render nothing until the host node exists. `WritePanel` lives in `features/artifacts` and reaches the drawer as the `writePanel` prop from `DrawerHost`, because `features/session` must not import artifacts components.
 
+## A tool's health has one author
+
+The rail dot, the folded Integrations dot, the page chip and the key-missing notice of an integration all read `toolHealthOf` (`features/integrations/toolHealthOf.ts`); a dot and a chip written separately drift. The keychain answer reaches it through `useToolSecrets` for the rail (keyed by binding id, so a late answer for a replaced binding is dropped) and `useCredentialSecret` for the page; **Check again** asks both to read again through `requestCredentialRecheck`. The Disconnect of a settings page is the header menu verb, so `IntegrationConnectedRow` takes `hasHeaderDisconnect` there and keeps its own Disconnect icon only where no page menu exists (the onboarding step, GitHub's account rows). A provider page does the same with `providerAccountChip`: it reads `providerRailStatus` with the usage window ignored, so the chip stays `Working` while the dot warns that a window is nearly used up.
+
 ## Hints when a fix starts
 
 The hint a person types before a fix is plain text carried as a field, never re-parsed out of a prompt to rebuild it. Four rules keep it safe.

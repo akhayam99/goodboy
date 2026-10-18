@@ -11,6 +11,7 @@ import { SlackFormBody } from './slack/SlackFormBody';
 type FormBodyProps = {
   readonly workspaceId: WorkspaceId;
   readonly shouldAutoFocus?: boolean;
+  readonly hasHeaderDisconnect?: boolean;
 };
 
 export const FORM_BODIES: Record<

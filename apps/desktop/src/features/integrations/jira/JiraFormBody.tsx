@@ -2,15 +2,22 @@ import { useShallow } from 'zustand/react/shallow';
 import type { JiraIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
+import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import { JiraConnectSteps } from './JiraConnectSteps';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly onConnected?: () => void;
   readonly shouldAutoFocus?: boolean;
+  readonly hasHeaderDisconnect?: boolean;
 };
 
-export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
+export const JiraFormBody = ({
+  workspaceId,
+  onConnected,
+  shouldAutoFocus = false,
+  hasHeaderDisconnect = false,
+}: Props) => {
   const integrations = useAppStore(
     useShallow((state) => state.workspaceIntegrations[workspaceId] ?? []),
   );
@@ -27,7 +34,8 @@ export const JiraFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false
         credentialId={jira?.credentialId ?? null}
         primary={`Connected as ${jira.config.displayName ?? jira.config.email}`}
         secondary={`${jira.config.siteUrl} (${jira.config.projectKey})`}
-        disconnectDescription="Disconnects this workspace from the Jira personal API key. The key stays saved for your other workspaces."
+        disconnectDescription={disconnectDescriptionOf({ provider: 'jira' })}
+        hasHeaderDisconnect={hasHeaderDisconnect}
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'jira' })}
       />
     );

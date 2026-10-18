@@ -10,11 +10,17 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly onConnected?: () => void;
   readonly shouldAutoFocus?: boolean;
+  readonly hasHeaderDisconnect?: boolean;
 };
 
 const MANIFEST_URL = buildSlackManifestUrl({ userScopes: SLACK_USER_SCOPES });
 
-export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
+export const SlackFormBody = ({
+  workspaceId,
+  onConnected,
+  shouldAutoFocus = false,
+  hasHeaderDisconnect = false,
+}: Props) => {
   const integrations = useAppStore(
     useShallow((state) => state.workspaceIntegrations[workspaceId] ?? []),
   );
@@ -25,7 +31,13 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
   const connectSlack = useAppStore((state) => state.connectSlack);
 
   if (slack != null) {
-    return <SlackSettings workspaceId={workspaceId} slack={slack} />;
+    return (
+      <SlackSettings
+        workspaceId={workspaceId}
+        slack={slack}
+        hasHeaderDisconnect={hasHeaderDisconnect}
+      />
+    );
   }
 
   return (

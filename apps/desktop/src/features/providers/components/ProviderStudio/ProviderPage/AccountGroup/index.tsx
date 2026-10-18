@@ -8,11 +8,10 @@ import { ProviderCredentialsSection } from '../../ProviderCredentialsSection';
 import { ProviderBindingsSection } from '../../ProviderBindingsSection';
 import { CliUpdateNotice } from '../../CliUpdateNotice';
 import { CliRow } from './CliRow';
+import { ConnectionHistory } from './ConnectionHistory';
 import { RuntimeRow } from './RuntimeRow';
 import { SignedInRow } from './SignedInRow';
 import type { AccountGroupProps } from './types';
-
-export type { AccountConfirm } from './types';
 
 export const AccountGroup = (props: AccountGroupProps) => {
   const { info } = props;
@@ -46,6 +45,9 @@ export const AccountGroup = (props: AccountGroupProps) => {
           </button>
         ) : null}
       </Band>
+      {isApi || !props.isHistoryOpen ? null : (
+        <ConnectionHistory providerId={info.id} label={info.label} onClose={props.onCloseHistory} />
+      )}
       {isApi ? null : <CliUpdateNotice providerId={info.id} autoStart={props.autoUpdate} />}
       {showsKeys ? <ProviderCredentialsSection providerId={info.id} /> : null}
       <ProviderBindingsSection providerId={info.id} cliIdentity={isApi ? null : info.identity} />

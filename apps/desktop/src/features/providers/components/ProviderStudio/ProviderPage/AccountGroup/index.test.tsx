@@ -32,17 +32,15 @@ const seedClaude = ({ version }: { readonly version: string }) => {
 };
 
 type AccountParams = {
-  readonly confirm?: 'none' | 'reauth' | 'disconnect';
-  readonly onConfirmChange?: () => void;
-  readonly onConfirmReauth?: () => void;
-  readonly onDisconnect?: () => void;
+  readonly isHistoryOpen?: boolean;
+  readonly onCloseHistory?: () => void;
+  readonly onReauth?: () => Promise<void>;
 };
 
 const renderAccount = ({
-  confirm = 'none',
-  onConfirmChange = vi.fn(),
-  onConfirmReauth = vi.fn(),
-  onDisconnect = vi.fn(),
+  isHistoryOpen = false,
+  onCloseHistory = vi.fn(),
+  onReauth = vi.fn(async () => undefined),
 }: AccountParams = {}) => {
   const info = useAppStore.getState().providers.find((item) => item.id === 'anthropic');
   if (info === undefined) {
@@ -51,14 +49,25 @@ const renderAccount = ({
   return render(
     <AccountGroup
       info={info}
-      planLabel={null}
-      canReauth
+      planLabel="Max"
       autoUpdate={false}
-      confirm={confirm}
-      onConfirmChange={onConfirmChange}
-      onReauth={vi.fn()}
-      onConfirmReauth={onConfirmReauth}
-      onDisconnect={onDisconnect}
+      target={{
+        kind: 'provider',
+        facts: {
+          label: 'Claude',
+          cliPath: '/usr/local/bin/claude',
+          isChecking: false,
+          canReauth: true,
+          willSignOutOnReauth: false,
+          canDisconnect: true,
+          onCheck: vi.fn(async () => undefined),
+          onReauth,
+          onShowHistory: vi.fn(),
+          onDisconnect: vi.fn(async () => undefined),
+        },
+      }}
+      isHistoryOpen={isHistoryOpen}
+      onCloseHistory={onCloseHistory}
     />,
   );
 };
@@ -103,32 +112,45 @@ describe('AccountGroup CLI row', () => {
   });
 });
 
-describe('AccountGroup sign out and sign in again', () => {
-  it('keeps the signed in row while Disconnect asks in a popover', () => {
-    const onDisconnect = vi.fn();
-    const onConfirmChange = vi.fn();
-    const { container } = renderAccount({
-      confirm: 'disconnect',
-      onDisconnect,
-      onConfirmChange,
-    });
+describe('AccountGroup signed in row', () => {
+  it('says who is signed in, the plan and one state chip, with no button', () => {
+    seedClaude({ version: '99.0.0' });
+    renderAccount();
 
-    const dialog = screen.getByRole('dialog', { name: /^Disconnect .+\?$/ });
-    expect(container.contains(dialog)).toBe(false);
-    expect(screen.getByText('Signed in')).toBeDefined();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Disconnect' }));
-
-    expect(onConfirmChange).toHaveBeenCalledWith('none');
-    expect(onDisconnect).toHaveBeenCalledOnce();
+    const account = within(screen.getByRole('region', { name: 'Account' }));
+    expect(account.getByText('Signed in as dev@acme.test')).toBeDefined();
+    expect(account.getByText(/Max plan/)).toBeDefined();
+    expect(account.getByText('Working')).toBeDefined();
+    expect(account.queryByRole('button', { name: 'Disconnect' })).toBeNull();
+    expect(account.queryByRole('button', { name: 'Test connection' })).toBeNull();
+    expect(account.queryByRole('button', { name: 'History' })).toBeNull();
+    expect(account.queryByRole('button', { name: 'Sign in again' })).toBeNull();
   });
 
-  it('asks before signing in again and runs it on confirm', () => {
-    const onConfirmReauth = vi.fn();
-    renderAccount({ confirm: 'reauth', onConfirmReauth });
+  it('offers Sign in again on the row once the last connection test failed', () => {
+    useAppStore.setState({
+      providerConnectionTests: {
+        ...useAppStore.getState().providerConnectionTests,
+        anthropic: {
+          isTesting: false,
+          result: { isOk: false, millis: 40, detail: 'Not logged in' },
+        },
+      },
+    });
+    renderAccount();
 
-    const dialog = screen.getByRole('dialog', { name: /^Sign in to .+ again\?$/ });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Sign in again' }));
+    expect(screen.getByRole('button', { name: 'Sign in again' })).toBeDefined();
+  });
 
-    expect(onConfirmReauth).toHaveBeenCalledOnce();
+  it('shows the history panel only while the page asks for it, and hides it from its button', () => {
+    const onCloseHistory = vi.fn();
+    renderAccount({ onCloseHistory });
+    expect(screen.queryByRole('region', { name: 'Claude connection history' })).toBeNull();
+    cleanup();
+    renderAccount({ isHistoryOpen: true, onCloseHistory });
+
+    expect(screen.getByRole('region', { name: 'Claude connection history' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide history' }));
+    expect(onCloseHistory).toHaveBeenCalledOnce();
   });
 });

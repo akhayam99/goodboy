@@ -2,9 +2,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
+import { QUIET_TOOL_HEALTH } from '../../../../__tests__/helpers/quietToolHealth';
 import { SettingsColumnNav } from './SettingsColumnNav';
 import { SettingsRail } from './SettingsRail';
 import { settingsDirectory, type SettingsStatus } from './settingsDirectory';
+
+const QUIET_HEALTH = QUIET_TOOL_HEALTH;
 
 const STATUS: SettingsStatus = {
   subtitles: {
@@ -26,7 +29,15 @@ const STATUS: SettingsStatus = {
       status: { subtitle: 'Claude is about to run out', tone: 'warning' },
     },
   ],
-  tools: [{ tool: 'linear', label: 'Linear', subtitle: 'Not connected', isConnected: false }],
+  tools: [
+    {
+      tool: 'linear',
+      label: 'Linear',
+      subtitle: 'Not connected',
+      isConnected: false,
+      health: QUIET_HEALTH,
+    },
+  ],
 };
 
 const GROUPS = settingsDirectory({ status: STATUS, workspaceName: 'Harborline' });

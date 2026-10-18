@@ -3,11 +3,13 @@ import { Checkbox, Eyebrow, Input, Switch } from '@goodboy/ui';
 import type { SlackIntegrationBinding, SlackIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { IntegrationConnectedRow } from '../../components/IntegrationConnectedRow';
+import { disconnectDescriptionOf } from '../../disconnectDescriptionOf';
 import { SlackPolicyRow } from './SlackPolicyRow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly slack: SlackIntegrationBinding;
+  readonly hasHeaderDisconnect?: boolean;
 };
 
 const BINARY_OPTIONS = [
@@ -34,7 +36,7 @@ const save = ({ config, workspaceId, update }: SaveParams): void => {
   void update({ workspaceId, config });
 };
 
-export const SlackSettings = ({ workspaceId, slack }: Props) => {
+export const SlackSettings = ({ workspaceId, slack, hasHeaderDisconnect = false }: Props) => {
   const channels = useAppStore(
     (state) => state.slackChannels[workspaceId]?.channels ?? EMPTY_ARRAY,
   );
@@ -58,7 +60,8 @@ export const SlackSettings = ({ workspaceId, slack }: Props) => {
         credentialId={slack.credentialId}
         primary={`Connected as ${config.userName ?? config.userId}`}
         secondary={config.teamName}
-        disconnectDescription="Disconnects this workspace from Slack. The saved credential remains available to other workspaces."
+        disconnectDescription={disconnectDescriptionOf({ provider: 'slack' })}
+        hasHeaderDisconnect={hasHeaderDisconnect}
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'slack' })}
       />
 

@@ -3,8 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SettingsPageScope } from '../../settingsFocus';
+import { QUIET_TOOL_HEALTH } from '../../../../__tests__/helpers/quietToolHealth';
 import { SettingsRail } from './SettingsRail';
 import { settingsDirectory, type SettingsStatus } from './settingsDirectory';
+
+const QUIET_HEALTH = QUIET_TOOL_HEALTH;
 
 const STATUS: SettingsStatus = {
   subtitles: {
@@ -32,8 +35,14 @@ const STATUS: SettingsStatus = {
     },
   ],
   tools: [
-    { tool: 'github', label: 'GitHub', subtitle: 'Ada', isConnected: true },
-    { tool: 'linear', label: 'Linear', subtitle: 'Not connected', isConnected: false },
+    { tool: 'github', label: 'GitHub', subtitle: 'Ada', isConnected: true, health: QUIET_HEALTH },
+    {
+      tool: 'linear',
+      label: 'Linear',
+      subtitle: 'Not connected',
+      isConnected: false,
+      health: QUIET_HEALTH,
+    },
   ],
 };
 

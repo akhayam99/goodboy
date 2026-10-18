@@ -77,6 +77,10 @@ const BINDINGS = [
   },
 ] satisfies ReadonlyArray<IntegrationBinding>;
 
+const openHeaderMenu = ({ title }: { readonly title: string }) => {
+  fireEvent.click(screen.getByRole('button', { name: `More ${title} actions` }));
+};
+
 const github = vi.hoisted(() => ({ mode: 'absent', scoped: false, user: null as string | null }));
 
 type GithubStatusMap = Record<string, unknown>;
@@ -141,17 +145,27 @@ vi.mock('../../../../store', () => ({
     <T,>(selector: (state: ReturnType<typeof store.getState>) => T) => store(selector),
     {
       getState: () => store.getState(),
+      subscribe: (listener: () => void) => store.subscribe(listener),
     },
   ),
 }));
 
+const keychain = vi.hoisted(() => ({ hasSecret: true }));
+
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async (command: string) =>
-    command === 'gh_status' ? { ...github, available: true } : true,
-  ),
+  invoke: vi.fn(async (command: string) => {
+    if (command === 'gh_status') {
+      return { ...github, available: true };
+    }
+    if (command === 'integration_credential_has_secret') {
+      return keychain.hasSecret;
+    }
+    return true;
+  }),
 }));
 
 beforeEach(() => {
+  keychain.hasSecret = true;
   github.mode = 'absent';
   github.scoped = false;
   github.user = null;
@@ -211,9 +225,13 @@ describe('ToolSettingsScope', () => {
     });
     expect(screen.getByText('Connected as Ada')).toBeDefined();
     expect(screen.getByText('linear.app/acme')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Linear' }));
+    expect(screen.queryByRole('button', { name: 'Disconnect Linear' })).toBeNull();
+    openHeaderMenu({ title: 'Linear' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Disconnect' }));
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect Linear' }),
+      within(screen.getByRole('group', { name: 'Disconnect Linear?' })).getByRole('button', {
+        name: 'Disconnect Linear',
+      }),
     );
     await waitFor(() =>
       expect(store.getState().disconnectIntegration).toHaveBeenCalledWith({
@@ -237,7 +255,8 @@ describe('ToolSettingsScope', () => {
       timeout: 2000,
     });
     expect(screen.queryByLabelText('API key')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open in Tasks' })).toBeDefined();
+    openHeaderMenu({ title: 'Linear' });
+    expect(screen.getByRole('menuitem', { name: 'Open in Tasks' })).toBeDefined();
   });
 
   it('opens connected tools in Tasks', async () => {
@@ -248,10 +267,83 @@ describe('ToolSettingsScope', () => {
         <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
       );
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Open in Tasks' }));
+    openHeaderMenu({ title: 'Linear' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open in Tasks' }));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'goodboy:open-inbox', detail: { provider: 'linear' } }),
     );
+  });
+
+  it('says the key is missing in a notice and a chip, with the one Disconnect', async () => {
+    keychain.hasSecret = false;
+    store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
+    await act(async () => {
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
+    });
+
+    expect(await screen.findByText('The Linear key is missing from this Mac')).toBeDefined();
+    expect(screen.getByText('Key missing')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Disconnect Linear?' })).getByRole('button', {
+        name: 'Disconnect Linear',
+      }),
+    );
+    await waitFor(() =>
+      expect(store.getState().disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        provider: 'linear',
+      }),
+    );
+  });
+
+  it('stays quiet about the key while it is in the keychain', async () => {
+    store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
+    await act(async () => {
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
+    });
+
+    expect(screen.queryByText('Key missing')).toBeNull();
+    expect(screen.queryByText('The Linear key is missing from this Mac')).toBeNull();
+  });
+
+  it('checks the key again from the header menu', async () => {
+    store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
+    await act(async () => {
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
+    });
+    expect(screen.queryByText('Key missing')).toBeNull();
+
+    keychain.hasSecret = false;
+    openHeaderMenu({ title: 'Linear' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Check again' }));
+    });
+
+    expect(await screen.findByText('Key missing')).toBeDefined();
+  });
+
+  it('offers GitHub Open in Tasks and Check again but leaves Disconnect to its account rows', async () => {
+    github.mode = 'gh-cli';
+    github.user = 'Ada';
+    await act(async () => {
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
+    });
+    await screen.findByText('Connected as Ada through the gh CLI');
+    openHeaderMenu({ title: 'GitHub' });
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Open in Tasks',
+      'Check again',
+    ]);
   });
 
   it.each([
@@ -301,9 +393,12 @@ describe('ToolSettingsScope', () => {
       expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([label]);
       expect(screen.getByText(identity)).toBeDefined();
       expect(screen.getAllByText(secondary).length).toBeGreaterThan(0);
-      fireEvent.click(screen.getByRole('button', { name: `Disconnect ${label}` }));
+      openHeaderMenu({ title: label });
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Disconnect' }));
       fireEvent.click(
-        within(screen.getByRole('dialog')).getByRole('button', { name: `Disconnect ${label}` }),
+        within(screen.getByRole('group', { name: `Disconnect ${label}?` })).getByRole('button', {
+          name: `Disconnect ${label}`,
+        }),
       );
       await waitFor(() =>
         expect(store.getState().disconnectIntegration).toHaveBeenCalledWith({

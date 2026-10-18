@@ -37,6 +37,11 @@ const STATES: ReadonlyArray<{
     facts: facts({ onOpenTasks: null, onCheck: null }),
     expected: [DISCONNECT],
   },
+  {
+    name: 'a host whose accounts disconnect from their own rows',
+    facts: facts({ onDisconnect: null }),
+    expected: [OPEN_TASKS, CHECK],
+  },
 ];
 
 const env: ActionEnv = {
