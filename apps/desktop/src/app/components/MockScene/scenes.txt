@@ -482,6 +482,7 @@ live-edit-busy
 live-edit-conflict
 live-edit-stash
 model-picker
+model-picker-auto
 model-picker-claude
 model-picker-codex
 model-picker-cursor

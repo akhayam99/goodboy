@@ -474,7 +474,9 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const providerRow = screen.getByRole('button', { name: 'Cursor' }).closest('div');
+    const providerRow = screen
+      .getByRole('button', { name: 'Cursor' })
+      .closest('div')?.parentElement;
     expect(providerRow?.querySelectorAll('svg')).toHaveLength(
       baseProps.connectedProviders.length + 1,
     );

@@ -63,7 +63,7 @@ export const RecommendationRow = ({
         </span>
         <span className="flex min-w-0 items-center gap-1 text-meta font-normal">
           {isAuto ? (
-            <span className="truncate text-faint-foreground">Now: {summary}</span>
+            <span className="whitespace-nowrap text-faint-foreground">Now: {summary}</span>
           ) : routing.label === null ? (
             <>
               <ProviderGlyph
