@@ -240,14 +240,25 @@ describe('CommitsHistory toolbar', () => {
     slot.remove();
   });
 
-  it('says how to drag at rest and lists the keys from a Keys popover', () => {
+  it('draws the row menu in a slot that reveals on hover', () => {
+    const slot = mountWithSlot();
+
+    const cells = document.querySelectorAll('[data-slot="commit-row-actions"]');
+
+    expect(cells.length).toBeGreaterThan(0);
+    slot.remove();
+  });
+
+  it('keeps the teaching line off the page and lists the keys from the header menu', () => {
     const slot = mountWithSlot();
 
     expect(
-      screen.getByText('Drag a commit to move it, drop it on another to fold it in.'),
-    ).toBeDefined();
+      screen.queryByText('Drag a commit to move it, drop it on another to fold it in.'),
+    ).toBeNull();
     expect(screen.queryByText('Fold in')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Keys' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Commits help' }));
+    expect(screen.getByText('How to edit commits')).toBeDefined();
+    expect(screen.getByText('Keys for this page')).toBeDefined();
     expect(screen.getByText('Fold in')).toBeDefined();
     expect(screen.getByText('Rename')).toBeDefined();
     expect(screen.getByText('Remove')).toBeDefined();

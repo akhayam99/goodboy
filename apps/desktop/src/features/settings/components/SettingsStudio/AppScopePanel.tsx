@@ -14,6 +14,7 @@ import { UpdatesSection } from './UpdatesSection';
 import { UpdatesWhatsNewBand } from './UpdatesWhatsNewBand';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { STORAGE_APP_PAGES } from '../../../storage/storageAppPages';
+import { useStorageMeta } from '../../../storage/useStorageMeta';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type Props = {
@@ -68,6 +69,7 @@ const SectionBody = ({ section, workspaceId }: BodyProps) => {
 
 export const AppScopePanel = ({ section, workspaceId }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
+  const storageMeta = useStorageMeta();
   if (section === 'iphone') {
     return iphoneSettingsPage({
       animationClassName: SETTINGS_PANE_ENTRY,
@@ -77,6 +79,7 @@ export const AppScopePanel = ({ section, workspaceId }: Props) => {
   const meta: Readonly<Partial<Record<PaneSection, string>>> = {
     updates: APP_VERSION === null ? undefined : `Goodboy ${APP_VERSION}`,
     shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
+    storage: storageMeta,
   };
   const label = APP_SECTIONS.find((entry) => entry.id === section)?.label ?? section;
   return (

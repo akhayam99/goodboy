@@ -892,6 +892,10 @@ u26s-palette-empty
 u26s-palette-guide
 u26s-palette-pair
 u26s-palette-search
+u26s-rows-branches
+u26s-rows-commits
+u26s-rows-menu
+u26s-rows-storage
 u26s-settings-branches
 u26s-settings-general
 u26s-settings-iphone

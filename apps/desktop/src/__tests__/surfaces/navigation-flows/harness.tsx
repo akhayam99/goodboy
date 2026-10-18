@@ -479,7 +479,7 @@ export const both =
   };
 
 const FOREIGN_CONTROLS: ReadonlyArray<RegExp> = [
-  /^Rewrite history/,
+  /^Edit commits/,
   /^PR #\d+/,
   /^Open in Review/,
   /^Fix \d+ notes?$/,

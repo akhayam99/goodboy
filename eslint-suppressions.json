@@ -6325,14 +6325,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/storage/components/BranchesSection/LiveSessionCells.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/storage/components/BranchesSection/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 5
+      "count": 4
     },
     "react-hooks/exhaustive-deps": {
       "count": 1

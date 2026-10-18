@@ -55,7 +55,7 @@ const seedWorkflow = (): void => {
 
 const openDiffHistory = async (): Promise<void> => {
   await openWorktreeMenu();
-  await click(await screen.findByRole('menuitem', { name: /^Rewrite history/ }));
+  await click(await screen.findByRole('menuitem', { name: /^Edit commits/ }));
 };
 
 export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
@@ -66,12 +66,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('commits'),
   },
   {
-    name: 'the Commits tab draws the branch and the keys hint, with no plan at rest',
+    name: 'the Commits tab draws the branch and the header help, with no plan at rest',
     covers: ['openRewriteHistory'],
     open: openDiffHistory,
     lands: both(
       () => visible('list', 'Commits'),
-      () => visible('button', 'Keys'),
+      () => visible('button', 'Commits help'),
     ),
   },
   {

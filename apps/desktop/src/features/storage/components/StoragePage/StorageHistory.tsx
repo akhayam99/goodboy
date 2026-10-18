@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FolderOpen, Trash2 } from 'lucide-react';
-import { Band, BandRow, Button, ConfirmPopover, SectionHeader, cn, tintClasses } from '@goodboy/ui';
+import { Band, BandRow, Button, ConfirmPopover, SectionHeader } from '@goodboy/ui';
 import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -89,11 +89,10 @@ export const StorageHistory = () => {
             onCancel={() => setIsConfirming(false)}
             trigger={() => (
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 disabled={stats.archivedTranscriptRows === 0}
                 onClick={() => setIsConfirming(true)}
-                className={cn('text-danger hover:text-danger', tintClasses('danger').hoverBg)}
               >
                 Prune
               </Button>

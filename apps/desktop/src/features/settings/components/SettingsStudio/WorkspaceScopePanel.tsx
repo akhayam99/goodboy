@@ -7,6 +7,7 @@ import { pluralize } from '../../../../shared/utils/pluralize';
 import { pageKeys } from '../../pageKeys';
 import { usePageChangedCount } from '../../hooks/usePageChangedCount';
 import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
+import { useBranchesMeta } from '../../../storage/useBranchesMeta';
 import { folderMetaOf } from './folderMetaOf';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 import { WorkspacePageBody } from './WorkspacePageBody';
@@ -27,6 +28,11 @@ export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, request
   const ownsSettings = pageKeys({ page }).length > 0;
   const changedCount = usePageChangedCount({ workspaceId, page });
   const folderMeta = useAppStore((s) => folderMetaOf({ projects: s.projects, workspaceId }));
+  const branchesMeta = useBranchesMeta({ workspaceId });
+  const metaByPage: Readonly<Partial<Record<WorkspacePage, string | undefined>>> = {
+    projects: folderMeta,
+    branches: branchesMeta,
+  };
   const [flow, setFlow] = useState<{
     readonly page: WorkspacePage;
     readonly scope: WorkspacePage | 'all';
@@ -89,7 +95,7 @@ export const WorkspaceScopePanel = ({ workspaceId, section, initialFlow, request
       key={page}
       animationClassName={SETTINGS_PANE_ENTRY}
       title={entry.label}
-      meta={page === 'projects' ? folderMeta : undefined}
+      meta={metaByPage[page]}
       actions={
         page === 'branches' ? (
           <>

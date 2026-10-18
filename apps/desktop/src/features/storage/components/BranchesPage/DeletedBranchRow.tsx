@@ -33,23 +33,20 @@ export const DeletedBranchRow = ({
   const { ago, left } = deletedBranchDays({ deletedAt: entry.deletedAt, now });
   return (
     <li className="flex flex-col gap-1">
-      <div className={`${BRANCH_TABLE_GRID} rounded-md px-2 hover:bg-hover`}>
+      <div className={`${BRANCH_TABLE_GRID} group/row rounded-md px-2 hover:bg-hover`}>
         <span data-cell="select" />
-        <span data-cell="branch" className="flex min-w-0">
+        <span data-cell="branch" className="flex min-w-0 flex-col py-1">
           <Tooltip content={entry.branch} anchorClassName="flex min-w-0">
             <span className="truncate font-mono text-code text-foreground">{entry.branch}</span>
           </Tooltip>
+          <span className="truncate font-mono text-meta text-faint-foreground">
+            {entry.sha.slice(0, 7)}
+          </span>
         </span>
-        <span data-cell="session" className="truncate text-label text-muted-foreground">
+        <span data-cell="folder" className="truncate text-label text-muted-foreground">
           {projectName}
         </span>
-        <span data-cell="state" className="truncate text-label tabular-nums text-muted-foreground">
-          {ago === 0 ? 'Today' : ago === 1 ? '1 day ago' : `${ago} days ago`}
-        </span>
-        <span data-cell="origin" className="truncate font-mono text-meta text-faint-foreground">
-          {entry.sha.slice(0, 7)}
-        </span>
-        <span data-cell="status" className="flex min-w-0">
+        <span data-cell="state" className="flex min-w-0">
           <Chip
             tone={left <= NEAR_EXPIRY_DAYS ? 'warning' : 'neutral'}
             size="xs"
@@ -57,8 +54,10 @@ export const DeletedBranchRow = ({
             label={left === 1 ? '1 day left' : `${left} days left`}
           />
         </span>
-        <span data-cell="age" />
-        <span data-cell="action" className="flex items-center justify-end gap-1">
+        <span data-cell="age" className="text-right text-meta tabular-nums text-muted-foreground">
+          {ago === 0 ? 'Today' : `${ago}d`}
+        </span>
+        <span data-cell="action" className="row-actions flex items-center justify-end gap-1">
           <Button
             variant="secondary"
             size="sm"

@@ -259,7 +259,6 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
         {backupCount > 0 ? (
           <HistoryVersionsLink count={backupCount} onOpen={versionsDrawer.showVersions} />
         ) : null}
-        {isInteractive && !isDone ? <HistoryKeysHint /> : null}
         <p aria-live="polite" className="sr-only">
           {editing.live}
         </p>
@@ -271,7 +270,10 @@ export const CommitsHistory = ({ sessionId, worktreePath, isReadOnly = false }: 
 
   return (
     <>
-      <TabActions>{actions}</TabActions>
+      <TabActions>
+        {actions}
+        {isInteractive && !isDone ? <HistoryKeysHint /> : null}
+      </TabActions>
       <ScrollFade className="min-h-0 flex-1" fadeSize="h-6">
         <div className="flex min-w-0 flex-col gap-4 pb-6">{body}</div>
       </ScrollFade>

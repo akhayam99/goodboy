@@ -2437,14 +2437,22 @@ default`, hidden while the value is the default, `WorkspaceFieldRow`). Precedent
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
   under three filters: To review, In use and Kept. Each part is a card
-  (`Band`) under a plain section title: the summary, Worktrees (with `Scan
+  (`Band`) under a plain section title: Worktrees (with `Scan
 another repository` at its foot), Artifacts of deleted sessions, and
-  Transcripts and app data. Branches is its own App page (`branches` in
-  `appSections.ts`, `BranchesPage`): the scoped workspace's after-merge rule
-  with a `Change` link, `Recently deleted` (restore or delete for good,
-  loaded from `deleted_branches` on open, which also releases the refs of
-  deletions older than 14 days), then the branch list, safe ones first with
-  `Show all branches` and a `Made by` picker. A scope picker
+  Transcripts and app data. There is no summary band: the page meta line
+  reads `<total> on this Mac`, or `<total> in <workspace>` under a scope, from
+  one function (`storageTotalBytes` and `storageMetaOf` through
+  `useStorageMeta`), and adds `Low space: N GB free on this disk` under 10 GB
+  free. The Worktrees header holds the three filters and `Remove N safe
+folders · size` (`WorktreeRemoveButton`), with the sentence on idle days as
+  its help line, and the folder `...` menu shows on hover and focus. `Prune`
+  is a secondary button that confirms. Branches is a Workspace page
+  (`branches`, `BranchesPage`): the workspace's After merge rule first, then
+  the branch list under one select (`Safe to delete`, `Needs a look`, `All`),
+  then a `Recently deleted` fold row (restore or delete for good, loaded from
+  `deleted_branches` on open, which also releases the refs of deletions older
+  than 14 days). The page meta line reads `N safe to delete · M need a look`
+  (`branchesMetaOf` through `useBranchesMeta`). A scope picker
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
   `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
   Branches header has the same picker without `Removed workspaces`
@@ -2452,13 +2460,12 @@ another repository` at its foot), Artifacts of deleted sessions, and
   cleanup notifications always land on Storage. The picker lists the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
-  and `All workspaces` with the machine total. The scope drives the summary
-  numbers, the worktree list and the artifact list together
+  and `All workspaces` with the machine total. The scope drives the total, the
+  worktree list and the artifact list together
   (`storageScope`, `resolveStorageScope`); it defaults to the current
   window's workspace, or to all workspaces without one. A scope other than
-  all drops App data out of the bar into its own line (`state.storageScope`
-  never splits app data by workspace) and keeps a faint, clickable `All
-workspaces: <total>, <can go> can go` line under the numbers. The
+  all leaves App data out of the total (`state.storageScope`
+  never splits app data by workspace). The
   workspace page's own Notice, and the `open-orphan-worktrees` notification
   action, both open Storage already scoped to that workspace
   (`openStorage({ scope })`); the machine-wide `open-storage` nudge opens it
@@ -2473,27 +2480,26 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
   On the Branches page, `BranchesSection` lists local branches
-  only, in the same scope, grouped by project. It scans only when it opens:
+  only, in the same scope, in one list. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
   test cached by both tips and fed each branch's merged pull request head
-  (`listMergedRequestHeads`). The `Made by` picker shows all local branches
-  (the default), `Made by Goodboy` (branch names from `session_worktrees` and
-  `retained_worktree_paths`) or `Yours` (plus branches whose tip is authored
-  by the repo's `user.email`, shown `By you`); protected branches never show.
-  The list opens on `Safe to delete` (merged by merge commit or rebase,
-  merged by its pull request with nothing after the merged head, or never
-  used), and `Show all branches` adds the ones that need a look (`Merged,
-then N new commits`, unmerged and gone on origin, local only for over 30
-  days, or older than 90 days; never preselected) and the kept ones. Every
-  branch row and every Recently deleted row sit on one grid
-  (`BRANCH_TABLE_GRID`, each cell marked with its `data-cell` name): select, branch,
-  session title, session state, origin state (`On origin` / `Local only` /
-  `Gone on origin`), the status on one line with how it merged as a muted
-  suffix and in its tooltip, the last commit's age and the action. A
-  Recently deleted row puts the project, the days since, the short sha and
-  the days left in the same columns. Delete on a merged branch acts at once
-  and a toast carries `Undo`; an unmerged one confirms above the bulk bar,
-  which counts the commits it takes. `Also delete N on origin` sits above
+  (`listMergedRequestHeads`); protected branches never show. One select
+  (`Safe to delete`, the default, `Needs a look`, `All`) filters the list.
+  Safe to delete means merged by merge commit or rebase, merged by its pull
+  request with nothing after the merged head, or never used. Needs a look
+  means `Merged, then N new commits`, unmerged and gone on origin, local only
+  for over 30 days, or older than 90 days; never preselected. Every branch
+  row and every Recently deleted row sit on one grid (`BRANCH_TABLE_GRID`,
+  each cell marked with its `data-cell` name): select, branch with its
+  session title under it, folder, state chip (`Merged`, `No commits` or the
+  full verdict, with how it merged and where it lives in its tooltip), the
+  last commit's age and the action cell (`row-actions`, shown on hover and
+  focus). Delete reads the `branch` kind (`branch.delete`), from the cell and
+  from right click. A Recently deleted row shows the sha under the branch,
+  the days left as the chip and Restore plus delete for good in the action
+  cell. Delete on a merged branch acts at once
+  and a toast carries `Undo`; an unmerged one confirms in a popover beside its button, and the bulk bar
+  counts the commits it takes. `Also delete N on origin` sits above
   the bar only for Goodboy's own pushed branches in repos where GitHub does
   not already delete merged branches. Deletes use the same
   compare-and-delete and 14-day restore as the after-merge rule. A branch another worktree
@@ -3775,9 +3781,13 @@ to it and runs the rebase command (`rebaseBranch`, with `ontoBranch` for another
 base) with a version of the current history kept. The Activity rebase suggestion
 (`Open rebase`) opens this page on the mount it names, scrolled to the row with
 the button focused (`HISTORY_FOCUS_BASE_EVENT`).
-Under the list one muted line, `Drag a commit to move it, drop it on another to
-fold it in.`, with a ghost `Keys` button that opens an anchored popover listing
-the keys of the focused row (`useHistoryKeys/historyKeys.ts`). There is no
+The page header has one `...` button (`HistoryKeysHint`, an anchored popover)
+with `How to edit commits` (the Guide chapter Commits) and the keys of the
+focused row (`useHistoryKeys/historyKeys.ts`); no teaching line sits under the
+list. Each row's `...` menu lives in a fixed cell that shows on hover and
+focus (`row-actions`, `HistoryRowActions`), and `Previous versions` is a fold
+row with its count at the end (`HistoryVersionsLink`). The registry verb for
+`mount.rewriteHistory` and `diff.rewriteHistory` reads `Edit commits`. There is no
 preview or Apply step. The graph shows the live branch. Drag a row between
 two others to move it, or onto another to fold it in. Focused-row keys are
 Alt with arrows to move, C to fold, S to combine both messages, R or Enter to

@@ -347,7 +347,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.rewriteHistory',
-    label: 'Rewrite history',
+    label: 'Edit commits',
     icon: History,
     group: 'act',
     when: ({ facts }) => isOpen({ facts }) && facts.ahead > 0 && facts.pr !== 'merged',

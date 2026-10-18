@@ -1,24 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import type { DeletedBranch, Project, ProjectId, SessionId } from '@goodboy/types';
-import { Band, Listbox, Switch, type ListboxOption } from '@goodboy/ui';
+import type { DeletedBranch, Project, ProjectId } from '@goodboy/types';
+import { Band, Listbox, SectionHeader, type ListboxOption } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { BranchScanEntry } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
 import { useToast } from '../../../../shared/components/Toast';
 import { useSelectionKeys } from '../../../../shared/hooks/useSelectionKeys';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { branchCount, deletedNotice } from '../../branches/branchCopy';
 import type { BranchScope } from '../../branches/branchScope';
-import { storageOwnerMatchesScope } from '../../storageOwnerMatchesScope';
+import { classifyBranchScan } from '../../branches/classifyBranchScan';
 import {
-  classifyBranch,
   isSafeVerdict,
   matchesBranchFilter,
   matchesBranchTab,
-  type BranchFilter,
+  type BranchTab,
   type ClassifiedBranch,
 } from '../../branches/classifyBranch';
+import { useBranchProjects } from '../../useBranchProjects';
 import { BranchBulkBar, type SelectedBranch } from './BranchBulkBar';
 import { BranchRow } from './BranchRow';
 
@@ -38,51 +36,29 @@ type DeleteTarget = {
   readonly alsoOrigin: boolean;
 };
 
-const OWNER_OPTIONS: ReadonlyArray<ListboxOption<BranchFilter>> = [
-  { value: 'all', label: 'All local branches' },
-  { value: 'goodboy', label: 'Made by Goodboy' },
-  { value: 'yours', label: 'Yours' },
+const TAB_OPTIONS: ReadonlyArray<ListboxOption<BranchTab>> = [
+  { value: 'safe', label: 'Safe to delete' },
+  { value: 'needs-look', label: 'Needs a look' },
+  { value: 'all', label: 'All' },
 ];
+
+const EMPTY_COPY = {
+  safe: 'Nothing safe to delete here. Choose All to see the rest.',
+  'needs-look': 'No branch needs a look.',
+  all: 'No branch here.',
+} as const satisfies Record<BranchTab, string>;
 
 const keyOf = (projectId: ProjectId, branch: string): string => `${projectId}:${branch}`;
 
-const classifyScan = ({
-  scan,
-  now,
-}: {
-  readonly scan: BranchScanEntry | undefined;
-  readonly now: number;
-}): ReadonlyArray<ClassifiedBranch> => {
-  if (scan?.status !== 'ready') {
-    return [];
-  }
-  const goodboySessions = new Map<string, SessionId | null>(
-    scan.goodboy.map((entry) => [entry.branch, entry.sessionId]),
-  );
-  return scan.scan.branches.map((branch) =>
-    classifyBranch({ branch, goodboySessions, userEmail: scan.scan.userEmail, now }),
-  );
-};
-
 export const BranchesSection = ({ scope }: Props) => {
-  const projects = useAppStore(
-    useShallow((state) =>
-      state.projects.filter(
-        (project) =>
-          project.kind === 'repo' &&
-          project.disconnectedAt === undefined &&
-          storageOwnerMatchesScope({ ownerWorkspace: project.workspaceId, scope }),
-      ),
-    ),
-  );
+  const projects = useBranchProjects({ scope });
   const scans = useAppStore((state) => state.branchScans);
   const loadProjectBranches = useAppStore((state) => state.loadProjectBranches);
   const deleteBranches = useAppStore((state) => state.deleteBranches);
   const restoreDeletedBranches = useAppStore((state) => state.restoreDeletedBranches);
   const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
-  const [filter, setFilter] = useState<BranchFilter>('all');
-  const [isShowingAll, setIsShowingAll] = useState(false);
+  const [tab, setTab] = useState<BranchTab>('safe');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [isConfirming, setIsConfirming] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -121,16 +97,12 @@ export const BranchesSection = ({ scope }: Props) => {
       projects.map((project) => ({
         project,
         scan: scans[project.id],
-        entries: classifyScan({ scan: scans[project.id], now }).filter((entry) =>
-          matchesBranchFilter({ entry, filter }),
+        entries: classifyBranchScan({ scan: scans[project.id], now }).filter((entry) =>
+          matchesBranchFilter({ entry, filter: 'all' }),
         ),
       })),
-    [projects, scans, filter, now],
+    [projects, scans, now],
   );
-  const everything = groups.flatMap((group) => group.entries);
-  const safeCount = everything.filter((entry) => isSafeVerdict(entry.verdict)).length;
-  const lookCount = everything.filter((entry) => entry.verdict === 'needs-look').length;
-  const tab = isShowingAll ? 'all' : 'safe';
   const visibleGroups = groups
     .map((group) => ({
       ...group,
@@ -221,14 +193,7 @@ export const BranchesSection = ({ scope }: Props) => {
   }: {
     readonly group: ProjectGroup;
     readonly entry: ClassifiedBranch;
-  }) => {
-    if (isSafeVerdict(entry.verdict)) {
-      void runDelete([{ projectId: group.project.id, entry, alsoOrigin: false }]);
-      return;
-    }
-    setSelected(new Set([keyOf(group.project.id, entry.branch.name)]));
-    setIsConfirming(true);
-  };
+  }) => runDelete([{ projectId: group.project.id, entry, alsoOrigin: false }]);
 
   const deleteSelected = ({ alsoOrigin }: { readonly alsoOrigin: boolean }) =>
     void runDelete(
@@ -266,89 +231,56 @@ export const BranchesSection = ({ scope }: Props) => {
       data-selecting={selected.size > 0}
       className="group/select-list flex flex-col gap-2"
     >
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-1">
-        <span className="text-label text-muted-foreground">
-          <span className="tabular-nums text-foreground">{safeCount}</span> safe to delete
-        </span>
-        {lookCount === 0 ? null : (
-          <span className="text-label text-muted-foreground">
-            <span className="tabular-nums text-foreground">{lookCount}</span> need a look
-          </span>
-        )}
-        <span className="ml-auto flex items-center gap-3">
+      <SectionHeader
+        label="Branches"
+        headingLevel={2}
+        action={
           <Listbox
-            ariaLabel="Made by"
+            ariaLabel="Show branches"
             trigger="quiet"
             size="sm"
-            value={filter}
-            options={OWNER_OPTIONS}
+            value={tab}
+            options={TAB_OPTIONS}
             onChange={(next) => {
               clearSelection();
-              setFilter(next);
+              setTab(next);
             }}
           />
-          <Switch
-            label="Show all branches"
-            checked={isShowingAll}
-            onChange={(next) => {
-              clearSelection();
-              setIsShowingAll(next);
-            }}
-          />
-        </span>
-      </div>
+        }
+      />
       <Band>
         {visibleGroups.length === 0 ? (
           <p className="px-2 py-2 text-label text-muted-foreground">
-            {isLoading
-              ? 'Checking…'
-              : isShowingAll
-                ? 'No branch matches this filter.'
-                : 'Nothing safe to delete here. Show all branches to see the rest.'}
+            {isLoading ? 'Checking…' : EMPTY_COPY[tab]}
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
-            {visibleGroups.map((group, index) => (
-              <div key={group.project.id} className="flex flex-col">
-                <div className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-baseline gap-2 px-2 py-1">
-                  <span />
-                  <span className="flex min-w-0 items-baseline gap-2">
-                    <span className="truncate text-row text-foreground">{group.project.name}</span>
-                    <span className="shrink-0 text-meta text-muted-foreground">
-                      base {group.project.baseBranch ?? 'main'} ·{' '}
-                      {branchCount(group.entries.length)}
-                    </span>
-                  </span>
-                  {index === 0 ? (
-                    <span className="text-meta text-faint-foreground">
-                      Select with {shortcutGlyphs('selection.toggle')} or{' '}
-                      {shortcutGlyphs('selection.all')}
-                    </span>
-                  ) : null}
-                </div>
-                {group.scan?.status === 'failed' ? (
-                  <p className="px-2 text-label text-danger">{group.scan.message}</p>
-                ) : (
-                  <ul className="flex flex-col">
-                    {group.entries.map((entry) => {
-                      const key = keyOf(group.project.id, entry.branch.name);
-                      return (
-                        <BranchRow
-                          key={key}
-                          entry={entry}
-                          selectId={key}
-                          base={group.project.baseBranch ?? 'main'}
-                          isSelected={selected.has(key)}
-                          isBusy={isBusy}
-                          onToggle={(isOn) => toggle(key, isOn)}
-                          onDelete={() => deleteOne({ group, entry })}
-                        />
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            ))}
+          <div className="flex flex-col">
+            {visibleGroups.map((group) =>
+              group.scan?.status === 'failed' ? (
+                <p key={group.project.id} className="px-2 py-1 text-label text-danger">
+                  {group.scan.message}
+                </p>
+              ) : (
+                <ul key={group.project.id} className="flex flex-col">
+                  {group.entries.map((entry) => {
+                    const key = keyOf(group.project.id, entry.branch.name);
+                    return (
+                      <BranchRow
+                        key={key}
+                        entry={entry}
+                        selectId={key}
+                        base={group.project.baseBranch ?? 'main'}
+                        projectName={group.project.name}
+                        isSelected={selected.has(key)}
+                        isBusy={isBusy}
+                        onToggle={(isOn) => toggle(key, isOn)}
+                        onDelete={() => deleteOne({ group, entry })}
+                      />
+                    );
+                  })}
+                </ul>
+              ),
+            )}
           </div>
         )}
       </Band>
