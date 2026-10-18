@@ -25,6 +25,8 @@ mod external_terminal;
 #[cfg(all(test, unix))]
 mod fake_cli;
 mod file_versions;
+mod folder_git;
+mod folder_signals;
 mod frame_protocol;
 mod github;
 mod gitlab;
@@ -132,6 +134,8 @@ pub(crate) fn stop_running_work(app: &tauri::AppHandle) {
         terminal::scrollback_dir_of(app).as_deref(),
     );
 }
+
+const WINDOW_REVEAL_FALLBACK: std::time::Duration = std::time::Duration::from_secs(3);
 
 pub fn run_query_cli() -> Option<i32> {
     query_bridge::run_cli()
@@ -241,7 +245,11 @@ pub fn run() {
                 for window in windows.values() {
                     #[cfg(target_os = "macos")]
                     fullscreen_escape::install(window);
-                    let _ = window.show();
+                    let fallback = window.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(WINDOW_REVEAL_FALLBACK);
+                        let _ = fallback.show();
+                    });
                 }
                 boot_breadcrumb::record("webview-attached", Some("ok"));
             }
@@ -296,7 +304,6 @@ pub fn run() {
             frame_protocol::frame_stage,
             frame_protocol::frame_release,
             artifacts::export_artifact_to_file,
-            session_dir::session_dir_create,
             session_dir::session_dir_remove,
             session_dir::session_dir_exists,
             scratch_dir::scratch_dir_prepare,
@@ -433,6 +440,20 @@ pub fn run() {
             file_versions::file_versions_restore,
             file_versions::file_versions_delete,
             file_versions::file_versions_purge_session,
+            file_versions::folder_commands::file_versions_folder_prepare,
+            file_versions::folder_commands::file_versions_folder_status,
+            file_versions::folder_commands::file_versions_folder_begin,
+            file_versions::folder_commands::file_versions_folder_finalize,
+            file_versions::folder_commands::file_versions_folder_discard,
+            file_versions::folder_commands::file_versions_folder_list_staged,
+            file_versions::folder_commands::file_versions_folder_list_turns,
+            file_versions::folder_commands::file_versions_folder_check,
+            file_versions::folder_commands::file_versions_folder_restore,
+            file_versions::folder_commands::file_versions_folder_read,
+            file_versions::folder_commands::file_versions_folder_sessions,
+            file_versions::folder_commands::file_versions_folder_prune,
+            file_versions::folder_commands::file_versions_folder_size,
+            file_versions::folder_commands::file_versions_folder_forget,
             summarize::summarize_session,
             summarize::summarize_cancel,
             planner::planner_run,
@@ -453,10 +474,13 @@ pub fn run() {
             bootstrap::bootstrap_recover,
             bootstrap::bootstrap_rollback,
             publish::project_publish_main,
-            repo::repo_init_with_remote,
             repo::repo_init,
             project_folder::project_folder_create,
             repo::scan_child_repos,
+            folder_git::folder_git_first_commit_plan,
+            folder_git::folder_git_make_first_commit,
+            folder_git::folder_git_probe,
+            folder_signals::read_folder_signals,
             repo::repo_identity,
             repo::find_moved_projects,
             project_relocation::project_relocate,

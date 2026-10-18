@@ -1,4 +1,4 @@
-import type { MountId, Project, SessionProjectMount } from '@goodboy/types';
+import type { FolderPurpose, MountId, Project, SessionProjectMount } from '@goodboy/types';
 import { starredProjectLines } from './starredProjectLines';
 import { projectById } from '../projects/projectIndex';
 
@@ -10,7 +10,13 @@ type ScopeGuardParams = {
   readonly isBridgeServing: boolean;
   readonly isSessionDirScope: boolean;
   readonly firstLapProject?: Project | null;
+  readonly inPlaceFolders?: ReadonlyArray<InPlaceFolder>;
   readonly canWrite: boolean;
+};
+
+type InPlaceFolder = {
+  readonly folder: Project;
+  readonly purpose: FolderPurpose | null;
 };
 
 type ProjectLineParams = {
@@ -229,6 +235,103 @@ const firstLapGuard = ({ firstLapProject, workingDir, canWrite }: FirstLapGuardP
     '[/first-lap-scope]',
   ].join('\n');
 
+const FOLDER_WRITE_LINES: ReadonlyArray<string> = [
+  "You work directly in the folder itself. There is no session copy, no branch and no worktree: every file you change is the user's own file.",
+  'ALL writes MUST resolve inside the folders this session works in. That covers Write and Edit and every shell command that creates, changes, moves, renames or deletes a file (cp, mv, rm, mkdir, touch, sed -i, tee, a redirect such as > or >>, an archive you unpack, a script you run). NEVER write outside it: not a parent folder, not a sibling folder, not your home folder, and not a temporary folder you then copy from.',
+  'NEVER follow a symbolic link that leads outside the folder to write through it, and never create one that does.',
+  'Do not run git init or git clone, and do not create a .git folder. This folder has no git; Goodboy offers it to the user when they want it.',
+  'Do not materialize this folder and do not create branches or worktrees for it: the session already writes in it.',
+  'Goodboy saves a version of the files before your turn and saves what changed after it, so the user can review and restore your changes.',
+];
+
+const DOCUMENT_READ_ONLY_KINDS = 'Word, PDF, Pages, Keynote, Numbers, Excel and PowerPoint';
+
+type DocumentsLineParams = {
+  readonly folder: Project;
+};
+
+const documentsLine = ({ folder }: DocumentsLineParams): string =>
+  `${folder.name} holds documents. Edit Markdown and plain text files there. ${DOCUMENT_READ_ONLY_KINDS} files are read only: read them, and never write, convert over, rename or delete them.`;
+
+const FOLDER_READ_ONLY_LINE =
+  'Another session may be writing in this folder right now. Read it and answer, and do not change, create or delete any file in it.';
+
+const PURPOSE_LABEL = {
+  code: 'code project',
+  documents: 'documents',
+} satisfies Record<FolderPurpose, string>;
+
+type FolderLineParams = {
+  readonly entry: InPlaceFolder;
+};
+
+const folderLine = ({ entry }: FolderLineParams): string => {
+  const face = entry.purpose === null ? '' : `, ${PURPOSE_LABEL[entry.purpose]}`;
+  return `- ${entry.folder.name} (folder${face}) at ${entry.folder.rootPath}`;
+};
+
+type FolderProjectLineParams = {
+  readonly project: Project;
+  readonly focus: string;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly folders: ReadonlyArray<InPlaceFolder>;
+};
+
+const folderScopeProjectLine = ({
+  project,
+  focus,
+  mounts,
+  folders,
+}: FolderProjectLineParams): string => {
+  if (folders.some((entry) => entry.folder.id === project.id)) {
+    return `- ${project.name} (folder) root: ${project.rootPath}${focus} | works in place: this session reads and writes it directly`;
+  }
+  return projectLine({ project, focus, mounts });
+};
+
+type FolderGuardParams = {
+  readonly folders: ReadonlyArray<InPlaceFolder>;
+  readonly projects: ReadonlyArray<Project>;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly workingDir: string;
+  readonly isBridgeServing: boolean;
+  readonly canWrite: boolean;
+};
+
+const folderGuard = ({
+  folders,
+  projects,
+  mounts,
+  workingDir,
+  isBridgeServing,
+  canWrite,
+}: FolderGuardParams): string => {
+  const hasRepoProject = projects.some((project) => project.kind === 'repo');
+  const writeLines = [
+    ...FOLDER_WRITE_LINES,
+    ...folders.flatMap((entry) =>
+      entry.purpose === 'documents' ? [documentsLine({ folder: entry.folder })] : [],
+    ),
+    ...(hasRepoProject ? [...MOUNT_RULE_LINES, materializeLine({ isBridgeServing })] : []),
+  ];
+  return [
+    '[folder-scope]',
+    'This session belongs to a workspace with these projects:',
+    ...starredProjectLines({
+      projects,
+      line: ({ project, focus }) => folderScopeProjectLine({ project, focus, mounts, folders }),
+    }),
+    ...READING_LINES,
+    `You are working in place, starting in: ${workingDir}`,
+    folders.length === 1
+      ? 'This session works in this folder:'
+      : 'This session works in place in these folders:',
+    ...folders.map((entry) => folderLine({ entry })),
+    ...(canWrite ? writeLines : [READ_ONLY_ROLE_LINE, FOLDER_READ_ONLY_LINE]),
+    '[/folder-scope]',
+  ].join('\n');
+};
+
 export const buildScopeGuard = ({
   workingDir,
   projects,
@@ -237,10 +340,21 @@ export const buildScopeGuard = ({
   isBridgeServing,
   isSessionDirScope,
   firstLapProject = null,
+  inPlaceFolders = [],
   canWrite,
 }: ScopeGuardParams): string => {
   if (firstLapProject !== null) {
     return firstLapGuard({ firstLapProject, workingDir, canWrite });
+  }
+  if (inPlaceFolders.length > 0) {
+    return folderGuard({
+      folders: inPlaceFolders,
+      projects,
+      mounts,
+      workingDir,
+      isBridgeServing,
+      canWrite,
+    });
   }
   const tag = guardTag({ mounts, isSessionDirScope });
   const boundaryLines = canWrite

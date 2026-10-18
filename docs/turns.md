@@ -29,8 +29,9 @@ return `turnReady` with their values. Side effects run in the order below.
 2. `routeTurn`: provider, model, effort and credential, the over-budget gate and
    the disconnected-provider gate.
 3. `leaseTurnWriter`: the captured-mount check, the resolver's worktree writer
-   lease and, for the turns of an Auto tree only, the write set lease.
-4. `startTurnRun`: run id, user message, provider run row, the cancel-before-spawn
+   lease, the write set lease (the turns of an Auto tree, and every writing
+   turn in a plain folder) and, for a plain folder, the before snapshot.
+4. `startTurnRun`: run id (the one the before snapshot reserved), user message, provider run row, the cancel-before-spawn
    claim (`claimTurnStart`), the agent row moving to `running`, session state.
 5. `buildTurnPrompt`: permission flags, context preamble, handoff layers, the
    context-window warning.
@@ -64,7 +65,9 @@ database.
 ## Where a turn writes
 
 - A turn writes into the mount it was aimed at, else the session's active
-  mount, else the scratch folder ([mounts.md](mounts.md#where-a-session-writes)).
+  mount, else the first lap project folder, else the plain folders of the
+  workspace in place, else the scratch folder
+  ([mounts.md](mounts.md#where-a-session-writes)).
   The destination is resolved when the turn starts and recorded as the
   agent's write destination, so the place the user sees is the place the turn
   writes.
@@ -87,8 +90,9 @@ database.
   bound to the child process and freed by its exit in Rust, whatever the window
   does, and it is released again when the turn ends. A second Auto writer on a
   shared key does not fail: its turn waits in `acquireTurnWriteSet`. The agent
-  reads "starting" with the note **Waiting for the writer** (`agentWriterWait`),
-  the tail Stop and Send now cancel the wait, the poll is one second and wakes at once
+  reads "starting" with the composer band **Waiting for the writer**
+  (`agentWriterWait`, `WriterWaitBand`), the tail Stop, Send now and the band's
+  **Cancel** cancel the wait, the poll is one second and wakes at once
   when this window releases, and after 30 minutes the turn answers
   `isWriterLeaseDenied` like a resolver does. Two Auto writers on different
   worktrees of one repo serialize on the metadata folder on purpose. A turn with
@@ -106,8 +110,55 @@ database.
   running, no later attempt started on that worktree, and a writer is still
   live or the resolver has not completed. Otherwise the candidate is dropped
   and the branch is left as it is.
-- A turn in a folder project captures a recoverable file version before and
-  after it runs.
+- **A plain folder has one writer at a time.** A turn with no mount in a
+  workspace that holds plain folders (`inPlaceFoldersOf`: folder projects the
+  session has no `sessions/` mount for) starts in the first of them, gets the
+  others as `--add-dir` roots and gets a root write destination with no branch.
+  A writing turn (a write-capable kind, or a writer `confinedRole`) takes the
+  write set lease over all of them, so a second session that wants to write
+  waits in `acquireTurnWriteSet` with the band **Waiting to write in
+  acme-notes** (`WriterWaitBand`: who writes, `queueEstimate` for the time
+  left, **Answer without editing**, **Cancel**). A read-only kind never takes
+  the lease and never waits. **Answer without editing**
+  (`answerWithoutEditing`) ends the wait and starts the same turn with
+  `confinedRole` `scout`, no lease and no writable roots, so the CLI enforces
+  read only; **Cancel** (`cancelWriterWait`) leaves the queue and records
+  nothing. The guard is `[folder-scope]` (`scopeGuard.ts`): every write,
+  shell commands and links included, stays inside the folders, no repository
+  is created, and a Documents folder (its face read at send time,
+  `readFolderPurposes`) keeps Word, PDF, Pages, Keynote, Numbers, Excel and
+  PowerPoint files read only.
+- **The before snapshot is the hook for saved versions.** With the lease held
+  and before the user message is written, `leaseTurnWriter` reserves the run
+  id and calls `inPlaceSnapshot.begin({ sessionId, runId, folders })`. If it
+  throws, nothing is recorded, the lease is freed and the composer says
+  "Couldn't save acme-notes before this turn, so the agent did not start"
+  with Retry. What it returns is finalized in `closeTurnCapture` after the
+  stream and before `run` frees the lease. Boot installs the saved versions
+  port (`createFolderSnapshotPort`, `store/slices/file-versions/`): `begin`
+  brings the folder's first copy up to date and stages the run in Rust
+  (`file_versions_folder_begin`), and a folder that fails frees the folders
+  already staged. A run that never spawns (cancelled in `claimTurnStart`, or
+  a throw before the stream) is discarded by `sendTurn` through
+  `discardInPlaceCapture`. `finalize` writes the turn's changes, then the
+  `file_versions` rows; a failure is kept in `folderCaptureFailures` for
+  `retryFolderCapture`, and a second finalize of one run returns the same
+  changes. Startup finishes runs a restart left staged
+  (`recoverStagedFolderTurns`) except live ones and ones younger than a
+  minute, which the next turn in that folder finishes first. Restore and
+  Undo restore refuse while a turn is staged in the folder. The data layout
+  is in [architecture.md](architecture.md).
+- The chat ends each writing turn of a plain folder in a card
+  (`TurnChangesCard`, under the turn's usage row): "Changed 2 files in
+  acme-notes · saved before this turn", the files with their line counts from
+  `textChangesOf`, **Review changes** (opens Changes on the turn's first file
+  through `sessionFileVersionSelectedPath`) and **Restore turn**, which asks
+  in the card when a file changed since. A run in `folderCaptureFailures`
+  shows "Changes from this turn couldn't be saved" with Retry
+  (`retryFolderCapture`) in its place.
+- A turn in a session that already writes in a `sessions/<name>` folder mount
+  keeps it, takes no folder lease and captures a recoverable file version
+  before and after it runs.
 
 ## Which provider and model
 
@@ -890,6 +941,15 @@ avoided on `SendControl`'s own buttons.
   so a new prefix group appears there on its own. Then `PermissionModePicker`,
   then an attachment count once files are staged (the attachment chips
   themselves sit above the field, not in this row).
+- The toolbar is a container (`@container` on `ComposerToolbar`), so it
+  answers to the composer's width, not the window's, and a drawer composer
+  holds at the narrowest drawer. Labels never wrap (`whitespace-nowrap`). It
+  collapses in this order: under 512px the usage pill and "pinned" go, under
+  448px the effort and the `Auto` prefix go, under 384px the model name and the
+  access label go and the provider glyph and the mode icon stay. The hidden
+  words stay in the tooltip and in the accessible name (`Permission mode: Full
+access`, `Model routing: ..., pinned`). The main composer keeps every label at
+  its usual width.
 - The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
   passed in rather than living beside it) then `SendControl` (`parts/`): the
   same `ArrowUp` glyph as `ConversationComposer` while idle, and Send now/Queue
@@ -1109,7 +1169,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   no activity for seven days moves to the idle group, and only the user
   archives it.
 - **Default model for new chats.** Without a saved default a new chat starts
-  on the newest Sonnet when Claude is connected, else on the newest GPT Terra
+  on the newest Sonnet when Claude is connected, else on the newest GPT Sol
   when Codex is (`defaultChatModel`, through `latestInGroup`). It
   never starts above the mid cost tier. When the workspace default provider can run
   a chat (Claude or Codex) and is connected, the chat starts on its line instead; a

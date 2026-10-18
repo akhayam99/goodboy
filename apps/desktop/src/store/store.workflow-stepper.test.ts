@@ -81,11 +81,6 @@ const wireStoryDefaults = () => {
     branchName: 'kay/test',
     slug: 'test',
   }));
-  storySpies.createSessionDir.mockImplementation(async () => ({
-    worktreePath: '/tmp/sessions/test',
-    branchName: '',
-    slug: 'test',
-  }));
   storySpies.scratchDirPrepare.mockImplementation(
     async () => '/tmp/goodboy-root/scratch/mountless',
   );

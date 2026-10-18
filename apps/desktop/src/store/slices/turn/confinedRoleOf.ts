@@ -3,6 +3,8 @@ import type { SendTurnInput } from './types';
 
 export const AUTO_CONFINED_ROLE = 'auto';
 
+export const READ_ONLY_ANSWER_ROLE = 'scout';
+
 export type ConfinedRoleOfParams = Readonly<{
   input: Pick<SendTurnInput, 'confinedRole'>;
   agent: Pick<Agent, 'kind'> | null;

@@ -206,12 +206,6 @@ describe('store contract', () => {
       slug: 'session',
       reused: false,
     });
-    storySpies.createSessionDir.mockResolvedValue({
-      worktreePath: '/tmp/repo/sessions/session',
-      branchName: '',
-      slug: 'session',
-      reused: false,
-    });
   });
 
   afterEach(() => {
@@ -1103,17 +1097,11 @@ describe('store contract', () => {
       );
     });
 
-    it('mounts a folder project as a session directory inside the folder', async () => {
+    it('starts a plain folder session in place: no session folder, no mount', async () => {
       const store = useAppStore;
       const folderProject = buildProject({ kind: 'folder', name: 'notes', rootPath: '/tmp/notes' });
       storySpies.listProjectsForWorkspace.mockResolvedValueOnce([folderProject]);
       store.setState({ currentWorkspaceId: WS_ID, projects: [folderProject] });
-      storySpies.createSessionDir.mockResolvedValueOnce({
-        worktreePath: '/tmp/notes/sessions/take-notes',
-        branchName: '',
-        slug: 'take-notes',
-        reused: false,
-      });
 
       const { session } = await store.getState().createSession({
         workspaceId: WS_ID,
@@ -1122,13 +1110,12 @@ describe('store contract', () => {
       });
 
       expect(storySpies.createWorktree).not.toHaveBeenCalled();
-      expect(storySpies.createSessionDir).toHaveBeenCalledWith(
-        expect.objectContaining({ basePath: '/tmp/notes', sessionId: session.id }),
+      expect(storySpies.tauriInvoke).not.toHaveBeenCalledWith(
+        'session_dir_create',
+        expect.anything(),
       );
-      expect(store.getState().sessionWorktrees[session.id]).toEqual([
-        '/tmp/notes/sessions/take-notes',
-      ]);
-      expect(store.getState().sessionBranches[session.id]).toBe('');
+      expect(store.getState().sessionWorktrees[session.id]).toEqual([]);
+      expect(store.getState().sessionProjectMounts[session.id]).toEqual([]);
     });
 
     it('starts a session on the first On provider and leaves the live policy to routing', async () => {
@@ -1722,7 +1709,7 @@ describe('store contract', () => {
       ).toEqual([WEB_PROJECT_ID]);
     });
 
-    it('registers a folder project mount without a branch', async () => {
+    it('adds a plain folder in place: no session folder, the repo mount stays the destination', async () => {
       const store = useAppStore;
       const folderProject = buildProject({
         id: API_PROJECT_ID,
@@ -1742,28 +1729,21 @@ describe('store contract', () => {
       const { session } = await store
         .getState()
         .createSession({ workspaceId: WS_ID, projectId: WEB_PROJECT_ID, goal: 'Take notes' });
-      storySpies.createSessionDir.mockResolvedValueOnce({
-        worktreePath: '/tmp/notes/sessions/take-notes',
-        branchName: '',
-        slug: 'take-notes',
-        reused: false,
-      });
 
-      await store.getState().ensureProjectMounted({
+      const outcome = await store.getState().ensureProjectMounted({
         sessionId: session.id,
         projectId: API_PROJECT_ID,
         reason: 'added manually by the user',
       });
 
-      expect(storySpies.createSessionDir).toHaveBeenCalledWith(
-        expect.objectContaining({ basePath: '/tmp/notes', sessionId: session.id }),
+      expect(outcome).toEqual({ status: 'in-place', mountIds: [] });
+      expect(storySpies.tauriInvoke).not.toHaveBeenCalledWith(
+        'session_dir_create',
+        expect.anything(),
       );
       expect(
-        store
-          .getState()
-          .sessionProjectMounts[session.id]?.find((entry) => entry.projectId === API_PROJECT_ID)
-          ?.branch,
-      ).toBe('');
+        store.getState().sessionProjectMounts[session.id]?.map((entry) => entry.projectId),
+      ).toEqual([WEB_PROJECT_ID]);
       expect(store.getState().sessionBranches[session.id]).toBe('goodboy/take-notes');
     });
 

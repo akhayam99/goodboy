@@ -13,6 +13,7 @@ import {
   type WriteDestination,
   type WriteDestinationCandidate,
 } from '../../../../../store/slices/project-mounts/writeDestination';
+import { inPlaceFoldersOf } from '../../../../../store/slices/project-mounts/inPlaceFoldersOf';
 import { scratchDirPrepare } from '../../../../../features/worktree/worktree';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { projectById } from '../../../../../store/slices/projects/projectIndex';
@@ -96,9 +97,25 @@ export const useWriteDestination = ({
     [nextMount, projects],
   );
 
+  const inPlaceFolder = useMemo(
+    () =>
+      nextMount !== null
+        ? null
+        : (inPlaceFoldersOf({
+            state: {
+              sessions: session === undefined ? [] : [session],
+              projects,
+              sessionProjectMounts:
+                sessionProjectMounts === undefined ? {} : { [sessionId]: sessionProjectMounts },
+            },
+            sessionId,
+          })[0] ?? null),
+    [nextMount, session, projects, sessionProjectMounts, sessionId],
+  );
+
   const [scratchPath, setScratchPath] = useState<string | null>(null);
   useEffect(() => {
-    if (activeMount !== null || writableMounts.length > 0) {
+    if (activeMount !== null || writableMounts.length > 0 || inPlaceFolder !== null) {
       return;
     }
     let cancelled = false;
@@ -112,7 +129,7 @@ export const useWriteDestination = ({
     return () => {
       cancelled = true;
     };
-  }, [activeMount, sessionId, writableMounts]);
+  }, [activeMount, sessionId, writableMounts, inPlaceFolder]);
 
   const next = useMemo(
     () =>
@@ -120,8 +137,17 @@ export const useWriteDestination = ({
         mount: nextMount,
         projectName: activeProjectName,
         scratchPath,
+        root:
+          inPlaceFolder === null
+            ? null
+            : {
+                projectId: inPlaceFolder.id,
+                projectName: inPlaceFolder.name,
+                path: inPlaceFolder.rootPath,
+                branch: null,
+              },
       }),
-    [nextMount, activeProjectName, scratchPath, writableMounts],
+    [nextMount, activeProjectName, scratchPath, inPlaceFolder],
   );
 
   const running = turnKind === 'running' ? turnDestination : null;

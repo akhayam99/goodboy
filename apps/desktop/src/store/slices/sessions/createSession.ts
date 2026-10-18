@@ -65,7 +65,6 @@ type Input = {
   branchSlug?: string;
   existingBranch?: string;
   fallbackRef?: string;
-  folderName?: string;
   providerPreference?: SessionProviderPreference;
   workflowId?: WorkflowId;
   autoRun?: boolean;
@@ -89,7 +88,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     branchSlug,
     existingBranch,
     fallbackRef,
-    folderName,
     providerPreference,
     workflowId,
     autoRun,
@@ -116,7 +114,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
     const trimmedBranchSlug = branchSlug?.trim();
     const trimmedExisting = existingBranch?.trim();
     const trimmedFallbackRef = fallbackRef?.trim();
-    const trimmedFolderName = folderName?.trim();
     const sessionId = crypto.randomUUID() as SessionId;
     const existingSeparator = trimmedExisting?.lastIndexOf('/') ?? -1;
     const existingPrefix =
@@ -139,9 +136,6 @@ export const createSession = (set: SetFn, get: GetFn) => {
           : {}),
         ...(trimmedFallbackRef !== undefined && trimmedFallbackRef !== ''
           ? { fallbackRef: trimmedFallbackRef }
-          : {}),
-        ...(trimmedFolderName !== undefined && trimmedFolderName !== ''
-          ? { folderName: trimmedFolderName }
           : {}),
       },
     });

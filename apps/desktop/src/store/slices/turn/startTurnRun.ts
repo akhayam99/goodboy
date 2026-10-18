@@ -51,7 +51,7 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
     effortFlag,
     resolvedOverride,
   } = ctx;
-  const runId = ctx.input.runId ?? (crypto.randomUUID() as ProviderRunId);
+  const runId = ctx.reservedRunId ?? ctx.input.runId ?? (crypto.randomUUID() as ProviderRunId);
   const runHistory = get().agentRunHistory[activeAgentId] ?? [];
   const isFirstTurn = runHistory.length === 0;
   const isHandoffTurn =

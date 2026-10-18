@@ -12,6 +12,7 @@ import {
   listWriteDestinationCandidates,
   mountDisplayName,
   resolveWriteDestination,
+  writeDestinationDetail,
   writeDestinationLabel,
   writeDestinationsMatch,
 } from './writeDestination';
@@ -255,5 +256,39 @@ describe('the first lap root destination', () => {
     });
 
     expect(writeDestinationsMatch(first, second)).toBe(true);
+  });
+});
+
+describe('the in place root destination of a plain folder', () => {
+  const folderRoot = {
+    projectId: FOLDER_PROJECT_ID,
+    projectName: 'acme-notes',
+    path: '/tmp/Documents/acme-notes',
+    branch: null,
+  };
+
+  it('names the folder alone: no branch, no project folder suffix, no scratch', () => {
+    const destination = resolveWriteDestination({
+      mount: null,
+      projectName: null,
+      scratchPath: null,
+      root: folderRoot,
+    });
+
+    expect(destination).toEqual({ kind: 'root', ...folderRoot });
+    expect(writeDestinationLabel(destination)).toBe('acme-notes');
+    expect(writeDestinationDetail(destination)).toBe('acme-notes (/tmp/Documents/acme-notes)');
+  });
+
+  it('gives way to a sessions/ folder mount a session already has', () => {
+    const legacy = resolveWriteDestination({
+      mount: folderMount,
+      projectName: 'notes',
+      scratchPath: null,
+      root: folderRoot,
+    });
+
+    expect(legacy.kind).toBe('mount');
+    expect(writeDestinationLabel(legacy)).toBe('notes / working folder / no git');
   });
 });

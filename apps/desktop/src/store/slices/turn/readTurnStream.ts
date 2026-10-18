@@ -15,7 +15,7 @@ import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
 import type { GetFn, SetFn } from './types';
-import { confinedRoleOf } from './confinedRoleOf';
+import { confinedRoleOf, READ_ONLY_ANSWER_ROLE } from './confinedRoleOf';
 import type { TurnContext } from './turnContext';
 
 type Params = Readonly<{
@@ -58,7 +58,9 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
     agentRowEarly,
   } = ctx;
   const { filesTouchedThisTurn, editedPathsThisTurn } = progress;
-  const confinedRole = confinedRoleOf({ input: ctx.input, agent: agentRowEarly });
+  const confinedRole = ctx.isReadOnlyAnswer
+    ? READ_ONLY_ANSWER_ROLE
+    : confinedRoleOf({ input: ctx.input, agent: agentRowEarly });
   for await (const rawEvent of runTurn(
     {
       runId,

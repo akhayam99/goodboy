@@ -894,7 +894,28 @@ Everything the app saves for itself lives in `~/.goodboy`.
   permanently, offered only on a `discarded` artifact, removes the folder with
   `artifact_mirror_remove` and then the row, which takes its plan consumptions
   (the Run by history) with it.
-- `file-versions/`: saved versions of files.
+- `file-versions/<session-id>/`: saved versions of files, one copy per
+  version named `<version-id>-<file name>`, each with its `file_versions` row.
+  A session that writes in a `sessions/<name>` folder also stages its turn in
+  `file-versions/<session-id>/staging/<run-id>/` until the turn ends. This
+  layout is what older builds read: changing it is a new on-disk format and a
+  one-way door ([versioning.md](versioning.md)).
+- `folder-versions/<folder-key>/`: saved versions of a plain folder that agents
+  edit in place, keyed by a hash of the folder's real path. Nothing is written
+  inside the folder itself. `mirror/` is the first copy of the folder (an APFS
+  clone where the disk allows, else a copy) as it was when the last writing
+  turn began or ended, `index.json` its size, modified time and hash per file,
+  `staging/<run-id>.json` a turn that began and has not been saved yet, and
+  `turns/<session-id>/<run-id>.json` each turn's changes (added, modified and
+  deleted, with before and after hashes) and each restore. Before copies of
+  modified and deleted files go to `file-versions/<session-id>/` with their
+  rows, as above. Not versioned: files over 15 MB, links, the dependency and
+  build folders `folder_signals` skips, `.git`, `.DS_Store` and the
+  `sessions/` folders of older sessions. Pruning drops a session's versions 30
+  days after it ends (archived or deleted), then the oldest versions over the
+  folder cap (1 GB or the folder's size, whichever is larger), never the newest
+  version of a file a live session changed; rows go only after their copies.
+  Older builds never read this folder.
 - `query/query-<pid>.sock`: the socket a running app uses for the query bridge, in its own owner-only folder (see [query-bridge.md](query-bridge.md)).
 - `history-copies/`: the temporary copies Rewrite history replays a plan in.
 - `boot-breadcrumbs.log`: how long each startup step took.
@@ -910,7 +931,9 @@ workspace is gone, and the storage scan only ever looks inside
 the way Finder's "size on disk" does.
 
 Two things live next to your code instead of in `~/.goodboy`. A folder
-project keeps its session folders in `<project-root>/sessions/`. Skills live
+project keeps the session folders of sessions made before 0.27.3 in
+`<project-root>/sessions/`; newer sessions write in the folder itself and add
+nothing to it. Skills live
 in `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
 
 ### How mounts are saved and recovered

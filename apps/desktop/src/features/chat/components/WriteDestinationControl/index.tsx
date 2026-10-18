@@ -110,7 +110,12 @@ export const WriteDestinationControl = ({
         ? `This turn runs in ${runningDetail}. New turns start in ${nextDetail}.`
         : `This turn runs in ${nextDetail}. New turns start there too.${reachSentence}`;
 
-  const Icon = next.kind === 'scratch' ? CONCEPT_ICONS.folderOpen : CONCEPT_ICONS.worktree;
+  const Icon =
+    next.kind === 'scratch'
+      ? CONCEPT_ICONS.folderOpen
+      : next.kind === 'root' && next.branch === null
+        ? CONCEPT_ICONS.projectFolder
+        : CONCEPT_ICONS.worktree;
   const hasCandidates = candidates.length > 0;
 
   const openPicker = () => {

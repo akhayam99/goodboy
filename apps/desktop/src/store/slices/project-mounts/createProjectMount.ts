@@ -8,11 +8,7 @@ import { formatError } from '@goodboy/ui';
 import type { MountId, Project, Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { tauriGhRunner } from '../../../features/integrations/github/github';
-import {
-  createSessionDir,
-  createWorktree,
-  listBranchNames,
-} from '../../../features/worktree/worktree';
+import { createWorktree, listBranchNames } from '../../../features/worktree/worktree';
 import { consumeAdoptionSeed, materializationSeedFor } from '../sessions/materializationSeeds';
 import { mountPlan } from '../sessions/mountPlan';
 import { branchInUseError } from './mountErrors';
@@ -82,9 +78,11 @@ type Params = {
   readonly reason: string;
   readonly parallelIndex: number;
   readonly taskIdentifiers?: ReadonlyArray<string>;
-  readonly slug?: string;
   readonly branch?: string;
 };
+
+const FOLDER_IN_PLACE_REFUSAL =
+  'A plain folder works in place: Goodboy never makes a session folder inside it.';
 
 export const createProjectMount = async ({
   set,
@@ -96,7 +94,6 @@ export const createProjectMount = async ({
   reason,
   parallelIndex,
   taskIdentifiers,
-  slug: plannedSlug,
   branch: plannedBranch,
 }: Params): Promise<SessionProjectMount> =>
   withRepositoryAndMountLock({
@@ -105,8 +102,11 @@ export const createProjectMount = async ({
     run: async () => {
       const sessionId = session.id;
       const projectId = project.id;
+      if (project.kind !== 'repo') {
+        throw new Error(FOLDER_IN_PLACE_REFUSAL);
+      }
       const repoBranches =
-        project.kind === 'repo' && plannedBranch === undefined
+        plannedBranch === undefined
           ? await listBranchNames({ repoPath: project.rootPath }).catch(
               () => [] as ReadonlyArray<string>,
             )
@@ -128,35 +128,23 @@ export const createProjectMount = async ({
       );
       const adoptedBranch = hasRepoMount ? undefined : seed?.existingBranch;
       const adoptedFallbackRef = adoptedBranch === undefined ? undefined : seed?.fallbackRef;
-      const sessionSlug = plannedSlug ?? plan.slug;
       const parentDir = `${project.rootPath}/.goodboy/worktrees`;
       let created;
-      if (project.kind === 'repo') {
-        await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
-      }
+      await rememberWorktreeRoot({ repoRoot: project.rootPath, addedBy: 'mount' });
       try {
-        created =
-          project.kind === 'repo'
-            ? await createWorktree({
-                repoPath: project.rootPath,
-                branchName: adoptedBranch ?? plannedBranch ?? plan.branch ?? '',
-                parentDir,
-                dirName: await allocateMountDirName({
-                  mountId,
-                  repoPath: project.rootPath,
-                  parentDir,
-                }),
-                baseBranch: project.baseBranch ?? undefined,
-                ...(adoptedBranch !== undefined ? { existingBranch: adoptedBranch } : {}),
-                ...(adoptedFallbackRef !== undefined ? { fallbackRef: adoptedFallbackRef } : {}),
-              })
-            : await createSessionDir({
-                basePath: project.rootPath,
-                slug: sessionSlug,
-                ...(seed?.folderName !== undefined ? { directoryName: seed.folderName } : {}),
-                sessionId,
-                workspaceId: session.workspaceId,
-              });
+        created = await createWorktree({
+          repoPath: project.rootPath,
+          branchName: adoptedBranch ?? plannedBranch ?? plan.branch ?? '',
+          parentDir,
+          dirName: await allocateMountDirName({
+            mountId,
+            repoPath: project.rootPath,
+            parentDir,
+          }),
+          baseBranch: project.baseBranch ?? undefined,
+          ...(adoptedBranch !== undefined ? { existingBranch: adoptedBranch } : {}),
+          ...(adoptedFallbackRef !== undefined ? { fallbackRef: adoptedFallbackRef } : {}),
+        });
       } catch (error) {
         await get().recordSessionEvent({
           sessionId,
@@ -182,7 +170,7 @@ export const createProjectMount = async ({
         mountName: project.name,
         revision: 0,
         branchOrigin: mountBranchOrigin({
-          isRepo: project.kind === 'repo',
+          isRepo: true,
           adopted: adoptedBranch !== undefined,
           reused: 'reused' in created && created.reused,
           trackedRemote: 'trackedRemote' in created && created.trackedRemote === true,
@@ -231,15 +219,13 @@ export const createProjectMount = async ({
         }),
         ...mountViewPatch({ state, sessionId, mount }),
       }));
-      if (project.kind === 'repo') {
-        void stampRepoSlug({
-          sessionId,
-          workspaceId: session.workspaceId,
-          repoRoot: project.rootPath,
-          worktreePath: created.worktreePath,
-          projectId,
-        });
-      }
+      void stampRepoSlug({
+        sessionId,
+        workspaceId: session.workspaceId,
+        repoRoot: project.rootPath,
+        worktreePath: created.worktreePath,
+        projectId,
+      });
       return mount;
     },
   });

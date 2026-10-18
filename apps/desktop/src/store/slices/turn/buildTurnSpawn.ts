@@ -16,6 +16,7 @@ import { resumableResolveThreadIds } from '../resolve/resumableResolveThreadIds'
 import { selectWritableMounts } from '../project-mounts/selectors';
 import { isTurnWritableMount } from './turnWritableRoots';
 import { createResolveCandidateWriter } from './createResolveCandidateWriter';
+import { readFolderPurposes } from './readFolderPurposes';
 import { collectTouchedMounts } from './collectTouchedMounts';
 import { composeAgentHandoff } from './composeAgentHandoff';
 import { snapshotMountChanges } from './snapshotMountChanges';
@@ -46,6 +47,9 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     turnMountId,
     copyPath,
     firstLapProject,
+    inPlaceFolders,
+    isReadOnlyAnswer,
+    hasFolderLease,
     workingDir,
     now,
     activeAgentId,
@@ -167,6 +171,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       })
     : null;
   const isBridgeServing = await isQueryBridgeServing();
+  const folderPurposes = await readFolderPurposes({ get, folders: inPlaceFolders });
   const scopeGuard = buildScopeGuard({
     workingDir,
     projects: workspaceProjects,
@@ -175,7 +180,14 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     isBridgeServing,
     isSessionDirScope,
     firstLapProject,
-    canWrite: kindWritesFiles({ kind: earlyAgentKind }),
+    inPlaceFolders: inPlaceFolders.map((folder) => ({
+      folder,
+      purpose: folderPurposes[folder.id] ?? null,
+    })),
+    canWrite:
+      kindWritesFiles({ kind: earlyAgentKind }) &&
+      !isReadOnlyAnswer &&
+      (inPlaceFolders.length === 0 || hasFolderLease),
   });
   const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';
   const languageGuard = buildSessionLanguageGuard({

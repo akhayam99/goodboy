@@ -47,6 +47,7 @@ import {
   Hand,
   Highlighter,
   History,
+  Hourglass,
   Inbox,
   Keyboard,
   Layers2,
@@ -87,6 +88,7 @@ import {
   Trash2,
   TrendingUp,
   TriangleAlert,
+  Undo2,
   Unplug,
   UserRound,
   Wallet,
@@ -202,10 +204,12 @@ export const CONCEPT_ICONS = {
   checks: ListChecks,
   comments: MessageSquare,
   updates: CircleFadingArrowUp,
+  versionRestore: Undo2,
   wireframe: PanelsTopLeft,
   workflows: Waypoints,
   workspace: LayoutGrid,
   worktree: FolderTree,
+  writerWait: Hourglass,
 } satisfies Record<string, LucideIcon>;
 
 type Concept = keyof typeof CONCEPT_ICONS;
@@ -307,10 +311,12 @@ export const CONCEPT_TONE = {
   checks: 'success',
   comments: 'info',
   updates: 'info',
+  versionRestore: 'neutral',
   wireframe: 'neutral',
   workflows: 'primary',
   workspace: 'info',
   worktree: 'neutral',
+  writerWait: 'warning',
 } satisfies Record<Concept, Tone>;
 
 type ProjectGlyphParams = {
