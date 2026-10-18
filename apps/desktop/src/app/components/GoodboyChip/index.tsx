@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AnchoredPopover, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import { useUpdateCardState } from '../../../features/updater/hooks/useUpdateCardState';
 import { updatePillLabel } from '../../../features/updater/updateCardCopy';
@@ -97,6 +97,20 @@ export const GoodboyChip = ({
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [isPrimary, isInMainWindow]);
+
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+    if (!wasOpen || isOpen) {
+      return;
+    }
+    const focused = document.activeElement;
+    if (focused !== null && focused !== document.body) {
+      return;
+    }
+    dropdown.containerRef.current?.querySelector<HTMLElement>('[data-goodboy-chip]')?.focus();
+  }, [isOpen, dropdown.containerRef]);
 
   useEffect(() => {
     if (!shouldAutoOpen) {

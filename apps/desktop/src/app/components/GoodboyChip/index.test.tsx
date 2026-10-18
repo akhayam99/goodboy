@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { OnboardingStepId } from '../../../features/onboarding/onboarding-store';
 import { setupProgress } from '../../../features/onboarding/setupProgress';
 import {
@@ -301,6 +302,30 @@ describe('GoodboyChip', () => {
 
     expect(onOpenGuide).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+  });
+
+  it('lands keyboard focus in the menu, moves with arrows, opens Guide on Enter and gives focus back on Escape', async () => {
+    const user = userEvent.setup();
+    const { onOpenGuide } = renderChip();
+    const trigger = screen.getByTestId('goodboy-chip');
+
+    trigger.focus();
+    await user.keyboard('{Enter}');
+    const guide = screen.getByRole('menuitem', { name: /Guide/ });
+    expect(document.activeElement).toBe(guide);
+
+    await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: /What's new/ }));
+    await user.keyboard('{ArrowUp}');
+    expect(document.activeElement).toBe(guide);
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    await user.keyboard('{Enter}');
+    await user.keyboard('{Enter}');
+    expect(onOpenGuide).toHaveBeenCalledOnce();
   });
 
   it('asks the app to open Settings, iPhone from Pair an iPhone', () => {

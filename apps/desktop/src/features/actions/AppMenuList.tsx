@@ -7,5 +7,5 @@ type Props = {
 };
 
 export const AppMenuList = ({ label, entries, onClose }: Props) => (
-  <MenuList label={label} entries={entries} onClose={onClose} isAutoFocus={false} />
+  <MenuList label={label} entries={entries} onClose={onClose} />
 );

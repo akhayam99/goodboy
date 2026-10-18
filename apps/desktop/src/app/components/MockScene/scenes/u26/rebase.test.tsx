@@ -203,6 +203,27 @@ describe('the u26 rebase scenes', () => {
     expect(screen.getByRole('status').textContent).toContain('Stopping after this branch');
   });
 
+  it('offers Dismiss only once Auto has taken the work or the run has ended', async () => {
+    await mount({ name: 'u26-rebase-all-running-dark' });
+    const setPhase = async ({ phase }: { readonly phase: 'handing' | 'done' }) => {
+      const run = useAppStore.getState().rebaseAllRuns[SESSION_ID];
+      if (run === undefined) {
+        throw new Error('the scene has no run');
+      }
+      useAppStore.setState({
+        rebaseAllRuns: { ...useAppStore.getState().rebaseAllRuns, [SESSION_ID]: { ...run, phase } },
+      });
+      await settle();
+    };
+
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+    await setPhase({ phase: 'handing' });
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Abort' })).toBeNull();
+    await setPhase({ phase: 'done' });
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeDefined();
+  });
+
   it('opens one picker with every behind branch checked, and Rebase N after unchecking', async () => {
     await mount({ name: 'u26-rebase-picker-dark' });
     const rebaseAll = vi.fn<AppStore['rebaseAll']>(async () => 'handed');

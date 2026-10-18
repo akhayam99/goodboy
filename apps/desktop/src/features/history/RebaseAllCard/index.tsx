@@ -61,7 +61,7 @@ export const RebaseAllCard = ({ sessionId }: Props) => {
             label="Abort"
             variant="ghost"
           />
-        ) : (
+        ) : run.phase === 'handing' ? null : (
           <Button
             size="xs"
             variant="ghost"

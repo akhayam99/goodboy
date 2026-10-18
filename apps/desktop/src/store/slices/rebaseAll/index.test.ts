@@ -346,6 +346,41 @@ describe('rebase all', () => {
     expect(store.getState().historyRuns[RELAY_MOUNT]).toBeUndefined();
   });
 
+  it('refuses to dismiss while Auto is being handed the work, and still takes its late acceptance', async () => {
+    stub({ outcomes: { [RELAY_MOUNT]: 'conflict' } });
+    let release = (): void => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    store.setState({
+      spawnAgent: vi.fn(async (...call: SpawnCall) => {
+        spawned.push(call);
+        await gate;
+        call[1].onKickoffAccepted?.();
+        return AUTO_ID;
+      }),
+    });
+
+    const first = store
+      .getState()
+      .rebaseAll({ sessionId: SESSION_ID, mountIds: ALL, shouldTidy: false });
+    await vi.waitFor(() => expect(spawned).toHaveLength(1));
+    const run = store.getState().rebaseAllRuns[SESSION_ID];
+    expect(run?.phase).toBe('handing');
+
+    store.getState().dismissRebaseAll({ sessionId: SESSION_ID, runId: run?.id ?? '' });
+    expect(store.getState().rebaseAllRuns[SESSION_ID]?.id).toBe(run?.id);
+    await expect(
+      store.getState().rebaseAll({ sessionId: SESSION_ID, mountIds: ALL, shouldTidy: false }),
+    ).resolves.toBe('busy');
+
+    release();
+    await expect(first).resolves.toBe('handed');
+    expect(store.getState().rebaseAllRuns[SESSION_ID]?.phase).toBe('handed');
+    expect(store.getState().rebaseAllRuns[SESSION_ID]?.autoAgentId).toBe(AUTO_ID);
+    expect(spawned).toHaveLength(1);
+  });
+
   it('keeps a finished run until it is dismissed, and never dismisses a running one', async () => {
     stub({ outcomes: {} });
     await store.getState().rebaseAll({ sessionId: SESSION_ID, mountIds: ALL, shouldTidy: false });
