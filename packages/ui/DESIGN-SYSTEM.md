@@ -1069,7 +1069,7 @@ of the open row (visible on hover and focus, always visible while folded,
 focus of any live row (the checkbox owns the left slot). With two or more
 branches the card nests a 28px row per branch under the Branch page while it
 is current, at the page indent, up to five and then `All branches`: the repo
-glyph, the branch cut in the middle in `text-code`, and the pull request glyph;
+glyph, the branch cut at the end in `text-code`, and the pull request glyph;
 the current branch reads in `foreground`. Every row and button takes its hover
 wash and focus ring from `ROW_INTERACTIVE`, never a copy.
 
@@ -1402,11 +1402,12 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   keyboard, is `bg-selected`; the current value is a check on the right and
   `text-row`. No primary tint. A blocked option stays visible in
   `disabled-foreground` and says why on its second line. A group label is a
-  muted `Eyebrow`. A label that can outgrow the popup names its `tail`, the
-  last characters that must stay readable: the row and the trigger cut the
-  middle (the head takes the ellipsis, the tail never shrinks) and the search
-  underline covers both halves. A branch name takes `splitBranchLabel` for it
-  (`branchPickerOption`).
+  muted `Eyebrow`. A label that can outgrow the popup is cut at the end with
+  `truncate`, in the row and the trigger; text never stays after the ellipsis.
+  Names that share a start are told apart by what the row carries beside them
+  (a pull request number), and the full name sits in the tooltip.
+  A name in a row is never cut in the middle. A file or terminal path keeps
+  the extension or last segment after the ellipsis (`MiddleText`).
 - **Search** appears on its own above 8 options (or with `searchable`): a flush
   row (search icon, no box, a hairline divider below, no focus ring of its own),
   a fuzzy filter, the match underlined (the list itself shows the matches, so no

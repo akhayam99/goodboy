@@ -862,8 +862,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   the worktree level identity row, the folded rail and the session hover card:
   draft gray, open or approved green, in the merge queue (`queued`) the warning
   amber, merged violet, closed red, no pull request a neutral branch glyph),
-  mono branch cut in the middle so the distinguishing tail stays
-  (`BranchName`), pull request number right aligned at its content width, then
+  mono branch cut at the end only, never in the middle, full name in the
+  shared tooltip (`BranchName`), pull request number right aligned at its content width, then
   the worst state as one 6px dot in the last column (`worktreeRowStateOf`:
   danger for a failed check; warning for conflicts, a running rebase, behind
   its base, a branch decision waiting, comments waiting on you; none when
@@ -937,7 +937,7 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   so the page keeps one source for every number. ⌘[ in the rail and the
   back row go up one level each.
 - **Linked** lists the session's linked work, one row per item: provider
-  mark, key in one 72px mono column cut in the middle (`LinkedKey`, the full
+  mark, key in one 72px mono column cut at the end (`LinkedKey`, the full
   key in the tooltip) so every title starts on one edge, title. A GitHub pull
   request a worktree row of the session already owns is not listed again
   (`githubRefOf`, same owner/repo and number). The row opens the item; its right-click menu holds
@@ -2228,7 +2228,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   session's group, and the drawer closes by itself when its worktree has no terminal left.
   `Open on Terminal page` closes the drawer and selects the same tab on the page; the pane
   remounts on the same pty and replays its scrollback. The page group title is the session title,
-  cut in the middle past 28 characters (`middleTruncate`); the group's `aria-label` keeps the full
+  cut at the end, never in the middle; the group's `aria-label` keeps the full
   title.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
@@ -3440,7 +3440,7 @@ the Pull request property block, the commit count is the Commits entry, and a bl
 says its reason in its tooltip. **The switcher** (`BranchSwitcher`) is the branch line of the
 worktree level's identity row. It opens a menu of the session's
 branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
-glyph, branch cut in the middle, `#318 Open`, a check on the current one,
+glyph, branch cut at the end, `#318 Open`, a check on the current one,
 grouped by repo when there are several) and `New branch`. Choosing a branch
 makes it the active mount and replaces the address with the landing tab of
 that branch (`switchBranchMount`, also what the trail menu and the sidebar rows

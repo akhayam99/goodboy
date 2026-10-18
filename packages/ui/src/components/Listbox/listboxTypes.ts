@@ -12,7 +12,6 @@ export type ListboxOption<T extends ListboxValue> = {
   readonly disabledReason?: string;
   readonly keywords?: string;
   readonly isCode?: boolean;
-  readonly tail?: string;
 };
 
 export type ListboxTriggerVariant = 'field' | 'quiet' | 'chip';

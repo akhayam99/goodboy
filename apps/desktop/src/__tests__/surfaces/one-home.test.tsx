@@ -23,7 +23,6 @@ import {
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { StageBoard } from '../../features/workspace/components/StageBoard';
 import { LimitsProvidersMenu } from '../../app/components/AppTopBar/LimitsStrip/LimitsProvidersMenu';
-import { linkedKeyText } from '../../app/components/SessionRail/SessionLevel/linkedKeyText';
 import { LevelLinked } from '../../app/components/SessionRail/SessionLevel/LevelLinked';
 
 const STAGE_DEFAULT_REASONS = ['no PR yet', 'awaiting review'];
@@ -84,8 +83,7 @@ describe('one home per fact', () => {
       const text = document.body.textContent ?? '';
 
       for (const task of tasks) {
-        const key = linkedKeyText({ key: task.identifier });
-        expect(text.split(key).length - 1, task.identifier).toBe(1);
+        expect(text.split(task.identifier).length - 1, task.identifier).toBe(1);
       }
     }
   });

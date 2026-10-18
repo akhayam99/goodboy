@@ -140,17 +140,21 @@ type ExtraBranch = {
   readonly request: ExtraRequest | null;
 };
 
+const LONG_BRANCH_DRAFT = 'ak/eng-1200-retry-header-for-notify-relay-with-backoff-draft';
+
+const LONG_BRANCH_QUEUED = 'ak/eng-1200-retry-header-for-notify-relay-with-backoff-queued';
+
 const EXTRA_BRANCHES: ReadonlyArray<ExtraBranch> = [
   {
     from: PAYMENTS_MOUNT,
     id: 'mock-r4-tree-draft',
-    branch: 'hl/retry-budget-guard',
+    branch: LONG_BRANCH_DRAFT,
     request: { number: 322, state: 'open', isDraft: true },
   },
   {
     from: PAYMENTS_MOUNT,
     id: 'mock-r4-tree-queued',
-    branch: 'hl/settlement-export-rounding',
+    branch: LONG_BRANCH_QUEUED,
     request: { number: 315, state: 'queued', isDraft: false },
   },
   {

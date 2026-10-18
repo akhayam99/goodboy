@@ -101,8 +101,8 @@ describe('BranchCombobox', () => {
     expect(onChange).toHaveBeenCalledWith('old-experiment');
   });
 
-  it('opens a popup wide enough for a long branch and cuts it in the middle', () => {
-    const long = 'grw-1348-cta-per-bypassare-la-selezione-dello-slot';
+  it('opens a popup wide enough for a long branch and cuts it at the end only', () => {
+    const long = 'ak/eng-1200-retry-header-for-notify-relay-slot';
     render(
       <BranchCombobox
         branches={[
@@ -117,18 +117,16 @@ describe('BranchCombobox', () => {
     );
 
     const trigger = screen.getByRole('combobox', { name: 'Branch' });
-    expect(trigger.querySelector('[data-slot="label-tail"]')?.textContent).toBe('-slot');
+    expect(trigger.querySelector('.truncate')?.textContent).toBe(long);
+    expect(trigger.querySelector('[data-slot="label-tail"]')).toBeNull();
     fireEvent.click(trigger);
 
     const popup = screen.getByRole('listbox').closest('[data-dropdown-portal] > div');
     expect(popup?.getAttribute('style')).toContain(`max-width: ${BRANCH_PICKER_MAX_WIDTH}px`);
     expect(BRANCH_PICKER_MAX_WIDTH).toBeGreaterThan(360);
     const row = screen.getByRole('option', { name: long });
-    expect(row.querySelector('[data-slot="label-head"]')?.textContent).toBe(
-      'grw-1348-cta-per-bypassare-la-selezione-dello',
-    );
-    expect(row.querySelector('[data-slot="label-tail"]')?.textContent).toBe('-slot');
-    expect(screen.getByRole('option', { name: 'main' }).querySelector('[data-slot]')).toBeNull();
+    expect(row.querySelector('.truncate')?.textContent).toBe(long);
+    expect(row.querySelector('[data-slot]')).toBeNull();
   });
 
   it('stays closed with no local branch', () => {

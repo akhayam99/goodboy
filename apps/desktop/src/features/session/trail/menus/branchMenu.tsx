@@ -129,7 +129,7 @@ export const branchMenuGroups = ({
       isCurrent: mount.worktreePath === currentPath,
       isDisabled: false,
       indent: 0,
-      isMiddleTruncated: true,
+      isCode: true,
       onSelect: () => onSelect(mount),
     };
   };
