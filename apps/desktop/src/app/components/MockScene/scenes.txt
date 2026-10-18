@@ -521,6 +521,8 @@ notifications-empty
 notifications-rail
 notifications-rail-folded
 onboarding
+onboarding-brand-tile-dark
+onboarding-brand-tile-light
 open-question-prose
 open-questions
 overview-branch-tasks

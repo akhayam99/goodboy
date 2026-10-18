@@ -352,8 +352,10 @@ second home for them.
   only for information that truly does not fit one screen. Only the workflow
   builder, the first-run wizard and the question answer flow have one. The
   first-run wizard's shell never moves: the labelled stepper is there from
-  Welcome, the body starts at the same line on every step, the footer is
-  pinned, and steps crossfade in one grid cell instead of re-centering.
+  Welcome, every step after Welcome starts its title on the same line of one
+  600 px column, the action row ends the content like every form, and steps
+  crossfade in one grid cell instead of re-centering. Welcome is the cover: its
+  tile sits on the boot splash's dog.
 - **Empty states teach the board model.** They say what the thing is, why it
   matters, and offer one action to create it. Teach the board, not the chat.
   Never a dead end, never a "start chatting" prompt. An empty Activity shows

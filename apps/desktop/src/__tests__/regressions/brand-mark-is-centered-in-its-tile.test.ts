@@ -15,6 +15,7 @@ const CHROME_MARK = join(
   'GoodboyChip',
   'BrandLockup.tsx',
 );
+const BRAND_TILE = join(__dirname, '..', '..', 'app', 'components', 'BrandTile.tsx');
 const DESKTOP_STYLES = join(__dirname, '..', '..', 'styles.css');
 const DESKTOP_ICONS = join(__dirname, '..', '..', '..', 'src-tauri', 'icons');
 const SITE_LOGO = join(REPOSITORY_ROOT, 'website', 'src', 'components', 'Logo.tsx');
@@ -354,6 +355,7 @@ const fullScanlines = ({ width, height }: { width: number; height: number }): Bu
 
 const CHROME_MARK_SOURCE = readFileSync(CHROME_MARK, 'utf8');
 const LOGO_SOURCE = readFileSync(SITE_LOGO, 'utf8');
+const BRAND_TILE_SOURCE = readFileSync(BRAND_TILE, 'utf8');
 const FAVICON_SOURCE = readFileSync(FAVICON, 'utf8');
 const DESKTOP_TILE = cssValueOf({ path: DESKTOP_STYLES, variableName: '--color-brand' });
 const SITE_TILE = cssValueOf({ path: SITE_STYLES, variableName: '--brand-tile' });
@@ -507,6 +509,17 @@ describe('brand mark is centered in its tile', () => {
     expect(LOGO_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
     expect(ratioOf({ source: LOGO_SOURCE, name: 'MARK_SCALE' })).toBe(MARK_SCALE);
     expect(ratioOf({ source: LOGO_SOURCE, name: 'TILE_RADIUS' })).toBe(TILE_RADIUS);
+  });
+
+  it('centers the app tile with the box model and the shared tile ratios', () => {
+    expect(BRAND_TILE_SOURCE).not.toContain('absolute');
+    expect(BRAND_TILE_SOURCE).not.toMatch(/MARK_(LEFT|TOP)/);
+    expect(BRAND_TILE_SOURCE).toContain('items-center justify-center');
+    expect(BRAND_TILE_SOURCE).toContain('bg-brand');
+    expect(BRAND_TILE_SOURCE).toMatch(/<DogMascot [^>]*className="text-white"/);
+    expect(BRAND_TILE_SOURCE).not.toMatch(/\bborder\b|border-|ring-|shadow/);
+    expect(ratioOf({ source: BRAND_TILE_SOURCE, name: 'MARK_SCALE' })).toBe(MARK_SCALE);
+    expect(ratioOf({ source: BRAND_TILE_SOURCE, name: 'TILE_RADIUS' })).toBe(TILE_RADIUS);
   });
 
   it('lands the favicon glyph box on the center of its own canvas', () => {

@@ -180,6 +180,10 @@ import { ScribeProposalFailedScene } from '../scenes/ScribeProposalFailedScene';
 import { ScribeProposalTranscriptScene } from '../scenes/ScribeProposalTranscriptScene';
 import { FixRunScene } from '../scenes/FixRunScene';
 import { CrashReportScene } from '../scenes/audit/ReportScenes';
+import { BrandTileScene } from '../scenes/onboarding/BrandTileScene';
+
+const OnboardingBrandTileDarkScene = () => createElement(BrandTileScene, { theme: 'dark' });
+const OnboardingBrandTileLightScene = () => createElement(BrandTileScene, { theme: 'light' });
 
 export const BASE_SCENES = {
   workspace: WorkspaceScene,
@@ -369,4 +373,6 @@ export const BASE_SCENES = {
   'space-diff-split': SpaceDiffSplitScene,
   'space-diff-comment': SpaceDiffCommentScene,
   'crash-report': CrashReportScene,
+  'onboarding-brand-tile-dark': OnboardingBrandTileDarkScene,
+  'onboarding-brand-tile-light': OnboardingBrandTileLightScene,
 };
