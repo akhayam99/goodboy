@@ -42,7 +42,12 @@ const isWrapperFence = (line: string): boolean => {
   return match !== null && WRAPPER_FENCE_INFOS.has((match[1] ?? '').toLowerCase());
 };
 
-const fencedEnvelopeStart = (text: string): number | null => {
+type FencedEnvelope = {
+  readonly fenceStart: number;
+  readonly start: number;
+};
+
+const fencedEnvelope = (text: string): FencedEnvelope | null => {
   const lines = linesFrom(text, 0);
   for (let index = 0; index < lines.length; index += 1) {
     if (!isWrapperFence(lines[index]!.text)) {
@@ -50,10 +55,19 @@ const fencedEnvelopeStart = (text: string): number | null => {
     }
     const next = lines.slice(index + 1).find((line) => line.text.trim().length > 0);
     if (next !== undefined && next.text.trimStart().startsWith(OPEN_PREFIX)) {
-      return next.start;
+      return { fenceStart: lines[index]!.start, start: next.start };
     }
   }
   return null;
+};
+
+const closingFenceEnd = (text: string, from: number): number => {
+  const next = linesFrom(text, from).find((line) => line.text.trim().length > 0);
+  if (next === undefined || !isWrapperFence(next.text)) {
+    return from;
+  }
+  const end = text.indexOf('\n', next.start);
+  return end === -1 ? text.length : end + 1;
 };
 
 const toBlock = (text: string, span: ArtifactBlockSpan): ArtifactBlock => {
@@ -79,6 +93,27 @@ export const locateArtifactBlocks = (text: string): ReadonlyArray<ArtifactBlock>
   if (blocks.length > 0) {
     return blocks;
   }
-  const start = fencedEnvelopeStart(text);
-  return start === null ? [] : blocksOf(text.slice(start));
+  const envelope = fencedEnvelope(text);
+  return envelope === null ? [] : blocksOf(text.slice(envelope.start));
+};
+
+export const locateArtifactSpans = (text: string): ReadonlyArray<ArtifactBlockSpan> => {
+  const spans = scanArtifactBlocks({ text }).spans;
+  if (spans.length > 0) {
+    return spans;
+  }
+  const envelope = fencedEnvelope(text);
+  if (envelope === null) {
+    return [];
+  }
+  return scanArtifactBlocks({ text: text.slice(envelope.start) }).spans.map((span) => ({
+    attrs: span.attrs,
+    start: envelope.fenceStart,
+    bodyStart: span.bodyStart + envelope.start,
+    bodyEnd: span.bodyEnd + envelope.start,
+    end: span.complete
+      ? closingFenceEnd(text, span.end + envelope.start)
+      : span.end + envelope.start,
+    complete: span.complete,
+  }));
 };

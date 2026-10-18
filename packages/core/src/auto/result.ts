@@ -1,5 +1,6 @@
 import type { AutoOutcome } from '@goodboy/db';
 import type { ChildClosing, ChildCompletion } from './closing';
+import { isMissingShellText, rerouteHintOf } from './roleTools';
 import type { AutoDelegationRole } from './roles';
 
 export const DELEGATION_RESULT_SCHEMA_VERSION = 1;
@@ -99,7 +100,8 @@ export const resolveDelegationOutcome = ({
     return { outcome: 'failed', reason: 'artifact_persistence_failed' };
   }
   if (completion === 'blocked') {
-    return { outcome: 'blocked', reason: 'declared_blocked' };
+    const isShellMissing = isMissingShellText({ text: closing?.summary ?? '' });
+    return { outcome: 'blocked', reason: isShellMissing ? 'missing_tool' : 'declared_blocked' };
   }
   if (completion === 'done') {
     return { outcome: 'completed', reason: null };
@@ -195,6 +197,9 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
   ];
   if (result.declared.summary !== '') {
     lines.push(`  it said: ${oneLine(result.declared.summary)}`);
+  }
+  if (result.reason === 'missing_tool') {
+    lines.push(rerouteHintOf({ role: result.role }));
   }
   if (result.declared.completion === 'none') {
     lines.push('  it did not close its work with the closing line');

@@ -34,6 +34,7 @@ export const AUTO_REFUSAL_CODES = [
   'not_paused',
   'no_run',
   'retry_unavailable',
+  'role_lacks_shell',
 ] as const;
 
 export type AutoRefusalCode = (typeof AUTO_REFUSAL_CODES)[number];

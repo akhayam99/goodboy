@@ -36,6 +36,7 @@ export const AUTO_REFUSAL_USER_REASON = {
   not_paused: 'that agent is not waiting for an answer',
   no_run: 'that agent has no run to continue',
   retry_unavailable: 'that work cannot be retried',
+  role_lacks_shell: 'the role it chose cannot run commands',
 } as const satisfies Readonly<Record<AutoRefusalCode, string>>;
 
 type UserReasonParams = {
