@@ -51,7 +51,7 @@ describe('the frames scenes', () => {
         </ToastProvider>,
       );
 
-      const title = await screen.findByRole('heading', { level: 1, name: 'Guide' });
+      const title = await screen.findByRole('heading', { level: 1, name: 'What is Goodboy' });
       const detail = container.querySelector<HTMLElement>('[data-studio-detail]');
       expect(container.querySelector('[data-studio-band]')).toBeNull();
       expect(detail?.contains(title)).toBe(true);

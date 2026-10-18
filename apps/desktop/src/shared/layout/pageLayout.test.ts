@@ -38,7 +38,11 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     page: 'notifications',
     files: ['features/notifications/components/NotificationsStudio/index.tsx'],
   },
-  { page: 'guide', files: ['features/settings/components/GuideStudio/parts/GuideContent.tsx'] },
+  {
+    page: 'guide',
+    files: ['features/settings/components/GuideStudio/parts/ChapterPage.tsx'],
+    prop: 'page="guideChapter"',
+  },
   {
     page: 'impact',
     files: [

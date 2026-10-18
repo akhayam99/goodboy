@@ -1844,10 +1844,15 @@ kind has no `visible` row. Three links open the Guide on a chapter and Back
 returns to the page you were on: the session hover card's "What do these marks
 mean?" (Legend), Impact's Spend tab "How cost is counted" (Tokens and cost) and
 the Storage worktree row's "What is a worktree?" (Words). They share
-`features/settings/openGuideChapter.ts`. The Guide chapter "Sidebar, session rail
-and panes" restates this shell in `guideChapters.ts`, and
+`features/settings/openGuideChapter.ts`, and an id the Guide no longer has
+(a renamed chapter keeps its old id as an alias in `resolveGuideChapter.ts`)
+opens What is Goodboy, never an empty page. The Guide shows one chapter per
+page on the `guideChapter` reader frame, with Previous and Next; its rail
+search (`shared/components/RailSearch.tsx`) lists chapters and points, Enter
+opens the first hit and flashes its point, Escape clears it. The chapter
+"Sidebar and session rail" restates this shell in `guideChapters.ts`, and
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
-registry and `NEW_DRAWER_FORMS`; the Legend draws its session marks through
+registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
 `sessionNodeOf`, so a new mark appears there without a second table. The addresses live in
 `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the

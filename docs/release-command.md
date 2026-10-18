@@ -205,13 +205,18 @@ pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
 
 ## Align the in-app Guide
 
-The Guide (palette, Open the guide) explains Goodboy chapter by
+The Guide (Help in the menu bar, the Goodboy row, the palette) explains Goodboy chapter by
 chapter, in the order a task lives. Its text is in
 `apps/desktop/src/features/settings/components/GuideStudio/guideChapters.ts`.
 
 - For each app-facing PR in the release notes, find the chapter it touches.
   Remove what the release made false, add what it made new, and keep each
-  chapter short and plain.
+  chapter short and plain: `guideChapters.test.ts` holds a lead to 35 words,
+  a point to 60, a chapter to 7 points and the Guide to 4,000 words, and
+  fails on a version number, a page a feature flag hides or the word
+  project for a folder.
+- A renamed chapter keeps its old id in `resolveGuideChapter.ts`, so the
+  links that open the Guide on a chapter still land.
 - Check every changed sentence against the code, not the PR title. Screen
   names and button labels in the Guide must match the app exactly.
 - A chapter link opens a screen through a `GuideTarget`. If the release moved

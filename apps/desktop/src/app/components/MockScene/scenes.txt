@@ -867,6 +867,9 @@ u26s-explore-drawer
 u26s-explore-empty
 u26s-explore-nomount
 u26s-explore-rows
+u26s-guide-chapter
+u26s-guide-monitoring
+u26s-guide-search
 u26s-impact-empty
 u26s-impact-overview
 u26s-impact-spend

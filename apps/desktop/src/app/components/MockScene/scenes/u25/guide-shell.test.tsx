@@ -58,17 +58,15 @@ describe('the guide shell scenes', () => {
     expect(MOCK_SCENES['guide-legend']).toBe(U25_GUIDE_SHELL_SCENES['guide-legend']);
   });
 
-  it('guide-shell opens on the sidebar, session rail and panes chapter', async () => {
+  it('guide-shell opens on the sidebar and session rail chapter', async () => {
     await mount('guide-shell');
 
     const rail = within(screen.getByRole('navigation', { name: 'Guide chapters' }));
     expect(
-      rail
-        .getByRole('button', { name: 'Sidebar, session rail and panes' })
-        .getAttribute('aria-current'),
+      rail.getByRole('button', { name: 'Sidebar and session rail' }).getAttribute('aria-current'),
     ).toBe('true');
-    const chapter = within(screen.getByRole('region', { name: 'Sidebar, session rail and panes' }));
-    ['Sidebar', 'Session rail', 'Levels', 'Fold the rail', 'Session tools'].forEach((term) =>
+    const chapter = within(screen.getByRole('region', { name: 'Sidebar and session rail' }));
+    ['Sidebar', 'Session rail', 'Levels', 'Session tools'].forEach((term) =>
       expect(chapter.getByText(term)).toBeDefined(),
     );
   });

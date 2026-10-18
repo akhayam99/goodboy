@@ -1,63 +1,101 @@
-import { Search } from 'lucide-react';
-import { EmptyLine, Eyebrow, SelectableRow } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { GUIDE_GROUP_LABEL, type GuideChapter, type GuideGroup } from '../guideChapters';
-
-const GROUP_ORDER: ReadonlyArray<GuideGroup> = ['start', 'task', 'reference'];
+import { EmptyLine, Eyebrow, ScrollFade, SelectableRow } from '@goodboy/ui';
+import { RailSearch, type RailSearchStep } from '../../../../../shared/components/RailSearch';
+import { pluralize } from '../../../../../shared/utils/pluralize';
+import { GUIDE_CHAPTERS, GUIDE_GROUP_LABEL, GUIDE_GROUP_ORDER } from '../guideChapters';
+import { queryWordsOf } from '../queryWordsOf';
+import type { GuideHit } from '../searchChapters';
+import { HitLabel } from './HitLabel';
 
 type Props = {
-  readonly chapters: ReadonlyArray<GuideChapter>;
-  readonly activeId: string | null;
+  readonly chapterId: string;
   readonly query: string;
+  readonly hits: ReadonlyArray<GuideHit>;
+  readonly activeHit: number;
   readonly onQueryChange: (query: string) => void;
-  readonly onSelect: (id: string) => void;
+  readonly onStep: (step: RailSearchStep) => void;
+  readonly onSubmit: () => void;
+  readonly onOpenChapter: (id: string) => void;
+  readonly onOpenHit: (hit: GuideHit) => void;
 };
 
-export const GuideRail = ({ chapters, activeId, query, onQueryChange, onSelect }: Props) => (
-  <nav className="flex flex-col gap-2 p-3" aria-label="Guide chapters">
-    <div className="flex h-7 items-center gap-2 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
-      <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-      <input
-        type="text"
-        value={query}
-        onChange={(event) => onQueryChange(event.target.value)}
-        placeholder="Search the guide"
-        aria-label="Search the guide"
-        autoComplete="off"
-        className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
-      />
-    </div>
-    {chapters.length === 0 ? (
-      <EmptyLine className="px-2 py-2 text-label text-faint-foreground">
-        No chapter mentions "{query.trim()}".
-      </EmptyLine>
-    ) : null}
-    {GROUP_ORDER.map((group) => {
-      const inGroup = chapters.filter((chapter) => chapter.group === group);
-      if (inGroup.length === 0) {
-        return null;
-      }
-      return (
-        <div key={group} className="flex flex-col gap-0.5">
-          <Eyebrow label={GUIDE_GROUP_LABEL[group]} className="px-2 py-1" />
-          {inGroup.map((chapter) => {
-            const Icon = CONCEPT_ICONS[chapter.concept];
-            const isActive = chapter.id === activeId;
-            return (
-              <SelectableRow
-                key={chapter.id}
-                selected={isActive}
-                ariaCurrent={isActive ? 'true' : undefined}
-                onClick={() => onSelect(chapter.id)}
-                className="items-center gap-2 px-3 py-2 text-body"
-              >
-                <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-                <span className="min-w-0 flex-1 truncate">{chapter.title}</span>
-              </SelectableRow>
-            );
-          })}
+export const GuideRail = ({
+  chapterId,
+  query,
+  hits,
+  activeHit,
+  onQueryChange,
+  onStep,
+  onSubmit,
+  onOpenChapter,
+  onOpenHit,
+}: Props) => {
+  const words = queryWordsOf({ query });
+  const isSearching = words.length > 0;
+  return (
+    <nav aria-label="Guide chapters" className="flex min-h-0 flex-1 flex-col gap-2 pt-3">
+      <div className="px-3">
+        <RailSearch
+          label="Search the guide"
+          value={query}
+          onChange={onQueryChange}
+          onSubmit={onSubmit}
+          onStep={onStep}
+        />
+      </div>
+      <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+        <div className="flex flex-col gap-2 px-3 pb-3">
+          {isSearching ? (
+            <div className="flex flex-col gap-0.5">
+              {hits.length === 0 ? (
+                <EmptyLine className="px-2 py-1 text-ui text-faint-foreground">
+                  No chapter matches "{query.trim()}".
+                </EmptyLine>
+              ) : (
+                <Eyebrow label={pluralize(hits.length, 'result')} className="px-2 py-1" />
+              )}
+              <ul aria-label="Guide results" className="flex flex-col gap-0.5 empty:hidden">
+                {hits.map((hit, index) => (
+                  <li key={hit.key}>
+                    <SelectableRow
+                      selected={index === activeHit}
+                      ariaLabel={`${hit.term ?? hit.chapterTitle}, ${hit.term === null ? 'Chapter' : hit.chapterTitle}`}
+                      onClick={() => onOpenHit(hit)}
+                      className="flex-col items-start gap-0 px-2 py-1"
+                    >
+                      <span className="w-full truncate text-ui text-foreground">
+                        <HitLabel text={hit.term ?? hit.chapterTitle} words={words} />
+                      </span>
+                      <span className="w-full truncate text-ui text-faint-foreground">
+                        {hit.term === null ? 'Chapter' : hit.chapterTitle}
+                      </span>
+                    </SelectableRow>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            GUIDE_GROUP_ORDER.map((group) => (
+              <div key={group} className="flex flex-col gap-0.5">
+                <Eyebrow label={GUIDE_GROUP_LABEL[group]} className="px-2 py-1" />
+                {GUIDE_CHAPTERS.filter((chapter) => chapter.group === group).map((chapter) => {
+                  const isActive = chapter.id === chapterId;
+                  return (
+                    <SelectableRow
+                      key={chapter.id}
+                      selected={isActive}
+                      ariaCurrent={isActive ? 'true' : undefined}
+                      onClick={() => onOpenChapter(chapter.id)}
+                      className="items-center px-2 py-1 text-ui"
+                    >
+                      <span className="min-w-0 flex-1 truncate">{chapter.title}</span>
+                    </SelectableRow>
+                  );
+                })}
+              </div>
+            ))
+          )}
         </div>
-      );
-    })}
-  </nav>
-);
+      </ScrollFade>
+    </nav>
+  );
+};
