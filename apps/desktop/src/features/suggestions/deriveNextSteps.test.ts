@@ -1003,10 +1003,28 @@ describe('deriveNextSteps eleven new kinds', () => {
       expect(ids).not.toContain(`mark-ready:${webMountId}`);
     });
 
-    it('gates nothing for a running agent without a mount', () => {
+    it('gates nothing for a running agent without a mount when the session has two mounts', () => {
       const ids = kindsFor({ agents: [agent({ status: 'running' })] });
       expect(ids).toContain(`fix-checks:${otherMountId}`);
       expect(ids).toContain(`mark-ready:${webMountId}`);
+    });
+
+    it('gates the only mount for a running agent without a mount', () => {
+      const ids = deriveNextSteps({
+        ...BASE_PARAMS,
+        agents: [agent({ status: 'running' })],
+        mounts: [mount({ pr: pr({ isDraft: true, checks: 'success' }) })],
+      }).map((candidate) => candidate.id);
+      expect(ids).not.toContain(`mark-ready:${webMountId}`);
+    });
+
+    it('hides fix checks of the only mount for a running agent without a mount', () => {
+      const ids = deriveNextSteps({
+        ...BASE_PARAMS,
+        agents: [agent({ status: 'running' })],
+        mounts: [mount({ pr: pr({ checks: 'failure' }) })],
+      }).map((candidate) => candidate.id);
+      expect(ids).not.toContain(`fix-checks:${webMountId}`);
     });
 
     it('gates nothing for an agent that is not running', () => {

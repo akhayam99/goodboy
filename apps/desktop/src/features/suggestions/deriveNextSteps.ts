@@ -467,7 +467,7 @@ export const deriveNextSteps = ({
     if (pr.checks !== 'failure' && progress?.chain !== 'fixed-pushed') {
       continue;
     }
-    if (isMountBusyOf({ agents, mountId: mount.mountId })) {
+    if (isMountBusyOf({ agents, mountId: mount.mountId, mountCount: mounts.length })) {
       continue;
     }
     suggestions.push(
@@ -484,7 +484,7 @@ export const deriveNextSteps = ({
   for (const mount of mounts) {
     if (
       !isFresh({ fetchedAt: mount.fetchedAt, now }) ||
-      isMountBusyOf({ agents, mountId: mount.mountId })
+      isMountBusyOf({ agents, mountId: mount.mountId, mountCount: mounts.length })
     ) {
       continue;
     }

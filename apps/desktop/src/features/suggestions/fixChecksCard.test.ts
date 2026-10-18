@@ -103,10 +103,12 @@ describe('the failing-checks card by chain state', () => {
   it('waits while an agent runs on the same branch', () => {
     expect(cardOf({ agents: [agent({ status: 'running', mountId })] })).toBeUndefined();
   });
-  it('stays while an agent runs on another branch or on none', () => {
+  it('stays while an agent runs on another branch', () => {
     const other: MountId = JSON.parse(JSON.stringify('mount-other'));
     expect(cardOf({ agents: [agent({ status: 'running', mountId: other })] })).toBeDefined();
-    expect(cardOf({ agents: [agent({ status: 'running' })] })).toBeDefined();
+  });
+  it('hides while an agent without a mount runs in a one mount session', () => {
+    expect(cardOf({ agents: [agent({ status: 'running' })] })).toBeUndefined();
   });
   it.each([
     { name: 'analyzing', progress: { chain: 'analyzing' as const } },
