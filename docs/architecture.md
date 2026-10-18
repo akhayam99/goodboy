@@ -59,8 +59,15 @@ cached: Homebrew, `~/.local/bin`, `~/.cargo/bin`, `~/.volta/bin`, `~/.asdf/shims
 probe runs in its own session and is killed and reaped on its deadline
 (`apps/desktop/src-tauri/src/proc/probe.rs`).
 
-`login_shell()` is the one place that decides which shell to use. The built-in
-terminal and the environment check always agree because both ask it.
+`platform::shell::discover()` (`apps/desktop/src-tauri/src/platform/shell.rs`)
+is the one place that decides which shell a terminal runs. On macOS and Linux
+it lists `$SHELL`, the usual candidates and `/etc/shells`. On Windows it lists
+PowerShell 7, Windows PowerShell, `%ComSpec%`, Git Bash (from the
+`GitForWindows` registry key, then `git` on `PATH`) and each WSL distribution
+from the user's `Lxss` registry key, without starting `wsl.exe`. Each shell is
+a `ShellKind` with its own arguments, so PowerShell never receives `-l -i`.
+When a shell fails to start the terminal tries the next default one and its
+first line names the shell that opened and why the first did not.
 
 If a push fails because a variable is missing, do not skip hooks with
 `git push --no-verify`. Pass the environment through instead. The login shell

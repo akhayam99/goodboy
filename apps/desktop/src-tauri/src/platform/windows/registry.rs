@@ -4,7 +4,7 @@ use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use windows_sys::Win32::Foundation::ERROR_SUCCESS;
 use windows_sys::Win32::System::Registry::{
     RegCloseKey, RegEnumKeyExW, RegGetValueW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER,
-    HKEY_LOCAL_MACHINE, KEY_READ, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_SZ,
+    HKEY_LOCAL_MACHINE, KEY_READ, RRF_RT_REG_SZ,
 };
 
 #[derive(Clone, Copy)]
@@ -30,7 +30,7 @@ fn wide(text: &str) -> Vec<u16> {
 pub fn read_string(root: Root, subkey: &str, value: &str) -> Option<String> {
     let subkey = wide(subkey);
     let value = wide(value);
-    let flags = RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ;
+    let flags = RRF_RT_REG_SZ;
     let mut bytes: u32 = 0;
     let status = unsafe {
         RegGetValueW(

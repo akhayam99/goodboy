@@ -10,6 +10,7 @@ use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
+use crate::platform::shell::{self, ShellProfile};
 use crate::pty_ring::{
     empty_snapshot, new_shared_ring, push_shared, snapshot_of, ExitedStore, OutputSnapshot,
     SharedRing,
@@ -149,8 +150,58 @@ impl TerminalError {
     }
 }
 
-fn login_shell() -> String {
-    crate::path_env::login_shell()
+fn default_cwd() -> String {
+    crate::platform::paths::home_dir()
+        .map(|home| home.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "/".to_string())
+}
+
+fn shell_command(
+    profile: &ShellProfile,
+    cwd: &str,
+) -> (CommandBuilder, crate::aux_spawn::SpawnTag) {
+    let mut cmd = CommandBuilder::new(&profile.program);
+    for arg in profile.interactive_args() {
+        cmd.arg(arg);
+    }
+    cmd.cwd(cwd);
+    for (key, value) in std::env::vars() {
+        cmd.env(key, value);
+    }
+    cmd.env("PATH", crate::path_env::resolved_path());
+    cmd.env("TERM", "xterm-256color");
+    cmd.env("COLORTERM", "truecolor");
+    if profile.exports_shell_variable() {
+        cmd.env("SHELL", &profile.program);
+    }
+    let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Terminal);
+    (cmd, tag)
+}
+
+fn fallback_notice(failures: &[String], started: &ShellProfile) -> Option<Vec<u8>> {
+    if failures.is_empty() {
+        return None;
+    }
+    let reasons = failures.join(". ");
+    Some(
+        format!(
+            "\x1b[2m{reasons}. Opened {} instead.\x1b[0m\r\n",
+            started.label
+        )
+        .into_bytes(),
+    )
+}
+
+fn emit_output<R: Runtime>(app: &AppHandle<R>, ring: &SharedRing, session_id: &str, bytes: &[u8]) {
+    let offset = push_shared(ring, bytes);
+    let _ = app.emit(
+        "terminal-output",
+        TerminalOutputPayload {
+            session_id: session_id.to_string(),
+            data: STANDARD.encode(bytes),
+            offset,
+        },
+    );
 }
 
 #[cfg(unix)]
@@ -245,6 +296,7 @@ pub async fn terminal_open(
         exited: Arc::clone(&registry.1),
         session_id,
         cwd,
+        shell_id: None,
         cols,
         rows,
     };
@@ -267,6 +319,7 @@ struct TerminalSpawnRequest<R: Runtime> {
     exited: Arc<ExitedStore>,
     session_id: String,
     cwd: Option<String>,
+    shell_id: Option<String>,
     cols: u16,
     rows: u16,
 }
@@ -279,6 +332,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
         exited,
         session_id: session_id_clone,
         cwd,
+        shell_id,
         cols,
         rows,
     } = request;
@@ -299,29 +353,30 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
         })
         .map_err(|e| TerminalError::Io(e.to_string()))?;
 
-    let shell = login_shell();
-    let mut cmd = CommandBuilder::new(&shell);
-    cmd.arg("-l");
-    cmd.arg("-i");
-
-    let effective_cwd =
-        cwd.unwrap_or_else(|| std::env::var("HOME").unwrap_or_else(|_| "/".to_string()));
-    cmd.cwd(&effective_cwd);
-
-    for (key, value) in std::env::vars() {
-        cmd.env(key, value);
+    let effective_cwd = cwd.unwrap_or_else(default_cwd);
+    let attempts = shell::launch_order(&shell::discover(), shell_id.as_deref());
+    let mut failures: Vec<String> = Vec::new();
+    let mut started = None;
+    for profile in attempts {
+        let (cmd, tag) = shell_command(&profile, &effective_cwd);
+        match pair.slave.spawn_command(cmd) {
+            Ok(child) => {
+                started = Some((child, tag, profile));
+                break;
+            }
+            Err(error) => failures.push(format!("{} could not start: {error}", profile.label)),
+        }
     }
-    cmd.env("PATH", crate::path_env::resolved_path());
-    cmd.env("TERM", "xterm-256color");
-    cmd.env("COLORTERM", "truecolor");
-    cmd.env("SHELL", &shell);
-    let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Terminal);
-
-    let child = pair
-        .slave
-        .spawn_command(cmd)
-        .map_err(|e| TerminalError::Io(e.to_string()))?;
     drop(pair.slave);
+    let Some((child, tag, profile)) = started else {
+        if failures.is_empty() {
+            return Err(TerminalError::Io(
+                "No shell was found on this computer".to_string(),
+            ));
+        }
+        return Err(TerminalError::Io(failures.join(". ")));
+    };
+    let notice = fallback_notice(&failures, &profile);
 
     let reader = pair
         .master
@@ -362,6 +417,9 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     {
         push_shared(&ring, &saved);
     }
+    if let Some(notice) = notice.as_deref() {
+        emit_output(&app, &ring, &session_id_clone, notice);
+    }
     exited.forget(&session_id_clone);
     registry_arc
         .lock()
@@ -386,18 +444,7 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
         loop {
             match reader.read(&mut buf) {
                 Ok(0) | Err(_) => break,
-                Ok(n) => {
-                    let offset = push_shared(&ring, &buf[..n]);
-                    let encoded = STANDARD.encode(&buf[..n]);
-                    let _ = app_r.emit(
-                        "terminal-output",
-                        TerminalOutputPayload {
-                            session_id: sid.clone(),
-                            data: encoded,
-                            offset,
-                        },
-                    );
-                }
+                Ok(n) => emit_output(&app_r, &ring, &sid, &buf[..n]),
             }
         }
 
@@ -738,6 +785,7 @@ mod tests {
             exited: Arc::clone(&registry.1),
             session_id: "session-7::t1".to_string(),
             cwd: Some(cwd.clone()),
+            shell_id: None,
             cols: 80,
             rows: 24,
         })
@@ -773,6 +821,7 @@ mod tests {
             exited: Arc::clone(&registry.1),
             session_id: "session-9::t1".to_string(),
             cwd: Some(cwd),
+            shell_id: None,
             cols: 80,
             rows: 24,
         })
@@ -822,6 +871,7 @@ mod tests {
             exited: Arc::clone(&registry.1),
             session_id: "session-11::t1".to_string(),
             cwd: Some(cwd),
+            shell_id: None,
             cols: 80,
             rows: 24,
         })
@@ -848,6 +898,7 @@ mod tests {
             exited: Arc::clone(&registry.1),
             session_id: "session-12::t1".to_string(),
             cwd: Some("/mock/harborline/payments-api/gone".to_string()),
+            shell_id: None,
             cols: 80,
             rows: 24,
         });
@@ -861,12 +912,28 @@ mod tests {
     }
 
     #[test]
-    fn login_shell_returns_existing_executable() {
-        let shell = login_shell();
-        assert!(
-            std::path::Path::new(&shell).exists(),
-            "login_shell must return an existing path, got: {}",
-            shell
-        );
+    fn the_first_shell_to_try_exists() {
+        let order = shell::launch_order(&shell::discover(), None);
+        let first = order.first().expect("at least one shell to try");
+        assert!(first.program.exists(), "got: {:?}", first.program);
+    }
+
+    #[test]
+    fn a_fallback_says_which_shell_opened_and_why_the_first_did_not() {
+        let started = ShellProfile {
+            id: "powershell".into(),
+            kind: shell::ShellKind::WindowsPowerShell,
+            label: "Windows PowerShell".into(),
+            program: PathBuf::from("powershell.exe"),
+            distro: None,
+            is_default: false,
+        };
+        let failures = vec!["PowerShell 7 could not start: access denied".to_string()];
+
+        let notice = String::from_utf8(fallback_notice(&failures, &started).unwrap()).unwrap();
+
+        assert!(notice.contains("PowerShell 7 could not start: access denied"));
+        assert!(notice.contains("Opened Windows PowerShell instead."));
+        assert!(fallback_notice(&[], &started).is_none());
     }
 }

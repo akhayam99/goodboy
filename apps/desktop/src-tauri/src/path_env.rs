@@ -3,7 +3,7 @@ use std::process::Command;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use crate::platform::paths;
+use crate::platform::{paths, shell};
 use crate::proc::probe;
 
 struct Slot<T: 'static> {
@@ -87,21 +87,6 @@ pub fn command_with_login_env(binary: &str) -> Command {
     cmd
 }
 
-pub fn login_shell() -> String {
-    if let Ok(shell) = std::env::var("SHELL") {
-        let shell = shell.trim();
-        if !shell.is_empty() && std::path::Path::new(shell).exists() {
-            return shell.to_string();
-        }
-    }
-    for candidate in shell_candidates() {
-        if std::path::Path::new(candidate).exists() {
-            return (*candidate).to_string();
-        }
-    }
-    "/bin/sh".to_string()
-}
-
 #[cfg(windows)]
 fn compute_path() -> (String, bool) {
     let inherited = std::env::var("PATH").unwrap_or_default();
@@ -130,35 +115,15 @@ fn compute_path() -> (String, bool) {
     (merged, is_complete)
 }
 
-#[cfg(target_os = "macos")]
-fn shell_candidates() -> &'static [&'static str] {
-    &["/bin/zsh", "/bin/bash", "/bin/sh"]
-}
-
-#[cfg(target_os = "linux")]
-fn shell_candidates() -> &'static [&'static str] {
-    &["/bin/bash", "/bin/zsh", "/bin/sh"]
-}
-
-#[cfg(target_os = "windows")]
-fn shell_candidates() -> &'static [&'static str] {
-    &[]
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-fn shell_candidates() -> &'static [&'static str] {
-    &[]
-}
-
 const SHELL_PROBE_SCRIPT: &str =
     "printf 'GBPATH:%s\\n' \"$PATH\"; printf 'GBNPM:%s\\n' \"$(npm prefix -g 2>/dev/null)\"";
 
 fn probe_login_shell() -> (Option<String>, Option<String>) {
-    for sh in shell_candidates() {
+    for sh in shell::posix_candidates() {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
-        let args: &[&str] = if *sh == "/bin/sh" {
+        let args: &[&str] = if *sh == shell::POSIX_FALLBACK {
             &["-lc", SHELL_PROBE_SCRIPT]
         } else {
             &["-ilc", SHELL_PROBE_SCRIPT]
@@ -223,11 +188,11 @@ fn parse_env(raw: &str) -> Vec<(String, String)> {
 fn probe_login_shell_env() -> Option<String> {
     const LOGIN_ARGS: &[&str] = &["-ilc", "env"];
     const POSIX_ARGS: &[&str] = &["-lc", "env"];
-    for sh in shell_candidates() {
+    for sh in shell::posix_candidates() {
         if !std::path::Path::new(sh).exists() {
             continue;
         }
-        let args = if *sh == "/bin/sh" {
+        let args = if *sh == shell::POSIX_FALLBACK {
             POSIX_ARGS
         } else {
             LOGIN_ARGS
