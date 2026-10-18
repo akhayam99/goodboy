@@ -42,7 +42,7 @@ export const MODE_COPY: Record<PickerMode, ModeCopy> = {
   acceptEdits: {
     mode: 'acceptEdits',
     label: 'Edits allowed',
-    promise: 'Changes files in your projects. Asks before anything else.',
+    promise: 'Changes files in your folders. Asks before anything else.',
     short: 'Edits files, asks for the rest.',
     tone: 'warning',
     icon: PencilLine,

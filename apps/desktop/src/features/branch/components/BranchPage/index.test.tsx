@@ -259,9 +259,7 @@ describe('Branch page header and sections', () => {
 
     expect(document.querySelectorAll('[data-branch-primary]').length).toBeLessThanOrEqual(1);
     const names = screen.getAllByRole('button').map((button) => button.textContent ?? '');
-    expect(names.filter((name) => /^(Rewrite history|Open in Review|PR #\d+)/.test(name))).toEqual(
-      [],
-    );
+    expect(names.filter((name) => /^(Edit commits|Open in Review|PR #\d+)/.test(name))).toEqual([]);
   });
 
   it('switches sections in the address without adding history', async () => {

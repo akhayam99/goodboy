@@ -37,6 +37,7 @@ const actions = (): ColumnActions => ({
   openNewChat: vi.fn(),
   openNewTerminal: vi.fn(),
   openMonitoring: vi.fn(),
+  openImpact: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),
@@ -101,7 +102,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 describe('SideColumn', () => {
-  it('stacks New session, the five doors, the sessions, then Settings and the Goodboy row, the toggle left to the top bar', () => {
+  it('stacks New session, the seven doors, the sessions, then Settings and the Goodboy row, the toggle left to the top bar', () => {
     mountColumn();
     const nav = navLayer();
 
@@ -109,7 +110,16 @@ describe('SideColumn', () => {
     expect(within(nav).getAllByRole('button')[0]?.getAttribute('aria-label')).toMatch(
       /^New session/,
     );
-    expect(doorNames(nav)).toEqual(['board', 'inbox', 'chat', 'workflows', 'terminal', 'settings']);
+    expect(doorNames(nav)).toEqual([
+      'board',
+      'inbox',
+      'chat',
+      'workflows',
+      'terminal',
+      'impact',
+      'monitoring',
+      'settings',
+    ]);
     expect(nav.querySelector('[data-column-sessions]')).not.toBeNull();
     const foot = nav.querySelector('[data-column-foot]') as HTMLElement;
     expect(within(foot).getByRole('button', { name: 'Settings' })).toBeDefined();
@@ -140,10 +150,25 @@ describe('SideColumn', () => {
     expect(screen.getByRole('button', { name: 'New terminal' })).toBeDefined();
   });
 
-  it('has no Monitoring door: Monitoring lives in the top bar', () => {
+  it('has a Monitoring door after Impact that opens Monitoring', () => {
+    const doors = actions();
+    mountColumn({ doors });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Monitoring/ }));
+
+    expect(doors.openMonitoring).toHaveBeenCalledOnce();
+    expect(doorNames(navLayer()).slice(-3)).toEqual(['impact', 'monitoring', 'settings']);
+  });
+
+  it('names the pinned port that is down on the Monitoring door, with the warning dot', () => {
+    useAppStore.setState({
+      monitorSnapshot: { listeners: [], processes: [], takenAt: 1, isPlatformSupported: true },
+      monitorPinned: [{ port: 9000, description: 'Mock API' }],
+    });
     mountColumn();
 
-    expect(screen.queryByRole('button', { name: /^Monitoring/ })).toBeNull();
+    const door = screen.getByRole('button', { name: 'Monitoring, pinned port :9000 is down' });
+    expect(door.querySelector('[data-door-signal="warning"]')).not.toBeNull();
   });
 
   it('leaves the Terminal row plain when nothing runs', () => {
@@ -179,10 +204,10 @@ describe('SideColumn', () => {
     ['chat', ['chat']],
     ['workflows', ['workflows']],
     ['terminal', ['terminal']],
-    ['monitoring', []],
+    ['monitoring', ['monitoring']],
     ['settings', ['settings']],
     ['new', []],
-    ['impact', []],
+    ['impact', ['impact']],
     [null, []],
   ] as const)('marks only the %s door current', (place, expected) => {
     mountColumn({ place });
@@ -422,7 +447,7 @@ describe('ColumnRail', () => {
     expect(document.querySelector('[data-door-signal]')).toBeNull();
   });
 
-  it('keeps every door at 44px: New, the five doors, then Settings, the bug and the mark', () => {
+  it('keeps every door at 44px: New, the seven doors, then Settings, the bug and the mark', () => {
     const { container } = mountRail();
     const rail = container.querySelector('[data-column-rail]') as HTMLElement;
 
@@ -435,6 +460,8 @@ describe('ColumnRail', () => {
       'chat',
       'workflows',
       'terminal',
+      'impact',
+      'monitoring',
       'settings',
     ]);
     expect(within(rail).getByRole('button', { name: 'Report a bug' })).toBeDefined();

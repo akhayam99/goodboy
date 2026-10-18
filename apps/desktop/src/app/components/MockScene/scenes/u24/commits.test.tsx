@@ -47,7 +47,7 @@ const renderScene = ({ name }: { readonly name: keyof typeof U24_COMMITS_SCENES 
 };
 
 describe('the u24 commits scenes', () => {
-  it('draws one column at rest with the hint line and no plan chrome', async () => {
+  it('draws one column at rest with the header help and no plan chrome', async () => {
     renderScene({ name: 'commits-rest' });
 
     await screen.findByRole('list', { name: 'Commits' }, { timeout: 4_000 });
@@ -56,9 +56,9 @@ describe('the u24 commits scenes', () => {
     expect(screen.getByText('Based on main')).toBeDefined();
     expect(screen.queryByText(/is here now/)).toBeNull();
     expect(
-      screen.getByText('Drag a commit to move it, drop it on another to fold it in.'),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Keys' })).toBeDefined();
+      screen.queryByText('Drag a commit to move it, drop it on another to fold it in.'),
+    ).toBeNull();
+    expect(screen.getByRole('button', { name: 'Commits help' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Backups' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Legend' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Planned changes' })).toBeNull();

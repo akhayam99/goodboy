@@ -84,7 +84,7 @@ describe('taskGroupsOf', () => {
     expect(summary('project')).toEqual([
       ['ledger-core', ['linear:2', 'linear:1']],
       ['notify-relay', ['github:1']],
-      ['No project', ['linear:3', 'sentry:1']],
+      ['No folder', ['linear:3', 'sentry:1']],
     ]);
   });
 

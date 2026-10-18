@@ -35,7 +35,7 @@ const project = ({ id, name }: { readonly id: string; readonly name: string }) =
 });
 
 const openPicker = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
 };
 
 describe('MountProjectAction', () => {
@@ -55,18 +55,10 @@ describe('MountProjectAction', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
   });
 
-  it('tells the workspace has no projects at all', () => {
-    let settingsDetail: unknown = null;
-    const onOpenWorkspaceSettings = vi.fn((event: Event) => {
-      if (!(event instanceof CustomEvent)) {
-        return;
-      }
-      settingsDetail = event.detail;
-    });
-    window.addEventListener('goodboy:open-settings', onOpenWorkspaceSettings);
+  it('tells the workspace has no projects and offers to connect one in the same picker', () => {
     store.projects = [];
     render(
       <MountProjectAction
@@ -77,21 +69,12 @@ describe('MountProjectAction', () => {
     );
     openPicker();
 
-    expect(screen.getByText('Add a project in workspace settings to use it here.')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Add workspace project' }));
-    expect(onOpenWorkspaceSettings).toHaveBeenCalledOnce();
-    expect(settingsDetail).toEqual({ scope: 'workspace', section: 'projects' });
-    window.removeEventListener('goodboy:open-settings', onOpenWorkspaceSettings);
+    expect(screen.getByText('This workspace has no folder yet.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Add workspace project' })).toBeNull();
   });
 
-  it('keeps Add project a button whose popover says every project is already in', () => {
-    let settingsDetail: unknown = null;
-    const onOpenWorkspaceSettings = (event: Event) => {
-      if (event instanceof CustomEvent) {
-        settingsDetail = event.detail;
-      }
-    };
-    window.addEventListener('goodboy:open-settings', onOpenWorkspaceSettings);
+  it('says every project is already in and still offers to connect a new one', () => {
     store.projects = [project({ id: 'api', name: 'API' })];
     store.sessionProjectMounts = {
       'session-1': [{ mountId: 'mount-1', projectId: 'api' }],
@@ -106,11 +89,8 @@ describe('MountProjectAction', () => {
 
     openPicker();
     expect(screen.queryByRole('button', { name: 'Project actions' })).toBeNull();
-    expect(screen.getByText('Every workspace project is already in this session.')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Add workspace project' }));
-
-    expect(settingsDetail).toEqual({ scope: 'workspace', section: 'projects' });
-    window.removeEventListener('goodboy:open-settings', onOpenWorkspaceSettings);
+    expect(screen.getByText('Every workspace folder is already in this session.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
   });
 
   it('lists an unmounted project for mounting', () => {

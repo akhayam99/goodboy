@@ -3,7 +3,6 @@ import type { WorkspaceId, WorkspaceProfile } from '@goodboy/types';
 import { Band } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { ProfileForm } from '../../../../shared/components/ProfileForm';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
 import { WorkspaceLearnings } from '../../../../shared/components/Learnings/WorkspaceLearnings';
 
@@ -42,8 +41,7 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
       inset="content"
       label="Profile"
       ariaLabel="Profile"
-      hint="What agents already know about you and how you like to work. It stays in this workspace."
-      icon={<CONCEPT_ICONS.profile size={ICON_SIZE.row} aria-hidden />}
+      hint="What agents know about you and how you work, in this workspace."
       headingLevel={2}
     >
       <ProfileForm

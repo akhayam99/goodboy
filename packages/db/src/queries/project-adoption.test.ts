@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { ProjectId, WorkspaceId } from '@goodboy/types';
+import { brandId, type ProjectId, type WorkspaceId } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { describeProjectAdoption, moveProjectToWorkspace } from './project-adoption';
+import {
+  countRunningAdoptionAgents,
+  describeProjectAdoption,
+  moveProjectToWorkspace,
+} from './project-adoption';
 
 const target = 'ws-target' as WorkspaceId;
 const source = 'ws-source' as WorkspaceId;
@@ -130,6 +134,58 @@ describe('describeProjectAdoption', () => {
     const db = await seed();
 
     expect(await describeProjectAdoption({ db, projectId: 'ghost' as ProjectId })).toBeNull();
+  });
+});
+
+type AgentParams = {
+  readonly db: Db;
+  readonly id: string;
+  readonly sessionId: string;
+  readonly status: string;
+};
+
+const addAgent = async ({ db, id, sessionId, status }: AgentParams) => {
+  await db.execute(
+    'INSERT INTO agents (id, session_id, ordinal, name, status) VALUES (?, ?, 0, ?, ?)',
+    [id, sessionId, id, status],
+  );
+};
+
+describe('countRunningAdoptionAgents', () => {
+  it('counts only the running agents of sessions that move with the folder', async () => {
+    const db = await seed();
+    await addProject({ db, id: 'proj-a', workspaceId: source });
+    await addProject({ db, id: 'proj-b', workspaceId: source });
+    await addSession({ db, id: 'sess-a', workspaceId: source, activeProjectId: 'proj-a' });
+    await addSession({ db, id: 'sess-mount', workspaceId: source });
+    await addMount({ db, sessionId: 'sess-mount', projectId: 'proj-a' });
+    await addSession({ db, id: 'sess-b', workspaceId: source, activeProjectId: 'proj-b' });
+    await addAgent({ db, id: 'agent-1', sessionId: 'sess-a', status: 'running' });
+    await addAgent({ db, id: 'agent-2', sessionId: 'sess-mount', status: 'running' });
+    await addAgent({ db, id: 'agent-3', sessionId: 'sess-a', status: 'completed' });
+    await addAgent({ db, id: 'agent-4', sessionId: 'sess-b', status: 'running' });
+    const projectId = brandId<ProjectId>({ value: 'proj-a' });
+    const info = await describeProjectAdoption({ db, projectId });
+
+    expect(info?.isShell).toBe(false);
+    expect(info === null ? null : await countRunningAdoptionAgents({ db, projectId, info })).toBe(
+      2,
+    );
+  });
+
+  it('counts every running agent of a shell workspace, since all its sessions move', async () => {
+    const db = await seed();
+    await addProject({ db, id: 'proj-s', workspaceId: source });
+    await addSession({ db, id: 'sess-1', workspaceId: source });
+    await addSession({ db, id: 'sess-gone', workspaceId: source, deleted: true });
+    await addAgent({ db, id: 'agent-1', sessionId: 'sess-1', status: 'running' });
+    await addAgent({ db, id: 'agent-2', sessionId: 'sess-gone', status: 'running' });
+    const projectId = brandId<ProjectId>({ value: 'proj-s' });
+    const info = await describeProjectAdoption({ db, projectId });
+
+    expect(info === null ? null : await countRunningAdoptionAgents({ db, projectId, info })).toBe(
+      1,
+    );
   });
 });
 

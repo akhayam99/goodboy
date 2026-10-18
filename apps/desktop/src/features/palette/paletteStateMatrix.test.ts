@@ -22,6 +22,9 @@ const LIVE: SessionFacts = {
   session: aSession({ id: SESSION_ID, goal: 'Speed up the payout export' }),
   sessionId: SESSION_ID,
   title: 'Speed up the payout export',
+  behindMountIds: [],
+  rebaseAllRunId: null,
+  isRebaseAllRunning: false,
   isArchived: false,
   isPinned: false,
   isRefreshing: false,
@@ -35,6 +38,7 @@ const LIVE: SessionFacts = {
   mounts: [],
   worktreePaths: ['/worktrees/ledger-core'],
   prUrl: 'https://example.test/harborline/ledger-core/pull/318',
+  runningAgentCount: 0,
 };
 
 const AGENT: AgentFacts = {
@@ -186,7 +190,7 @@ describe('palette verbs follow the session state', () => {
       'Delete',
     ]);
     expect(sessionView({ facts, query: 'files' })).toEqual([
-      'Open files (Add a project to this session first)',
+      'Open files (Add a folder to this session first)',
     ]);
     expect(sessionView({ facts, query: 'editor' })).toEqual([
       'Open in editor (This session has no worktree yet)',

@@ -147,11 +147,9 @@ export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
   terminal: 'full',
 };
 
-const BAND_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['impact', 'whatsNew', 'release']);
-
 export const frameGeometryOf = ({ page }: FramePageParams): FrameGeometry => {
   const type = PAGE_FRAME[page];
-  const bandHeight = BAND_PAGES.has(page) ? FRAME_BAND_PX : FRAME_PAGE_HEADER_INSET_PX;
+  const bandHeight = FRAME_PAGE_HEADER_INSET_PX;
   return {
     type,
     bandHeight,

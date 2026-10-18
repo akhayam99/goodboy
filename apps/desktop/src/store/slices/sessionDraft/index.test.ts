@@ -193,8 +193,8 @@ describe('session draft slice', () => {
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
-      goal: 'Scout the project',
-      title: 'Scout the project',
+      goal: 'Scout the folder',
+      title: 'Scout the folder',
       omitGoalSlot: true,
     });
   });
@@ -235,8 +235,8 @@ describe('session draft slice', () => {
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
-      goal: 'Implement the project',
-      title: 'Implement the project',
+      goal: 'Implement the folder',
+      title: 'Implement the folder',
       omitGoalSlot: true,
     });
   });

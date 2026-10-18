@@ -53,8 +53,8 @@ export const GoodboyIgnoreCard = ({ workspaceId }: Props) => {
     <Notice
       tone="info"
       placement="banner"
-      title={`Git doesn't ignore .goodboy in ${pendingProjects.length} projects`}
-      body="Goodboy keeps worktrees and attachments in a .goodboy folder inside each project. Right now it hides it on this Mac only."
+      title={`Git doesn't ignore .goodboy in ${pendingProjects.length} folders`}
+      body="Goodboy keeps worktrees and attachments in a .goodboy directory inside each folder. Right now it hides it on this Mac only."
       actions={
         <div className="flex items-center gap-2">
           <Button
@@ -63,10 +63,10 @@ export const GoodboyIgnoreCard = ({ workspaceId }: Props) => {
             onClick={() => setIsDismissed(true)}
             disabled={isSaving}
           >
-            Choose per project
+            Choose per folder
           </Button>
           <Button variant="primary" size="sm" onClick={() => void onSaveAll()} isBusy={isSaving}>
-            {`Save for ${pendingProjects.length} projects`}
+            {`Save for ${pendingProjects.length} folders`}
           </Button>
         </div>
       }

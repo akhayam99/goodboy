@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Band, FieldRow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SETTING_REPO_CHECK_MINUTES } from '../../settings';
 import { repoCheckMinutesOf } from '../../../workspace/repoCheckMinutesOf';
 
@@ -47,9 +46,8 @@ export const RepoCheckBand = () => {
   return (
     <Band
       inset="content"
-      label="Repositories"
+      label="Git"
       hint="Fetches origin in the background. Goodboy never pulls by itself."
-      icon={<CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden />}
       headingLevel={2}
     >
       <div className="flex flex-col">

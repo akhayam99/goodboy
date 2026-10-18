@@ -329,7 +329,7 @@ describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#4
     const agentId = state.selectedAgentId[session.id];
     expect(agentId).toBeDefined();
     const modelOverride = state.agentModelOverride[agentId!];
-    expect(modelOverride).toBe('haiku-4.5');
+    expect(modelOverride).toBe('haiku-5.5');
   });
 
   it('auto-runs the first workflow agent by triggering a turn (sendTurn fires with promptPrefix)', async () => {
@@ -358,7 +358,7 @@ describe('createSession, AGENT_KIND_DEFAULTS applied to first workflow agent (#4
     const callArgs = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(typeof callArgs['prompt']).toBe('string');
     expect(String(callArgs['prompt'])).toContain('Survey the area');
-    expect(callArgs['model']).toBe('claude-haiku-4-5');
+    expect(callArgs['model']).toBe('claude-haiku-5-5');
   });
 
   it('reaches the provider spawn from a scratch standpoint when no project is mounted', async () => {

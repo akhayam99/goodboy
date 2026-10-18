@@ -35,11 +35,11 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
       <Notice
         tone="success"
         placement="inline"
-        title={`Moved ${completed.length} ${completed.length === 1 ? 'project' : 'projects'}. ${sessionFolderCount} session folders are back.`}
+        title={`Moved ${completed.length} ${completed.length === 1 ? 'folder' : 'folders'}. ${sessionFolderCount} session folders are back.`}
         detail={
           repairFailures === 0
             ? null
-            : `Git links could not be repaired for ${repairFailures} projects.`
+            : `Git links could not be repaired for ${repairFailures} folders.`
         }
         actions={
           <Button variant="secondary" size="sm" onClick={() => void undo()}>
@@ -56,7 +56,7 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
     >
       <div className="flex flex-col gap-1">
         <h3 id="locate-moved-projects" className="text-heading text-foreground">
-          Locate moved projects
+          Locate moved folders
         </h3>
         <p className="text-label text-muted-foreground">
           Confirm the folders Goodboy should reconnect. Different repositories stay unchanged.
@@ -79,7 +79,7 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
         </p>
       )}
       <p className="text-label text-muted-foreground">
-        Git links get repaired. Session folders move with their project.
+        Git links get repaired. Session folders move with it.
       </p>
       <FormActions>
         <Button
@@ -98,10 +98,10 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
           size="sm"
           disabled={selectedCount === 0}
           isBusy={isBusy}
-          busyLabel="Moving projects…"
+          busyLabel="Moving folders…"
           onClick={() => void relocate()}
         >
-          Move {selectedCount} {selectedCount === 1 ? 'project' : 'projects'}
+          Move {selectedCount} {selectedCount === 1 ? 'folder' : 'folders'}
         </Button>
       </FormActions>
     </section>

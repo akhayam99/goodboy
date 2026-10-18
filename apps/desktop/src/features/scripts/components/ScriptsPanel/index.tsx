@@ -391,7 +391,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
           placement="inline"
           role="alert"
           title={`Couldn't read the scripts of ${group.projectName}`}
-          body={summary ?? 'Goodboy could not read this project.'}
+          body={summary ?? 'Goodboy could not read this folder.'}
           detail={detail}
           actions={
             <Button
@@ -729,7 +729,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId, onClose }: Props) => {
             headingLevel={3}
             icon={CONCEPT_ICONS.scripts}
             title="No scripts yet"
-            description="Scripts run inside a project of this session."
+            description="Scripts run inside a folder of this session."
             action={
               <MountProjectAction
                 sessionId={sessionId}

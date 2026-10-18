@@ -1,4 +1,5 @@
-import { AnchoredPopover, EmptyLine, Button, ScrollFade, Tooltip, useDropdown } from '@goodboy/ui';
+import { EmptyLine, IconButton, ScrollFade, Tooltip, useEscapeLayer } from '@goodboy/ui';
+import { X } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../../../../store/store';
 import { useNow } from '../../../../../../../shared/hooks/useNow';
@@ -8,6 +9,7 @@ import { formatDateTime } from '../../../../../../../shared/utils/time/formatDat
 type Props = {
   readonly providerId: ProviderId;
   readonly label: string;
+  readonly onClose: () => void;
 };
 
 type ReasonParams = {
@@ -40,56 +42,51 @@ const reasonInWords = ({ reason, label }: ReasonParams): string => {
   return reason.charAt(0).toUpperCase() + reason.slice(1).replaceAll('_', ' ');
 };
 
-export const ConnectionHistory = ({ providerId, label }: Props) => {
+export const ConnectionHistory = ({ providerId, label, onClose }: Props) => {
   const events = useAppStore((state) => state.providerHealth[providerId].events);
-  const dropdown = useDropdown({ align: 'end', width: 'w-96', expectedWidth: 384, maxWidth: 384 });
-  const now = useNow(30_000, dropdown.open);
+  const now = useNow(30_000);
+  useEscapeLayer(onClose);
   return (
-    <AnchoredPopover
-      dropdown={dropdown}
-      anchorClassName="flex"
-      className="w-96"
-      trigger={
-        <Button variant="ghost" size="sm" aria-expanded={dropdown.open} onClick={dropdown.toggle}>
-          History
-        </Button>
-      }
+    <section
+      aria-label={`${label} connection history`}
+      className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-3"
     >
-      <section aria-label={`${label} connection history`} className="flex flex-col gap-3 p-3">
-        <h3 className="text-label text-foreground">History of changes</h3>
-        {events.length === 0 ? (
-          <EmptyLine>No changes since Goodboy started.</EmptyLine>
-        ) : (
-          <ScrollFade className="max-h-80">
-            <ol className="flex flex-col gap-3">
-              {events
-                .slice(-20)
-                .reverse()
-                .map((event, index) => (
-                  <li key={`${event.at}-${index}`} className="flex flex-col gap-1 text-label">
-                    <div className="flex items-center justify-between gap-3 text-muted-foreground">
-                      <span>
-                        {event.from.replaceAll('_', ' ')} → {event.to.replaceAll('_', ' ')}
-                      </span>
-                      <Tooltip content={formatDateTime({ at: event.at, hasYear: true })}>
-                        <time
-                          dateTime={new Date(event.at).toISOString()}
-                          tabIndex={0}
-                          className="shrink-0 tabular-nums"
-                        >
-                          {formatAge({ from: event.at, now })}
-                        </time>
-                      </Tooltip>
-                    </div>
-                    <span className="text-foreground">
-                      {reasonInWords({ reason: event.reason, label })}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-label text-foreground">History of changes</h2>
+        <IconButton icon={X} label="Hide history" onClick={onClose} />
+      </div>
+      {events.length === 0 ? (
+        <EmptyLine>No changes since Goodboy started.</EmptyLine>
+      ) : (
+        <ScrollFade className="max-h-80">
+          <ol className="flex flex-col gap-3">
+            {events
+              .slice(-20)
+              .reverse()
+              .map((event, index) => (
+                <li key={`${event.at}-${index}`} className="flex flex-col gap-1 text-label">
+                  <div className="flex items-center justify-between gap-3 text-muted-foreground">
+                    <span>
+                      {event.from.replaceAll('_', ' ')} → {event.to.replaceAll('_', ' ')}
                     </span>
-                  </li>
-                ))}
-            </ol>
-          </ScrollFade>
-        )}
-      </section>
-    </AnchoredPopover>
+                    <Tooltip content={formatDateTime({ at: event.at, hasYear: true })}>
+                      <time
+                        dateTime={new Date(event.at).toISOString()}
+                        tabIndex={0}
+                        className="shrink-0 tabular-nums"
+                      >
+                        {formatAge({ from: event.at, now })}
+                      </time>
+                    </Tooltip>
+                  </div>
+                  <span className="text-foreground">
+                    {reasonInWords({ reason: event.reason, label })}
+                  </span>
+                </li>
+              ))}
+          </ol>
+        </ScrollFade>
+      )}
+    </section>
   );
 };

@@ -15,7 +15,12 @@ const enterLabel = (entry: PaletteEntry): string => {
   if (entry.level !== undefined) {
     return entry.level.kind === 'confirm-run' ? 'Review' : 'Open';
   }
-  if (entry.kind === 'verb' || entry.kind === 'action' || entry.kind === 'next') {
+  if (
+    entry.kind === 'verb' ||
+    entry.kind === 'action' ||
+    entry.kind === 'create' ||
+    entry.kind === 'next'
+  ) {
     return 'Run';
   }
   return 'Open';

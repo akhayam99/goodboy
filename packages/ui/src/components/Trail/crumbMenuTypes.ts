@@ -23,7 +23,7 @@ export type CrumbMenuRow = {
   readonly isCurrent: boolean;
   readonly isDisabled: boolean;
   readonly indent: 0 | 1;
-  readonly isMiddleTruncated?: boolean;
+  readonly isCode?: boolean;
   readonly onSelect: () => void;
 };
 

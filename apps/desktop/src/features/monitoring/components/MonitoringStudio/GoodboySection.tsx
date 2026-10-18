@@ -1,14 +1,10 @@
 import type { MonitorProcess, PortRow } from '@goodboy/core';
-import { portLabel } from '../../portLabel';
 import { portRowName } from '../../portRowName';
-import { shownRowCount } from '../../shownRowCount';
 import type { LeftoverRow } from '../../leftoverRows';
 import type { StartedRow } from '../../startedByGoodboy';
 import { LeftoversList } from './LeftoversList';
-import { PortGroupList } from './PortGroupList';
 import { PortListSection } from './PortListSection';
 import { PortRowItem } from './PortRowItem';
-import { PortRowMenu } from '../../../actions/PortRowMenu';
 import { ProcessRowView } from './ProcessRowView';
 
 type Props = {
@@ -37,31 +33,34 @@ export const GoodboySection = ({
   processOf,
   now,
 }: Props) => (
-  <PortListSection label="Run by Goodboy" count={shownRowCount({ rows }) + processes.length}>
-    {sweptCount > 0 ? (
-      <p role="status" className="px-2 text-meta text-faint-foreground">
-        {sweptLine({ count: sweptCount })}
-      </p>
-    ) : null}
-    <PortGroupList
-      rows={rows}
-      processOf={processOf}
-      now={now}
-      renderRow={({ row, isNested }) => (
-        <PortRowItem
-          key={row.key}
-          row={row}
-          process={processOf(row.pid)}
-          now={now}
-          name={portRowName({ row, isPinned: false })}
-          isNested={isNested}
-          actions={<PortRowMenu port={row.port} layer="goodboy" description={portLabel({ row })} />}
-        />
-      )}
-      extraRows={processes.map((row) => (
-        <ProcessRowView key={row.spawnId} row={row} idleCounts={idleCounts} now={now} />
-      ))}
-    />
-    {leftovers.length > 0 ? <LeftoversList rows={leftovers} now={now} /> : null}
-  </PortListSection>
+  <PortListSection
+    label="Run by Goodboy"
+    layer="goodboy"
+    rows={rows}
+    processOf={processOf}
+    now={now}
+    extraCount={processes.length}
+    before={
+      sweptCount > 0 ? (
+        <p role="status" className="px-2 text-meta text-faint-foreground">
+          {sweptLine({ count: sweptCount })}
+        </p>
+      ) : null
+    }
+    renderRow={({ row, isNested }) => (
+      <PortRowItem
+        key={row.key}
+        row={row}
+        layer="goodboy"
+        process={processOf(row.pid)}
+        now={now}
+        name={portRowName({ row, isPinned: false })}
+        isNested={isNested}
+      />
+    )}
+    extraRows={processes.map((row) => (
+      <ProcessRowView key={row.spawnId} row={row} idleCounts={idleCounts} now={now} />
+    ))}
+    after={leftovers.length > 0 ? <LeftoversList rows={leftovers} now={now} /> : null}
+  />
 );

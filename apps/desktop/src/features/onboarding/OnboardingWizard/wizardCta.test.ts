@@ -1,97 +1,47 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_GATE_HINT, wizardActions } from './wizardCta';
-import { WIZARD_STEPS, visibleWizardSteps } from './wizardSteps';
+import { AGENT_GATE_REASON, wizardCta } from './wizardCta';
+import type { WizardStepId } from './wizardSteps';
 
-const BASE = {
-  providersConnected: 1,
-  hasWorkspace: true,
-  workspaceName: 'Northwind',
-  projectCount: 1,
-  codeHostConnected: false,
-  taskSourceConnected: false,
-  isLastStep: false,
-  busy: false,
-} as const;
+type Params = Partial<Parameters<typeof wizardCta>[0]> & {
+  readonly step: WizardStepId;
+};
 
-describe('wizardActions', () => {
-  it('maps every step to its primary action', () => {
-    expect(WIZARD_STEPS.map((step) => wizardActions({ ...BASE, step }).primary?.action)).toEqual([
-      'next',
-      'next',
-      'commit-project',
-      'next',
-      'next',
-      undefined,
-    ]);
-    expect(wizardActions({ ...BASE, step: 'welcome' }).primary?.label).toBe('Get started');
+const ctaOf = ({ step, ...rest }: Params) =>
+  wizardCta({ step, mode: 'full', readyCount: 1, isIssuePick: false, hasFailed: false, ...rest });
+
+describe('wizardCta', () => {
+  it('pins one label per step, and Skip on First session only', () => {
+    expect(ctaOf({ step: 'welcome' })).toEqual({
+      primary: 'Get started',
+      skip: null,
+      reason: null,
+    });
+    expect(ctaOf({ step: 'agents' })).toEqual({ primary: 'Continue', skip: null, reason: null });
+    expect(ctaOf({ step: 'workspace' })).toEqual({ primary: null, skip: null, reason: null });
+    expect(ctaOf({ step: 'tools' })).toEqual({ primary: 'Continue', skip: null, reason: null });
+    expect(ctaOf({ step: 'first-session' })).toEqual({
+      primary: 'Start',
+      skip: 'Skip',
+      reason: null,
+    });
   });
 
-  it('gates the providers step with a hint while nothing is connected', () => {
-    const gated = wizardActions({ ...BASE, step: 'providers', providersConnected: 0 });
-    expect(gated.primary?.disabled).toBe(true);
-    expect(gated.hint).toBe(PROVIDER_GATE_HINT);
-    expect(wizardActions({ ...BASE, step: 'providers' }).hint).toBeNull();
+  it('says why Continue is off with no ready agent', () => {
+    expect(ctaOf({ step: 'agents', readyCount: 0 }).reason).toBe(AGENT_GATE_REASON);
   });
 
-  it('keeps the project step closed until a project and a workspace name exist', () => {
-    expect(wizardActions({ ...BASE, step: 'project', projectCount: 0 }).primary?.disabled).toBe(
-      true,
-    );
-    expect(wizardActions({ ...BASE, step: 'project', workspaceName: ' ' }).primary?.disabled).toBe(
-      true,
-    );
-    expect(wizardActions({ ...BASE, step: 'project' }).primary?.disabled).toBe(false);
+  it('relabels the primary Retry after a failure', () => {
+    expect(ctaOf({ step: 'agents', hasFailed: true }).primary).toBe('Retry');
+    expect(ctaOf({ step: 'first-session', hasFailed: true }).primary).toBe('Retry');
   });
 
-  it('offers Skip for now on code host and tasks until something is connected', () => {
-    const codeHost = wizardActions({ ...BASE, step: 'code-host' });
-    expect(codeHost.skip?.label).toBe('Skip for now');
-    expect(codeHost.primary?.disabled).toBe(true);
-    const connected = wizardActions({ ...BASE, step: 'code-host', codeHostConnected: true });
-    expect(connected.skip).toBeNull();
-    expect(connected.primary?.disabled).toBe(false);
-    expect(wizardActions({ ...BASE, step: 'tasks' }).skip?.label).toBe('Skip for now');
+  it('drafts a brief when an issue is picked, and closes a single step with Done', () => {
+    expect(ctaOf({ step: 'first-session', isIssuePick: true }).primary).toBe('Draft the brief');
+    expect(ctaOf({ step: 'tools', mode: 'single' }).primary).toBe('Done');
   });
 
-  it('closes with Done when a reopened step is the last one', () => {
-    const single = wizardActions({ ...BASE, step: 'tasks', isLastStep: true });
-    expect(single.primary?.label).toBe('Done');
-    expect(single.primary?.action).toBe('finish');
-    expect(single.skip?.action).toBe('finish');
-  });
-
-  it('leaves the first session primary to the step, with Skip, open the board in the action row', () => {
-    const first = wizardActions({ ...BASE, step: 'first-session' });
-    expect(first.primary).toBeNull();
-    expect(first.skip?.label).toBe('Skip, open the board');
-  });
-});
-
-describe('visibleWizardSteps', () => {
-  it('runs the five numbered steps after Welcome', () => {
-    expect(visibleWizardSteps({ mode: 'full', start: null, skipsCodeHost: false })).toEqual(
-      WIZARD_STEPS,
-    );
-  });
-
-  it('skips Code host when no project is a git folder', () => {
-    expect(visibleWizardSteps({ mode: 'full', start: null, skipsCodeHost: true })).not.toContain(
-      'code-host',
-    );
-  });
-
-  it('starts setup mode at Code host and runs to the first session', () => {
-    expect(visibleWizardSteps({ mode: 'setup', start: null, skipsCodeHost: false })).toEqual([
-      'code-host',
-      'tasks',
-      'first-session',
-    ]);
-  });
-
-  it('opens a single step on its own', () => {
-    expect(visibleWizardSteps({ mode: 'single', start: 'tasks', skipsCodeHost: false })).toEqual([
-      'tasks',
-    ]);
+  it('never offers a skip word on Tools: Continue with nothing connected is the skip', () => {
+    expect(ctaOf({ step: 'tools', readyCount: 0 }).skip).toBeNull();
   });
 });

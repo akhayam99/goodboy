@@ -39,8 +39,11 @@ The row above the provider chips is one component with two meanings.
   the caller's `resetLabel` ("Back to Auto", "Use default"). The row under a Models page label and the run page and builder
   orchestrator pills read that answer from `useResolution`, so they name the same
   model; when a pin is skipped, the row's muted line says why through
-  `explainResolution` (see `docs/providers.md`, Defaults internals). The background
-  rows are named for the agent they drive: **History rewriter** (rebase and history
+  `explainResolution` (see `docs/providers.md`, Defaults internals). Auto names a
+  model line, so a new catalog entry takes over on its own: Scout and the Haiku
+  background tasks moved to Haiku 5.5 with no routing change, and a Claude CLI below
+  2.1.293 keeps them on Haiku 4.5. The background
+  rows are named for the agent they drive: **History rewriter** (history
   clean-up) and **Scribe** (the title and body of a pull or merge request)
 - **Launching popovers** (Start an agent, Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that

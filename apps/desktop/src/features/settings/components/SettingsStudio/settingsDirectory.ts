@@ -1,23 +1,19 @@
 import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
-import { CONCEPT_TONE, type CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../shared/names';
+import type { ToolHealth } from '../../../integrations/toolHealthOf';
 import type { ToolRailEntry } from '../../../integrations/toolRailEntries';
 import type { ProviderRailStatus } from '../../../providers/providerRailStatus';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
-import { APP_SECTIONS, type AppSection } from './appSections';
+import { APP_SECTIONS, appSectionOf, type AppSection } from './appSections';
 import type { RailSubtitles } from './railSubtitles';
 import { SCOPE_ITEMS } from './settingsScopes';
 import { WORKSPACE_PAGES, workspacePageOf } from './workspacePages';
 
 type Concept = keyof typeof CONCEPT_ICONS;
 
-export type SettingsPageGlyph =
-  | { readonly kind: 'concept'; readonly concept: Concept }
-  | { readonly kind: 'defaults' }
-  | { readonly kind: 'provider'; readonly provider: ProviderId };
-
-type SettingsAttention = {
+export type SettingsAttention = {
   readonly text: string;
   readonly tone: Tone;
 };
@@ -25,8 +21,6 @@ type SettingsAttention = {
 type SettingsPage = {
   readonly key: string;
   readonly label: string;
-  readonly glyph: SettingsPageGlyph;
-  readonly tone: Tone;
   readonly attention: SettingsAttention | null;
   readonly target: SettingsScopeChange;
 };
@@ -73,6 +67,24 @@ const scopeMeta = (
 
 const ATTENTION_TONES: ReadonlyArray<Tone> = ['info', 'warning', 'danger'];
 
+type RankParams = {
+  readonly attention: SettingsAttention | null;
+};
+
+const rankOf = ({ attention }: RankParams): number =>
+  attention === null ? -1 : ATTENTION_TONES.indexOf(attention.tone);
+
+type WorstParams = {
+  readonly attentions: ReadonlyArray<SettingsAttention | null>;
+};
+
+const worstAttention = ({ attentions }: WorstParams): SettingsAttention | null =>
+  attentions.reduce<SettingsAttention | null>(
+    (worst, attention) =>
+      rankOf({ attention }) > rankOf({ attention: worst }) ? attention : worst,
+    null,
+  );
+
 const attentionOf = ({
   text,
   tone,
@@ -86,6 +98,18 @@ const attentionOf = ({
   return { text, tone };
 };
 
+type FoldParams = {
+  readonly group: SettingsGroup;
+};
+
+export const foldAttentionOf = ({ group }: FoldParams): SettingsAttention | null =>
+  worstAttention({
+    attentions: [
+      attentionOf({ text: group.attention, tone: group.tone }),
+      ...group.pages.map((page) => page.attention),
+    ],
+  });
+
 const appAttention = ({
   section,
   subtitles,
@@ -93,16 +117,18 @@ const appAttention = ({
   readonly section: AppSection;
   readonly subtitles: RailSubtitles;
 }): SettingsAttention | null => {
-  if (section === 'general') {
-    return attentionOf({ text: subtitles.generalText, tone: subtitles.generalTone });
+  if (section === 'updates') {
+    return attentionOf({ text: subtitles.updatesText, tone: subtitles.updatesTone });
   }
   if (section === 'storage') {
-    return attentionOf({ text: subtitles.storageText, tone: subtitles.storageTone });
-  }
-  if (section === 'security-findings') {
-    return attentionOf({
-      text: subtitles.securityFindingsText,
-      tone: subtitles.securityFindingsTone,
+    return worstAttention({
+      attentions: [
+        attentionOf({
+          text: subtitles.securityFindingsText,
+          tone: subtitles.securityFindingsTone,
+        }),
+        attentionOf({ text: subtitles.storageText, tone: subtitles.storageTone }),
+      ],
     });
   }
   return null;
@@ -119,8 +145,6 @@ const appGroup = ({ status }: Pick<Params, 'status'>): SettingsGroup => ({
   pages: APP_SECTIONS.map((section): SettingsPage => ({
     key: `app:${section.id}`,
     label: section.label,
-    glyph: { kind: 'concept', concept: section.concept },
-    tone: CONCEPT_TONE[section.concept],
     attention: appAttention({ section: section.id, subtitles: status.subtitles }),
     target: { scope: 'app', section: section.id },
   })),
@@ -134,8 +158,6 @@ const workspaceGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   pages: WORKSPACE_PAGES.map((page): SettingsPage => ({
     key: `workspace:${page.id}`,
     label: page.label,
-    glyph: { kind: 'concept', concept: page.concept },
-    tone: CONCEPT_TONE[page.concept],
     attention:
       page.id === 'projects'
         ? attentionOf({
@@ -155,8 +177,6 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
           {
             key: 'providers:defaults',
             label: NAMES.models,
-            glyph: { kind: 'defaults' },
-            tone: 'primary',
             attention: null,
             target: { scope: 'providers' },
           },
@@ -164,8 +184,6 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
   const accounts = status.providers.map((provider): SettingsPage => ({
     key: `provider:${provider.id}`,
     label: provider.label,
-    glyph: { kind: 'provider', provider: provider.id },
-    tone: 'neutral',
     attention: attentionOf({ text: provider.status.subtitle, tone: provider.status.tone }),
     target: { scope: 'providers', provider: provider.id },
   }));
@@ -175,9 +193,7 @@ const providerPages = ({ status, workspaceName }: Params): ReadonlyArray<Setting
   return [
     {
       key: 'providers',
-      label: 'Providers & models',
-      glyph: { kind: 'concept', concept: 'providers' },
-      tone: CONCEPT_TONE.providers,
+      label: NAMES.providersAndModels,
       attention: attentionOf({
         text: status.subtitles.providersText,
         tone: status.subtitles.providersTone,
@@ -195,6 +211,17 @@ const providersGroup = (params: Params): SettingsGroup => ({
   pages: providerPages(params),
 });
 
+type ToolAttentionParams = {
+  readonly health: ToolHealth;
+};
+
+const toolAttention = ({ health }: ToolAttentionParams): SettingsAttention | null => {
+  if (health.signal === 'none' || health.reason === null) {
+    return null;
+  }
+  return { text: health.reason, tone: health.signal === 'danger' ? 'danger' : 'warning' };
+};
+
 const toolsGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   ...scopeMeta('tools'),
   place: workspaceName ?? 'This workspace',
@@ -203,9 +230,7 @@ const toolsGroup = ({ status, workspaceName }: Params): SettingsGroup => ({
   pages: status.tools.map((entry): SettingsPage => ({
     key: `tool:${entry.tool}`,
     label: entry.label,
-    glyph: { kind: 'concept', concept: entry.tool },
-    tone: CONCEPT_TONE[entry.tool],
-    attention: null,
+    attention: toolAttention({ health: entry.health }),
     target: { scope: 'tools', tool: entry.tool },
   })),
 });
@@ -229,7 +254,7 @@ type PageKeyParams = {
 
 export const settingsPageKey = ({ scope, section, provider, tool }: PageKeyParams): string => {
   if (scope === 'app') {
-    return `app:${APP_SECTIONS.find((entry) => entry.id === section)?.id ?? 'general'}`;
+    return `app:${appSectionOf({ section })}`;
   }
   if (scope === 'providers') {
     return provider === undefined ? 'providers:defaults' : `provider:${provider}`;

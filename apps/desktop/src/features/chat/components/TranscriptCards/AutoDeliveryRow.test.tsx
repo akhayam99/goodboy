@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { brandId } from '@goodboy/types';
-import type { IsoDateTime } from '@goodboy/types';
+import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { TranscriptCard } from '.';
 
 afterEach(cleanup);
@@ -16,6 +16,7 @@ const renderRow = () =>
       item={{
         kind: 'auto_delivery',
         key: 'auto-delivery-0',
+        runId: brandId<ProviderRunId>({ value: 'run-auto-1' }),
         text: DELIVERY,
         at: brandId<IsoDateTime>({ value: '2026-10-16T09:00:00.000Z' }),
       }}

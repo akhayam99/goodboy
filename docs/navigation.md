@@ -18,9 +18,9 @@
   **List** switch
   (`SessionViewPrefs.pageView`, kept per workspace in the session view prefs,
   a version 3 record without it reads Board), and **Filter sessions**
-  (`SessionFilterPopover`). Its icon carries one neutral 6px dot while a filter
-  is on. On the Board the filter holds Project and Sort; the List adds Status
-  and Archive (no Group: the List always groups by stage). Repository state is
+  (`SessionFilterPopover`). Its icon carries one primary 6px dot while a filter
+  is on. On the Board the filter holds Sort and Project; the List adds Status
+  and Show archived (no Group: the List always groups by stage). Repository state is
   not here: it lives on the Repositories entry of the top bar (`RepoEntry`).
   New session is not
   here: it is the first row of the column. Nothing else sits on that line, and
@@ -86,20 +86,25 @@
   presence ("where do I go, what else is going on"): its doors and the sessions
   list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
-  Forward and Search, clustered in the centre. It never holds a destination
-  again, with one exception: Impact is an icon door beside the bell, because it
-  reads like a figure, not a place you work in. The spend chip is state that
-  opens the studio that owns that number, on Impact's Spend tab, and the Limits
-  chips open the Providers menu. The bar never edits a record in place.
+  Forward and Search, clustered in the centre. It never holds a destination.
+  The spend chip is state that opens the studio that owns that number, on
+  Impact's Spend tab, and the Limits chips open the Providers menu. The bar
+  never edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
-  Tasks, Chat, Workflows and Terminal; Chat and Terminal each end in a plus
+  Tasks, Chat, Workflows, Terminal, Impact and Monitoring; Chat and Terminal each end in a plus
   (New chat, New terminal) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
   door's trailing slot is a 6px dot (running, unread, warning); the count is in
-  its tooltip and accessible name, never a colored number. Monitoring is not a
-  door: it is the top bar signal (`MonitoringSignal`), an `activity` icon with a
-  dot while ports are in use and the words "Pinned port down" when a pinned
-  port is free. Inside a session the column stays the same and marks the open
+  its tooltip and accessible name, never a colored number. Sessions carries the
+  warning dot while sessions need you, named "Sessions, 2 need you: Checks
+  failing, 1 question for you" (`doorSignalOf`, `needsYouReasonsOf`). It reads
+  `useNowSessions`, the attention group of the same `useStageGroupedSessions`
+  the board lanes use, and the palette's Needs you rows read it too.
+  Monitoring is the door after Impact, its page has no band and no Close, and
+  it is the one way to the page in the chrome: the top bar holds no Monitoring
+  icon. A pinned port that is down puts the warning dot on it, named "Monitoring,
+  pinned port :5173 is down" (`monitoringSignal` lists the down pins,
+  `doorSignalOf` names them). Inside a session the column stays the same and marks the open
   session's row; the session's own levels live in the session rail at the left
   of the page (see Session rail). The column is on every screen with a workspace: the board, a
   session, the draft and every studio but Settings, which swaps the column's
@@ -130,8 +135,8 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised column control. Doors, Board included, are neutral at
-  rest, and so is the column's Goodboy row, with one exception: a downloaded
-  update tints the row into a pill until you act on it. A ready update is an
+  rest, and so is the column's Goodboy row, with one exception: a pending
+  update adds a version pill to the row until you act on it. An update is an
   event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
@@ -221,14 +226,30 @@ drawer instead of the Terminal page.
      from a typed `Run a workflow: Ship a fix` row, opens a confirm that names the
      session, the project, the model and the steps, and nothing starts until you
      confirm.
-  4. **Recent**, agents of this session first; then **Go to** (Board inside a
-     session, Tasks, Chat, Workflows, Impact, Notifications, What's new), **App**
-     (New session, Settings, Switch theme, Connect a provider, Pair your iPhone,
-     Report a bug) and **Help**.
-     On the Board the first section is **Needs you**: the sessions the Now chip
-     lists, each opening its `attentionPlace`. The session pages (Open Overview,
-     Questions, Artifacts and the rest), Run defaults, Impact: Spend, Start a new
-     project and Open a folder stay out of the empty list and answer to typing.
+  4. **Recent**, agents of this session first; then four fixed groups, each
+     entry in the one its `kind` names (`EMPTY_SECTION_KINDS` in
+     `commandList.ts`): **Go to** (`goto`: Sessions, Tasks, Chat, Workflows,
+     Terminal, Impact, Monitoring, Notifications, Settings), **Create**
+     (`create`: New session, New chat, New terminal, New workspace), **App**
+     (`action`: Resume setup while setup is unfinished in the main window,
+     Switch theme, Check for updates, Connect a provider, Reset chat, the column
+     fold) and **Help** (`help`: Guide, What's new, Keyboard shortcuts, Report a
+     bug). New workspace answers to its former names, Open a folder and Start a
+     new project (`formerNamesOf` in `shared/names.ts`). Pair an iPhone and one
+     **Guide: {chapter}** entry per `GUIDE_CHAPTERS` row (opens it through
+     `openGuideChapter`, also while the Guide is open) are typed only. Pair an
+     iPhone answers to Pair your iPhone and the other former names of the page.
+     Check for updates opens Settings > Updates and runs the updater check only
+     in a status the menu item also checks. Palette and menu bar share one
+     function, `checkForUpdatesNow` in `features/updater`.
+     The overlay is a compact window: 640px wide (search 720px), a 48px input row,
+     28px rows, a list capped at 320px that scrolls, a 320px minimum height
+     (`PALETTE_MIN_HEIGHT_PX`), and a key chip with a minimum width so a glyph
+     like the Terminal one is never clipped.
+     On the Board the first section is **Needs you**: the sessions the
+     Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The session pages (Open Overview,
+     Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out
+     of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:
      both list the same verbs (`menuParity.test.tsx`), `⋯` keeps its stable order.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
@@ -286,7 +307,7 @@ A task row shows a result glyph, its duration and age in gray, and the last
 line of a failure. **Pin**, **Restart** and the rest are in the row's right
 click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
 root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
-**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
+**Pin** on every row. Scripts that are not pinned stay on the workspace Folders
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
@@ -384,7 +405,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   on, the main window restores its own layout and reopens every other saved
   window with `#restore=<old label>`, one per workspace; each one reads its
   old layout and forgets it (`restoreLaunchLayout`). On a plain launch with
-  Reopen last off, the launcher opens and the saved windows are forgotten.
+  Reopen last off, Home opens and the saved windows are forgotten.
   The history stack itself stays in memory: a restored window starts with one
   entry.
 
@@ -441,9 +462,15 @@ never exists on one surface only.
   Turn off Autopilot (the session's autorun, the default of a run started
   without its own setting and of agents outside a workflow; the Agents page
   header has no switch), Start an agent, Link
-  work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
-  Delete with its confirm (Restore once archived). Several sessions: Copy
-  titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
+  work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with its
+  confirm and Undo, and Delete with its confirm (Restore once archived). Several sessions: Copy
+  titles, Archive N, Restore N, Delete N. Archive N asks once for all of them
+  with the same `archiveConfirmOf` as one session ("Archive 3 sessions?",
+  summing `runningAgentCountOf` over them, and saying running agents keep
+  running: archive never stops an agent). Cancel archives nothing; a partial
+  failure archives the rest with Undo on the toast and names the sessions it
+  could not archive above the bar, with Retry for those only. Archive instead
+  on the Delete N confirm archives at once, with no second ask. An agent: Open agent, Show its
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
   Move to Auto on a standalone agent of a standard role,
   Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
@@ -588,7 +615,7 @@ dot means attention without a number. Chat with none running shows a primary dot
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
 Terminal counts the terminal tabs still alive, all owners, and Monitoring counts the pinned ports
 and the ports Goodboy started that are in use; a pinned port that is down swaps Monitoring's count
-for a warning dot. The door's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
+for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
 `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
@@ -683,7 +710,7 @@ hide animation or overlay can move it.
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
 
-**The Projects card of the session level shows which projects a session has
+**The Folders card of the session level shows which folders a session has
 materialized.** It lives in the session rail, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
 row that folds its worktrees, each worktree folds its main pages one more
@@ -712,7 +739,7 @@ deeper level shows, and the hidden ones are `inert`. The rail is 240px by
 default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
 rows are the column's rows (28px, `SelectableRow`, the same type roles).
 
-- **Level 1 reads top to bottom:** the pages, then the Projects card and the
+- **Level 1 reads top to bottom:** the pages, then the Folders card and the
   Linked card, then the foot. The session level has no identity row: the
   selected main sidebar row is the session's identity (its title and state
   node). The Overview h1 is the session title, the linked key in gray mono
@@ -729,22 +756,32 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   the palette). Autopilot has no rail control: Turn on Autopilot and Turn off
   Autopilot (`session.autopilotOn` / `Off`) stay in the sidebar row's right
   click menu and the palette. An archived session shows none of them. The foot
-  (`SessionLevel/SessionLevelFoot`) starts with one quiet line, the session
-  spend (`SessionCostChip`, over `sessionSpendByAgent` and
-  `sessionSpendPresentation`, the one source of the number): `$3.47`, or
-  `$3.47 of $10.00 limit` once a limit is set, the warning tone from 80
-  percent and danger past it, `Paused · …` when a pausing limit stopped the
+  (`SessionLevel/SessionLevelFoot`) is one row: the session spend at the left
+  (`SessionCostChip`, over `sessionSpendByAgent` and
+  `sessionSpendPresentation`, the one source of the number): `$3.47`, or the
+  compact `$3.47 / $10` once a limit is set (`compactLabel`, a whole limit
+  without its cents), with the full sentence ("$3.47 spent of the $10.00 limit
+  in this session", `sentence`) in the tooltip and `Spend $3.47 of $10.00
+limit` as its name; the warning tone from 80 percent and danger past it, the
+  pause glyph and `Paused, …` in the tooltip when a pausing limit stopped the
   session, and `Set a limit` in faint gray while nothing is spent and no limit
   is set. A click opens the session spend popover (the limit editor, the
   agents and the context cost, Open in Impact); **Raise limit** on a paused
   run opens it on the editor from any session level: off the session level an
   edit host in `SessionFrame` opens it at the rail foot (`sessionSpendLines`).
-  Under it sit **Archive** (⌘⇧A, the registry
-  `session.archive`; **Restore** on an archived session) in gray text and
-  **Delete…** (⌘⇧⌫) in red text (`ghost-danger`: no fill, no border), side by
-  side, half the rail width each, text only, no `⋯`; Delete opens
-  `DeleteSessionConfirm` anchored to the button (end aligned, the `ConfirmPopover` default, flipped above
-  it and kept inside the window by `useDropdownDirection`). Rename has no rail
+  At the right of the same row sit two `sm` icon buttons, no text and no
+  ellipsis, each with a tooltip that names it and its key: **Archive session**
+  (the archive icon, ⌘⇧A, the registry `session.archive`; **Restore session**
+  with the restore icon on an archived session) in gray, and **Delete session**
+  (the trash icon, ⌘⇧⌫) in the danger tone. Archive asks first: the registry
+  verb carries a confirm (`archiveConfirmOf`, "Archive session?", saying how
+  many agents are still running in the session when any run, from
+  `runningAgentCountOf`, and that they keep running after the archive), so the foot, the sidebar row's right click menu, the
+  palette and ⌘⇧A (`SessionArchiveBridge` triggers the same verb and anchors
+  its confirm at the window corner) all ask the same way, and Undo on the toast
+  still restores it. Restore never asks. Delete opens `DeleteSessionConfirm`
+  anchored to the button (end aligned, the `ConfirmPopover` default, flipped
+  above it and kept inside the window by `useDropdownDirection`). Rename has no rail
   control: a rename
   request (`session-header`, from the palette, the sidebar row's right click
   menu or the shortcut) edits the Overview title in place while that session's
@@ -774,11 +811,17 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   agents (Auto is always on, so it always shows), Artifacts, and Questions last, always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
   Two entries carry a marker: **Auto agents** reads **Experimental** ("Auto
-  picks and starts agents on its own, under a limit. Its choices are still
-  being tuned.") and, while Auto is shown, **Agents** reads
-  **Deprecated** ("Use Start an auto: Auto picks and starts the right agent.
-  Agents you start by hand keep working."). the marker is a quiet gray `Chip` right of the label, beside the count, from `pageMarkerOf` (`features/session/pageMarkerOf.ts`), and its why is the row tooltip, after the count
-  fact. Start an agent stays available.
+  starts agents on its own. Its choices are still being tuned.") and, while
+  Auto is shown, **Agents** reads **Deprecated** ("Start an auto on Auto
+  agents. Agents you start by hand keep running."). The marker is a quiet gray
+  `Chip` right of the label, beside the count, from `pageMarkerOf`
+  (`features/session/pageMarkerOf.ts`). Its words live in
+  `SESSION_PAGE_MARKER_WHY` next to `SESSION_PAGE_INTRO`
+  (`features/session/sessionPageIntro.ts`), which share the sentences about
+  hand-started agents and Auto's tuning. The marker has its own shared
+  `Tooltip` with those words only, and the count has a separate one ("1
+  agent"); a row never carries a native `title`. Start an agent stays
+  available.
   Agents lists standalone agents only; an Auto agent lives under Auto agents
   (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
   right-aligned slot as wide as its content, so a label never truncates for an
@@ -794,7 +837,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
   its flyout read the same function; the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
-- **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
+- **Folders and Linked are cards** (`SessionLevel/LevelCard`): a rounded
   `bg-subtle` surface (`rounded-lg`, 4px inset) whose edges sit on the page
   row highlight edges: pages and cards share one column inset
   (`SessionLevel/railInset`, `RAIL_INSET`), and a card row adds 4px
@@ -806,11 +849,11 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   title and a fold chevron as one button, then the quiet meta and a `+` icon
   button (`LevelAddTrigger`) at the right. A card folds from its header and
   remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);
-  folded, Projects keeps the worst state of its worktrees as one dot in the
+  folded, Folders keeps the worst state of its worktrees as one dot in the
   header (`useProjectsSignal`) and Linked its item count from 2, so a state
   that needs you never hides in a fold. Cards sit 8px apart, 16px under the
   pages.
-- **Projects is a tree** you fold at two depths, many nodes open at once. A
+- **Folders is a tree** you fold at two depths, many nodes open at once. A
   project row (`SessionLevel/ProjectTree`) is one toggle (`aria-expanded`):
   folder icon, name, then its branch count from 1 in quiet tabular gray beside
   a chevron in the right slot. Its worktrees sit one 16px indent in
@@ -819,8 +862,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   the worktree level identity row, the folded rail and the session hover card:
   draft gray, open or approved green, in the merge queue (`queued`) the warning
   amber, merged violet, closed red, no pull request a neutral branch glyph),
-  mono branch cut in the middle so the distinguishing tail stays
-  (`BranchName`), pull request number right aligned at its content width, then
+  mono branch cut at the end only, never in the middle, full name in the
+  shared tooltip (`BranchName`), pull request number right aligned at its content width, then
   the worst state as one 6px dot in the last column (`worktreeRowStateOf`:
   danger for a failed check; warning for conflicts, a running rebase, behind
   its base, a branch decision waiting, comments waiting on you; none when
@@ -852,11 +895,22 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   state dot on its corner (`useWorktreeRowState`, shared with the open row); the
   folded rail never draws the session node. A worktree row drills into the worktree level
   (level 2) on its landing entry. The card header carries one `+`
-  (`LevelAddTrigger`, a ghost `xs` icon button named Add to this session: no
-  border, no fill at rest, so the rail stays light), opening `LevelAddMenu`:
-  Add project, Add workspace project, and `New branch in`
-  each repo project of the session; each opens today's popover
-  (`MountProjectAction`, `NewBranchMountAction`) anchored under the label.
+  (`LevelAddTrigger`, a ghost `xs` icon button named Add folder: no border,
+  no fill at rest, so the rail stays light) that opens the project picker
+  straight away (`MountProjectAction`, no menu first): the workspace projects
+  not yet in the session, then `Connect a repo or folder`, which picks a folder,
+  links it to the workspace (`useConnectProject`, `addProject`) and lands on its
+  preflight to add it here. A folder of repositories, a project of another
+  workspace or a failure says why in the picker and offers Open workspace
+  projects. Each repo project row ends in its own `+`, named `New branch in
+<project>` (`ProjectRowAdd`), which opens the new branch form
+  (`NewBranchMountAction`) at once. It is the registry verb `project.newBranch`
+  (`features/actions/kinds/project.ts`, offered on a repo project with a mount
+  of a session that is not archived), so any surface that runs the verb opens
+  the same form. It is quiet (`faint-foreground`, `foreground` on row hover or
+  focus) but visible at rest and in the tab order, never hover only; a folder
+  project keeps an empty slot of the same width so the counts line up. An
+  archived session draws neither `+`.
 - **Level 2, the worktree.** Showing the Branch lens is being on level 2
   (`useSessionRailLevel` reads `activeLens === 'branch'`, so history, links and
   keys drill the rail without extra state). It reads: the back row
@@ -883,11 +937,11 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   so the page keeps one source for every number. ⌘[ in the rail and the
   back row go up one level each.
 - **Linked** lists the session's linked work, one row per item: provider
-  mark, key in one 72px mono column cut in the middle (`LinkedKey`, the full
+  mark, key in one 72px mono column cut at the end (`LinkedKey`, the full
   key in the tooltip) so every title starts on one edge, title. A GitHub pull
   request a worktree row of the session already owns is not listed again
   (`githubRefOf`, same owner/repo and number). The row opens the item; its right-click menu holds
-  Unlink and Move. It is a card like Projects, and its header carries the same
+  Unlink and Move. It is a card like Folders, and its header carries the same
   `+` (`LevelAddTrigger`, named Link work), opening Link work (L). Every card
   header of the session level uses this one control, never a bordered chip.
 - **Back.** On level 2 the back row goes up to level 1, and so does ⌘[ while
@@ -994,8 +1048,8 @@ the pull request with its checks (the state word only for Draft, Merged or
 Closed: the stage line already says In review), the linked task chips, one chip
 per project, the
 agent count, the spend and the age, and one ghost action, **Open what needs
-you**, when the session needs you. That action lands where the Now chip lands
-(`attentionPlace`). Moving to another row swaps the card at once, with no second
+you**, when the session needs you. That action lands where the palette's Needs
+you rows land (`attentionPlace`). Moving to another row swaps the card at once, with no second
 wait. Esc and opening a session close it, and the pointer may move onto the
 card. The row, the card and the board card all read `useSessionSummary`, so they
 say the same things in the same words. The board card keeps one signal and
@@ -1005,20 +1059,27 @@ chips.
 **The user chooses what the list shows and in what order.** The sidebar list
 has no "Sessions" eyebrow and no filter row of its own: the Sessions door row
 holds one funnel button in its action slot at the right, **Filter sessions**
-(`SidebarSessionsFilter` over `SessionFilterPopover`), with a neutral 6px dot
-while a filter is on. The door row never regroups, so the popover stays open
+(`SidebarSessionsFilter` over `SessionFilterPopover`), with a primary 6px dot
+while a filter is on (a status, a project or Show archived; `displayStateOf`
+owns that count). The door row never regroups, so the popover stays open
 while the list under it changes grouping. The Sessions page header holds the
-same button. Its popover is a labelled dialog, not a menu of menus. Every
-choice starts on its label at the section's left edge, with its count after
-it (from one; a zero row is dimmed with no number) and one check slot last,
-as in every other menu (`FilterChoice`). Status lists Needs you,
-Running, In review, Building and Done with their counts (`statusFilter` in the
-prefs). Project lists the projects of the sessions with their counts and shows
-only when two or more projects have sessions (the same selection as the board's
-project filter). Archive holds Show archived. Sort offers Needs you first
-[default], Alphabetical, Last activity and Created; Group offers None
-[default], PR state, Stage and Project (the Sessions page drops Group). **Clear filters** shows while a filter
-is active. The choices persist per workspace in the browser storage
+same button. Its popover is a labelled dialog laid out like a display menu,
+in sections spaced by `gap-3` (no unlabeled line inside a floating surface, see
+docs/styling.md). On top, Display: two compact rows, **Sort**
+and **Group**, the label at the left and the current value at the right
+(`DisplayValueRow`); the value is a quiet `Listbox` that opens its choices.
+Sort offers Needs you first [default], Alphabetical, Last activity and Created;
+Group offers None [default], PR state, Stage and Project (the Sessions page
+drops Group). Then **Filter** (an `Eyebrow`), with the captions Status and
+Project over real `Checkbox` rows (`FilterCheckRow`), each named with its count
+("Running, 3"). Status lists only the stages that have sessions, from Needs
+you, Running, In review, Building and Done (`statusFilter` in the prefs; a
+checked stage stays listed at zero so it can be cleared). Project lists the
+projects of the sessions with their counts and shows only when two or more
+projects have sessions (the same selection as the board's project filter).
+Last in Filter, **Show archived**, a `Switch` with the archived count. **Reset** shows
+only while the popover is off its default (a filter on, or Sort or Group
+changed) and puts every choice back. The choices persist per workspace in the browser storage
 (`goodboy:session-view:<workspace id>`, version 3: a version 2 record loads with
 an empty status filter); nothing goes to the database.
 
@@ -1143,7 +1204,7 @@ session is listed once. The first press still lands on the previous session
 wherever it sits. `Tab` and `⇧Tab`
 move while `⌃` is held, releasing `⌃` opens the chosen session and Esc cancels.
 A quick tap flips to the previous session and never draws the list. `⌥⌘↓`
-lands on the next session that needs you, in the Now chip's order, on its
+lands on the next session that needs you, in the board's Needs you order, on its
 `attentionPlace`. A focused terminal and an open dialog keep both keys.
 
 **Peek is a way of showing the column, not a second column.** The overlay
@@ -1201,12 +1262,12 @@ The draft asks one question, "How do you want to start?", with four choices
 on one row as compact tabs (`StartChoiceTabs`, `SegmentedTabs` pill variant):
 Pick up a task, Run a workflow, Run an orchestrator and Start an agent. **Start blank** sits
 in the page header. Run a workflow, Run an orchestrator and Start an agent each hold
-**Projects** (`KickoffProjects` over the shared `ProjectPicker`): optional, a
+**Folders** (`KickoffProjects` over the shared `ProjectPicker`): optional, a
 searchable multiple `Listbox` with the picked projects as removable chips under
 it, in two groups (`projectPickerGroups`): "Suggested" holds at most five (the
 picked issue's project, then the most recently used, then starred ones) and
-"All projects" lists the rest by name with the base branch at the right. The
-trigger reads `Add project` with or without a pick (`emptyValueLabel`) and no
+"All folders" lists the rest by name with the base branch at the right. The
+trigger reads `Add folder` with or without a pick (`emptyValueLabel`) and no
 line sits under it (mounts stay lazy). The draft keeps them as `projectIds`; the first is
 the session's project and the rest are added with it (`additionalProjectIds`).
 When a picked issue maps to a project, the picker starts with it and one line
@@ -1295,7 +1356,7 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   for Run a workflow, `dynamic` for Run an orchestrator; the choice is the mode, so
   there is no mode switch and no remembered mode): goal card with the paperclip
   and Polish (no title field: the run is named from the preset or the goal, and
-  renamed on its page), Projects, Can use (only with two or more providers), the
+  renamed on its page), Folders, Can use (only with two or more providers), the
   preset with its editable steps and a model per step or the orchestrator row
   with its model right after the label, guidance, then one actions row with
   Autonomy, Starts and Limit at the left and Discard, the estimate and the
@@ -1323,14 +1384,14 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
 - **Start an agent** opens the role list (`AgentStart`, below): Auto being always
   available does not make it the start here. `SessionKickoff` takes `isAuto`
   (false by default, set only by a scene) to draw the Auto composer instead
-  (`AutoStart`): one goal with files, Projects, then one actions row with the
+  (`AutoStart`): one goal with files, Folders, then one actions row with the
   Model chip and the Auto limit chip at the left and Discard and **Start an auto**
   at the right, no role list, no guidance; `Experimental` is a gray word after
   the choice line, on the page and in the drawer. Its goal and
   model live in the draft (`autoGoal`, `autoRouting`) and count as written for
   Discard. Start runs `startSessionFromDraft` kind `scout` with an Auto agent
   (`agentKind: 'auto'`), the goal as its prompt and the chosen routing.
-- **Start an agent** (`AgentStart`) is the goal field, then Projects, then one
+- **Start an agent** (`AgentStart`) is the goal field, then Folders, then one
   actions row with Role and Model as `ControlChip`s (`AgentStartFields`,
   `ModelControlChip`) and the primary, opening the same role list and model
   picker the New drawer and the Start an agent popover use (`AgentStartBlock`:
@@ -1556,7 +1617,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   a branch fact and is not counted here), Runs
   `2 running` in the info tone (else `4 runs`, every kept run), Agents `1 running` (else `3 agents`), Artifacts
   `4 artifacts`, Questions `2 open`. The sidebar row and the menu read it
-  through `usePageSummaries`; `Session`
+  through `pageSlotOf` (`features/session/pageSlot.ts`); `Session`
   has no menu once it has children. A run lists the session's runs (Running,
   Finished, a chained run indented under its own with `after ...`); a step
   lists every step of its run in order, the ones not started switched off; an
@@ -1603,10 +1664,10 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   view has no peek, because its lines are not the working tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
-- **Settings draws no band in the column.** In the launcher, where it covers the
+- **Settings draws no band in the column.** On Home, where it covers the
   window, it claims its studio band with Settings, the scope and the App
-  section. The scope segment lists App, the workspace, Providers & models and
-  Tools; the section segment lists the App sections. Neither carries an
+  section. The scope segment lists App, the workspace, Providers and models and
+  Integrations; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.
   The first segment of a studio has no menu because studios change from the
@@ -1683,16 +1744,18 @@ covered.
   overview with nothing drafted.
 - Left of Back and Forward: the main sidebar toggle (`ColumnToggleButton`, ⌘B), the one
   toggle of the column; the column itself has no toggle row.
-- Right, in this order: the Now chip (needs you, running, scripts, each
-  only when above zero, from `deriveSessionStage` so needs you wins over running; its dots are
-  static, and its tooltip names the unit: "1 session needs you, 2 sessions running"), Limits,
+- Right, in this order: the Now chip (running, scripts, each
+  only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
+  session that needs you is not counted as running; its dots are static, and its tooltip
+  names the unit: "2 sessions running, 1 script running"), Limits,
   today's spend (hidden until the first cent today) and the bell (a 6px dot at its corner,
   primary when unread, warning when an unread item carries an action; the count is the Unread
   tab badge in its popover). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
-  three, and a group with no rows is not drawn. A script row moves to its
+  two, and a group with no rows is not drawn. Sessions that need you are not in
+  the bar: the Sessions door of the column carries their warning dot. A script row moves to its
   session and opens that run's output in the right drawer. `Limits`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and one bar of
@@ -1703,15 +1766,16 @@ covered.
   on a provider under `+N`, opens the Providers menu anchored under the strip
   (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >
-  Providers & models. Without a workspace a chip still opens that usage page.
+  Providers and models. Without a workspace a chip still opens that usage page.
   The strip is a toolbar: arrow keys move between chips. With no provider
   connected the strip is one `Connect a provider` chip that pulses and opens
   the same menu, and nothing shows while providers are still being detected.
   A bar in the chrome is always a provider window; money is always a figure.
-  Then Spend, the one door to Impact: the figure with `today`, named `Spend
+  Then Spend: the figure with `today`, named `Spend
 today. Open Impact`, opening the Impact studio on its Spend tab (it is never
-  merged with a count). The other Impact tabs are reached inside the studio and
-  from ⌘K. The bar holds no Impact icon. Last the bell, which opens the
+  merged with a count). Impact itself is the last sidebar door, a page like
+  Tasks with no band and no Close, and ⌘K reaches every tab. The bar holds no
+  Impact icon. Last the bell, which opens the
   notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
@@ -1721,12 +1785,12 @@ viewport, so app zoom takes the same path as a narrow window:
    at every width; the workspace name lives in its tooltip) and
    Limits keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
-   (`need you`, `running`, `scripts`, `today`) drop and Limits keeps
+   (`running`, `scripts`, `today`) drop and Limits keeps
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
 The traffic lights, identity, the movement cluster, the command center, the
-needs-you count, the spend figure, the first Limits chip and the bell
+spend figure, the first Limits chip and the bell
 never hide. A Limits chip is
 the provider glyph and one bar, the percent beside it only above 70%; every
 window lives in its tooltip and its accessible name. A provider with no
@@ -1739,8 +1803,12 @@ only drop under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
-  lists workspaces as rows of its own. `Find a workspace or project` filters by
-  workspace name and by project name. The current workspace sits in its own
+  lists workspaces as rows of its own. `Find a workspace or folder` filters by
+  workspace name and by folder path. The current workspace row carries its
+  folder count (`folderCountLabel`, "3 folders"), **Add folder** (the folder
+  picker, a repository or a plain folder, then an undo toast) and **Manage
+  folders**; the foot holds one **New workspace**, which closes the popover and
+  opens the one form. The current workspace sits in its own
   `This window` row (a check mark and `Current`, plus the only gear icon into
   Workspace settings); every other workspace shows one verb, `Open`, that
   replaces the workspace in this window (`⌘Enter` always opens a new window
@@ -1776,19 +1844,32 @@ carries a dot while an update or setup waits.
 
 The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
 menu or Linear's help menu does. Its label says one thing, in this order: an
-update is ready, setup is unfinished (with its progress), or
-the brand lockup with the installed version. The lockup
+update is pending (the bare lockup, then the version pill), setup is unfinished
+(with its progress), or the brand lockup with the installed version. The lockup
 (`GoodboyChip/BrandLockup.tsx`) is one dark chip holding only the dog mark and
 "Goodboy", the same in light and dark; "Beta" and "v<version>" sit after it in
 theme text. The popover header and the rail mark draw the same lockup. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
-and shows in mock scenes too. The update pill is soft, enters once and holds
-still. Its popover leads with Report a bug (with ⌘I, and Draft saved
-when a draft waits), then the version and release notes, the update, the setup
-checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
-your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
-iPhone the pairing studio, so neither waits behind the palette. Every
+and shows in mock scenes too. The update pill (`features/updater/components/UpdatePill`)
+is soft, enters once and holds still. It is its own button beside the lockup and
+shows only the new version and a state icon; the state ("is ready", "did not
+install") lives in its tooltip and accessible name. It stays on one line at
+every column width: when the lockup and the pill have under 168px, the lockup
+drops to the dog mark (a container query on the row), and only a version too
+long for the row truncates.
+`validate-scenes.mjs --only update-pill` pins this at 200, 240 and 400px. The
+pill opens the update card; the column menu holds no update. On the rail, which
+has no room for a pill, the menu's first row is the same pill label and opens
+the same card (`railUpdate` in `GoodboyChip/index.tsx`). The popover header is the
+lockup and "<version> · Beta", and the version opens What's new. Below it sit the
+setup checklist while setup is unfinished, then two labelled groups on the shared
+`MenuList` rows of `@goodboy/ui`: **Help** (Guide, What's new, Keyboard shortcuts
+with ⌘/, Report a bug last with ⌘I, and Draft saved when a draft waits) and
+**Goodboy** (`NAMES.pairIphone`, Sponsor on GitHub and Follow on X, the last two
+with the external mark). There is no paragraph under the groups. Guide opens the
+guide studio and Pair an iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
+`{ scope: 'app', section: 'iphone' }`), so neither waits behind the palette. Every
 studio keeps a door you can see: the flow table in
 `__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
 `door` of `visible` or `palette`, and `studio-doors.test.ts` fails when a studio
@@ -1796,16 +1877,58 @@ kind has no `visible` row. Three links open the Guide on a chapter and Back
 returns to the page you were on: the session hover card's "What do these marks
 mean?" (Legend), Impact's Spend tab "How cost is counted" (Tokens and cost) and
 the Storage worktree row's "What is a worktree?" (Words). They share
-`features/settings/openGuideChapter.ts`. The Guide chapter "Sidebar, session rail
-and panes" restates this shell in `guideChapters.ts`, and
+`features/settings/openGuideChapter.ts`, and an id the Guide no longer has
+(a renamed chapter keeps its old id as an alias in `resolveGuideChapter.ts`)
+opens What is Goodboy, never an empty page. The Guide shows one chapter per
+page on the `guideChapter` reader frame, with Previous and Next; its rail
+search (`shared/components/RailSearch.tsx`) lists chapters and points, Enter
+opens the first hit and flashes its point, Escape clears it. The chapter
+"Sidebar and session rail" restates this shell in `guideChapters.ts`, and
 `guideChapters.test.ts` pins its names against `COLUMN_DOORS`, the page
-registry and `NEW_DRAWER_FORMS`; the Legend draws its session marks through
+registry and `NEW_DRAWER_FORMS`, and pins the word budget; the Legend draws its session marks through
 `sessionNodeOf`, so a new mark appears there without a second table. The addresses live in
 `shared/lib/productLinks.ts`. Report a bug closes the
 popover and opens the report sheet. The popover opens by itself once, when the
 first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card. Only the pinned row does that (and reports the
 update arrival); the copy inside a peeked column is quiet.
+
+**What's new** is the changelog studio (`ChangelogStudio`): a rail of releases
+grouped by minor, with an Older group below 0.4 (`ChangelogRail`, filtered by
+`RailSearch`), and a reader beside it. `CatchUpReader` (`page="whatsNew"`)
+opens first and sums up everything since the version you last read;
+`ReleaseReader` (`page="release"`) shows one release. Close is the last action
+of the reader's title row (`close: 'header'`), and only when no page header
+renders does the studio fall back to a Close in its band
+(`StudioFrame/index.test.tsx` pins both). A release that is the pending update
+shows `UpdateActions`, the same verbs as the update card, and never a confirm of
+its own.
+
+## Menu bar
+
+On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
+Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
+New Workspace, Close), Edit, View (sidebar, Command Palette, zoom, Reload, full
+screen), Go (Back, Forward, Sessions, Tasks, Chat, Workflows, Terminal,
+Impact, Notifications, Monitoring), Window and Help (Guide, What's New,
+Keyboard Shortcuts, Report a Bug). One table lays all of them out
+(`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
+(About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)
+or a command with an id, a title-case label and an optional combo.
+
+One rule runs the bar: a command row emits one event, `goodboy://menu` with
+`{ id }`, to the focused window, and `useMenuCommands` is the one listener
+(mounted by `useAppShortcuts`). `runMenuCommand` reads the id. A registry
+shortcut id (`session.new`, `app.close`, `search.open`) replays its combo
+through the dispatcher, so a scoped owner keeps its place; any other id runs
+its `MENU_ACTIONS` entry (`menuActions.ts`: Check for Updates, New Terminal,
+New Workspace, the Go doors, Guide, What's New). An id with neither warns once
+and does nothing. A new menu item therefore adds a row to the table and an id,
+never an event or a listener. The menu labels the registry's Board as
+Sessions (`session.board`), and the Go doors that need a workspace do nothing
+without one. `menuBar.parity.test.ts` reads the Rust table and fails when an id
+has no registry entry or action, a combo differs from the registry's, a label
+is not title case, or a key has two owners.
 
 ## Report sheet
 
@@ -1815,8 +1938,9 @@ the window, centred, with no overlay: the page under it stays live. Every door
 lands there: ⌘I from anywhere, the bug icon at the column foot, Report a bug in
 the Goodboy menu, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
-**Help > Report a bug** in the macOS menu bar (`help_menu.rs`
-emits `goodboy://report-open` to the focused window), and Report this on a
+**Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
+`goodboy://menu` with `report.open` to the focused window; `useMenuCommands`
+replays the shortcut), and Report this on a
 warning or error notification, which attaches that notification. Opening the sheet reads the screen you are on
 before anything moves, so Settings stays open under it.
 
@@ -1847,29 +1971,57 @@ before anything moves, so Settings stays open under it.
   deletes the record. `LastCrashBridge` claims the record, so only one window
   shows it.
 
-First-run setup is a full-screen wizard in one shell that never moves: a top
-bar with a labelled stepper (Provider, Project, Code host, Tasks, First
-session) and Skip setup, a body that starts at the same line on every step,
-and the form actions inline at the end of the step (Back, Skip for now and
-the primary, right-aligned, no divider). Steps crossfade in place (240 ms,
-80 ms of opacity with reduced motion); the actions are disabled while they do. Welcome says what the five
-steps take. Provider needs one usable route (a CLI login, a saved key or
-OpenCode's free models). Project picks one folder, with or without version
-control, names the workspace after its parent folder and finds the
-repositories inside one. Code host is skipped by itself when no project is a
-repository. Code host and Tasks can be skipped; Sentry, Slack and the rest
-live in Settings › Integrations. There is no permissions question: every
-workspace starts on Full access. The last step offers the same three ways as
-a new session, with Start an agent picked and three starters: Start Scout
-starts the session from a Scout draft (`startSessionFromDraft`) with that
-starter as its focus, and Scout running. Pick up a task and Run a workflow
-close the wizard on the new session draft with that choice picked. Either
-way the draft carries the project picked in the Project step, so the session
-lands in it. With no
-issue source at all, Pick up a task says so and leads back to Code host. The checklist has six
-items (provider, project, code host, task manager, first session, profile); a
-skipped code host or task manager reopens its own step, and the first session
-ticks when an agent finishes a turn, not when a session row exists.
+First-run setup is a full-screen wizard in one shell that never moves: a header
+with the lockup (a 22 px `BrandTile` and the word, absent on Welcome, where the
+hero is the lockup), a labelled four-step stepper (Agents, Workspace, Tools
+marked Optional, First session) and Set up later at the right; one 600 px
+column whose title starts at the same line on every step; and the form actions
+inline at the end of the step, owned by the step (Back and the primary,
+right-aligned, no divider; Skip on First session only). Steps crossfade in one grid cell (240 ms, 80 ms of
+opacity with reduced motion); the actions are disabled while they do. Escape
+goes through the escape stack: an open inner layer closes first, else setup
+goes back one step; on Welcome and on the first step of a resume it does
+nothing, and it never ends setup. Set up later writes `onboarding.wizard =
+later`; entering a step writes `onboarding.step`. A relaunch with setup still
+open reopens at that step (`resumeStep` falls back to Workspace when the step
+needs a workspace that is gone), in the main window only, on Home (see Home
+below); the Goodboy menu offers Resume setup while it is
+paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
+`nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
+`finish`, `later` and `setBusy`. Welcome is the cover: the boot splash dog stays on
+its pixel and the black tile fills in under it (`useSplashAnchor` puts the 84 px
+tile's centre where `BootSplash` draws the mark), the app backdrop shows behind it,
+and agent detection starts there. Agents lists one row per sign-in CLI (Claude,
+Codex, Cursor, Gemini) with its real state: Ready with version and account, Not
+signed in with Sign in, Not installed with the exact install command and Run,
+Can't start with the CLI's output and Check again. Rows check again on window
+focus, when a sign-in or install terminal ends and on Check now, one agent at a
+time (`useAgentDetection`, `probeAgent`); an answer for an older check of the same
+agent is dropped. The ready count comes from `readyAgents()`; Continue needs one
+ready agent and saves the default agent (`agents.default`), which the new
+workspace takes as its default provider. API key providers sit behind Use an API
+key instead. Workspace is `NewWorkspaceForm` in first-run mode. Tools holds Code
+and Tasks on one step and never leaves the stepper: the host the first
+repository pushes to leads, the others fold under Other code hosts, and with no
+repository Code says why while Tasks still works. Continue with nothing
+connected is the skip; every form binds to the workspace the step opened for.
+Sentry, Slack and the rest live in Settings › Integrations. There is no
+permissions question: every workspace starts on Full access. First session is
+one input card: three starters that name the folder, the agent, Scout reads
+only and the model as pills, and Start, which starts a Scout session from a
+draft (`startSessionFromDraft`); setup is done only once that resolves, and a
+failure keeps the prompt and reads Retry. With a task source connected, Pick up
+an issue lists assigned issues and Draft the brief opens the session draft with
+that issue picked. The draft carries the first folder, so the session lands in
+it. The checklist in the
+Goodboy menu has the stepper's four rows, counted by `setupProgress()` in
+`features/onboarding/setupProgress.ts`, the one function the chip and the menu
+read ("Setup · 2 of 4"). About you is not counted: it is suggested under Next
+once the first session is done. While setup is open or paused a row resumes
+setup at its step; once setup is done Tools reopens its own step. Tools ticks
+when the user moves past it or connects a code host or task source, and the
+first session ticks when an agent finishes a turn, not when a session row
+exists. Old checklist ids map to the four on hydrate.
 
 ## Auto in the shell
 
@@ -1891,9 +2043,9 @@ at first), with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a door, the icon beside the bell; it opens its Overview
 tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
-open its Spend tab. The **Providers menu** is not a door to the Providers &
+open its Spend tab. The **Providers menu** is not a door to the Providers and
 models page: it changes things in place (`app/components/ProvidersMenu`, opened
-from the Limits strip). Settings > Providers & models is the one home for
+from the Limits strip). Settings > Providers and models is the one home for
 providers and usage; the menu holds no usage figure and sends there with
 **Manage providers** (a door). It lists the same `ProviderPolicyList` as the
 Models row When a provider is out, writing through the same
@@ -1911,7 +2063,7 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
 - **Before any workspace exists, the column keeps its app half**: Settings,
   the Goodboy row and the bug. New session, the doors and the sessions belong
   to a workspace and wait for one. Settings then opens its home with only the
-  App and Providers & models groups, and Providers opens on an account instead
+  App and Providers and models groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and
   Manage gear with no folder open.
 
@@ -1940,7 +2092,7 @@ its plain keys with `useShortcut` and an enabled flag, never with its own
 window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Lists, Comments, Files, Window; ids stay `review` and
-`diff`), and Settings > App > Shortcuts lists the
+`diff`), and Settings > App > Keyboard shortcuts lists the
 groups in that order, read top to bottom per column. An entry that works only in
 one place carries a `scope` (Tasks and Notifications lists, the Branch page,
 the terminal, a chat composer, an activity row, a workspace
@@ -1990,7 +2142,7 @@ screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 ## Studios
 
 Utility studios (Tasks, Chat, Workflows, Terminal, Impact, Notifications, Changelog,
-the guide, pairing, Add workspace) render in the shell's studio slot, which
+the guide, Add workspace) render in the shell's studio slot, which
 covers the content area only, beside the column, as its own sheet; the page
 title is its one header (no title band). The column stays live, so another door or a session row is
 one click away. **Settings is the one studio that takes the column**, in
@@ -2010,11 +2162,10 @@ Esc and Back land alike. A session key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward
 closes Settings on its way. On close, `StudioFrame` gives focus back to what
 opened the studio, or to the studio's door when that is gone (the palette),
 unless focus already sits outside the studio (`restoreStudioOpener`). The
-exception is the workspace launcher, which has no column to give. In the
-launcher, Add
-workspace takes the whole window, and so do the app studios: Settings (its
-corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette opens there
-too.
+exception is Home, which has no column to give. On Home, New workspace swaps
+the list for the form in place, and the app studios take the whole window:
+Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette
+opens there too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
@@ -2041,16 +2192,17 @@ one is open at a time.
   (`STUDIO_META[kind].skeleton`, drawn through `PageSkeleton` on the page's header
   inset and measure): `rows` (Tasks, Workflows, Monitoring, Notifications, Settings,
   Add workspace), `prose` (the guide, What's new), `room` (Chat), `terminal` and
-  `cards` (Impact, pairing), with a rail skeleton where the page has a rail. With no
+  `cards` (Impact), with a rail skeleton where the page has a rail. With no
   studio open, no frame node exists, so nothing covers the page.
 - **One title per page; the band holds no title.** `StudioBand` never draws a
   crumb title, an icon or a subtitle; the page `h1` is the one title.
   `STUDIO_META[kind].close` places Close: `none` for the sidebar door pages
-  (Tasks, Chat, Workflows, Terminal: no band, no Close, the top bar Back and
-  Escape leave them), `header` for Monitoring, Notifications and the guide
-  (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
-  action of the page title row), `band` for the rest (Settings over the window,
-  Impact, What's new, pairing, Add workspace), whose 40px band holds only Close
+  (Tasks, Chat, Workflows, Terminal, Impact, Monitoring: no band, no Close, the
+  top bar Back and Escape leave them), `header` for Notifications, the guide and
+  What's new (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
+  action of the page title row, and the band holds it only until a page header
+  claims it), `band` for the rest (Settings over the window, Add workspace),
+  whose 40px band holds only Close
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not
@@ -2114,7 +2266,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   session's group, and the drawer closes by itself when its worktree has no terminal left.
   `Open on Terminal page` closes the drawer and selects the same tab on the page; the pane
   remounts on the same pty and replays its scrollback. The page group title is the session title,
-  cut in the middle past 28 characters (`middleTruncate`); the group's `aria-label` keeps the full
+  cut at the end, never in the middle; the group's `aria-label` keeps the full
   title.
 - **One Esc stack.** The frame, a body that holds Esc (Tasks with a record
   open), the agent overlay and the delete confirm all register with
@@ -2141,10 +2293,15 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   All) and in the studio (`cozy`, opens in place with the body, the older
   members and Report this). Both lead with the severity glyph alone: unread is
   the title weight (500 in foreground), read rows recede, and no second leading
-  dot. In the studio the time owns the last fixed column; the row's action,
-  Mark read and Delete live on the opened row (one line of buttons under it), so
-  the row never changes width and no row carries a wall of icons. The facets (view, severity,
-  source and the workspace scope) are a page rail docked beside the list, in
+  dot. In the studio the time owns the third column and a fixed fourth column
+  holds the hover controls (`NotificationRowActions`): the registry's hover
+  action (Mark read, one click) and the `⋯` menu of the `notification` kind
+  (Open, Mark read or unread, Report this, Copy text, Delete), also opened by
+  right click. They show on hover and keyboard focus, never change the row's
+  width, and the opened row keeps only the notification's own action (Retry) as
+  a button under it. A failed write shows a "Couldn't finish that" toast and
+  leaves the row as it was (`runVerb`). The facets (view, severity,
+  source and, with more than one workspace, the workspace scope) are a page rail docked beside the list, in
   Chat's frame (`StudioRailLayout`, `placement="page"`, surface `notifications`,
   288px), with counts that come from SQL (`countNotifications`), so they stay
   true past the loaded page; a facet count shows from two, a zero facet is dimmed
@@ -2154,12 +2311,12 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
-  The studio header draws them through `HeaderActions`: the shared `FilterButton`
-  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the quiet
-  `Delete all` (the `notifications` kind of the action registry, drawn by
-  `ObjectActionVerb`, since a `⋯` of one item draws nothing), which opens a
-  `ConfirmPopover` anchored to it, aligned to its end edge, titled with the scope's count ("Delete 7 notifications?") and naming the
-  workspace or "every workspace"; it never swaps the title row. A row's Delete acts
+  The studio header draws them through `NotificationsHeaderActions`: the shared `FilterButton`
+  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the `⋯` menu of the
+  `notifications` kind of the action registry (Mark all read, which names the scope, and Delete all). Delete all
+  opens a `ConfirmPopover` anchored to the `⋯`, aligned to its end edge, titled with the scope's count ("Delete 7 notifications?") and naming the
+  workspace or "every workspace"; it never swaps the title row. The title row's meta reads the
+  count and the unread count ("6 notifications · 4 unread"). A row's Delete acts
   at once and pushes "Notification deleted" with Undo (`dismissNotificationGroup`
   re-inserts the rows through `insertNotification`; ⌘Z works too).
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
@@ -2234,7 +2391,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   amends the history entry to the concrete page. The rail is the only index,
   portaled into the column (`SettingsColumnNav`, `Back to app` first, then
   `Search settings`, then the groups) in both sidebar states, or drawn beside
-  the page in the launcher: its four groups (App, Workspace, Providers &
+  the page on Home: its four groups (App, Workspace, Providers and
   models, Integrations) come from `settingsDirectory`. Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
@@ -2254,14 +2411,14 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   scan, no provider refresh). Without a workspace the Workspace and
   Integrations groups are left out. Precedent: the VS Code settings editor and
   Linear's settings sidebar.
-- **Settings nests items in its rail.** The App items (General, Shortcuts,
-  Backup, Storage, Security findings) always sit under the
+- **Settings nests items in its rail.** The App items (General, Updates,
+  Keyboard shortcuts, Storage, Backup and reset, iPhone) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The Workspace pages (Projects, About you, New sessions, After
-  merge, Replies and commits, Permissions) sit the same way under the
+  the pointer. The Workspace pages (Folders, About you, New sessions,
+  Branches, Replies and commits, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
-  shows one item at a time. Providers & models nests
+  shows one item at a time. Providers and models nests
   Models and one row per provider, and Integrations nests one row per tool. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
@@ -2270,11 +2427,11 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
-- **Providers & models names its scope in the page header.** Every page of
+- **Providers and models names its scope in the page header.** Every page of
   the scope (Models and each provider) carries the scope as the meta line of
   its title: the workspace name when one is open, `All workspaces` when there
   is none (`ProviderSettingsScope` passes `scopeLabel`). The legacy trail
-  reads `Workspace` and `Providers & models` without a name, so the name
+  reads `Workspace` and `Providers and models` without a name, so the name
   appears once per page.
 - **Workspace settings is one page per area, each part in a card.** A
   workspace page carries the page title and one line of
@@ -2283,15 +2440,15 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   page on screen mounts, so Permissions and Replies and commits compute nothing
   while another page is open. The old anchors (`projects`, `profile`,
   `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
-  pick a page (`workspacePageOf`); `dev-project` lands on Projects with the
+  pick a page (`workspacePageOf`); `dev-project` lands on Folders with the
   conversion open. The workspace is renamed from the `Name` field of the
-  Projects page, and its name is written once on that page, in the top bar
+  Folders page, and its name is written once on that page, in the top bar
   (the disconnect row says `Disconnect this workspace`). The attribution line
   lives on New sessions only, and Replies and commits links to it. Replies
   and commits holds the reply voice and templates, `Mark thread as resolved`
   and the commit style (`review-replies` stays its page id and anchor); Run
   defaults live under Workflows.
-  Turning a plain folder into a dev project is an inline flow in the Projects
+  Turning a plain folder into a git repository is an inline flow in the Folders
   page (`ConvertWorkspaceFlow`), never a dialog: linking a plain folder opens
   Settings there once the add workspace studio has closed. Skills stays
   hidden behind its feature flag. Precedent: GitHub repository settings and
@@ -2299,7 +2456,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
 - **Restore defaults and copy from another workspace share one inline
   flow.** The page menu (⋯ in the title row) of every page that owns settings
   offers `Restore defaults` and `Copy from…`; under a separator, the menu of
-  every workspace page (Projects included) offers `Copy all pages from…` and
+  every workspace page (Folders included) offers `Copy all pages from…` and
   `Restore all workspace defaults` for every page at once. The flow opens under the title as a band, never as a
   popover: pick the workspace, then a preview grouped by page with a
   checkbox per page and the from and to values, then the action row (`Copy N
@@ -2307,7 +2464,7 @@ settings`, `Back`, `Cancel`). It ends on a status line with `Undo`. The
   preview is computed when the flow opens (`loadFlowSources`), not on every
   render. Which keys a page owns comes from `pageKeys` (`features/settings/
 pageKeys.ts`), typed so a new override key does not compile until it has
-  an owner; provider defaults belong to Providers & models and are never
+  an owner; provider defaults belong to Providers and models and are never
   copied, and neither are projects, folders, integration accounts,
   permission history or `bootstrap.*` keys. Restoring writes `null`; every
   override change of one copy or restore is one `patchWorkspaceOverrides`
@@ -2318,14 +2475,22 @@ default`, hidden while the value is the default, `WorkspaceFieldRow`). Precedent
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
   under three filters: To review, In use and Kept. Each part is a card
-  (`Band`) under a plain section title: the summary, Worktrees (with `Scan
+  (`Band`) under a plain section title: Worktrees (with `Scan
 another repository` at its foot), Artifacts of deleted sessions, and
-  Transcripts and app data. Branches is its own App page (`branches` in
-  `appSections.ts`, `BranchesPage`): the scoped workspace's after-merge rule
-  with a `Change` link, `Recently deleted` (restore or delete for good,
-  loaded from `deleted_branches` on open, which also releases the refs of
-  deletions older than 14 days), then the branch list, safe ones first with
-  `Show all branches` and a `Made by` picker. A scope picker
+  Transcripts and app data. There is no summary band: the page meta line
+  reads `<total> on this Mac`, or `<total> in <workspace>` under a scope, from
+  one function (`storageTotalBytes` and `storageMetaOf` through
+  `useStorageMeta`), and adds `Low space: N GB free on this disk` under 10 GB
+  free. The Worktrees header holds the three filters and `Remove N safe
+folders · size` (`WorktreeRemoveButton`), with the sentence on idle days as
+  its help line, and the folder `...` menu shows on hover and focus. `Prune`
+  is a secondary button that confirms. Branches is a Workspace page
+  (`branches`, `BranchesPage`): the workspace's After merge rule first, then
+  the branch list under one select (`Safe to delete`, `Needs a look`, `All`),
+  then a `Recently deleted` fold row (restore or delete for good, loaded from
+  `deleted_branches` on open, which also releases the refs of deletions older
+  than 14 days). The page meta line reads `N safe to delete · M need a look`
+  (`branchesMetaOf` through `useBranchesMeta`). A scope picker
   (`StorageScopePicker`, `Listbox`) sits in the page header row next to
   `Suggest cleanup after` and `Check again` (`StorageHeaderActions`); the
   Branches header has the same picker without `Removed workspaces`
@@ -2333,13 +2498,12 @@ another repository` at its foot), Artifacts of deleted sessions, and
   cleanup notifications always land on Storage. The picker lists the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
-  and `All workspaces` with the machine total. The scope drives the summary
-  numbers, the worktree list and the artifact list together
+  and `All workspaces` with the machine total. The scope drives the total, the
+  worktree list and the artifact list together
   (`storageScope`, `resolveStorageScope`); it defaults to the current
   window's workspace, or to all workspaces without one. A scope other than
-  all drops App data out of the bar into its own line (`state.storageScope`
-  never splits app data by workspace) and keeps a faint, clickable `All
-workspaces: <total>, <can go> can go` line under the numbers. The
+  all leaves App data out of the total (`state.storageScope`
+  never splits app data by workspace). The
   workspace page's own Notice, and the `open-orphan-worktrees` notification
   action, both open Storage already scoped to that workspace
   (`openStorage({ scope })`); the machine-wide `open-storage` nudge opens it
@@ -2354,27 +2518,26 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
   On the Branches page, `BranchesSection` lists local branches
-  only, in the same scope, grouped by project. It scans only when it opens:
+  only, in the same scope, in one list. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
   test cached by both tips and fed each branch's merged pull request head
-  (`listMergedRequestHeads`). The `Made by` picker shows all local branches
-  (the default), `Made by Goodboy` (branch names from `session_worktrees` and
-  `retained_worktree_paths`) or `Yours` (plus branches whose tip is authored
-  by the repo's `user.email`, shown `By you`); protected branches never show.
-  The list opens on `Safe to delete` (merged by merge commit or rebase,
-  merged by its pull request with nothing after the merged head, or never
-  used), and `Show all branches` adds the ones that need a look (`Merged,
-then N new commits`, unmerged and gone on origin, local only for over 30
-  days, or older than 90 days; never preselected) and the kept ones. Every
-  branch row and every Recently deleted row sit on one grid
-  (`BRANCH_TABLE_GRID`, each cell marked with its `data-cell` name): select, branch,
-  session title, session state, origin state (`On origin` / `Local only` /
-  `Gone on origin`), the status on one line with how it merged as a muted
-  suffix and in its tooltip, the last commit's age and the action. A
-  Recently deleted row puts the project, the days since, the short sha and
-  the days left in the same columns. Delete on a merged branch acts at once
-  and a toast carries `Undo`; an unmerged one confirms above the bulk bar,
-  which counts the commits it takes. `Also delete N on origin` sits above
+  (`listMergedRequestHeads`); protected branches never show. One select
+  (`Safe to delete`, the default, `Needs a look`, `All`) filters the list.
+  Safe to delete means merged by merge commit or rebase, merged by its pull
+  request with nothing after the merged head, or never used. Needs a look
+  means `Merged, then N new commits`, unmerged and gone on origin, local only
+  for over 30 days, or older than 90 days; never preselected. Every branch
+  row and every Recently deleted row sit on one grid (`BRANCH_TABLE_GRID`,
+  each cell marked with its `data-cell` name): select, branch with its
+  session title under it, folder, state chip (`Merged`, `No commits` or the
+  full verdict, with how it merged and where it lives in its tooltip), the
+  last commit's age and the action cell (`row-actions`, shown on hover and
+  focus). Delete reads the `branch` kind (`branch.delete`), from the cell and
+  from right click. A Recently deleted row shows the sha under the branch,
+  the days left as the chip and Restore plus delete for good in the action
+  cell. Delete on a merged branch acts at once
+  and a toast carries `Undo`; an unmerged one confirms in a popover beside its button, and the bulk bar
+  counts the commits it takes. `Also delete N on origin` sits above
   the bar only for Goodboy's own pushed branches in repos where GitHub does
   not already delete merged branches. Deletes use the same
   compare-and-delete and 14-day restore as the after-merge rule. A branch another worktree
@@ -2383,7 +2546,9 @@ then N new commits`, unmerged and gone on origin, local only for over 30
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete, which asks in a `ConfirmPopover` beside its button. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
-- **Security findings is its own App page, workspace-scoped.** It scans the
+- **Security findings is a section at the end of the Storage page,
+  workspace-scoped** (`SecurityFindingsSection`; the old `security-findings`
+  address lands on Storage, and its warning dot sits on Storage). It scans the
   text Goodboy keeps for a workspace (saved scripts today; workflow steps,
   the profile, reply templates and permission rules are named in the design
   but not wired to a scan call yet) for known token shapes
@@ -2401,31 +2566,33 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   calls it once per studio and hands the result to the rail and the home, and
   a test mounts the home on the strict `invoke` mock to keep it free of
   commands and loads at render. A dot appears only
-  when something needs doing: warning on Providers & models when a connected
+  when something needs doing: warning on Providers and models when a connected
   CLI is too old for a model it serves or no provider is connected
   (`selectProviderAttention`, with the reason as the dot's label), info on
-  General while an app update is ready, info on Storage with "N GB can go" as
+  Updates while an app update is ready (`updatesText`), info on Storage with "N GB can go" as
   its label once clean idle folders pass 10 GB (warning when the disk has
   under 10 GB free and at least 1 GB can go, `storageAttention`),
-  warning on Security findings with "N open" once the current workspace has
-  an undismissed finding (`selectSecurityFindingsAttention`), and warning on
+  warning on Storage with "N open" once the current workspace has
+  an undismissed finding (`selectSecurityFindingsAttention`; Storage shows the
+  worse of its two dots, `appAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
   `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). A connected tool shows a quiet success dot named by its identity;
-  an Integrations row says nothing more. No rail row is red: the destructive actions sit at the
+  workspace). A dot means only "needs you": a tool whose health is bad shows a
+  warning or danger dot named by its reason (`toolAttention`), and a connected,
+  healthy provider or tool shows none (no green dot for connected). No rail row is red: the destructive actions sit at the
   bottom of their page, Reset (Delete all data) at the end of Backup and
-  Disconnect at the end of Projects, and turn red only in their inline
+  Disconnect at the end of Folders, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
   renamed in place. One `Terminal folder` row sits above the projects: the
   computed folder (`workspaceFolder`) with `Change` (the folder dialog) and,
-  when overridden, `Use the default` (`setTerminalWorkspaceFolder`). Projects
-  group `Starred` ahead of `Other projects` (never in both; one `Projects`
+  when overridden, `Use the default` (`setTerminalWorkspaceFolder`). Folders
+  group `Starred` ahead of `Other folders` (never in both; one `Folders`
   heading with `Star the ones you use most.` while nothing is starred), 16px
   apart with no divider, each a `SectionHeader` with its count and, for
   Starred, `Agents and pickers list these first.`; Starred is never folded and
-  `Show N more` stays under Other projects. Each project is a 32px row on the
+  `Show N more` stays under Other folders. Each project is a 32px row on the
   group grid (star, kind, name, description, a base-branch chip only when set
   by hand, a Folder-not-found flag) with Open in editor, Copy path and Remove
   link in a reserved column, dim at rest. The star shows at rest only on
@@ -2437,7 +2604,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   right of the name. `starredProjectsFirst({ projects, inside })` is the one
   order: starred first, then the rest, by `name` in Settings and by `recency`
   in pickers (`groupProjects` calls it). A project picker (the session Add
-  project list, the Sessions project filter) with a starred project and six or
+  folder list, the Sessions folder filter) with a starred project and six or
   more projects shows the same two headings and a small filled star on starred
   rows (`shouldGroupStarred`); a search flattens them. New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
@@ -2564,7 +2731,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `warning` `Notice` with `Use this branch here`, `Keep both branches` and
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
-  Activity. Projects, Linked work, Artifacts and Add project live on the
+  Activity. Folders, Linked work, Artifacts and Add folder live on the
   session rail's session level. Next and Unassigned notes open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
@@ -2708,9 +2875,15 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed, opens as a pane (see The session tools), and
-  browses one project of the session at a time as a tree (`role="tree"`). A
-  project chip under the title (`ExploreProjectChip`) names it, `ledger-core ·
-hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
+  browses one project of the session at a time as a tree (`role="tree"`). It
+  draws the shared page header (`PaneShell` `page="explore"` inside the
+  drawer's `DrawerFrame isHeaderless`, which keeps Esc and focus): the title
+  with no glyph, counts on the meta line (`exploreMetaOf`: `3 folders · 4 files`
+  for the root, `7 files changed` in the Changed view, nothing while the root
+  loads or is empty), then Refresh and Close at the right of the title row. A
+  project chip on the row under the meta (`ExploreProjectChip`) names the
+  folder, `ledger-core · hl/ledger-rounding`, and with two or more mounts opens
+  a menu grouped by
   project; a first-lap session reads `ledger-core, project folder` and a
   session without a project reads `Session scratch folder`. Picking a row is
   view only: it sets `exploreMountPath` in the session-view slice and never
@@ -2718,8 +2891,13 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   moves it. Until you pick, Explore follows the write destination
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
-  "This worktree is gone", and a session with nothing to browse reads "Nothing
-  to browse yet". The `mount.browseFiles` action (Browse files) opens the
+  "This worktree is gone", and a session with nothing to browse reads "No
+  folder to browse" with one action, Add folder (`DrawerHost` hands it
+  in as `noFolderAction`, so `features/explore` does not import the session
+  feature). Every empty state is an
+  `EmptyState` at page size: a title, one line that says what fills it and at
+  most one action ("This folder is empty", "No changes against main", "Couldn't
+  read this session folder" with Retry). The `mount.browseFiles` action (Browse files) opens the
   Explore pane on a given mount (`openExplorePane`). An `explore` target in a
   stored place (`s/{session}/explore/{mount}`) still parses and lands on the
   Overview with the pane open. Rows are 40px
@@ -2742,7 +2920,7 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   git answers and that has changes (or while you are in Changed). Changed
   filters the same tree to the changed paths and their folders, all open, with
   deleted files as faint struck rows that do not open; with nothing left it
-  says "No changes against main." A changed file's drawer offers
+  says "No changes against main". A changed file's drawer offers
   `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
   presentation with a ghost Open in Files that opens the Files tab on the file. The folders you opened
   are kept per session and project in the session-view slice (`exploreExpanded`,
@@ -2811,19 +2989,67 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   draws no state chip: the state leads the gray meta line. A report shows its
   title only in the document, the header keeps a hidden `h1`.
 
+## Home
+
+Home is the one page of a window with no workspace open: workspaces exist and
+none is open here, or there is no workspace at all. `App.tsx` renders it
+whenever `currentWorkspace` is null, in every window. It has no app chrome, so
+it carries the lockup itself: the 40px `BrandTile`, the word and the version
+([brand.md](brand.md)). Under it:
+
+- **Workspaces.** One row per workspace, most recent first (`WorkspaceRow`):
+  the identity tile, the name, the folder count (`folderCountLabel`, "3
+  folders") and the folders' common parent (`workspaceFolderPath`, the home
+  folder as `~`), Open in a new window, Disconnect behind an inline confirm, and
+  when it was last opened. A click opens it here, or in a new window while
+  agents run here. The search field shows from five workspaces on.
+- **New workspace** (⌘N on Home, `home.newWorkspace`) fires
+  `goodboy:add-workspace` through `openNewWorkspace`, like the switcher, the
+  palette, the Goodboy menu and the menu bar. On Home the `addWorkspace` place
+  swaps the list for `NewWorkspaceForm` in place, the lockup stays put, Cancel
+  or Escape goes back, and Create opens the new workspace. A workspace of plain
+  folders only is offered a repository after it opens, as from the studio.
+- **No workspace yet.** A card that says how a workspace starts, with New
+  workspace and, while setup is unfinished in the main window, "Setup paused at
+  Workspace · 1 of 4 done" and **Resume setup** (`useSetupResume`, counted by
+  `setupProgress`).
+- **Reopen the last workspace on launch**, a switch.
+
+Setup mounts over Home and opens in the main window only. The app layers keep
+one key across Home and the shell, so the setup wizard is not remounted when
+the first workspace opens under it.
+
 ## Starting a project from nothing
 
-The empty screen, the workspace launcher, the workspace switcher and the
-command palette offer **Start a new project** and **Open a folder**, in that
-order. The wizard's project step offers the same two. Settings, Workspace,
-Projects names its form **Start a new project** too and opens the same form in
-line. **Add workspace** names only the studio that groups projects. Start opens
-one inline form (`NewProjectForm`), never a dialog: a name, a location (the
-last parent folder, else the home folder, changed with the system picker) and
-the four things the click does. A name that exists in the parent says so and
-offers **Open it instead**. Create project makes the folder, a repository on
-`main` with a first commit that holds `.gitignore` and nothing else, one
-workspace and project named after it, and opens the first lap session.
+Every door that creates or adds folders opens one inline form,
+`NewWorkspaceForm` (`shared/components/NewWorkspaceForm/`), never a dialog. It
+runs in three modes: `first-run` (the setup Workspace step, title "Your first
+workspace"), `new` (the New workspace studio and Home) and
+`add` (the empty board and Settings, Workspace, folders, which add folders to
+the workspace they name by id). The form owns its action row.
+
+- **Pick or drop a folder.** Choose folder (Cmd+O) or a drop on the drop area
+  only reads: `validate_git_repo`, `scan_child_repos` and the move preview fill
+  a draft in memory (`useWorkspaceDraft`). Each read carries a pick number and a
+  late answer for an older pick is dropped. A repository shows Git and its
+  default branch; a subfolder of one snaps to its root and says so; a folder of
+  repositories lists them checked; a plain folder offers git init on Create; a
+  folder that cannot be read says why (macOS privacy opens Privacy settings
+  through `open_privacy_settings`) and keeps Create off with the reason.
+- **Name.** The workspace takes the picked folder's name through
+  `nameFromFolder` and is edited in place; Escape while editing restores it.
+- **A folder another workspace holds** asks Move it here or Leave it out; Create
+  stays off until one is chosen, and Move is off while agents run there. The
+  move happens on Create, never on the click.
+- **Start from scratch** (the old Start a new project) asks a folder name and a
+  location (the last parent folder, else the home folder, changed with the
+  system picker). Create makes the folder, a repository on `main` with a first
+  commit that holds `.gitignore` and nothing else, and the workspace named
+  after it. Outside setup it then opens the first lap session; in setup it goes
+  on to the next step.
+- **Create** calls `createWorkspaceWithFolders` once, with a workspace id the
+  draft made before the write; Retry reuses it. Nothing is written before
+  Create. The New workspace studio never reopens setup.
 
 The first lap session shows one notice under the goal of its Overview,
 `Not published yet`, with **Publish**. Publish
@@ -3024,7 +3250,7 @@ card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
 off-scale widths a floating surface declares per file and never lets one
 grow.
 
-**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy chip with 12px to the window edge and never wider than `min(384px, window - 24px)`: it carries the title `<version> is ready` and the Later, What's new and Restart now actions, no lead and no bullets. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy row with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](release.md#auto-update)), no bullets. It stays away while its row is inert, as when Settings covers the column (`useIsAnchorInert`), and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
 
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the
@@ -3117,7 +3343,7 @@ The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
 open, it lists the last round (`summarizerRounds`: when, how many turns or a
 full pass, model and effort, tokens and cost, what changed as a comma list of
-links to the tabs, every value on the same column), **Change model** (Settings, Providers & models, Models, scrolled to
+links to the tabs, every value on the same column), **Change model** (Settings, Providers and models, Models, scrolled to
 Step summaries) and **Update now**. Update now queues a consolidation pass
 through `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is
@@ -3256,7 +3482,7 @@ the Pull request property block, the commit count is the Commits entry, and a bl
 says its reason in its tooltip. **The switcher** (`BranchSwitcher`) is the branch line of the
 worktree level's identity row. It opens a menu of the session's
 branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
-glyph, branch cut in the middle, `#318 Open`, a check on the current one,
+glyph, branch cut at the end, `#318 Open`, a check on the current one,
 grouped by repo when there are several) and `New branch`. Choosing a branch
 makes it the active mount and replaces the address with the landing tab of
 that branch (`switchBranchMount`, also what the trail menu and the sidebar rows
@@ -3572,10 +3798,11 @@ menus); there are no worktree tabs. Every rewrite takes the shown
 mount's `mountId`, never the active mount. `Rebase on main` replays the
 branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads
-`Rebase on main · N conflicts`, and only then
-the hidden History rewriter merges the edits in a throwaway copy. The branch
-moves only after the engine checks the result, with a backup ref and a push
-with lease.
+`Rebase on main · N conflicts`. A conflict stops the rebase with the branch as
+it was and asks inline (`RebaseConflictPrompt`): **Resolve with Auto**, **Open
+terminal here** or **Abort rebase**; no agent starts by itself. A clean rebase
+moves the branch only after the engine checks the result, with a backup ref and
+a push with lease.
 
 The Commits tab draws the branch as a graph (`history_graph`): a grey main
 trunk, your branch leaving it at the real fork point, one
@@ -3596,9 +3823,13 @@ to it and runs the rebase command (`rebaseBranch`, with `ontoBranch` for another
 base) with a version of the current history kept. The Activity rebase suggestion
 (`Open rebase`) opens this page on the mount it names, scrolled to the row with
 the button focused (`HISTORY_FOCUS_BASE_EVENT`).
-Under the list one muted line, `Drag a commit to move it, drop it on another to
-fold it in.`, with a ghost `Keys` button that opens an anchored popover listing
-the keys of the focused row (`useHistoryKeys/historyKeys.ts`). There is no
+The page header has one `...` button (`HistoryKeysHint`, an anchored popover)
+with `How to edit commits` (the Guide chapter Commits) and the keys of the
+focused row (`useHistoryKeys/historyKeys.ts`); no teaching line sits under the
+list. Each row's `...` menu lives in a fixed cell that shows on hover and
+focus (`row-actions`, `HistoryRowActions`), and `Previous versions` is a fold
+row with its count at the end (`HistoryVersionsLink`). The registry verb for
+`mount.rewriteHistory` and `diff.rewriteHistory` reads `Edit commits`. There is no
 preview or Apply step. The graph shows the live branch. Drag a row between
 two others to move it, or onto another to fold it in. Focused-row keys are
 Alt with arrows to move, C to fold, S to combine both messages, R or Enter to
@@ -3800,7 +4031,7 @@ shows once: in the `Pinned` strip at the top of the lens only when the session
 has more than one project (one click runs one in its group's worktree), and
 only in the rows otherwise. The palette lists pinned scripts under `$` with the
 project name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
-their project name too). On the workspace Projects page the open editor card
+their project name too). On the workspace Folders page the open editor card
 of a project ends with a `Scripts` field (`ProjectScriptsField`, label
 `Scripts · N pinned`): it reads the project folder when the card opens
 (`loadProjectRootScripts`, kept in memory by root path), says `On <base>` and

@@ -30,6 +30,17 @@ const SONNET_5_PRICE: ModelPrice = {
   outputPerMtok: 10,
   cachedInputPerMtok: 0.2,
 };
+const SONNET_55_PRICE: ModelPrice = {
+  inputPerMtok: 2,
+  outputPerMtok: 10,
+  cachedInputPerMtok: 0.1,
+};
+const HAIKU_55_PRICE: ModelPrice = {
+  inputPerMtok: 0.1,
+  outputPerMtok: 0.5,
+  cachedInputPerMtok: 0.01,
+  assumed: true,
+};
 
 export const CLAUDE_PRICES: Record<string, ModelPrice> = {
   'claude-fable-5-1': FABLE_51_PRICE,
@@ -39,10 +50,11 @@ export const CLAUDE_PRICES: Record<string, ModelPrice> = {
   'claude-opus-4-8': OPUS_PRICE,
   'claude-opus-4-7': OPUS_PRICE,
   'claude-opus-4-6': OPUS_PRICE,
-  'claude-sonnet-5-5': SONNET_5_PRICE,
+  'claude-sonnet-5-5': SONNET_55_PRICE,
   'claude-sonnet-5': SONNET_5_PRICE,
   'claude-sonnet-4-6': SONNET_PRICE,
   'claude-sonnet-4-5': SONNET_PRICE,
+  'claude-haiku-5-5': HAIKU_55_PRICE,
   'claude-haiku-4-5': {
     inputPerMtok: 1,
     outputPerMtok: 5,

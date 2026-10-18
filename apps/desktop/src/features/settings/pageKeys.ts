@@ -28,7 +28,7 @@ export const FIELD_PAGE: Readonly<Record<WorkspaceSettingField, PlanPage>> = {
   attribution: 'general',
   parallelAgents: 'general',
   verbosity: 'general',
-  afterMerge: 'after-merge',
+  afterMerge: 'branches',
   replyVoice: 'review-replies',
   replyStyleNote: 'review-replies',
   replyTemplateFixed: 'review-replies',

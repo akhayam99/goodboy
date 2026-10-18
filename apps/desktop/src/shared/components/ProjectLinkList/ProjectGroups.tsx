@@ -96,12 +96,12 @@ export const ProjectGroups = ({
       ) : null}
       {groups.all.length > 0 ? (
         <section
-          aria-label={hasStarred ? 'Other projects' : 'Projects'}
+          aria-label={hasStarred ? 'Other folders' : 'Folders'}
           className="col-span-full grid grid-cols-subgrid gap-y-1"
         >
           {hasStarred ? (
             <SectionHeader
-              label="Other projects"
+              label="Other folders"
               headingLevel={2}
               meta={<GroupCount count={groups.all.length} />}
               className="col-span-full px-2"

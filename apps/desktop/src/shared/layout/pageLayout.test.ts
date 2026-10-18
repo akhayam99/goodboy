@@ -38,7 +38,37 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     page: 'notifications',
     files: ['features/notifications/components/NotificationsStudio/index.tsx'],
   },
-  { page: 'guide', files: ['features/settings/components/GuideStudio/parts/GuideContent.tsx'] },
+  {
+    page: 'guide',
+    files: ['features/settings/components/GuideStudio/parts/ChapterPage.tsx'],
+    prop: 'page="guideChapter"',
+  },
+  {
+    page: 'guideChapter',
+    files: ['features/settings/components/GuideStudio/parts/ChapterPage.tsx'],
+  },
+  { page: 'explore', files: ['features/explore/components/ExplorePane/index.tsx'] },
+  {
+    page: 'settings',
+    files: ['features/companion/components/IphonePage/index.tsx'],
+  },
+  {
+    page: 'whatsNew',
+    files: ['features/changelog/components/ChangelogStudio/CatchUpReader.tsx'],
+  },
+  {
+    page: 'release',
+    files: ['features/changelog/components/ChangelogStudio/ReleaseReader.tsx'],
+  },
+  {
+    page: 'impact',
+    files: [
+      'features/impact/components/ImpactStudio/OverviewPanel.tsx',
+      'features/impact/components/ImpactStudio/ShippedPanel.tsx',
+      'features/impact/components/ImpactStudio/FlowPanel.tsx',
+      'features/impact/components/ImpactStudio/SpendPanel.tsx',
+    ],
+  },
 ];
 
 const SESSION_PAGES: ReadonlyArray<PageRoot> = [
@@ -90,6 +120,11 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   monitoring: 'column',
   notifications: 'column',
   guide: 'column',
+  guideChapter: 'column',
+  explore: 'column',
+  whatsNew: 'column',
+  release: 'column',
+  impact: 'column',
   overview: 'column',
   runs: 'column',
   run: 'column',
@@ -125,7 +160,6 @@ const TITLE_ROW_IMPORT = /\bPaneTitleRow\b/;
 const SKELETON_BODY_OF: Readonly<Record<keyof typeof STUDIO_META, string>> = {
   settings: 'rows',
   guide: 'prose',
-  companion: 'cards',
   addWorkspace: 'rows',
   workflow: 'rows',
   inbox: 'rows',

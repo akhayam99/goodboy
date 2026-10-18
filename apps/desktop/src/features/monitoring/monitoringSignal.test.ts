@@ -34,7 +34,7 @@ describe('monitoringSignal', () => {
           ],
         },
       }),
-    ).toEqual({ inUse: 2, hasDownPin: false });
+    ).toEqual({ inUse: 2, downPins: [] });
   });
 
   it('counts a port once when two listeners share it', () => {
@@ -48,11 +48,19 @@ describe('monitoringSignal', () => {
     ).toBe(1);
   });
 
-  it('flags a pinned port that is down', () => {
+  it('names each pinned port that is down, once and in order', () => {
     expect(
       monitoringSignal({
-        split: { pinned: [rowOf({ port: 9000, state: 'free' })], goodboy: [] },
+        split: {
+          pinned: [
+            rowOf({ port: 9000, state: 'free' }),
+            rowOf({ port: 5173, state: 'free' }),
+            rowOf({ port: 9000, state: 'free' }),
+            rowOf({ port: 4000, state: 'listening' }),
+          ],
+          goodboy: [],
+        },
       }),
-    ).toEqual({ inUse: 0, hasDownPin: true });
+    ).toEqual({ inUse: 1, downPins: [5173, 9000] });
   });
 });

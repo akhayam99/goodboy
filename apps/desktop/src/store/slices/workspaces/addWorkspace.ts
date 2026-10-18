@@ -20,6 +20,8 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { repoIdentity, validateGitRepo } from '../../../shared/lib/repo';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
+import { nameFromFolder } from '../../../features/workspace/nameFromFolder';
+import { folderName } from '../terminal/terminalOwner';
 import { rescanWorkspaceSkills } from './workspaceSkills';
 import { workspaceSlug } from './slug';
 import type { GetFn, SetFn } from './types';
@@ -129,19 +131,15 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
       return workspace;
     }
 
-    const inferredName =
-      name?.trim() ||
-      resolvedRoot
-        .split('/')
-        .filter((part) => part.length > 0)
-        .at(-1) ||
-      'workspace';
+    const typedName = name?.trim() ?? '';
+    const workspaceName = typedName === '' ? nameFromFolder({ path: resolvedRoot }) : typedName;
+    const projectName = folderName({ path: resolvedRoot }) ?? workspaceName;
     const now = new Date().toISOString() as IsoDateTime;
     const workspaceId = crypto.randomUUID() as WorkspaceId;
     const workspace: Workspace = {
       id: workspaceId,
-      name: inferredName,
-      slug: workspaceSlug({ name: inferredName, id: workspaceId }),
+      name: workspaceName,
+      slug: workspaceSlug({ name: workspaceName, id: workspaceId }),
       overrides: EMPTY_OVERRIDES,
       createdAt: now,
       updatedAt: now,
@@ -150,7 +148,7 @@ export const addWorkspace = (set: SetFn, get: GetFn) => {
     const project: Project = {
       id: crypto.randomUUID() as ProjectId,
       workspaceId,
-      name: inferredName,
+      name: projectName,
       rootPath: resolvedRoot,
       kind: isRepo ? 'repo' : 'folder',
       overrides: EMPTY_OVERRIDES,

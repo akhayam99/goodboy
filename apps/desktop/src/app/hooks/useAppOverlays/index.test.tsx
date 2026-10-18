@@ -62,7 +62,19 @@ vi.mock('../../../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
 vi.mock('../../../features/workspace/components/WorkspaceLauncher', () => ({
-  WorkspaceLauncher: () => <div data-testid="launcher" />,
+  WorkspaceLauncher: ({
+    isCreating,
+    onCloseCreate,
+  }: {
+    readonly isCreating: boolean;
+    readonly onCloseCreate: () => void;
+  }) => (
+    <div data-testid="launcher" data-creating={String(isCreating)}>
+      <button type="button" onClick={onCloseCreate}>
+        Cancel
+      </button>
+    </div>
+  ),
 }));
 vi.mock('../../../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: ({ focus }: { focus: { scope: string; section?: string } }) => (
@@ -116,9 +128,6 @@ vi.mock('../../../features/changelog/components/ChangelogStudio', () => ({
 }));
 vi.mock('../../../features/notifications/components/NotificationsStudio', () => ({
   NotificationsStudio: () => <div data-testid="studio" data-kind="notifications" />,
-}));
-vi.mock('../../../features/companion/components/CompanionStudio', () => ({
-  CompanionStudio: () => <div data-testid="studio" data-kind="companion" />,
 }));
 
 import { useAppStore } from '../../../store';
@@ -351,13 +360,16 @@ describe('app overlay hook', () => {
     expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('shortcuts');
   });
 
-  it('leaves only the companion when pairing opens over workflows', async () => {
+  it('opens Settings on the iPhone page when pairing opens over workflows', async () => {
     renderHarness();
 
     act(() => overlays().openWorkflows());
     fire({ name: 'goodboy:open-pair-device' });
 
-    expect(await openStudios()).toEqual(['companion']);
+    expect(await openStudios()).toEqual(['settings']);
+    const page = screen.getByTestId('studio');
+    expect(page.getAttribute('data-scope')).toBe('app');
+    expect(page.getAttribute('data-section')).toBe('iphone');
   });
 
   it('leaves nothing open after settings, then pairing, then close', async () => {
@@ -365,7 +377,8 @@ describe('app overlay hook', () => {
 
     act(() => overlays().openSettings());
     fire({ name: 'goodboy:open-pair-device' });
-    expect(await openStudios()).toEqual(['companion']);
+    expect(await openStudios()).toEqual(['settings']);
+    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('iphone');
 
     fire({ name: 'goodboy:reveal-chat' });
 
@@ -404,6 +417,31 @@ describe('app overlay hook, workspace launcher', () => {
       expect(await openStudios()).toEqual([kind]);
     },
   );
+
+  it('opens New workspace in place on Home, with no studio over it, and Cancel goes back', async () => {
+    renderLauncher();
+
+    fire({ name: 'goodboy:add-workspace' });
+
+    expect(await openStudios()).toEqual([]);
+    expect(screen.getByTestId('launcher').getAttribute('data-creating')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await act(async () => undefined);
+    expect(screen.getByTestId('launcher').getAttribute('data-creating')).toBe('false');
+    expect(useAppStore.getState().appStudio).toBeNull();
+  });
+
+  it('answers no start-new-project event: Start from scratch lives inside New workspace', async () => {
+    renderLauncher();
+
+    fire({ name: 'goodboy:start-new-project' });
+
+    await act(async () => undefined);
+    expect(screen.getByTestId('launcher').getAttribute('data-creating')).toBe('false');
+    expect(useAppStore.getState().appStudio).toBeNull();
+  });
 
   it('keeps workspace studios closed while no workspace is open', async () => {
     renderLauncher();

@@ -23,7 +23,7 @@ export const LaunchMountRow = ({
   const selected = mount.options.find((option) => option.projectId === selectedId) ?? null;
   const options: ReadonlyArray<ListboxOption<string>> = [
     ...mount.options.map((option) => ({ value: option.projectId, label: option.name })),
-    { value: NO_PROJECT, label: 'No project' },
+    { value: NO_PROJECT, label: 'No folder' },
   ];
   const ProjectIcon = CONCEPT_ICONS.projectRepo;
 
@@ -40,7 +40,7 @@ export const LaunchMountRow = ({
       <Listbox
         trigger="chip"
         size="sm"
-        ariaLabel="Project to work in"
+        ariaLabel="Folder to work in"
         disabled={disabled}
         value={selected === null ? NO_PROJECT : selected.projectId}
         options={options}
@@ -48,7 +48,7 @@ export const LaunchMountRow = ({
           <>
             <ProjectIcon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="truncate">
-              {selected === null ? 'No project' : `Works in ${selected.name}`}
+              {selected === null ? 'No folder' : `Works in ${selected.name}`}
             </span>
           </>
         }

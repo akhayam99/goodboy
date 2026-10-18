@@ -134,6 +134,20 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.tasks)).toContain('Inbox');
   });
 
+  it('calls what a workspace holds a folder and keeps the project words findable', () => {
+    expect([NAMES.folders, NAMES.addFolder, NAMES.gitRepository]).toEqual([
+      'Folders',
+      'Add folder',
+      'Git repository',
+    ]);
+    expect(formerNamesOf(NAMES.folders)).toEqual(['Projects', 'Workspace projects']);
+    expect(formerNamesOf(NAMES.addFolder)).toEqual(
+      expect.arrayContaining(['Add project', 'Link a project', 'Link a repository']),
+    );
+    expect(formerNamesOf(NAMES.gitRepository)).toEqual(['Dev project']);
+    expect(formerNamesOf(NAMES.removeFromSession)).toContain('Detach project');
+  });
+
   it('names the three autonomy levels Ask me, Balanced and Autopilot', () => {
     expect([NAMES.askMe, NAMES.balanced, NAMES.autopilot]).toEqual([
       'Ask me',
@@ -176,6 +190,9 @@ describe('names', () => {
     ['Autopilot agent', 'autopilot-agent'],
     ['Autopilot mode', 'autopilot-agent'],
     ['Auto mode', 'autopilot-agent'],
+    ['Add project', 'add-project'],
+    ['Dev project', 'dev-project'],
+    ['Turn this into a dev project', 'dev-project'],
   ])('fails the old phrase %s', (phrase, id) => {
     const retired = RETIRED_NAMES.find((entry) => entry.id === id);
 
@@ -196,6 +213,8 @@ describe('names', () => {
     'Pick HBL-412',
     'Pick an issue',
     'Pick up a task',
+    'Add folder',
+    'Git repository',
   ])('lets the new word %s through', (phrase) => {
     expect(RETIRED_NAMES.filter((entry) => entry.pattern.test(phrase))).toEqual([]);
   });

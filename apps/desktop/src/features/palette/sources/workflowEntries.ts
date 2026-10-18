@@ -44,7 +44,7 @@ export const runConfirmFacts = ({
   ];
   return [
     { label: 'Session', value: sessionTitle },
-    ...(projectNames.length === 0 ? [] : [{ label: 'Project', value: projectNames.join(', ') }]),
+    ...(projectNames.length === 0 ? [] : [{ label: 'Folder', value: projectNames.join(', ') }]),
     {
       label: 'Model',
       value: pinned.length === 0 ? EACH_ROLE : pinned.map((key) => modelLabel(key)).join(', '),

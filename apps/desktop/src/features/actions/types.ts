@@ -27,6 +27,10 @@ import type { TaskListFacts } from './kinds/taskList';
 import type { RunStepFacts } from './kinds/runStep';
 import type { WorkflowListFacts } from './kinds/workflowList';
 import type { NotificationsFacts } from './kinds/notifications';
+import type { NotificationFacts } from './kinds/notification';
+import type { ProviderFacts } from './kinds/provider';
+import type { IntegrationFacts } from './kinds/integration';
+import type { BranchFacts } from './kinds/branch';
 import type { ProjectAskFacts } from './kinds/projectAsk';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
@@ -396,6 +400,26 @@ export type NotificationsActionTarget = {
   readonly facts: NotificationsFacts;
 };
 
+export type NotificationActionTarget = {
+  readonly kind: 'notification';
+  readonly facts: NotificationFacts;
+};
+
+export type ProviderActionTarget = {
+  readonly kind: 'provider';
+  readonly facts: ProviderFacts;
+};
+
+export type IntegrationActionTarget = {
+  readonly kind: 'integration';
+  readonly facts: IntegrationFacts;
+};
+
+export type BranchActionTarget = {
+  readonly kind: 'branch';
+  readonly facts: BranchFacts;
+};
+
 export type ProjectAskActionTarget = {
   readonly kind: 'projectAsk';
   readonly facts: ProjectAskFacts;
@@ -468,6 +492,10 @@ export type ObjectTarget =
   | RunStepActionTarget
   | WorkflowListActionTarget
   | NotificationsActionTarget
+  | NotificationActionTarget
+  | ProviderActionTarget
+  | IntegrationActionTarget
+  | BranchActionTarget
   | ProjectAskActionTarget
   | LinkActionTarget
   | ReviewActionTarget

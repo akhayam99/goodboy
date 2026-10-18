@@ -71,7 +71,7 @@ const present = ({ chip }: PresentParams): ReadonlyArray<SearchChip> =>
 export const SearchFilterBar = ({ chips, projects, now, onGroupChange }: Props) => {
   const dateValue = valuesOf({ chips, group: 'date' })[0] ?? null;
   return (
-    <div role="group" aria-label="Filters" className="flex flex-wrap items-center gap-2 px-4 pb-2">
+    <div role="group" aria-label="Filters" className="flex flex-wrap items-center gap-1 px-3 pb-1">
       <Listbox
         multiple
         trigger="chip"
@@ -91,10 +91,10 @@ export const SearchFilterBar = ({ chips, projects, now, onGroupChange }: Props) 
         multiple
         trigger="chip"
         size="sm"
-        placeholder="Project"
-        ariaLabel="Filter by project"
+        placeholder="Folder"
+        ariaLabel="Filter by folder"
         searchable
-        noun="project"
+        noun="folder"
         options={projects.map((project) => ({ value: project.id, label: project.name }))}
         value={valuesOf({ chips, group: 'project' })}
         onChange={(values) =>

@@ -91,7 +91,7 @@ export const publishFirstLap = (_set: SetFn, get: GetFn) => {
   return async ({ projectId, remote }: Input): Promise<PublishFirstLapResult> => {
     const project = projectById(get().projects, projectId);
     if (project === undefined || project.kind !== 'repo') {
-      return failure({ step: 'link', message: 'This project is not a repository yet.' });
+      return failure({ step: 'link', message: 'This folder is not a repository yet.' });
     }
     const created =
       remote.kind === 'github' ? await createOnGithub({ remote }) : { url: remote.url.trim() };

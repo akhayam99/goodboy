@@ -71,7 +71,17 @@ const openRowDrawer = () => {
   return screen.getByRole('region', { name: 'Debugger' });
 };
 
-const nextCard = () => screen.getByRole('region', { name: 'Next steps' });
+const rowPush = (): HTMLElement | null =>
+  screen
+    .queryAllByRole('button', { name: 'Push' })
+    .find((button) => button.closest('[aria-label="Next steps"]') === null) ?? null;
+const requireRowPush = (): HTMLElement => {
+  const button = rowPush();
+  if (button === null) {
+    throw new Error('The Activity row has no Push');
+  }
+  return button;
+};
 
 describe('CI fix state scenes', () => {
   it('labels the checks row Not pushed and opens the Debugger with Push from the row', () => {
@@ -245,18 +255,14 @@ describe('CI fix state scenes', () => {
     expect(row?.textContent).toContain('Sonnet 5.5');
     expect(row?.textContent).not.toContain('Composer 2.5');
   });
-  it('turns the Next card into a success card with Push', () => {
+  it('offers Push on the Activity row of the chain, not as a Next card', () => {
     show({ name: 'activity-check-fixed-local' });
-    const card = nextCard();
-    expect(within(card).getByText('payments-api / test is fixed on your branch')).toBeDefined();
-    expect(
-      within(card).getByText('1 commit is ready. Push it so the check runs again.'),
-    ).toBeDefined();
-    expect(within(card).getByRole('button', { name: 'Push' })).toBeDefined();
-    expect(within(card).queryByRole('button', { name: 'Open' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Next steps' })).toBeNull();
+    expect(screen.queryByText('payments-api / test is fixed on your branch')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
     expect(screen.queryByText('Review the changes')).toBeNull();
   });
-  it('pushes from the card and then says the check is running again', async () => {
+  it('pushes once from the Activity row and then drops the Push', async () => {
     let isPushed = false;
     const pushes: Array<unknown> = [];
     store.setState({
@@ -286,21 +292,13 @@ describe('CI fix state scenes', () => {
       }
       return null;
     });
-    fireEvent.click(within(nextCard()).getByRole('button', { name: 'Push' }));
-    await waitFor(() =>
-      expect(
-        within(nextCard()).getByText('payments-api / test is running again on #318'),
-      ).toBeDefined(),
-    );
+    const push = requireRowPush();
+    fireEvent.click(push);
+    fireEvent.click(push);
+    await waitFor(() => expect(rowPush()).toBeNull());
     expect(pushes).toHaveLength(1);
-    const fixRow = within(nextCard())
-      .getByText('payments-api / test is running again on #318')
-      .closest<HTMLElement>('[data-testid^="next-step-"]');
-    expect(fixRow).not.toBeNull();
-    expect(within(fixRow ?? nextCard()).queryByRole('button', { name: 'Push' })).toBeNull();
-    expect(within(nextCard()).getByText('payments-api · 1 commit pushed')).toBeDefined();
   });
-  it('moves to pushed when the branch is pushed from somewhere else', async () => {
+  it('drops the row Push when the branch is pushed from somewhere else', async () => {
     let isPushed = false;
     show({ name: 'activity-check-fixed-local' });
     const worktreePaths = Object.values(store.getState().sessionProjectMounts)
@@ -342,15 +340,12 @@ describe('CI fix state scenes', () => {
       return null;
     });
     await refreshWorktreeStatuses({ worktreePaths });
+    await waitFor(() => expect(rowPush()).not.toBeNull());
     isPushed = true;
     await refreshWorktreeStatuses({ worktreePaths });
-    await waitFor(() =>
-      expect(
-        within(nextCard()).getByText('payments-api / test is running again on #318'),
-      ).toBeDefined(),
-    );
+    await waitFor(() => expect(rowPush()).toBeNull());
   });
-  it('keeps the card on Push and shows the error when the push fails', async () => {
+  it('keeps Push on the row and shows the error when the push fails', async () => {
     const reportError = vi.fn(async (_params: unknown) => undefined);
     store.setState({
       refreshSessionPr: async () => undefined,
@@ -377,16 +372,13 @@ describe('CI fix state scenes', () => {
       }
       return null;
     });
-    fireEvent.click(within(nextCard()).getByRole('button', { name: 'Push' }));
+    fireEvent.click(requireRowPush());
     await waitFor(() =>
       expect(reportError).toHaveBeenCalledWith(
         expect.objectContaining({ title: "Couldn't push the branch" }),
       ),
     );
-    expect(
-      within(nextCard()).getByText('payments-api / test is fixed on your branch'),
-    ).toBeDefined();
-    expect(within(nextCard()).getByRole('button', { name: 'Push' })).toBeDefined();
+    await waitFor(() => expect(rowPush()?.hasAttribute('disabled')).toBe(false));
   });
   it.each(Object.keys(U24_CI_FIX_STATE_SCENES))(
     '%s has no accessibility violations',

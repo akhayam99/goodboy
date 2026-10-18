@@ -9,8 +9,10 @@ import {
   both,
   click,
   clickButton,
+  clickMenuItem,
   heading,
   openPalette,
+  settingsColumn,
   settle,
   useAppStore,
   visible,
@@ -24,14 +26,6 @@ const doorIn = (name: string): HTMLElement => {
   );
   expect(door).not.toBeNull();
   return door as HTMLElement;
-};
-
-const signalIn = (): HTMLElement => {
-  const signal = document.querySelector<HTMLElement>('[data-top-bar] [data-monitoring-signal]');
-  if (signal === null) {
-    throw new Error('no monitoring signal in the top bar');
-  }
-  return signal;
 };
 
 const createIn = (name: string): HTMLElement => {
@@ -81,13 +75,18 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     },
   })),
   {
-    name: 'palette verb: Archive',
-    covers: ['palette:Archive'],
+    name: 'palette verb: Archive asks first, then archives',
+    covers: ['palette:Archive…'],
     open: async () => {
       useAppStore.setState({ archiveTask: async () => undefined } as never);
-      await openPalette(/^Archive$/, 'archive');
+      await openPalette(/^Archive…$/, 'archive');
     },
-    lands: async () => expect(await screen.findByText('Session archived', {}, WAIT)).toBeDefined(),
+    lands: async () => {
+      expect(await screen.findByText('Archive session?', {}, WAIT)).toBeDefined();
+      const input = await screen.findByRole('combobox', { name: /search/i });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      expect(await screen.findByText('Session archived', {}, WAIT)).toBeDefined();
+    },
   },
   {
     name: 'palette verb: Delete asks first',
@@ -96,17 +95,29 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
   },
   {
-    name: 'palette: Open a folder',
-    covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:Open a folder'],
+    name: 'palette: New workspace',
+    covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:New workspace'],
     door: 'palette',
-    open: () => openPalette(/^Open a folder/, 'Open a folder'),
-    lands: () => studio('Add workspace'),
+    open: () => openPalette(/^New workspace/, 'New workspace'),
+    lands: () => studio('New workspace'),
   },
   {
-    name: 'palette: Start a new project',
-    covers: ['palette:Start a new project'],
-    open: () => openPalette(/^Start a new project/, 'Start a new project'),
-    lands: () => studio('Start a new project'),
+    name: 'palette: Resume setup opens the setup where it paused',
+    covers: ['palette:Resume setup'],
+    open: () => openPalette(/^Resume setup/, 'Resume setup'),
+    lands: () => visible('dialog', 'Goodboy setup'),
+  },
+  {
+    name: 'palette: searching Open a folder finds New workspace',
+    covers: ['palette:New workspace'],
+    open: () => openPalette(/^New workspace/, 'Open a folder'),
+    lands: () => studio('New workspace'),
+  },
+  {
+    name: 'palette: searching Start a new project finds New workspace',
+    covers: ['palette:New workspace'],
+    open: () => openPalette(/^New workspace/, 'Start a new project'),
+    lands: () => studio('New workspace'),
   },
   {
     name: 'column: inbox',
@@ -138,17 +149,26 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'top bar: the monitoring signal opens Monitoring',
+    name: 'column: impact',
+    covers: ['openImpact', 'studio:impact'],
+    door: 'visible',
+    open: () => click(doorIn('impact')),
+    lands: both(
+      () => studio('Impact'),
+      () => heading('Impact'),
+      async () => expect(doorIn('impact').getAttribute('aria-current')).toBe('page'),
+    ),
+  },
+  {
+    name: 'column: monitoring',
     covers: ['openMonitoring', 'studio:monitoring'],
     door: 'visible',
-    open: () => click(signalIn()),
+    open: () => click(doorIn('monitoring')),
     lands: both(
       () => studio('Monitoring'),
-      async () => expect(signalIn().getAttribute('aria-pressed')).toBe('true'),
+      async () => expect(doorIn('monitoring').getAttribute('aria-current')).toBe('page'),
       async () =>
-        expect(document.querySelector('[data-side-column] [data-column-door="monitoring"]')).toBe(
-          null,
-        ),
+        expect(document.querySelector('[data-top-bar] [aria-label^="Monitoring"]')).toBe(null),
     ),
   },
   {
@@ -249,7 +269,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await clickButton(/^Goodboy: setup/);
-      await clickButton(/^What's new/);
+      await clickMenuItem(/^What's new/);
     },
     lands: () => heading(/^Goodboy \d/),
   },
@@ -259,19 +279,22 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await clickButton(/^Goodboy: setup/);
-      await clickButton(/^Guide/);
+      await clickMenuItem(/^Guide/);
     },
     lands: () => studio('Guide'),
   },
   {
-    name: 'column: goodboy chip to pair your iPhone',
-    covers: ['studio:companion'],
+    name: 'column: goodboy chip to pair an iPhone',
+    covers: ['studio:settings', 'scope:app', 'settings:iphone'],
     door: 'visible',
     open: async () => {
       await clickButton(/^Goodboy: setup/);
-      await clickButton(/^Pair your iPhone/);
+      await clickMenuItem(/^Pair an iPhone/);
     },
-    lands: () => studio('Pair device'),
+    lands: both(
+      () => settingsColumn(),
+      () => heading('iPhone'),
+    ),
   },
   {
     name: 'column: report a bug opens the sheet',
@@ -307,13 +330,13 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('textbox', 'Workspace name'),
   },
   {
-    name: 'workspace switcher: open a folder',
+    name: 'workspace switcher: New workspace',
     covers: ['studio:addWorkspace'],
     door: 'visible',
     open: async () => {
       await clickButton(/^Switch workspace/);
-      await clickButton(/^Open a folder/);
+      await clickButton(/^New workspace/);
     },
-    lands: () => studio('Add workspace'),
+    lands: () => studio('New workspace'),
   },
 ];

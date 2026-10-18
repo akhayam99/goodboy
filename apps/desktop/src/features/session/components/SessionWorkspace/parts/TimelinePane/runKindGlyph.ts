@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { activityRowConcept } from '../../../../timeline/activityRowConcept';
 import type { RunWorkflowKind } from '../../../../timeline/runWorkflowKind';
 
 type RunKindGlyph = {
@@ -8,11 +9,13 @@ type RunKindGlyph = {
   readonly isNamedInTooltip: boolean;
 };
 
+const WORKFLOW_RUN_ICON = CONCEPT_ICONS[activityRowConcept({ kind: 'workflow-run' })];
+
 export const RUN_KIND_GLYPH: Record<RunWorkflowKind, RunKindGlyph> = {
-  preset: { icon: CONCEPT_ICONS.workflowPreset, label: 'Preset run', isNamedInTooltip: true },
-  custom: { icon: CONCEPT_ICONS.workflowCustom, label: 'Custom run', isNamedInTooltip: true },
+  preset: { icon: WORKFLOW_RUN_ICON, label: 'Preset run', isNamedInTooltip: true },
+  custom: { icon: WORKFLOW_RUN_ICON, label: 'Custom run', isNamedInTooltip: true },
   orchestrator: {
-    icon: CONCEPT_ICONS.orchestrator,
+    icon: CONCEPT_ICONS[activityRowConcept({ kind: 'orchestrated-run' })],
     label: 'Orchestrated run',
     isNamedInTooltip: false,
   },

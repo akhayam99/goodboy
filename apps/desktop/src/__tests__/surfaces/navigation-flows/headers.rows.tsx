@@ -54,10 +54,15 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
     covers: [],
     open: async () => {
       await settle();
-      expect(screen.queryByRole('button', { name: 'Delete session' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Archive session' })).toBeNull();
+      const footDelete = await screen.findByRole('button', { name: 'Delete session' }, WAIT);
+      expect(screen.getAllByRole('button', { name: 'Delete session' })).toHaveLength(1);
+      expect(footDelete.closest('[data-session-foot]')).not.toBeNull();
+      expect(
+        screen.getByRole('button', { name: 'Archive session' }).closest('[data-session-foot]'),
+      ).not.toBeNull();
       expect(screen.queryByRole('button', { name: 'More session actions' })).toBeNull();
-      await click(await screen.findByRole('button', { name: 'Delete…' }, WAIT));
+      expect(screen.queryByRole('button', { name: 'Delete…' })).toBeNull();
+      await click(footDelete);
     },
     lands: async (ctx) => {
       const deleteTask = vi.fn(async () => {
@@ -74,9 +79,9 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       within(confirm).getByRole('button', { name: 'Cancel' }).focus();
       await userEvent.keyboard('{Escape}');
       expect(screen.queryByRole('dialog')).toBeNull();
-      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Delete…' }));
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Delete session' }));
 
-      await click(screen.getByRole('button', { name: 'Delete…' }));
+      await click(screen.getByRole('button', { name: 'Delete session' }));
       const again = await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT);
       await click(within(again).getByRole('button', { name: 'Delete session' }));
 

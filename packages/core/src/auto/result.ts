@@ -179,13 +179,18 @@ export const buildDelegationResult = (params: BuildResultParams): DelegationResu
 
 type RenderResultParams = {
   readonly result: DelegationResultV1;
+  readonly label?: string;
 };
 
 const oneLine = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
-export const renderDelegationResult = ({ result }: RenderResultParams): string => {
+export const renderDelegationResult = ({ result, label }: RenderResultParams): string => {
+  const who =
+    label === undefined
+      ? `${result.role} ${result.childAgentId} (${result.delegationId})`
+      : `${label} (${result.role} ${result.childAgentId}, ${result.delegationId})`;
   const lines: string[] = [
-    `- ${result.role} ${result.childAgentId} (${result.delegationId}): ${result.outcome}${result.reason === null ? '' : `, ${result.reason}`}`,
+    `- ${who}: ${result.outcome}${result.reason === null ? '' : `, ${result.reason}`}`,
     `  ran on ${result.routing.provider} ${result.routing.model} ${result.routing.effort}; ${result.process.turns} turns, ${Math.round(result.process.durationMs / 1000)}s, cost ${result.cost.usd === null ? 'unknown' : result.cost.usd.toFixed(2)} USD (${result.cost.basis})`,
   ];
   if (result.declared.summary !== '') {

@@ -32,6 +32,9 @@ import {
 } from '../../../../../../../store/slices/agents/selectFixOffers';
 import { selectCheckMount } from '../../../../../../../store/slices/agents/selectCheckMount';
 import { startCheckFix } from '../../../../../../branch/checks/startCheckFix';
+import { pushCheckFix } from '../../../../../../branch/checks/pushCheckFix';
+import { selectCheckPushOffers } from '../../../../../../../store/slices/agents/selectCheckPushOffers';
+import { selectCheckChain } from '../../../../../../../store/slices/agents/selectCheckChain';
 import type { TimelineRows } from '../useTimelineRows';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
@@ -79,6 +82,7 @@ export const useTimelineRowProps = ({
   const { worktrees, laneRuns, stream } = rows;
   const railWidth = rows.laneGutter;
   const fixOffers = useAppStore((state) => selectFixOffers({ state, sessionId }));
+  const pushOffers = useAppStore((state) => selectCheckPushOffers({ state, sessionId }));
 
   const latestLaneRuns = useRef(laneRuns);
   latestLaneRuns.current = laneRuns;
@@ -205,6 +209,28 @@ export const useTimelineRowProps = ({
               key: `fix:${entry.agent.id}`,
               failureTitle: "Couldn't start the Implementer",
               task: () => startCheckFix({ sessionId, url, mountId: checkMountId }),
+            }),
+        };
+      }
+      if (
+        checkMountId !== null &&
+        pushOffers.split('\n').includes(fixOfferKey({ agentId: entry.agent.id, url }))
+      ) {
+        return {
+          label: ROW_ACTION_LABEL.push,
+          variant: 'secondary',
+          isBusy: pending.pendingKeys.has(`push:${entry.agent.id}`),
+          onAct: () =>
+            void pending.run({
+              key: `push:${entry.agent.id}`,
+              failureTitle: "Couldn't push the branch",
+              task: () =>
+                pushCheckFix({
+                  sessionId,
+                  mountId: checkMountId,
+                  fixAgentId: selectCheckChain({ state: useAppStore.getState(), sessionId, url })
+                    .fix?.id,
+                }),
             }),
         };
       }

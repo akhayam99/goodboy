@@ -91,7 +91,7 @@ describe('the monitoring scenes', () => {
     const row = portRow(5002);
 
     expect(within(row).getByText('blog')).toBeDefined();
-    expect(within(row).getByRole('img', { name: 'Free' })).toBeDefined();
+    expect(within(row).getByText('Free')).toBeDefined();
   });
 
   it('counts the ports in use across Pinned, Run by Goodboy and From workspace', async () => {
@@ -182,8 +182,13 @@ describe('the monitoring scenes', () => {
   it('shows the empty state with a way to pin a port', async () => {
     renderScene('monitoring-empty');
     await waitFor(() =>
-      expect(screen.getByText('Goodboy found no ports in your projects')).toBeDefined(),
+      expect(screen.getByRole('heading', { name: 'No ports in use' })).toBeDefined(),
     );
+
+    expect(screen.getByText(/^Ports opened by agents, terminals and scripts/)).toBeDefined();
+    expect(screen.getByText('Nothing tracked')).toBeDefined();
+    expect(screen.queryByRole('searchbox', { name: 'Filter ports' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Pin a port' })).toHaveLength(1);
 
     expect(screen.getByRole('button', { name: 'Pin a port' })).toBeDefined();
   });

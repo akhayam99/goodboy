@@ -6,8 +6,10 @@ import { splitPortRows } from '../../../../features/monitoring/splitPortRows';
 import { workspacePortSet } from '../../../../features/monitoring/workspacePortSet';
 import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
 import { runningTerminalCount } from '../../../../features/terminal/runningTerminalCount';
+import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 import type { ColumnDoorId } from '../columnPlace';
 import { doorSignalOf, type DoorSignal } from '../doorSignal';
+import { needsYouReasonsOf } from '../needsYouReasonsOf';
 
 type Params = Record<never, never>;
 
@@ -19,6 +21,7 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
   const pinned = useAppStore((state) => state.monitorPinned);
   const hidden = useAppStore((state) => state.monitorHidden);
   const { runningCount, hasUnread } = useChatActivity();
+  const { needsYou } = useNowSessions({});
 
   return useMemo(() => {
     const split = splitPortRows({
@@ -28,6 +31,11 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
       workspacePorts: workspacePortSet({ scanned }),
     });
     return {
+      board: doorSignalOf({
+        kind: 'board',
+        count: needsYou.length,
+        reasons: needsYouReasonsOf({ state: useAppStore.getState(), sessions: needsYou }),
+      }),
       chat: doorSignalOf({ kind: 'chat', count: runningCount, hasUnread }),
       terminal: doorSignalOf({
         kind: 'terminal',
@@ -37,5 +45,5 @@ export const useDoorSignals = ({}: Params): Partial<Record<ColumnDoorId, DoorSig
         ? doorSignalOf({ kind: 'monitoring', ...monitoringSignal({ split }) })
         : undefined,
     };
-  }, [runningCount, hasUnread, terminalTabs, rows, hasSnapshot, scanned, pinned, hidden]);
+  }, [needsYou, runningCount, hasUnread, terminalTabs, rows, hasSnapshot, scanned, pinned, hidden]);
 };

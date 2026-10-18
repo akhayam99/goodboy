@@ -10,6 +10,7 @@ const SELECTED_GOALS = [
 
 type Params = {
   readonly isConfirming: boolean;
+  readonly verb?: 'Delete' | 'Archive';
 };
 
 const clickIfFound = ({ selector }: { readonly selector: () => HTMLElement | null }): boolean => {
@@ -21,7 +22,7 @@ const clickIfFound = ({ selector }: { readonly selector: () => HTMLElement | nul
   return true;
 };
 
-export const useSelectBoardCards = ({ isConfirming }: Params): void => {
+export const useSelectBoardCards = ({ isConfirming, verb = 'Delete' }: Params): void => {
   useEffect(() => {
     let step = 0;
     const interval = window.setInterval(() => {
@@ -40,12 +41,14 @@ export const useSelectBoardCards = ({ isConfirming }: Params): void => {
       }
       const isOpened = clickIfFound({
         selector: () =>
-          document.querySelector<HTMLElement>('[role="toolbar"] [aria-label="Delete 3 sessions"]'),
+          document.querySelector<HTMLElement>(
+            `[role="toolbar"] [aria-label="${verb} ${SELECTED_GOALS.length} sessions"]`,
+          ),
       });
       if (isOpened) {
         window.clearInterval(interval);
       }
     }, POLL_MS);
     return () => window.clearInterval(interval);
-  }, [isConfirming]);
+  }, [isConfirming, verb]);
 };

@@ -19,7 +19,7 @@ describe('autoModelForRole', () => {
     it('keeps the curated cheap default for a scout role', () => {
       expect(autoModelForRole({ role: 'scout', providers: ['anthropic'] })).toEqual({
         provider: 'anthropic',
-        model: 'haiku-4.5',
+        model: 'haiku-5.5',
       });
     });
 
@@ -67,7 +67,7 @@ describe('autoModelForRole', () => {
       const result = autoModelForRole({ role: 'scout', providers: ['codex'] });
       expect(result?.provider).toBe('codex');
       const model = result?.model ?? '';
-      expect(model).toBe('gpt-5.6-luna');
+      expect(model).toBe('gpt-6-luna');
     });
 
     it('weight tie-break: picks highest-weight model when two providers share cost tier', () => {

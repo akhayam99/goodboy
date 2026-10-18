@@ -2,6 +2,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { SentryIntegrationConfig, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
+import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import { SentryConnectSteps } from './SentryConnectSteps';
 import { SentryProjectMap } from './SentryProjectMap';
 
@@ -9,9 +10,15 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly onConnected?: () => void;
   readonly shouldAutoFocus?: boolean;
+  readonly hasHeaderDisconnect?: boolean;
 };
 
-export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
+export const SentryFormBody = ({
+  workspaceId,
+  onConnected,
+  shouldAutoFocus = false,
+  hasHeaderDisconnect = false,
+}: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const sentry = integrations.find((i) => i.provider === 'sentry') ?? null;
   const sentryConfig = (sentry?.config ?? null) as SentryIntegrationConfig | null;
@@ -25,7 +32,8 @@ export const SentryFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
           credentialId={sentry?.credentialId ?? null}
           primary={`Connected to ${sentryConfig.projectName ?? sentryConfig.project}`}
           secondary={`${sentryConfig.org}/${sentryConfig.project}`}
-          disconnectDescription="Disconnects this workspace from the Sentry personal API key. The key stays saved for your other workspaces."
+          disconnectDescription={disconnectDescriptionOf({ provider: 'sentry' })}
+          hasHeaderDisconnect={hasHeaderDisconnect}
           onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'sentry' })}
         />
         {sentry.credentialId == null ? null : (

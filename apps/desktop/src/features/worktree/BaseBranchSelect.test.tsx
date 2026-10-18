@@ -46,7 +46,7 @@ describe('BaseBranchSelect', () => {
     expect(auto.textContent).toContain('Detected from origin/HEAD: develop');
   });
 
-  it('gives the list the branch picker width and cuts a long name in the middle', async () => {
+  it('gives the list the branch picker width and cuts a long name at the end only', async () => {
     const long = 'nw/fix-billing-api-settlement-exports-stuck-deliveries';
     listBranchNames.mockResolvedValue(['main', long]);
     render(<BaseBranchSelect repoPath="/repo" value={null} onCommit={vi.fn()} />);
@@ -55,7 +55,8 @@ describe('BaseBranchSelect', () => {
     const row = await screen.findByRole('option', { name: long });
     const popup = row.closest('[data-dropdown-portal] > div');
     expect(popup?.getAttribute('style')).toContain(`max-width: ${BRANCH_PICKER_MAX_WIDTH}px`);
-    expect(row.querySelector('[data-slot="label-tail"]')?.textContent).toBe('-deliveries');
+    expect(row.querySelector('.truncate')?.textContent).toBe(long);
+    expect(row.querySelector('[data-slot="label-tail"]')).toBeNull();
   });
 
   it('filters the fetched branch list', async () => {

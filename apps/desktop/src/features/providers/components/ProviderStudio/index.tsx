@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import {
   PROVIDER_IDS,
   type ProviderId,
@@ -9,7 +9,6 @@ import { useAppStore } from '../../../../store';
 import { isConfirmationStale } from '../../../../store/slices/providers/providerHealth';
 import type { ScopeFrame } from '../../../settings/components/SettingsStudio/types';
 import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
-import { ProvidersRail } from './ProvidersRail';
 import { ProviderPage } from './ProviderPage';
 import { DefaultsPanel } from './DefaultsPanel';
 import { PROVIDER_ORDER } from './providerOrder';
@@ -41,19 +40,10 @@ export const ProviderSettingsScope = ({
   );
   const scopeLabel = workspaceId === null ? ALL_WORKSPACES : workspaceName;
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const landing: ProviderId | 'defaults' =
+  const focused: ProviderId | 'defaults' =
     initialFocus ?? (workspaceId === null ? (PROVIDER_ORDER[0] ?? 'defaults') : 'defaults');
-  const [focused, setFocused] = useState<ProviderId | 'defaults'>(landing);
-  const wantsConnect = initialFocus != null && initialAction != null && initialAction !== 'update';
-  const wantsUpdate = initialFocus != null && initialAction === 'update';
-  const [autoConnect, setAutoConnect] = useState(wantsConnect);
-  const [autoUpdate, setAutoUpdate] = useState(wantsUpdate);
-
-  useEffect(() => {
-    setFocused(landing);
-    setAutoConnect(wantsConnect);
-    setAutoUpdate(wantsUpdate);
-  }, [initialAction, landing, wantsConnect, wantsUpdate]);
+  const autoConnect = initialFocus != null && initialAction != null && initialAction !== 'update';
+  const autoUpdate = initialFocus != null && initialAction === 'update';
 
   const ordered = orderProviders({ providers });
 
@@ -79,29 +69,7 @@ export const ProviderSettingsScope = ({
     void refreshProviders();
   }, [focused, refreshProviders]);
 
-  const onSelect = (id: ProviderId) => {
-    setAutoConnect(false);
-    setAutoUpdate(false);
-    setFocused(id);
-  };
-
   return frame({
-    nested: (
-      <ProvidersRail
-        providers={ordered}
-        focusedId={focused}
-        onSelect={onSelect}
-        onSelectDefaults={
-          workspaceId === null
-            ? undefined
-            : () => {
-                setAutoConnect(false);
-                setAutoUpdate(false);
-                setFocused('defaults');
-              }
-        }
-      />
-    ),
     detail:
       focused === 'defaults' && workspaceId !== null ? (
         <DefaultsPanel

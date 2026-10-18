@@ -1820,7 +1820,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     });
 
     const spawnedModel = runTurnSpy.mock.calls[0]?.[0]?.model;
-    expect(spawnedModel).toBe('claude-opus-5');
+    expect(spawnedModel).toBe('claude-opus-5-5');
   });
 
   it('keeps the agent kind model pin when no per-turn override is supplied', async () => {
@@ -2744,7 +2744,7 @@ describe('sendTurn, budget routing notice', () => {
       fallbackFrom: 'anthropic',
     });
 
-    expect(messages).toContain('anthropic is over its monthly cap. running this turn on cursor.');
+    expect(messages).toContain('anthropic is over its monthly limit. running this turn on cursor.');
     expect(messages.join(' ')).not.toContain('threshold');
   });
 

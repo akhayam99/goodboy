@@ -327,8 +327,8 @@ describe('AGENT_KIND_DEFAULTS', () => {
     }
   });
 
-  it('scout → haiku, docs → sonnet low, generic → sonnet medium', () => {
-    expect(kindRouting({ kind: 'scout' })).toMatchObject({ model: 'haiku-4.5', effort: 'low' });
+  it('scout → haiku medium, docs → sonnet low, generic → sonnet medium', () => {
+    expect(kindRouting({ kind: 'scout' })).toMatchObject({ model: 'haiku-5.5', effort: 'medium' });
     expect(kindRouting({ kind: 'docs' })).toMatchObject({ model: 'sonnet-5.5', effort: 'low' });
     expect(kindRouting({ kind: 'generic' })).toMatchObject({
       model: 'sonnet-5.5',
@@ -493,7 +493,7 @@ describe('kindRouting role overrides', () => {
     });
 
     expect(routing.model).toMatch(/haiku/i);
-    expect(routing.effort).toBe('low');
+    expect(routing.effort).toBe('medium');
   });
 
   it('keeps a pinned model and clamps an unsupported effort upward', () => {

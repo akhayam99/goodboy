@@ -414,14 +414,18 @@ fn open_url_blocking(app: &tauri::AppHandle, url: String) -> Result<(), MessageE
         }
     }
 
+    open_with_system(&url)
+}
+
+fn open_with_system(target: &str) -> Result<(), MessageError> {
     #[cfg(target_os = "macos")]
-    let result = Command::new("open").arg(&url).spawn();
+    let result = Command::new("open").arg(target).spawn();
     #[cfg(target_os = "linux")]
-    let result = Command::new("xdg-open").arg(&url).spawn();
+    let result = Command::new("xdg-open").arg(target).spawn();
     #[cfg(target_os = "windows")]
     let result = Command::new("rundll32.exe")
         .arg("url.dll,FileProtocolHandler")
-        .arg(&url)
+        .arg(target)
         .spawn();
 
     result
@@ -429,11 +433,34 @@ fn open_url_blocking(app: &tauri::AppHandle, url: String) -> Result<(), MessageE
         .map_err(|e| MessageError::Failed(e.to_string()))
 }
 
+const FOLDER_PRIVACY_PANE: &str =
+    "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders";
+
+#[tauri::command]
+pub async fn open_privacy_settings() -> Result<(), MessageError> {
+    tauri::async_runtime::spawn_blocking(open_privacy_settings_blocking)
+        .await
+        .map_err(|e| MessageError::Failed(e.to_string()))?
+}
+
+fn open_privacy_settings_blocking() -> Result<(), MessageError> {
+    privacy_pane().and_then(open_with_system)
+}
+
+fn privacy_pane() -> Result<&'static str, MessageError> {
+    if cfg!(target_os = "macos") {
+        return Ok(FOLDER_PRIVACY_PANE);
+    }
+    Err(MessageError::Refused(
+        "folder privacy settings exist on macOS only".to_string(),
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        chosen_launch, is_openable_url, setting_value, BrowserLaunch, KnownBrowser, Platform,
-        KNOWN_BROWSERS, MAX_URL_LEN, SETTING_BROWSER_APP,
+        chosen_launch, is_openable_url, privacy_pane, setting_value, BrowserLaunch, KnownBrowser,
+        Platform, FOLDER_PRIVACY_PANE, KNOWN_BROWSERS, MAX_URL_LEN, SETTING_BROWSER_APP,
     };
     use std::path::PathBuf;
 
@@ -579,5 +606,13 @@ mod tests {
         assert_eq!(saved.as_deref(), Some("arc"));
         let launch = chosen_launch(Platform::Mac, saved.as_deref(), installed(&["arc"]), URL);
         assert_eq!(launch.map(|l| l.args[1].clone()).as_deref(), Some("Arc"));
+    }
+
+    #[test]
+    fn the_privacy_door_opens_the_files_and_folders_pane_on_macos_only() {
+        assert!(FOLDER_PRIVACY_PANE.starts_with("x-apple.systempreferences:"));
+        assert!(FOLDER_PRIVACY_PANE.ends_with("Privacy_FilesAndFolders"));
+        assert!(!is_openable_url(FOLDER_PRIVACY_PANE));
+        assert_eq!(privacy_pane().is_ok(), cfg!(target_os = "macos"));
     }
 }

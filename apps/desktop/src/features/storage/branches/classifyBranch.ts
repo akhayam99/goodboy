@@ -21,8 +21,6 @@ export type ClassifiedBranch = {
   readonly isYours: boolean;
 };
 
-export type BranchFilter = 'goodboy' | 'yours' | 'all';
-
 export type BranchTab = 'safe' | 'needs-look' | 'all';
 
 type ClassifyParams = {
@@ -76,24 +74,11 @@ export const classifyBranch = ({
   return { branch, verdict: verdictOf({ branch, now }), owner, isMadeByGoodboy, isYours };
 };
 
-export const matchesBranchFilter = ({
-  entry,
-  filter,
-}: {
+type ListedParams = {
   readonly entry: ClassifiedBranch;
-  readonly filter: BranchFilter;
-}): boolean => {
-  if (entry.verdict === 'protected') {
-    return false;
-  }
-  if (filter === 'goodboy') {
-    return entry.isMadeByGoodboy;
-  }
-  if (filter === 'yours') {
-    return entry.isMadeByGoodboy || entry.isYours;
-  }
-  return true;
 };
+
+export const isListedBranch = ({ entry }: ListedParams): boolean => entry.verdict !== 'protected';
 
 export const isSafeVerdict = (verdict: BranchVerdict): boolean =>
   verdict === 'safe-merged' || verdict === 'safe-no-commits';

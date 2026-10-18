@@ -49,18 +49,18 @@ describe('frameGeometryOf', () => {
       'monitoring',
       'notifications',
       'guide',
+      'impact',
+      'whatsNew',
+      'release',
     ] as const) {
       expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_PAGE_HEADER_INSET_PX);
     }
   });
 
-  it('keeps the 40px band only where the band still holds Close', () => {
+  it('puts no page under a 40px band, since every Close sits on the title row', () => {
     expect(
       FRAME_PAGES.filter((page) => frameGeometryOf({ page }).bandHeight === FRAME_BAND_PX),
-    ).toEqual(['impact', 'whatsNew', 'release']);
-    for (const page of ['impact', 'whatsNew'] as const) {
-      expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_BAND_PX);
-    }
+    ).toEqual([]);
     expect(FRAME_PAGES.every((page) => frameGeometryOf({ page }).titleRowHeight === 32)).toBe(true);
   });
 

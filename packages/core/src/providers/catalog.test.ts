@@ -80,7 +80,9 @@ const selectionsFor = ({ model }: CrossParams): ReadonlyArray<ModelSelection> =>
     case 'opencode':
     case 'openrouter':
     case 'moonshot':
-      return model.efforts.map((effort) => ({ key: model.key, effort }));
+      return model.efforts.length > 0
+        ? model.efforts.map((effort) => ({ key: model.key, effort }))
+        : [{ key: model.key }];
     default: {
       const exhaustive: never = model;
       throw new Error(`unknown model: ${exhaustive}`);
@@ -203,6 +205,16 @@ describe('model catalogs', () => {
       'claude-fable-5-thinking-max',
       'claude-fable-5-thinking-medium',
       'claude-fable-5-thinking-xhigh',
+      'claude-haiku-5-5-high',
+      'claude-haiku-5-5-low',
+      'claude-haiku-5-5-max',
+      'claude-haiku-5-5-medium',
+      'claude-haiku-5-5-thinking-high',
+      'claude-haiku-5-5-thinking-low',
+      'claude-haiku-5-5-thinking-max',
+      'claude-haiku-5-5-thinking-medium',
+      'claude-haiku-5-5-thinking-xhigh',
+      'claude-haiku-5-5-xhigh',
       'claude-opus-4-7-thinking-high',
       'claude-opus-4-8-thinking-high',
       'claude-opus-5-5-high',
@@ -241,11 +253,11 @@ describe('model catalogs', () => {
     expect(
       resolveModelArgs({
         provider: 'anthropic',
-        selection: { key: 'sonnet-4.6', effort: 'max' },
+        selection: { key: 'opus-4.6', effort: 'xhigh' },
       }),
     ).toEqual({
-      args: ['--model', 'claude-sonnet-4-6', '--effort', 'high'],
-      clamped: { requested: 'max', applied: 'high' },
+      args: ['--model', 'claude-opus-4-6', '--effort', 'high'],
+      clamped: { requested: 'xhigh', applied: 'high' },
     });
   });
 

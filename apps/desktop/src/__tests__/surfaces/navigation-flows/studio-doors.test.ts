@@ -17,7 +17,7 @@ const STUDIO_TOKEN = /^studio:(\w+)$/;
 describe('every studio has a door you can see', () => {
   it('lists the studio kinds of the navigation slice', () => {
     expect(STUDIO_KINDS).toContain('guide');
-    expect(STUDIO_KINDS).toContain('companion');
+    expect(STUDIO_KINDS).not.toContain('companion');
   });
 
   it('declares the door of every flow row that reaches a studio', () => {
@@ -40,7 +40,7 @@ describe('every studio has a door you can see', () => {
     expect(withoutVisibleDoor).toEqual([]);
   });
 
-  it('puts the Guide and Pair device in the Goodboy menu', () => {
+  it('puts the Guide and the iPhone page in the Goodboy menu', () => {
     const rows = ALL_ROWS;
     const visibleRowsOf = (kind: string) =>
       rows.filter((row) => row.door === 'visible' && row.covers.includes(`studio:${kind}`));
@@ -48,8 +48,8 @@ describe('every studio has a door you can see', () => {
     expect(visibleRowsOf('guide').map((row) => row.name)).toContain(
       'column: goodboy chip to the guide',
     );
-    expect(visibleRowsOf('companion').map((row) => row.name)).toContain(
-      'column: goodboy chip to pair your iPhone',
+    expect(visibleRowsOf('settings').map((row) => row.name)).toContain(
+      'column: goodboy chip to pair an iPhone',
     );
   });
 });

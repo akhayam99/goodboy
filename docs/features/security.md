@@ -4,7 +4,7 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 ### Security findings
 
-Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show in **Settings**, **App**, **Security findings**. **Not a secret** dismisses one and **Flag again** brings it back.
+Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show at the end of **Settings**, **App**, **Storage**, under **Security findings**. **Not a secret** dismisses one and **Flag again** brings it back.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-findings-dark.webp">
@@ -52,7 +52,7 @@ Open an older Goodboy on newer data without damage. It stops before touching any
 
 ### Updates
 
-Get updates in the background, then see what is new. When one is ready, the chip in the Goodboy row offers **Restart now**, **Later** and **What's new**. With agents running, **Restart when they finish** waits for them.
+Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy row opens a card with **Restart now**, **Later** and **What's new**. With agents running, **Restart when they finish** waits for them. **Settings > App > Updates** shows the installed version and **Check for updates**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">
@@ -63,7 +63,7 @@ Get updates in the background, then see what is new. When one is ready, the chip
 
 ### Changelog in the app
 
-Read release notes inside the app, searchable, with links into the screen each change touched. Before an update, **What's new** shows every release it brings, and after one it covers the releases you skipped.
+Read release notes inside the app, searchable, with links into the screen each change touched. Every release in the list shows its version, its date and whether it is installed, and a release that changes your data carries a quiet mark. Before an update, **What's new** shows every release it brings, and after one it covers the releases you skipped.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-changelog-update-dark.webp">
@@ -78,7 +78,7 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 ### Guide
 
-Learn how Goodboy works in short chapters that follow a task, with search and links that open each screen. Open **Guide** from the Goodboy menu or the palette.
+Learn how Goodboy works in short chapters, one per page with Previous and Next. Search the rail and press Enter to land on the point you need, and the links at the end of a chapter open its screen. Open **Guide** from the Goodboy menu or the palette.
 
 **Also in this area**
 

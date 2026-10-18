@@ -1,5 +1,6 @@
 import { PaneShell } from '@goodboy/ui';
 import type { ChangelogCatchUp } from '../../changelogCatchUp';
+import { releaseDateLabel } from '../../releaseDateLabel';
 import { ReleaseBody } from './ReleaseBody';
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 
 export const CatchUpReader = ({ catchUp, dates, installedVersion }: Props) => (
   <PaneShell
+    page="whatsNew"
     scroll="body"
     title="What's new"
     meta={`Since ${catchUp.fromVersion} · ${catchUp.releases.length} releases`}
@@ -20,7 +22,7 @@ export const CatchUpReader = ({ catchUp, dates, installedVersion }: Props) => (
           <h2 className="text-heading text-foreground">Goodboy {release.version}</h2>
           <ReleaseBody
             release={release}
-            dateLabel={dates[release.version] ?? null}
+            dateLabel={releaseDateLabel({ publishedAt: dates[release.version] })}
             installedVersion={installedVersion}
             featureHeadingLevel={3}
           />

@@ -4,6 +4,7 @@ import { dismissProviderConnect } from './dismissProviderConnect';
 import { hydrateCliRequirements } from './hydrateCliRequirements';
 import { learnCliRequirement } from './learnCliRequirement';
 import { logoutProvider } from './logoutProvider';
+import { probeAgent } from './probeAgent';
 import { refreshProviders } from './refreshProviders';
 import { testProviderConnection } from './testProviderConnection';
 import { updateProviderCli } from './updateProviderCli';
@@ -15,6 +16,7 @@ export const createProvidersSlice = ({ set, get }: SliceDeps) => {
   return {
     testProviderConnection: testProviderConnection({ set, get }),
     refreshProviders: refreshProviders({ set, get }),
+    probeAgent: probeAgent({ set, get }),
     logoutProvider: logoutProvider(set, get),
     connectProvider: connectProvider(set, get),
     cancelProviderConnect: cancelProviderConnect(set, get),

@@ -16,12 +16,13 @@ import { useAppStore } from '../../../../../store';
 import { selectProjectById } from '../../../../../store/slices/projects/selectProjectById';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { ExistingBranchField } from '../../../../worktree/ExistingBranchField';
+import { LevelAddTrigger } from '../../../../../shared/components/LevelAddTrigger';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly projectId: ProjectId;
   readonly projectName: string;
-  readonly presentation?: 'icon' | 'button' | 'anchor';
+  readonly presentation?: 'icon' | 'button' | 'add';
   readonly triggerClassName?: string;
   readonly openEvent?: string;
 };
@@ -35,7 +36,7 @@ export const NewBranchMountAction = ({
   openEvent,
 }: Props) => {
   const dropdown = useDropdown({
-    align: presentation === 'anchor' ? 'start' : 'end',
+    align: 'end',
     width: 'w-80',
     expectedHeight: 240,
     ...(openEvent !== undefined && { openEvent }),
@@ -49,6 +50,8 @@ export const NewBranchMountAction = ({
   const [mode, setMode] = useState<'new' | 'existing'>('new');
   const [branch, setBranch] = useState('');
   const [isBusy, setIsBusy] = useState(false);
+
+  const label = `${NAMES.newBranch} in ${projectName}`;
 
   const create = async () => {
     setIsBusy(true);
@@ -77,15 +80,21 @@ export const NewBranchMountAction = ({
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={`${NAMES.newBranch} in ${projectName}`}
+      ariaLabel={label}
       trigger={
-        presentation === 'anchor' ? (
-          <span aria-hidden className="block h-0 w-px" />
+        presentation === 'add' ? (
+          <LevelAddTrigger
+            ariaLabel={label}
+            isExpanded={dropdown.open}
+            onClick={() => dropdown.toggle()}
+            data-project-new-branch=""
+            {...(triggerClassName !== undefined && { className: triggerClassName })}
+          />
         ) : (
           <Tooltip content={`Add another line of work on ${projectName}, on its own branch`}>
             <button
               type="button"
-              aria-label={`${NAMES.newBranch} in ${projectName}`}
+              aria-label={label}
               aria-haspopup="dialog"
               aria-expanded={dropdown.open}
               onClick={() => dropdown.toggle()}
@@ -105,9 +114,7 @@ export const NewBranchMountAction = ({
     >
       <div className="flex flex-col gap-3 p-3">
         <div className="flex flex-col gap-1">
-          <span className="text-label font-medium text-foreground">
-            {`${NAMES.newBranch} in ${projectName}`}
-          </span>
+          <span className="text-label font-medium text-foreground">{label}</span>
           <span className="text-meta text-muted-foreground">
             It gets its own branch. The branches already here keep their pull requests.
           </span>

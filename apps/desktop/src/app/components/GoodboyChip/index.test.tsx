@@ -7,7 +7,9 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { OnboardingStepId } from '../../../features/onboarding/onboarding-store';
+import { setupProgress } from '../../../features/onboarding/setupProgress';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -18,14 +20,20 @@ import {
 const { mocks } = vi.hoisted(() => ({
   mocks: {
     progress: {
-      completedCount: 3,
-      totalCount: 6,
-      completed: new Set<OnboardingStepId>(['provider', 'project', 'codeHost']),
-      collapsed: true,
-      finished: false,
-      wizardDone: true,
-      isDone: false,
+      completed: new Set<string>(),
+      isCollapsed: true,
+      isFinished: false,
+      wizard: 'done',
+      isWizardDone: true,
+      hasWorkspace: true,
       hasProjects: true,
+      suggestsProfile: false,
+      details: {
+        agents: 'Claude is ready',
+        workspace: 'Harborline, 3 folders',
+        tools: 'Optional',
+        'first-session': 'Ask Scout about the code',
+      },
     },
     hasDraft: false,
     collapse: vi.fn(),
@@ -41,11 +49,10 @@ vi.mock('../../../features/onboarding/onboarding-store', async (importOriginal) 
 }));
 
 vi.mock('../../../features/onboarding/hooks/useOnboardingProgress', () => ({
-  useOnboardingProgress: () => mocks.progress,
-}));
-
-vi.mock('../../../features/onboarding/SetupChecklist/ChecklistBody', () => ({
-  ChecklistBody: () => <div data-testid="checklist" />,
+  useOnboardingProgress: () => ({
+    ...mocks.progress,
+    setup: setupProgress({ completed: mocks.progress.completed }),
+  }),
 }));
 
 vi.mock('../../../features/settings/hooks/useHasBugReportDraft', () => ({
@@ -77,12 +84,12 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   useAppStore.setState({ updateVersion: '0.5.2' });
-  mocks.progress.collapsed = true;
-  mocks.progress.finished = false;
-  mocks.progress.isDone = false;
+  mocks.progress.isCollapsed = true;
+  mocks.progress.isFinished = false;
   mocks.progress.hasProjects = true;
-  mocks.progress.wizardDone = true;
-  mocks.progress.completed = new Set<OnboardingStepId>(['provider', 'project', 'codeHost']);
+  mocks.progress.wizard = 'done';
+  mocks.progress.isWizardDone = true;
+  mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace']);
   mocks.hasDraft = false;
 });
 
@@ -113,7 +120,7 @@ const openMenu = () => {
 
 describe('GoodboyChip', () => {
   it('names Goodboy, beta and the version the build stamped at rest', () => {
-    mocks.progress.finished = true;
+    mocks.progress.isFinished = true;
     renderChip();
 
     const chip = screen.getByRole('button', { name: REST_LABEL });
@@ -123,7 +130,7 @@ describe('GoodboyChip', () => {
   it.each(['dark', 'light'] as const)(
     'wraps only the mark and the name in the brand chip in %s mode',
     (theme) => {
-      mocks.progress.finished = true;
+      mocks.progress.isFinished = true;
       applyDocumentTheme({ theme });
       renderChip();
 
@@ -147,16 +154,34 @@ describe('GoodboyChip', () => {
     renderChip();
 
     const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
-    expect(chip.textContent).toBe('Setup3 of 6');
+    expect(chip.textContent).toBe('Setup2 of 4');
   });
 
-  it('puts a ready update ahead of setup', () => {
+  it('puts the update pill beside the bare lockup, ahead of setup, and keeps it out of the menu', () => {
     useAppStore.setState({ updaterStatus: 'available' });
     renderChip();
 
-    const chip = screen.getByRole('button', { name: 'Goodboy: an update is ready' });
-    expect(chip.textContent).toBe('0.5.2 available');
-    expect(within(openMenu()).getByRole('button', { name: 'Restart to update' })).toBeDefined();
+    const chip = screen.getByTestId('goodboy-chip');
+    expect(chip.getAttribute('aria-label')).toBe(REST_LABEL);
+    expect(chip.textContent).toBe('Goodboy');
+    const pill = screen.getByRole('button', { name: 'Goodboy 0.5.2 is available' });
+    expect(pill.textContent).toBe('0.5.2');
+    expect(chip.contains(pill)).toBe(false);
+    expect(chip.parentElement?.contains(pill) ?? false).toBe(true);
+    const menu = openMenu();
+    expect(within(menu).queryByText('0.5.2 is available.')).toBeNull();
+    expect(within(menu).queryByRole('button', { name: 'Update now' })).toBeNull();
+  });
+
+  it('opens the update card from the pill, not the Goodboy menu', () => {
+    useAppStore.setState({ updaterStatus: 'available' });
+    renderChip();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Goodboy 0.5.2 is available' }));
+
+    const card = screen.getByRole('dialog', { name: 'Goodboy 0.5.2 is available' });
+    expect(within(card).getByRole('button', { name: 'Update now' })).toBeDefined();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 
   it('holds the version, setup and every product place in one popover', () => {
@@ -166,27 +191,80 @@ describe('GoodboyChip', () => {
 
     const header = menu.querySelector('header');
     expect(header?.querySelector('[data-brand-chip]')?.textContent).toBe('Goodboy');
-    expect(header?.textContent).toBe(`GoodboyBetav${APP_VERSION}`);
-    expect(within(menu).getByTestId('checklist')).toBeDefined();
+    expect(header?.textContent).toBe(`Goodboy${APP_VERSION} · Beta`);
+    expect(within(menu).getByRole('region', { name: 'Setup' })).toBeDefined();
     [
       'Report a bug',
       'Guide',
       "What's new",
       'Keyboard shortcuts',
-      'Pair your iPhone',
+      'Pair an iPhone',
       'Sponsor on GitHub',
+      'Follow on X',
     ].forEach((row) => {
-      expect(within(menu).getByText(row)).toBeDefined();
+      expect(within(menu).getByRole('menuitem', { name: new RegExp(row) })).toBeDefined();
     });
+    expect(menu.textContent).not.toContain('Releases land often');
     expect(within(menu).queryByRole('button', { name: 'Restart to update' })).toBeNull();
   });
 
-  it('skips setup from the popover', () => {
+  it("opens what's new from the version in the header", () => {
+    const { onOpenChangelog } = renderChip();
+
+    fireEvent.click(within(openMenu()).getByRole('button', { name: "Open What's new" }));
+
+    expect(onOpenChangelog).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+  });
+
+  it('hides setup from the popover', () => {
     renderChip();
 
-    fireEvent.click(within(openMenu()).getByRole('button', { name: 'Skip setup' }));
+    fireEvent.click(within(openMenu()).getByRole('button', { name: 'Hide setup' }));
 
     expect(mocks.finish).toHaveBeenCalledOnce();
+  });
+
+  it('counts the four steps in the menu and the chip from one function', () => {
+    renderChip();
+
+    const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
+    const setup = within(openMenu()).getByRole('region', { name: 'Setup' });
+    expect(chip.textContent).toContain('2 of 4');
+    expect(within(setup).getByText('Setup · 2 of 4')).toBeDefined();
+    expect(within(setup).getByRole('progressbar').getAttribute('aria-valuenow')).toBe('2');
+    expect(within(setup).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(setup).queryByText(/about you/i)).toBeNull();
+  });
+
+  it('offers Resume setup while setup is paused, at the step it stopped on', () => {
+    mocks.progress.wizard = 'later';
+    mocks.progress.isWizardDone = false;
+    const listener = vi.fn();
+    window.addEventListener('goodboy:open-onboarding-wizard', listener);
+    renderChip();
+
+    fireEvent.click(within(openMenu()).getByRole('button', { name: 'Resume setup' }));
+
+    expect(listener).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    window.removeEventListener('goodboy:open-onboarding-wizard', listener);
+  });
+
+  it('offers no Resume setup once setup is done', () => {
+    renderChip();
+
+    expect(within(openMenu()).queryByRole('button', { name: 'Resume setup' })).toBeNull();
+  });
+
+  it('suggests About you after the first session, outside the count', () => {
+    mocks.progress.suggestsProfile = true;
+    renderChip();
+
+    const setup = within(openMenu()).getByRole('region', { name: 'Setup' });
+    expect(within(setup).getByRole('button', { name: 'Open Tell agents about you' })).toBeDefined();
+    expect(within(setup).getByText('Setup · 2 of 4')).toBeDefined();
+    mocks.progress.suggestsProfile = false;
   });
 
   it("opens what's new and shortcuts, and closes on the way out", () => {
@@ -206,10 +284,19 @@ describe('GoodboyChip', () => {
 
     const menu = openMenu();
     const labels = within(menu)
-      .getAllByRole('button')
-      .map((button) => button.textContent ?? '');
-    expect(labels.indexOf('Guide')).toBeGreaterThan(-1);
-    expect(labels.indexOf('Guide')).toBeLessThan(labels.indexOf("What's new"));
+      .getAllByRole('menuitem')
+      .map((row) => row.getAttribute('data-menu-label'));
+    expect(labels).toEqual([
+      'Guide',
+      "What's new",
+      'Keyboard shortcuts',
+      'Report a bug',
+      'Pair an iPhone',
+      'Sponsor on GitHub',
+      'Follow on X',
+    ]);
+    expect(within(menu).getByText('Help')).toBeDefined();
+    expect(menu.querySelectorAll('[role="presentation"]')).toHaveLength(2);
 
     fireEvent.click(within(menu).getByText('Guide'));
 
@@ -217,12 +304,36 @@ describe('GoodboyChip', () => {
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 
-  it('asks the app to open the pairing studio from Pair your iPhone', () => {
+  it('lands keyboard focus in the menu, moves with arrows, opens Guide on Enter and gives focus back on Escape', async () => {
+    const user = userEvent.setup();
+    const { onOpenGuide } = renderChip();
+    const trigger = screen.getByTestId('goodboy-chip');
+
+    trigger.focus();
+    await user.keyboard('{Enter}');
+    const guide = screen.getByRole('menuitem', { name: /Guide/ });
+    expect(document.activeElement).toBe(guide);
+
+    await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: /What's new/ }));
+    await user.keyboard('{ArrowUp}');
+    expect(document.activeElement).toBe(guide);
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    await user.keyboard('{Enter}');
+    await user.keyboard('{Enter}');
+    expect(onOpenGuide).toHaveBeenCalledOnce();
+  });
+
+  it('asks the app to open Settings, iPhone from Pair an iPhone', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:open-pair-device', listener);
     renderChip();
 
-    fireEvent.click(within(openMenu()).getByText('Pair your iPhone'));
+    fireEvent.click(within(openMenu()).getByText('Pair an iPhone'));
 
     expect(listener).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
@@ -247,16 +358,17 @@ describe('GoodboyChip', () => {
     expect(SOCIAL_LINKS.x).toBe('https://x.com/GoodboyWorks');
   });
 
-  it('leads with report a bug, says a draft is saved, and hands off to the report sheet', () => {
+  it('ends the help rows with report a bug, says a draft is saved, and hands off to the report sheet', () => {
     mocks.hasDraft = true;
+    mocks.progress.isFinished = true;
     const listener = vi.fn();
     window.addEventListener(OPEN_REPORT_SHEET_EVENT, listener);
     renderChip();
 
     const menu = openMenu();
-    expect(within(menu).getByText('Draft saved')).toBeDefined();
-    const rows = within(menu).getAllByRole('button');
-    expect(rows[0]?.textContent).toContain('Report a bug');
+    expect(within(menu).getByText(/^Draft saved/)).toBeDefined();
+    const helpRows = within(menu).getAllByRole('menuitem');
+    expect(helpRows[3]?.textContent).toContain('Report a bug');
     fireEvent.click(within(menu).getByText('Report a bug'));
 
     expect(listener).toHaveBeenCalledOnce();
@@ -265,8 +377,8 @@ describe('GoodboyChip', () => {
   });
 
   it('opens itself once after the first agent finishes, then remembers it did', async () => {
-    mocks.progress.collapsed = false;
-    mocks.progress.completed = new Set<OnboardingStepId>(['provider', 'project', 'firstSession']);
+    mocks.progress.isCollapsed = false;
+    mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace', 'first-session']);
     await act(async () => {
       renderChip();
     });
@@ -276,7 +388,7 @@ describe('GoodboyChip', () => {
   });
 
   it('never opens itself before the first agent finishes', async () => {
-    mocks.progress.collapsed = false;
+    mocks.progress.isCollapsed = false;
     await act(async () => {
       renderChip();
     });
@@ -286,9 +398,10 @@ describe('GoodboyChip', () => {
   });
 
   it('never opens itself over the setup wizard', async () => {
-    mocks.progress.collapsed = false;
-    mocks.progress.wizardDone = false;
-    mocks.progress.completed = new Set<OnboardingStepId>(['provider', 'project', 'firstSession']);
+    mocks.progress.isCollapsed = false;
+    mocks.progress.isWizardDone = false;
+    mocks.progress.wizard = 'open';
+    mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace', 'first-session']);
     await act(async () => {
       renderChip();
     });
@@ -300,7 +413,7 @@ describe('GoodboyChip', () => {
 
 describe('GoodboyChip in the column and on the rail', () => {
   it('spells Goodboy, beta and the version in the column row at every width', () => {
-    mocks.progress.finished = true;
+    mocks.progress.isFinished = true;
     render(
       <GoodboyChip
         variant="column"
@@ -331,9 +444,27 @@ describe('GoodboyChip in the column and on the rail', () => {
     expect(screen.getByRole('dialog', { name: 'Goodboy' })).toBeDefined();
   });
 
+  it('opens the update card from a menu row on the rail, where no pill fits', () => {
+    useAppStore.setState({ updaterStatus: 'available' });
+    render(
+      <GoodboyChip
+        variant="rail"
+        onOpenChangelog={vi.fn()}
+        onOpenGuide={vi.fn()}
+        onOpenShortcuts={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('goodboy-chip'));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Goodboy 0.5.2 is available' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Goodboy 0.5.2 is available' })).toBeDefined();
+  });
+
   it('opens itself only from the primary chip, so a peeked column never opens a second menu', async () => {
-    mocks.progress.collapsed = false;
-    mocks.progress.completed = new Set<OnboardingStepId>(['provider', 'project', 'firstSession']);
+    mocks.progress.isCollapsed = false;
+    mocks.progress.completed = new Set<OnboardingStepId>(['agents', 'workspace', 'first-session']);
     await act(async () => {
       render(
         <GoodboyChip

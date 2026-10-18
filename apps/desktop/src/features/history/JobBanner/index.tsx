@@ -11,6 +11,7 @@ import { JobBannerActions } from './JobBannerActions';
 import { JobBannerLine } from './JobBannerLine';
 import { JobBannerNote } from './JobBannerNote';
 import { JobBannerReview } from './JobBannerReview';
+import { RebaseConflictPrompt } from '../components/RebaseConflictPrompt';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -45,6 +46,9 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
     return null;
   }
   const { job } = controls;
+  if (job.state === 'conflict') {
+    return <RebaseConflictPrompt sessionId={sessionId} worktreePath={worktreePath} />;
+  }
   const isNoteShown = isNoteOpen && job.state === 'stuck';
   const tone = TONE_OF[job.tone];
   const isAlert = job.isSettled && (job.tone === 'warn' || job.tone === 'danger');

@@ -76,7 +76,7 @@ const DOOR_SCENES: ReadonlyArray<readonly [string, FramePage]> = [
   ['r4-layout-terminal', 'terminal'],
   ['r4-layout-monitoring', 'monitoring'],
   ['r4-layout-settings', 'settings'],
-  ['r4-layout-guide', 'guide'],
+  ['r4-layout-guide', 'guideChapter'],
 ];
 
 const LOADING_SCENES: ReadonlyArray<readonly [string, FramePage, string]> = [

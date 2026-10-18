@@ -15,7 +15,6 @@ const WIDTH_ALLOWLIST = new Set(['shared/components/ImageLightbox/index.tsx']);
 const NARROW_ALLOWLIST = new Set([
   'features/chat/components/HandoffChip/HandoffCardShell.tsx',
   'features/workspace/components/StageBoard/index.tsx',
-  'features/workspace/components/WorkspaceLauncher/index.tsx',
 ]);
 
 type Forbidden = {
@@ -28,12 +27,11 @@ const NO_EXCEPTION: ReadonlySet<string> = new Set();
 const FIXED_PX_ALLOWLIST: ReadonlySet<string> = new Set([
   'features/palette/paletteModes.ts',
   'features/onboarding/OnboardingWizard/WizardFrame.tsx',
+  'features/workspace/components/WorkspaceLauncher/index.tsx',
 ]);
 
 const CENTRED_ALLOWLIST: ReadonlySet<string> = new Set([
   'features/workspace/components/StageBoard/index.tsx',
-  'features/companion/components/CompanionStudio/index.tsx',
-  'features/onboarding/OnboardingWizard/steps/ProjectsStep.tsx',
 ]);
 
 const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [
@@ -159,8 +157,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
     'features/settings/components/SettingsStudio/AppScopePanel.tsx',
     'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx',
   ],
-  guide: ['features/settings/components/GuideStudio/parts/GuideContent.tsx'],
-  companion: ['features/companion/components/CompanionStudio/index.tsx'],
+  guide: ['features/settings/components/GuideStudio/parts/ChapterPage.tsx'],
   addWorkspace: ['features/workspace/components/WorkspaceLinkStudio/index.tsx'],
   workflow: ['features/workflows/components/WorkflowsPanel/index.tsx'],
   inbox: ['features/inbox/components/InboxStudio/index.tsx'],
@@ -193,7 +190,7 @@ const FORM_AND_DETAIL_ROOTS: PlaceRoots = {
 
 const COLUMN_ROOT = /<(PaneShell|PageColumn|PageSkeleton|FormPage)\b/;
 
-const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['companion', 'addWorkspace']);
+const PAGELESS_STUDIOS: ReadonlySet<string> = new Set(['addWorkspace']);
 
 const FULL_BLEED_PLACES: ReadonlySet<string> = new Set(['studio terminal']);
 

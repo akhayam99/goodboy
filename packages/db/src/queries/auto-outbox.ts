@@ -142,17 +142,21 @@ type ListAutoOutboxParams = {
   readonly db: Database;
   readonly treeId: AutoTreeId;
   readonly states?: ReadonlyArray<AutoOutboxState>;
+  readonly kinds?: ReadonlyArray<AutoOutboxKind>;
 };
 
 export const listAutoOutbox = async ({
   db,
   treeId,
   states = AUTO_OUTBOX_STATES,
+  kinds = AUTO_OUTBOX_KINDS,
 }: ListAutoOutboxParams): Promise<ReadonlyArray<AutoOutboxRow>> => {
-  const marks = states.map(() => '?').join(', ');
+  const stateMarks = states.map(() => '?').join(', ');
+  const kindMarks = kinds.map(() => '?').join(', ');
   const rows = await db.select<OutboxDbRow>(
-    `${OUTBOX_SELECT} WHERE tree_id = ? AND state IN (${marks}) ORDER BY created_at, rowid`,
-    [treeId, ...states],
+    `${OUTBOX_SELECT} WHERE tree_id = ? AND state IN (${stateMarks}) AND kind IN (${kindMarks})
+      ORDER BY created_at, rowid`,
+    [treeId, ...states, ...kinds],
   );
   return rows.map((row) => toOutbox({ row }));
 };

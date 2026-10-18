@@ -119,7 +119,7 @@ describe('the policy and failure scenes', () => {
 
     const band = screen.getByRole('region', { name: 'Providers' });
     expect(within(band).getByText('When a provider is out')).toBeDefined();
-    expect(within(band).getByRole('button', { name: 'Open Providers & models' })).toBeDefined();
+    expect(within(band).getByRole('button', { name: 'Open Providers and models' })).toBeDefined();
     expect(within(band).queryAllByRole('switch')).toEqual([]);
   });
 
@@ -156,7 +156,7 @@ describe('the policy and failure scenes', () => {
   it('first-lap-publish-no-gh starts on the existing repository, offers the install help and no primary', async () => {
     await mount('first-lap-publish-no-gh');
 
-    const panel = screen.getByRole('region', { name: 'Publish this project' });
+    const panel = screen.getByRole('region', { name: 'Publish this folder' });
     expect(
       within(panel)
         .getByRole('tab', { name: 'Use an existing repository' })
@@ -209,7 +209,7 @@ describe('the policy and failure scenes', () => {
     );
     await settle();
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Projects' })).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1, name: 'Folders' })).toBeDefined();
     expect(screen.getAllByText('Harborline')).toHaveLength(1);
     const page = document.querySelector('[data-settings-detail]');
     expect(page).not.toBeNull();

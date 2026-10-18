@@ -11,6 +11,8 @@ vi.mock('@goodboy/db', async () =>
     renameWorkspace: vi.fn(async () => undefined),
     upsertWorkspaceProfile: vi.fn(async () => undefined),
     setWorkspacePermissionDefault: vi.fn(async () => undefined),
+    listDeletedBranches: vi.fn(async () => []),
+    listExpiredDeletedBranches: vi.fn(async () => []),
   }),
 );
 vi.mock('../../../permissions/permissions', async () =>
@@ -123,22 +125,47 @@ describe('WorkspaceScopePanel pages', () => {
   it('opens on Projects with the workspace name, and one page per section', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Projects');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Folders');
     expect(screen.getByLabelText<HTMLInputElement>('Workspace name').value).toBe('Harborline');
     expect(screen.queryByRole('region', { name: 'Branches and comments' })).toBeNull();
     screen.getByRole('region', { name: 'Disconnect workspace' });
   });
 
-  it.each(WORKSPACE_PAGES.map((page) => ({ id: page.id, label: page.label, hint: page.hint })))(
-    'gives $id one title and one muted sentence',
-    ({ id, label, hint }) => {
+  it.each(WORKSPACE_PAGES.map((page) => ({ id: page.id, label: page.label })))(
+    'gives $id one title and no sentence under it',
+    ({ id, label }) => {
       renderPage({ section: id });
 
-      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(label);
-      screen.getByText(hint);
-      expect(hint.split(' ').length).toBeLessThanOrEqual(12);
+      const title = screen.getByRole('heading', { level: 1 });
+      expect(title.textContent).toBe(label);
+      const header = title.closest('[data-page-header]');
+      expect(header?.querySelectorAll('p:not([data-slot="pane-meta"])')).toHaveLength(0);
+      expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent ?? '').not.toMatch(
+        /\.$/,
+      );
     },
   );
+
+  it('says the workspace has no folders yet in the Folders header', () => {
+    renderPage();
+
+    const header = screen.getByRole('heading', { level: 1 }).closest('[data-page-header]');
+    expect(header?.querySelector('[data-slot="pane-meta"]')?.textContent).toBe('No folders yet');
+  });
+
+  it('opens Branches with After merge first and Check again in the header', () => {
+    renderPage({ section: 'branches' });
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Branches');
+    const afterMerge = screen.getByRole('region', { name: 'When a pull request merges' });
+    const branches = screen.getByRole('region', { name: 'Branches' });
+    expect(
+      afterMerge.compareDocumentPosition(branches) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
+    expect(screen.queryByRole('combobox', { name: 'Storage scope' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Change' })).toBeNull();
+  });
 
   it.each([
     ['copy', 'Copy settings from another workspace'],
@@ -151,6 +178,7 @@ describe('WorkspaceScopePanel pages', () => {
 
   it('lands old anchors on their page', () => {
     renderPage({ section: 'after-merge' });
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Branches');
     screen.getByRole('region', { name: 'When a pull request merges' });
     cleanup();
 
@@ -310,7 +338,7 @@ describe('copy from another workspace', () => {
 
     expect(flow.textContent).toContain('Will change 3 settings on 1 page.');
     within(flow).getByText('Voice: Friendly → Formal, Mark thread as resolved: On → Off, 1 more');
-    expect(flow.textContent).toContain('Stays: projects, folders, accounts, permission history.');
+    expect(flow.textContent).toContain('Stays: folders, accounts, permission history.');
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 3 settings' }));
 
     await screen.findByText('Copied 3 settings from Northwind.');
@@ -336,17 +364,17 @@ describe('copy from another workspace', () => {
     renderPage({ section: 'projects' });
 
     fireEvent.click(
-      within(pageMenu('Projects')).getByRole('menuitem', { name: /Copy all pages from/ }),
+      within(pageMenu('Folders')).getByRole('menuitem', { name: /Copy all pages from/ }),
     );
     const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
     fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
     fireEvent.click(within(flow).getByRole('button', { name: 'Preview changes' }));
 
     expect(flow.textContent).toContain('Will change 3 settings on 3 pages.');
-    ['New sessions', 'After merge', 'Replies and commits'].forEach((page) =>
+    ['New sessions', 'Branches', 'Replies and commits'].forEach((page) =>
       within(flow).getByRole('checkbox', { name: `Include ${page}` }),
     );
-    fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include After merge' }));
+    fireEvent.click(within(flow).getByRole('checkbox', { name: 'Include Branches' }));
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 2 settings' }));
 
     await screen.findByText('Copied 2 settings from Northwind.');
@@ -371,14 +399,14 @@ describe('dev project', () => {
     });
     renderPage({ section: 'dev-project' });
 
-    const region = screen.getByRole('region', { name: 'Turn this into a dev project' });
+    const region = screen.getByRole('region', { name: 'Turn this into a git repository' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(
       within(region).getByText(/Git starts tracking \/work\/harborline\/runbooks/),
     ).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
-    expect(screen.queryByRole('region', { name: 'Turn this into a dev project' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Turn this into a git repository' })).toBeNull();
     act(() => undefined);
   });
 });

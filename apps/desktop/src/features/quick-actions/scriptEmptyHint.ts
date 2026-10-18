@@ -21,7 +21,7 @@ type Params = {
 
 export const scriptEmptyHint = ({ groups, query, isReading }: Params): string => {
   if (groups.length === 0) {
-    return 'Add a project to this session to run its scripts.';
+    return 'Add a folder to this session to run its scripts.';
   }
   const ready = groups.filter((group) => group.isReady);
   if (ready.some((group) => group.scripts.length > 0)) {
@@ -30,7 +30,7 @@ export const scriptEmptyHint = ({ groups, query, isReading }: Params): string =>
   if (ready.length === 0) {
     return groups.length === 1
       ? `${projectNames({ groups })} is still preparing.`
-      : 'These projects are still preparing.';
+      : 'These folders are still preparing.';
   }
   if (isReading) {
     return `Reading scripts in ${projectNames({ groups: ready })}.`;

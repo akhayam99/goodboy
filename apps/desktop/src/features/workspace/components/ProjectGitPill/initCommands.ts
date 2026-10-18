@@ -30,7 +30,7 @@ export const initCommands = ({ rootPath, state }: Params): ReadonlyArray<InitCom
   return [
     {
       title: 'Create the repository',
-      detail: 'Runs in the project folder, never inside a session worktree.',
+      detail: 'Runs in the folder, never inside a session worktree.',
       command: `${at} init -b main`,
     },
     commit,

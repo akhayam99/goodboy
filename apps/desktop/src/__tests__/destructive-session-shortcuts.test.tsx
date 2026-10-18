@@ -60,7 +60,6 @@ vi.mock('../app/components/BootSplash', () => ({
 }));
 vi.mock('../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
 vi.mock('../app/components/AppTopBar', () => ({ AppTopBar: () => null }));
-vi.mock('../app/components/AppEmptyState', () => ({ NoWorkspaceScreen: () => null }));
 vi.mock('../features/workspace/components/StageBoard', () => ({ StageBoard: () => null }));
 vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: ({ session, isOpen }: { session: { id: string }; isOpen?: boolean }) => {
@@ -80,6 +79,9 @@ vi.mock('../features/session/hooks/useSessionArchive', () => ({
     },
     restore: async () => undefined,
   }),
+}));
+vi.mock('../features/session/components/SessionArchiveBridge', () => ({
+  SessionArchiveBridge: () => null,
 }));
 vi.mock('../features/settings/components/SettingsStudio', () => ({ SettingsStudio: () => null }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
@@ -118,9 +120,6 @@ vi.mock('../features/worktree/worktree', () => ({
   worktreeSnapshot: vi.fn(),
 }));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
-vi.mock('../features/companion/components/CompanionStudio', () => ({
-  CompanionStudio: () => null,
-}));
 vi.mock('../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));
@@ -191,12 +190,11 @@ afterEach(() => {
 });
 
 describe('archive/delete session shortcuts', () => {
-  it('archives straight away on the archive shortcut, with no confirm in the way', () => {
+  it('leaves the archive shortcut to its own bridge: no delete confirm opens', () => {
     const { container } = render(<App />);
 
     openArchive();
 
-    expect(archiveCalls).toEqual([{ sessionId: 'session-1' }]);
     expect(container.querySelector('[data-testid="delete-confirm"]')).toBeNull();
     expect(deleteConfirmCalls).toEqual([]);
   });

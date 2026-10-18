@@ -9,7 +9,7 @@ const NOTIFY = { key: 'notify-relay', name: 'notify-relay' };
 describe('projectAnswerOf', () => {
   it('asks for a choice until one project is picked', () => {
     expect(projectAnswerOf({ picks: [], roleNoun: 'Implementer' })).toEqual({
-      label: 'Choose a project',
+      label: 'Choose a folder',
       message: null,
     });
   });
@@ -21,10 +21,10 @@ describe('projectAnswerOf', () => {
     });
     expect(projectAnswerOf({ picks: [PAYMENTS, LEDGER], roleNoun: 'Implementer' })).toEqual({
       label: 'Use both',
-      message: 'Use payments-api and ledger-core: start one Implementer per project.',
+      message: 'Use payments-api and ledger-core: start one Implementer per folder.',
     });
     expect(
       projectAnswerOf({ picks: [PAYMENTS, LEDGER, NOTIFY], roleNoun: 'Implementer' }).label,
-    ).toBe('Use 3 projects');
+    ).toBe('Use 3 folders');
   });
 });

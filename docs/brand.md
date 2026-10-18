@@ -50,12 +50,18 @@ light theme, next to the same word. The mask file and its ratios do not
 change. This is the title bar convention of Linear, Cursor and Arc: a
 monochrome glyph in the chrome, the tile on the dock icon.
 
-The app shows the mark in two places only: the Goodboy chip (the row at the
-foot of the column, the mark on its rail, and the header of its menu) and the
-boot splash. Empty states, onboarding, the
-workspace launcher and agent kinds draw no dog. They use a concept tile
-(`ConceptTile`), the stage chips or the kind chip. A ratchet
-(`dog-mascot-only-marks-the-brand.test.ts`) keeps `DogMascot` to those files.
+The app shows the mark in three places: the Goodboy chip (the row at the
+foot of the column, the mark on its rail, and the header of its menu), the
+boot splash, and the lockup on first run and Home. That lockup is the black
+tile with the white mark, then the word. Welcome shows it at hero size, on the
+boot splash dog's exact box (`BOOT_MARK_PX`). The setup header and Home show it
+small. These three use `BrandTile` (`shared/components/BrandTile.tsx`), with the shared
+ratios and `--color-brand`. A frame shows the mark once, so Welcome's header draws none.
+Empty states inside a workspace and agent kinds still draw no dog. They use a
+concept tile (`ConceptTile`), the stage chips or the kind chip. A ratchet
+(`dog-mascot-only-marks-the-brand.test.ts`) keeps `DogMascot` to `BrandLockup`,
+`BootBrand` and `BrandTile`, and pins the importers of `BrandTile` to
+`WelcomeStep.tsx`, `WizardHeader.tsx` and `WorkspaceLauncher/index.tsx`.
 
 The tile has one shape everywhere, and no other shape exists:
 
@@ -91,13 +97,15 @@ value on the site, in the favicon and in the app icon: `--brand-tile` in
 `website/src/styles.css` and `--color-brand` in `apps/desktop/src/styles.css`.
 The generator refuses to run when those two disagree.
 
-**The app chrome never paints the tile.** A fixed black tile on the top bar
+**The working chrome never paints the tile.** A fixed black tile on the top bar
 disappeared on the dark theme (1.09:1 against `bg-background`) and read as a
-dark block on the light theme. Neither is the brand. So the chrome (the
-footer Goodboy chip) shows the bare glyph in the theme foreground, and `--color-brand` stays only to keep the
-generator honest against the site. Do not bring the tile back into the chrome,
-and do not give it a border, a lighter dark-theme variant or a glow. On the
-site, the favicon and the dock the tile stands alone and does its job.
+dark block on the light theme. Neither is the brand. So the working chrome (top
+bar, sidebar, Goodboy chip) shows the bare glyph in the theme foreground. Do
+not bring the tile back into it. The setup header and Home are not working
+chrome: they sit alone on the background, where the tile reads as the app icon.
+On the dark theme it stays black, with no border and no lighter variant, and it
+gets no glow either. On the site, the favicon and the dock the tile stands
+alone and does its job.
 `brand-mark-is-centered-in-its-tile.test.ts` checks both halves.
 
 The background is white on the site and charcoal in the app, and both are

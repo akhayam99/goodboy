@@ -12,8 +12,8 @@ The other docs link here instead of explaining them again.
 ## At a glance
 
 - **Workspace**: where you work, named after what you work on
-- **Project**: one repository or folder inside a workspace
-- **Session**: one task, with its own goal, budget and shared notes
+- **Folder**: one repository or plain folder inside a workspace (the code calls it a project)
+- **Session**: one task, with its own goal, limit and shared notes
 - **Agent**: one chat inside a session, with its own provider and model
 - **Workflow**: a list of steps you can reuse, and each step gets its own agent
 - **Artifact**: a plan, report or wireframe an agent saves as its own page
@@ -53,25 +53,62 @@ A few rules are always true:
 The app follows the life of a task. First the task itself. Then the tools it
 comes from and goes back to. Then the code it produces. The chat comes last.
 
-## Workspaces and projects
+## Workspaces and folders
 
-A **workspace** is named after what you work on, not after a folder on disk.
-It holds your profile, your connected tools, one or more projects and every
-session.
+A **workspace** holds your profile, your connected tools, one or more folders
+and every session. The screen calls what it holds a **folder**; the code, the
+database and the technical docs call it a **project** (`Project`, the
+`projects` table).
 
-A **project** is one place where code or files live. It has a root folder on
-disk, and it is one of two kinds:
+A folder is one place where code or files live. It has a root path on disk,
+and it is one of two kinds:
 
 - A git repository, kind `repo`
 - A plain folder, kind `folder`
 
-Each project belongs to one workspace only. It keeps only what is specific to
+Each folder belongs to one workspace only. It keeps only what is specific to
 that place. That means its scripts, its own settings and, if you want, its own
 connection to a tool.
 
-The new-workspace form offers **Start from a project** and **A workspace with
-several projects**, and the empty screen adds **Start a new project**. They set
-up the projects of one workspace. They are not different kinds of workspace, and
+**The name.** A new workspace is named after the folder you picked, never its
+parent: dashes and underscores become spaces and the first letter is a
+capital, so `~/Code/acme-web` becomes "Acme web" and `ledger_core` becomes
+"Ledger core". One function does it, `nameFromFolder`
+(`features/workspace/nameFromFolder.ts`), for setup, New workspace and Start
+from scratch alike. The folder keeps its name on disk (`acme-web`), and you can
+rename the workspace in place.
+
+**Detection is read only.** `validate_git_repo` and `scan_child_repos`
+(`src-tauri/src/repo.rs`) write nothing. A failed check says why in
+`errorKind`: `not_found`, `permission_denied` (a folder macOS will not let
+Goodboy open), `not_a_directory`, `not_a_repository` or `git_failed`. Each
+repository also reports its `defaultBranch`, read on disk only: the branch
+`origin/HEAD` points at, else the current branch, else none (a detached HEAD).
+It is stored as the folder's `baseBranch`.
+
+**One write on Create.** `createWorkspaceWithFolders`
+(`store/slices/workspaces/`) takes the workspace id the form made beforehand,
+the name, the folders and the folders to move here. In this order:
+
+1. It refuses a move while agents run in that folder (the message names the
+   count and the other workspace), and a folder another workspace holds,
+   before touching the disk.
+2. It runs `git init` for a plain folder you chose to track, or creates the
+   folder for Start from scratch, before any database write. A git failure
+   writes nothing and shows git's own message.
+3. It writes the workspace, every folder and the first-lap phase of a new
+   folder in one transaction (`insertWorkspaceWithProjects`). A failed insert
+   leaves no row.
+4. Only then the store shows them, and the moves run through `adoptProject`,
+   which refuses on its own while agents run there.
+
+Retry is safe: the workspace id and the `root_path UNIQUE` column (m119) make a
+second try reuse what the first one left, and a scratch folder the first try
+created is picked up instead of refused.
+
+Every door says **New workspace** (Home, the switcher, the palette, the
+Goodboy menu, the menu bar) and opens one form with no shape to choose; **Start
+from scratch** lives inside it. The form sets up the folders of one workspace. They are not different kinds of workspace, and
 a workspace never links to another one
 ([ADR 001](adr/001-workspace-project-rename.md)).
 
@@ -92,16 +129,16 @@ every turn running in the one it had, so opening a workspace only switches
 this window in place when nothing is running here. When agents are running,
 the workspace popover asks first and offers a new window, which keeps them
 going; a side door that used to switch silently (a notification, a Tasks
-item, Open a folder) now opens that workspace's own window instead of
+item, New workspace) now opens that workspace's own window instead of
 touching this one. `⌘Enter` on a workspace row always opens a new window,
 no question asked.
 
-**Disconnect** keeps a workspace and its projects in the database with
+**Disconnect** keeps a workspace and its folders in the database with
 everything they hold, it only hides them. Re-adding the same folder through
-Open a folder, or a project through Add project, reconnects it and its
+New workspace, or a folder through Add folder, reconnects it and its
 sessions instead of creating a duplicate. If the folder moved since it was
 disconnected, Goodboy recognizes it by repository identity and offers to
-locate it the same way a moved project is located while connected.
+locate it the same way a moved folder is located while connected.
 
 Moving a project's folder on disk does not lose anything either: the
 database keeps its rows, but every saved path still points at the old
@@ -155,6 +192,15 @@ or closed.
 
 What you did in a session stays counted after the session leaves the board.
 Impact, the Spend tab and the spend chip in the top bar all count it.
+
+Every spend number on screen comes from one function, `spendFigures`
+(`features/budget/spendFigures.ts`), and each figure names its window: the
+Impact header says the range it spent over (7 days, 30 days or all time), the
+provider page says this month (the UTC calendar month, from the provider
+status, with the limit, what is left and the reset date), and the top bar chip
+says today. A provider row, a session row and a model row sum their own records
+through `totalUsd` in the same file. The overview empty state says what fills
+it in one line, whatever was spent today.
 
 | How it goes away                      | What happens to its rows                                                                          | What Impact keeps                                     |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
@@ -432,12 +478,22 @@ whether you clicked it on the board or in the session overview.
   Activity does not show, so it never sits above a question already in view.
   With one such question, **Answer** opens the agent that asked at that
   question (`useOpenAgentQuestion`); with more, it opens the questions view.
+- Next never offers what an Activity row already offers for the same run.
+  One rule, `isOfferedByActivity` (`features/suggestions/isOfferedByActivity.ts`,
+  exhaustive over the kinds), runs in `deriveNextSteps` before
+  `dedupeByTargetKey`: the hint that starts a run stays, and the run's
+  follow-ups live only on its row. Today that drops the ready step of a
+  workflow run (its row has **Start**) and every stage of a CI fix after
+  **Analyze** (its row opens the drawer, then has **Start fix** and **Push**).
+  **Resume all** after a restart stays, because no row resumes several
+  agents at once; a failed agent's **Retry** stays, because its row has none.
 - A permission has one place in the overview: the **Needs you** callout,
   whose button opens the blocked agent. The approve-tool
   suggestion for that same agent stays out of Next steps; a permission the
   callout does not name (a second blocked agent) still shows there.
 - Eighteen suggestion kinds ship: the original six (answer open questions,
-  continue a workflow's ready step, fix review conversations, rebase a
+  continue a workflow's ready step (derived, then left to its Activity row
+  by `isOfferedByActivity`), fix review conversations, rebase a
   project, run a ready plan, add a proposed project) plus twelve more that
   landed on the same engine, not a second one: approve a pending permission,
   sign back in after `auth_required`, resume every agent a restart stopped
@@ -561,8 +617,9 @@ pick it when you start the agent.
 - **PR reviewer** opens a session that reviews someone else's pull request
 - **Resolve** starts from the **Review** lens and fixes review comments
 - **History rewriter** is hidden: nobody picks it. Goodboy starts it only
-  when replaying a branch history hits a conflict git cannot settle alone
-  (a rebase on main, or a Rewrite history plan). It works in a throwaway
+  when a Rewrite history plan hits a conflict git cannot settle alone and
+  you press **Rewrite with an agent**. A rebase on main never starts it: a
+  conflict there stops and asks, and **Resolve with Auto** hands it to Auto. It works in a throwaway
   copy of the branch, never in a mount. Its turn carries a git config that
   points `origin` at a push URL that always fails, it has no GitHub token and
   no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
@@ -908,8 +965,8 @@ count is a count of comments, never of agents:
   you changed the reply
 - **Couldn't fix**: the box under the comment says why in one sentence, from the
   cause recorded on the attempt (`resolve_attempts.failure_cause`, m225): the fix
-  didn't start, the provider stopped the run, every provider is over its spend
-  cap, you stopped it (shown as Stopped), the app closed while it was working, it
+  didn't start, the provider stopped the run, every provider is over its
+  limit, you stopped it (shown as Stopped), the app closed while it was working, it
   conflicts with a fix you accepted before, the worktree is gone, or the fix
   couldn't be saved from its copy of the branch. A comment written before m225
   reads "Cause not recorded". A failed run also shows the last command it ran
@@ -1445,7 +1502,7 @@ and budgets, and turn each one on or off per session. Goodboy decides where
 each piece of work goes.
 
 - When a provider passes its budget limit, the work moves to the next one. You
-  pick the limit, and it starts at 80% of the cap.
+  pick the limit, and it warns at 80% of it.
 - Quick tasks go to fast, cheap models. Hard design work goes to the best model
   you have.
 - Each workflow step picks its model by role, level and cost. A model you pin
@@ -1472,12 +1529,12 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
   only warns, with an alert before you reach them
 - **Ask**: every answer is recorded as telemetry kind `ask` on its session
   (m227). It counts in the session cost, today's spend, provider budgets and
-  the session cap alert, and shows as its own **Ask** row in the session
-  spend. It never counts toward a run's cap, which sums only that
+  the session limit alert, and shows as its own **Ask** row in the session
+  spend. It never counts toward a run's limit, which sums only that
   run's agents
 
-Caps steer where work goes. They never lock you out. When every provider is
-over its cap, the message box tells you. You can still send the turn on the
+Limits steer where work goes. They never lock you out. When every provider is
+over its limit, the message box tells you. You can still send the turn on the
 provider you picked.
 
 ## Skills
@@ -1511,16 +1568,21 @@ task up again in Goodboy.
 
 ### Vocabulary rules
 
-- Each word has one meaning. **workspace** is the container, **project** is
-  the repo or folder, **session** is the goal, **agent** is the chat.
-- No screen may use a different word for any of these four
+- Each word has one meaning. **workspace** is the container, **folder** is
+  what it holds on screen (a repository or a plain folder; `project` in code),
+  **session** is the goal, **agent** is the chat.
+- No screen may use a different word for any of these four. Every surface that
+  creates, adds, lists or manages what a workspace holds says folder: the
+  session rail, the session overview, Settings, palette labels, notices and
+  aria-labels alike. The old words stay findable as former names
+  (`formerNamesOf` in `shared/names.ts`: Projects, Add project, Dev project)
 - Internal words stay in code and technical docs. The screen says the word the
   user already knows from git, the file system or the rest of the app:
 
   | Internal word       | On screen                                         |
   | ------------------- | ------------------------------------------------- |
-  | mount, branch mount | branch (repo), folder (folder project), project   |
-  | mount a project     | Add project                                       |
+  | mount, branch mount | branch (repo), folder (plain folder)              |
+  | mount a project     | Add folder                                        |
   | fork a mount        | New branch                                        |
   | unmount             | Close branch, and Reopen for a closed row         |
   | spawn               | Start (an agent, a reviewer, an implementer)      |
@@ -1556,10 +1618,29 @@ task up again in Goodboy.
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:
   searching the old word finds the new one (`formerNamesOf` in `names.ts`).
 - **Models** is the Providers page that sets what each role runs on (it was
-  Defaults). **Limit** is the most a run or a session may spend (it was Spend
-  cap), **Limits** the backup group that holds them (it was Spend caps), **Copy context** the drawer button, **Context window**
+  Defaults). **Limit** is the most a provider, a run or a session may spend,
+  said the same in the provider panel (Monthly limit, Save limit, Remove limit),
+  the alerts and the run defaults (it was Spend cap and cap), **Limits** the
+  backup group that holds them (it was Spend caps). Notifications written before
+  the change keep their stored text, and the `budget-cap` kind id stays, **Copy context** the drawer button, **Context window**
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
+- **General**, **Updates**, **Keyboard shortcuts**, **Storage**, **Backup and
+  reset** and **iPhone** are the App pages of Settings (Keyboard shortcuts was
+  Shortcuts, iPhone was Pair device and Companion; Security findings is a
+  section at the end of Storage). **Branches** is a Workspace page that starts
+  with After merge. **Pair an iPhone** is the one verb that opens the iPhone
+  page, **Providers and models** is its group in the rail (it was Providers &
+  models), and **Edit commits** is the one name for changing the commits of a
+  branch (it was Rewrite history). **Disconnect** is the one verb for a
+  provider or tool (it was Sign out). The old words are palette aliases and
+  `RETIRED_NAMES` keeps them out of copy. A dot on a settings row means only
+  that something needs you; a connected, healthy provider or tool shows none.
+- **The Guide is one page per chapter**, in the app's voice: at most 60 words
+  a point, 7 points a chapter and 4,000 words in all, pinned by
+  `guideChapters.test.ts`. **Impact** and **Monitoring** are doors of their own
+  with a header of one title and one meta line; `pageLayout.test.ts` and
+  `secondaryHeaders.test.ts` keep every secondary page on that header.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
   request. Tools connect from Settings > Integrations.
@@ -1755,4 +1836,4 @@ is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). 
 
 A check analysis agent has `sourceKind` `failed_check` and keeps the originating check URL in `sourceCommentUrl`. The latest non-deleted agent for that session and URL owns the check row status; its transcript owns the finding and **Proposed fix**. The source type is in `packages/types/src/workflow.ts`, and the selector is `apps/desktop/src/store/slices/agents/selectCheckAnalysis.ts`.
 
-The fix's commit comes from the repository, not from the fix agent's transcript. `readCheckFixCommit` in `apps/desktop/src/store/slices/check-fix-commits/readCheckFixCommit.ts` lists the mount branch and takes the newest commit made after the fix started. `selectCheckChain` turns that fact into `fixed-local` (committed, not pushed), `fixed-pushed` (on the remote) or `fix-failed` (the fix ended with no new commit). The transcript's `commitOf` stands in only when the repository cannot be read. The Next card for failing checks follows that state (`apps/desktop/src/features/suggestions/fixChecksSuggestionOf.ts`): **Analyzing**, **Fixing**, a success card with **Push**, then **is running again**. The generic **Review the changes** card never fires for an agent whose `sourceKind` is `failed_check`.
+The fix's commit comes from the repository, not from the fix agent's transcript. `readCheckFixCommit` in `apps/desktop/src/store/slices/check-fix-commits/readCheckFixCommit.ts` lists the mount branch and takes the newest commit made after the fix started. `selectCheckChain` turns that fact into `fixed-local` (committed, not pushed), `fixed-pushed` (on the remote) or `fix-failed` (the fix ended with no new commit). The transcript's `commitOf` stands in only when the repository cannot be read. The Next card for failing checks is only the first hint, **Analyze** (`apps/desktop/src/features/suggestions/fixChecksSuggestionOf.ts`). Once the Debugger runs, every follow-up lives on its one Activity row, "CI fix · check · #318": a click opens the Debugger drawer while it analyzes or fixes, **Start fix** sits on the row once a fix is proposed (`selectFixOffers`), and **Push** once the fix is committed and not pushed (`selectCheckPushOffers`, `pushCheckFix`). Next drops all of them through `isOfferedByActivity`, and it hides the plain push card for that branch meanwhile. It comes back only to start something new: **Analyze** after an analysis without a fix, **Analyze again** when the check still fails after the push. The generic **Review the changes** card never fires for an agent whose `sourceKind` is `failed_check`.

@@ -7,7 +7,7 @@ import {
   selectMountForPath,
 } from '../../../store/slices/project-mounts/selectors';
 import { refreshWorktreeStatuses } from '../../../store/slices/worktreeStatuses/cache';
-import { changedCount } from '../../../shared/lib/gitStatus';
+import { changedCount, distanceBehind } from '../../../shared/lib/gitStatus';
 import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { pushFixCommand } from '../pushFixCommand';
 import { openSettings } from '../../settings/openSettings';
@@ -58,6 +58,8 @@ export const useRebaseJob = ({ sessionId, worktreePath }: Params): RebaseJobCont
     baseBranch: chosenBase ?? 'main',
     commitCount: run.commitCount,
     dirtyCount,
+    behind: status === null ? null : distanceBehind({ distance: status.mainDistance }),
+    isRebasingHere: status?.inProgress === 'rebase',
   });
   if (job === null) {
     return null;
@@ -66,7 +68,7 @@ export const useRebaseJob = ({ sessionId, worktreePath }: Params): RebaseJobCont
   if (isCleared) {
     return null;
   }
-  const agentId = run.pushFix?.agentId ?? run.agentId;
+  const agentId = run.pushFix?.agentId ?? run.rebaseConflict?.autoAgentId ?? run.agentId;
   return {
     job,
     agentId,

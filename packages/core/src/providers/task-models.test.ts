@@ -56,7 +56,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'anthropic',
-      model: 'haiku-4.5',
+      model: 'haiku-5.5',
     });
   });
 
@@ -173,7 +173,7 @@ describe('resolveTaskModel', () => {
         workspaceDefaultProviderId: 'codex',
         sessionDefaultProviderId: 'anthropic',
       }),
-    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-luna', effort: 'low' });
+    ).toEqual({ providerId: 'codex', model: 'gpt-6-luna', effort: 'low' });
   });
 
   it('preserves an explicit codex model variant', () => {
@@ -239,7 +239,7 @@ describe('resolveTaskModel', () => {
         sessionDefaultProviderId: 'codex',
         connectedProviders: ['anthropic'],
       }),
-    ).toEqual({ providerId: 'anthropic', model: 'haiku-4.5' });
+    ).toEqual({ providerId: 'anthropic', model: 'haiku-5.5' });
   });
 
   it('uses the pinned fallback when the pinned provider is disconnected', () => {

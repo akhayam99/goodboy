@@ -1,33 +1,24 @@
-import { Button, EmptyState, formatUsd } from '@goodboy/ui';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { useCurrentWorkspace, useSessions, useWorkspaceRollup } from '../../../../store';
-import { overviewEmptyTitle } from './overviewEmptyTitle';
+import { Plus } from 'lucide-react';
+import { Button, EmptyState } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly onStartSession: () => void;
 };
 
-export const OverviewEmpty = ({ onStartSession }: Props) => {
-  const workspace = useCurrentWorkspace();
-  const sessions = useSessions();
-  const rollup = useWorkspaceRollup(workspace?.id ?? null, sessions);
-
-  return (
-    <EmptyState
-      icon={CONCEPT_ICONS.impact}
-      tone={CONCEPT_TONE.impact}
-      title={overviewEmptyTitle({
-        todaySpend: rollup.todaySpend,
-        spentLabel: formatUsd(rollup.todaySpend),
-      })}
-      action={
-        <Button variant="secondary" size="sm" onClick={onStartSession}>
-          Start a session
-        </Button>
-      }
-      bordered
-      size="page"
-      headingLevel={2}
-    />
-  );
-};
+export const OverviewEmpty = ({ onStartSession }: Props) => (
+  <EmptyState
+    icon={CONCEPT_ICONS.impact}
+    tone={CONCEPT_TONE.impact}
+    title="Nothing finished yet"
+    description="Finished sessions appear here: what shipped, how long it took, what it cost."
+    action={
+      <Button variant="secondary" size="sm" onClick={onStartSession}>
+        <Plus size={ICON_SIZE.control} aria-hidden />
+        New session
+      </Button>
+    }
+    size="page"
+    headingLevel={2}
+  />
+);

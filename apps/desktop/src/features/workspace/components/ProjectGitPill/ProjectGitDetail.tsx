@@ -272,7 +272,7 @@ export const ProjectGitDetail = ({ project, status }: Props) => {
       )}
       <span className="border-t border-border-soft px-3 py-2 text-meta text-faint-foreground">
         {isFirstLap
-          ? 'This project works in its own folder until it is published.'
+          ? 'Work happens in this folder itself until it is published.'
           : 'Sessions keep working in their own worktree, never on this checkout.'}
       </span>
     </div>

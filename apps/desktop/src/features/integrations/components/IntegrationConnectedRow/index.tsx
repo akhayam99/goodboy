@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Chip, ConfirmPopover, formatError, IconButton, StatusDot } from '@goodboy/ui';
+import { Chip, ConfirmPopover, formatError, IconButton } from '@goodboy/ui';
 import { TriangleAlert, Unplug } from 'lucide-react';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { useCredentialSecret } from '../../useCredentialSecret';
+import { toolHealthOf } from '../../toolHealthOf';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -17,6 +18,7 @@ type Props = {
   readonly badge?: string;
   readonly credentialId?: IntegrationCredentialId | null;
   readonly disconnectDescription: string;
+  readonly hasHeaderDisconnect?: boolean;
   readonly onDisconnect: () => Promise<void>;
 };
 
@@ -27,10 +29,12 @@ export const IntegrationConnectedRow = ({
   badge,
   credentialId = null,
   disconnectDescription,
+  hasHeaderDisconnect = false,
   onDisconnect,
 }: Props) => {
   const label = integrationLabel({ provider });
   const secret = useCredentialSecret({ credentialId });
+  const health = toolHealthOf({ tool: provider, isConnected: true, secret });
   const [isArmed, setIsArmed] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,34 +62,31 @@ export const IntegrationConnectedRow = ({
             <span className="truncate font-mono text-meta text-muted-foreground">{secondary}</span>
           ) : null}
         </div>
-        {secret === 'missing' ? (
-          <span className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
-            <StatusDot tone="danger" size="sm" />
-            Key missing
-          </span>
-        ) : null}
+        {health.chip === null ? null : <Chip tone="danger" size="xs" label={health.chip} />}
         {badge != null ? <Chip tone="neutral" size="xs" bordered label={badge} /> : null}
-        <ConfirmPopover
-          role="danger"
-          icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-          title={`Disconnect ${label}?`}
-          description={disconnectDescription}
-          confirmLabel={`Disconnect ${label}`}
-          isBusy={isBusy}
-          isOpen={isArmed}
-          onConfirm={disconnect}
-          onCancel={() => setIsArmed(false)}
-          trigger={() => (
-            <IconButton
-              icon={Unplug}
-              label={`Disconnect ${label}`}
-              onClick={() => setIsArmed(true)}
-              disabled={isBusy}
-            />
-          )}
-        />
+        {hasHeaderDisconnect ? null : (
+          <ConfirmPopover
+            role="danger"
+            icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
+            title={`Disconnect ${label}?`}
+            description={disconnectDescription}
+            confirmLabel={`Disconnect ${label}`}
+            isBusy={isBusy}
+            isOpen={isArmed}
+            onConfirm={disconnect}
+            onCancel={() => setIsArmed(false)}
+            trigger={() => (
+              <IconButton
+                icon={Unplug}
+                label={`Disconnect ${label}`}
+                onClick={() => setIsArmed(true)}
+                disabled={isBusy}
+              />
+            )}
+          />
+        )}
       </div>
-      {secret === 'missing' ? (
+      {health.signal === 'danger' && !hasHeaderDisconnect ? (
         <p className="flex items-start gap-1 text-meta text-muted-foreground">
           <TriangleAlert
             size={ICON_SIZE.row}

@@ -11,7 +11,7 @@ import { discardUncreatedSession } from '../sessions/discardUncreatedSession';
 import { draftGoalText } from './draftGoalText';
 import type { GetFn, SetFn } from './types';
 
-const SCOUT_DRAFT_TITLE = 'Scout the project';
+const SCOUT_DRAFT_TITLE = 'Scout the folder';
 
 type SessionDraftRun = (session: Session) => Promise<void>;
 
@@ -86,7 +86,7 @@ const seedOf = ({ start }: SeedParams): Seed => {
       const fallbackTitle =
         start.agentKind === 'scout'
           ? SCOUT_DRAFT_TITLE
-          : `${AGENT_KIND_META[start.agentKind].label} the project`;
+          : `${AGENT_KIND_META[start.agentKind].label} the folder`;
       return { title: goal === '' ? fallbackTitle : goal, goal };
     }
     default: {

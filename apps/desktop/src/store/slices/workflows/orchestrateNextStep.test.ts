@@ -688,7 +688,7 @@ describe('orchestrateNextStep', () => {
     const insert = invokeAgentInsertSpy.mock.calls[0]![0] as Record<string, unknown>;
     expect(insert['kind']).toBe('scout');
     expect(insert['modelOverride']).toBe(AUTO_DEFAULTS.anthropic.scout[0]?.key);
-    expect(insert['effort']).toBeUndefined();
+    expect(insert['effort']).toBe(AUTO_DEFAULTS.anthropic.scout[0]?.effort);
   });
 
   it('still spawns a decided step on the model the orchestrator picked for it', async () => {
@@ -777,7 +777,7 @@ describe('orchestrateNextStep', () => {
       'anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
     );
     expect(prompt).toContain(
-      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 1000k $4/$20',
+      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 272k $4/$20',
     );
     expect(prompt).toContain(
       'anthropic/haiku-4.5 efforts no effort control unassessed ctx 200k $1/$5',
@@ -787,7 +787,7 @@ describe('orchestrateNextStep', () => {
     const menuLines = prompt
       .split('\n')
       .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
-    expect(menuLines).toHaveLength(14);
+    expect(menuLines).toHaveLength(17);
     expect(menuLines.some((line) => line.startsWith('anthropic/sonnet-4.5 '))).toBe(false);
     for (const line of menuLines) {
       expect(line).toContain('unassessed');

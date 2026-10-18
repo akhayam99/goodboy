@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import type { WorkspaceId } from '@goodboy/types';
-import { EmptyLine, Button } from '@goodboy/ui';
+import { Band, Button, EmptyLine, SectionHeader } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SECRET_KIND_LABEL, SecurityFindingRow } from './SecurityFindingRow';
@@ -10,6 +10,11 @@ import { SECRET_KIND_LABEL, SecurityFindingRow } from './SecurityFindingRow';
 type Props = {
   readonly workspaceId: WorkspaceId | null;
 };
+
+const SECURITY_FINDINGS_LABEL = 'Security findings';
+
+const SECURITY_FINDINGS_HINT =
+  'Keys or tokens in your saved scripts. This text never leaves your Mac.';
 
 export const SecurityFindingsSection = ({ workspaceId }: Props) => {
   const [status, setStatus] = useState<'loading' | 'ready'>('loading');
@@ -44,25 +49,39 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
     void loadSecurityFindings({ workspaceId }).finally(() => setStatus('ready'));
   }, [loadSecurityFindings, workspaceId]);
 
+  const header = (
+    <SectionHeader label={SECURITY_FINDINGS_LABEL} hint={SECURITY_FINDINGS_HINT} headingLevel={2} />
+  );
+
   if (workspaceId === null) {
-    return <p className="text-body text-muted-foreground">Add a workspace to see this.</p>;
+    return (
+      <section aria-label={SECURITY_FINDINGS_LABEL} className="flex flex-col gap-2">
+        {header}
+        <Band inset="content">
+          <EmptyLine>Open a workspace to check its saved scripts.</EmptyLine>
+        </Band>
+      </section>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-body text-muted-foreground">
-        Goodboy checks a project script for anything that looks like a key or a token each time you
-        save it. This text never leaves your Mac.
-      </p>
+    <section aria-label={SECURITY_FINDINGS_LABEL} className="flex flex-col gap-2">
+      {header}
       {open.length > 0 && (
         <p className="text-label text-faint-foreground">
           Keep the value in your shell or in a .env file git ignores, and use its name instead:{' '}
           <code>$DEPLOY_TOKEN</code>.
         </p>
       )}
-      {status === 'loading' && <p className="text-body text-muted-foreground">Checking…</p>}
+      {status === 'loading' && open.length === 0 && (
+        <Band inset="content">
+          <EmptyLine>Checking…</EmptyLine>
+        </Band>
+      )}
       {status === 'ready' && open.length === 0 && (
-        <EmptyLine icon={ShieldCheck}>No findings in your saved scripts.</EmptyLine>
+        <Band inset="content">
+          <EmptyLine icon={ShieldCheck}>No findings in your saved scripts.</EmptyLine>
+        </Band>
       )}
       {open.map((finding) => (
         <SecurityFindingRow
@@ -106,6 +125,6 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
             ))}
         </div>
       )}
-    </div>
+    </section>
   );
 };

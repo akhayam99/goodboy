@@ -68,7 +68,6 @@ vi.mock('../../features/palette/components/PaletteOverlay', () => ({ PaletteOver
 vi.mock('../../app/components/BootSplash', () => ({ BootSplash: () => null }));
 vi.mock('../../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
 vi.mock('../../app/components/AppTopBar', () => ({ AppTopBar: () => null }));
-vi.mock('../../app/components/AppEmptyState', () => ({ NoWorkspaceScreen: () => null }));
 vi.mock('../../features/workspace/components/StageBoard', () => ({ StageBoard: () => null }));
 vi.mock('../../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
@@ -108,9 +107,6 @@ vi.mock('../../features/worktree/worktree', () => ({
   worktreeSnapshot: vi.fn(),
 }));
 vi.mock('../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
-vi.mock('../../features/companion/components/CompanionStudio', () => ({
-  CompanionStudio: () => null,
-}));
 vi.mock('../../features/companion/commandExecutor', () => ({
   listenBridgeCommands: vi.fn(async () => () => undefined),
 }));

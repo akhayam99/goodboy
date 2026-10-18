@@ -45,7 +45,7 @@ afterEach(() => {
 });
 
 describe('useWorkspaceSpend', () => {
-  it('updates a provider cap without deleting or replacing its rule', async () => {
+  it('updates a provider limit without deleting or replacing its rule', async () => {
     const existing: BudgetRule = {
       id: 'rule-1',
       provider: 'anthropic',
@@ -66,13 +66,13 @@ describe('useWorkspaceSpend', () => {
     expect(h.store.deleteBudgetRule).not.toHaveBeenCalled();
   });
 
-  it('updates a threshold under the existing identity', async () => {
+  it('writes the limit and the warn share in one rule update', async () => {
     const existing: BudgetRule = {
       id: 'rule-1',
       provider: 'anthropic',
       period: 'monthly',
       capUsd: 50,
-      alertThresholdPct: 0.8,
+      alertThresholdPct: 80,
       extraTokensBudget: null,
       createdAt: CREATED_AT,
     };
@@ -80,13 +80,35 @@ describe('useWorkspaceSpend', () => {
     const { result } = renderHook(() => useWorkspaceSpend({ sinceMs: null }));
 
     await act(async () => {
-      await result.current.saveProviderThreshold({ provider: 'anthropic', thresholdPct: 0.9 });
+      await result.current.saveProviderCap({
+        provider: 'anthropic',
+        capUsd: 60,
+        thresholdPct: 90,
+      });
+    });
+
+    expect(h.store.saveBudgetRule).toHaveBeenCalledTimes(1);
+    expect(h.store.saveBudgetRule).toHaveBeenCalledWith({
+      ...existing,
+      capUsd: 60,
+      alertThresholdPct: 90,
+    });
+    expect(h.store.deleteBudgetRule).not.toHaveBeenCalled();
+  });
+
+  it('starts a new limit at 80 percent when no share is given', async () => {
+    const { result } = renderHook(() => useWorkspaceSpend({ sinceMs: null }));
+
+    await act(async () => {
+      await result.current.saveProviderCap({ provider: 'anthropic', capUsd: 40 });
     });
 
     expect(h.store.saveBudgetRule).toHaveBeenCalledWith({
-      ...existing,
-      alertThresholdPct: 0.9,
+      provider: 'anthropic',
+      period: 'monthly',
+      capUsd: 40,
+      alertThresholdPct: 80,
+      extraTokensBudget: null,
     });
-    expect(h.store.deleteBudgetRule).not.toHaveBeenCalled();
   });
 });

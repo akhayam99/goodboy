@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProviderId } from '@goodboy/types';
 import type { SettingsFocus } from '../../settingsFocus';
 import { settingsPaletteEntries } from '../../settingsPaletteEntries';
+import { QUIET_TOOL_HEALTH } from '../../../../__tests__/helpers/quietToolHealth';
 import { resolveSettingsFocus } from './resolveSettingsFocus';
 import {
   settingsDirectory,
@@ -11,10 +12,12 @@ import {
   type SettingsStatus,
 } from './settingsDirectory';
 
+const QUIET_HEALTH = QUIET_TOOL_HEALTH;
+
 const STATUS: SettingsStatus = {
   subtitles: {
-    generalText: undefined,
-    generalTone: undefined,
+    updatesText: undefined,
+    updatesTone: undefined,
     storageText: undefined,
     storageTone: undefined,
     securityFindingsText: undefined,
@@ -32,8 +35,20 @@ const STATUS: SettingsStatus = {
     },
   ],
   tools: [
-    { tool: 'linear', label: 'Linear', subtitle: 'Not connected', isConnected: false },
-    { tool: 'slack', label: 'Slack', subtitle: 'Not connected', isConnected: false },
+    {
+      tool: 'linear',
+      label: 'Linear',
+      subtitle: 'Not connected',
+      isConnected: false,
+      health: QUIET_HEALTH,
+    },
+    {
+      tool: 'slack',
+      label: 'Slack',
+      subtitle: 'Not connected',
+      isConnected: false,
+      health: QUIET_HEALTH,
+    },
   ],
 };
 
@@ -142,5 +157,43 @@ describe('command palette settings entries', () => {
     const entries = settingsPaletteEntries({ groups: WITHOUT_WORKSPACE, open: () => undefined });
 
     expect(entries.filter((entry) => entry.key.startsWith('setting:workspace:'))).toEqual([]);
+  });
+
+  it.each([
+    {
+      from: { scope: 'workspace', section: 'after-merge' },
+      to: { scope: 'workspace', section: 'branches' },
+    },
+    {
+      from: { scope: 'app', section: 'branches' },
+      to: { scope: 'workspace', section: 'branches' },
+    },
+    {
+      from: { scope: 'app', section: 'security-findings' },
+      to: { scope: 'app', section: 'storage' },
+    },
+    { from: { scope: 'app', section: 'shortcuts' }, to: { scope: 'app', section: 'shortcuts' } },
+  ] satisfies ReadonlyArray<{ from: SettingsFocus; to: SettingsFocus }>)(
+    'moves the old $from.scope $from.section link to its page',
+    ({ from, to }) => {
+      expect(resolveSettingsFocus({ focus: from, last: null, groups: WITH_WORKSPACE })).toEqual(to);
+      expect(resolve({ last: from })).toEqual(to);
+    },
+  );
+
+  it('keeps the provider and tool of a moved link', () => {
+    expect(
+      resolveSettingsFocus({
+        focus: { scope: 'tools', tool: 'linear' },
+        last: null,
+        groups: WITH_WORKSPACE,
+      }),
+    ).toEqual({ scope: 'tools', tool: 'linear' });
+  });
+
+  it('lands an old link on General when its new page needs a workspace and there is none', () => {
+    expect(
+      resolve({ last: { scope: 'app', section: 'branches' }, groups: WITHOUT_WORKSPACE }),
+    ).toEqual(GENERAL);
   });
 });

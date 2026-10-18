@@ -22,7 +22,6 @@ export const WorkflowStartButton = ({ sessionId, layout = 'page' }: Props) => {
       size={layout}
       icon={CONCEPT_ICONS.workflows}
       title="No runs yet"
-      description="A run is a workflow working on this session."
       action={
         <Button
           variant={isPage ? 'primary' : 'ghost'}

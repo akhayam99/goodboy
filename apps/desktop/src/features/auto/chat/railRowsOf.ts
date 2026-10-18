@@ -3,6 +3,7 @@ import type { Agent, AgentId, TurnState } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import type { AgentKind } from '../../session/agent-kind';
+import { autoChildLabelsOf } from '../autoChildLabelsOf';
 import { autoTreeWordOf } from '../autoTreeWordOf';
 import { delegationCardOf, type DelegationCardModel } from './delegationCardOf';
 
@@ -119,12 +120,13 @@ export const railRowsOf = ({
     const childAgent = agents.find((agent) => agent.id === delegation.childAgentId) ?? null;
     latestByChild.set(delegation.childAgentId, delegationCardOf({ delegation, childAgent }));
   }
+  const labels = autoChildLabelsOf({ delegations: view.delegations });
   const children = [...latestByChild.values()].map((card): RailRow => ({
     id: card.childAgentId,
     agentId: card.childAgentId,
     kind: 'child',
     role: card.role,
-    label: card.roleLabel,
+    label: labels.get(card.childAgentId) ?? card.roleLabel,
     task: card.task,
     node: delegationNodeOf({ card }),
     word: card.status.word,

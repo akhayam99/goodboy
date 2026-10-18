@@ -16,6 +16,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { SESSION_PAGE_MARKER_WHY } from '../../../../../features/session/sessionPageIntro';
 import { MOCK_SCENES } from '../..';
 import { U25_C02_LEVEL_SCENES } from './c02-levels';
 
@@ -113,11 +114,11 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(
       sessionLayer().querySelector('[data-page-value="runs"]')?.getAttribute('data-tone'),
     ).toBe('info');
-    const projects = within(level.getByRole('group', { name: 'Projects' }));
+    const projects = within(level.getByRole('group', { name: 'Folders' }));
     expect(projects.getByText('#331')).toBeDefined();
     expect(within(level.getByRole('group', { name: 'Linked' })).getByText('NW-142')).toBeDefined();
     const adds = [
-      projects.getByRole('button', { name: 'Add to this session' }),
+      projects.getByRole('button', { name: 'Add folder' }),
       within(level.getByRole('group', { name: 'Linked' })).getByRole('button', {
         name: 'Link work',
       }),
@@ -146,24 +147,24 @@ describe('the c02 sidebar and session rail scenes', () => {
     const experimental = within(auto).getByTestId('page-marker-auto');
     expect(deprecated.textContent).toBe('Deprecated');
     expect(experimental.textContent).toBe('Experimental');
-    expect(deprecated.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
-    expect(experimental.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
+    const deprecatedTrigger = deprecated.parentElement;
+    const experimentalTrigger = experimental.parentElement;
+    expect(deprecatedTrigger).not.toBeNull();
+    expect(experimentalTrigger).not.toBeNull();
+    expect(deprecatedTrigger?.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
+    expect(experimentalTrigger?.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
 
-    fireEvent.mouseEnter(agents);
+    fireEvent.mouseEnter(deprecatedTrigger ?? agents);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
-    expect(screen.getByRole('tooltip').textContent).toContain(
-      'Use Start an auto: Auto picks and starts the right agent.',
-    );
-    fireEvent.mouseLeave(agents);
-    fireEvent.mouseEnter(auto);
+    expect(screen.getByRole('tooltip').textContent).toContain(SESSION_PAGE_MARKER_WHY.agents);
+    fireEvent.mouseLeave(deprecatedTrigger ?? agents);
+    fireEvent.mouseEnter(experimentalTrigger ?? auto);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
     });
-    expect(screen.getByRole('tooltip').textContent).toContain(
-      'Auto picks and starts agents on its own, under a limit.',
-    );
+    expect(screen.getByRole('tooltip').textContent).toContain(SESSION_PAGE_MARKER_WHY.auto);
   });
 
   it('c02-level-branchless shows File versions and no Projects', async () => {
@@ -171,7 +172,7 @@ describe('the c02 sidebar and session rail scenes', () => {
 
     const level = within(sessionLayer());
     expect(level.getByRole('button', { name: /^File versions/ })).toBeDefined();
-    expect(level.queryByRole('group', { name: 'Projects' })).toBeNull();
+    expect(level.queryByRole('group', { name: 'Folders' })).toBeNull();
   });
 
   it('c02-level-main-folded folds the main sidebar to its icons and keeps the rail open', async () => {

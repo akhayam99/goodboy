@@ -1,6 +1,6 @@
 import type { PaletteEntry } from '../../types';
 
-export const PALETTE_MIN_HEIGHT_PX = 480;
+export const PALETTE_MIN_HEIGHT_PX = 320;
 
 type LayoutParams = {
   readonly hasPreview: boolean;

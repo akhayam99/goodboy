@@ -54,13 +54,13 @@ describe('WorkspaceIdentityRow', () => {
     expect(screen.queryByText('monorepo')).toBeNull();
   });
 
-  it('carries the linked project count and the switcher shortcut in the title', () => {
+  it('carries the folder count and the switcher shortcut in the title', () => {
     render(<WorkspaceIdentityRow />);
 
     const trigger = screen.getByLabelText('Switch workspace: Acme');
     expect(trigger.getAttribute('title')).toBeNull();
     expect(tooltipTextOf({ element: trigger })).toBe(
-      `Acme, 1 linked project${shortcutGlyphs('workspace.switcher')}`,
+      `Acme, 1 folder${shortcutGlyphs('workspace.switcher')}`,
     );
   });
 
@@ -72,7 +72,7 @@ describe('WorkspaceIdentityRow', () => {
     fireEvent.click(trigger);
 
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByText('Open a folder')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New workspace' })).toBeDefined();
   });
 
   it('answers the global switcher shortcut', () => {
@@ -82,7 +82,7 @@ describe('WorkspaceIdentityRow', () => {
       window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher'));
     });
 
-    expect(screen.getByText('Open a folder')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'New workspace' })).toBeDefined();
   });
 
   it('keeps workspace settings inside the switcher, with no second control on the row', () => {

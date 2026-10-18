@@ -183,6 +183,15 @@ export const PIN_ROWS: ReadonlyArray<Row> = [
       await pinThroughTheStore({ sessionId: target });
       isMountlessArchive = true;
       await chooseFromRowMenu({ sessionId: target, label: /^Archive/ });
+      expect(await screen.findByText('Archive session?', {}, WAIT)).toBeDefined();
+      expect(rowIds()).toContain(target);
+      const confirmButton = screen
+        .getAllByRole('button', { name: 'Archive session' })
+        .find((button) => button.closest('[data-session-foot]') === null);
+      if (confirmButton === undefined) {
+        throw new Error('no Archive session confirm in the menu');
+      }
+      fireEvent.click(confirmButton);
       await waitFor(() => expect(rowIds()).not.toContain(target), WAIT);
       expect(within(sessionsList()).queryByText('Pinned')).toBeNull();
       expect(pinnedIds()).toContain(target);

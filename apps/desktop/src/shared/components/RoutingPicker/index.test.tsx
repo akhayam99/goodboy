@@ -474,7 +474,9 @@ describe('RoutingPicker', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
-    const providerRow = screen.getByRole('button', { name: 'Cursor' }).closest('div');
+    const providerRow = screen
+      .getByRole('button', { name: 'Cursor' })
+      .closest('div')?.parentElement;
     expect(providerRow?.querySelectorAll('svg')).toHaveLength(
       baseProps.connectedProviders.length + 1,
     );
@@ -657,6 +659,14 @@ describe('RoutingPicker', () => {
     fireEvent.click(screen.getByRole('button', { name: '6' }));
     expect(onChange).toHaveBeenLastCalledWith({
       provider: 'codex',
+      model: 'gpt-6-sol',
+      effort: 'low',
+    });
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Variant' })).getByRole('button', { name: 'Astra' }),
+    );
+    expect(onChange).toHaveBeenLastCalledWith({
+      provider: 'codex',
       model: 'gpt-6-astra',
       effort: 'low',
     });
@@ -696,8 +706,8 @@ describe('RoutingPicker', () => {
     render(<RoutingPicker {...baseProps} provider="codex" model="gpt-6-astra" />);
     fireEvent.click(screen.getByRole('button', { name: /routing/i }));
     const astra = within(screen.getByRole('group', { name: 'Variant' })).getAllByRole('button');
-    expect(astra.map((button) => button.textContent)).toEqual(['Astra']);
-    expect(astra[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(astra.map((button) => button.textContent)).toEqual(['Luna', 'Sol', 'Astra']);
+    expect(astra[2]?.getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: '6' }).getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -1070,7 +1080,7 @@ describe('RoutingPicker hands the whole route to the parent in one change', () =
         {...baseProps}
         presentation="inline"
         model="claude-opus-5-5"
-        effort={{ editable: true, value: 'max' }}
+        effort={{ editable: true, value: 'xhigh' }}
         onChange={onChange}
       />,
     );
@@ -1083,7 +1093,7 @@ describe('RoutingPicker hands the whole route to the parent in one change', () =
       model: 'claude-sonnet-4-6',
       effort: 'high',
     });
-    expect(screen.getByText('Effort adjusted from Max to High.')).toBeDefined();
+    expect(screen.getByText('Effort adjusted from Very high to High.')).toBeDefined();
   });
 
   it('keeps the effort of a Cursor model whose catalog entry carries none', () => {
@@ -1100,6 +1110,7 @@ describe('RoutingPicker hands the whole route to the parent in one change', () =
     );
 
     fireEvent.click(group('Model').getByRole('button', { name: 'Gemini' }));
+    fireEvent.click(group('Version').getByRole('button', { name: '3.1' }));
 
     expect(onChange).toHaveBeenLastCalledWith({
       provider: 'cursor',

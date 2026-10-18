@@ -95,40 +95,69 @@ const openMenu = () => {
   return screen.getByRole('dialog', { name: 'Filter sessions' });
 };
 
+const GROUP_CHOICES: ReadonlySet<string> = new Set(['None', 'PR state', 'Stage', 'Folder']);
+
+type PickParams = {
+  readonly menu: HTMLElement;
+  readonly label: string;
+};
+
+const pick = ({ menu, label }: PickParams) => {
+  const field = GROUP_CHOICES.has(label) ? 'Group' : 'Sort';
+  fireEvent.click(within(menu).getByRole('combobox', { name: field }));
+  fireEvent.click(screen.getByRole('option', { name: label }));
+};
+
+const filterDialog = (): HTMLElement => screen.getByRole('dialog', { name: 'Filter sessions' });
+
 const storedPrefs = (workspaceId: WorkspaceId): unknown =>
   JSON.parse(localStorage.getItem(`${STORAGE_PREFIXES.sessionView}${workspaceId}`) ?? 'null');
 
 describe('the Sessions filter popover', () => {
-  it('lists status, project, show archived, sort and group', () => {
+  it('reads Sort and Group on top, then Filter with checkboxes, then Show archived as a switch', () => {
     mount();
     const menu = openMenu();
-    expect(
-      within(menu)
-        .getAllByRole('radio')
-        .map((item) => item.textContent),
-    ).toEqual([
+    const sections = Array.from(menu.querySelectorAll('[role="group"][aria-label]')).map((group) =>
+      group.getAttribute('aria-label'),
+    );
+    expect(sections.slice(0, 2)).toEqual(['Display', 'Filter']);
+    expect(within(menu).getByRole('combobox', { name: 'Sort' })).toBeDefined();
+    expect(within(menu).getByRole('combobox', { name: 'Group' })).toBeDefined();
+    expect(within(menu).getByRole('group', { name: 'Folder' })).toBeDefined();
+    expect(within(menu).queryAllByRole('radio')).toHaveLength(0);
+    expect(within(menu).getByRole('switch', { name: 'Show archived, 2' })).toBeDefined();
+    expect(within(menu).queryAllByRole('separator')).toHaveLength(0);
+    expect(within(menu).getByText('Filter')).toBeDefined();
+  });
+
+  it('starts on Needs you first and no grouping, with no Reset', () => {
+    mount();
+    const menu = openMenu();
+    expect(within(menu).getByRole('combobox', { name: 'Sort' }).textContent).toContain(
+      'Needs you first',
+    );
+    expect(within(menu).getByRole('combobox', { name: 'Group' }).textContent).toContain('None');
+    expect(within(menu).queryByRole('button', { name: 'Reset' })).toBeNull();
+  });
+
+  it('lists the four sort choices and the four group choices behind their values', () => {
+    mount();
+    const menu = openMenu();
+    fireEvent.click(within(menu).getByRole('combobox', { name: 'Sort' }));
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
       'Needs you first',
       'Alphabetical',
       'Last activity',
       'Created',
+    ]);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.click(within(filterDialog()).getByRole('combobox', { name: 'Group' }));
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
       'None',
       'PR state',
       'Stage',
-      'Project',
+      'Folder',
     ]);
-    expect(within(menu).getByRole('group', { name: 'Project' })).toBeDefined();
-    expect(within(menu).getByRole('checkbox', { name: 'Show archived 2' })).toBeDefined();
-  });
-
-  it('starts on Needs you first and no grouping', () => {
-    mount();
-    const menu = openMenu();
-    expect(
-      within(menu).getByRole('radio', { name: 'Needs you first' }).getAttribute('aria-checked'),
-    ).toBe('true');
-    expect(within(menu).getByRole('radio', { name: 'None' }).getAttribute('aria-checked')).toBe(
-      'true',
-    );
   });
 
   it('closes on Escape and returns focus to its button', () => {
@@ -156,12 +185,19 @@ describe('the funnel', () => {
     expect(screen.queryByRole('button', { name: 'Options for sessions' })).toBeNull();
   });
 
-  it('shows no mark until a filter is active, then one neutral dot and never a count', () => {
+  it('shows no mark until a filter is active, then one dot and never a count', () => {
     mount();
     const trigger = screen.getByRole('button', { name: 'Filter sessions' });
     expect(document.querySelector('[data-filter-dot]')).toBeNull();
     const dialog = openMenu();
-    fireEvent.click(within(dialog).getByRole('checkbox', { name: /^Running/ }));
+    const stages = within(within(dialog).getByRole('group', { name: 'Status' })).getAllByRole(
+      'checkbox',
+    );
+    const firstStage = stages[0];
+    if (firstStage === undefined) {
+      throw new Error('no stage row');
+    }
+    fireEvent.click(firstStage);
     fireEvent.click(within(dialog).getByRole('checkbox', { name: /^payments-api/ }));
     expect(document.querySelector('[data-filter-dot]')?.getAttribute('data-filter-dot')).toBe(
       'active',
@@ -169,7 +205,7 @@ describe('the funnel', () => {
     expect(trigger.closest('.relative')?.textContent).toBe('');
   });
 
-  it('lists the stages label first, a count from one and the check slot last, with no project facet for one project', () => {
+  it('lists only the stages with sessions, each a checkbox with its count, with no project facet for one project', () => {
     seedColumn({
       store: useAppStore,
       sessions: [webhook, copy],
@@ -182,38 +218,27 @@ describe('the funnel', () => {
     const dialog = openMenu();
     const status = within(dialog).getByRole('group', { name: 'Status' });
     const rows = within(status).getAllByRole('checkbox');
-    expect(rows.map((item) => item.textContent)).toEqual([
-      'Needs you',
-      'Running',
-      'In review',
-      'Building2',
-      'Done',
-    ]);
-    expect(rows.map((item) => item.hasAttribute('data-filter-empty'))).toEqual([
-      true,
-      true,
-      true,
-      false,
-      true,
-    ]);
-    for (const row of rows) {
-      expect(row.firstElementChild?.textContent).toBe(row.textContent?.replace(/\d+$/, ''));
-      expect(row.lastElementChild?.hasAttribute('data-filter-check')).toBe(true);
-    }
-    expect(within(dialog).queryByRole('group', { name: 'Project' })).toBeNull();
+    expect(rows.map((item) => item.getAttribute('aria-label'))).toEqual(['Building, 2']);
+    expect(rows.map((item) => item instanceof HTMLInputElement && item.checked)).toEqual([false]);
+    expect(within(dialog).queryByRole('group', { name: 'Folder' })).toBeNull();
   });
 
-  it('keeps only the checked stages and offers Clear filters', () => {
+  it('keeps only the checked stages, checks the row and offers Reset back to the default', () => {
     seedColumn({ store: useAppStore, sessions: [webhook, ledgerExport] });
     useAppStore.setState({ sessionGithub: { [ledgerExport.id]: mergedGithub() } });
     renderBar();
     const dialog = openMenu();
-    fireEvent.click(within(dialog).getByRole('checkbox', { name: /^Done/ }));
+    expect(within(dialog).queryByRole('button', { name: 'Reset' })).toBeNull();
+    const done = within(dialog).getByRole('checkbox', { name: /^Done/ });
+    fireEvent.click(done);
+    expect(done instanceof HTMLInputElement && done.checked).toBe(true);
     expect(titlesOnScreen()).toEqual(['Ledger export speedup']);
     expect(storedPrefs(harborline.id)).toMatchObject({ v: 3, statusFilter: ['done'] });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Clear filters' }));
+    pick({ menu: dialog, label: 'Alphabetical' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Reset' }));
     expect(titlesOnScreen()).toHaveLength(2);
-    expect(within(dialog).queryByRole('button', { name: 'Clear filters' })).toBeNull();
+    expect(storedPrefs(harborline.id)).toMatchObject({ sort: 'needsYou', statusFilter: [] });
+    expect(within(dialog).queryByRole('button', { name: 'Reset' })).toBeNull();
   });
 });
 
@@ -244,7 +269,7 @@ describe('what a filter never hides', () => {
     });
     renderBar();
     const dialog = openMenu();
-    const group = within(dialog).getByRole('group', { name: 'Project' });
+    const group = within(dialog).getByRole('group', { name: 'Folder' });
     fireEvent.click(within(group).getByRole('checkbox', { name: /^ledger-core/ }));
     expect([...titlesOnScreen()].sort()).toEqual([
       'Cascadia onboarding copy',
@@ -270,20 +295,20 @@ describe('sort', () => {
     ],
   ])('orders the list by %s', (label, expected) => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: label }));
+    pick({ menu: openMenu(), label: label });
     expect(titlesOnScreen()).toEqual(expected);
   });
 
   it('remembers the choice for this workspace only', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Alphabetical' }));
+    pick({ menu: openMenu(), label: 'Alphabetical' });
     expect(storedPrefs(harborline.id)).toMatchObject({ v: 3, sort: 'goal' });
     expect(storedPrefs('workspace-cascadia' as WorkspaceId)).toBeNull();
   });
 
   it('comes back after the window reloads', () => {
     const first = mount();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Alphabetical' }));
+    pick({ menu: openMenu(), label: 'Alphabetical' });
     first.unmount();
     useAppStore.setState({ sessionViewPrefs: {} });
     renderBar();
@@ -308,14 +333,14 @@ const groupHeaders = (): ReadonlyArray<string> =>
 describe('group', () => {
   it('groups by project with the project name and a count', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Project' }));
+    pick({ menu: openMenu(), label: 'Folder' });
     closeMenu();
     expect(groupHeaders()).toEqual(['ledger-core', 'payments-api2']);
   });
 
   it('groups by stage and keeps the sessions in each group', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Stage' }));
+    pick({ menu: openMenu(), label: 'Stage' });
     closeMenu();
     expect(groupHeaders()).toHaveLength(1);
     expect(titlesOnScreen()).toHaveLength(3);
@@ -323,7 +348,7 @@ describe('group', () => {
 
   it('folds a group from its header', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Project' }));
+    pick({ menu: openMenu(), label: 'Folder' });
     closeMenu();
     fireEvent.click(screen.getByRole('button', { name: /^payments-api/ }));
     expect(titlesOnScreen()).toEqual(['Ledger export speedup']);
@@ -333,7 +358,7 @@ describe('group', () => {
     seedColumn({ store: useAppStore, sessions: [webhook, ledgerExport] });
     useAppStore.setState({ sessionGithub: { [ledgerExport.id]: mergedGithub() } });
     renderBar();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Stage' }));
+    pick({ menu: openMenu(), label: 'Stage' });
     closeMenu();
     const done = screen.getByRole('button', { name: 'Done' });
     expect(done.getAttribute('aria-expanded')).toBe('false');
@@ -345,8 +370,8 @@ describe('group', () => {
 
   it('returns to one flat list on None', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Project' }));
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('radio', { name: 'None' }));
+    pick({ menu: openMenu(), label: 'Folder' });
+    pick({ menu: filterDialog(), label: 'None' });
     closeMenu();
     expect(groupHeaders()).toHaveLength(0);
     expect(titlesOnScreen()).toHaveLength(3);
@@ -356,17 +381,17 @@ describe('group', () => {
 describe('filter by project', () => {
   it('lists the projects of the open sessions with their counts', () => {
     mount();
-    const group = within(openMenu()).getByRole('group', { name: 'Project' });
+    const group = within(openMenu()).getByRole('group', { name: 'Folder' });
     expect(
       within(group)
         .getAllByRole('checkbox')
-        .map((item) => item.textContent),
-    ).toEqual(['ledger-core1', 'payments-api2']);
+        .map((item) => item.getAttribute('aria-label')),
+    ).toEqual(['ledger-core, 1', 'payments-api, 2']);
   });
 
   it('keeps only the sessions of the checked project and restores them when unchecked', () => {
     mount();
-    const group = within(openMenu()).getByRole('group', { name: 'Project' });
+    const group = within(openMenu()).getByRole('group', { name: 'Folder' });
     fireEvent.click(within(group).getByRole('checkbox', { name: /^payments-api/ }));
     expect(titlesOnScreen()).toEqual(['Cascadia onboarding copy', 'Fix webhook retries']);
     fireEvent.click(within(group).getByRole('checkbox', { name: /^payments-api/ }));
@@ -375,7 +400,7 @@ describe('filter by project', () => {
 
   it('shares its choice with the board filter', () => {
     mount();
-    const group = within(openMenu()).getByRole('group', { name: 'Project' });
+    const group = within(openMenu()).getByRole('group', { name: 'Folder' });
     fireEvent.click(within(group).getByRole('checkbox', { name: /^ledger-core/ }));
     expect(useAppStore.getState().selectedProjectIds[harborline.id]).toEqual([ledgerCore.id]);
   });
@@ -391,7 +416,7 @@ describe('show archived', () => {
 
   it('adds the archived sessions after the rest, with the archived node', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('checkbox', { name: 'Show archived 2' }));
+    fireEvent.click(within(openMenu()).getByRole('switch', { name: 'Show archived, 2' }));
     expect(titlesOnScreen().slice(-2).sort()).toEqual([
       'Legacy hook cleanup',
       'Spike: batch settle',
@@ -403,20 +428,16 @@ describe('show archived', () => {
 
   it('hides them again and remembers the choice', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('checkbox', { name: 'Show archived 2' }));
+    fireEvent.click(within(openMenu()).getByRole('switch', { name: 'Show archived, 2' }));
     expect(storedPrefs(harborline.id)).toMatchObject({ isArchivedShown: true });
-    fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('checkbox', { name: 'Show archived 2' }),
-    );
+    fireEvent.click(within(filterDialog()).getByRole('switch', { name: 'Show archived, 2' }));
     expect(titlesOnScreen()).toHaveLength(3);
   });
 
   it('keeps archived sessions in a group of their own when the list is grouped', () => {
     mount();
-    fireEvent.click(within(openMenu()).getByRole('radio', { name: 'Project' }));
-    fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('checkbox', { name: 'Show archived 2' }),
-    );
+    pick({ menu: openMenu(), label: 'Folder' });
+    fireEvent.click(within(filterDialog()).getByRole('switch', { name: 'Show archived, 2' }));
     closeMenu();
     expect(screen.getByText('Archived')).toBeDefined();
   });

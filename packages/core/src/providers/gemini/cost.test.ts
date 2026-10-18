@@ -26,6 +26,6 @@ describe('computeGeminiCostUsd', () => {
     expect(computeGeminiCostUsd({ usage, model: 'gemini-3.8-flash' })).toBeCloseTo(4.5);
     expect(computeGeminiCostUsd({ usage, model: 'gemini-3.7-flash' })).toBeCloseTo(4.5);
     expect(computeGeminiCostUsd({ usage, model: 'gemini-3.6-flash' })).toBeCloseTo(4.5);
-    expect(computeGeminiCostUsd({ usage, model: 'gemini-3.5-flash' })).toBeCloseTo(10.5);
+    expect(computeGeminiCostUsd({ usage, model: 'gemini-3.5-flash' })).toBe(0);
   });
 });

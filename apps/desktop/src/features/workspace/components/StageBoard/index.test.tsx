@@ -58,9 +58,11 @@ vi.mock('../../hooks/useProjectGitStatuses', () => ({
       .map((project) => ({ project, status: gitStatuses.current[project.id] ?? null })),
 }));
 
-vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
-  ProjectsStep: ({ workspace }: { workspace: Workspace }) => (
-    <div data-testid="projects-step">{workspace.name}</div>
+vi.mock('../../../../shared/components/NewWorkspaceForm', () => ({
+  NewWorkspaceForm: ({ mode, workspaceId }: { mode: string; workspaceId: WorkspaceId }) => (
+    <div data-testid="projects-step">
+      {mode === 'add' ? state.workspaces.find((entry) => entry.id === workspaceId)?.name : null}
+    </div>
   ),
 }));
 
@@ -305,7 +307,7 @@ describe('StageBoard git gate', () => {
 
     expect(
       screen.getByRole('heading', {
-        name: 'This project needs a git repository with one commit first',
+        name: 'This folder needs a git repository with one commit first',
       }),
     ).toBeDefined();
     expect(screen.queryByText('No sessions yet')).toBeNull();
@@ -321,9 +323,7 @@ describe('StageBoard git gate', () => {
     gitStatuses.current = { 'proj-1': statusOf('missing') };
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
 
-    expect(
-      screen.getByRole('heading', { name: 'The project folder is unreachable' }),
-    ).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'The folder is unreachable' })).toBeDefined();
     expect(screen.getByText(/Relink it in workspace settings/)).toBeDefined();
   });
 });

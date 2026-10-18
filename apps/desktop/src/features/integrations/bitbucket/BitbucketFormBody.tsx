@@ -4,17 +4,24 @@ import type { BitbucketIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
+import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import { normalizeWorkspaceSlug } from './normalizeWorkspaceSlug';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly onConnected?: () => void;
   readonly shouldAutoFocus?: boolean;
+  readonly hasHeaderDisconnect?: boolean;
 };
 
 const TOKEN_URL = 'https://id.atlassian.com/manage-profile/security/api-tokens';
 
-export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
+export const BitbucketFormBody = ({
+  workspaceId,
+  onConnected,
+  shouldAutoFocus = false,
+  hasHeaderDisconnect = false,
+}: Props) => {
   const integrations = useAppStore(
     useShallow((state) => state.workspaceIntegrations[workspaceId] ?? []),
   );
@@ -39,7 +46,8 @@ export const BitbucketFormBody = ({ workspaceId, onConnected, shouldAutoFocus = 
         credentialId={bitbucket?.credentialId ?? null}
         primary={`Connected as ${bitbucket.config.displayName ?? bitbucket.config.email}`}
         secondary={`bitbucket.org/${bitbucket.config.workspaceSlug}`}
-        disconnectDescription="Disconnects this workspace from the Bitbucket personal API key. The key stays saved for your other workspaces."
+        disconnectDescription={disconnectDescriptionOf({ provider: 'bitbucket' })}
+        hasHeaderDisconnect={hasHeaderDisconnect}
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'bitbucket' })}
       />
     );

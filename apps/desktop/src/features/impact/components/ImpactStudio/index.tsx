@@ -4,12 +4,13 @@ import { SegmentedTabs, inlineMarkdownText } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore, sessionPlace } from '../../../../store';
-import { openGuideChapter } from '../../../settings/openGuideChapter';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
 import { ProviderPanel } from '../../../budget/components/spend/ProviderPanel';
 import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
 import { useWorkspaceSpend } from '../../../budget/hooks/useWorkspaceSpend';
+import { spendFigures } from '../../../budget/spendFigures';
 import { useImpactMetrics } from '../../hooks/useImpactMetrics';
+import { impactMeta } from '../../impactMeta';
 import {
   IMPACT_WINDOW_OPTIONS,
   impactTabOf,
@@ -32,8 +33,6 @@ type Props = {
 };
 
 const SPEND_SCOPE: ImpactScope = { kind: 'spend' };
-
-const IMPACT_META = 'What Goodboy got done, and what it cost.';
 
 export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose }: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
@@ -70,21 +69,21 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
     }
   }, [scope, selectedSession]);
 
-  const meta =
-    scope.kind === 'spend' ? (
-      <>
-        {IMPACT_META}{' '}
-        <button
-          type="button"
-          onClick={() => openGuideChapter({ id: 'tokens' })}
-          className="rounded-sm text-foreground underline decoration-border-soft underline-offset-3 hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          How cost is counted
-        </button>
-      </>
-    ) : (
-      IMPACT_META
-    );
+  const rangeLabel = IMPACT_WINDOW_OPTIONS.find((option) => option.value === windowId)?.label ?? '';
+  const rangeSpend = useMemo(
+    () =>
+      spendFigures({
+        records: spend.turns.map((turn) => turn.record),
+        nowMs: Date.now(),
+        sinceMs,
+      }).range,
+    [sinceMs, spend.turns],
+  );
+  const meta = impactMeta({
+    rangeLabel,
+    sessionCount: metrics.overview.data?.sessionCount ?? null,
+    spentUsd: rangeSpend.usd,
+  });
 
   const frame: PaneFrame = {
     title: 'Impact',
@@ -148,7 +147,6 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
         return (
           <SpendPanel
             frame={frame}
-            windowId={windowId}
             spend={spend}
             metrics={metrics}
             onSelectProvider={(provider) => setScope({ kind: 'provider', provider })}
@@ -159,6 +157,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
         return (
           <ProviderPanel
             frame={frame}
+            rangeLabel={rangeLabel}
             onBack={backToSpend}
             provider={scope.provider}
             entry={spend.providers.find((entry) => entry.provider === scope.provider) ?? null}
@@ -167,11 +166,10 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
             rulesResult={spend.data.rules}
             telemetryResult={spend.data.telemetry}
             isLoading={spend.data.loading.rules || spend.data.loading.telemetry}
-            onSaveCap={(capUsd) => spend.saveProviderCap({ provider: scope.provider, capUsd })}
-            onSaveThreshold={(thresholdPct) =>
-              spend.saveProviderThreshold({ provider: scope.provider, thresholdPct })
+            onSaveLimit={({ capUsd, thresholdPct }) =>
+              spend.saveProviderCap({ provider: scope.provider, capUsd, thresholdPct })
             }
-            onRemoveCap={() => spend.removeProviderCap({ provider: scope.provider })}
+            onRemoveLimit={() => spend.removeProviderCap({ provider: scope.provider })}
             onRetryRules={() => spend.data.retry('rules')}
             onRetryTelemetry={() => spend.data.retry('telemetry')}
             onOpenSession={openSession}

@@ -100,12 +100,13 @@ describe('SessionCostChip', () => {
     expect(store.loadSessionBudget).toHaveBeenCalledWith(SID);
   });
 
-  it('reads spend of limit with a small bar once a limit exists', () => {
+  it('reads spend over limit in the compact form with a small bar once a limit exists', () => {
     store.sessionTelemetry = { [SID]: [record({ estimatedCostUsd: 2.77 })] };
     store.sessionBudgets = { [SID]: limit(10) };
     render(<SessionCostChip sessionId={SID} />);
 
-    expect(spendChip().textContent).toBe('$2.77 of $10.00 limit');
+    expect(spendChip().textContent).toBe('$2.77 / $10');
+    expect(spendChip().getAttribute('aria-label')).toBe('Spend $2.77 of $10.00 limit');
     expect(spendChip().getAttribute('data-level')).toBe('clear');
     expect(spendChip().getAttribute('data-tone')).toBe('neutral');
     expect(document.querySelector('[data-slot="spend-bar"]')).not.toBeNull();
@@ -133,12 +134,13 @@ describe('SessionCostChip', () => {
     store.sessionTelemetry = { [SID]: [record({ estimatedCostUsd: 10.2 })] };
     store.sessionBudgets = { [SID]: limit(10) };
     const { unmount } = render(<SessionCostChip sessionId={SID} />);
-    expect(spendChip().textContent).toBe('Paused · $10.20 of $10.00 limit');
+    expect(spendChip().textContent).toBe('$10.20 / $10');
+    expect(spendChip().getAttribute('aria-label')).toBe('Spend Paused · $10.20 of $10.00 limit');
     unmount();
 
     store.sessionBudgets = { [SID]: limit(10, 'warn') };
     render(<SessionCostChip sessionId={SID} />);
-    expect(spendChip().textContent).toBe('$10.20 of $10.00 limit');
+    expect(spendChip().getAttribute('aria-label')).toBe('Spend $10.20 of $10.00 limit');
     expect(spendChip().getAttribute('data-level')).toBe('over');
     expect(spendChip().getAttribute('data-tone')).toBe('danger');
   });

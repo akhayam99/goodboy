@@ -32,7 +32,7 @@ export const SearchResultRow = memo(
         aria-disabled={isBlocked}
         data-selected={isSelected ? 'true' : undefined}
         className={cn(
-          'flex cursor-pointer items-start gap-3 rounded-sm px-3 py-2',
+          'flex cursor-pointer items-start gap-2 rounded-sm px-2 py-1',
           isSelected ? 'bg-selected' : 'hover:bg-hover',
         )}
         onMouseEnter={() => onHover(hit.docId)}
@@ -56,7 +56,7 @@ export const SearchResultRow = memo(
             <MarkedText segments={hitHeadline({ hit })} />
           </span>
           {hit.snippet.length > 0 ? (
-            <span className="line-clamp-2 text-label text-muted-foreground">
+            <span className="line-clamp-1 text-label text-muted-foreground">
               <MarkedText segments={hit.snippet} />
             </span>
           ) : null}

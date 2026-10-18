@@ -403,13 +403,13 @@ describe('startWorkflowGeneration model metadata', () => {
       'anthropic/opus-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25',
     );
     expect(prompt).toContain(
-      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 1000k $4/$20',
+      'codex/gpt-5.6-sol efforts low,medium,high,xhigh,max unassessed ctx 272k $4/$20',
     );
 
     const menuLines = prompt
       .split('\n')
       .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
-    expect(menuLines).toHaveLength(14);
+    expect(menuLines).toHaveLength(17);
     expect(menuLines.some((line) => line.startsWith('anthropic/sonnet-4.5 '))).toBe(false);
     for (const line of menuLines) {
       expect(line).toContain('unassessed');

@@ -1,7 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AnchoredPopover, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
-import { useAppStore } from '../../../store';
-import { collapse } from '../../../features/onboarding/onboarding-store';
+import { useUpdateCardState } from '../../../features/updater/hooks/useUpdateCardState';
+import { updatePillLabel } from '../../../features/updater/updateCardCopy';
+import { toggleUpdateCard } from '../../../features/updater/updateCardRequest';
+import { UpdatePill } from '../../../features/updater/components/UpdatePill';
+import { collapse, hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
+import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import { useOnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../features/changelog/hooks/useInstalledVersion';
 import { openReportSheet } from '../../../features/bug-report/openReportSheet';
@@ -10,10 +14,10 @@ import { openUrl } from '../../../shared/lib/editor';
 import { SOCIAL_LINKS, SPONSOR_URL } from '../../../shared/lib/productLinks';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyChipEffects } from './GoodboyChipEffects';
+import { GoodboyMenu } from './GoodboyMenu';
 
 const OPEN_GOODBOY_MENU_EVENT = 'goodboy:open-goodboy-menu';
 const OPEN_PAIR_DEVICE_EVENT = 'goodboy:open-pair-device';
-import { GoodboyMenu } from './GoodboyMenu';
 
 type GoodboyChipVariant = 'column' | 'rail';
 
@@ -28,14 +32,17 @@ type Props = {
 const PANEL_WIDTH = 320;
 const PANEL_MAX_HEIGHT = 560;
 
+const REST_LABEL = 'Goodboy beta: version, help and sponsor';
+
 const TRIGGER_LABEL: Record<GoodboyChipState, string> = {
-  update: 'Goodboy: an update is ready',
+  update: REST_LABEL,
   setup: 'Goodboy: setup is not finished',
-  rest: 'Goodboy beta: version, help and sponsor',
+  rest: REST_LABEL,
 };
 
-const TRIGGER_SHAPE: Record<GoodboyChipVariant, string> = {
+const TRIGGER_SHAPE: Record<GoodboyChipVariant | 'column-pill', string> = {
   column: 'h-7 min-w-0 flex-1 gap-2 overflow-hidden px-2',
+  'column-pill': 'h-7 min-w-0 shrink gap-2 overflow-hidden px-2',
   rail: 'size-8 shrink-0 justify-center',
 };
 
@@ -47,7 +54,7 @@ export const GoodboyChip = ({
   isPrimary = true,
 }: Props) => {
   const progress = useOnboardingProgress();
-  const updaterStatus = useAppStore((s) => s.updaterStatus);
+  const update = useUpdateCardState();
   const version = useInstalledVersion();
   const hasDraft = useHasBugReportDraft();
   const dropdown = useDropdown({
@@ -57,20 +64,53 @@ export const GoodboyChip = ({
     ...(isPrimary && { openEvent: OPEN_GOODBOY_MENU_EVENT }),
   });
   const { open: isOpen, close, toggle } = dropdown;
-  const isQueued = useAppStore((s) => s.updateQueuedUntilIdle);
-  const hasUpdate =
-    updaterStatus === 'available' ||
-    updaterStatus === 'downloading' ||
-    updaterStatus === 'ready' ||
-    isQueued;
-  const isSetupOpen = !progress.finished && progress.hasProjects && !progress.isDone;
+  const hasUpdate = update.state !== null;
+  const isSetupOpen = !progress.isFinished && progress.hasProjects && !progress.setup.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
   const shouldAutoOpen =
     isPrimary &&
-    !progress.finished &&
-    progress.wizardDone &&
-    progress.completed.has('firstSession') &&
-    !progress.collapsed;
+    !progress.isFinished &&
+    progress.isWizardDone &&
+    progress.completed.has('first-session') &&
+    !progress.isCollapsed;
+  const isInMainWindow = useIsMainWindow();
+  const hasRowPill = variant === 'column' && hasUpdate;
+  const railUpdate =
+    variant === 'rail' && update.state !== null
+      ? {
+          label: updatePillLabel({
+            state: update.state,
+            version: update.version,
+            runningCount: update.runningCount,
+          }),
+          onOpen: toggleUpdateCard,
+        }
+      : null;
+
+  useEffect(() => {
+    if (!isPrimary || isInMainWindow) {
+      return;
+    }
+    const onFocus = () => {
+      void hydrateOnboardingFromDb();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [isPrimary, isInMainWindow]);
+
+  const wasOpenRef = useRef(false);
+  useEffect(() => {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+    if (!wasOpen || isOpen) {
+      return;
+    }
+    const focused = document.activeElement;
+    if (focused !== null && focused !== document.body) {
+      return;
+    }
+    dropdown.containerRef.current?.querySelector<HTMLElement>('[data-goodboy-chip]')?.focus();
+  }, [isOpen, dropdown.containerRef]);
 
   useEffect(() => {
     if (!shouldAutoOpen) {
@@ -87,7 +127,7 @@ export const GoodboyChip = ({
       action();
     };
 
-  const trigger = (
+  const menuTrigger = (
     <Tooltip content={TRIGGER_LABEL[state]} side={variant === 'rail' ? 'right' : 'top'}>
       <button
         type="button"
@@ -99,7 +139,7 @@ export const GoodboyChip = ({
         className={cn(
           'relative flex items-center rounded-md text-meta motion-safe:transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          TRIGGER_SHAPE[variant],
+          TRIGGER_SHAPE[hasRowPill ? 'column-pill' : variant],
           isOpen ? 'bg-muted' : 'hover:bg-hover',
         )}
       >
@@ -120,6 +160,15 @@ export const GoodboyChip = ({
     </Tooltip>
   );
 
+  const trigger = hasRowPill ? (
+    <>
+      {menuTrigger}
+      <UpdatePill tooltipSide="top" />
+    </>
+  ) : (
+    menuTrigger
+  );
+
   return (
     <>
       {isPrimary ? (
@@ -134,14 +183,19 @@ export const GoodboyChip = ({
         ariaLabel="Goodboy"
         hasBackdrop
         className="flex flex-col"
-        anchorClassName={variant === 'column' ? 'flex min-w-0 flex-1' : 'flex'}
+        anchorClassName={
+          variant === 'column' ? '@container flex min-w-0 flex-1 items-center gap-1' : 'flex'
+        }
         trigger={trigger}
       >
         <GoodboyMenu
           version={version}
           progress={progress}
-          hasUpdate={hasUpdate}
+          isMainWindow={isInMainWindow}
           hasDraft={hasDraft}
+          railUpdate={railUpdate}
+          onClose={close}
+          onLeave={close}
           onReport={leaveFor({ action: () => openReportSheet() })}
           onOpenGuide={leaveFor({ action: onOpenGuide })}
           onPairDevice={leaveFor({

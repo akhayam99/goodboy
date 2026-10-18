@@ -59,5 +59,5 @@ export const projectFilterNote = ({ scope }: NoteParams): string | null => {
   }
   const nouns = new Set(scope.unmapped.map((provider) => ITEM_NOUN[provider]));
   const noun = nouns.size === 1 ? [...nouns][0] : 'items';
-  return `Project filter applies to ${labelList({ providers: scope.mapped })}. ${labelList({ providers: scope.unmapped })} ${noun} aren't tied to a project, so they stay listed.`;
+  return `Folder filter applies to ${labelList({ providers: scope.mapped })}. ${labelList({ providers: scope.unmapped })} ${noun} aren't tied to a folder, so they stay listed.`;
 };

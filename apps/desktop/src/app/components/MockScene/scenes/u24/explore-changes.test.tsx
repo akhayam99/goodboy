@@ -76,7 +76,7 @@ describe('the explore changes scenes', () => {
   it('explore-changedempty says nothing changed against main', async () => {
     mount({ id: 'explore-changedempty' });
 
-    expect(await screen.findByText('No changes against main.', {}, WAIT)).toBeDefined();
+    expect(await screen.findByText('No changes against main', {}, WAIT)).toBeDefined();
   });
 
   it('explore-drawerchanges shows the diff of the file next to the tree', async () => {

@@ -46,6 +46,8 @@ const mountFacts: MountFacts = {
   isDiverged: false,
   onlyOnline: null,
   isRebasing: false,
+  rebaseConflict: null,
+  autoBlockedReason: null,
   comments: 0,
   canStartTurnsHere: false,
   isScribeWriting: false,
@@ -59,6 +61,9 @@ const sessionFacts: SessionFacts = {
   session: aSession({ id: mountFacts.sessionId }),
   sessionId: 'session-harborline' as SessionId,
   title: 'Fix duplicate credit',
+  behindMountIds: [],
+  rebaseAllRunId: null,
+  isRebaseAllRunning: false,
   isArchived: false,
   isPinned: false,
   isRefreshing: false,
@@ -72,6 +77,7 @@ const sessionFacts: SessionFacts = {
   mounts: [],
   worktreePaths: ['/work/payments-api'],
   prUrl: null,
+  runningAgentCount: 0,
 };
 
 type Surface = {

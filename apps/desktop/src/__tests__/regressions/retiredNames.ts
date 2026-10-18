@@ -16,6 +16,8 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'copy-as-brief', pattern: /\bCopy as brief\b/i, use: NAMES.copyContext },
   { id: 'budget-cap', pattern: /\b[Bb]udget cap\b/i, use: NAMES.spendCap },
   { id: 'link-plain-folder', pattern: /\bLink a plain folder\b/i, use: NAMES.addPlainFolder },
+  { id: 'add-project', pattern: /\bAdd project\b/, use: NAMES.addFolder },
+  { id: 'dev-project', pattern: /\b[Dd]ev project\b/, use: NAMES.gitRepository },
   { id: 'link-existing', pattern: /\bLink existing\b/i, use: NAMES.addExisting },
   {
     id: 'link-integration',
@@ -75,6 +77,9 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   },
   { id: 'try-again', pattern: /^Try again(?: on [\w .-]+| with the hint)?$/, use: NAMES.retry },
   { id: 'your-roles', pattern: /\bYour roles\b/i, use: NAMES.yourJob },
+  { id: 'pair-device', pattern: /\bPair (?:a |another )?device\b/, use: NAMES.pairIphone },
+  { id: 'sign-out-label', pattern: /^Sign out$/, use: NAMES.disconnect },
+  { id: 'rewrite-history', pattern: /\bRewrite history\b/i, use: NAMES.editCommits },
   { id: 'open-review', pattern: /\bOpen Review\b(?! replies)/, use: NAMES.comments },
   { id: 'open-diff', pattern: /\bOpen diff\b/i, use: NAMES.files },
   { id: 'review-diff-view', pattern: /\b[Ii]n the (?:Review|Diff) view\b/, use: NAMES.comments },

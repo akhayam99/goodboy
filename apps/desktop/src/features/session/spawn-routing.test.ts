@@ -125,8 +125,8 @@ describe('resolveSpawnRouting', () => {
 
     expect(routing).toEqual({
       provider: 'anthropic',
-      model: 'haiku-4.5',
-      effort: 'low',
+      model: 'haiku-5.5',
+      effort: 'medium',
       origin: 'role-default',
     });
   });

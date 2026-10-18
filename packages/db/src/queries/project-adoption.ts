@@ -99,6 +99,32 @@ export const describeProjectAdoption = async ({
   return { sourceWorkspaceId, isShell, sessionCount: visible.length };
 };
 
+type CountRunningAdoptionAgentsParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly info: ProjectAdoptionInfo;
+};
+
+const RUNNING_IN_WORKSPACE = `SELECT COUNT(DISTINCT a.id) AS count FROM live_agents a
+  JOIN sessions s ON s.id = a.session_id
+  WHERE a.status = 'running' AND s.deleted_at IS NULL AND s.workspace_id = ?`;
+
+export const countRunningAdoptionAgents = async ({
+  db,
+  projectId,
+  info,
+}: CountRunningAdoptionAgentsParams): Promise<number> => {
+  const rows = info.isShell
+    ? await db.select<{ readonly count: number }>(RUNNING_IN_WORKSPACE, [info.sourceWorkspaceId])
+    : await db.select<{ readonly count: number }>(
+        `${RUNNING_IN_WORKSPACE}
+          AND (s.active_project_id = ?
+               OR s.id IN (SELECT session_id FROM session_worktrees WHERE project_id = ?))`,
+        [info.sourceWorkspaceId, projectId, projectId],
+      );
+  return rows[0]?.count ?? 0;
+};
+
 export type ProjectMoveResult = {
   readonly movedSessionCount: number;
   readonly ambiguousSessionCount: number;

@@ -8,11 +8,11 @@ Open a real login shell in the workspace folder or any linked worktree. **⌃`**
 
 ### Keyboard shortcuts, back and forward
 
-A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[** and **⌘]** walk your history, and **⌘/** opens the full list. **⌘B** folds the sidebar and **⌥⌘B** folds the column inside the page you are on: the session rail on every level, the Chat and Terminal lists, the Guide chapters, the changelog versions, the Settings scopes and the notification filters; each remembers it per page, and on a page with no inner column the key does nothing and the palette leaves the entry out. On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it; text fields keep their own undo. Tooltips show keys beside their controls.
+A **⌘⌥** key opens each view, **⌘1** to **⌘9** switch workspaces, **⌘[** and **⌘]** walk your history, and **⌘/** opens the full list. **⌘B** folds the sidebar and **⌥⌘B** folds the column inside the page you are on: the session rail on every level, the Chat and Terminal lists, the Guide chapters, the changelog versions, the Settings scopes and the notification filters; each remembers it per page, and on a page with no inner column the key does nothing and the palette leaves the entry out. On the Commits page, **⌘Z** undoes a local commit edit and **⌘⇧Z** redoes it; text fields keep their own undo. Tooltips show keys beside their controls. On a Mac the menu bar carries the same keys: File holds New Session, New Chat and Close (**⌘W**), Edit holds Search, View holds the sidebar, the palette, zoom and Reload, Go walks to Sessions, Tasks, Chat, Workflows, Terminal, Impact, Notifications and Monitoring, and Help holds Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Shortcuts page in Settings, 105 shortcuts in the groups General, Workspaces, Views and Lists, with Command palette on ⌘K, Search on ⌘F, Report a bug on ⌘I and a ⌘⌥ key for each view from Overview to Slack threads">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/keyboard-shortcuts-light.webp" alt="The Keyboard shortcuts page in Settings, 105 shortcuts in the groups General, Workspaces, Views and Lists, with Command palette on ⌘K, Search on ⌘F, Report a bug on ⌘I and a ⌘⌥ key for each view from Overview to Slack threads">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

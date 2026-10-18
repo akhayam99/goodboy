@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { WorkspaceId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
@@ -54,35 +54,54 @@ vi.mock('./ProviderPage', () => ({
   ),
 }));
 
+import { nextWorkspaceId } from '@goodboy/types/testing';
 import { ProviderSettingsScope } from './index';
 import type { ScopeFrameParts } from '../../../settings/components/SettingsStudio/types';
 
-const plainFrame = ({ nested, detail }: ScopeFrameParts) => (
-  <>
-    <nav aria-label="Settings scopes">{nested}</nav>
-    {detail}
-  </>
-);
+const plainFrame = ({ detail }: ScopeFrameParts) => <>{detail}</>;
+
+const RAIL_WORKSPACE_ID = nextWorkspaceId();
 
 afterEach(cleanup);
 
 describe('ProviderSettingsScope', () => {
-  it('hands its provider list to the settings rail and lands on Models', () => {
+  it('lands on Models and leaves the rail to the settings studio', () => {
     render(<ProviderSettingsScope workspaceId={'workspace-1' as WorkspaceId} frame={plainFrame} />);
 
-    const rail = screen.getByRole('navigation', { name: 'Settings scopes' });
-    const list = within(rail).getByRole('list', { name: 'Providers & models settings' });
-
-    expect(within(list).getByRole('button', { name: 'Models' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'Models' })).toBeDefined();
+    expect(screen.queryByRole('navigation')).toBeNull();
     expect(screen.queryByRole('complementary')).toBeNull();
+  });
+
+  it('follows the provider the settings rail names', () => {
+    state.providers = [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'codex', connection: 'connected' },
+    ];
+    const view = render(
+      <ProviderSettingsScope
+        workspaceId={RAIL_WORKSPACE_ID}
+        initialFocus="anthropic"
+        frame={plainFrame}
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'detail anthropic' })).toBeDefined();
+
+    view.rerender(
+      <ProviderSettingsScope
+        workspaceId={RAIL_WORKSPACE_ID}
+        initialFocus="codex"
+        frame={plainFrame}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'detail codex' })).toBeDefined();
   });
 
   it('hides Models without a workspace and opens the first provider instead', () => {
     state.providers = [{ id: 'anthropic', connection: 'connected' }];
     render(<ProviderSettingsScope workspaceId={null} frame={plainFrame} />);
 
-    expect(screen.queryByRole('button', { name: 'Models' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Models' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'detail anthropic' })).toBeDefined();
   });

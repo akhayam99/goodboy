@@ -556,7 +556,9 @@ behavior beyond rendering:
   (Auto's deliveries and a child's first brief, origin `delegation`). Every
   reader of the transcript still sees it (resume, the preamble, retry send it
   again as written); only the chat draws it differently, as the collapsed row
-  `auto_delivery`.
+  `auto_delivery`, which keeps the `runId` of its event: under it sit the cards
+  of the child results that run read (`AutoDeliveryResults`, see
+  [auto.md](auto.md), The chat).
 - `operator_text` is display only: the words a user typed to an Auto agent,
   written when Auto takes the message. It is not a provider turn, so nothing
   that resumes or counts turns reads it, and the question ordinals (which count
@@ -1162,7 +1164,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   brief into the latest agent's composer draft (`landOnSession.ts`). The
   panel starts on the keyboard with cmd or ctrl plus Enter.
   The Project field is a searchable multiple `Listbox` (`ProjectField.tsx`)
-  with removable chips and a "No project" state; it starts with the projects the
+  with removable chips and a "No folder" state; it starts with the projects the
   answer named files in, or none, and hides in "Add to a session" mode. The first
   picked project is `createSession`'s `projectId`; the others go in
   `additionalProjectIds`. The Session

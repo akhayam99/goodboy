@@ -153,6 +153,46 @@ describe('useNextStepOutcomes', () => {
 
     await waitFor(() => expect(listNudgeEvents).toHaveBeenCalledTimes(2));
   });
+
+  it('drops the late answer of the session it left', async () => {
+    const otherSessionId: SessionId = JSON.parse(JSON.stringify('session-2'));
+    const at: IsoDateTime = JSON.parse(JSON.stringify('2026-01-01T00:00:00.000Z'));
+    type DismissedParams = { readonly id: SessionId; readonly fingerprint: string };
+    const dismissedOf = ({ id, fingerprint }: DismissedParams): NudgeEvent => ({
+      id: `ev-${id}`,
+      sessionId: id,
+      ts: at,
+      kind: 'next:fix-checks',
+      contextJson: JSON.stringify({ fingerprint }),
+      outcome: 'dismissed',
+      outcomeTs: at,
+    });
+    let answerFirst: (events: ReadonlyArray<NudgeEvent>) => void = () => undefined;
+    listNudgeEvents
+      .mockImplementationOnce(
+        () =>
+          new Promise<ReadonlyArray<NudgeEvent>>((resolve) => {
+            answerFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce([
+        dismissedOf({ id: otherSessionId, fingerprint: 'fix-checks:mount-web:318' }),
+      ]);
+    const view = renderHook(
+      ({ id }: { readonly id: SessionId }) => useNextStepOutcomes({ sessionId: id }),
+      { initialProps: { id: sessionId } },
+    );
+    view.rerender({ id: otherSessionId });
+    await waitFor(() =>
+      expect(view.result.current.dismissedFingerprints.has('fix-checks:mount-web:318')).toBe(true),
+    );
+
+    answerFirst([dismissedOf({ id: sessionId, fingerprint: 'fix-checks:mount-web:204' })]);
+    await Promise.resolve();
+
+    expect(view.result.current.dismissedFingerprints.has('fix-checks:mount-web:204')).toBe(false);
+    expect(view.result.current.dismissedFingerprints.has('fix-checks:mount-web:318')).toBe(true);
+  });
 });
 
 describe('recordNextStepOutcome', () => {

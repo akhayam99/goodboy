@@ -192,6 +192,7 @@ const COLOR_KEYWORDS = new Set([
   'center',
   'right',
   'ellipsis',
+  'balance',
   'dashed',
   'dotted',
   'solid',

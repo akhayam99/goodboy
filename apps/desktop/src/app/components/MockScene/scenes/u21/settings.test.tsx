@@ -77,7 +77,7 @@ describe('the Settings scenes', () => {
     await mount('settings-providers-rail');
 
     expect(screen.getByRole('button', { name: /^Back to app/ })).toBeDefined();
-    const list = screen.getByRole('list', { name: 'Providers & models settings' });
+    const list = screen.getByRole('list', { name: 'Providers and models settings' });
     expect(
       within(within(list).getByRole('button', { name: /^Claude/ })).getByRole('img', {
         name: 'Claude is about to run out',

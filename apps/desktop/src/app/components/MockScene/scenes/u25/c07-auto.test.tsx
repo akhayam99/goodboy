@@ -211,8 +211,8 @@ describe('c07 Auto scenes', () => {
     const ask = await screen.findByText('Where should the Implementer work?', undefined, WAIT);
     expect(ask).toBeDefined();
     expect(document.querySelector('[data-auto-tail]')).toBeNull();
-    expect(screen.getByPlaceholderText('Pick a project, or write to Auto')).toBeDefined();
-    const list = screen.getByRole('list', { name: 'Projects' });
+    expect(screen.getByPlaceholderText('Pick a folder, or write to Auto')).toBeDefined();
+    const list = screen.getByRole('list', { name: 'Folders' });
     const boxes = within(list).getAllByRole('checkbox');
     expect(boxes.length).toBeGreaterThan(1);
     expect(screen.getByText('In this session')).toBeDefined();
@@ -223,12 +223,12 @@ describe('c07 Auto scenes', () => {
       screen.getByRole('button', { name: 'Discard request' }).getAttribute('data-variant'),
     ).toBe('quiet');
     expect(screen.queryByRole('button', { name: 'More request actions' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Another project…' }));
-    expect(screen.getByRole('textbox', { name: 'Type a project name' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Another folder…' }));
+    expect(screen.getByRole('textbox', { name: 'Type a folder name' })).toBeDefined();
     expect(list.compareDocumentPosition(actions ?? list) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(screen.getByRole('button', { name: 'Choose a project' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: 'Choose a folder' })).toHaveProperty(
       'disabled',
       true,
     );
@@ -238,16 +238,16 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByRole('button', { name: 'Use both' })).toBeDefined();
   });
 
-  it('No project, just answer tells Auto through its door and collapses the ask', async () => {
+  it('No folder, just answer tells Auto through its door and collapses the ask', async () => {
     const port = vi.fn<AutoUserTurnPort>(async () => 'queued');
     registerAutoUserTurnPort({ port });
     mount({ id: 'c07-auto-project' });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'No project, just answer' }, WAIT));
+    fireEvent.click(await screen.findByRole('button', { name: 'No folder, just answer' }, WAIT));
 
-    expect(await screen.findByText('Answered: no project', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByText('Answered: no folder', undefined, WAIT)).toBeDefined();
     expect(port).toHaveBeenCalledWith(
-      expect.objectContaining({ text: 'No project, just answer in the chat.' }),
+      expect.objectContaining({ text: 'No folder, just answer in the chat.' }),
     );
     registerAutoUserTurnPort({ port: null });
   });

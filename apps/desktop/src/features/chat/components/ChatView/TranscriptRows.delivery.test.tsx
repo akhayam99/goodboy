@@ -2,7 +2,13 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { brandId, type AgentId, type IsoDateTime, type SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+} from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TranscriptRow } from '../../utils/cluster-operations';
 import { aPlannerQuestion } from '../../../../test/planDrawerFixtures';
@@ -52,7 +58,13 @@ describe('TranscriptRows with delivered text', () => {
   it('counts a delivery as a turn and the operator echo as none, so a question stays in place', () => {
     const { container } = renderRows({
       rows: [
-        itemRow({ kind: 'auto_delivery', key: 'd1', text: 'delivery', at: AT }),
+        itemRow({
+          kind: 'auto_delivery',
+          key: 'd1',
+          runId: brandId<ProviderRunId>({ value: 'run-auto-1' }),
+          text: 'delivery',
+          at: AT,
+        }),
         itemRow({
           kind: 'user_text',
           key: 'echo',

@@ -28,6 +28,7 @@ export type ShortcutScope =
   | 'ask'
   | 'chatPage'
   | 'terminalPage'
+  | 'home'
   | 'find'
   | 'overview'
   | 'row'
@@ -48,6 +49,7 @@ export const SHORTCUT_SCOPE_LABEL: Readonly<Record<ShortcutScope, string>> = {
   ask: 'In the Ask panel',
   chatPage: 'On the Chat page',
   terminalPage: 'On the Terminal page and the terminal drawer',
+  home: 'On Home, where no workspace is open',
   find: 'After a search in the view',
   overview: 'On a session overview',
   row: 'On a focused row',
@@ -689,6 +691,13 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'general',
     scope: 'terminalPage',
+  },
+  'home.newWorkspace': {
+    combo: 'cmd+KeyN',
+    label: NAMES.newWorkspace,
+    plane: 'app',
+    group: 'workspaces',
+    scope: 'home',
   },
   'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'session', group: 'general' },
   'app.close': {

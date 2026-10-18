@@ -3,6 +3,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { SkillsPanel } from '../../../skills/components/SkillsPanel';
 import { PermissionsSettings } from '../../../permissions/components/PermissionsSettings';
 import { WorkspaceStorageNotice } from '../../../storage/components/WorkspaceStorageNotice';
+import { storageWorkspacePages } from '../../../storage/storageWorkspacePages';
 import { WorkspaceAfterMergeSection } from './WorkspaceAfterMergeSection';
 import { WorkspaceProfileSection } from './WorkspaceProfileSection';
 import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
@@ -45,8 +46,13 @@ export const WorkspacePageBody = ({
       return <WorkspaceProfileSection workspaceId={workspaceId} />;
     case 'general':
       return <WorkspaceDefaultsGrid workspaceId={workspaceId} />;
-    case 'after-merge':
-      return <WorkspaceAfterMergeSection workspaceId={workspaceId} />;
+    case 'branches':
+      return (
+        <>
+          <WorkspaceAfterMergeSection workspaceId={workspaceId} />
+          {storageWorkspacePages({ workspaceId }).branches.body}
+        </>
+      );
     case 'review-replies':
       return <WorkspaceReviewRepliesSection workspaceId={workspaceId} />;
     case 'permissions':

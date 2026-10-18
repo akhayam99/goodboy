@@ -1,30 +1,36 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Button,
   DrawerFrame,
   EmptyState,
-  PANE_RHYTHM,
+  PAGE_MEASURE,
+  PageColumn,
+  PaneActionsContext,
+  PaneShell,
   RefreshIconButton,
   SegmentedTabs,
   Skeleton,
-  cn,
 } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { StudioCloseButton } from '../../../../shared/components/StudioShell/StudioCloseButton';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { useAppStore } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { changedExpandedOf, changedListingOf } from '../../exploreChanges';
 import type { LoadFolderParams, SelectFileParams, SetExpandedParams } from '../../exploreHandlers';
+import { exploreMetaOf } from '../../exploreMeta';
 import { EXPLORE_ROOT_PATH, ancestorPathsOf } from '../../exploreRows';
 import { useExploreChanges } from '../../hooks/useExploreChanges';
 import { useExploreListing } from '../../hooks/useExploreListing';
 import { useExploreRoot } from '../../hooks/useExploreRoot';
+import { ExploreNoFolder } from './ExploreNoFolder';
 import { ExploreProjectChip } from './ExploreProjectChip';
 import { ExploreTree } from './ExploreTree';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly noFolderAction?: ReactNode;
   readonly onClose: () => void;
 };
 
@@ -42,7 +48,7 @@ type ChangedView = {
 
 const FRESH_VIEW: ChangedView = { mountPath: null, mode: 'all', collapsed: NO_EXPANDED };
 
-export const ExplorePane = ({ sessionId, onClose }: Props) => {
+export const ExplorePane = ({ sessionId, noFolderAction, onClose }: Props) => {
   const now = useNow(30_000);
   const root = useExploreRoot({ sessionId });
   const { target } = root;
@@ -138,6 +144,7 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
     changesView.refresh();
   };
 
+  const baseBranch = changesView.baseBranch ?? 'main';
   const rootEntries = listing.entriesByPath[EXPLORE_ROOT_PATH];
   const isRootLoading = listing.loadingByPath[EXPLORE_ROOT_PATH] === true;
   const rootError = listing.errorByPath[EXPLORE_ROOT_PATH] ?? null;
@@ -147,28 +154,19 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
       return <Skeleton className="h-6 w-full rounded-md" />;
     }
     if (target.kind === 'none') {
-      return (
-        <EmptyState
-          size="section"
-          tone={CONCEPT_TONE.explore}
-          icon={CONCEPT_ICONS.explore}
-          title="Nothing to browse yet"
-          description="Files show here once this session has a project."
-        />
-      );
+      return <ExploreNoFolder action={noFolderAction} />;
     }
     if (target.kind === 'gone') {
       return (
         <EmptyState
-          size="section"
-          tone={CONCEPT_TONE.explore}
+          size="page"
           icon={CONCEPT_ICONS.explore}
           title="This worktree is gone"
           description={GONE_SENTENCE}
           action={
             root.rowCount > 0 ? (
               <Button size="sm" variant="ghost" onClick={() => root.pick({ mountPath: null })}>
-                Show the current project
+                Show the current folder
               </Button>
             ) : undefined
           }
@@ -179,10 +177,10 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
       if (changes.count === 0) {
         return (
           <EmptyState
-            size="section"
-            tone={CONCEPT_TONE.explore}
+            size="page"
             icon={CONCEPT_ICONS.explore}
-            title={`No changes against ${changesView.baseBranch ?? 'main'}.`}
+            title={`No changes against ${baseBranch}`}
+            description={`Files that differ from ${baseBranch} appear here.`}
           />
         );
       }
@@ -214,8 +212,7 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
     if (rootError !== null) {
       return (
         <EmptyState
-          size="section"
-          tone={CONCEPT_TONE.explore}
+          size="page"
           icon={CONCEPT_ICONS.explore}
           title="Couldn't read this session folder"
           description={rootError}
@@ -234,10 +231,10 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
     if (rootEntries === undefined || rootEntries.length === 0) {
       return (
         <EmptyState
-          size="section"
-          tone={CONCEPT_TONE.explore}
+          size="page"
           icon={CONCEPT_ICONS.explore}
           title="This folder is empty"
+          description="Files that agents write here show up as soon as they are saved."
         />
       );
     }
@@ -263,9 +260,9 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
     changesView.isAvailable &&
     (changes.count > 0 || view.mode === 'changed');
 
-  const chip =
+  const toolbar =
     target.kind === 'none' ? undefined : (
-      <div className="flex min-w-0 items-center justify-between gap-3">
+      <div className="flex w-full min-w-0 items-center justify-between gap-3">
         <ExploreProjectChip target={target} groups={root.groups} rowCount={root.rowCount} />
         {hasTabs ? (
           <SegmentedTabs
@@ -282,32 +279,32 @@ export const ExplorePane = ({ sessionId, onClose }: Props) => {
       </div>
     );
 
+  const meta = exploreMetaOf({ isChangedMode, entries: rootEntries, changeCount: changes.count });
+
   return (
-    <DrawerFrame
-      title="Explore"
-      icon={CONCEPT_ICONS.explore}
-      iconClassName="text-faint-foreground"
-      scroll="self"
-      toolbar={chip}
-      action={
-        sessionDir === null ? undefined : (
-          <RefreshIconButton
-            label="Refresh the files"
-            isLoading={isRootLoading}
-            onClick={handleRefresh}
-          />
-        )
-      }
-      onClose={onClose}
-    >
-      <div
-        className={cn(
-          'flex min-h-0 w-full flex-1 flex-col px-2 py-2',
-          PANE_RHYTHM.board.listMaxWidth,
-        )}
-      >
-        {renderBody()}
-      </div>
+    <DrawerFrame title="Explore" isHeaderless onClose={onClose}>
+      <PaneActionsContext.Provider value={<StudioCloseButton label="Close" onClose={onClose} />}>
+        <PaneShell
+          page="explore"
+          scroll="self"
+          title="Explore"
+          meta={meta ?? undefined}
+          tabs={toolbar}
+          actions={
+            sessionDir === null ? undefined : (
+              <RefreshIconButton
+                label="Refresh the files"
+                isLoading={isRootLoading}
+                onClick={handleRefresh}
+              />
+            )
+          }
+        >
+          <PageColumn width={PAGE_MEASURE.explore} className="flex min-h-0 flex-1 flex-col pb-2">
+            {renderBody()}
+          </PageColumn>
+        </PaneShell>
+      </PaneActionsContext.Provider>
     </DrawerFrame>
   );
 };

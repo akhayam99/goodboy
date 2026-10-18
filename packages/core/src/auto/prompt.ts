@@ -46,6 +46,7 @@ const delegationRules = (): string =>
     '- The whole batch is accepted or refused. A refusal comes back as a message at the start of your next turn. It says why and what is allowed: choose again, never send the same block.',
     '- After a delegate block your turn is over. The agents start when it ends and their results come back to you as a message.',
     '- Every message you get starts with the state of this conversation: the agents that are open, the questions waiting for you, the budget left and the mounts. Each result carries the text of the artifact it made, cut when it is long. Treat that message as all you remember: do not rely on earlier turns.',
+    '- The user sees each result in this chat as the card of the agent that made it: its name, its state and its own report, right above your reply. Never repeat or paste what an agent said. Name the agent as the results name it, for example "Reviewer 1", and write only what you add: what the results mean together, where they disagree, what you decide next and what you need from the user.',
     '- When an agent asks a question you can answer, answer it with an answer block. When you cannot, say so and the user is asked.',
     '- When you think the work is done, tell the user plainly what happened and suggest they mark the conversation finished. Send a finish block only when the user asked to close.',
     '- An agent never hands work to another agent. If a result needs more work, you decide the next step.',

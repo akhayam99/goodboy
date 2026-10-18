@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppTopBar } from '../../../AppTopBar';
-import { NoWorkspaceScreen } from '../../../AppEmptyState';
 import { KeepAliveWorkSurface } from '../../../KeepAliveWorkSurface';
 import { ShellLeft } from '../../../SideColumn/ShellLeft';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
@@ -48,7 +47,7 @@ export const AppFrame = ({
   const goToBoard = useGoToBoard();
   const [settingsSlot, setSettingsSlot] = useState<HTMLDivElement | null>(null);
   const isSettingsOpen = useAppStore((state) => state.appStudio?.kind === 'settings');
-  const isLauncher = view === 'launcher';
+  const isLauncher = view === 'launcher' || currentWorkspace === null;
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace !== null,
     isSidebarCollapsed: isMainCollapsed,
@@ -74,6 +73,7 @@ export const AppFrame = ({
       openNewChat: overlays.openNewChat,
       openNewTerminal: overlays.openNewTerminal,
       openMonitoring: overlays.openMonitoring,
+      openImpact: overlays.openImpact,
       openSettings: overlays.openSettings,
       openChangelog: overlays.openChangelog,
       openGuide: overlays.openGuide,
@@ -98,9 +98,7 @@ export const AppFrame = ({
       </SessionFrame>
     ) : currentWorkspace !== null ? (
       <StageBoard workspaceId={currentWorkspace.id} sessions={sessions} />
-    ) : (
-      <NoWorkspaceScreen onAddWorkspace={overlays.openAddWorkspace} />
-    );
+    ) : null;
 
   return (
     <>

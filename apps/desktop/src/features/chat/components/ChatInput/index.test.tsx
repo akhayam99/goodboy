@@ -653,16 +653,16 @@ describe('ChatInput, agent reference routing', () => {
     status: 'pending',
     kind: 'scout',
     providerOverride: 'anthropic',
-    modelOverride: 'claude-haiku-4-5',
-    effort: 'low',
+    modelOverride: 'claude-haiku-5-5',
+    effort: 'medium',
   };
 
   function selectScout() {
     mockStore.setState({
       sessionPhaseRuns: { 'session-1': [scoutRow] },
-      agentModelOverride: { 'agent-1': 'claude-haiku-4-5' },
+      agentModelOverride: { 'agent-1': 'claude-haiku-5-5' },
       agentProviderOverride: { 'agent-1': 'anthropic' },
-      agentEffortOverride: { 'agent-1': 'low' },
+      agentEffortOverride: { 'agent-1': 'medium' },
     });
   }
 
@@ -685,7 +685,7 @@ describe('ChatInput, agent reference routing', () => {
 
     await user.click(screen.getByRole('button', { name: /^Model routing:/ }));
     const dialog = screen.getByRole('dialog', { name: 'Model routing' });
-    expect(dialog.textContent).toContain('Using default · Claude · Haiku 4.5');
+    expect(dialog.textContent).toContain('Using default · Claude · Haiku 5.5');
   });
 
   it('shows the affordance after a manual pick and reset returns to the reference', async () => {
@@ -710,8 +710,8 @@ describe('ChatInput, agent reference routing', () => {
 
     expect(setAgentConfig).toHaveBeenLastCalledWith('session-1', 'agent-1', {
       providerOverride: 'anthropic',
-      modelOverride: 'haiku-4.5',
-      effort: 'low',
+      modelOverride: 'haiku-5.5',
+      effort: 'medium',
     });
     expect(setSessionConfig).not.toHaveBeenCalled();
     await waitFor(() => {
@@ -741,7 +741,7 @@ describe('ChatInput, agent reference routing', () => {
         expect.objectContaining({
           override: expect.objectContaining({
             providerId: 'anthropic',
-            model: 'haiku-4.5',
+            model: 'haiku-5.5',
             explicit: false,
           }),
         }),

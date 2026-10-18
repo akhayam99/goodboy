@@ -40,7 +40,13 @@ export type TranscriptItem =
       model?: string;
       at: IsoDateTime;
     }
-  | { kind: 'auto_delivery'; key: string; text: string; at: IsoDateTime }
+  | {
+      kind: 'auto_delivery';
+      key: string;
+      runId: ProviderRunId;
+      text: string;
+      at: IsoDateTime;
+    }
   | { kind: 'assistant_text'; key: string; text: string }
   | {
       kind: 'artifact_block';
@@ -313,6 +319,7 @@ export const reduceTranscript = (
           items.push({
             kind: 'auto_delivery',
             key: `auto-delivery-${i}`,
+            runId: event.runId,
             text: event.text,
             at: event.at,
           });

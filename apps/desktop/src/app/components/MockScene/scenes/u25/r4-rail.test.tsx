@@ -120,7 +120,7 @@ describe('r4 session rail scenes', () => {
   it('r4-rail-session draws the cards with each worktree pages inline, the tools outside the rail', async () => {
     await mount('r4-rail-session');
 
-    const projects = card('Projects');
+    const projects = card('Folders');
     expect(entryLabels(projects)).toEqual(['Pull request', 'Comments', 'Files', 'Checks']);
     expect(
       within(projects)
@@ -139,7 +139,12 @@ describe('r4 session rail scenes', () => {
     expect(top.queryByRole('button', { name: 'More session actions' })).toBeNull();
     expect(top.getByRole('button', { name: 'Refresh session' })).toBeDefined();
     const foot = rail().querySelector<HTMLElement>('[data-session-foot]');
-    expect(foot?.textContent).toBe('ArchiveDelete…');
+    expect(
+      Array.from(foot?.querySelectorAll('[data-session-foot-action]') ?? []).map((button) =>
+        button.getAttribute('aria-label'),
+      ),
+    ).toEqual(['Archive session', 'Delete session']);
+    expect(foot?.querySelector('[data-session-spend]')).not.toBeNull();
   });
 
   it('r4-rail-session lines the cards up with the page rows, edges, icons and slots', async () => {
@@ -148,9 +153,12 @@ describe('r4 session rail scenes', () => {
     const navRow = elementIn(rail(), '[data-testid="session-pages"] button');
     const navIcon = elementIn(navRow, 'svg');
     const navSlot = elementIn(rail(), '[data-page-value="runs"]');
-    const projects = card('Projects');
+    const projects = card('Folders');
     const headerLabel = elementIn(projects, 'h2 button span');
-    const projectIcon = elementIn(projects, '[data-card-project] > button > svg');
+    const projectIcon = elementIn(
+      projects,
+      '[data-card-project] [data-project-row] > button > svg',
+    );
 
     const navLeft = insetOf({ element: navIcon, side: 'left', isOwnPaddingCounted: false });
     expect(insetOf({ element: headerLabel, side: 'left', isOwnPaddingCounted: false })).toBe(
@@ -186,11 +194,11 @@ describe('r4 session rail scenes', () => {
     await mount('r4-rail-cards-folded');
 
     expect(
-      within(card('Projects'))
-        .getByRole('button', { name: 'Projects' })
+      within(card('Folders'))
+        .getByRole('button', { name: 'Folders' })
         .getAttribute('aria-expanded'),
     ).toBe('false');
-    expect(card('Projects').querySelector('[data-card-signal]')).not.toBeNull();
+    expect(card('Folders').querySelector('[data-card-signal]')).not.toBeNull();
     expect(
       within(card('Linked')).getByRole('button', { name: 'Linked' }).getAttribute('aria-expanded'),
     ).toBe('false');
@@ -228,7 +236,7 @@ describe('r4 session rail scenes', () => {
   it('r4-rail-tree draws many branches with their pull request icons, two open at once', async () => {
     await mount('r4-rail-tree');
 
-    const projects = card('Projects');
+    const projects = card('Folders');
     const states = [...projects.querySelectorAll('[data-pr-state]')].map((icon) =>
       icon.getAttribute('data-pr-state'),
     );
@@ -252,6 +260,30 @@ describe('r4 session rail scenes', () => {
         .map((row) => row.querySelector('[data-project-count]')?.textContent),
     ).toEqual(['5', '3']);
     expect(rail().textContent).not.toMatch(/finished/i);
+  });
+
+  it('r4-rail-tree cuts long branches at the end only and keeps the full name in the tooltip', async () => {
+    await mount('r4-rail-tree');
+
+    const projects = card('Folders');
+    const names = [...projects.querySelectorAll('[data-worktree-branch]')].map(
+      (cell) => cell.textContent ?? '',
+    );
+    const drafts = names.filter((name) => name.startsWith('ak/eng-1200-retry-header'));
+    expect(drafts).toEqual([
+      'ak/eng-1200-retry-header-for-notify-relay-with-backoff-draft',
+      'ak/eng-1200-retry-header-for-notify-relay-with-backoff-queued',
+    ]);
+    for (const cell of projects.querySelectorAll('[data-worktree-branch]')) {
+      const label = cell.querySelector('.truncate');
+      expect(label?.textContent).toBe(cell.textContent);
+      expect(cell.querySelector('.shrink-0')).toBeNull();
+      expect(cell.querySelector('[title]')).toBeNull();
+    }
+    const rows = within(projects).getAllByRole('button', {
+      name: /ak\/eng-1200-retry-header-for-notify-relay-with-backoff-draft/,
+    });
+    expect(rows.length).toBeGreaterThan(0);
   });
 
   it('r4-rail-delete opens the delete confirm from the foot', async () => {

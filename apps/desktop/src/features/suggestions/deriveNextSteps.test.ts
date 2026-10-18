@@ -111,7 +111,6 @@ describe('deriveNextSteps', () => {
     expect(suggestions.map((suggestion) => suggestion.kind)).toEqual([
       'answer-questions',
       'mount-project',
-      'workflow-next-step',
       'plan-ready',
       'resolve-threads',
       'rebase-project',
@@ -142,9 +141,13 @@ describe('deriveNextSteps', () => {
     ).toBe(false);
     expect(
       derive({ isOwnedByRun: true, isRunning: false }).some(
-        (suggestion) => suggestion.kind === 'workflow-next-step',
+        (suggestion) => suggestion.kind === 'plan-ready',
       ),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('leaves the ready step of a started run to the Start of its Activity row', () => {
+    expect(derive({}).some((suggestion) => suggestion.kind === 'workflow-next-step')).toBe(false);
   });
 
   it('carries the fixable comment count of the selected source, on any host', () => {
@@ -371,7 +374,7 @@ describe('deriveNextSteps', () => {
 
     const rebase = suggestions.find((suggestion) => suggestion.kind === 'rebase-project');
     expect(rebase?.title).toBe('Rebase 4 branches');
-    expect(rebase?.detail).toBe('3 projects behind');
+    expect(rebase?.detail).toBe('3 folders behind');
     expect(rebase?.payload.targets.map((target) => target.mountId)).toEqual([
       'mount-far',
       'mount-alpha-first',
@@ -471,7 +474,7 @@ describe('deriveNextSteps', () => {
         behindProject({ id: 'payments-api', isClean: false, changedCount: 5 }),
       ]);
 
-      expect(rebase?.detail).toBe('2 projects behind');
+      expect(rebase?.detail).toBe('2 folders behind');
       expect(rebase?.payload.targets.every((target) => target.dirtyCount > 0)).toBe(true);
     });
 

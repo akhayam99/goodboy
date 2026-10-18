@@ -23,7 +23,6 @@ describe('columnPlaceOf', () => {
       ['notifications', null],
       ['changelog', null],
       ['guide', null],
-      ['companion', null],
       ['addWorkspace', null],
     ];
     for (const [studio, place] of cases) {

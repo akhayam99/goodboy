@@ -26,14 +26,14 @@ export const WorkspaceDevProjectBand = ({ workspaceId, isInitiallyOpen }: Props)
   return (
     <Band
       inset="content"
-      label="Dev project"
-      ariaLabel="Dev project"
-      hint="For a project that started as a plain folder."
+      label="Git repository"
+      ariaLabel="Git repository"
+      hint="For a plain folder that has no git yet."
       icon={<CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden />}
       headingLevel={2}
     >
       <FieldRow
-        label={`Turn ${project.name} into a dev project`}
+        label={`Turn ${project.name} into a git repository`}
         help="Gives it a git repository, so sessions get their own branch and pull requests."
       >
         <Button

@@ -24,7 +24,7 @@ export const ProjectStarToggle = ({ project, busy }: Props) => {
     <StarToggle
       isStarred={isStarred}
       label={`Starred: ${project.name}`}
-      tooltip="Starred projects come first for agents"
+      tooltip="Starred folders come first for agents"
       disabled={busy}
       onToggle={() => void toggle()}
     />

@@ -172,9 +172,8 @@ describe('workspace and project slices', () => {
   it('creates one container and one leaf project with distinct identifiers', async () => {
     const store = harness({});
 
-    const created = await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
+    await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
 
-    expect(created.name).toBe('api');
     expect(h.insertWorkspace).toHaveBeenCalledOnce();
     expect(h.insertProject).toHaveBeenCalledOnce();
     const insertedWorkspace = store.state.workspaces[0]!;

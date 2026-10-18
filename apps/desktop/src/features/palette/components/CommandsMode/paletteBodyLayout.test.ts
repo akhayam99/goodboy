@@ -16,19 +16,19 @@ const entry = (patch: Partial<PaletteEntry>): PaletteEntry => ({
 });
 
 describe('paletteBodyLayoutOf', () => {
-  it('holds one 480 minimum height with and without a preview pane', () => {
-    expect(paletteBodyLayoutOf({ hasPreview: true }).minHeightPx).toBe(480);
-    expect(paletteBodyLayoutOf({ hasPreview: false }).minHeightPx).toBe(480);
-    expect(PALETTE_MIN_HEIGHT_PX).toBe(480);
+  it('holds one 320 minimum height with and without a preview pane', () => {
+    expect(paletteBodyLayoutOf({ hasPreview: true }).minHeightPx).toBe(320);
+    expect(paletteBodyLayoutOf({ hasPreview: false }).minHeightPx).toBe(320);
+    expect(PALETTE_MIN_HEIGHT_PX).toBe(320);
   });
 
   it('hides the pane, never the height, when there is nothing to preview', () => {
     expect(paletteBodyLayoutOf({ hasPreview: false })).toEqual({
-      minHeightPx: 480,
+      minHeightPx: 320,
       previewShown: false,
     });
     expect(paletteBodyLayoutOf({ hasPreview: true })).toEqual({
-      minHeightPx: 480,
+      minHeightPx: 320,
       previewShown: true,
     });
   });

@@ -183,15 +183,23 @@ afterEach(() => {
 });
 
 describe('StoragePage', () => {
-  it('leads with what can go and states every folder with a word', () => {
+  it('states every folder with a word', () => {
     render(<StoragePage />);
 
-    expect(screen.getByText('4.0 GB can go')).toBeDefined();
-    expect(screen.getByText('61 GB free on this disk')).toBeDefined();
     expect(screen.getByText('12 files not committed')).toBeDefined();
     expect(screen.getByText("Git doesn't track this folder")).toBeDefined();
     expect(screen.getByText(/2 commits only on this Mac/)).toBeDefined();
     expect(screen.getByText(/idle under 30 days/)).toBeDefined();
+  });
+
+  it('puts Remove and its sentence in the Worktrees header and the row menu in a hover cell', () => {
+    render(<StoragePage />);
+
+    const header = screen.getByRole('region', { name: 'Worktrees' });
+    expect(within(header).getByRole('button', { name: /Remove 1 safe folder ·/ })).toBeDefined();
+    expect(within(header).getByText(/Folders with changes are skipped/)).toBeDefined();
+    const cells = document.querySelectorAll('[data-slot="worktree-row-actions"]');
+    expect(cells.length).toBeGreaterThan(0);
   });
 
   it('bulk removes only clean idle folders and never offers the dirty or untracked ones', () => {
@@ -238,9 +246,7 @@ describe('StoragePage', () => {
 
   it('names the scope on the bulk buttons', () => {
     const { unmount } = render(<StoragePage />);
-    expect(
-      screen.getByRole('button', { name: /Remove 1 safe folder in all workspaces ·/ }),
-    ).toBeDefined();
+    expect(screen.getByRole('button', { name: /Remove 1 safe folder ·/ })).toBeDefined();
     expect(
       screen.getByRole('button', { name: /Delete 1 unused in all workspaces ·/ }),
     ).toBeDefined();
@@ -252,7 +258,7 @@ describe('StoragePage', () => {
       workspaces: [{ id: 'harborline', name: 'Harborline' }],
     });
     render(<StoragePage />);
-    fireEvent.click(screen.getByRole('button', { name: /Remove 1 safe folder in Harborline ·/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Remove 1 safe folder ·/ }));
     expect(screen.getByRole('group', { name: /Remove 1 folder in Harborline/ })).toBeDefined();
   });
 
@@ -401,43 +407,12 @@ describe('StoragePage', () => {
       render(<StoragePage />);
 
       expect(screen.queryByText('goodboy/northwind-cleanup')).toBeNull();
-      expect(screen.getByText('All workspaces:', { exact: false })).toBeDefined();
     });
 
     it('defaults to all workspaces without a current window workspace', () => {
       render(<StoragePage />);
 
-      expect(screen.queryByText('All workspaces:', { exact: false })).toBeNull();
-    });
-
-    it('switches scope from the All workspaces line back to all', () => {
-      Object.assign(state, {
-        currentWorkspaceId: 'harborline',
-        currentWorkspace: { id: 'harborline', name: 'Harborline' },
-      });
-      render(<StoragePage />);
-
-      fireEvent.click(screen.getByText('All workspaces:', { exact: false }));
-
-      expect(state.setStorageScope).toHaveBeenCalledWith({ kind: 'all' });
-    });
-
-    it('keeps the legend to Can go, Review first and Keep, and leaves app data out once a scope is active', () => {
-      Object.assign(state, {
-        currentWorkspaceId: 'harborline',
-        currentWorkspace: { id: 'harborline', name: 'Harborline' },
-      });
-      render(<StoragePage />);
-
-      const summary = screen.getByRole('region', { name: 'Storage summary' });
-      expect(
-        within(summary)
-          .getAllByRole('button')
-          .map((button) => button.textContent)
-          .filter((text) => /^(Can go|Review first|Keep)/.test(text ?? '')),
-      ).toHaveLength(3);
-      expect(within(summary).queryByText('App data')).toBeNull();
-      expect(screen.getByText(/of app data shared by every workspace/)).toBeDefined();
+      expect(screen.getByText('goodboy/northwind-cleanup')).toBeDefined();
     });
   });
 });

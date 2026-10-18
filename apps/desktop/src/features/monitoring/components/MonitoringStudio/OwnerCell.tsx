@@ -2,7 +2,7 @@ import { Tooltip, cn } from '@goodboy/ui';
 import type { PortRow } from '@goodboy/core';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { ownerPresentation } from '../../ownerPresentation';
+import { portOwnerPresentation } from '../../portOwnerPresentation';
 
 type Props = {
   readonly row: PortRow;
@@ -19,11 +19,7 @@ export const OwnerCell = ({ row }: Props) => {
   const projects = useAppStore((state) => state.projects);
   const sessionMounts = useAppStore((state) => state.sessionMounts);
   const navigate = useAppStore((state) => state.navigate);
-  const isEcho = row.owner?.kind === 'external' && row.owner.name === row.processName;
-  const presentation =
-    row.owner === null || isEcho
-      ? null
-      : ownerPresentation({ owner: row.owner, projects, sessionMounts });
+  const presentation = portOwnerPresentation({ row, projects, sessionMounts });
   const session = useAppStore((state) =>
     presentation?.sessionId === undefined || presentation.sessionId === null
       ? undefined

@@ -55,7 +55,7 @@ const seedWorkflow = (): void => {
 
 const openDiffHistory = async (): Promise<void> => {
   await openWorktreeMenu();
-  await click(await screen.findByRole('menuitem', { name: /^Rewrite history/ }));
+  await click(await screen.findByRole('menuitem', { name: /^Edit commits/ }));
 };
 
 export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
@@ -66,12 +66,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: branchTab('commits'),
   },
   {
-    name: 'the Commits tab draws the branch and the keys hint, with no plan at rest',
+    name: 'the Commits tab draws the branch and the header help, with no plan at rest',
     covers: ['openRewriteHistory'],
     open: openDiffHistory,
     lands: both(
       () => visible('list', 'Commits'),
-      () => visible('button', 'Keys'),
+      () => visible('button', 'Commits help'),
     ),
   },
   {
@@ -114,9 +114,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'Show session rail'),
   },
   {
-    name: 'palette: Board',
-    covers: ['navigate', 'palette:Board'],
-    open: () => openPalette(/^Board$/),
+    name: 'palette: Sessions',
+    covers: ['navigate', 'palette:Sessions'],
+    open: () => openPalette(/^Sessions$/),
     lands: () => heading('Sessions'),
   },
   {
@@ -135,9 +135,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: New terminal in this session',
-    covers: ['palette:New terminal'],
+    covers: ['palette:New terminal in this session'],
     door: 'palette',
-    open: () => openPalette(/^New terminal in this session$/, 'new terminal'),
+    open: () => openPalette(/^New terminal in this session$/),
     lands: async () => {
       await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
@@ -348,7 +348,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Workspace settings',
     covers: ['openStudio', 'studio:settings', 'scope:workspace', 'palette:Workspace settings'],
     door: 'palette',
-    open: () => openPalette(/^Workspace settings: Projects/, 'workspace settings projects'),
+    open: () => openPalette(/^Workspace settings: Folders/, 'workspace settings folders'),
     lands: both(
       () => settingsColumn(),
       () => visible('textbox', 'Workspace name'),
@@ -362,6 +362,16 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: both(
       () => settingsColumn(),
       () => visible('navigation', 'Settings scopes'),
+    ),
+  },
+  {
+    name: 'palette: Check for updates',
+    covers: ['openStudio', 'studio:settings', 'settings:updates', 'palette:Check for updates'],
+    door: 'palette',
+    open: () => openPalette(/^Check for updates/),
+    lands: both(
+      () => settingsColumn(),
+      () => heading('Updates'),
     ),
   },
   {
@@ -451,11 +461,14 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Pair your iPhone',
-    covers: ['openStudio', 'studio:companion', 'palette:Pair your iPhone'],
+    name: 'palette: Pair an iPhone',
+    covers: ['openStudio', 'studio:settings', 'settings:iphone', 'palette:Pair an iPhone'],
     door: 'palette',
-    open: () => openPalette(/^Pair your iPhone/),
-    lands: () => studio('Pair device'),
+    open: () => openPalette(/^Pair an iPhone/, 'iPhone'),
+    lands: both(
+      () => settingsColumn(),
+      () => heading('iPhone'),
+    ),
   },
   {
     name: 'palette: Report a bug',
@@ -467,7 +480,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette: Keyboard shortcuts',
     covers: ['openStudio', 'settings:shortcuts', 'palette:Keyboard shortcuts'],
     open: () => openPalette(/^Keyboard shortcuts/),
-    lands: () => heading('Shortcuts'),
+    lands: () => heading('Keyboard shortcuts'),
   },
   {
     name: 'palette: Guide',

@@ -213,8 +213,8 @@ The top bar's 6px left padding puts the workspace tile on the collapsed rail's
 22px axis. The identity row adds `--titlebar-inset`, which defaults to 0px in
 `styles.css`; on macOS `useTitlebarInset` raises it to 72px so the traffic
 lights, drawn inside the bar by the overlay title bar, never sit on a control,
-and drops it back to 0px in full screen. A window without a top bar (the
-workspace launcher) keeps a 36px drag strip at its top edge instead.
+and drops it back to 0px in full screen. A window without a top bar (Home)
+keeps a 36px drag strip at its top edge instead.
 
 The overlay slots are children of the grid, not siblings above it. An overlay
 that must float without taking up layout space spans its row and is
@@ -287,8 +287,8 @@ A page with no entry fails typecheck. Four frame types:
 | split  | Chat, Guide, What's new, Tasks, Notifications, Branch                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
 
 `frameGeometryOf({ page })` returns the type, the space above the title (the 12px
-header inset, or the 40px band on Impact, What's new and a release), the title row
-(32px), the title centre (28px, 56px under a band), the drawer row (28px) and
+header inset; no page sits under a 40px band now that every Close is on the title row), the title row
+(32px), the title centre (28px), the drawer row (28px) and
 `titleLeft` read from the type.
 `STUDIO_META[kind].page` names the page of a studio and `frameTierOf` gives the tier its band
 draws at; a test fails when the two disagree.
@@ -353,7 +353,7 @@ never moves the column, with or without a drawer. The pure geometry is
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
 Overview to Review to a chat. `shared/layout/columnContract.test.ts` fails under `features/` on any
-`max-w-[Nch]`, any `max-w-[Npx]` (the palette and the onboarding wizard are the
+`max-w-[Nch]`, any `max-w-[Npx]` (the palette, the onboarding wizard and Home, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
 and the test asserts it centres `column` and `measure` and not `full`), `PANE_RHYTHM.measure`,
@@ -553,6 +553,20 @@ draws it. Every control in the top bar, every switch and every checkbox composes
 `FOCUS_RING`, and the `controls` journey tabs through the bar and a Settings row
 and checks the ring by the constant, not by a class written in a test. A
 selected card is a fill plus a check, never a ring, a border and a wash together.
+
+## Row actions rest quiet
+
+A row that carries verbs keeps them in one fixed cell and draws them with
+`row-actions` (`styles.css`), on a row that is a `group/row`. The cell is empty
+at rest and fills on hover, on focus inside the row, while a menu or confirm
+opened from it is open (`aria-expanded`), and while the row's right click menu
+is open (`data-menu-open`). The verbs stay in the tab order, so the keyboard
+reaches them without a hover. Every verb is also in the row's registry menu on
+right click and Shift+F10. Write the reveal as `row-actions`, never as
+`opacity-0` with `group-hover:opacity-100`: `no-hover-only-actions.test.ts`
+counts the second form. A status the user must see (Stopping, Force stop) is
+not a verb and sits outside the reveal. `MonitoringStudio/ActionsCell.tsx` is
+the reference.
 
 ## An expanded row is one group, not two
 

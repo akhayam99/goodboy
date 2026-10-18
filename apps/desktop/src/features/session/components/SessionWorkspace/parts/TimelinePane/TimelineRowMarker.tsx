@@ -1,22 +1,27 @@
-import { BookOpen, GitBranch, MessageSquareCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { WORK_NODE_GLYPH_SIZE, WorkNode, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
-import {
-  ARTIFACT_KIND_CONCEPT,
-  ARTIFACT_KIND_MARKER_LABEL,
-} from '../../../../../artifacts/artifactPresentation';
+import { ARTIFACT_KIND_MARKER_LABEL } from '../../../../../artifacts/artifactPresentation';
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
+import { activityRowConcept, type ActivityRowKind } from '../../../../timeline/activityRowConcept';
 
 type Props = {
   readonly item: TimelineRowItem;
   readonly progress?: number | null;
 };
+
+type KindParams = {
+  readonly kind: ActivityRowKind;
+};
+
+const iconOf = ({ kind }: KindParams): LucideIcon => CONCEPT_ICONS[activityRowConcept({ kind })];
+
+const toneOf = ({ kind }: KindParams): Tone => CONCEPT_TONE[activityRowConcept({ kind })];
 
 type ConceptParams = {
   readonly icon: LucideIcon;
@@ -97,25 +102,24 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
   }
   if (entry.kind === 'learning') {
     return conceptNode({
-      icon: BookOpen,
-      tone: 'neutral',
+      icon: iconOf({ kind: 'learning' }),
+      tone: toneOf({ kind: 'learning' }),
       label: 'Explained',
       isEmphasized: false,
     });
   }
   if (entry.kind === 'plan') {
     return conceptNode({
-      icon: CONCEPT_ICONS.plans,
-      tone: CONCEPT_TONE.plans,
+      icon: iconOf({ kind: 'plan' }),
+      tone: toneOf({ kind: 'plan' }),
       label: 'Plan',
       isEmphasized: true,
     });
   }
   if (entry.kind === 'artifact') {
-    const concept = ARTIFACT_KIND_CONCEPT[entry.artifact.kind];
     return conceptNode({
-      icon: CONCEPT_ICONS[concept],
-      tone: CONCEPT_TONE[concept],
+      icon: iconOf({ kind: entry.artifact.kind }),
+      tone: toneOf({ kind: entry.artifact.kind }),
       label: ARTIFACT_KIND_MARKER_LABEL[entry.artifact.kind],
       isEmphasized: true,
     });
@@ -124,18 +128,23 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
     const isOpen = entry.questions.every((question) => question.status === 'open');
     if (isOpen) {
       return conceptNode({
-        icon: CONCEPT_ICONS.questions,
+        icon: iconOf({ kind: 'question' }),
         tone: rowStateTone({ state: item.rowState }),
         label: 'Question',
         isEmphasized: false,
       });
     }
     return conceptNode({
-      icon: MessageSquareCheck,
-      tone: 'neutral',
+      icon: iconOf({ kind: 'question-answered' }),
+      tone: toneOf({ kind: 'question-answered' }),
       label: questionResolvedLabel({ questions: entry.questions }),
       isEmphasized: false,
     });
   }
-  return conceptNode({ icon: GitBranch, tone: 'neutral', label: 'Branch', isEmphasized: false });
+  return conceptNode({
+    icon: iconOf({ kind: 'branch' }),
+    tone: 'neutral',
+    label: 'Branch',
+    isEmphasized: false,
+  });
 };

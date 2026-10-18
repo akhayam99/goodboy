@@ -44,11 +44,11 @@ describe('SpendSection', () => {
     render(<SpendSection {...baseProps} />);
 
     expect(screen.getByText('Spend')).toBeDefined();
-    expect(screen.queryByText('by provider')).toBeNull();
-    expect(screen.queryByText('alerts')).toBeNull();
+    expect(screen.queryByText('By provider')).toBeNull();
+    expect(screen.queryByText('Alerts')).toBeNull();
   });
 
-  it('names the cap and the share of it each provider has used', () => {
+  it('names the limit and the share of it each provider has used', () => {
     render(
       <SpendSection
         {...baseProps}
@@ -63,8 +63,8 @@ describe('SpendSection', () => {
       />,
     );
 
-    expect(screen.getByText('$10.00 cap · 30% used this month')).toBeDefined();
-    expect(screen.getByText('no cap')).toBeDefined();
+    expect(screen.getByText('$10.00 limit · 30% used this month')).toBeDefined();
+    expect(screen.getByText('No limit')).toBeDefined();
   });
 
   it('hands a provider row back as the scope to open', () => {
@@ -83,7 +83,7 @@ describe('SpendSection', () => {
 
   it('shows a live alert and stays silent once every alert is dismissed', () => {
     const { rerender } = render(<SpendSection {...baseProps} alerts={[alert({})]} />);
-    expect(screen.getByText(/nearing its cap/i)).toBeDefined();
+    expect(screen.getByText(/close to its limit/i)).toBeDefined();
 
     rerender(
       <SpendSection
@@ -91,7 +91,7 @@ describe('SpendSection', () => {
         alerts={[alert({ dismissedAt: '2026-06-02T00:00:00.000Z' as IsoDateTime })]}
       />,
     );
-    expect(screen.queryByText(/nearing its cap/i)).toBeNull();
+    expect(screen.queryByText(/close to its limit/i)).toBeNull();
   });
 
   it('surfaces a failed load with a retry', () => {

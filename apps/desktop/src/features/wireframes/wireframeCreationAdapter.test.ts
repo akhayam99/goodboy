@@ -98,7 +98,7 @@ describe('wireframeCreationAdapter', () => {
       }),
     ).toBe('Plain wireframe, no design files read.');
     expect(wireframeCreationAdapter.repoLine({ choice: 'high', repo: null })).toBe(
-      'No project in this session, so the generic theme is used.',
+      'No folder in this session, so the generic theme is used.',
     );
   });
 });

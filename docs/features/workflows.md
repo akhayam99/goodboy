@@ -75,7 +75,7 @@ Choose how often a run stops for you: **Ask me**, **Balanced** to approve once a
 
 ### Run defaults
 
-Set what every new run starts with in the **Run defaults** tab: how it asks, the limit and shared **Guidance** for the agents that write code. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers & models**.
+Set what every new run starts with in the **Run defaults** tab: how it asks, the limit and shared **Guidance** for the agents that write code. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers and models**.
 
 ### Limit
 

@@ -79,7 +79,7 @@ export const runScript = (set: SetFn, get: GetFn) => {
         script === undefined
           ? 0
           : selectProjectMounts({ state, sessionId, projectId: script.projectId }).length;
-      const projectLabel = project?.name ?? 'Script project';
+      const projectLabel = project?.name ?? 'Script folder';
       const unmountedMessage =
         candidateCount > 1
           ? `${projectLabel} has several mounts in this session. Pick the mount to run in.`

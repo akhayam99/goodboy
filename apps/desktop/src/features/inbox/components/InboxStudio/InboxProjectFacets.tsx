@@ -20,7 +20,7 @@ export const InboxProjectFacets = ({ projects, filters, counts, note, onFiltersC
   const shown = isShowingEmpty ? projects : projects.filter(isVisible);
 
   return (
-    <FacetSection label="Project">
+    <FacetSection label="Folder">
       {shown.map((project) => (
         <FacetRow
           key={project.id}

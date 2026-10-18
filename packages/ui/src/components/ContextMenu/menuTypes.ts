@@ -33,6 +33,7 @@ export type MenuItemEntry = {
   readonly icon?: ComponentType<IconProps>;
   readonly iconClassName?: string | null;
   readonly hint?: string | null;
+  readonly isExternal?: boolean;
   readonly description?: string | null;
   readonly blockedReason?: string | null;
   readonly isDestructive?: boolean;

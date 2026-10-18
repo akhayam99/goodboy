@@ -5,6 +5,7 @@ export const ROW_ACTION_LABEL = {
   open: 'Open',
   start: 'Start',
   startFix: 'Start fix',
+  push: 'Push',
   resume: 'Resume',
   continue: 'Continue',
   retry: 'Retry',

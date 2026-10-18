@@ -20,6 +20,13 @@ describe('shortcutRows', () => {
         last: 'workspace.9',
         where: null,
       },
+      {
+        key: 'home.newWorkspace',
+        label: 'New workspace',
+        first: 'home.newWorkspace',
+        last: 'home.newWorkspace',
+        where: 'On Home, where no workspace is open',
+      },
     ]);
   });
 

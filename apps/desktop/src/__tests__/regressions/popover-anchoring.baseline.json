@@ -11,9 +11,6 @@
   "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": {
     "top bar right cluster: the end edge stays on the trigger": 1
   },
-  "apps/desktop/src/app/components/SessionRail/SessionLevel/LevelAddMenu.tsx": {
-    "+ at the end of a rail card header row: the end edge stays on the trigger": 1
-  },
   "apps/desktop/src/features/actions/components/ObjectOverflowMenu/ObjectOverflowTrigger.tsx": {
     "a more menu sits at the end of its row: align right maps to end": 1,
     "a more menu defaults to the end edge of its trigger": 1
@@ -55,9 +52,6 @@
   "apps/desktop/src/features/permissions/components/PermissionRequestCard/index.tsx": {
     "more actions at the end of the permission card actions": 1
   },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx": {
-    "trailing action of an account row": 1
-  },
   "apps/desktop/src/features/review/components/ReviewPane/WriteReview/ReviewPanelButton.tsx": {
     "submit review at the end of the review pane header": 1
   },
@@ -82,20 +76,11 @@
   "apps/desktop/src/features/terminal/components/TerminalStudio/NewTerminalMenu.tsx": {
     "the terminal picker opens to the right of the split chevron": 1
   },
-  "apps/desktop/src/features/updater/components/UpdateConfirm/index.tsx": {
-    "a confirm keeps its end edge on its trigger, like ConfirmPopover": 1
-  },
-  "apps/desktop/src/features/updater/components/UpdatePill/QueuedRestartPopover.tsx": {
-    "top bar right cluster: the end edge stays on the trigger": 1
-  },
   "apps/desktop/src/features/workflows/components/WorkflowStudio/ImportPopover/index.tsx": {
     "header action at the end of the Workflows header": 1
   },
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionFilterPopover/index.tsx": {
     "filter at the end of the Sessions door row: the end edge stays on the trigger": 1
-  },
-  "apps/desktop/src/shared/components/ProjectLinkList/ProjectAddPopover.tsx": {
-    "+ Add at the end of a label row": 1
   },
   "packages/ui/src/components/ConfirmPopover.tsx": {
     "a confirm keeps its end edge on its trigger": 1

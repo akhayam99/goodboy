@@ -32,7 +32,7 @@ type JobColumn = Readonly<Record<AutoSlotId, ReadonlyArray<AutoJob>>>;
 type Column = Readonly<Record<AutoSlotId, ReadonlyArray<AutoChoice>>>;
 
 const HAIKU: AutoJob = { group: 'Haiku' };
-const HAIKU_LOW: AutoJob = { group: 'Haiku', effort: 'low' };
+const HAIKU_MEDIUM: AutoJob = { group: 'Haiku', effort: 'medium' };
 const SONNET_LOW: AutoJob = { group: 'Sonnet', effort: 'low' };
 const SONNET_MEDIUM: AutoJob = { group: 'Sonnet', effort: 'medium' };
 const SONNET_HIGH: AutoJob = { group: 'Sonnet', effort: 'high' };
@@ -40,7 +40,7 @@ const SONNET: AutoJob = { group: 'Sonnet' };
 const OPUS_HIGH: AutoJob = { group: 'Opus', effort: 'high' };
 
 const ANTHROPIC: JobColumn = {
-  scout: [HAIKU_LOW],
+  scout: [HAIKU_MEDIUM],
   investigator: [SONNET_HIGH],
   planner: [OPUS_HIGH],
   implementer: [SONNET_MEDIUM],

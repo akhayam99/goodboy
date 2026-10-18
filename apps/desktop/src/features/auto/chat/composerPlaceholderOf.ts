@@ -9,7 +9,7 @@ type Params = {
 
 export const composerPlaceholderOf = ({ view }: Params): string | undefined => {
   if (projectAskOf({ view }) !== null) {
-    return 'Pick a project, or write to Auto';
+    return 'Pick a folder, or write to Auto';
   }
   if (waitingTextOf({ view }) !== null) {
     return 'Message Auto';

@@ -1,101 +1,191 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { formatCombo } from '../../../../shared/keyboard/registry';
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+vi.mock('../../../../shared/lib/db', async () =>
+  (await import('../../../../store/storyHarness')).dbLibModuleMock(),
+);
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  brandId,
+  type IntegrationBindingId,
+  type IntegrationCredentialId,
+  type Project,
+  type ProjectId,
+  type WorkspaceId,
+} from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  STORY_NOW,
+  buildStoryProject,
+  importStore,
+  resetStoryStore,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 import { FirstSessionStep } from './FirstSessionStep';
 
-afterEach(cleanup);
+let useAppStore: StoryStore;
 
-const renderStep = ({ hasIssueSource = false } = {}) => {
+const ACME = brandId<WorkspaceId>({ value: 'workspace-acme' });
+
+const ACME_WEB: Project = buildStoryProject({
+  workspaceId: ACME,
+  id: brandId<ProjectId>({ value: 'project-acme-web' }),
+  name: 'acme-web',
+  rootPath: '/mock/Code/acme-web',
+  kind: 'repo',
+  baseBranch: 'main',
+});
+
+const LINEAR_ISSUES = [
+  {
+    id: 'mock-linear-acm-112',
+    identifier: 'ACM-112',
+    title: 'Checkout submits twice on a slow network',
+    description: null,
+    url: 'https://example.invalid/linear/ACM-112',
+    state: { name: 'Todo', type: 'unstarted' },
+    team: { key: 'ACM' },
+    updatedAt: STORY_NOW,
+  },
+];
+
+type RenderParams = {
+  readonly onStart?: () => Promise<void>;
+};
+
+const renderStep = ({ onStart = async () => undefined }: RenderParams = {}) => {
   const handlers = {
-    onStartScout: vi.fn(),
-    onHandOff: vi.fn(),
-    onBackToCodeHost: vi.fn(),
-    onConnectTaskManager: vi.fn(),
+    onStart: vi.fn(onStart),
+    onDraft: vi.fn(),
+    onSkip: vi.fn(),
+    onOpenTools: vi.fn(),
   };
   render(
     <FirstSessionStep
-      projectName="ledger-core"
-      hasIssueSource={hasIssueSource}
-      busy={false}
+      workspaceId={ACME}
+      folder={ACME_WEB}
+      agent="anthropic"
+      mode="full"
+      isLocked={false}
+      onBack={() => undefined}
       {...handlers}
     />,
   );
   return handlers;
 };
 
+const prompt = () => {
+  const field = screen.getByRole('textbox', { name: 'What Scout should do' });
+  if (!(field instanceof HTMLTextAreaElement)) {
+    throw new Error('the prompt is not a text area');
+  }
+  return field;
+};
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  stubStoryInvoke({ linear_fetch_assigned_issues: LINEAR_ISSUES });
+});
+
+afterEach(cleanup);
+
 describe('FirstSessionStep', () => {
-  it('opens on Start an agent with the first starter written out for the project', () => {
+  it('opens on one input card that names the folder, the agent and the branch', () => {
     renderStep();
-    expect(screen.getByRole('tab', { name: /start an agent/i }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
-    const field = screen.getByRole('textbox', {
-      name: 'What Scout should do',
-    }) as HTMLTextAreaElement;
-    expect(field.value).toContain('Explain how ledger-core is organized');
+
+    expect(prompt().value).toContain('Explain how acme-web is organized');
+    expect(screen.getByRole('button', { name: 'Explain how acme-web is organized' })).toBeDefined();
+    expect(screen.getByText('Claude')).toBeDefined();
+    expect(screen.getByText('reads only')).toBeDefined();
+    expect(screen.getByText('acme-web · main')).toBeDefined();
   });
 
-  it('swaps the prompt when another starter is picked, and starts Scout with it', () => {
-    const { onStartScout } = renderStep();
+  it('fills the input card from a starter chip', () => {
+    renderStep();
+
     fireEvent.click(screen.getByRole('button', { name: 'Find one small bug' }));
-    fireEvent.click(screen.getByRole('button', { name: /start scout/i }));
-    expect(onStartScout).toHaveBeenCalledWith(
-      "Find one small bug in ledger-core and propose a fix. Don't change any files yet.",
-    );
+
+    expect(prompt().value).toContain('Find one small, real bug in acme-web');
   });
 
-  it.each([{ metaKey: true }, { ctrlKey: true }])('starts Scout on %o and Enter', (modifier) => {
-    const { onStartScout } = renderStep();
-    const field = screen.getByRole('textbox', { name: 'What Scout should do' });
-
-    fireEvent.keyDown(field, { key: 'Enter', ...modifier });
-
-    expect(onStartScout).toHaveBeenCalledOnce();
-  });
-
-  it('does not start Scout on a bare Enter', () => {
-    const { onStartScout } = renderStep();
-
-    fireEvent.keyDown(screen.getByRole('textbox', { name: 'What Scout should do' }), {
-      key: 'Enter',
+  it('starts with the prompt, and on failure keeps it and reads Retry', async () => {
+    const handlers = renderStep({
+      onStart: async () => {
+        throw new Error('the worktree could not be created');
+      },
     });
 
-    expect(onStartScout).not.toHaveBeenCalled();
-  });
+    fireEvent.click(screen.getByRole('button', { name: /^start/i }));
 
-  it('names the start chord the way this platform spells it', () => {
-    renderStep();
-
-    expect(screen.getByRole('button', { name: /start scout/i }).textContent).toContain(
-      formatCombo('cmd+Enter'),
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toContain('the worktree could not be created'),
     );
+    expect(handlers.onStart).toHaveBeenCalledWith({
+      workspaceId: ACME,
+      projectId: ACME_WEB.id,
+      prompt: expect.stringContaining('Explain how acme-web is organized'),
+    });
+    expect(screen.getByRole('button', { name: /^retry/i })).toBeDefined();
+    expect(prompt().value).toContain('Explain how acme-web is organized');
   });
 
-  it('says there is no issue source and leads back to Code host', () => {
-    const { onBackToCodeHost, onConnectTaskManager } = renderStep();
-    fireEvent.click(screen.getByRole('tab', { name: /pick up a task/i }));
-    expect(screen.getByText('Connect a code host to see your tasks')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Code host' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Connect a task manager' }));
-    expect(onBackToCodeHost).toHaveBeenCalledOnce();
-    expect(onConnectTaskManager).toHaveBeenCalledOnce();
+  it('skips with the one skip word in setup', () => {
+    const handlers = renderStep();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+
+    expect(handlers.onSkip).toHaveBeenCalledOnce();
   });
 
-  it('hands a task start to a new session when an issue source exists', () => {
-    const { onHandOff } = renderStep({ hasIssueSource: true });
-    fireEvent.click(screen.getByRole('tab', { name: /pick up a task/i }));
-    expect(screen.queryByText('Connect a code host to see your tasks')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open a new session' }));
-    expect(onHandOff).toHaveBeenCalledWith('task');
+  it('hides the issue tab until a task source is connected and points at Tools', () => {
+    const handlers = renderStep();
+
+    expect(screen.queryByRole('tab', { name: 'Pick up an issue' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open Tools' }));
+
+    expect(handlers.onOpenTools).toHaveBeenCalledOnce();
   });
 
-  it('moves between the three choices with the arrow keys', () => {
-    renderStep();
-    fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
-    expect(screen.getByRole('tab', { name: /pick up a task/i }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
+  it('drafts a brief from the picked issue once Linear is connected', async () => {
+    useAppStore.setState({
+      workspaceIntegrations: {
+        [ACME]: [
+          {
+            id: brandId<IntegrationBindingId>({ value: 'binding-linear' }),
+            workspaceId: ACME,
+            projectId: null,
+            credentialId: brandId<IntegrationCredentialId>({ value: 'credential-linear' }),
+            provider: 'linear',
+            config: { workspaceUrlKey: 'acme', viewerUserId: 'viewer-dana', viewerName: 'Dana K.' },
+            createdAt: STORY_NOW,
+            updatedAt: STORY_NOW,
+          },
+        ],
+      },
+    });
+    const handlers = renderStep();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Pick up an issue' }));
+    fireEvent.click(await screen.findByRole('button', { name: /ACM-112/ }));
+    fireEvent.click(screen.getByRole('button', { name: /draft the brief/i }));
+
+    expect(handlers.onDraft).toHaveBeenCalledWith({
+      workspaceId: ACME,
+      projectId: ACME_WEB.id,
+      issue: expect.objectContaining({ identifier: 'ACM-112' }),
+    });
   });
 });

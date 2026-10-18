@@ -29,7 +29,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
   const { item, positions } = row;
   const Icon = item.icon;
   const isBlocked = item.isBlocked === true;
-  const isDanger = item.action?.group === 'danger' && item.action.confirm !== null;
+  const isDanger = item.action?.group === 'danger' && item.action.confirm?.role === 'danger';
   const label =
     item.action?.confirm != null || item.confirm != null ? `${item.label}…` : item.label;
   const hasLevel = item.level !== undefined && item.level.kind !== 'confirm-run';
@@ -44,7 +44,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
       data-key={item.key}
       data-selected={isSelected || undefined}
       className={cn(
-        'flex h-10 cursor-pointer items-center gap-3 rounded-sm px-3 text-body',
+        'flex h-7 cursor-pointer items-center gap-2 rounded-sm px-2 text-body',
         isSelected ? 'bg-selected' : 'hover:bg-hover',
       )}
       onMouseMove={onHover}
@@ -56,7 +56,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
       <span
         aria-hidden
         className={cn(
-          'flex size-6 shrink-0 items-center justify-center rounded-sm',
+          'flex size-5 shrink-0 items-center justify-center rounded-sm',
           TILED.has(item.kind) && 'bg-fill',
         )}
       >
@@ -88,7 +88,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
         )}
       </span>
       {item.shortcut !== undefined ? (
-        <span className="shrink-0">
+        <span className="flex min-w-11 shrink-0 justify-end">
           <KeyHint keys={shortcutGlyphs(item.shortcut)} />
         </span>
       ) : item.tag !== undefined ? (

@@ -1,111 +1,56 @@
-import type { WizardStepId } from './wizardSteps';
+import type { WizardMode, WizardStepId } from './wizardSteps';
 
-export type WizardCtaAction = 'next' | 'commit-project' | 'finish';
-
-type WizardCta = {
-  readonly label: string;
-  readonly action: WizardCtaAction;
-  readonly disabled: boolean;
+export type WizardCta = {
+  readonly primary: string | null;
+  readonly skip: string | null;
+  readonly reason: string | null;
 };
 
-export type WizardActions = {
-  readonly primary: WizardCta | null;
-  readonly skip: WizardCta | null;
-  readonly hint: string | null;
-};
+export const RETRY_LABEL = 'Retry';
 
-export const PROVIDER_GATE_HINT =
-  'Connect one provider to continue. Install sets up a missing CLI, then signs you in.';
+export const AGENT_GATE_REASON = 'Get one agent ready to continue.';
 
 type Params = {
   readonly step: WizardStepId;
-  readonly providersConnected: number;
-  readonly hasWorkspace: boolean;
-  readonly workspaceName: string;
-  readonly projectCount: number;
-  readonly codeHostConnected: boolean;
-  readonly taskSourceConnected: boolean;
-  readonly isLastStep: boolean;
-  readonly busy: boolean;
+  readonly mode: WizardMode;
+  readonly readyCount: number;
+  readonly isIssuePick: boolean;
+  readonly hasFailed: boolean;
 };
 
-const cta = ({
-  label,
-  action,
-  disabled = false,
-}: {
-  readonly label: string;
-  readonly action: WizardCtaAction;
-  readonly disabled?: boolean;
-}): WizardCta => ({ label, action, disabled });
+const cta = ({ primary, skip = null, reason = null }: Partial<WizardCta>): WizardCta => ({
+  primary: primary ?? null,
+  skip,
+  reason,
+});
 
-const actions = ({
-  primary,
-  skip = null,
-  hint = null,
-}: {
-  readonly primary: WizardCta | null;
-  readonly skip?: WizardCta | null;
-  readonly hint?: string | null;
-}): WizardActions => ({ primary, skip, hint });
-
-const optionalStep = ({
-  isConnected,
-  isLastStep,
-  busy,
-}: {
-  readonly isConnected: boolean;
-  readonly isLastStep: boolean;
-  readonly busy: boolean;
-}): WizardActions => {
-  const action: WizardCtaAction = isLastStep ? 'finish' : 'next';
-  return actions({
-    primary: cta({
-      label: isLastStep ? 'Done' : 'Continue',
-      action,
-      disabled: busy || !isConnected,
-    }),
-    skip: isConnected ? null : cta({ label: 'Skip for now', action, disabled: busy }),
-  });
-};
-
-export const wizardActions = ({
+export const wizardCta = ({
   step,
-  providersConnected,
-  hasWorkspace,
-  workspaceName,
-  projectCount,
-  codeHostConnected,
-  taskSourceConnected,
-  isLastStep,
-  busy,
-}: Params): WizardActions => {
+  mode,
+  readyCount,
+  isIssuePick,
+  hasFailed,
+}: Params): WizardCta => {
   switch (step) {
     case 'welcome':
-      return actions({ primary: cta({ label: 'Get started', action: 'next' }) });
-    case 'providers':
-      return actions({
-        primary: cta({ label: 'Continue', action: 'next', disabled: providersConnected === 0 }),
-        hint: providersConnected === 0 ? PROVIDER_GATE_HINT : null,
+      return cta({ primary: 'Get started' });
+    case 'agents':
+      if (hasFailed) {
+        return cta({ primary: RETRY_LABEL });
+      }
+      return cta({
+        primary: 'Continue',
+        reason: readyCount === 0 ? AGENT_GATE_REASON : null,
       });
-    case 'project':
-      return actions({
-        primary: cta({
-          label: 'Continue',
-          action: 'commit-project',
-          disabled:
-            busy || !hasWorkspace || projectCount === 0 || workspaceName.trim().length === 0,
-        }),
-      });
-    case 'code-host':
-      return optionalStep({ isConnected: codeHostConnected, isLastStep, busy });
-    case 'tasks':
-      return optionalStep({ isConnected: taskSourceConnected, isLastStep, busy });
+    case 'workspace':
+      return cta({});
+    case 'tools':
+      return cta({ primary: mode === 'single' ? 'Done' : 'Continue' });
     case 'first-session':
-      return actions({
-        primary: null,
-        skip: cta({ label: 'Skip, open the board', action: 'finish', disabled: busy }),
-      });
+      if (hasFailed) {
+        return cta({ primary: RETRY_LABEL, skip: 'Skip' });
+      }
+      return cta({ primary: isIssuePick ? 'Draft the brief' : 'Start', skip: 'Skip' });
     default: {
       const exhaustive: never = step;
       return exhaustive;

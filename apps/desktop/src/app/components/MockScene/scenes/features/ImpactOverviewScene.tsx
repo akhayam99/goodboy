@@ -4,6 +4,7 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { SegmentedTabs } from '@goodboy/ui';
 import { ImpactTabs } from '../../../../../features/impact/components/ImpactStudio/ImpactTabs';
 import { OverviewPanel } from '../../../../../features/impact/components/ImpactStudio/OverviewPanel';
+import { impactMeta } from '../../../../../features/impact/impactMeta';
 import { IMPACT_WINDOW_OPTIONS } from '../../../../../features/impact/lib';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../../shared/components/StudioShell';
@@ -33,7 +34,7 @@ const GOALS = new Map<SessionId, string>([
 
 const goalOf = (sessionId: SessionId): string => GOALS.get(sessionId) ?? '';
 
-const OVERVIEW: ImpactOverview = {
+export const OVERVIEW: ImpactOverview = {
   sessionCount: 24,
   deletedSessionCount: 0,
   orchestratedSessions: 15,
@@ -62,7 +63,7 @@ const entryOf = (sessionId: SessionId, number: number, title: string, spendUsd: 
   isDeleted: false,
 });
 
-const PULL_REQUESTS: PullRequestOutcomes = {
+export const PULL_REQUESTS: PullRequestOutcomes = {
   open: 3,
   merged: 17,
   closed: 2,
@@ -77,7 +78,7 @@ const PULL_REQUESTS: PullRequestOutcomes = {
   ],
 };
 
-const REVIEWS: ReviewOutcomes = {
+export const REVIEWS: ReviewOutcomes = {
   commentsResolved: 46,
   previousCommentsResolved: 38,
   sentToAgent: 0,
@@ -115,7 +116,11 @@ export const FeaturesImpactOverviewScene = () => {
 
   const frame: PaneFrame = {
     title: 'Impact',
-    meta: 'What Goodboy got done, and what it cost.',
+    meta: impactMeta({
+      rangeLabel: '30 days',
+      sessionCount: OVERVIEW.sessionCount,
+      spentUsd: OVERVIEW.spendUsd ?? 0,
+    }),
     actions: (
       <SegmentedTabs
         ariaLabel="Impact window"

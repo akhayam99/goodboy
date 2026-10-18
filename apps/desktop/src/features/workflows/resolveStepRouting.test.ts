@@ -199,7 +199,7 @@ describe('resolveStepRouting', () => {
 
     expect(routing.provider).toBe('codex');
     expect(routing.model).toBe(getCheapModel('codex'));
-    expect(routing.effort).toBe('low');
+    expect(routing.effort).toBe('medium');
   });
 
   it('lets the step pin beat the session default', () => {

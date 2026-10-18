@@ -6,7 +6,6 @@
     "apps/desktop/src/features/diff/components/DiffView/CommentComposer.tsx": 1,
     "apps/desktop/src/features/history/components/CommitsHistory/RewordEditor.tsx": 1,
     "apps/desktop/src/features/inbox/components/InboxStudio/InboxListHeader.tsx": 1,
-    "apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx": 1,
     "apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx": 1,
     "apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx": 1,
     "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 1,

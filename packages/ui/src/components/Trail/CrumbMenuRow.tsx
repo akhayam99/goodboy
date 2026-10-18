@@ -13,15 +13,6 @@ type Props = {
   readonly onActivate: (row: CrumbMenuRowModel) => void;
 };
 
-const middleTruncate = (text: string): string => {
-  const limit = 28;
-  if (text.length <= limit) {
-    return text;
-  }
-  const keep = Math.floor((limit - 1) / 2);
-  return `${text.slice(0, keep)}…${text.slice(text.length - keep)}`;
-};
-
 export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActivate }: Props) => {
   const StateGlyph = row.state?.glyph ?? null;
   return (
@@ -48,10 +39,10 @@ export const CrumbMenuRow = ({ row, metaWidthClass, showMeta, showState, onActiv
           className={cn(
             'shrink truncate text-label',
             row.isDisabled ? 'text-disabled-foreground' : 'text-foreground',
-            row.isMiddleTruncated === true && 'font-mono text-meta',
+            row.isCode === true && 'font-mono text-meta',
           )}
         >
-          {row.isMiddleTruncated === true ? middleTruncate(row.label) : row.label}
+          {row.label}
         </span>
         {row.secondary != null ? (
           <span className="min-w-0 shrink-[2] truncate text-meta text-faint-foreground">

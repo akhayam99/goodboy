@@ -50,7 +50,7 @@ describe('search index settings', () => {
 
   it('leaves a project out and brings one back', async () => {
     render(<SearchIndexBand />);
-    await userEvent.click(screen.getByRole('combobox', { name: 'Projects search leaves out' }));
+    await userEvent.click(screen.getByRole('combobox', { name: 'Folders search leaves out' }));
     await userEvent.click(screen.getByRole('option', { name: /ledger-core/ }));
     expect(setProjectSearchExcluded).toHaveBeenCalledWith({
       projectId: 'p-ledger',

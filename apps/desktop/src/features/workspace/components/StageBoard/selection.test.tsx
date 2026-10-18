@@ -25,7 +25,7 @@ vi.mock('../../hooks/useSessionSummary', async (importOriginal) => {
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
+import { aProject, aSession, aWorkspace, anAgent } from '@goodboy/types/testing';
 import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -35,6 +35,7 @@ import {
 } from '../../../../store/storyHarness';
 import { bindTarget } from '../../../actions/registry';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import type { AppStore } from '../../../../store/store';
 import { borderOf, spacingOf } from '../../../../test/boxGeometry';
 import { inFlowBefore, isLaidOver } from '../../../../test/flowLayout';
 import { StageBoard } from './index';
@@ -76,6 +77,20 @@ const mountBoard = (sessions: ReadonlyArray<Session>) => {
       <StageBoard workspaceId={workspace.id} sessions={sessions} />
     </ToastProvider>,
   );
+};
+
+const markArchived = (ids: ReadonlyArray<SessionId>): void => {
+  useAppStore.setState((state) => ({
+    sessions: state.sessions.filter((session) => !ids.includes(session.id)),
+    archivedSessions: {
+      [workspace.id]: [
+        ...(state.archivedSessions[workspace.id] ?? []),
+        ...state.sessions
+          .filter((session) => ids.includes(session.id))
+          .map((session) => ({ ...session, archivedAt: session.updatedAt })),
+      ],
+    },
+  }));
 };
 
 const checkboxOf = (goal: string): HTMLElement =>
@@ -256,21 +271,147 @@ describe('StageBoard selection bar', () => {
     expect(bar).toEqual(menu);
   });
 
-  it('archives at once, with no confirmation, and clears the selection', async () => {
-    const bulkArchiveTask = vi.fn(async (ids: ReadonlyArray<SessionId>) => ({
+  it('asks once above the bar before archiving, naming the count and the running agents', () => {
+    const sessions = sessionsOf(GOALS);
+    const [first, second] = sessions;
+    if (first === undefined || second === undefined) {
+      throw new Error('sessions missing');
+    }
+    mountBoard(sessions);
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [first.id]: [anAgent({ sessionId: first.id, status: 'running' })],
+        [second.id]: [anAgent({ sessionId: second.id, status: 'running' })],
+      },
+    });
+    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    fireEvent.click(checkboxOf(GOALS[1] ?? ''));
+    fireEvent.click(checkboxOf(GOALS[2] ?? ''));
+
+    fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 3 sessions' }));
+
+    const confirm = screen.getByRole('group', { name: 'Archive 3 sessions?' });
+    expect(screen.getAllByRole('group', { name: /^Archive/ })).toHaveLength(1);
+    expect(confirm.textContent).toContain(
+      '2 agents are still running in these sessions and keep running after you archive them.',
+    );
+    expect(confirm.textContent).toContain('Restore brings them back');
+    expect(within(confirm).getByRole('button', { name: 'Archive 3 sessions' })).toBeDefined();
+    expect(document.activeElement).toBe(within(confirm).getByRole('button', { name: 'Cancel' }));
+  });
+
+  it('archives nothing on Cancel and keeps the selection', async () => {
+    const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>();
+    mountBoard(sessionsOf(GOALS));
+    useAppStore.setState({ bulkArchiveTask });
+    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    fireEvent.click(checkboxOf(GOALS[1] ?? ''));
+    fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
+
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Archive 2 sessions?' })).getByRole('button', {
+        name: 'Cancel',
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('group', { name: 'Archive 2 sessions?' })).toBeNull(),
+    );
+    expect(bulkArchiveTask).not.toHaveBeenCalled();
+    expect(within(toolbar()).getByText('2 selected')).toBeDefined();
+  });
+
+  it('archives every selected session once confirmed, and Undo restores them all', async () => {
+    const sessions = sessionsOf(GOALS);
+    const picked = [sessions[0]?.id, sessions[2]?.id];
+    const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>(async (ids) => ({
+      succeeded: [...ids],
+      failed: [],
+    }));
+    const bulkUnarchiveTask = vi.fn<AppStore['bulkUnarchiveTask']>(async (ids) => ({
+      succeeded: [...ids],
+      failed: [],
+    }));
+    mountBoard(sessions);
+    useAppStore.setState({ bulkArchiveTask, bulkUnarchiveTask });
+    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    fireEvent.click(checkboxOf(GOALS[2] ?? ''));
+    fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
+
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Archive 2 sessions?' })).getByRole('button', {
+        name: 'Archive 2 sessions',
+      }),
+    );
+
+    await waitFor(() => expect(bulkArchiveTask).toHaveBeenCalledWith(picked));
+    expect(bulkArchiveTask).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
+    await act(async () => {
+      fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    });
+    expect(bulkUnarchiveTask).toHaveBeenCalledWith(picked);
+  });
+
+  it('archives what it can, names the session that failed, keeps the selection and retries only it', async () => {
+    const sessions = sessionsOf(GOALS);
+    const failed = sessions[1];
+    if (failed === undefined) {
+      throw new Error('sessions missing');
+    }
+    const bulkArchiveTask = vi
+      .fn<AppStore['bulkArchiveTask']>()
+      .mockImplementationOnce(async (ids) => {
+        const succeeded = ids.filter((id) => id !== failed.id);
+        markArchived(succeeded);
+        return { succeeded, failed: [failed.id] };
+      })
+      .mockImplementationOnce(async (ids) => ({ succeeded: [...ids], failed: [] }));
+    mountBoard(sessions);
+    useAppStore.setState({ bulkArchiveTask });
+    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    fireEvent.click(checkboxOf(GOALS[1] ?? ''));
+    fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
+
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Archive 2 sessions?' })).getByRole('button', {
+        name: 'Archive 2 sessions',
+      }),
+    );
+
+    const note = await screen.findByRole('alert');
+    expect(note.textContent).toContain(
+      `Couldn't archive ${GOALS[1] ?? ''}. The other one is archived.`,
+    );
+    expect(within(toolbar()).getByText('2 selected')).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Undo' })).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(within(note).getByRole('button', { name: 'Retry' }));
+    });
+    await waitFor(() => expect(bulkArchiveTask).toHaveBeenCalledTimes(2));
+    expect(bulkArchiveTask).toHaveBeenLastCalledWith([failed.id]);
+  });
+
+  it('archives at once from Archive instead in the delete confirm, with no second ask', async () => {
+    const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>(async (ids) => ({
       succeeded: [...ids],
       failed: [],
     }));
     const sessions = sessionsOf(GOALS);
     mountBoard(sessions);
     useAppStore.setState({ bulkArchiveTask });
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    fireEvent.click(checkboxOf(GOALS[3] ?? ''));
+    fireEvent.click(within(toolbar()).getByRole('button', { name: 'Delete 1 session' }));
 
-    fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 1 session' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Delete 1 session?' })).getByRole('button', {
+        name: 'Archive instead',
+      }),
+    );
 
-    await waitFor(() => expect(bulkArchiveTask).toHaveBeenCalledWith([sessions[0]?.id]));
-    await waitFor(() => expect(screen.queryByRole('toolbar')).toBeNull());
-    expect(screen.queryByRole('group', { name: /Archive/ })).toBeNull();
+    await waitFor(() => expect(bulkArchiveTask).toHaveBeenCalledWith([sessions[3]?.id]));
+    expect(screen.queryByRole('group', { name: 'Archive session?' })).toBeNull();
   });
 
   it('asks above the bar before deleting, says what goes and what stays, and puts focus on Cancel', () => {

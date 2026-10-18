@@ -214,7 +214,7 @@ describe('MountBranchDecision', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText('ak/part-two is already checked out in another worktree of this project.'),
+        screen.getByText('ak/part-two is already checked out in another worktree of this folder.'),
       ).toBeDefined(),
     );
     expect(screen.queryByRole('button', { name: 'Use this branch here' })).toBeNull();

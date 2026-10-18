@@ -10,7 +10,6 @@ const CHANGE_TREE = 'apps/desktop/src/features/diff/components/ChangeTree';
 
 const SHARED_STYLE_ROWS: ReadonlyArray<string> = [
   'apps/desktop/src/app/components/AppTopBar/NowChip/NeedsYouSessionRow.tsx',
-  'apps/desktop/src/app/components/GoodboyChip/MenuRow.tsx',
   'apps/desktop/src/features/onboarding/SetupChecklist/StepRow.tsx',
   'apps/desktop/src/features/resolve/components/FixCommentsDrawer/FixCommentRow.tsx',
   'apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowList/WorkflowListRow.tsx',

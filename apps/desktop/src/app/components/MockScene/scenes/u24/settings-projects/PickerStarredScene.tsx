@@ -50,7 +50,13 @@ export const PickerStarredScene = () => {
     <ToastProvider>
       <div className="flex justify-center pt-12">
         <div className="w-80 rounded-lg border border-border-soft bg-floating p-1 shadow-lg">
-          <MountProjectList sessionId={SESSION_ID} projects={PROJECTS} onDone={noop} />
+          <MountProjectList
+            sessionId={SESSION_ID}
+            workspaceId={SETTINGS_WORKSPACE.id}
+            emptyHint=""
+            projects={PROJECTS}
+            onDone={noop}
+          />
         </div>
       </div>
     </ToastProvider>

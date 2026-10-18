@@ -1,5 +1,4 @@
 import { invoke } from '@tauri-apps/api/core';
-import userEvent from '@testing-library/user-event';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
@@ -11,14 +10,10 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { ToolSettingsScope } from '.';
+import type { IntegrationGlyphProvider } from '../IntegrationGlyph';
 import type { ScopeFrameParts } from '../../../settings/components/SettingsStudio/types';
 
-const plainFrame = ({ nested, detail }: ScopeFrameParts) => (
-  <>
-    {nested}
-    {detail}
-  </>
-);
+const plainFrame = ({ detail }: ScopeFrameParts) => <>{detail}</>;
 import { TrackerStudioLinks } from '../TrackerStudioLinks';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -81,6 +76,10 @@ const BINDINGS = [
     },
   },
 ] satisfies ReadonlyArray<IntegrationBinding>;
+
+const openHeaderMenu = ({ title }: { readonly title: string }) => {
+  fireEvent.click(screen.getByRole('button', { name: `More ${title} actions` }));
+};
 
 const github = vi.hoisted(() => ({ mode: 'absent', scoped: false, user: null as string | null }));
 
@@ -146,17 +145,27 @@ vi.mock('../../../../store', () => ({
     <T,>(selector: (state: ReturnType<typeof store.getState>) => T) => store(selector),
     {
       getState: () => store.getState(),
+      subscribe: (listener: () => void) => store.subscribe(listener),
     },
   ),
 }));
 
+const keychain = vi.hoisted(() => ({ hasSecret: true }));
+
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async (command: string) =>
-    command === 'gh_status' ? { ...github, available: true } : true,
-  ),
+  invoke: vi.fn(async (command: string) => {
+    if (command === 'gh_status') {
+      return { ...github, available: true };
+    }
+    if (command === 'integration_credential_has_secret') {
+      return keychain.hasSecret;
+    }
+    return true;
+  }),
 }));
 
 beforeEach(() => {
+  keychain.hasSecret = true;
   github.mode = 'absent';
   github.scoped = false;
   github.user = null;
@@ -172,18 +181,6 @@ afterEach(() => {
 });
 
 describe('ToolSettingsScope', () => {
-  it('renders every tool in footer order', async () => {
-    await act(async () => {
-      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
-    });
-    const rail = screen.getByRole('list', { name: 'Integrations settings' });
-    expect(
-      within(rail)
-        .getAllByRole('button')
-        .map((row) => row.textContent),
-    ).toEqual(['GitHub', 'GitLab', 'Bitbucket', 'Linear', 'Jira', 'Sentry', 'Slack']);
-  });
-
   it.each([
     { tool: 'linear', label: 'Linear', field: 'API key', id: 'linear-api-key' },
     { tool: 'jira', label: 'Jira', field: 'Site', id: 'jira-site' },
@@ -191,11 +188,20 @@ describe('ToolSettingsScope', () => {
     { tool: 'bitbucket', label: 'Bitbucket', field: 'Personal API key', id: 'bitbucket-token' },
     { tool: 'sentry', label: 'Sentry', field: 'Auth token', id: 'sentry-token' },
     { tool: 'slack', label: 'Slack', field: 'User token', id: 'slack-token' },
-  ])('focuses the $tool form from the rail', async ({ label, field, id }) => {
+  ] satisfies ReadonlyArray<{
+    tool: IntegrationGlyphProvider;
+    label: string;
+    field: string;
+    id: string;
+  }>)('focuses the $tool form when the rail opens it', async ({ tool, label, field, id }) => {
+    const view = await act(async () =>
+      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />),
+    );
     await act(async () => {
-      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
+      view.rerender(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus={tool} />,
+      );
     });
-    fireEvent.click(screen.getByRole('button', { name: label }));
     expect(screen.getByLabelText(field).id).toBe(id);
     expect(screen.getByLabelText(field)).toBe(document.activeElement);
     expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([label]);
@@ -208,7 +214,6 @@ describe('ToolSettingsScope', () => {
       );
     });
     expect(screen.getByLabelText('User token')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Slack' }).getAttribute('aria-current')).toBe('true');
   });
 
   it('shows the connected identity and confirms disconnect', async () => {
@@ -220,9 +225,13 @@ describe('ToolSettingsScope', () => {
     });
     expect(screen.getByText('Connected as Ada')).toBeDefined();
     expect(screen.getByText('linear.app/acme')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Disconnect Linear' }));
+    expect(screen.queryByRole('button', { name: 'Disconnect Linear' })).toBeNull();
+    openHeaderMenu({ title: 'Linear' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Disconnect' }));
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'Disconnect Linear' }),
+      within(screen.getByRole('group', { name: 'Disconnect Linear?' })).getByRole('button', {
+        name: 'Disconnect Linear',
+      }),
     );
     await waitFor(() =>
       expect(store.getState().disconnectIntegration).toHaveBeenCalledWith({
@@ -246,7 +255,8 @@ describe('ToolSettingsScope', () => {
       timeout: 2000,
     });
     expect(screen.queryByLabelText('API key')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open in Tasks' })).toBeDefined();
+    openHeaderMenu({ title: 'Linear' });
+    expect(screen.getByRole('menuitem', { name: 'Open in Tasks' })).toBeDefined();
   });
 
   it('opens connected tools in Tasks', async () => {
@@ -257,10 +267,83 @@ describe('ToolSettingsScope', () => {
         <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
       );
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Open in Tasks' }));
+    openHeaderMenu({ title: 'Linear' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Open in Tasks' }));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'goodboy:open-inbox', detail: { provider: 'linear' } }),
     );
+  });
+
+  it('says the key is missing in a notice and a chip, with the one Disconnect', async () => {
+    keychain.hasSecret = false;
+    store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
+    await act(async () => {
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
+    });
+
+    expect(await screen.findByText('The Linear key is missing from this Mac')).toBeDefined();
+    expect(screen.getByText('Key missing')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Disconnect Linear?' })).getByRole('button', {
+        name: 'Disconnect Linear',
+      }),
+    );
+    await waitFor(() =>
+      expect(store.getState().disconnectIntegration).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        provider: 'linear',
+      }),
+    );
+  });
+
+  it('stays quiet about the key while it is in the keychain', async () => {
+    store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
+    await act(async () => {
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
+    });
+
+    expect(screen.queryByText('Key missing')).toBeNull();
+    expect(screen.queryByText('The Linear key is missing from this Mac')).toBeNull();
+  });
+
+  it('checks the key again from the header menu', async () => {
+    store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: [LINEAR] } });
+    await act(async () => {
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="linear" />,
+      );
+    });
+    expect(screen.queryByText('Key missing')).toBeNull();
+
+    keychain.hasSecret = false;
+    openHeaderMenu({ title: 'Linear' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Check again' }));
+    });
+
+    expect(await screen.findByText('Key missing')).toBeDefined();
+  });
+
+  it('offers GitHub Open in Tasks and Check again but leaves Disconnect to its account rows', async () => {
+    github.mode = 'gh-cli';
+    github.user = 'Ada';
+    await act(async () => {
+      render(
+        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
+      );
+    });
+    await screen.findByText('Connected as Ada through the gh CLI');
+    openHeaderMenu({ title: 'GitHub' });
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Open in Tasks',
+      'Check again',
+    ]);
   });
 
   it.each([
@@ -310,9 +393,12 @@ describe('ToolSettingsScope', () => {
       expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([label]);
       expect(screen.getByText(identity)).toBeDefined();
       expect(screen.getAllByText(secondary).length).toBeGreaterThan(0);
-      fireEvent.click(screen.getByRole('button', { name: `Disconnect ${label}` }));
+      openHeaderMenu({ title: label });
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Disconnect' }));
       fireEvent.click(
-        within(screen.getByRole('dialog')).getByRole('button', { name: `Disconnect ${label}` }),
+        within(screen.getByRole('group', { name: `Disconnect ${label}?` })).getByRole('button', {
+          name: `Disconnect ${label}`,
+        }),
       );
       await waitFor(() =>
         expect(store.getState().disconnectIntegration).toHaveBeenCalledWith({
@@ -323,16 +409,21 @@ describe('ToolSettingsScope', () => {
     },
   );
 
-  it('defaults to the first unconnected tool after GitHub resolves', async () => {
+  it('defaults to the first unconnected tool after GitHub resolves and names it once', async () => {
     github.mode = 'gh-cli';
     github.user = 'Ada';
+    const onDefaultTool = vi.fn();
     await act(async () => {
-      render(<ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} />);
+      render(
+        <ToolSettingsScope
+          frame={plainFrame}
+          workspaceId={WORKSPACE_ID}
+          onDefaultTool={onDefaultTool}
+        />,
+      );
     });
     await waitFor(() => expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat'));
-    expect(screen.getByRole('button', { name: 'GitLab' }).getAttribute('aria-current')).toBe(
-      'true',
-    );
+    expect(onDefaultTool.mock.calls).toEqual([[{ tool: 'gitlab' }]]);
   });
 
   it.each([undefined, 'linear'] satisfies ReadonlyArray<'linear' | undefined>)(
@@ -355,11 +446,6 @@ describe('ToolSettingsScope', () => {
       expect(screen.queryByRole('heading')).toBeNull();
       expect(screen.queryByLabelText('Personal API key')).toBeNull();
       expect(screen.queryByLabelText('API key')).toBeNull();
-      expect(
-        within(screen.getByRole('list', { name: 'Integrations settings' }))
-          .getAllByRole('button')
-          .every((button) => button.getAttribute('aria-current') !== 'true'),
-      ).toBe(true);
       await act(async () => resolveStatus({ mode: 'gh-cli', user: 'Ada', scoped: false }));
       const field =
         initialFocus === 'linear'
@@ -446,9 +532,7 @@ describe('ToolSettingsScope', () => {
     });
     expect(await screen.findByText('Connected as Ada through the gh CLI')).toBeDefined();
     expect(screen.getByText('Run gh auth logout to sign out')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'GitHub Ada' }).getAttribute('aria-current')).toBe(
-      'true',
-    );
+    expect(screen.getByRole('heading', { name: 'GitHub' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Disconnect GitHub' })).toBeNull();
     expect(screen.queryByLabelText('Personal API key')).toBeNull();
   });
@@ -509,21 +593,6 @@ describe('ToolSettingsScope', () => {
     expect(invoke).toHaveBeenCalledTimes(2);
     expect(invoke).toHaveBeenCalledWith('gh_status', { workspaceId: WORKSPACE_ID });
     expect(invoke).toHaveBeenCalledWith('gh_status', {});
-  });
-
-  it('reaches a connection form using the keyboard', async () => {
-    const user = userEvent.setup();
-    await act(async () => {
-      render(
-        <ToolSettingsScope frame={plainFrame} workspaceId={WORKSPACE_ID} initialFocus="github" />,
-      );
-    });
-    await screen.findByRole('button', { name: 'Use a different key' });
-    screen.getByRole('button', { name: 'GitHub' }).focus();
-    await user.tab();
-    await user.keyboard('{Enter}');
-    expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat');
-    expect(screen.getByLabelText('Personal API key')).toBe(document.activeElement);
   });
 
   it.each([false, true])('routes tracker links with connection state %s', async (isConnected) => {

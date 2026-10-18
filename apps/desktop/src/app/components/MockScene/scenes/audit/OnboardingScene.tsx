@@ -1,74 +1,91 @@
 import { useEffect, useState } from 'react';
-import { ToastProvider } from '../../../../../shared/components/Toast';
 import { OnboardingWizard } from '../../../../../features/onboarding/OnboardingWizard';
-import { OPEN_WIZARD_EVENT } from '../../../../../features/onboarding/onboarding-store';
-import { useAppStore } from '../../../../../store';
-import { SETTINGS_PROVIDERS, SETTINGS_WORKSPACE, seedSettingsBase } from './settingsSeed';
+import {
+  WIZARD_STEPS,
+  type WizardStepId,
+} from '../../../../../features/onboarding/OnboardingWizard/wizardSteps';
+import {
+  OPEN_WIZARD_EVENT,
+  type OpenWizardDetail,
+} from '../../../../../features/onboarding/onboarding-store';
+import {
+  SETTLED_MOTION,
+  WIZARD_SCENE_AGENTS,
+  WIZARD_SCENE_WORKSPACES,
+  seedWizardScene,
+  type WizardSceneAgents,
+  type WizardSceneWorkspace,
+} from '../onboarding/wizardSceneSeed';
 import { sceneParam } from './sceneParams';
 
-const STEPS = Number(sceneParam({ key: 'step' }) ?? '0');
-const HAS_WORKSPACE = sceneParam({ key: 'ws' }) !== '0';
-const HAS_NO_PROVIDERS = sceneParam({ key: 'providers' }) === '0';
-
-const CTA_LABELS = ['Get started', 'Continue', 'Skip for now'];
-
-const clickCta = (): void => {
-  const buttons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button'),
-  );
-  const target = buttons
-    .reverse()
-    .find((button) => CTA_LABELS.includes(button.textContent?.trim() ?? ''));
-  target?.click();
+type PickParams<T extends string> = {
+  readonly key: string;
+  readonly options: ReadonlyArray<T>;
+  readonly fallback: T;
 };
 
-const DISCONNECTED_PROVIDERS = SETTINGS_PROVIDERS.map((provider) => ({
-  ...provider,
-  connection: provider.id === 'anthropic' ? 'installed_disconnected' : provider.connection,
-  identity: null,
-}));
+const pickParam = <T extends string>({ key, options, fallback }: PickParams<T>): T => {
+  const value = sceneParam({ key });
+  return options.find((option) => option === value) ?? fallback;
+};
 
-const seedOnboarding = (): void => {
-  seedSettingsBase();
-  useAppStore.setState({
-    hydrated: true,
-    renameWorkspace: async () => SETTINGS_WORKSPACE,
-    updateWorkspaceProfile: async () => SETTINGS_WORKSPACE,
+const STEPS_BEFORE_A_WORKSPACE: ReadonlySet<WizardStepId> = new Set([
+  'welcome',
+  'agents',
+  'workspace',
+]);
+
+type SceneSetup = {
+  readonly step: WizardStepId;
+  readonly agents: WizardSceneAgents;
+  readonly ws: WizardSceneWorkspace;
+};
+
+const readSetup = (): SceneSetup => {
+  const step = pickParam<WizardStepId>({ key: 'step', options: WIZARD_STEPS, fallback: 'welcome' });
+  const agents = pickParam<WizardSceneAgents>({
+    key: 'agents',
+    options: WIZARD_SCENE_AGENTS,
+    fallback: 'ready',
   });
-  if (!HAS_WORKSPACE) {
-    useAppStore.setState({ workspaces: [], currentWorkspaceId: null, projects: [] });
-  }
-  if (HAS_NO_PROVIDERS) {
-    useAppStore.setState({ providers: DISCONNECTED_PROVIDERS });
-  }
+  const ws = pickParam<WizardSceneWorkspace>({
+    key: 'ws',
+    options: WIZARD_SCENE_WORKSPACES,
+    fallback: STEPS_BEFORE_A_WORKSPACE.has(step) ? 'none' : 'repo',
+  });
+  return { step, agents, ws };
 };
+
+const OPEN_DELAY_MS = 100;
 
 export const OnboardingScene = () => {
+  const [setup] = useState(readSetup);
   const [isReady, setIsReady] = useState(false);
+
   useEffect(() => {
-    seedOnboarding();
+    const { step, agents, ws } = setup;
+    seedWizardScene({ agents, ws, hasLinear: step === 'first-session' });
     setIsReady(true);
-  }, []);
+  }, [setup]);
+
   useEffect(() => {
     if (!isReady) {
       return;
     }
-    const opener = window.setTimeout(() => {
-      window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail: { mode: 'full' } }));
-    }, 100);
-    const clicks = Array.from({ length: STEPS }, (_, index) =>
-      window.setTimeout(clickCta, 600 + index * 600),
-    );
-    return () => [opener, ...clicks].forEach((timer) => window.clearTimeout(timer));
-  }, [isReady]);
+    const detail: OpenWizardDetail = { mode: 'full', step: setup.step };
+    const timer = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent(OPEN_WIZARD_EVENT, { detail }));
+    }, OPEN_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [isReady, setup]);
+
   if (!isReady) {
     return null;
   }
   return (
-    <ToastProvider>
-      <main className="h-screen bg-background text-foreground">
-        <OnboardingWizard />
-      </main>
-    </ToastProvider>
+    <main className="h-screen bg-background text-foreground">
+      <style>{SETTLED_MOTION}</style>
+      <OnboardingWizard />
+    </main>
   );
 };

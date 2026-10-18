@@ -3,6 +3,7 @@ import type { Agent, AgentId, IsoDateTime, ProviderRunId, TurnEvent } from '@goo
 import { aSession, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import { selectCheckChain } from './selectCheckChain';
 import { selectFixOffers } from './selectFixOffers';
+import { selectCheckPushOffers } from './selectCheckPushOffers';
 import type { CheckFixCommit } from '../check-fix-commits/types';
 
 const sessionId = aSession().id;
@@ -247,5 +248,23 @@ describe('check chain states', () => {
         sessionId,
       }),
     ).toBe('');
+  });
+  it('offers Push only on the Debugger row of a chain fixed on the branch', () => {
+    const done = fixAgent({ status: 'completed' });
+    expect(
+      selectCheckPushOffers({
+        state: stateOf({ agents: [debuggerAgent, done], fact: LOCAL }),
+        sessionId,
+      }),
+    ).toBe(`${debuggerAgent.id}|${url}`);
+    expect(
+      selectCheckPushOffers({
+        state: stateOf({ agents: [debuggerAgent, done], fact: PUSHED }),
+        sessionId,
+      }),
+    ).toBe('');
+    expect(selectCheckPushOffers({ state: stateOf({ agents: [debuggerAgent] }), sessionId })).toBe(
+      '',
+    );
   });
 });

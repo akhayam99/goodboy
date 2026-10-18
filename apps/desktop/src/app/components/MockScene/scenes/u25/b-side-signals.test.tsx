@@ -73,11 +73,15 @@ describe('the side column signal scenes', () => {
     expect(screen.getByRole('button', { name: 'Terminal, 2 running' })).toBeDefined();
   });
 
-  it('side-signals-idle shows nothing on the rows', async () => {
+  it('side-signals-idle shows nothing on the tool rows, only the Sessions dot for who needs you', async () => {
     await mount({ name: 'side-signals-idle' });
 
     expect(screen.getByRole('button', { name: 'Terminal' })).toBeDefined();
-    expect(document.querySelector('[data-door-signal]')).toBeNull();
+    expect(
+      document.querySelector(
+        '[data-column-door]:not([data-column-door="board"]) [data-door-signal]',
+      ),
+    ).toBeNull();
   });
 
   it.each(NAMES)('%s has no accessibility violation', async (name) => {

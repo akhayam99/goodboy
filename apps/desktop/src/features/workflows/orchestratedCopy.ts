@@ -10,7 +10,6 @@ type ReasonParams = {
 
 export const ORCHESTRATED_COPY = {
   emptyTitle: 'No orchestrated runs yet',
-  emptyDescription: 'The orchestrator picks each next step from your goal.',
   start: NAMES.startOrchestrator,
   showGuidance: 'Show guidance',
   hideGuidance: 'Hide guidance',

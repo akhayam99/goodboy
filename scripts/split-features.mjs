@@ -8,7 +8,11 @@ const ROOT =
 const FEATURES = resolve(ROOT, 'FEATURES.md');
 const DIRECTORY = resolve(ROOT, 'docs/features');
 const AREAS = [
-  ['setup', 'Set up', ['Welcome to Goodboy', 'Provider connection', 'Integrations']],
+  [
+    'setup',
+    'Set up',
+    ['Welcome to Goodboy', 'Your agents', 'Your first workspace', 'Home', 'Integrations'],
+  ],
   [
     'start',
     'Start a task',
@@ -24,8 +28,8 @@ const AREAS = [
   ['search', 'Search and navigation', ['Go anywhere', 'Command palette', 'Search']],
   [
     'workspace',
-    'Workspace and projects',
-    ['Workspace with several projects', 'Worktrees', 'Repo status across projects'],
+    'Workspaces and folders',
+    ['Workspace with several folders', 'Worktrees', 'Repo status across folders', 'Monitoring'],
   ],
   [
     'branch-history',

@@ -211,7 +211,7 @@ describe('the Explore project chip with one project', () => {
     await rowNamed('README.md');
     expect(screen.getByTestId('explore-project').textContent).toContain('ledger-core');
     expect(screen.getByTestId('explore-project').textContent).toContain('hl/ledger-rounding');
-    expect(screen.queryByRole('button', { name: /^Project / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Folder / })).toBeNull();
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
@@ -230,9 +230,9 @@ describe('the Explore project chip with two projects', () => {
     mountPane();
     await rowNamed('README.md');
 
-    fireEvent.click(projectChip('Project ledger-core, hl/ledger-rounding'));
+    fireEvent.click(projectChip('Folder ledger-core, hl/ledger-rounding'));
 
-    const menu = await screen.findByRole('menu', { name: 'Projects' });
+    const menu = await screen.findByRole('menu', { name: 'Folders' });
     expect(within(menu).getByRole('group', { name: 'ledger-core' })).toBeDefined();
     expect(within(menu).getByRole('group', { name: 'notify-relay' })).toBeDefined();
     const rows = within(menu).getAllByRole('menuitemradio');
@@ -246,9 +246,9 @@ describe('the Explore project chip with two projects', () => {
     mountPane();
     await rowNamed('rounding.ts');
 
-    fireEvent.click(projectChip('Project ledger-core, hl/ledger-rounding'));
+    fireEvent.click(projectChip('Folder ledger-core, hl/ledger-rounding'));
     fireEvent.click(
-      within(await screen.findByRole('menu', { name: 'Projects' })).getByRole('menuitemradio', {
+      within(await screen.findByRole('menu', { name: 'Folders' })).getByRole('menuitemradio', {
         name: /hl\/notify/,
       }),
     );
@@ -259,7 +259,7 @@ describe('the Explore project chip with two projects', () => {
     expect(useAppStore.getState().sessionActiveMount[SESSION_ID]).toBe(LEDGER.mountId);
     expect(setSessionActiveMount).not.toHaveBeenCalled();
     expect(
-      screen.getByRole('button', { name: 'Project notify-relay, hl/notify-retries' }),
+      screen.getByRole('button', { name: 'Folder notify-relay, hl/notify-retries' }),
     ).toBeDefined();
   });
 
@@ -356,7 +356,7 @@ describe('the Explore project chip without a mounted project', () => {
     mountPane();
 
     expect(await rowNamed('package.json')).toBeDefined();
-    expect(screen.getByTestId('explore-project').textContent).toBe('ledger-core, project folder');
+    expect(screen.getByTestId('explore-project').textContent).toBe('ledger-core, folder');
     expect(listedDirs()).toEqual([LEDGER_ROOT]);
   });
 
@@ -373,11 +373,34 @@ describe('the Explore project chip without a mounted project', () => {
     useAppStore.setState({ projects: [LEDGER_PROJECT] });
     mountPane();
 
-    expect(await screen.findByText('Nothing to browse yet')).toBeDefined();
-    expect(screen.getByText('Files show here once this session has a project.')).toBeDefined();
+    expect(await screen.findByText('No folder to browse')).toBeDefined();
+    expect(
+      screen.getByText('Explore lists the files of a folder this session works in.'),
+    ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(screen.queryByTestId('explore-project')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Refresh the files' })).toBeNull();
+  });
+});
+
+describe('the Explore pane with nothing to browse and an action', () => {
+  it('shows the action it is given under the line', async () => {
+    h.scratch.current = new Error('The scratch folder is not available');
+    useAppStore.setState({ projects: [LEDGER_PROJECT] });
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <ExplorePane
+            sessionId={SESSION_ID}
+            noFolderAction={<button type="button">Add folder</button>}
+            onClose={vi.fn()}
+          />
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'No folder to browse' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
   });
 });
 
@@ -415,7 +438,7 @@ describe('the Explore project chip when the worktree is gone', () => {
     seedGone();
     mountPane();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Show the current project' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show the current folder' }));
 
     expect(await rowNamed('rounding.ts')).toBeDefined();
     await waitFor(() =>

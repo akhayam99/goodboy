@@ -82,9 +82,13 @@ export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
   const presentation = sessionSpendPresentation({ totalUsd: spend.totalUsd, limit });
   const fill = Math.min(presentation.ratio ?? 0, 1) * 100;
   const isUnspent = limit === null && spend.totalUsd < MIN_SHOWN_USD;
-  const shownLabel = isUnspent
-    ? UNSPENT_LABEL
-    : `${presentation.label}${presentation.ratio === null ? '' : ' limit'}`;
+  const fullLabel = `${presentation.label}${presentation.ratio === null ? '' : ' limit'}`;
+  const shownLabel = isUnspent ? UNSPENT_LABEL : presentation.compactLabel;
+  const tooltip = isUnspent
+    ? 'Nothing spent in this session yet. Set a limit'
+    : limit === null
+      ? `${formatUsdPrecise(spend.totalUsd)} spent in this session`
+      : presentation.sentence;
   const textClass = isUnspent
     ? 'text-faint-foreground'
     : presentation.tone === 'neutral'
@@ -169,14 +173,7 @@ export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
         isEditHost ? (
           <span aria-hidden data-spend-edit-host="" className="block size-0" />
         ) : (
-          <Tooltip
-            content={
-              isUnspent
-                ? 'Nothing spent in this session yet. Set a limit'
-                : `${formatUsdPrecise(spend.totalUsd)} spent in this session`
-            }
-            isSuppressed={open}
-          >
+          <Tooltip content={tooltip} isSuppressed={open}>
             <Button
               ref={triggerRef}
               variant="quiet"
@@ -184,7 +181,7 @@ export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
               onClick={toggle}
               aria-haspopup="dialog"
               aria-expanded={open}
-              aria-label={isUnspent ? UNSPENT_LABEL : `Spend ${shownLabel}`}
+              aria-label={isUnspent ? UNSPENT_LABEL : `Spend ${fullLabel}`}
               data-level={presentation.level}
               data-tone={isUnspent ? 'faint' : presentation.tone}
               data-session-spend=""

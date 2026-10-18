@@ -416,8 +416,8 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     await spawn(SESSION_ID, { kindOverride: 'scout' });
 
-    expect(getState().agentModelOverride[INSERTED_ID]).toBe('haiku-4.5');
-    expect(getState().agentEffortOverride[INSERTED_ID]).toBe('low');
+    expect(getState().agentModelOverride[INSERTED_ID]).toBe('haiku-5.5');
+    expect(getState().agentEffortOverride[INSERTED_ID]).toBe('medium');
   });
 
   it('fans out an explicit (triggeredPlanId) plan with 2+ clusters', async () => {

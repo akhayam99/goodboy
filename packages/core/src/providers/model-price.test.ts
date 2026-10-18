@@ -39,8 +39,9 @@ describe('getProviderModelPrice per provider table', () => {
     expect(price('codex', 'gpt-6-astra')).toEqual({ inputPerMtok: 10, outputPerMtok: 50 });
     expect(price('codex', 'gpt-6.1-sol')).toEqual({ inputPerMtok: 2, outputPerMtok: 10 });
     expect(price('codex', 'gpt-5.5')).toEqual({ inputPerMtok: 5, outputPerMtok: 30 });
-    expect(price('codex', 'gpt-5.4')).toEqual({ inputPerMtok: 2.5, outputPerMtok: 15 });
-    expect(price('codex', 'gpt-5.4-mini')).toEqual({ inputPerMtok: 0.75, outputPerMtok: 4.5 });
+    expect(price('codex', 'gpt-6-sol')).toEqual({ inputPerMtok: 2, outputPerMtok: 10 });
+    expect(price('codex', 'gpt-6-luna')).toEqual({ inputPerMtok: 0.1, outputPerMtok: 0.5 });
+    expect(price('codex', 'gpt-5.4')).toBeNull();
   });
 
   it('returns gemini pricing for catalog cli ids', () => {

@@ -49,7 +49,7 @@ export const SessionPreview = ({ session, subject }: Props) => {
             label: 'Stage',
             value: `${stage.label.charAt(0).toUpperCase()}${stage.label.slice(1)}`,
           },
-          ...(mount === null ? [] : [{ label: 'Project', value: mount.mountName }]),
+          ...(mount === null ? [] : [{ label: 'Folder', value: mount.mountName }]),
           ...(shownBranch === null
             ? []
             : [{ label: 'Branch', value: <span className="text-code">{shownBranch}</span> }]),

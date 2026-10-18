@@ -63,7 +63,7 @@ export const ProjectDescriptionField = ({ project, busy }: Props) => {
         className="h-8 min-w-0 rounded-md border border-border-soft bg-background px-2 text-row text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
       />
       <div className="flex items-center gap-2 text-label text-faint-foreground">
-        <span className="flex-1">Every agent reads this next to the project name.</span>
+        <span className="flex-1">Every agent reads this next to the folder name.</span>
         {showSaved ? <span className="text-success">Saved</span> : null}
         {remaining <= COUNTER_THRESHOLD ? <span>{remaining}</span> : null}
       </div>

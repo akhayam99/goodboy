@@ -188,7 +188,7 @@ describe('groups', () => {
     expect(groups.map((group) => [group.key, group.label])).toEqual([
       ['p-ledger', 'ledger-core'],
       ['p-payments', 'payments-api'],
-      [NO_PROJECT_GROUP_KEY, 'No project'],
+      [NO_PROJECT_GROUP_KEY, 'No folder'],
     ]);
     expect(ids(groups[1]?.sessions ?? [])).toHaveLength(2);
   });

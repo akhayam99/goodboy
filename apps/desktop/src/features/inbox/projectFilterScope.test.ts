@@ -23,25 +23,25 @@ const CASES: ReadonlyArray<Case> = [
     name: 'Sentry and Linear',
     connected: ['linear', 'sentry'],
     mapped: ['sentry'],
-    note: "Project filter applies to Sentry. Linear issues aren't tied to a project, so they stay listed.",
+    note: "Folder filter applies to Sentry. Linear issues aren't tied to a folder, so they stay listed.",
   },
   {
     name: 'Sentry, Linear and Jira',
     connected: ['linear', 'jira', 'sentry'],
     mapped: ['sentry'],
-    note: "Project filter applies to Sentry. Linear and Jira issues aren't tied to a project, so they stay listed.",
+    note: "Folder filter applies to Sentry. Linear and Jira issues aren't tied to a folder, so they stay listed.",
   },
   {
     name: 'GitHub, Sentry and Slack',
     connected: ['github', 'sentry', 'slack'],
     mapped: ['github', 'sentry'],
-    note: "Project filter applies to GitHub and Sentry. Slack threads aren't tied to a project, so they stay listed.",
+    note: "Folder filter applies to GitHub and Sentry. Slack threads aren't tied to a folder, so they stay listed.",
   },
   {
     name: 'Sentry, Linear and Slack',
     connected: ['linear', 'sentry', 'slack'],
     mapped: ['sentry'],
-    note: "Project filter applies to Sentry. Linear and Slack items aren't tied to a project, so they stay listed.",
+    note: "Folder filter applies to Sentry. Linear and Slack items aren't tied to a folder, so they stay listed.",
   },
   {
     name: 'GitLab and GitHub',
@@ -74,7 +74,7 @@ const CASES: ReadonlyArray<Case> = [
     connected: ['github', 'linear', 'sentry'],
     filters: { kind: 'issue' },
     mapped: ['github'],
-    note: "Project filter applies to GitHub. Linear issues aren't tied to a project, so they stay listed.",
+    note: "Folder filter applies to GitHub. Linear issues aren't tied to a folder, so they stay listed.",
   },
 ];
 

@@ -1,4 +1,5 @@
 import { useAppStore } from '../../../../../store';
+import { SETTING_REPO_CHECK_MINUTES } from '../../../../../features/settings/settings';
 import { seedBoardScene } from '../BoardScene';
 import { NOW, SESSION, seedWorkflowScene } from '../workflowSeed';
 import { seedShellChrome } from '../shellChrome';
@@ -8,7 +9,8 @@ export type FrameContext = 'board' | 'session' | 'rail' | 'empty';
 const noop = () => undefined;
 
 export const seedFrameChromeStubs = (): void => {
-  useAppStore.setState({
+  useAppStore.setState((state) => ({
+    settings: { ...state.settings, [SETTING_REPO_CHECK_MINUTES]: '0' },
     notifications: [],
     notificationsLoading: false,
     loadNotifications: async () => undefined,
@@ -16,7 +18,7 @@ export const seedFrameChromeStubs = (): void => {
     scriptRuns: {},
     projectScripts: {},
     navigate: () => undefined,
-  });
+  }));
 };
 
 type SeedParams = {

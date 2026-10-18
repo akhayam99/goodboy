@@ -1,73 +1,116 @@
-import { PANE_RHYTHM, Reveal, cn } from '@goodboy/ui';
+import { useState } from 'react';
+import { PANE_RHYTHM, cn } from '@goodboy/ui';
 import type { SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { SettingsNavRow } from '../../../../shared/components/SettingsNavRow';
 import type { SettingsGroup } from './settingsDirectory';
+import { SettingsRailFold } from './SettingsRailFold';
 import { SettingsRailPageGroup } from './SettingsRailPageGroup';
+import { SettingsRailPlaceholder } from './SettingsRailPlaceholder';
 import { isNestedScope, type NestedScope } from './settingsScopes';
 
 type Props = {
   readonly scope: SettingsPageScope;
   readonly pageKey: string | null;
   readonly groups: ReadonlyArray<SettingsGroup>;
-  readonly nestedSlot: Readonly<Record<NestedScope, (element: HTMLDivElement | null) => void>>;
-  readonly onNestedClosed: (params: { readonly scope: NestedScope }) => void;
+  readonly workspaceName: string | null;
   readonly onSelect: (params: SettingsScopeChange) => void;
   readonly isInColumn?: boolean;
 };
+
+type Folds = Readonly<Record<NestedScope, boolean>>;
+
+const CLOSED: Folds = { providers: false, tools: false };
+
+type OpenedParams = {
+  readonly folds: Folds;
+  readonly scope: SettingsPageScope;
+};
+
+const opened = ({ folds, scope }: OpenedParams): Folds =>
+  isNestedScope(scope) && !folds[scope] ? { ...folds, [scope]: true } : folds;
+
+type GroupParams = {
+  readonly groups: ReadonlyArray<SettingsGroup>;
+  readonly scope: SettingsPageScope;
+};
+
+const groupOf = ({ groups, scope }: GroupParams): SettingsGroup | undefined =>
+  groups.find((group) => group.scope === scope);
 
 export const SettingsRail = ({
   scope,
   pageKey,
   groups,
-  nestedSlot,
-  onNestedClosed,
+  workspaceName,
   onSelect,
   isInColumn = false,
-}: Props) => (
-  <nav
-    aria-label="Settings scopes"
-    className={cn('flex flex-col gap-3', isInColumn ? 'py-1' : PANE_RHYTHM.navRail.body)}
-  >
-    {groups
-      .filter((group) => !isNestedScope(group.scope))
-      .map((group) => (
+}: Props) => {
+  const [folds, setFolds] = useState<Folds>(() => opened({ folds: CLOSED, scope }));
+  const [seenScope, setSeenScope] = useState(scope);
+  if (seenScope !== scope) {
+    setSeenScope(scope);
+    setFolds(opened({ folds, scope }));
+  }
+
+  const app = groupOf({ groups, scope: 'app' });
+  const workspace = groupOf({ groups, scope: 'workspace' });
+  const providers = groupOf({ groups, scope: 'providers' });
+  const tools = groupOf({ groups, scope: 'tools' });
+
+  return (
+    <nav
+      aria-label="Settings scopes"
+      className={cn('flex flex-col gap-3', isInColumn ? 'py-1' : PANE_RHYTHM.navRail.body)}
+    >
+      {app === undefined ? null : (
         <SettingsRailPageGroup
-          key={group.scope}
-          group={group}
-          isCurrentGroup={scope === group.scope}
+          group={app}
+          label={app.label}
+          isCurrentGroup={scope === 'app'}
           pageKey={pageKey}
           onSelect={onSelect}
         />
-      ))}
-    <div className="flex flex-col gap-0.5">
-      {groups.map((group) => {
-        if (!isNestedScope(group.scope)) {
-          return null;
-        }
-        const nested = group.scope;
-        const Icon = CONCEPT_ICONS[group.concept];
-        const isActive = scope === nested;
-        return (
-          <div key={nested} data-settings-group={nested} className="flex flex-col gap-0.5">
-            <SettingsNavRow
-              level="group"
-              icon={<Icon size={ICON_SIZE.control} />}
-              label={group.label}
-              isActiveGroup={isActive}
-              status={
-                group.tone === undefined || isActive
-                  ? null
-                  : { tone: group.tone, label: group.attention ?? null }
-              }
-              onClick={() => onSelect({ scope: nested })}
-            />
-            <Reveal open={isActive} onClosed={() => onNestedClosed({ scope: nested })}>
-              <div ref={nestedSlot[nested]} />
-            </Reveal>
-          </div>
-        );
-      })}
-    </div>
-  </nav>
-);
+      )}
+      {workspace === undefined || workspaceName === null ? (
+        <SettingsRailPlaceholder
+          scope="workspace"
+          label="Workspace"
+          line="Open a workspace to see its settings."
+        />
+      ) : (
+        <SettingsRailPageGroup
+          group={workspace}
+          label={`${workspace.label} · ${workspaceName}`}
+          isCurrentGroup={scope === 'workspace'}
+          pageKey={pageKey}
+          onSelect={onSelect}
+        />
+      )}
+      {providers === undefined ? null : (
+        <SettingsRailFold
+          group={providers}
+          isOpen={folds.providers}
+          isCurrentGroup={scope === 'providers'}
+          pageKey={pageKey}
+          onToggle={() => setFolds({ ...folds, providers: !folds.providers })}
+          onSelect={onSelect}
+        />
+      )}
+      {tools === undefined ? (
+        <SettingsRailPlaceholder
+          scope="tools"
+          label="Integrations"
+          line="Integrations belong to a workspace."
+        />
+      ) : (
+        <SettingsRailFold
+          group={tools}
+          isOpen={folds.tools}
+          isCurrentGroup={scope === 'tools'}
+          pageKey={pageKey}
+          onToggle={() => setFolds({ ...folds, tools: !folds.tools })}
+          onSelect={onSelect}
+        />
+      )}
+    </nav>
+  );
+};

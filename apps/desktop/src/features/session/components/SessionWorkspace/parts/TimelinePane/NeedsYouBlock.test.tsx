@@ -43,6 +43,32 @@ describe('NeedsYouBlock', () => {
     expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
   });
 
+  it('draws each owner with the concept glyph of its Activity row', () => {
+    const RUN_OWNER = owner({ id: 'owner-run', kind: 'run', text: 'Checkout run' });
+    const AGENT_OWNER = owner({ id: 'owner-agent', kind: 'agent', text: 'Scout asks' });
+    render(
+      <NeedsYouBlock
+        owners={[PR_OWNER, REBASE_OWNER, QUESTION_OWNER, RUN_OWNER, AGENT_OWNER]}
+        onOpen={vi.fn()}
+      />,
+    );
+    const glyphs = within(screen.getByRole('region', { name: 'Needs you' }))
+      .getAllByRole('button')
+      .map((button) => button.querySelector('svg')?.getAttribute('class') ?? '');
+
+    expect(
+      glyphs.map((name) =>
+        name.split(' ').find((part) => part !== 'lucide' && part.startsWith('lucide-')),
+      ),
+    ).toEqual([
+      'lucide-message-square-reply',
+      'lucide-git-graph',
+      'lucide-circle-question-mark',
+      'lucide-waypoints',
+      'lucide-bot',
+    ]);
+  });
+
   it('makes each row the button, with no Open word, and sends that owner', () => {
     const onOpen = vi.fn();
     render(<NeedsYouBlock owners={[PR_OWNER, REBASE_OWNER]} onOpen={onOpen} />);

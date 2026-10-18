@@ -94,7 +94,7 @@ describe('the round 4 workspace scenes', () => {
       row.getAttribute('data-workspace-row'),
     );
     expect(rows).toEqual(['Northwind', 'Acme', 'Cascadia']);
-    expect(within(dialog).getByRole('button', { name: 'Link a repository' })).toBeDefined();
+    expect(within(dialog).getByRole('button', { name: 'Add folder' })).toBeDefined();
     expect(within(dialog).getByRole('button', { name: 'Reconnect Cascadia' })).toBeDefined();
   });
 

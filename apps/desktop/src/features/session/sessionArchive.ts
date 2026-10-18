@@ -1,5 +1,5 @@
 import { useAppStore } from '../../store/store';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { AppStore } from '../../store/store';
 import {
@@ -39,7 +39,7 @@ export const restoreSessions = async ({
   if (sessions.length === 0) {
     return;
   }
-  const { succeeded } = await bulkUnarchiveTask(sessions.map((session) => session.id as SessionId));
+  const { succeeded } = await bulkUnarchiveTask(sessions.map((session) => session.id));
   if (succeeded.length === 0) {
     return;
   }
@@ -50,20 +50,27 @@ export const restoreSessions = async ({
   });
 };
 
-export const archiveSessions = async (params: LifecycleParams): Promise<void> => {
+type ArchiveOutcome = {
+  readonly archived: ReadonlyArray<Session>;
+  readonly failed: ReadonlyArray<Session>;
+};
+
+export const archiveSessions = async (params: LifecycleParams): Promise<ArchiveOutcome> => {
   const { sessions, bulkArchiveTask, showToast } = params;
   if (sessions.length === 0) {
-    return;
+    return { archived: [], failed: [] };
   }
-  const { succeeded } = await bulkArchiveTask(sessions.map((session) => session.id as SessionId));
-  if (succeeded.length === 0) {
-    return;
+  const { succeeded } = await bulkArchiveTask(sessions.map((session) => session.id));
+  const archived = sessions.filter((session) => succeeded.includes(session.id));
+  const failed = sessions.filter((session) => !succeeded.includes(session.id));
+  if (archived.length === 0) {
+    return { archived, failed };
   }
-  const archived = sessions.filter((session) => succeeded.includes(session.id as SessionId));
   useAppStore.getState().undoable({
     showToast,
     message: ARCHIVE_KEPT_COPY,
     title: archivedTitle({ count: archived.length }),
     undo: () => restoreSessions({ ...params, sessions: archived }),
   });
+  return { archived, failed };
 };

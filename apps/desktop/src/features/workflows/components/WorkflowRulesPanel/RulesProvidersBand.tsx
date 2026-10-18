@@ -1,6 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { Band, BandRow, Button } from '@goodboy/ui';
 import { openSettings } from '../../../settings/openSettings';
+import { NAMES } from '../../../../shared/names';
 import { usePolicySummary } from '../../hooks/usePolicySummary';
 
 type Props = {
@@ -20,7 +21,7 @@ export const RulesProvidersBand = ({ workspaceId }: Props) => {
           {summary}
         </span>
         <Button variant="ghost" size="sm" onClick={() => openSettings({ scope: 'providers' })}>
-          Open Providers & models
+          {`Open ${NAMES.providersAndModels}`}
         </Button>
       </BandRow>
     </Band>

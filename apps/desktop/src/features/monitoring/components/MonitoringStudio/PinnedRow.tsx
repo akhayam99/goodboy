@@ -7,7 +7,6 @@ import { PORT_EDIT_EVENT, type PortEditRequest } from '../../../actions/kinds/po
 import { portLabel } from '../../portLabel';
 import { portRowName } from '../../portRowName';
 import { PortRowItem } from './PortRowItem';
-import { PortRowMenu } from '../../../actions/PortRowMenu';
 
 type Props = {
   readonly row: PortRow;
@@ -120,12 +119,12 @@ export const PinnedRow = ({ row, process, now, isNested }: Props) => {
   return (
     <PortRowItem
       row={row}
+      layer="pinned"
       process={process}
       now={now}
       name={portRowName({ row, isPinned: true })}
       nameSlot={nameSlot}
       isNested={isNested}
-      actions={<PortRowMenu port={row.port} layer="pinned" description={portLabel({ row })} />}
     />
   );
 };

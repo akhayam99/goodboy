@@ -79,7 +79,7 @@ export const blockerCopy = ({
     case 'no_branch':
       return { sentence: 'This session has no branch to push', action: null };
     case 'no_target':
-      return { sentence: 'Add the project to this session first', action: null };
+      return { sentence: 'Add the folder to this session first', action: null };
     default: {
       const never: never = blocker;
       return { sentence: never, action: null };

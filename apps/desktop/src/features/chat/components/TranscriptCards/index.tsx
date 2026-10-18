@@ -18,6 +18,7 @@ import { PermissionDecisionCard } from '../../../../features/permissions/compone
 import { ToolCallCard } from '../ToolCallCard';
 import { TurnFooter } from '../TurnFooter';
 import { AssistantText } from './AssistantText';
+import { AutoDeliveryResults } from './AutoDeliveryResults';
 import { AutoDeliveryRow } from './AutoDeliveryRow';
 import { DecisionNoteRow } from './DecisionNoteRow';
 import { StoppedProcessesLine } from './StoppedProcessesLine';
@@ -73,7 +74,14 @@ const TranscriptCardImpl = ({
         />
       );
     case 'auto_delivery':
-      return <AutoDeliveryRow text={item.text} />;
+      return sessionId === null ? (
+        <AutoDeliveryRow text={item.text} />
+      ) : (
+        <div className="flex min-w-0 flex-col gap-3">
+          <AutoDeliveryRow text={item.text} />
+          <AutoDeliveryResults sessionId={sessionId} runId={item.runId} />
+        </div>
+      );
     case 'handoff':
       return (
         <HandoffBlock

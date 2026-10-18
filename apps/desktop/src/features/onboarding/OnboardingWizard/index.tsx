@@ -1,10 +1,14 @@
 import { useOnboardingWizard } from './useOnboardingWizard';
 import { WizardFrame } from './WizardFrame';
 
-export const OnboardingWizard = () => {
-  const { open, ...state } = useOnboardingWizard();
-  if (!open) {
+type Props = {
+  readonly isMainWindow?: boolean;
+};
+
+export const OnboardingWizard = ({ isMainWindow = true }: Props) => {
+  const { isOpen, close, ...state } = useOnboardingWizard({ isMainWindow });
+  if (!isOpen) {
     return null;
   }
-  return <WizardFrame key={`${state.mode}:${state.start ?? ''}`} {...state} />;
+  return <WizardFrame key={`${state.mode}:${state.start ?? ''}`} {...state} onClose={close} />;
 };

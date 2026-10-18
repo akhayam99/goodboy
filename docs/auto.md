@@ -11,7 +11,7 @@ Auto is an agent that answers questions itself and hands the work it cannot do
 alone to agents of the right role, with a model it picks for each. It waits for
 their results, reads them and goes on. It is always on and stays labelled
 **Experimental**: the **Auto agents** entry of the session rail carries the
-marker beside its count, its tooltip says why, and there is no switch to turn
+marker beside its count, the marker's tooltip says why, and there is no switch to turn
 it off. The **Agents** entry reads **Deprecated** beside its count: Auto
 starts agents of the role it picks (`AUTO_ROLE_WHEN`), and agents started by
 hand keep working.
@@ -127,6 +127,30 @@ end first." while the agent works.
   Auto has not read yet, and bumps the tree revision. It waits for the turn of the
   agent to end. The Auto agent stays in the session.
 
+## Rebase conflicts
+
+A rebase on main is plain git and never starts Auto. When it stops on a
+conflict or a commit hook, the run keeps `rebaseConflict` (the onto ref, the
+base, the head before the rebase) and the stop keeps the files
+(`store/slices/history/rebaseBranch.ts`); the prompt asks the person. **Resolve
+with Auto** (`mount.resolveRebaseWithAuto`) calls `resolveRebaseWithAuto`
+(`store/slices/rebaseAll/resolveRebaseWithAuto.ts`): it starts one Auto agent
+with `spawnAgent` and `kindOverride: 'auto'`, the route the workspace picks for
+the role, and the goal `rebaseAutoGoal` writes, so the goal goes through the
+Auto user turn port and, from another window, over the bridge. The goal names
+each branch, its worktree, the onto ref and the conflicted files, tells Auto to
+hand each branch to one agent that writes in that worktree, to ask the person
+only when a conflict is ambiguous, to run `git rebase --abort` on a branch it
+cannot finish, and never to push. The hint of **Add a hint** ends the goal. The
+run is marked as handed (`autoAgentId`) only once Auto took the goal and only
+when the run is still the one that was asked, so an answer that lands after
+**Abort rebase** changes nothing. **Rebase all** (`store/slices/rebaseAll/rebaseAll.ts`)
+rebases each branch with git first and hands every conflicted branch to the
+same single Auto run; with **Also tidy commits with Auto** on, the goal also
+lists every rebased branch to tidy, locally, after its rebase. **Resolve with
+Auto** reads why when no provider can run Auto
+(`autoUnavailableReason`).
+
 ## Talking to Auto
 
 A message typed in the composer of an Auto agent is not a plain turn either. The
@@ -241,6 +265,27 @@ writing to it reopens it to **Deciding**.
   settles to one quiet line, "Plan v1 · changes asked".
 - **Where a line sits.** A batch goes before the first message sent after it
   settled, and an open batch goes at the end.
+- **Names.** Children of the same role are numbered in the order Auto started
+  them, **Reviewer 1** and **Reviewer 2**, and a role with one child keeps its
+  bare noun (`autoChildLabelsOf`, adopted agents left out of the numbers). The
+  rail row, the delegation line chip, the result card and the delivery text Auto
+  reads all take the name from that one function, so Auto and the screen say the
+  same name.
+- **What the agents reported.** Each child result Auto read for a turn is that
+  child's card, right after the **What Auto was told** row of that turn and
+  before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing
+  `AutoResultCards`): the role glyph, the name, the model
+  with its provider, the state word (`settledStatusOf`, the rail's words) and
+  **Open**, which opens the child pane. The body is the child's own report in
+  `ClampedProse`, three lines then **Show more**; a failed, stopped or timed out
+  child shows its card with its state and no body. The cards read data, never
+  Auto's prose: an accepted `results` row of the outbox keeps the root run that
+  read it (`accepted_run_id`), `readAutoTreeViews` reads those rows as
+  `deliveredResults`, and the delivery row of the transcript (the `auto_delivery`
+  item keeps the `runId` of its event) draws only the results of its own run. A
+  result whose delivery row is not in the transcript is not drawn, never moved
+  to the end, so a late result stays with the turn that read it; a reload and a
+  second window read the same rows.
 - **The tail.** Auto's state is said once, on the tail at the end of the
   conversation (`AutoTail`, phrases from `autoTreeLive`): **Waiting for
   Implementer and Tester** with **Change approach** and **Stop Auto and its
@@ -379,14 +424,14 @@ delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no p
 refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
 `pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
 `AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
-project fits and it did not say which. Auto is choosing again." A refusal about the project
+folder fits and it did not say which. Auto is choosing again." A refusal about the project
 (`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`): "Where
 should the Implementer work?" lists the session's projects with their branch, **Another
-project...** opens a filter over the workspace's other projects ("Not in this session. A worktree
-is created from main."), and the primary follows the choice (**Choose a project** disabled, **Use
-payments-api**, **Use both**, **Use 3 projects**) next to **No project, just answer**, one
+folder...** opens a filter over the workspace's other projects ("Not in this session. A worktree
+is created from main."), and the primary follows the choice (**Choose a folder** disabled, **Use
+payments-api**, **Use both**, **Use 3 folders**) next to **No folder, just answer**, one
 action row under the list, with **Discard request** as a quiet verb (the `projectAsk` kind of
-the action registry, drawn by `ObjectActionVerb`). The composer reads "Pick a project, or write
+the action registry, drawn by `ObjectActionVerb`). The composer reads "Pick a folder, or write
 to Auto", so a reply in the chat answers too. The answer is a message to Auto through
 `sendTurn` ("Use payments-api and ledger-core: start one Implementer per project."); a project not
 in the session is mounted first (`ensureProjectMounted`, the button says "Creating a worktree for
@@ -396,7 +441,12 @@ row, the line goes, and an admitted retry draws its delegation line. The mount o
 (`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
 writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
 one fits (Auto never guesses a write) and `mount_missing` when none does. The refusal counters (`refusals_used`, the limit on refusals)
-move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Every delivery starts with a digest of the tree (open agents
+move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Each result line in a delivery starts with the name the user
+sees on its card ("- Reviewer 2 (reviewer <agent id>, <delegation id>): completed"), and the
+results block says the user sees each result as that card above the reply; the system prompt
+tells Auto never to repeat or paste what an agent said, to name the agent that way and to write
+only what it adds (what the results mean together, where they disagree, the next step, the ask).
+Every delivery starts with a digest of the tree (open agents
 with role, state and age, questions waiting, the budget, and a `MOUNTS:` line listing each usable
 mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { HistoryRunPhase, HistoryStop } from '../../store/slices/history/types';
 import { rebaseJobOf } from './rebaseJob';
-import { aRebaseRun } from './testing/aRebaseRun';
+import { A_REBASE_AGENT_ID, aRebaseRun } from './testing/aRebaseRun';
 
 const job = (patch: Parameters<typeof aRebaseRun>[0], dirtyCount: number | null = 0) =>
   rebaseJobOf({
@@ -223,5 +223,59 @@ describe('a run that is not a rebase job', () => {
 
   it('has no banner for a rewrite planned by hand', () => {
     expect(job({ origin: 'plan', phase: 'trying' })).toBeNull();
+  });
+});
+
+describe('a rebase that stopped on a conflict', () => {
+  const conflict = {
+    ontoRef: 'origin/main',
+    baseBranch: 'main',
+    head: 'f00dcafe',
+    autoAgentId: null,
+  };
+
+  it('asks with the conflicted file count and says the branch did not change', () => {
+    expect(
+      job({
+        phase: 'stopped',
+        stop: stop({ reason: 'conflict', files: ['webhook.ts', 'dedupe.ts'] }),
+        rebaseConflict: conflict,
+      }),
+    ).toMatchObject({
+      state: 'conflict',
+      tone: 'warn',
+      title: '2 files conflict with main',
+      line: 'webhook.ts and 1 more. Nothing changed on your branch.',
+      isRunning: false,
+    });
+  });
+
+  it('reads Auto at work once the conflict was handed over, and done when the branch caught up', () => {
+    const handed = {
+      run: aRebaseRun({
+        phase: 'stopped',
+        stop: stop({ reason: 'conflict', files: ['webhook.ts'] }),
+        rebaseConflict: { ...conflict, autoAgentId: A_REBASE_AGENT_ID },
+      }),
+      projectName: 'payments-api',
+      baseBranch: 'main',
+      commitCount: null,
+      dirtyCount: 0,
+    };
+    expect(rebaseJobOf({ ...handed, behind: 4, isRebasingHere: false })).toMatchObject({
+      state: 'auto-resolving',
+      isRunning: true,
+    });
+    expect(rebaseJobOf({ ...handed, behind: 0, isRebasingHere: true })?.state).toBe(
+      'auto-resolving',
+    );
+    expect(rebaseJobOf({ ...handed, behind: 0, isRebasingHere: false })).toMatchObject({
+      state: 'auto-done',
+      title: 'Rebased on main',
+    });
+  });
+
+  it('keeps a conflict stop without the conflict facts as a failure', () => {
+    expect(job({ phase: 'stopped', stop: stop({ reason: 'conflict' }) })?.state).toBe('failed');
   });
 });

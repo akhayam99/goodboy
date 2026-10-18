@@ -25,6 +25,11 @@ type ActionOutcome = {
   readonly message: string;
 };
 
+type ConfirmParams = {
+  readonly choice?: string | null;
+  readonly insteadId?: string;
+};
+
 export type ActionControls = {
   readonly target: ObjectTarget | null;
   readonly actions: ReadonlyArray<ResolvedAction>;
@@ -34,7 +39,7 @@ export type ActionControls = {
   readonly failure: ActionFailure | null;
   readonly outcome: ActionOutcome | null;
   readonly trigger: (params: { readonly actionId: string }) => void;
-  readonly confirm: (params?: { readonly choice?: string | null }) => Promise<void>;
+  readonly confirm: (params?: ConfirmParams) => Promise<void>;
   readonly cancel: () => void;
   readonly retry: () => void;
   readonly dismissFailure: () => void;
@@ -129,15 +134,25 @@ export const useActionControls = ({
   );
 
   const confirm = useCallback(
-    async (params?: { readonly choice?: string | null }) => {
+    async (params?: ConfirmParams) => {
       if (confirming === null) {
         return;
       }
-      const actionId = confirming.id;
+      const insteadId = params?.insteadId;
+      const instead =
+        insteadId === undefined
+          ? null
+          : actions.find(
+              (candidate) => candidate.id === insteadId && candidate.blockedReason === null,
+            );
+      if (instead === undefined) {
+        return;
+      }
+      const actionId = instead === null ? confirming.id : instead.id;
       setConfirmingId(null);
       await execute({ actionId, choice: params?.choice ?? null });
     },
-    [confirming, execute],
+    [actions, confirming, execute],
   );
 
   const cancel = useCallback(() => setConfirmingId(null), []);

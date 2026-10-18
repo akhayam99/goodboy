@@ -1,5 +1,5 @@
 import type { FramePage, Tone } from '@goodboy/ui';
-import { Smartphone, type LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { NAMES } from '../../../shared/names';
 import type { StudioKind } from '../../../store';
@@ -49,20 +49,11 @@ export const STUDIO_META = {
     skeleton: { shape: 'prose', hasRail: true },
     railWidth: 'standard',
   },
-  companion: {
-    icon: Smartphone,
-    title: 'Pair device',
-    closeLabel: 'Close pairing',
-    close: 'band',
-    tier: 'full',
-    page: null,
-    skeleton: { shape: 'cards', hasRail: false },
-  },
   addWorkspace: {
     icon: CONCEPT_ICONS.workspace,
     tone: CONCEPT_TONE.workspace,
-    title: 'Add workspace',
-    closeLabel: 'Close add workspace',
+    title: NAMES.newWorkspace,
+    closeLabel: 'Close new workspace',
     close: 'band',
     tier: 'column',
     page: null,
@@ -96,7 +87,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.impact,
     title: 'Impact',
     closeLabel: 'Close impact',
-    close: 'band',
+    close: 'none',
     tier: 'column',
     page: 'impact',
     skeleton: { shape: 'cards', hasRail: false },
@@ -106,7 +97,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.changelog,
     title: NAMES.whatsNew,
     closeLabel: `Close ${NAMES.whatsNew.toLowerCase()}`,
-    close: 'band',
+    close: 'header',
     tier: 'column',
     page: 'whatsNew',
     skeleton: { shape: 'prose', hasRail: true },
@@ -150,7 +141,7 @@ export const STUDIO_META = {
     tone: CONCEPT_TONE.monitoring,
     title: 'Monitoring',
     closeLabel: 'Close monitoring',
-    close: 'header',
+    close: 'none',
     tier: 'column',
     page: 'monitoring',
     skeleton: { shape: 'rows', hasRail: false },

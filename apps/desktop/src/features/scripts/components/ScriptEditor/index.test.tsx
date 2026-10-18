@@ -48,7 +48,7 @@ describe('ScriptEditor', () => {
     renderEditor({ projects: [LEDGER] });
 
     expect(screen.getByText('ledger-core')).toBeDefined();
-    expect(screen.queryByRole('combobox', { name: 'Script project' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Script folder' })).toBeNull();
     expect(
       screen.getByText(
         'Saved scripts run in any branch of ledger-core, in every session of this workspace.',
@@ -59,7 +59,7 @@ describe('ScriptEditor', () => {
   it('lets the project change when the workspace has more than one', () => {
     renderEditor({ projects: [LEDGER, RELAY] });
 
-    expect(screen.getByRole('combobox', { name: 'Script project' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Script folder' })).toBeDefined();
   });
 
   it('saves with the modifier and Enter, and cancels with Escape', () => {

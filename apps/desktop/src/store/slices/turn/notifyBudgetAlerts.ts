@@ -66,7 +66,7 @@ type BodyParams = AlertParams;
 const bodyFor = ({ alert }: BodyParams): string =>
   alert.provider == null
     ? `${formatUsd(alert.currentUsd)} spent so far.`
-    : `${formatUsd(alert.currentUsd)} spent against a ${formatUsd(alert.capUsd)} cap.`;
+    : `${formatUsd(alert.currentUsd)} spent against a ${formatUsd(alert.capUsd)} limit.`;
 
 export const notifyBudgetAlerts = ({ alerts, get }: Params) => {
   for (const alert of alerts) {

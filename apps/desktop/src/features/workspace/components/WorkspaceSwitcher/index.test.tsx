@@ -97,7 +97,7 @@ describe('WorkspaceSwitcher', () => {
       const onClose = vi.fn();
       render(<WorkspaceSwitcher onClose={onClose} />);
 
-      fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or project'), {
+      fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or folder'), {
         key: 'Enter',
         ...modifier,
       });
@@ -133,7 +133,7 @@ describe('WorkspaceSwitcher', () => {
   it('hides the numbers while a search narrows the list', () => {
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText('Find a workspace or project'), {
+    fireEvent.change(screen.getByPlaceholderText('Find a workspace or folder'), {
       target: { value: 'bra' },
     });
 
@@ -146,7 +146,7 @@ describe('WorkspaceSwitcher', () => {
     const onClose = vi.fn();
     render(<WorkspaceSwitcher onClose={onClose} />);
 
-    fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or project'), {
+    fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or folder'), {
       key: 'Enter',
     });
 
@@ -193,7 +193,7 @@ describe('WorkspaceSwitcher', () => {
     expect(screen.getByText('bravo')).not.toBeNull();
     expect(screen.getByText('charlie')).not.toBeNull();
 
-    fireEvent.change(screen.getByPlaceholderText('Find a workspace or project'), {
+    fireEvent.change(screen.getByPlaceholderText('Find a workspace or folder'), {
       target: { value: 'brav' },
     });
 
@@ -214,19 +214,19 @@ describe('WorkspaceSwitcher', () => {
   it('says No other workspaces match when a search finds none', () => {
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    fireEvent.change(screen.getByPlaceholderText('Find a workspace or project'), {
+    fireEvent.change(screen.getByPlaceholderText('Find a workspace or folder'), {
       target: { value: 'zzz' },
     });
 
     expect(screen.getByText('No other workspaces match')).toBeDefined();
   });
 
-  it('requests a new workspace via the global event', () => {
+  it('opens New workspace through the one door event, closing the popover', () => {
     const onClose = vi.fn();
     const spy = vi.fn();
     window.addEventListener('goodboy:add-workspace', spy);
     render(<WorkspaceSwitcher onClose={onClose} />);
-    fireEvent.click(screen.getByText('Open a folder'));
+    fireEvent.click(screen.getByRole('button', { name: 'New workspace' }));
     expect(spy).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:add-workspace', spy);
@@ -248,11 +248,11 @@ describe('WorkspaceSwitcher', () => {
     window.removeEventListener('goodboy:open-settings', spy);
   });
 
-  it('offers no current-workspace row or manage-projects action without a workspace', () => {
+  it('offers no current-workspace row or manage-folders action without a workspace', () => {
     state.currentWorkspace = null;
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
     expect(screen.queryByLabelText('Workspace settings')).toBeNull();
-    expect(screen.queryByText('Manage projects')).toBeNull();
+    expect(screen.queryByText('Manage folders')).toBeNull();
   });
 
   it('lists disconnected workspaces in the same list, each with Reconnect one click away', () => {
@@ -304,7 +304,7 @@ describe('WorkspaceSwitcher', () => {
     });
   });
 
-  it('opens the workspace projects from Manage projects in one click', () => {
+  it('opens the workspace folders from Manage folders in one click', () => {
     const onClose = vi.fn();
     const details: Array<unknown> = [];
     const listener = (event: Event) => {
@@ -315,29 +315,26 @@ describe('WorkspaceSwitcher', () => {
     window.addEventListener('goodboy:open-settings', listener);
     render(<WorkspaceSwitcher onClose={onClose} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Manage projects' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Manage folders' }));
 
     expect(details).toEqual([{ scope: 'workspace', section: 'projects' }]);
     expect(onClose).toHaveBeenCalledOnce();
     window.removeEventListener('goodboy:open-settings', listener);
   });
 
-  it('starts a new project via the global event in one click', () => {
-    const onClose = vi.fn();
-    const spy = vi.fn();
-    window.addEventListener('goodboy:start-new-project', spy);
-    render(<WorkspaceSwitcher onClose={onClose} />);
+  it('says New workspace once and keeps no project door', () => {
+    render(<WorkspaceSwitcher onClose={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start a new project' }));
-
-    expect(spy).toHaveBeenCalledOnce();
-    expect(onClose).toHaveBeenCalledOnce();
-    window.removeEventListener('goodboy:start-new-project', spy);
+    expect(screen.getAllByRole('button', { name: 'New workspace' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /^Add folder/ })).toBeDefined();
+    expect(screen.queryByText('Start a new project')).toBeNull();
+    expect(screen.queryByText('Open a folder')).toBeNull();
+    expect(screen.queryByText('Link a repository')).toBeNull();
   });
 
   it('renders panel content only, leaving anchoring to the popover primitive', () => {
     const { container } = render(<WorkspaceSwitcher onClose={vi.fn()} />);
     expect(container.querySelector('.fixed')).toBeNull();
-    expect(screen.getByPlaceholderText('Find a workspace or project')).toBeDefined();
+    expect(screen.getByPlaceholderText('Find a workspace or folder')).toBeDefined();
   });
 });

@@ -4,12 +4,14 @@ import type { Session } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../store';
 import { useBranchIdentity } from '../../../../features/branch/hooks/useBranchIdentity';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
 import { useWorktreeStatusSnapshot } from '../../../../features/session/hooks/useWorktreeStatuses';
 import { worktreeStatusTargetsOf } from '../../../../features/session/hooks/useWorktreeStatuses/targets';
 import { BRANCH_LENSES } from '../branchLenses';
 import { useLapProject } from '../../../../features/bootstrap/useLapProject';
-import { LevelAddMenu, type BranchableProject } from './LevelAddMenu';
+import { MountProjectAction } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
+import { RebaseAllCard } from '../../../../features/history/RebaseAllCard';
 import { LevelCard } from './LevelCard';
 import { ProjectTree } from './ProjectTree';
 import { useLevelCardFold } from './useLevelCardFold';
@@ -45,13 +47,6 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   const snapshot = useWorktreeStatusSnapshot({ targets });
   const diffStats = useMountDiffStats(sessionId);
   const signal = useProjectsSignal({ sessionId, rows: liveRows, statuses: snapshot.statuses });
-  const branchable = useMemo<ReadonlyArray<BranchableProject>>(
-    () =>
-      groups
-        .filter((group) => group.projectKind === 'repo')
-        .map((group) => ({ projectId: group.projectId, projectName: group.projectName })),
-    [groups],
-  );
   const isArchived = session.archivedAt != null;
   const lap = useLapProject({ sessionId });
   const lapName = groups.length === 0 && lap.stage !== null ? (lap.project?.name ?? null) : null;
@@ -59,7 +54,7 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   return (
     <LevelCard
       id={LABEL_ID}
-      label="Projects"
+      label={NAMES.folders}
       isOpen={fold.isOpen}
       onToggle={fold.toggle}
       {...(signal.tone !== null && {
@@ -73,14 +68,15 @@ export const LevelProjects = ({ session, isActive }: Props) => {
       })}
       {...(!isArchived && {
         action: (
-          <LevelAddMenu
+          <MountProjectAction
             sessionId={sessionId}
             workspaceId={session.workspaceId}
-            projects={branchable}
+            presentation="add"
           />
         ),
       })}
     >
+      <RebaseAllCard sessionId={sessionId} />
       {lapName === null ? null : (
         <div
           data-lap-project=""

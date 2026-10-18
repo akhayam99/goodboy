@@ -54,7 +54,11 @@ import {
   pushConfirm,
 } from './gitRuns';
 import { mountFacts, type MountFacts } from './mountFacts';
+import { mountRebaseConflictOf } from './mountRebaseConflictOf';
+import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
 import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
+import { captureStartHint } from '../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 
 type FactsOnly = { readonly facts: MountFacts };
 
@@ -71,6 +75,9 @@ export const mountEventName = ({
 }): string => `${name}:${mountId}`;
 
 const isOpen = ({ facts }: FactsOnly): boolean => !facts.isClosed && facts.worktreePath !== null;
+
+const isAsking = ({ facts }: FactsOnly): boolean =>
+  facts.rebaseConflict !== null && !facts.rebaseConflict.isWithAuto;
 
 const changes = ({ count }: { readonly count: number }): string =>
   plural({ count, one: 'uncommitted change', many: 'uncommitted changes' });
@@ -172,7 +179,7 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     group: 'open',
     shortcut: 'session.terminal',
     when: isOpen,
-    slot: ({ facts }) => (facts.isRebasing ? 'notice' : 'menu'),
+    slot: ({ facts }) => (facts.isRebasing || isAsking({ facts }) ? 'notice' : 'menu'),
     run: ({ facts, env }) => {
       if (facts.worktreePath !== null) {
         env.getState().openMountTerminal(facts.sessionId, facts.worktreePath);
@@ -217,7 +224,8 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     label: ({ facts }) => `Rebase on ${facts.baseBranch}`,
     icon: GitBranch,
     group: 'act',
-    when: ({ facts }) => isOpen({ facts }) && facts.behind > 0 && !facts.isRebasing,
+    when: ({ facts }) =>
+      isOpen({ facts }) && facts.behind > 0 && !facts.isRebasing && !isAsking({ facts }),
     blockedReason: ({ facts }) =>
       facts.dirty > 0 ? dirtyTreeSentence({ count: facts.dirty }) : null,
     slot: ({ facts }) => (facts.pr === 'merged' ? 'menu' : 'inline'),
@@ -301,8 +309,45 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     run: ({ facts }) => abortRebase(statusParams({ facts })),
   },
   {
+    id: 'mount.resolveRebaseWithAuto',
+    label: 'Resolve rebase conflicts with Auto',
+    shortLabel: () => 'Resolve with Auto',
+    icon: CONCEPT_ICONS.auto,
+    group: 'act',
+    when: ({ facts }) => isOpen({ facts }) && isAsking({ facts }),
+    blockedReason: ({ facts }) => facts.autoBlockedReason,
+    slot: () => 'notice',
+    pendingLabel: () => 'Starting Auto…',
+    run: async ({ facts, env }) => {
+      const state = env.getState();
+      const capture = captureStartHint({
+        state,
+        sessionId: facts.sessionId,
+        scope: START_HINT_SCOPES.rebase({ mountId: facts.mountId }),
+      });
+      const outcome = await state.resolveRebaseWithAuto({
+        sessionId: facts.sessionId,
+        mountIds: [facts.mountId],
+        hint: capture.text,
+        onAccepted: () => env.getState().settleStartHint({ capture }),
+      });
+      return outcome.kind === 'started' ? 'done' : 'unchanged';
+    },
+  },
+  {
+    id: 'mount.abortRebaseConflict',
+    label: 'Abort rebase',
+    icon: Undo2,
+    group: 'act',
+    when: ({ facts }) => isAsking({ facts }),
+    slot: () => 'notice',
+    run: ({ facts, env }) => {
+      env.getState().dismissHistoryRun({ sessionId: facts.sessionId, mountId: facts.mountId });
+    },
+  },
+  {
     id: 'mount.rewriteHistory',
-    label: 'Rewrite history',
+    label: 'Edit commits',
     icon: History,
     group: 'act',
     when: ({ facts }) => isOpen({ facts }) && facts.ahead > 0 && facts.pr !== 'merged',
@@ -544,6 +589,8 @@ export const mountFactsFor = ({
     isScribeWriting: isScribeWriting({ scribeWork: state.scribeWork, mountId }),
     editors: state.detectedEditors.filter((editor) => REFERENCE_EDITORS.has(editor.binary)),
     onlyOnline: readOnlyOnline({ mountId, branch: view.branch }),
+    rebaseConflict: mountRebaseConflictOf({ run: state.historyRuns[mountId] }),
+    autoBlockedReason: autoUnavailableReason({ state }),
     blockers: mountCleanupBlockers({
       state,
       sessionId,

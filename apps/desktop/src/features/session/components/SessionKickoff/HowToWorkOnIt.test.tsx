@@ -101,7 +101,7 @@ describe('HowToWorkOnIt, where the work happens', () => {
 
     show();
 
-    expect(screen.getByRole('combobox', { name: 'Project' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Folder' })).toBeDefined();
     expect(await screen.findByRole('button', { name: 'Remove payments-api' })).toBeDefined();
   });
 

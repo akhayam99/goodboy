@@ -66,22 +66,17 @@ export const SettingsColumnNav = ({ groups, rail, onBack, onOpen }: Props) => {
         <div hidden={isSearching}>{rail}</div>
         {isSearching ? (
           <div role="list" aria-label="Matching settings" className="flex flex-col gap-0.5 py-1">
-            {results.map((entry) => {
-              const Icon = entry.icon;
-              return (
-                <div role="listitem" key={entry.key}>
-                  <SettingsNavRow
-                    level="group"
-                    icon={<Icon size={ICON_SIZE.control} />}
-                    label={entry.label}
-                    onClick={() => {
-                      setQuery('');
-                      entry.run();
-                    }}
-                  />
-                </div>
-              );
-            })}
+            {results.map((entry) => (
+              <div role="listitem" key={entry.key}>
+                <SettingsNavRow
+                  label={entry.label}
+                  onClick={() => {
+                    setQuery('');
+                    entry.run();
+                  }}
+                />
+              </div>
+            ))}
             {results.length === 0 ? (
               <EmptyLine className="px-2">No settings match</EmptyLine>
             ) : null}

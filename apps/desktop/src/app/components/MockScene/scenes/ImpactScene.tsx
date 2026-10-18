@@ -331,7 +331,7 @@ const BUDGET_ALERTS: ReadonlyArray<BudgetAlert> = [
 
 const noop = async (): Promise<void> => undefined;
 
-const seedImpactScene = (): void => {
+export const seedImpactScene = (): void => {
   seedStudioChrome();
   useAppStore.setState({
     workspaces: [mockWorkspace({ id: WORKSPACE_ID, name: WORKSPACE_NAME })],

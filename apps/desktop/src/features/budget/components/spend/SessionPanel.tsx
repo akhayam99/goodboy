@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { OpenSessionButton } from '../../../../shared/components/OpenSessionButton';
 import { ErrorStrip, PaneShell } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
+import { CostGuideLink } from './CostGuideLink';
 import { SpendAnchorTitle } from './SpendAnchorTitle';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import type { WorkspaceTurn } from './lib';
@@ -57,6 +58,7 @@ export const SessionPanel = ({
       <ErrorStrip label="session budget" error={budgetResult.error} onRetry={onRetryBudget} />
       {isLoading && <PanelLoading label="Loading budget data" />}
       <SessionBudgetContent turns={turns} sessionId={sessionId} onOpenSession={onOpenSession} />
+      <CostGuideLink />
     </PaneShell>
   );
 };

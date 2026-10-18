@@ -11,7 +11,7 @@ const VERDICT_LABEL: Readonly<Record<string, string>> = {
 
 const GROUP_LABEL: Readonly<Record<string, string>> = {
   workspaces: 'Workspaces',
-  projects: 'Projects',
+  projects: 'Folders',
   skills: 'Skills',
   phaseTemplates: 'Workflows',
   permissionRules: 'Permission rules',
@@ -100,7 +100,7 @@ export const ImportPreviewSection = ({
       {preview.projectMatches.filter((project) => !project.hasPath).length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-label text-muted-foreground">
-            This file has no folder paths. Choose where your projects are on this Mac.
+            This file has no folder paths. Choose where your folders are on this Mac.
           </p>
           <ul className="flex flex-col gap-1">
             {preview.projectMatches
@@ -122,7 +122,7 @@ export const ImportPreviewSection = ({
           </Button>
           {hasUnresolvedProjects && (
             <p className="text-meta text-faint-foreground">
-              Projects left unresolved are skipped, nothing is deleted.
+              Folders left unresolved are skipped, nothing is deleted.
             </p>
           )}
         </div>

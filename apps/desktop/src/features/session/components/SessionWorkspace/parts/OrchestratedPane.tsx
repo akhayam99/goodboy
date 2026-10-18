@@ -7,6 +7,7 @@ import { ORCHESTRATED_COPY } from '../../../../workflows/orchestratedCopy';
 import { openOrchestrateForm } from '../../../../workflows/openOrchestrateForm';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { NAMES } from '../../../../../shared/names';
+import { SessionPageIntro } from '../../SessionPageIntro';
 import { RunsGrid } from './RunsGrid';
 
 type Props = {
@@ -23,6 +24,7 @@ export const OrchestratedPane = ({ session }: Props) => {
     <PaneShell
       page="orchestrated"
       title={NAMES.orchestrated}
+      subheader={<SessionPageIntro page="orchestrated" />}
       actions={
         hasRuns ? (
           <Button

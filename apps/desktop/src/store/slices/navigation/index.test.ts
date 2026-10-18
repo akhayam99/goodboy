@@ -228,6 +228,31 @@ describe('restoring a saved window location', () => {
     expect(store.getState().activeLens[S1] ?? null).toBeNull();
     expect(keyOf(store)).toBe(`s/${S1}`);
   });
+
+  it('restores a window saved on the old pairing studio to Settings, iPhone', () => {
+    const store = makeStore();
+    const saved = parseLocation({
+      value: JSON.parse(
+        JSON.stringify({
+          workspaceId: WS,
+          place: { at: 'board' },
+          studio: { kind: 'companion' },
+          focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+        }),
+      ),
+    });
+    if (saved === null) {
+      throw new Error('the saved location did not parse');
+    }
+    store.getState().restoreLocation({ location: saved });
+
+    expect(store.getState().appStudio).toEqual({
+      kind: 'settings',
+      focus: { scope: 'app', section: 'iphone' },
+    });
+    const stack = store.getState().navigation[WS];
+    expect(stack?.entries[stack.index]?.studio).toEqual(store.getState().appStudio);
+  });
 });
 
 describe('navigation slice', () => {

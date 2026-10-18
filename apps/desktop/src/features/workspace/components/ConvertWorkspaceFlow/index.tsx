@@ -22,7 +22,7 @@ import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/names';
 import { tauriGhRunner } from '../../../integrations/github/github';
-import { lastPathSegment } from '../WorkspaceLinkForm/lastPathSegment';
+import { lastPathSegment } from './lastPathSegment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -221,7 +221,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
 
   return (
     <section
-      aria-label={isConverted ? 'This is a dev project now' : 'Turn this into a dev project'}
+      aria-label={isConverted ? 'This is a git repository now' : 'Turn this into a git repository'}
       className="flex flex-col gap-4 rounded-lg border border-border-soft bg-background p-3"
     >
       {isConverted ? (
@@ -435,7 +435,7 @@ export const ConvertWorkspaceFlow = ({ workspaceId, project, onClose }: Props) =
               aria-busy={isBusy}
             >
               <span className={isBusy ? 'text-shimmer' : undefined}>
-                {isCreating ? 'Create repository' : 'Convert to dev project'}
+                {isCreating ? 'Create repository' : 'Convert to git repository'}
               </span>
             </Button>
           </FormActions>

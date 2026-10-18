@@ -1,3 +1,4 @@
+import { projectKindOf } from '../projects/projectKindOf';
 import type {
   MountBranchObservation,
   MountId,
@@ -348,7 +349,7 @@ export const buildMountRows = ({
       mountId: view.id,
       projectId: view.projectId,
       projectName: project?.name ?? view.mountName,
-      projectKind: project?.kind ?? 'repo',
+      projectKind: projectKindOf({ project }),
       mountName: view.mountName,
       branch: view.branch,
       baseBranch: view.baseBranch,

@@ -73,7 +73,7 @@ export const WorktreeRow = ({
         data-select-id={isSelectable ? folder.path : undefined}
         onContextMenu={menu.onContextMenu}
         className={cn(
-          'group group/select-row relative flex h-10 items-center gap-3 rounded-sm px-2 text-body hover:bg-hover',
+          'group group/row group/select-row relative flex h-10 items-center gap-3 rounded-sm px-2 text-body hover:bg-hover',
           isRemoving && 'opacity-60',
         )}
       >

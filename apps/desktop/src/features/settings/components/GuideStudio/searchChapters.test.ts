@@ -3,41 +3,51 @@ import { describe, expect, it } from 'vitest';
 import { GUIDE_CHAPTERS } from './guideChapters';
 import { searchChapters } from './searchChapters';
 
-const ids = (query: string) =>
-  searchChapters({ chapters: GUIDE_CHAPTERS, query }).map((chapter) => chapter.id);
+const hits = (query: string) =>
+  searchChapters({ chapters: GUIDE_CHAPTERS, query }).map((hit) =>
+    hit.term === null ? hit.chapterId : `${hit.chapterId}: ${hit.term}`,
+  );
 
 describe('searchChapters', () => {
-  it('keeps every chapter for an empty query', () => {
-    expect(ids('   ')).toEqual(GUIDE_CHAPTERS.map((chapter) => chapter.id));
+  it('finds nothing for an empty query, so the rail shows the chapter list', () => {
+    expect(hits('   ')).toEqual([]);
   });
 
-  it('matches every word anywhere in a chapter, ignoring case', () => {
-    expect(ids('USE reset')).toEqual(['providers']);
-    expect(ids('squash')).toEqual(['history']);
+  it('lists the chapter first, then its points, in Guide order', () => {
+    const limit = hits('limit');
+    expect(limit).toContain('words: Limit');
+    expect(limit).toContain('providers');
+    expect(limit.indexOf('words: Limit')).toBeLessThan(limit.indexOf('providers'));
+    expect(limit.indexOf('providers')).toBeLessThan(limit.indexOf('providers: Limit'));
+  });
+
+  it('matches every word anywhere in a point, ignoring case', () => {
+    expect(hits('USE reset')).toEqual(['providers: Use reset']);
+    expect(hits('squash')).toEqual(['commits: Shape the history']);
   });
 
   it('finds a chapter by the screen it links to', () => {
-    expect(ids('security findings')).toContain('storage');
+    expect(hits('open branches')).toEqual(['commits', 'storage']);
   });
 
-  it('finds the shell chapter by the toggles and panes it names', () => {
-    expect(ids('fold session rail')).toContain('shell');
-    expect(ids('session tools')).toContain('shell');
-    expect(ids('terminal folder')).toContain('shell');
+  it('finds the rail, the tools and the rebase prompt by their names', () => {
+    expect(hits('fold session rail')).toContain('shell: Session tools');
+    expect(hits('resolve with auto')).toEqual(['commits: A rebase conflict asks']);
+    expect(hits('hint the orchestrator')[0]).toBe('workflows: Orchestrated');
   });
 
-  it('finds Orchestrated and Auto in the agents chapter', () => {
-    expect(ids('orchestrated or auto')).toContain('agents');
-    expect(ids('hint the orchestrator')).toEqual(['agents']);
+  it('names each hit once, with a key no other hit has', () => {
+    const keys = searchChapters({ chapters: GUIDE_CHAPTERS, query: 'a' }).map((hit) => hit.key);
+    expect(new Set(keys).size).toBe(keys.length);
   });
 
-  it('no longer finds what the shell dropped', () => {
-    expect(ids('LinkedTaskChip')).toEqual([]);
-    expect(ids('RunModeBar')).toEqual([]);
-    expect(ids('more panes')).toEqual([]);
+  it('no longer finds what the shell moved or renamed', () => {
+    expect(hits('pulse icon')).toEqual([]);
+    expect(hits('monthly cap')).toEqual([]);
+    expect(hits('more panes')).toEqual([]);
   });
 
-  it('returns nothing when a word matches no chapter', () => {
-    expect(ids('reset kubernetes')).toEqual([]);
+  it('returns nothing when a word matches no point', () => {
+    expect(hits('reset kubernetes')).toEqual([]);
   });
 });

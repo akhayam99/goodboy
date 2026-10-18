@@ -122,7 +122,7 @@ describe('TimelineRunLabel', () => {
     }
   });
 
-  it('carries the kind in the icon, with one distinct glyph per kind', () => {
+  it('names the kind on the icon, with the Workflows glyph for every workflow run', () => {
     const drawn = new Map<RunWorkflowKind, string>();
     for (const kind of [
       'preset',
@@ -136,7 +136,8 @@ describe('TimelineRunLabel', () => {
       cleanup();
     }
 
-    expect(new Set(drawn.values()).size).toBe(3);
+    expect(drawn.get('preset')).toBe(drawn.get('custom'));
+    expect(drawn.get('orchestrator')).not.toBe(drawn.get('preset'));
   });
 
   it('prints the run name as plain text and never the raw goal', () => {

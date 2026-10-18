@@ -40,6 +40,7 @@ export const GEMINI_CATALOG = [
   },
   {
     key: 'gemini-3.7-flash',
+    legacy: true,
     label: '3.7 Flash',
     tier: 'cheap',
     contextWindow: 1_000_000,

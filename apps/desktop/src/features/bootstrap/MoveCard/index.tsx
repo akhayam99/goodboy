@@ -46,8 +46,8 @@ export const MoveCard = ({ project, changedCount, isTurnRunning }: Props) => {
       title="Main is on the remote now. Move your work into a session called bootstrap"
       body={
         hasWork
-          ? `${changedCount} changed ${plural(changedCount)} in the project folder move into a worktree session. The folder ends clean on main.`
-          : 'The project folder has no changed files. Finish to start worktree sessions.'
+          ? `${changedCount} changed ${plural(changedCount)} in the folder move into a worktree session. The folder ends clean on main.`
+          : 'The folder has no changed files. Finish to start worktree sessions.'
       }
       actions={
         <Button

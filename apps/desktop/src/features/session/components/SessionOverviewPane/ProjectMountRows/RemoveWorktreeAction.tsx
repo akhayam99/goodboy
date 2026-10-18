@@ -192,7 +192,7 @@ export const RemoveWorktreeAction = ({ sessionId, row, label, triggerClassName }
           kind: 'unread',
           lines: [
             `Whether ${measured.branch} is merged into its base branch is unknown; the worktree stays until that can be read.`,
-            'Check again, or set the base branch for this project in Settings.',
+            'Check again, or set the base branch for this folder in Settings.',
           ],
         });
         return;

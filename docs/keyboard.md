@@ -10,8 +10,10 @@ mounted, and unregistering it restores global handling. Undo and Redo yield
 while a text field, editable surface or terminal owns input.
 
 ⌘W closes the nearest thing and never quits the app (⌘Q quits). On macOS the
-File menu item `goodboy-close` owns the chord and emits `goodboy://close-current`,
-which the web view replays as the chord; elsewhere the chord is Ctrl+Shift+W.
+File menu item Close (`app.close`) owns the chord and emits `goodboy://menu`
+with that id (`app_menu.rs`); `useMenuCommands` replays it as the registry
+shortcut, so the same dispatcher runs the press; elsewhere the chord is
+Ctrl+Shift+W.
 Each press closes one level: a popover or dialog, then the terminal tab (a
 running process asks first), then the open drawer, then a studio, then the
 session view back to the previous place. The Sessions page does nothing.
@@ -22,8 +24,8 @@ A key means the new thing of the place you are in. ⌘N is a new session
 (`session.new`), except on the Chat page (`chat.newHere`, a new chat), on the
 Terminal page and the session terminal drawer (`terminal.newHere`, the New
 terminal in picker: type to filter, arrows, Enter opens a tab, Esc closes; ⌘T
-adds a tab in place with no picker) and inside the Ask panel
-(`ask.reset`, Reset chat). Each contextual entry carries a `scope`, so the
+adds a tab in place with no picker), inside the Ask panel (`ask.reset`, Reset
+chat) and on Home (`home.newWorkspace`, New workspace). Each contextual entry carries a `scope`, so the
 registry binds a chord once per place, and a contextual handler that declines
 (focus outside the Ask panel) hands the chord back to the global one. ⌘K is
 the way to go anywhere: every global new and go-to is a palette entry, and the

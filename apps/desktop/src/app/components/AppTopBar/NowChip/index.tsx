@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
+import type { SessionAttentionReason, SessionId } from '@goodboy/types';
 import {
   AnchoredPopover,
   Button,
@@ -13,13 +13,8 @@ import {
   useDropdown,
   Tooltip,
 } from '@goodboy/ui';
-import {
-  EMPTY_ARRAY,
-  useAppStore,
-  useCurrentWorkspace,
-  useSessions,
-  useStageGroupedSessions,
-} from '../../../../store';
+import { useAppStore, useCurrentWorkspace } from '../../../../store';
+import { useNowSessions } from '../../../../shared/hooks/useNowSessions';
 import { RunningScriptRow } from '../../../../features/scripts/components/RunningScriptRow';
 import {
   useRunningScripts,
@@ -27,7 +22,6 @@ import {
 } from '../../../../features/scripts/hooks/useRunningScripts';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
-import { NAMES } from '../../../../shared/names';
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 import { NowGroup } from './NowGroup';
 import { attentionPlace } from '../../../../features/session/attentionPlace';
@@ -42,7 +36,6 @@ type SelectParams = {
 };
 
 type CountLabelParams = {
-  readonly attention: number;
   readonly running: number;
   readonly scripts: number;
 };
@@ -52,16 +45,8 @@ const PANEL_MAX_HEIGHT = 480;
 const SEGMENT = 'flex items-center gap-1';
 const SEGMENT_WORD = 'hidden text-muted-foreground @min-chrome-labels/topbar:inline';
 
-type WordParams = {
-  readonly count: number;
-};
-
-const needsYouWord = ({ count }: WordParams): string =>
-  count === 1 ? 'session needs you' : 'sessions need you';
-
-const chipLabel = ({ attention, running, scripts }: CountLabelParams): string =>
+const chipLabel = ({ running, scripts }: CountLabelParams): string =>
   [
-    attention > 0 ? `${attention} ${needsYouWord({ count: attention })}` : '',
     running > 0 ? `${running} ${running === 1 ? 'session' : 'sessions'} running` : '',
     scripts > 0 ? `${scripts} ${scripts === 1 ? 'script' : 'scripts'} running` : '',
   ]
@@ -70,8 +55,7 @@ const chipLabel = ({ attention, running, scripts }: CountLabelParams): string =>
 
 export const NowChip = ({ onOpenScript }: Props) => {
   const workspace = useCurrentWorkspace();
-  const sessions = useSessions();
-  const groups = useStageGroupedSessions(workspace?.id ?? null, sessions);
+  const { running } = useNowSessions({});
   const scripts = useRunningScripts();
   const navigate = useAppStore((state) => state.navigate);
   const cancelScript = useAppStore((state) => state.cancelScript);
@@ -85,15 +69,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
   const { open: isOpen, close, toggle } = dropdown;
   const now = useNow(1_000, isOpen && scripts.length > 0);
 
-  const needsYou: ReadonlyArray<Session> =
-    workspace == null
-      ? EMPTY_ARRAY
-      : (groups.find((group) => group.key === 'attention')?.sessions ?? EMPTY_ARRAY);
-  const running: ReadonlyArray<Session> =
-    workspace == null
-      ? EMPTY_ARRAY
-      : (groups.find((group) => group.key === 'running')?.sessions ?? EMPTY_ARRAY);
-  const total = needsYou.length + running.length + scripts.length;
+  const total = running.length + scripts.length;
 
   useEffect(() => {
     if (total === 0) {
@@ -125,7 +101,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
   };
 
   const label = chipLabel({
-    attention: needsYou.length,
     running: running.length,
     scripts: scripts.length,
   });
@@ -152,13 +127,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
               isOpen ? 'bg-muted' : 'hover:bg-hover',
             )}
           >
-            {needsYou.length > 0 ? (
-              <span className={SEGMENT}>
-                <StatusDot tone="warning" size="sm" />
-                <span className="font-medium tabular-nums text-foreground">{needsYou.length}</span>
-                <span className={SEGMENT_WORD}>{needsYouWord({ count: needsYou.length })}</span>
-              </span>
-            ) : null}
             {running.length > 0 ? (
               <span className={SEGMENT}>
                 <StatusDot tone="info" size="sm" />
@@ -193,13 +161,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
         fadeSize={16}
         fadeFrom="elevated"
       >
-        {needsYou.length > 0 ? (
-          <NowGroup label={NAMES.needsYou} count={needsYou.length} tone="warning">
-            {needsYou.map((session) => (
-              <NeedsYouSessionRow key={session.id} session={session} onSelect={selectSession} />
-            ))}
-          </NowGroup>
-        ) : null}
         {running.length > 0 ? (
           <NowGroup label="Running" count={running.length} tone="info">
             {running.map((session) => (

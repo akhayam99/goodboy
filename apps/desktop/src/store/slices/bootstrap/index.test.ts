@@ -148,7 +148,7 @@ describe('hydrateBootstrapPhases', () => {
 });
 
 describe('createNewProject', () => {
-  it('creates the folder and repository, registers the workspace and starts the first lap', async () => {
+  it('creates the folder and repository, names the workspace after it and starts the first lap', async () => {
     const { store, slice } = makeSlice();
 
     const created = await slice.createNewProject({ parentPath: '/games', name: ' cascadia ' });
@@ -156,7 +156,7 @@ describe('createNewProject', () => {
     expect(h.projectFolderCreate).toHaveBeenCalledWith({ parentPath: '/games', name: 'cascadia' });
     expect(store.state.addWorkspace).toHaveBeenCalledWith({
       rootPath: '/games/cascadia',
-      name: 'cascadia',
+      name: 'Cascadia',
     });
     expect(created.project.id).toBe(PROJECT_ID);
     expect(isProjectInFirstLap({ state: store.state, projectId: PROJECT_ID })).toBe(true);

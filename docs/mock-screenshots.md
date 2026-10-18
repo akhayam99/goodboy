@@ -238,6 +238,23 @@ every other scene. A scene opens a studio through the same entrance the app
 uses (a store opener or a click on the real control), never by mounting the
 studio itself.
 
+The setup and Home scenes live in `scenes/onboarding/` and sit in one
+`ONBOARDING_SCENES` block of `registry/base.ts`, each state once per theme:
+`onboarding-step-<state>-<theme>` for the wizard steps (welcome, four agents
+states, three tools states, two first session states),
+`onboarding-new-workspace-<state>-<theme>` for the one form,
+`onboarding-home-<state>-<theme>` (list, new, empty),
+`onboarding-setup-menu-<theme>` and `onboarding-brand-tile-<theme>`. The step
+scenes share `wizardSceneSeed.ts` (Acme web, the plain Acme docs, four agent
+CLIs) and settle all motion, because a headless capture does not advance CSS
+motion. Two take params instead, for the guide figures, whose shots switch
+theme with `&theme=`: `onboarding` opens the real setup wizard through its open
+event, with `&step=` a step id (`welcome`, `agents`, `workspace`, `tools`,
+`first-session`), `&agents=` an agents state (`ready`, `signin`, `none`,
+`error`) and `&ws=` a workspace state (`none`, `repo` for Acme web, `folder` for
+Acme docs; `none` up to Workspace, `repo` after it), and
+`onboarding-home&state=` shows Home in `list`, `new` or `empty`.
+
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens
 Settings through the store, so the column, the rail and the page behave as in
@@ -288,7 +305,7 @@ feature-area guide ones in the public
 and light `.webp` pairs. The README hero is also the website's hero picture,
 the one capture on the site; every other product view there is a React mock.
 `pnpm readme:hero` shoots the `readme-hero` scene (the Harborline session on
-its Overview with the Projects card unfolded, the shared Context drawer open
+its Overview with the Folders card unfolded, the shared Context drawer open
 and three runs interleaving in Activity) from the desktop mock dev server
 (`http://localhost:5230`, or the URL passed as its first argument) at
 1920x1200 and scale 4, in both themes. It writes

@@ -8,7 +8,7 @@ import { projectById } from '../../../../store/slices/projects/projectIndex';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useToast } from '../../../../shared/components/Toast';
 import { useNow } from '../../../../shared/hooks/useNow';
-import type { BranchScope } from '../../branches/branchScopeOf';
+import type { BranchScope } from '../../branches/branchScope';
 import { useRecentlyDeletedBranches } from '../../useRecentlyDeletedBranches';
 import { DeletedBranchRow } from './DeletedBranchRow';
 
@@ -30,7 +30,7 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const projectNameOf = (entry: DeletedBranch): string =>
-    projectById(projects, entry.projectId)?.name ?? 'a removed project';
+    projectById(projects, entry.projectId)?.name ?? 'a removed folder';
 
   const restore = async (entry: DeletedBranch) => {
     setBusyId(entry.id);
@@ -61,15 +61,15 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
   };
 
   return (
-    <section aria-label="Recently deleted" className="flex flex-col">
-      <Band>
-        <button
-          type="button"
-          aria-expanded={isOpen}
-          aria-controls={bodyId}
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex min-h-9 items-center gap-2 rounded-sm px-2 text-left hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
+    <section aria-label="Recently deleted" className="flex flex-col gap-2">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={bodyId}
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex min-h-9 items-center justify-between gap-2 rounded-sm px-1 text-left hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+      >
+        <span className="flex items-center gap-2">
           <ChevronRight
             size={ICON_SIZE.row}
             aria-hidden
@@ -79,12 +79,14 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
             )}
           />
           <span className="text-row text-foreground">Recently deleted</span>
-          <span className="text-meta tabular-nums text-muted-foreground">{entries.length}</span>
-          <span className="text-meta text-faint-foreground">
-            Restorable for {DELETED_BRANCH_KEEP_DAYS} days
-          </span>
-        </button>
-        {isOpen ? (
+        </span>
+        <span className="text-meta text-faint-foreground">
+          <span className="tabular-nums">{entries.length}</span> · restorable for{' '}
+          {DELETED_BRANCH_KEEP_DAYS} days
+        </span>
+      </button>
+      {isOpen ? (
+        <Band>
           <div id={bodyId} className="flex flex-col gap-1 pb-1">
             {entries.length === 0 ? (
               <EmptyLine className="px-2 py-2 text-label text-muted-foreground">
@@ -112,8 +114,8 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
               Expired ones are released when you open this page.
             </p>
           </div>
-        ) : null}
-      </Band>
+        </Band>
+      ) : null}
     </section>
   );
 };

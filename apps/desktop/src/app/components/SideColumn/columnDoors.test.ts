@@ -9,13 +9,15 @@ describe('the column doors', () => {
     expect(door?.label).toBe('Tasks');
   });
 
-  it('lists Sessions, Tasks, Chat, Workflows and Terminal in that order', () => {
+  it('lists Sessions, Tasks, Chat, Workflows, Terminal, Impact and Monitoring in that order', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
       'Sessions',
       'Tasks',
       'Chat',
       'Workflows',
       'Terminal',
+      'Impact',
+      'Monitoring',
     ]);
   });
 });

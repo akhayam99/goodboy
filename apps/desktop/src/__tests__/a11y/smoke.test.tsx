@@ -76,6 +76,11 @@ vi.mock('../../store', () => {
     loadDetectedEditors: vi.fn(async () => undefined),
     loadDetectedBrowsers: vi.fn(async () => undefined),
     reportError: vi.fn(),
+    storageStats: null,
+    storageFolders: [],
+    storageRoots: [],
+    storageArtifacts: [],
+    storageScope: null,
     ...storeSeed.current,
   });
   return {
@@ -251,6 +256,12 @@ describe('a11y smoke, QuickActionsPopover', () => {
 
 describe('a11y smoke, SettingsStudio app scope', () => {
   it('panel open', async () => {
+    storeSeed.current = {
+      storageFolders: [],
+      storageRoots: [],
+      storageStats: null,
+      storageArtifacts: [],
+    };
     const { container } = renderInToasts(<AppScopePanel section="general" workspaceId={null} />);
     await expectBaseline({ name: 'AppScopePanel open', container });
   });

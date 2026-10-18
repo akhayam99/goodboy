@@ -8,18 +8,18 @@ Free disk space from the checkout folders of archived, deleted or gone sessions.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-light.webp" alt="Settings, App, Storage: 5.1 GB with 5.0 GB that can go, the Can go, Review first and Keep bars, and the Worktrees table with hl/flaky-retry-test 2.5 GB and hl/retire-export-cron 1.8 GB in ledger-core and hl/receipt-email-retry 700 MB in notify-relay, each marked safe to remove, and the button Remove 3 safe folders in Harborline">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-worktrees-light.webp" alt="Settings, App, Storage: 5.1 GB on this Mac under the title, the Worktrees section with the filters To review, In use and Kept, and the table with hl/flaky-retry-test 2.5 GB and hl/retire-export-cron 1.8 GB in ledger-core and hl/receipt-email-retry 700 MB in notify-relay, each marked safe to remove, and the button Remove 3 safe folders · 5.0 GB">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Branches
 
-Delete old branches with confidence. **Branches**, under App settings, opens on the ones that are **Safe to delete** and shows how each was merged. Deleted branches wait in **Recently deleted** with **Restore**, and a merged branch can be removed with **Undo**.
+Delete old branches with confidence. **Branches**, in the settings of a workspace, starts with the **After merge** rule, then lists the branches that are **Safe to delete** and shows how each was merged. Deleted branches wait in **Recently deleted** with **Restore**, and a merged branch can be removed with **Undo**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-light.webp" alt="Settings, App, Branches: the line that Goodboy deletes the branch on this Mac after a pull request merges, Recently deleted 3, 7 safe to delete and 2 need a look, local branches grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete with how it merged">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/storage-branches-light.webp" alt="Settings, Harborline, Branches: the After merge rule first, 7 safe to delete and 2 need a look under the title, local branches grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete with how it merged, and Recently deleted 3 at the end">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

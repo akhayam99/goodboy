@@ -3,21 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { pageMarkerOf } from './pageMarkerOf';
 
 describe('pageMarkerOf', () => {
-  it('marks Auto agents Experimental and says why', () => {
+  it('marks Auto agents Experimental and says what that means', () => {
     const marker = pageMarkerOf({ pageId: 'auto', isAutoShown: true });
 
     expect(marker?.label).toBe('Experimental');
-    expect(marker?.why).toBe(
-      'Auto picks and starts agents on its own, under a limit. Its choices are still being tuned.',
-    );
+    expect(marker?.why).toBe('Auto starts agents on its own. Its choices are still being tuned.');
   });
 
-  it('marks Agents Deprecated and points to Start an auto while Auto is shown', () => {
+  it('marks Agents Deprecated and names the Start an auto door while Auto is shown', () => {
     const marker = pageMarkerOf({ pageId: 'agents', isAutoShown: true });
 
     expect(marker?.label).toBe('Deprecated');
     expect(marker?.why).toBe(
-      'Use Start an auto: Auto picks and starts the right agent. Agents you start by hand keep working.',
+      'Start an auto on Auto agents. Agents you start by hand keep running.',
     );
   });
 

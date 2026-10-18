@@ -5,18 +5,20 @@ import { workspaceAccent } from '../../color';
 type Props = {
   readonly workspace: Workspace;
   readonly isDimmed?: boolean;
+  readonly className?: string;
 };
 
 const initialOf = ({ name }: Pick<Workspace, 'name'>): string =>
   name.trim().charAt(0).toUpperCase() || '?';
 
-export const WorkspaceTile = ({ workspace, isDimmed = false }: Props) => (
+export const WorkspaceTile = ({ workspace, isDimmed = false, className }: Props) => (
   <span
     aria-hidden
     data-workspace-tile=""
     className={cn(
       'flex size-5 shrink-0 items-center justify-center rounded-md text-chip text-on-tone ring-1 ring-inset ring-border-soft',
       isDimmed && 'opacity-60',
+      className,
     )}
     style={{ backgroundColor: workspaceAccent(workspace.id) }}
   >

@@ -9,7 +9,7 @@ export const TASK_GROUP_BYS: ReadonlyArray<TaskGroupBy> = ['source', 'status', '
 export const TASK_GROUP_BY_LABEL = {
   source: 'Source',
   status: 'Status',
-  project: 'Project',
+  project: 'Folder',
   none: 'None',
 } satisfies Record<TaskGroupBy, string>;
 
@@ -63,7 +63,7 @@ const bucketOf = ({ record, groupBy, projectNames }: BucketParams): Bucket => {
     case 'project': {
       const projectId = (record.projectIds ?? []).find((id) => projectNames[id] !== undefined);
       if (projectId === undefined) {
-        return { key: NO_PROJECT_KEY, label: 'No project', rank: 1 };
+        return { key: NO_PROJECT_KEY, label: 'No folder', rank: 1 };
       }
       return { key: `project:${projectId}`, label: projectNames[projectId] ?? '', rank: 0 };
     }

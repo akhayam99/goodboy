@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AFTER_MERGE_RULES, type AfterMergeRule, type WorkspaceId } from '@goodboy/types';
-import { Collapsible, SegmentedTabs } from '@goodboy/ui';
+import { Band, Collapsible, SegmentedTabs } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { DEFAULT_AFTER_MERGE_RULE } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
@@ -97,7 +97,13 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section aria-label="When a pull request merges" className="flex flex-col gap-3">
+    <Band
+      inset="content"
+      label="After merge"
+      hint="What happens to a branch once its pull request merges."
+      headingLevel={2}
+      ariaLabel="When a pull request merges"
+    >
       <WorkspaceFieldRow
         workspaceId={workspaceId}
         field="afterMerge"
@@ -136,6 +142,6 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
           </ul>
         </Collapsible>
       )}
-    </section>
+    </Band>
   );
 };

@@ -69,6 +69,7 @@ const input = {
   digestBlock: 'STATE OF THIS CONVERSATION\nNo agent is open.',
   artifactsBlock: '',
   rows,
+  childLabels: new Map([['agent-scout-1', 'Scout 2']]),
   isRestart: false,
 };
 
@@ -97,6 +98,14 @@ describe('the message that delivers stored rows to Auto', () => {
     const text = buildDeliveryText(input);
     expect(text).toContain('the user had artifact artifact-plan-1 open');
     expect(text).toContain('ask the user');
+  });
+
+  it('names each result with the label the user sees on its card', () => {
+    const text = buildDeliveryText(input);
+    expect(text).toContain('- Scout 2 (scout agent-scout-1, delegation-1): completed');
+    expect(text).toContain('as the card of the agent that made it');
+    const unnamed = buildDeliveryText({ ...input, childLabels: new Map() });
+    expect(unnamed).toContain('- scout agent-scout-1 (delegation-1): completed');
   });
 
   it('names the question, its options and how to answer', () => {

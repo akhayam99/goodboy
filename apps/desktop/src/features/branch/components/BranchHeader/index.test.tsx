@@ -725,7 +725,7 @@ describe('BranchHeader overflow', () => {
     const labels = screen.queryAllByRole('menuitem').map((item) => item.textContent ?? '');
     expect(labels.some((label) => label.startsWith('Copy branch name'))).toBe(false);
     expect(labels.some((label) => label.startsWith('Open terminal'))).toBe(false);
-    expect(labels.some((label) => /Rewrite history|Restore a backup/.test(label))).toBe(false);
+    expect(labels.some((label) => /Edit commits|Restore a backup/.test(label))).toBe(false);
   });
 });
 

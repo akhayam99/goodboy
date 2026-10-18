@@ -33,7 +33,7 @@ import type { ProjectBranch } from '../../../worktree/branchCleanup';
 import { BranchesPage } from './index';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const ROW_CELLS = ['select', 'branch', 'session', 'state', 'origin', 'status', 'age', 'action'];
+const ROW_CELLS = ['select', 'branch', 'folder', 'state', 'age', 'action'];
 const nowS = Math.floor(Date.now() / 1000);
 
 let useAppStore: StoryStore;
@@ -104,7 +104,7 @@ const seedBranches = (branches: ReadonlyArray<BranchPatch>) =>
 const renderPage = () =>
   render(
     <ToastProvider>
-      <BranchesPage />
+      <BranchesPage workspaceId={HARBORLINE.id} />
     </ToastProvider>,
   );
 
@@ -252,13 +252,36 @@ describe('BranchesPage', () => {
     await within(list).findByText('goodboy/ledger-close');
     expect(within(list).queryByText('ines/fx-cache-experiment')).toBeNull();
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Show all branches' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Show branches' }));
+    fireEvent.click(screen.getByRole('option', { name: 'All' }));
     within(list).getByText('ines/fx-cache-experiment');
-    within(list).getByText('Behind main by 31');
-    fireEvent.click(within(list).getByRole('button', { name: 'Delete…' }));
+    const row = within(list).getByText('ines/fx-cache-experiment').closest('li');
+    expect(row).not.toBeNull();
+    fireEvent.click(within(row!).getByRole('button', { name: 'Delete' }));
 
-    screen.getByRole('group', { name: /Delete 1 branch in ledger-core/ });
+    const dialog = await screen.findByRole('dialog', { name: /Delete ines\/fx-cache-experiment/ });
     expect(invokes('branch_delete_checked')).toHaveLength(0);
+    fireEvent.click(within(dialog).getByRole('button', { name: /Delete and 5 commits/ }));
+    await waitFor(() => expect(invokes('branch_delete_checked')).toHaveLength(1));
+  });
+
+  it('draws Delete in a cell that reveals on hover and counts the list in one meta line', async () => {
+    seedBranches([
+      branch(),
+      branch({
+        name: 'ines/fx-cache-experiment',
+        sha: 'sha-fx',
+        mergeState: { kind: 'not-merged', ahead: 5 },
+      }),
+    ]);
+    renderPage();
+    const list = screen.getByRole('region', { name: 'Branches' });
+    await within(list).findByText('goodboy/ledger-close');
+
+    const cells = list.querySelectorAll('[data-cell="action"]');
+    expect(cells.length).toBeGreaterThan(0);
+    expect(screen.queryByRole('switch', { name: 'Show all branches' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Made by' })).toBeNull();
   });
 
   it('selects every branch in view with the select all key and clears with Escape', async () => {
@@ -316,7 +339,7 @@ describe('BranchesPage', () => {
     const group = await openRecentlyDeleted();
     await within(group).findByText('goodboy/fee-rounding');
     const list = screen.getByRole('region', { name: 'Branches' });
-    within(list).getByRole('button', { name: /Reconcile the ledger close/ });
+    within(list).getByText('Reconcile the ledger close');
 
     const cellsOf = (row: Element) =>
       [...row.children].map((cell) => cell.getAttribute('data-cell'));

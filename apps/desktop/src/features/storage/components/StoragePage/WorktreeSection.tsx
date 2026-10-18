@@ -15,6 +15,7 @@ import { ScanRepositoryRow } from './ScanRepositoryRow';
 import { StorageOutcomeNotice } from './StorageOutcomeNotice';
 import { WorktreeColumns } from './WorktreeColumns';
 import { WorktreeGroup } from './WorktreeGroup';
+import { WorktreeRemoveButton } from './WorktreeRemoveButton';
 import type { ToggleFolderParams } from './types';
 
 const EMPTY_COPY = {
@@ -135,15 +136,37 @@ export const WorktreeSection = ({ scope }: Props) => {
       <SectionHeader
         label="Worktrees"
         icon={<FolderIcon size={ICON_SIZE.row} aria-hidden />}
-        hint="Checkout folders of sessions that are archived, deleted or gone. Branches always stay in the repository."
+        meta={
+          filter === 'review' && suggested.length > 0 ? (
+            <span className="text-meta text-muted-foreground">
+              {suggested.length} safe to remove
+            </span>
+          ) : undefined
+        }
+        hint={
+          filter === 'review' && suggested.length === 0
+            ? `No clean folder has been idle for over ${suggestAfterDays} days.`
+            : `Clean folders idle for over ${suggestAfterDays} days. Folders with changes are skipped.`
+        }
         action={
-          <SegmentedTabs
-            ariaLabel="Worktree folders"
-            size="sm"
-            options={options}
-            value={filter}
-            onChange={onFilter}
-          />
+          <div className="flex items-center gap-2">
+            <SegmentedTabs
+              ariaLabel="Worktree folders"
+              size="sm"
+              options={options}
+              value={filter}
+              onChange={onFilter}
+            />
+            {filter === 'review' && selected.size === 0 && suggested.length > 0 ? (
+              <WorktreeRemoveButton
+                suggested={suggested}
+                onStart={() => {
+                  setSelected(new Set(suggested.map((folder) => folder.path)));
+                  setIsConfirming(true);
+                }}
+              />
+            ) : null}
+          </div>
         }
       />
       <StorageOutcomeNotice />
@@ -169,16 +192,10 @@ export const WorktreeSection = ({ scope }: Props) => {
       </Band>
       {filter === 'review' ? (
         <BulkRemoveBar
-          suggested={suggested}
-          suggestAfterDays={suggestAfterDays}
           workspaceName={workspaceName}
           selected={selected}
           total={selectable.length}
           isConfirming={isConfirming}
-          onStart={() => {
-            setSelected(new Set(suggested.map((folder) => folder.path)));
-            setIsConfirming(true);
-          }}
           onArm={() => setIsConfirming(true)}
           onCancel={() => setIsConfirming(false)}
           onClear={clearSelection}

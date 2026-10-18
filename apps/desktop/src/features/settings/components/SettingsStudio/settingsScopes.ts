@@ -1,5 +1,6 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { SettingsPageScope } from '../../settingsFocus';
+import { NAMES } from '../../../../shared/names';
 
 export type NestedScope = 'providers' | 'tools';
 
@@ -7,7 +8,7 @@ export const SCOPE_ITEMS = [
   { scope: 'workspace', label: 'Workspace', concept: 'workspace', needsWorkspace: true },
   {
     scope: 'providers',
-    label: 'Providers & models',
+    label: NAMES.providersAndModels,
     concept: 'providers',
     needsWorkspace: false,
   },

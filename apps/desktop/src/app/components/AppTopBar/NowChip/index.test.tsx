@@ -100,16 +100,12 @@ describe('NowChip', () => {
     withScript();
     rerender(<NowChip onOpenScript={vi.fn()} />);
 
-    expect(trigger().getAttribute('aria-label')).toBe(
-      '2 sessions need you, 1 session running, 1 script running',
-    );
-    expect(screen.getByText('sessions need you').className).toContain(
-      '@min-chrome-labels/topbar:inline',
-    );
+    expect(trigger().getAttribute('aria-label')).toBe('1 session running, 1 script running');
+    expect(screen.queryByText(/need you/)).toBeNull();
     expect(screen.getByText('scripts').className).toContain('@min-chrome-labels/topbar:inline');
   });
 
-  it('groups needs you, running and scripts in one popover and skips an empty group', async () => {
+  it('groups running and scripts in one popover, leaves needs you to the sidebar and skips an empty group', async () => {
     hooks.groups = [{ key: 'attention', sessions: [NEEDS] }];
     withScript();
     render(<NowChip onOpenScript={vi.fn()} />);
@@ -117,21 +113,28 @@ describe('NowChip', () => {
     const panel = await open();
 
     expect(within(panel).getByText('Now in Harborline')).toBeDefined();
-    expect(within(panel).getByRole('list', { name: 'Needs you' })).toBeDefined();
+    expect(within(panel).queryByRole('list', { name: 'Needs you' })).toBeNull();
     expect(within(panel).queryByRole('list', { name: 'Running' })).toBeNull();
     expect(within(panel).getByRole('list', { name: 'Scripts' })).toBeDefined();
   });
 
-  it('opens a session from its row and closes', async () => {
+  it('draws nothing when the only signal is a session that needs you', () => {
     hooks.groups = [{ key: 'attention', sessions: [NEEDS] }];
+    const { container } = render(<NowChip onOpenScript={vi.fn()} />);
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('opens a session from its row and closes', async () => {
+    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
     render(<NowChip onOpenScript={vi.fn()} />);
 
     const panel = await open();
     await act(async () => {
-      fireEvent.click(within(panel).getByText('Pick the retry backoff for notify-relay'));
+      fireEvent.click(within(panel).getByText('Retry failed webhook deliveries'));
     });
 
-    expect(store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: NEEDS.id }) });
+    expect(store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: RUNNING.id }) });
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
   });
 
@@ -165,7 +168,7 @@ describe('NowChip', () => {
   });
 
   it('opens on the named popover layer, closes on escape with focus back, and on the backdrop', async () => {
-    hooks.groups = [{ key: 'attention', sessions: [NEEDS] }];
+    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
     render(<NowChip onOpenScript={vi.fn()} />);
 
     await open();

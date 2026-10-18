@@ -53,6 +53,25 @@ describe('cliGate', () => {
 });
 
 describe('cliSupportedSibling', () => {
+  it('stays on the same line, so an old Codex CLI is offered the older Sol, never Astra', () => {
+    expect(
+      cliSupportedSibling({
+        provider: 'codex',
+        modelKey: 'gpt-6.1-sol',
+        installedVersion: '0.155.0',
+        learned: [],
+      })?.key,
+    ).toBe('gpt-5.6-sol');
+    expect(
+      cliSupportedSibling({
+        provider: 'codex',
+        modelKey: 'gpt-6-luna',
+        installedVersion: '0.161.0',
+        learned: [],
+      })?.key,
+    ).toBe('gpt-5.6-luna');
+  });
+
   it('offers the newest model of the same group the installed CLI runs', () => {
     expect(
       cliSupportedSibling({
@@ -80,7 +99,12 @@ describe('outdatedCliModels', () => {
       installedVersion: '2.1.240',
       learned: [],
     });
-    expect(gates.map((gate) => gate.model.key)).toEqual(['fable-5.1', 'opus-5.5', 'sonnet-5.5']);
+    expect(gates.map((gate) => gate.model.key)).toEqual([
+      'fable-5.1',
+      'opus-5.5',
+      'sonnet-5.5',
+      'haiku-5.5',
+    ]);
   });
 
   it('is empty on a current CLI', () => {

@@ -1,17 +1,10 @@
 import { AUTO_ATTEMPT_CEILING_USD, parseAutoDelegationRole } from '@goodboy/core';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId } from '@goodboy/types';
-import type { Tone, WorkNodeState } from '@goodboy/ui';
 import { AGENT_KIND_META, kindForRole, type AgentKind } from '../../session/agent-kind';
 import { delegationResultOf, type DelegationResultView } from './delegationResultOf';
 import { recordField, textField } from './readJson';
-
-type DelegationStatus = Readonly<{
-  word: string;
-  tone: Tone;
-  isLive: boolean;
-  node?: WorkNodeState;
-}>;
+import { settledStatusOf, type DelegationStatus } from './settledStatusOf';
 
 export type DelegationCardModel = Readonly<{
   delegationId: string;
@@ -36,14 +29,6 @@ type StatusParams = {
   readonly delegation: AutoDelegation;
 };
 
-const SETTLED_STATUS: Readonly<Record<NonNullable<AutoDelegation['outcome']>, DelegationStatus>> = {
-  completed: { word: 'Done', tone: 'success', isLive: false },
-  failed: { word: 'Failed', tone: 'danger', isLive: false },
-  blocked: { word: 'Blocked', tone: 'warning', isLive: false },
-  stopped: { word: 'Stopped', tone: 'neutral', isLive: false },
-  timed_out: { word: 'Timed out', tone: 'warning', isLive: false },
-};
-
 const delegationStatusOf = ({ delegation }: StatusParams): DelegationStatus => {
   if (delegation.isStopping && delegation.state !== 'settled') {
     return { word: 'Stopping', tone: 'neutral', isLive: true };
@@ -60,7 +45,7 @@ const delegationStatusOf = ({ delegation }: StatusParams): DelegationStatus => {
     case 'paused':
       return { word: 'Needs you', tone: 'warning', isLive: false, node: 'question' };
     case 'settled':
-      return SETTLED_STATUS[delegation.outcome ?? 'failed'];
+      return settledStatusOf({ outcome: delegation.outcome ?? 'failed' });
     default: {
       const exhaustive: never = delegation.state;
       return exhaustive;

@@ -44,9 +44,9 @@ const openFromRail = async (): Promise<void> => {
 const goToClaude = async (): Promise<void> => {
   const nav = await screen.findByRole('navigation', { name: 'Settings scopes' });
   await click(
-    within(nav).getAllByRole('button', { name: /^Providers & models/ })[0] as HTMLElement,
+    within(nav).getAllByRole('button', { name: /^Providers and models/ })[0] as HTMLElement,
   );
-  const list = await screen.findByRole('list', { name: 'Providers & models settings' });
+  const list = await screen.findByRole('list', { name: 'Providers and models settings' });
   await click(within(list).getByRole('button', { name: /^Claude/ }));
   await heading('Claude');
 };
@@ -279,7 +279,7 @@ export const SETTINGS_FRAME_ROWS: ReadonlyArray<Row> = [
       await goToClaude();
     },
     lands: async () => {
-      const list = screen.getByRole('list', { name: 'Providers & models settings' });
+      const list = screen.getByRole('list', { name: 'Providers and models settings' });
       const claude = within(list).getByRole('button', { name: /^Claude/ });
       expect(claude.textContent).toBe('Claude');
       expect(within(claude).getByRole('img', { name: 'Claude is about to run out' })).toBeDefined();

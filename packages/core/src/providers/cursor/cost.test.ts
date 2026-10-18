@@ -50,8 +50,20 @@ describe('computeCursorCostUsd', () => {
 
   it('gemini-3.7-flash-medium bills at the cursor flash rate', () => {
     expect(computeCursorCostUsd({ usage, model: 'gemini-3.7-flash-medium' })).toBeCloseTo(
-      0.75 + 3.5,
+      0.75 + 3.75,
     );
+    expect(computeCursorCostUsd({ usage, model: 'gemini-3.8-flash-high' })).toBeCloseTo(
+      0.75 + 3.75,
+    );
+  });
+
+  it('bills Haiku 5.5 at its lower rate, Gemini 4 Argon at 2 / 10 and Sonnet 5.5 cache at 0.10', () => {
+    expect(computeCursorCostUsd({ usage, model: 'claude-haiku-5-5-thinking-high' })).toBeCloseTo(
+      0.1 + 0.5,
+    );
+    expect(CURSOR_PRICES['claude-haiku-5-5-low']?.assumed).toBe(true);
+    expect(computeCursorCostUsd({ usage, model: 'gemini-4-argon-medium' })).toBeCloseTo(2 + 10);
+    expect(CURSOR_PRICES['claude-sonnet-5-5-medium']?.cachedInputPerMtok).toBe(0.1);
   });
 
   it('prices every slug the catalog can emit', () => {

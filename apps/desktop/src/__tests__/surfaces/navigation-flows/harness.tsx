@@ -313,6 +313,10 @@ export const clickButton = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('button', { name }));
 };
 
+export const clickMenuItem = async (name: RegExp | string): Promise<void> => {
+  await click(await screen.findByRole('menuitem', { name }));
+};
+
 const leaveWorktreeLevel = async (): Promise<void> => {
   const back = document.querySelector<HTMLElement>(
     '[data-level-layer="worktree"]:not([inert]) [data-level-back] button',
@@ -342,7 +346,7 @@ const sessionLevel = async (): Promise<HTMLElement> => {
 export const openCrumb = async (label: RegExp): Promise<void> => {
   const level = within(await sessionLevel());
   if (label.test('Branch')) {
-    const projects = within(level.getByRole('group', { name: 'Projects' }));
+    const projects = within(level.getByRole('group', { name: 'Folders' }));
     const [first] = projects.getAllByRole('button').filter((row) => row.closest('li') !== null);
     if (first === undefined) {
       throw new Error('the session level lists no worktree');
@@ -475,7 +479,7 @@ export const both =
   };
 
 const FOREIGN_CONTROLS: ReadonlyArray<RegExp> = [
-  /^Rewrite history/,
+  /^Edit commits/,
   /^PR #\d+/,
   /^Open in Review/,
   /^Fix \d+ notes?$/,
@@ -575,7 +579,6 @@ export const installNavigationHooks = (): void => {
       import('../../../features/impact/components/ImpactStudio'),
       import('../../../features/changelog/components/ChangelogStudio'),
       import('../../../features/notifications/components/NotificationsStudio'),
-      import('../../../features/companion/components/CompanionStudio'),
       import('../../../features/workspace-chat/components/ChatStudio'),
     ]);
   }, STORE_IMPORT_TIMEOUT_MS);

@@ -153,9 +153,7 @@ export const C10NewSessionScene = ({ state }: Props) => {
         window.clearInterval(timer);
         return;
       }
-      const trigger = document.querySelector<HTMLElement>(
-        '[role="combobox"][aria-label="Project"]',
-      );
+      const trigger = document.querySelector<HTMLElement>('[role="combobox"][aria-label="Folder"]');
       if (trigger === null) {
         return;
       }
@@ -163,9 +161,7 @@ export const C10NewSessionScene = ({ state }: Props) => {
         trigger.click();
         return;
       }
-      const search = document.querySelector<HTMLInputElement>(
-        'input[aria-label="Search projects"]',
-      );
+      const search = document.querySelector<HTMLInputElement>('input[aria-label="Search folders"]');
       if (search === null) {
         return;
       }

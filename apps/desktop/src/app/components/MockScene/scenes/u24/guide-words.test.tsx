@@ -63,7 +63,7 @@ describe('the guide words scenes', () => {
     );
   });
 
-  it('guide-words lists What is Goodboy then Words, with the nine terms drawn', async () => {
+  it('guide-words lists What is Goodboy then Words, with its terms drawn', async () => {
     await mount('guide-words');
 
     const rail = within(screen.getByRole('navigation', { name: 'Guide chapters' }));
@@ -71,7 +71,7 @@ describe('the guide words scenes', () => {
     expect(words.getAttribute('aria-current')).toBe('true');
     expect(words.previousElementSibling?.textContent).toBe('What is Goodboy');
     const chapter = within(screen.getByRole('region', { name: 'Words' }));
-    ['Workspace', 'Project', 'Session', 'Agent', 'Turn', 'Run', 'Plan', 'Budget'].forEach((term) =>
+    ['Workspace', 'Folder', 'Session', 'Agent', 'Turn', 'Limit'].forEach((term) =>
       expect(chapter.getByText(term)).toBeDefined(),
     );
     expect(chapter.getByText('Worktree and branch')).toBeDefined();

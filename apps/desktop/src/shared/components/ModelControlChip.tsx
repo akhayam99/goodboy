@@ -36,6 +36,8 @@ type Props = {
 
 const MODEL_LABEL = 'Model';
 
+const MODEL_POPOVER_WIDTH = 'w-96 max-w-[calc(100vw-2rem)]';
+
 export const ModelControlChip = ({
   connectedProviders,
   effective,
@@ -52,7 +54,8 @@ export const ModelControlChip = ({
   const dropdown = useDropdown({
     align: 'start',
     disabled: isDisabled,
-    expectedWidth: 320,
+    width: MODEL_POPOVER_WIDTH,
+    expectedWidth: 384,
     expectedHeight: 480,
   });
   const summary = recommendationSummary({
@@ -65,7 +68,6 @@ export const ModelControlChip = ({
       dropdown={dropdown}
       role="dialog"
       ariaLabel={ariaLabel}
-      className="w-80"
       trigger={
         <ControlChip
           label={MODEL_LABEL}

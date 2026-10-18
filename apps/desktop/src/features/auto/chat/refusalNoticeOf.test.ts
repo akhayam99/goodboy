@@ -11,7 +11,7 @@ describe('the notice of a refused hand over', () => {
         refusal: { action: 'delegate', code: 'mount_ambiguous', roles: ['implementer'] },
       }),
     ).toBe(
-      'Auto tried to start an Implementer. Not started: more than one project fits and it did not say which. Auto is choosing again.',
+      'Auto tried to start an Implementer. Not started: more than one folder fits and it did not say which. Auto is choosing again.',
     );
   });
 

@@ -15,26 +15,12 @@ type AgeParams = {
   readonly nowMs: number;
 };
 
-type ConfirmationParams = ProviderParams &
-  AgeParams & {
-    readonly identity: string | null;
-  };
-
-export const confirmationLine = ({
-  providerId,
-  health,
-  nowMs,
-  identity,
-}: ConfirmationParams): string | null => {
-  if (health.standing !== 'connected') {
+export const checkedLine = ({ health, nowMs }: AgeParams): string | null => {
+  if (health.standing !== 'connected' || !health.evidence.serverAccepted) {
     return null;
   }
-  if (!health.evidence.serverAccepted) {
-    return `Signed in on this Mac. Not confirmed by ${PROVIDER_LABEL[providerId]}.`;
-  }
   const age = formatAge({ from: health.evidence.lastGoodAt, now: nowMs });
-  const confirmed = age === '' ? 'Confirmed' : `Confirmed ${age}`;
-  return identity === null ? confirmed : `Signed in as ${identity}. ${confirmed}`;
+  return age === '' ? null : `checked ${age}`;
 };
 
 export const cannotCheckTitle = ({ providerId }: ProviderParams): string =>

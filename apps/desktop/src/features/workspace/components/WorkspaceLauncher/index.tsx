@@ -1,188 +1,219 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderOpen, FolderPlus, Plus, Search, Unplug } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
 import {
   Button,
-  Checkbox,
+  EmptyLine,
   Eyebrow,
   IconButton,
-  ConfirmPopover,
+  KeyHint,
   ScrollFade,
-  EmptyState,
+  SearchField,
+  Switch,
+  cn,
+  useEscapeLayer,
 } from '@goodboy/ui';
-import type { Workspace } from '@goodboy/types';
+import type { Workspace, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { BrandTile } from '../../../../shared/components/BrandTile';
+import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
+import { APP_VERSION } from '../../../../shared/lib/appVersion';
+import { NAMES } from '../../../../shared/names';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdatePill } from '../../../updater/components/UpdatePill';
-import { WorkspaceListRow } from '../WorkspaceListRow';
+import { useSetupResume } from '../../../onboarding/useSetupResume';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
-import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
-import { ConceptTile } from '../../../../shared/components/ConceptTile';
+import { hasOnlyPlainFolders } from '../../hasOnlyPlainFolders';
+import { openNewWorkspace } from '../../openNewWorkspace';
+import { useIsMainWindow } from '../../useIsMainWindow';
+import { LauncherEmpty } from './LauncherEmpty';
+import { WorkspaceRow } from './WorkspaceRow';
+import { useHomeFolder } from './useHomeFolder';
 
-export const WorkspaceLauncher = () => {
+type Props = {
+  readonly isCreating: boolean;
+  readonly onCloseCreate: () => void;
+  readonly onOfferRepo: () => void;
+};
+
+type CreatedParams = {
+  readonly workspaceId: WorkspaceId;
+};
+
+const SEARCH_FROM = 5;
+
+const LOCKUP_TILE_PX = 40;
+
+const openSettingsHome = () =>
+  window.dispatchEvent(new CustomEvent('goodboy:open-settings', { detail: { scope: 'home' } }));
+
+export const WorkspaceLauncher = ({ isCreating, onCloseCreate, onOfferRepo }: Props) => {
   const workspaces = useWorkspaces();
   const projects = useAppStore((s) => s.projects);
   const openWorkspace = useAppStore((s) => s.openWorkspace);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const disconnectWorkspace = useAppStore((s) => s.disconnectWorkspace);
-  const reopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const isReopenLast = useAppStore((s) => s.settings[SETTING_REOPEN_LAST] === '1');
+  const home = useHomeFolder();
+  const isInMainWindow = useIsMainWindow();
+  const setup = useSetupResume({ isMainWindow: isInMainWindow });
   const [query, setQuery] = useState('');
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [isStarting, setIsStarting] = useState(false);
+  const hasSearch = workspaces.length >= SEARCH_FROM;
+  const view = isCreating ? 'new' : workspaces.length === 0 ? 'empty' : 'list';
+  const [firstView] = useState(view);
+  const [hasSwapped, setHasSwapped] = useState(false);
+  if (!hasSwapped && view !== firstView) {
+    setHasSwapped(true);
+  }
+  const swap = hasSwapped ? 'motion-safe:animate-text-swap' : undefined;
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useShortcut('home.newWorkspace', openNewWorkspace, !isCreating);
+  useEscapeLayer(onCloseCreate, isCreating);
 
-  const filtered = useMemo(
-    () => filterWorkspaces({ workspaces: sortWorkspacesByRecent(workspaces), projects, query }),
-    [workspaces, projects, query],
+  const shown = useMemo(
+    () =>
+      filterWorkspaces({
+        workspaces: sortWorkspacesByRecent(workspaces),
+        projects,
+        query: hasSearch ? query : '',
+      }),
+    [workspaces, projects, query, hasSearch],
   );
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
-
-  const select = (workspace: Workspace) => {
+  const open = (workspace: Workspace) => {
     void openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' });
   };
 
-  const addWorkspace = () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
+  const openNewWindow = (workspace: Workspace) => {
+    void openWorkspace({ id: workspace.id, title: workspace.name, target: 'new-window' });
+  };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, filtered.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      const picked = filtered[activeIndex];
-      if (picked) {
-        select(picked);
-      }
+  const onCreated = ({ workspaceId }: CreatedParams) => {
+    onCloseCreate();
+    if (hasOnlyPlainFolders({ projects: useAppStore.getState().projects, workspaceId })) {
+      onOfferRepo();
     }
   };
+
+  const openFirstMatch = () => {
+    const first = shown[0];
+    if (first !== undefined) {
+      open(first);
+    }
+  };
+
+  const list = (
+    <div key="list" className={cn('flex flex-col gap-6', swap)}>
+      <div className="flex flex-col gap-3">
+        <div className="flex min-h-7 items-center gap-2">
+          <Eyebrow label="Workspaces" className="min-w-0 flex-1" />
+          <Button size="sm" onClick={openNewWorkspace}>
+            <Plus size={ICON_SIZE.row} aria-hidden />
+            {NAMES.newWorkspace}
+            <KeyHint keys={shortcutGlyphs('home.newWorkspace')} isOnTone />
+          </Button>
+        </div>
+        {hasSearch ? (
+          <SearchField
+            size="md"
+            value={query}
+            onChange={setQuery}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                openFirstMatch();
+              }
+            }}
+            placeholder="Search workspaces or folders"
+            ariaLabel="Search workspaces or folders"
+          />
+        ) : null}
+        {shown.length === 0 ? (
+          <EmptyLine
+            action={
+              <Button size="xs" variant="quiet" onClick={() => setQuery('')}>
+                Clear search
+              </Button>
+            }
+          >
+            No workspace matches.
+          </EmptyLine>
+        ) : (
+          <ul
+            aria-label="Workspaces"
+            className="flex flex-col gap-0.5 overflow-hidden rounded-lg ring-1 ring-border-soft"
+          >
+            {shown.map((workspace) => (
+              <WorkspaceRow
+                key={workspace.id}
+                workspace={workspace}
+                home={home}
+                onOpen={() => open(workspace)}
+                onOpenNewWindow={() => openNewWindow(workspace)}
+                onDisconnect={() => void disconnectWorkspace(workspace.id)}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+      <Switch
+        label="Reopen the last workspace on launch"
+        checked={isReopenLast}
+        onChange={(next) => void saveSetting(SETTING_REOPEN_LAST, next ? '1' : '0')}
+        className="w-fit"
+      />
+    </div>
+  );
+
+  const body = isCreating ? (
+    <div key="new" className={swap}>
+      <NewWorkspaceForm
+        mode="new"
+        titleRole="title"
+        onCreated={onCreated}
+        onCancel={onCloseCreate}
+        backLabel="Cancel"
+      />
+    </div>
+  ) : workspaces.length === 0 ? (
+    <div key="empty" className={swap}>
+      <LauncherEmpty setup={setup} onNew={openNewWorkspace} />
+    </div>
+  ) : (
+    list
+  );
 
   return (
     <ScrollFade
       className="h-full w-full"
-      viewportClassName="relative flex items-center justify-center bg-background px-6 py-10"
+      viewportClassName="relative flex justify-center bg-background px-6"
     >
       <div data-tauri-drag-region aria-hidden className="absolute inset-x-0 top-0 h-9" />
       <div
         data-tauri-drag-region="false"
-        className="absolute right-4 top-3 flex items-center gap-2"
+        className="absolute right-3 top-3 flex items-center gap-2"
       >
-        <UpdatePill />
+        <UpdatePill hasCard />
         <IconButton
           icon={CONCEPT_ICONS.settings}
           label="Open settings"
           shortcut="settings.open"
           variant="ghost"
-          onClick={() =>
-            window.dispatchEvent(
-              new CustomEvent('goodboy:open-settings', { detail: { scope: 'home' } }),
-            )
-          }
+          onClick={openSettingsHome}
         />
       </div>
-      <div className="flex w-full max-w-xl flex-col gap-6 motion-safe:animate-fade-in">
-        <div className="flex flex-col items-center gap-3 pb-2 text-center">
-          <ConceptTile icon={CONCEPT_ICONS.workspace} tone={CONCEPT_TONE.workspace} />
-          <h1 className="text-title text-foreground">Open a workspace</h1>
+      <main aria-label="Home" className="flex w-full max-w-[600px] flex-col gap-8 pb-10 pt-24">
+        <div className="flex items-center gap-3">
+          <BrandTile size={LOCKUP_TILE_PX} />
+          <div className="flex flex-col">
+            <h1 className="text-title text-foreground">Goodboy</h1>
+            <span className="text-meta tabular-nums text-faint-foreground">v{APP_VERSION}</span>
+          </div>
         </div>
-
-        {isStarting ? <NewProjectForm onCancel={() => setIsStarting(false)} /> : null}
-
-        <div className="relative">
-          <Search
-            size={ICON_SIZE.control}
-            aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint-foreground"
-          />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Search workspaces or paths…"
-            className="w-full rounded-lg border border-border bg-background py-3 pl-9 pr-4 text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Eyebrow label="Recent" className="px-1" />
-          <ul className="flex flex-col gap-0.5">
-            {filtered.length === 0 ? (
-              <li>
-                <EmptyState
-                  size="section"
-                  icon={CONCEPT_ICONS.workspace}
-                  tone={CONCEPT_TONE.workspace}
-                  title="No workspaces found"
-                />
-              </li>
-            ) : (
-              filtered.map((w, i) => (
-                <li key={w.id} className="group/launcher relative">
-                  <WorkspaceListRow
-                    workspace={w}
-                    highlighted={i === activeIndex}
-                    onOpen={() => select(w)}
-                  />
-                  <ConfirmPopover
-                    role="danger"
-                    icon={<Unplug size={ICON_SIZE.row} aria-hidden />}
-                    title={`Disconnect ${w.name}?`}
-                    description="Hides this workspace. Its folders and sessions stay; open its path to reconnect."
-                    confirmLabel="Disconnect workspace"
-                    onConfirm={() => disconnectWorkspace(w.id)}
-                    anchorClassName="absolute right-2 top-1/2 -translate-y-1/2 flex"
-                    returnFocusTo={{ rowSelector: 'li' }}
-                    trigger={({ arm, isArmed }) => (
-                      <IconButton
-                        icon={Unplug}
-                        label={`Disconnect ${w.name}`}
-                        tooltip={`Disconnect ${w.name}`}
-                        variant="ghost"
-                        onClick={arm}
-                        className={isArmed ? 'text-danger' : 'text-faint-foreground'}
-                      />
-                    )}
-                  />
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            size="md"
-            variant="secondary"
-            disabled={isStarting}
-            onClick={() => setIsStarting(true)}
-            className="w-fit"
-          >
-            <FolderPlus size={ICON_SIZE.control} aria-hidden />
-            Start a new project
-          </Button>
-          <Button size="md" variant="secondary" onClick={addWorkspace} className="w-fit">
-            <FolderOpen size={ICON_SIZE.control} aria-hidden />
-            Open a folder
-          </Button>
-        </div>
-
-        <Checkbox
-          label="Reopen last workspace on launch"
-          checked={reopenLast}
-          onChange={(next) => void saveSetting(SETTING_REOPEN_LAST, next ? '1' : '0')}
-          className="text-muted-foreground"
-        />
-      </div>
+        {body}
+      </main>
     </ScrollFade>
   );
 };

@@ -3,16 +3,33 @@ import type { Session } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
+import { archiveConfirmOf } from '../../session/archiveConfirmOf';
+import { runningAgentCountOf } from '../../../store/slices/live-work/runningAgentCountOf';
 import type { ActionEnv, ObjectKindDefinition, SessionsActionTarget } from '../types';
 
 export type SessionsFacts = {
   readonly sessions: ReadonlyArray<Session>;
   readonly active: ReadonlyArray<Session>;
   readonly archived: ReadonlyArray<Session>;
+  readonly runningAgentCount: number;
 };
 
 const countLabel = ({ verb, count }: { readonly verb: string; readonly count: number }): string =>
   `${verb} ${count} ${count === 1 ? 'session' : 'sessions'}`;
+
+type NotArchivedParams = {
+  readonly failed: ReadonlyArray<Session>;
+  readonly archivedCount: number;
+};
+
+const notArchivedMessage = ({ failed, archivedCount }: NotArchivedParams): string => {
+  const names = failed.map((session) => sessionTitle({ session })).join(', ');
+  if (archivedCount === 0) {
+    return `Couldn't archive ${names}.`;
+  }
+  const rest = archivedCount === 1 ? 'The other one is' : `The other ${archivedCount} are`;
+  return `Couldn't archive ${names}. ${rest} archived.`;
+};
 
 const lifecyclePorts = ({ env }: { readonly env: ActionEnv }) => ({
   bulkArchiveTask: env.getState().bulkArchiveTask,
@@ -31,10 +48,15 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
     if (sessions.length === 0) {
       return null;
     }
+    const active = sessions.filter((session) => session.archivedAt == null);
     return {
       sessions,
-      active: sessions.filter((session) => session.archivedAt == null),
+      active,
       archived: sessions.filter((session) => session.archivedAt != null),
+      runningAgentCount: active.reduce(
+        (count, session) => count + runningAgentCountOf({ state, sessionId: session.id }),
+        0,
+      ),
     };
   },
   actions: [
@@ -57,8 +79,20 @@ export const SESSIONS_KIND: ObjectKindDefinition<SessionsActionTarget, SessionsF
       group: 'danger',
       isUndoable: true,
       when: ({ facts }) => facts.active.length > 0,
-      run: ({ facts, env }) =>
-        archiveSessions({ sessions: facts.active, ...lifecyclePorts({ env }) }),
+      confirm: ({ facts }) =>
+        archiveConfirmOf({
+          sessionCount: facts.active.length,
+          runningAgentCount: facts.runningAgentCount,
+        }),
+      run: async ({ facts, env }) => {
+        const { archived, failed } = await archiveSessions({
+          sessions: facts.active,
+          ...lifecyclePorts({ env }),
+        });
+        if (failed.length > 0) {
+          throw new Error(notArchivedMessage({ failed, archivedCount: archived.length }));
+        }
+      },
     },
     {
       id: 'sessions.restore',

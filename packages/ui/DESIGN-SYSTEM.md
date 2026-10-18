@@ -379,7 +379,9 @@ within 1px.
 A stat card holds its label to two lines (`line-clamp-2`), pins the figure to
 the bottom of the card with `mt-auto`, and puts the delta and the hint on their
 own row under the figure, never beside the label. A row of cards that carry
-deltas passes `reservesDeltaRow` so the figures sit on one baseline.
+deltas passes `reservesDeltaRow` so the figures sit on one baseline. A card with
+`onClick` is the button: it carries no arrow, tints on hover and takes
+`FOCUS_RING`.
 
 The `html` root stays 15px while any `rem` remains. `body` and `#root` are
 14/20, so text with no class lands on the body role instead of 15/23.25.
@@ -1067,7 +1069,7 @@ of the open row (visible on hover and focus, always visible while folded,
 focus of any live row (the checkbox owns the left slot). With two or more
 branches the card nests a 28px row per branch under the Branch page while it
 is current, at the page indent, up to five and then `All branches`: the repo
-glyph, the branch cut in the middle in `text-code`, and the pull request glyph;
+glyph, the branch cut at the end in `text-code`, and the pull request glyph;
 the current branch reads in `foreground`. Every row and button takes its hover
 wash and focus ring from `ROW_INTERACTIVE`, never a copy.
 
@@ -1088,7 +1090,7 @@ The switcher is the palette frame (`z-command-palette`, a scrim, the floating
 surface) at `max-w-105`. Its rows are 36px `SelectableRow` options: node, title
 and age. Its foot shows two gestures, `⌃Tab next` (the real control glyph from
 `shortcutGlyphs('session.switcher')`) and `Release to open`; back and Esc still
-work and live in the Shortcuts list. It stays hidden for the first
+work and live in the Keyboard shortcuts list. It stays hidden for the first
 120ms of a hold, so a quick tap flips sessions without drawing it. With pins it
 adds a `Pinned` eyebrow and listbox of up to eight sessions above `Recent
 sessions`; the first `Tab` still selects the previous session wherever it sits.
@@ -1272,18 +1274,18 @@ Named tokens in `apps/desktop/src/styles.css` under `@theme`, with keys
 is a precedence chain (each layer must sit above the one below).
 `docs/styling.md` owns the reasoning. This table is only the registry.
 
-| token                        | value | who                                                                                            |
-| ---------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
-| `--z-index-studio`           | 50    | the `AppShell` studio slot and the launcher's viewport `StudioShell`, the floor: never lowered |
-| `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers                                                   |
-| `--z-index-onboarding`       | 60    | the onboarding wizard over a studio                                                            |
-| `--z-index-drag`             | 62    | the workflow studio drag ghost                                                                 |
-| `--z-index-popover`          | 65    | the app-global popovers                                                                        |
-| `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                                                          |
-| `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette                                               |
-| `--z-index-toast`            | 85    | the toast stack                                                                                |
-| `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                                 |
-| (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                                         |
+| token                        | value | who                                                                                |
+| ---------------------------- | ----- | ---------------------------------------------------------------------------------- |
+| `--z-index-studio`           | 50    | the `AppShell` studio slot and the app studios over Home, the floor: never lowered |
+| `--z-index-popover-backdrop` | 55    | click-catcher behind the app-global popovers                                       |
+| `--z-index-onboarding`       | 60    | the onboarding wizard over a studio                                                |
+| `--z-index-drag`             | 62    | the workflow studio drag ghost                                                     |
+| `--z-index-popover`          | 65    | the app-global popovers                                                            |
+| `--z-index-command-palette`  | 70    | ⌘K, which fires whatever else is open                                              |
+| `--z-index-tooltip`          | 75    | triggerable from inside a popover or the palette                                   |
+| `--z-index-toast`            | 85    | the toast stack                                                                    |
+| `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                     |
+| (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                             |
 
 A popover opened from inside the command palette does not need a higher token.
 `PopoverPortalProvider` gives `useDropdown` a portal target inside the
@@ -1329,8 +1331,9 @@ A bar has one control height. Every control in the top bar is 28 and
 Spend, the Limits chips and the Now chip all take
 `TOP_BAR_CONTROL` (height `h-7`, square `size-7`, radius `rounded-md`) and
 `FOCUS_RING`. The bar container stays `h-9`. The right cluster reads Now, Limits,
-Spend, the bell, and Spend is the one door to Impact (`Spend today. Open
-Impact`): there is no Impact icon and no theme toggle in the bar. The command
+Spend, the bell, and Spend opens Impact on its Spend tab (`Spend today. Open
+Impact`): Impact is a sidebar door, and the bar has no Impact icon and no theme
+toggle. The command
 centre says `Search` with its chord as bare text; the workspace name lives in its
 tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
 number. The trail keeps the first crumb's word until every other ancestor has
@@ -1399,11 +1402,12 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   keyboard, is `bg-selected`; the current value is a check on the right and
   `text-row`. No primary tint. A blocked option stays visible in
   `disabled-foreground` and says why on its second line. A group label is a
-  muted `Eyebrow`. A label that can outgrow the popup names its `tail`, the
-  last characters that must stay readable: the row and the trigger cut the
-  middle (the head takes the ellipsis, the tail never shrinks) and the search
-  underline covers both halves. A branch name takes `splitBranchLabel` for it
-  (`branchPickerOption`).
+  muted `Eyebrow`. A label that can outgrow the popup is cut at the end with
+  `truncate`, in the row and the trigger; text never stays after the ellipsis.
+  Names that share a start are told apart by what the row carries beside them
+  (a pull request number), and the full name sits in the tooltip.
+  A name in a row is never cut in the middle. A file or terminal path keeps
+  the extension or last segment after the ellipsis (`MiddleText`).
 - **Search** appears on its own above 8 options (or with `searchable`): a flush
   row (search icon, no box, a hairline divider below, no focus ring of its own),
   a fuzzy filter, the match underlined (the list itself shows the matches, so no
@@ -1609,7 +1613,7 @@ page's does under its trail.
 session a flat row and never changes level; the open one is set in medium
 weight and takes `bg-selected` while its page is on screen. Its pages, projects
 and linked work live on the session level of the session rail
-(`SessionRail/SessionLevel`; Projects and Linked as `LevelCard`s, a level 2
+(`SessionRail/SessionLevel`; Folders and Linked as `LevelCard`s, a level 2
 `bg-subtle` panel with its header row inside), at the left of the page on the page background
 with the column's row recipe, and its deeper levels slide in there over 180ms,
 so no card nests inside the list. A page
@@ -1675,12 +1679,11 @@ adds no top padding; outside both, a bare page keeps 12px above.
 **One title per page, no studio title band.** The studio band never draws a
 title, a crumb of its own, an icon or a subtitle: the page `h1` is the one
 title. `STUDIO_META[kind].close` says where Close lives. A sidebar door page
-(`none`: Tasks, Chat, Workflows, Terminal) has no band and no Close; the top bar
-Back and Escape leave it. A closable overlay (`header`: Monitoring,
-Notifications, Guide) has no band either: `StudioFrame` hands its Close button
+(`none`: Tasks, Chat, Workflows, Terminal, Impact, Monitoring) has no band and no Close; the top bar
+Back and Escape leave it. A closable overlay (`header`: Notifications, Guide, What's new) has no band either: `StudioFrame` hands its Close button
 to the page through `PaneActionsContext`, so `PaneShell` draws it as the last
-action of the title row. The other overlays (`band`: Settings over the window,
-Impact, What's new, Pair device, Add workspace) keep a 40px band that holds only
+action of the title row; until a page header claims it, the band holds it. The other overlays (`band`: Settings over the window,
+Add workspace) keep a 40px band that holds only
 Close. A band also appears when the body hands it a trail (`StudioTrail`, the
 workflow editor and the Settings crumbs) or a header accessory, and only then is
 the body `UnderTrailContext`. The bandless pages, the Board and Settings included,
@@ -1691,6 +1694,12 @@ crumb names the structure and the `h1` the object, and a report's document title
 `h2`.
 There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
+The one exception is the four session pages that hold work (Runs, Orchestrated,
+Agents, Auto agents), which explain themselves on content and empty alike:
+each passes `SessionPageIntro` as its `subheader`, two muted `text-body` lines at
+the prose measure from the one copy map `SESSION_PAGE_INTRO`, and their empty
+states keep only a title and an action. Every other page, the secondary pages
+included, adds no description line.
 A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
 fixed `h-8` row) through the custom `header` slot. The agent detail passes
 `AgentHeader` instead: one 32px title row with the role chip, the one-line title (full
@@ -1750,7 +1759,7 @@ page title line (`PANE_RHYTHM.headerInset`, `PANE_RHYTHM.headerRow`), a
 divider, a body and an optional `dock`. The title row reads icon, title, count
 (a number or a version, never a session title), at most one labelled action,
 then Close. A pane whose title is a control (the terminal scope picker) passes it as
-`titleContent`: it replaces the visible heading, the region keeps `title` as its name. Close always reads `Close` and is a 28px target (`size-7`, 14px
+`titleContent`: it replaces the visible heading, the region keeps `title` as its name. A pane that is a page (Explore) passes `isHeaderless` and draws `PaneShell` as its body: the frame then keeps only the region, Esc and focus, and `title` stays its name. Close always reads `Close` and is a 28px target (`size-7`, 14px
 glyph); every utility in the header (copy, open on its page) is a 28px
 icon button in one tone. The `dock` is `px-4 py-3`, the same padding for the Ask
 composer, a transcript reply field and a script run's status line. The first
@@ -1830,7 +1839,7 @@ orchestrated document) shows Pause run or Resume run and Stop run (which
 confirms) as visible header buttons while the run lives, and Restore alone once
 it is archived. The tail never repeats them: it carries a step verb ("Stop step
 2", "Start step 3", "Approve plan", "Raise limit") or none ("Paused by you"). An
-overlay page (Monitoring, Notifications, the guide) ends its header with Close,
+overlay page (Notifications, the guide) ends its header with Close,
 which `StudioFrame` hands it; a sidebar door page has no Close.
 
 **One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` has no card of its own: a host that wants a surface (the push banner) gives it `bg-subtle`, never a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
@@ -1848,7 +1857,7 @@ A verb blocked for a moment stays visible with its reason in the tooltip; a verb
 
 **Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch; a closed row keeps Remove from session in its menu), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two. Rows nest by one constant: a child row's leading glyph sits under the parent's name, `MOUNT_CHILD_INDENT = 22` (the 14px parent glyph and its 8px gap, `ProjectMountRows/mountGrid.ts`), every row of a band has the same 8px left edge and every trailing control ends 8px from the band's right edge. A "Show finished (n)" `CountToggle` and an empty line start on the child rail too.
 
-A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
+A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. Archiving a session is the one exception the owner asked for: it asks (`archiveConfirmOf`) and still offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
 
 - **Focus**: on open it lands on Cancel for `role="danger"` and on the confirm button for `primary` and `alert`. Enter activates the focused button, `Cmd+Enter` confirms from anywhere inside, Tab cycles between the buttons, Escape and a click outside cancel. After the confirm, if the trigger is gone, `returnFocusTo={{ rowSelector }}` puts focus on the next row, else the previous one, else the list; otherwise it returns to the trigger.
 - **Trigger**: it takes the open state (`aria-expanded`), so a hover-revealed trigger stays visible while its popover is open (`group-has-[[aria-expanded=true]]/slot:opacity-100`, as in `ChatListRow`).
@@ -2097,7 +2106,7 @@ holds the constants, the guide chapter How Goodboy listens prints them, and
   new line with Shift+Enter and sends now with ⌘↵. A document takes a new line on
   Enter and saves or sends with ⌘↵. Every ⌘↵ check reads the `composer.submit`
   id through `isSubmitChord`, and every hint prints `shortcutGlyphs`.
-- **A key you can see works.** The rail hints, the pills and the Shortcuts page
+- **A key you can see works.** The rail hints, the pills and the Keyboard shortcuts page
   read the registry. `navigation-flows/keys.test.tsx` presses every id on the
   real app and has a short exemption list that may only shrink.
 
@@ -2235,23 +2244,23 @@ A cell names the shape that page uses. N/A means the state cannot happen
 there. `0.22.1` marks a page the sweep has not reached yet: it still shows its
 old shape, and the next round moves it.
 
-| Page           | Loading                                  | First time                                                                                        | Nothing matches                                          | Can't load                                                          | Not connected                             |
-| -------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
-| Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Run a workflow. `section`: No runs in progress                               | N/A                                                      | N/A                                                                 | N/A                                       |
-| Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                                | N/A                                                      | N/A                                                                 | N/A                                       |
-| Artifacts      | Three skeleton rows                      | `page`: No artifacts yet, New artifact                                                            | `EmptyLine`: No plans in this session, Clear filter      | `Notice` danger: Could not load artifacts, Retry and Details        | N/A                                       |
-| Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add project. `section`: No scripts in a project, Pin a script, New script | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |
-| Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                                              | N/A                                                      | 0.22.1                                                              | N/A                                       |
-| Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries                          | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
-| Notifications  | Skeleton rows                            | `section`: No notifications yet, one line and no Unread or All tabs                               | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                       |
-| Tasks          | Skeleton rows                            | `page`: No items yet                                                                              | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
-| Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                                        | N/A                                                      | N/A                                                                 | N/A                                       |
-| Checks         | A muted Loading line                     | `section`: No checks have reported yet                                                            | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
-| Comments       | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
-| Commits        | Three skeleton rows                      | `section`: No commits yet on this branch                                                          | N/A                                                      | `Notice` danger: Could not load commits, Retry and Details          | N/A                                       |
-| Impact         | Skeleton cards                           | `page`: Impact fills in as sessions finish, spend line                                            | N/A                                                      | `Notice` danger: Retry and Details                                  | N/A                                       |
-| Chat           | Three skeleton rows                      | `page`, no rail: No chats yet, Start a chat                                                       | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
-| Settings lists | 0.22.1                                   | 0.22.1                                                                                            | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
+| Page           | Loading                                  | First time                                                                                       | Nothing matches                                          | Can't load                                                          | Not connected                             |
+| -------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| Runs           | N/A (the session holds its runs)         | `page`: No runs yet, Run a workflow. `section`: No runs in progress                              | N/A                                                      | N/A                                                                 | N/A                                       |
+| Agents         | Skeleton rows                            | `page`: No agents yet, Start an agent. `section`: No active agents                               | N/A                                                      | N/A                                                                 | N/A                                       |
+| Artifacts      | Three skeleton rows                      | `page`: No artifacts yet, New artifact                                                           | `EmptyLine`: No plans in this session, Clear filter      | `Notice` danger: Could not load artifacts, Retry and Details        | N/A                                       |
+| Scripts        | Muted line: Reading scripts in a project | `page`: No scripts yet, Add folder. `section`: No scripts in a project, Pin a script, New script | `EmptyLine`: No scripts match, Clear filter              | `Notice` danger: Couldn't read the scripts of a project, Retry      | N/A                                       |
+| Questions      | Skeleton rows                            | `page`: No questions yet, no primary                                                             | N/A                                                      | 0.22.1                                                              | N/A                                       |
+| Activity       | Skeleton rows                            | `section`: No runs or agents yet, See Log only while the log has entries                         | `EmptyLine`: No log entries match, Clear search          | N/A                                                                 | N/A                                       |
+| Notifications  | Skeleton rows                            | `section`: No notifications yet, one line and no Unread or All tabs                              | `section`: You're caught up (Unread view)                | N/A                                                                 | N/A                                       |
+| Tasks          | Skeleton rows                            | `page`: No items yet                                                                             | `EmptyLine`: No items match these filters, Clear filters | `Notice`, warning for a permission problem, Retry and Open settings | `page`: No tool connected, Connect a tool |
+| Board lanes    | Archived shows a muted Loading line      | `section` inside each lane, the lane keeps its full height                                       | N/A                                                      | N/A                                                                 | N/A                                       |
+| Checks         | A muted Loading line                     | `section`: No checks have reported yet                                                           | N/A                                                      | `Notice`, warning when the credential lacks access, Retry           | N/A                                       |
+| Comments       | 0.22.1                                   | 0.22.1                                                                                           | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
+| Commits        | Three skeleton rows                      | `section`: No commits yet on this branch                                                         | N/A                                                      | `Notice` danger: Could not load commits, Retry and Details          | N/A                                       |
+| Impact         | Skeleton cards                           | `page`: Impact fills in as sessions finish, spend line                                           | N/A                                                      | `Notice` danger: Retry and Details                                  | N/A                                       |
+| Chat           | Three skeleton rows                      | `page`, no rail: No chats yet, Start a chat                                                      | `EmptyLine`: No chats match this filter, Clear filter    | `Notice` danger: Could not load chats, Retry and Details            | N/A                                       |
+| Settings lists | 0.22.1                                   | 0.22.1                                                                                           | 0.22.1                                                   | 0.22.1                                                              | 0.22.1                                    |
 
 The new session draft is the kickoff. It asks "How do you want to
 start?" and answers with a single-select list of three rows, each a concept

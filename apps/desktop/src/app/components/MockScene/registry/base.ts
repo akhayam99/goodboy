@@ -1,4 +1,4 @@
-import { createElement } from 'react';
+import { createElement, type ComponentType, type ReactElement } from 'react';
 import { TaskLinksScene } from '../scenes/TaskLinksScene';
 import { TaskLinksHoverScene } from '../scenes/TaskLinksHoverScene';
 import { TaskLinksUndoScene } from '../scenes/TaskLinksUndoScene';
@@ -92,6 +92,7 @@ import {
   ModelPickerTriggersScene,
 } from '../scenes/ModelPickerScenes';
 import { ModelPickerClaudeScene } from '../scenes/ModelPickerClaudeScene';
+import { ModelPickerAutoScene } from '../scenes/ModelPickerAutoScene';
 import { RunsOnScene } from '../scenes/RunsOnScene';
 
 import { FrameScene } from '../scenes/audit/FrameScene';
@@ -118,6 +119,7 @@ import { SettingsProvidersScene } from '../scenes/audit/SettingsProvidersScene';
 import { SettingsToolsScene } from '../scenes/audit/SettingsToolsScene';
 import { SettingsWorkspaceScene } from '../scenes/audit/SettingsWorkspaceScene';
 import { OnboardingScene } from '../scenes/audit/OnboardingScene';
+import { sceneParam } from '../scenes/audit/sceneParams';
 import { ToastsScene } from '../scenes/audit/ToastsScene';
 import { UpdateConfirmScene } from '../scenes/audit/UpdateConfirmScene';
 import { UpdateWhatsNewScene } from '../scenes/audit/UpdateWhatsNewScene';
@@ -180,6 +182,92 @@ import { ScribeProposalFailedScene } from '../scenes/ScribeProposalFailedScene';
 import { ScribeProposalTranscriptScene } from '../scenes/ScribeProposalTranscriptScene';
 import { FixRunScene } from '../scenes/FixRunScene';
 import { CrashReportScene } from '../scenes/audit/ReportScenes';
+import { BrandTileScene } from '../scenes/onboarding/BrandTileScene';
+import { SetupMenuScene } from '../scenes/onboarding/SetupMenuScene';
+import {
+  NewWorkspaceScene,
+  type NewWorkspaceSceneState,
+} from '../scenes/onboarding/NewWorkspaceScene';
+import { WizardStepScene, type WizardSceneState } from '../scenes/onboarding/WizardStepScene';
+import { HomeScene, type HomeSceneState } from '../scenes/onboarding/HomeScene';
+
+type SceneTheme = 'dark' | 'light';
+
+const SCENE_THEMES: ReadonlyArray<SceneTheme> = ['dark', 'light'];
+
+type ThemedProps = {
+  readonly theme: SceneTheme;
+};
+
+type ThemedParams = {
+  readonly id: string;
+  readonly render: (props: ThemedProps) => ReactElement;
+};
+
+const themed = ({ id, render }: ThemedParams): ReadonlyArray<readonly [string, ComponentType]> =>
+  SCENE_THEMES.map((theme) => [`${id}-${theme}`, () => render({ theme })] as const);
+
+const NEW_WORKSPACE_STATES: ReadonlyArray<NewWorkspaceSceneState> = [
+  'empty',
+  'repo',
+  'many',
+  'plain',
+  'conflict',
+  'denied',
+  'scratch',
+];
+
+const WIZARD_STEP_STATES: ReadonlyArray<WizardSceneState> = [
+  'welcome',
+  'agents-ready',
+  'agents-signin',
+  'agents-none',
+  'agents-error',
+  'tools-github',
+  'tools-linear',
+  'tools-nogit',
+  'first-ask',
+  'first-task',
+];
+
+const HOME_STATES: ReadonlyArray<HomeSceneState> = ['list', 'new', 'empty'];
+
+const OnboardingHomeScene = () =>
+  createElement(HomeScene, {
+    state: HOME_STATES.find((state) => state === sceneParam({ key: 'state' })) ?? 'list',
+    theme: sceneParam({ key: 'theme' }) === 'light' ? 'light' : 'dark',
+  });
+
+const ONBOARDING_SCENES: Readonly<Record<string, ComponentType>> = Object.fromEntries([
+  ['onboarding', OnboardingScene],
+  ['onboarding-home', OnboardingHomeScene],
+  ...themed({
+    id: 'onboarding-brand-tile',
+    render: ({ theme }) => createElement(BrandTileScene, { theme }),
+  }),
+  ...themed({
+    id: 'onboarding-setup-menu',
+    render: ({ theme }) => createElement(SetupMenuScene, { theme }),
+  }),
+  ...NEW_WORKSPACE_STATES.flatMap((state) =>
+    themed({
+      id: `onboarding-new-workspace-${state}`,
+      render: ({ theme }) => createElement(NewWorkspaceScene, { state, theme }),
+    }),
+  ),
+  ...WIZARD_STEP_STATES.flatMap((state) =>
+    themed({
+      id: `onboarding-step-${state}`,
+      render: ({ theme }) => createElement(WizardStepScene, { state, theme }),
+    }),
+  ),
+  ...HOME_STATES.flatMap((state) =>
+    themed({
+      id: `onboarding-home-${state}`,
+      render: ({ theme }) => createElement(HomeScene, { state, theme }),
+    }),
+  ),
+]);
 
 export const BASE_SCENES = {
   workspace: WorkspaceScene,
@@ -272,6 +360,7 @@ export const BASE_SCENES = {
   'model-picker-cursor': ModelPickerCursorScene,
   'model-picker-codex': ModelPickerCodexScene,
   'model-picker-claude': ModelPickerClaudeScene,
+  'model-picker-auto': ModelPickerAutoScene,
   'model-picker-triggers': ModelPickerTriggersScene,
   'runs-on-codex-default': RunsOnScene,
   frame: FrameScene,
@@ -294,7 +383,6 @@ export const BASE_SCENES = {
   'settings-providers': SettingsProvidersScene,
   'settings-tools': SettingsToolsScene,
   'settings-workspace': SettingsWorkspaceScene,
-  onboarding: OnboardingScene,
   toasts: ToastsScene,
   'update-confirm': UpdateConfirmScene,
   'update-whats-new': UpdateWhatsNewScene,
@@ -369,4 +457,5 @@ export const BASE_SCENES = {
   'space-diff-split': SpaceDiffSplitScene,
   'space-diff-comment': SpaceDiffCommentScene,
   'crash-report': CrashReportScene,
+  ...ONBOARDING_SCENES,
 };

@@ -57,7 +57,7 @@ const landedButtonStartingWith = (prefix: string): Step => ({
 
 const STEPS: Readonly<Record<ChatWorkStage, ReadonlyArray<Step>>> = {
   drawer: [buttonWithText('Start work from chat')],
-  project: [buttonWithText('Start work from chat'), comboboxLabelled('Project')],
+  project: [buttonWithText('Start work from chat'), comboboxLabelled('Folder')],
   add: [buttonWithText('Start work from chat'), tabWithText('Add to a session')],
   session: [
     buttonWithText('Start work from chat'),

@@ -236,17 +236,18 @@ describe('SPEC3 9.3 worktree actions from the worktree level', () => {
     expect(screen.getByRole('dialog', { name: 'Switch branch' })).toBeDefined();
   });
 
-  it('Add project and New branch in each repo stay one Add away on the session level', async () => {
+  it('Add folder on the card and New branch on each repo row stay one click away', async () => {
     await mount('c04-session-worktrees');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add to this session' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
     await advance();
-    const labels = within(screen.getByRole('dialog', { name: 'Add to this session' }))
-      .getAllByRole('button')
-      .map((item) => item.textContent ?? '');
+    const picker = within(screen.getByRole('dialog', { name: 'Add folder' }));
+    expect(picker.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await advance();
 
-    expect(labels).toContain('Add project');
-    expect(labels).toContain('Add workspace project');
-    expect(labels).toContain('New branch in payments-api');
+    fireEvent.click(screen.getByRole('button', { name: 'New branch in payments-api' }));
+    await advance();
+    expect(screen.getByRole('dialog', { name: 'New branch in payments-api' })).toBeDefined();
   });
 });

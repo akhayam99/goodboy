@@ -347,7 +347,9 @@ describe('resolveWorkflowRouting effort', () => {
   });
 
   it('normalizes an unsupported automatic effort against the winning model', () => {
-    const decision = ready(resolve({ proposal: emitted(pick('anthropic', 'sonnet-5', 'max')) }));
+    const decision = ready(
+      resolve({ proposal: emitted(pick('anthropic', 'sonnet-4.6', 'xhigh')) }),
+    );
 
     expect(decision.selected.effort).toBe('high');
     expect(decision.adjustment).toBe('unsupported_effort');
@@ -367,10 +369,10 @@ describe('resolveWorkflowRouting effort', () => {
   });
 
   it('rejects a lock whose effort the locked model does not support', () => {
-    const result = blocked(resolve({ agentLock: lock(pick('anthropic', 'sonnet-5', 'max')) }));
+    const result = blocked(resolve({ agentLock: lock(pick('anthropic', 'sonnet-4.6', 'xhigh')) }));
 
     expect(result.cause).toBe('unavailable_lock');
-    expect(result.reason).toContain('max');
+    expect(result.reason).toContain('xhigh');
   });
 
   it('rejects a lock that asks for effort on a model with no effort control', () => {
@@ -402,7 +404,7 @@ describe('resolveWorkflowRouting effort', () => {
   });
 
   it('normalizes an unsupported effort on a configured fallback', () => {
-    const decision = ready(resolve({ sessionDefault: pick('anthropic', 'sonnet-5', 'max') }));
+    const decision = ready(resolve({ sessionDefault: pick('anthropic', 'sonnet-4.6', 'xhigh') }));
 
     expect(decision.selected.effort).toBe('high');
     expect(decision.adjustment).toBe('unsupported_effort');

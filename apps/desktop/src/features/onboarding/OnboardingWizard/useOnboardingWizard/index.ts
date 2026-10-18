@@ -1,17 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Project, Workspace, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import {
-  isWizardDone,
+  ONBOARDING_PROGRESS_EVENT,
   OPEN_WIZARD_EVENT,
+  getWizardState,
+  getWizardStep,
   type OpenWizardDetail,
-  type WizardMode,
 } from '../../onboarding-store';
-import type { WizardStepId } from '../wizardSteps';
+import { resumeStep, type WizardMode, type WizardStepId } from '../wizardSteps';
 
 export type OnboardingWizardState = {
-  readonly open: boolean;
+  readonly isOpen: boolean;
   readonly mode: WizardMode;
   readonly start: WizardStepId | null;
   readonly providersConnected: number;
@@ -20,9 +21,23 @@ export type OnboardingWizardState = {
   readonly workspaceId: WorkspaceId | null;
   readonly projectCount: number;
   readonly projects: ReadonlyArray<Project>;
+  readonly close: () => void;
 };
 
-export const useOnboardingWizard = (): OnboardingWizardState => {
+export type WizardContext = Omit<OnboardingWizardState, 'isOpen' | 'close'>;
+
+type Params = {
+  readonly isMainWindow: boolean;
+};
+
+type Opening = {
+  readonly mode: WizardMode;
+  readonly start: WizardStepId | null;
+};
+
+const CLOSED: Opening | null = null;
+
+export const useOnboardingWizard = ({ isMainWindow }: Params): OnboardingWizardState => {
   const providersConnected = useAppStore(
     (s) => s.providers.filter((p) => p.connection === 'connected').length,
   );
@@ -37,60 +52,76 @@ export const useOnboardingWizard = (): OnboardingWizardState => {
   const hasWorkspace = workspace !== null;
   const hydrated = useAppStore((s) => s.hydrated);
 
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<WizardMode>('full');
-  const [start, setStart] = useState<WizardStepId | null>(null);
-  const decided = useRef(false);
-  const openRef = useRef(false);
+  const [opening, setOpening] = useState<Opening | null>(CLOSED);
+  const isDecided = useRef(false);
+  const isOpenRef = useRef(false);
 
-  useEffect(() => {
-    const onOpen = (e: Event) => {
-      const detail = (e as CustomEvent<Partial<OpenWizardDetail> | null>).detail;
-      const requested = detail?.mode ?? 'full';
-      if (requested !== 'full' && openRef.current) {
-        return;
-      }
-      decided.current = true;
-      openRef.current = true;
-      setMode(requested);
-      setStart(detail?.step ?? null);
-      setOpen(true);
-    };
-    const onProgress = () => {
-      if (isWizardDone()) {
-        decided.current = true;
-        openRef.current = false;
-        setOpen(false);
-      }
-    };
-    window.addEventListener(OPEN_WIZARD_EVENT, onOpen);
-    window.addEventListener('goodboy:onboarding-progress', onProgress);
-    return () => {
-      window.removeEventListener(OPEN_WIZARD_EVENT, onOpen);
-      window.removeEventListener('goodboy:onboarding-progress', onProgress);
-    };
+  const show = useCallback((next: Opening) => {
+    isDecided.current = true;
+    isOpenRef.current = true;
+    setOpening(next);
+  }, []);
+
+  const close = useCallback(() => {
+    isDecided.current = true;
+    isOpenRef.current = false;
+    setOpening(CLOSED);
   }, []);
 
   useEffect(() => {
-    if (decided.current || !hydrated) {
+    if (!isMainWindow) {
       return;
     }
-    if (!isWizardDone() && !hasWorkspace) {
-      decided.current = true;
-      openRef.current = true;
-      setOpen(true);
+    const onOpen = (event: Event) => {
+      const detail =
+        event instanceof CustomEvent ? (event.detail as Partial<OpenWizardDetail> | null) : null;
+      const mode = detail?.mode ?? 'full';
+      if (mode !== 'full' && isOpenRef.current) {
+        return;
+      }
+      show({ mode, start: detail?.step ?? null });
+    };
+    const onProgress = () => {
+      if (getWizardState() === 'open' || !isOpenRef.current) {
+        return;
+      }
+      close();
+    };
+    window.addEventListener(OPEN_WIZARD_EVENT, onOpen);
+    window.addEventListener(ONBOARDING_PROGRESS_EVENT, onProgress);
+    return () => {
+      window.removeEventListener(OPEN_WIZARD_EVENT, onOpen);
+      window.removeEventListener(ONBOARDING_PROGRESS_EVENT, onProgress);
+    };
+  }, [isMainWindow, show, close]);
+
+  useLayoutEffect(() => {
+    if (isDecided.current || !hydrated || !isMainWindow) {
+      return;
     }
-  }, [hydrated, hasWorkspace]);
+    if (getWizardState() !== 'open') {
+      return;
+    }
+    const saved = getWizardStep();
+    if (saved !== null) {
+      show({ mode: 'setup', start: resumeStep({ saved, hasWorkspace }) });
+      return;
+    }
+    if (!hasWorkspace) {
+      show({ mode: 'full', start: null });
+    }
+  }, [hydrated, hasWorkspace, isMainWindow, show]);
 
   return {
-    open,
-    mode,
-    start,
+    isOpen: opening !== null,
+    mode: opening?.mode ?? 'full',
+    start: opening?.start ?? null,
     providersConnected,
     hasWorkspace,
     workspace,
     workspaceId,
     projectCount: projects.length,
     projects,
+    close,
   };
 };

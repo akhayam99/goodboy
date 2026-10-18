@@ -1,5 +1,5 @@
 import { DoorClosedLocked, Milestone, type LucideIcon } from 'lucide-react';
-import { Chip, SelectableRow } from '@goodboy/ui';
+import { SelectableRow, Tooltip } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isInstalledRelease } from '../../isInstalledRelease';
 import { isNewerRelease } from '../../isNewerRelease';
@@ -38,15 +38,19 @@ const oneWayMarkFor = ({ release }: { readonly release: ReleaseEntry }): OneWayM
 
 type Props = {
   readonly release: ReleaseEntry;
+  readonly dateLabel: string | null;
   readonly isActive: boolean;
   readonly installedVersion: string | null;
   readonly onSelect: (version: string) => void;
 };
 
-export const ReleaseRow = ({ release, isActive, installedVersion, onSelect }: Props) => {
+export const ReleaseRow = ({ release, dateLabel, isActive, installedVersion, onSelect }: Props) => {
   const isInstalled = isInstalledRelease({ tag: release.version, installed: installedVersion });
   const isAvailable = isNewerRelease({ tag: release.version, installed: installedVersion });
   const oneWayMark = oneWayMarkFor({ release });
+  const meta = [dateLabel, isInstalled ? 'Installed' : null, isAvailable ? 'In the update' : null]
+    .filter((part): part is string => part !== null)
+    .join(' · ');
   return (
     <SelectableRow
       selected={isActive}
@@ -55,18 +59,19 @@ export const ReleaseRow = ({ release, isActive, installedVersion, onSelect }: Pr
       className="flex-col items-stretch gap-0.5 px-3 py-2"
     >
       <div className="flex items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-body">{release.version}</span>
+        <span className="shrink-0 text-body">{release.version}</span>
+        <span className="min-w-0 flex-1 truncate text-meta text-muted-foreground">{meta}</span>
         {oneWayMark !== null ? (
-          <Chip
-            tone="warning"
-            kind="state"
-            icon={<oneWayMark.icon size={ICON_SIZE.row} aria-hidden />}
-            ariaLabel={oneWayMark.label}
-            title={oneWayMark.label}
-          />
+          <Tooltip content={oneWayMark.label}>
+            <span
+              role="img"
+              aria-label={oneWayMark.label}
+              className="shrink-0 text-faint-foreground"
+            >
+              <oneWayMark.icon size={ICON_SIZE.row} aria-hidden />
+            </span>
+          </Tooltip>
         ) : null}
-        {isInstalled ? <Chip tone="neutral" width="sm" label="installed" /> : null}
-        {isAvailable ? <Chip tone="primary" width="sm" label="in the update" /> : null}
       </div>
       <span className="truncate text-meta text-muted-foreground">
         {releaseSummary({ release })}

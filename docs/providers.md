@@ -22,7 +22,7 @@ what each provider needs and how to connect it, then how it works under the hood
 Every provider lives in the same place:
 
 1. Open **Settings** (`⌘,` on macOS)
-2. Pick the provider under **Providers & models**
+2. Pick the provider under **Providers and models**
 
 The card shows whether the provider is installed, which account is signed in, and
 its **API keys**. Goodboy runs the provider's own sign-in, so your credentials never
@@ -43,7 +43,7 @@ works. Add it under **API keys**.
 If the install asks for your password, click the terminal on the card and type it.
 A global npm install can need `sudo` when nvm does not manage your Node.
 
-**Disconnect:** click **Disconnect**, then **Confirm**. This removes the token from
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. This removes the token from
 your machine only. Your Anthropic account stays as it is.
 
 ## Cursor
@@ -60,7 +60,7 @@ your machine only. Your Anthropic account stays as it is.
 You stay signed in until you sign out. If Goodboy does not find `cursor-agent` after
 the install, restart Goodboy so it sees the new `PATH`.
 
-**Disconnect:** **Disconnect**, then **Confirm**. This removes the token from your
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. This removes the token from your
 machine, and you can sign back in any time.
 
 ## Codex
@@ -79,7 +79,7 @@ signs you back in, so cancelling halfway leaves you signed out.
 Codex saves your sign-in in `~/.codex/auth.json`. You can also set `OPENAI_API_KEY`
 in your shell, or add a key under **API keys**. Either way, Codex shows as connected.
 
-**Disconnect:** **Disconnect**, then **Confirm**. This deletes `~/.codex/auth.json`.
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. This deletes `~/.codex/auth.json`.
 Your OpenAI plan stays as it is.
 
 ## Gemini
@@ -97,7 +97,7 @@ Gemini runs through Antigravity (`agy`), the app that replaces the Gemini CLI.
 You sign in to Antigravity inside its own app, so the card has no **Connect** button.
 Rather use a key? Add a Gemini API key under **API keys** instead.
 
-**Disconnect:** **Disconnect**, then **Confirm**. Goodboy deletes
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**. Goodboy deletes
 `~/.gemini/antigravity-cli/`. Your Google account stays as it is.
 
 ## OpenCode
@@ -112,7 +112,7 @@ key. Sign in to your OpenCode account to get more.
 3. A terminal with a menu appears on the card. Pick the provider and sign in
 4. When the login ends, Goodboy checks your sign-in again
 
-**Disconnect:** **Disconnect**, then **Confirm**, then pick the account to remove.
+**Disconnect:** choose **Disconnect** in the page menu, then **Confirm**, then pick the account to remove.
 
 ## OpenRouter and Moonshot
 
@@ -142,7 +142,7 @@ Goodboy stores keys in your system keychain, not in its own database.
 
 ## Defaults and task models
 
-Go to **Settings** → **Providers & models** → **Models** to choose what a workspace
+Go to **Settings** → **Providers and models** → **Models** to choose what a workspace
 uses when you leave a model on **Auto**. It is one page in three parts.
 
 - **When a provider is out**: the workspace's provider policy, summed up on the row
@@ -198,7 +198,7 @@ muted line under the label says so, printed by `explainResolution` through
 `resolutionNote` (`Pinned Opus 5.5 is skipped: Claude is Off. Using Astra.`). A task
 row (`TaskModelRow`) carries the same chip and the same line from the same hook. The
 two background rows that name an agent say which one: **History rewriter** (task
-`rebase`, "Rewrites commits when you rebase or clean up history.") and **Scribe** (task
+`rebase`, "Merges the conflicts of a history clean-up in a copy.") and **Scribe** (task
 `pr_draft`, "Writes the title and body of a pull or merge request."). Their ids did
 not change. When some agents pin only
 models that cannot run, a line under the page title counts them (`With Codex as the only
@@ -222,10 +222,12 @@ and an arrow.
   is not connected. Each job names a model line, never a version, so a new model
   in the catalog reaches Auto on its own. On Claude, the Planner runs on the newest
   Opus (Opus 5.5, Opus 5 on an older CLI), the Debugger and the Reviewer on the
-  newest Sonnet at High, Docs on the newest Sonnet at Low, Scout and the small
-  writing jobs on Haiku 4.5, and plan drafting, Generalist, Report and the other
-  roles on the newest Sonnet at Medium (Sonnet 5.5 today, Sonnet 5 on a Claude CLI
-  older than 2.1.284)
+  newest Sonnet at High, Docs on the newest Sonnet at Low, Scout on the newest Haiku
+  at Medium, the small writing jobs on the newest Haiku (Haiku 5.5 today, Haiku 4.5
+  on a Claude CLI older than 2.1.293), and plan drafting, Generalist, Report and the
+  other roles on the newest Sonnet at Medium (Sonnet 5.5 today, Sonnet 5 on a Claude
+  CLI older than 2.1.284). On Codex the Luna jobs run on GPT-6 Luna (GPT-5.6 Luna
+  on a Codex CLI older than 0.162.1)
 - **Role model set**: a role with a set runs on one of its models. With no step size
   (or a large step) it takes the first model that can run; a medium step takes the
   first one at mid cost or cheaper, a small step the first cheap one, and when none
@@ -269,12 +271,14 @@ header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 ## The provider page
 
-Each provider page in **Settings > Providers & models** has four groups, in the
+Each provider page in **Settings > Providers and models** has four groups, in the
 same order for every provider: **Usage**, **Models in the picker**,
 **Permissions** and **Account**. The header carries the plan (`Team plan`), the
 Account group the signed-in account and the CLI version (`Claude CLI 2.1.282`), and
-the header menu holds **Check again**, **Sign in again**, **Sign out** and **Copy CLI
-path**. A provider that is not connected shows only its connect card.
+the header menu holds **Check again**, **Sign in again**, **History**, **Copy CLI
+path** and, after a line, **Disconnect**. The menu reads the provider kind of the
+action registry (`useProviderTarget`, `kinds/provider.ts`), so no button in the page
+repeats a verb. A provider that is not connected shows only its connect card.
 
 - **Usage**: one row per window the provider reported (5 hours, the week, a
   model's week), with the share used and the reset. The header says when the
@@ -306,7 +310,14 @@ path**. A provider that is not connected shows only its connect card.
   reason, or `Not available` with the mode it runs as instead), whether it
   follows Allow and Deny rules (only Claude does), and that role limits are
   asked, not locked. It reads `modeSupport` in `@goodboy/core`
-- **Account**: who is signed in with the plan, one CLI row (`Claude CLI 2.1.282`, in
+- **Account**: who is signed in (`Signed in as dana@harborline.dev`), the plan and
+  when the server last confirmed it (`Pro plan · checked 3m ago`), and one state chip
+  (`Working`, `Not confirmed`, `Update needed`, `Signed out`). The chip comes from
+  `providerAccountChip`, which asks the same `providerRailStatus` as the rail dot but
+  leaves the usage window to the notice and the dot, so a provider that is nearly out
+  stays `Working`. The row holds no button, except **Sign in again** while the
+  sign-in has expired or the last connection test failed. Under it sit one CLI row
+  (`Claude CLI 2.1.282`, in
   the same place on every CLI provider), and **Use an API key instead of your
   plan**, which opens the API keys. When a model needs a newer CLI, the update
   notice (`CliUpdateNotice`) sits right under the Account rows, below that CLI row.
@@ -314,25 +325,29 @@ path**. A provider that is not connected shows only its connect card.
   and notice under its connect card (`AccountGroup/CliGroup`), and an `update`
   deep link starts the update there too.
   Keys you already have show directly, with the workspace credentials under them
-- The provider's row in the rail turns warning from 80% of a window and danger
-  when the provider is out, with the reason under its name
+- The provider's row in the rail carries a dot only when the provider needs you,
+  and the dot's tooltip and accessible name are the reason: it turns warning from 80%
+  of a window and when the provider is out, and danger on an error. A provider that
+  works shows no dot, never a green one
 
-## Test the connection and read its history
+## Check the connection and read its history
 
-On Claude, Codex and Cursor, **Test connection** in Account makes a real account
-call with a 15-second deadline. It shows the elapsed time on success or the first
-line of the error with **Sign in again**. An authentication refusal counts as one
+**Check again** in the header menu refreshes the providers and, on Claude, Codex and
+Cursor, makes a real account call with a 15-second deadline (the page and the rail
+read the result). The row shows the elapsed time on success or the first line of the
+error, with **Sign in again** on the row. An authentication refusal counts as one
 refusal in the existing provider breaker; a passing call confirms the account.
 The command is `provider_test_connection` in `src-tauri/src/providers/test_connection.rs`.
 
-**History** opens beside its button and shows the newest 20 changes since Goodboy
-started, with relative times and absolute times in tooltips. It reads the existing
-health ring through the [Account history control](../apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx); each change uses the existing standing log.
+**History** in the header menu opens a panel under the Account rows and shows the
+newest 20 changes since Goodboy started, with relative times and absolute times in
+tooltips. **Hide history**, Escape or choosing History again closes it. It reads the
+existing health ring through the [Account history panel](../apps/desktop/src/features/providers/components/ProviderStudio/ProviderPage/AccountGroup/ConnectionHistory/index.tsx); each change uses the existing standing log.
 
 The probe lock in `store/slices/providers/probeLock.ts` allows one status, usage,
 limits or connection test per provider. Calls of the same kind join; other kinds
-wait. Automatic checks skip a provider with a live agent turn. Test connection
-and **Check again** wait for that turn. Each window owns its queue and history.
+wait. Automatic checks skip a provider with a live agent turn. **Check again**
+waits for that turn. Each window owns its queue and history.
 Codex limits in `refreshCodexLimits` read the latest rollout first and ask the
 app server only when that reading is missing, invalid or older than five minutes.
 
@@ -341,7 +356,7 @@ app server only when that reading is missing, invalid or older than five minutes
 Each provider uses one account at a time, and the card shows which one. That account
 pays for every turn.
 
-1. Click **Disconnect** and **Confirm**
+1. Choose **Disconnect** in the page menu and **Confirm**
 2. Click **Connect** and sign in with the other account
 3. Choose **Check again** in the page menu and check the account in the header before you continue
 
@@ -454,6 +469,11 @@ log with the provider, the kind and the milliseconds.
 
 - `ProviderStatus.errorKind` is `notFound`, `timeout` or `exit`. Only `notFound` means
   the CLI is not installed.
+- A CLI that exits non-zero on `--version` reports its own words: `ProviderStatus.error`
+  is its last non-empty line (stderr first, then stdout, trimmed, 160 characters at
+  most) followed by the code, as `<line> (exited with code N)`, or only
+  `exited with code N` when it printed nothing (`exit_failure_reason` in
+  `providers.rs`). The setup Agents step shows it under Can't start.
 - The sign-in parsers read the exit code and the output together. `claude auth status`
   and `codex login status` exit 1 when you are signed out, and that is read as
   disconnected. Output the parser does not recognise is `unknown`, with a `reason`.
@@ -557,11 +577,12 @@ one detected after it (`cliUpdateResultOf`):
 ### CLI version gate
 
 - `minCliVersion` on a catalog model is the oldest CLI that runs it. Opus 5.5
-  needs Claude CLI 2.1.280 and Fable 5.1 needs 2.1.251
-- Sonnet 5.5 has no `minCliVersion`. Claude CLI 2.1.282 runs it (it prints an
-  `unrecognized_model` note and serves the model anyway), and no older floor is
-  known, so a refusal on an older CLI is left to `learnCliRequirement`. Write a
-  floor only when a refusal or a release note names it
+  needs Claude CLI 2.1.280, Sonnet 5.5 2.1.284, Haiku 5.5 2.1.293 and Fable 5.1
+  2.1.251. GPT-6.1 Sol needs Codex CLI 0.160.0, GPT-6 Sol and GPT-6 Luna 0.162.1,
+  the first version whose `codex debug models` was read; an older CLI may know
+  them too, so that floor can only fall
+- Write a floor only when a refusal, a release note or the CLI's own model list
+  names it; a refusal on an older CLI is left to `learnCliRequirement`
 - A `cli_too_old` refusal also teaches the gate. `learnCliRequirement` stores the
   required version per provider and model in the `provider.cliRequirements`
   setting, so the next time the gate warns before the send even for a model with
@@ -769,15 +790,24 @@ What the catalogs do not tell you:
 - That is why Codex Sol, Terra and Luna are three ids: `gpt-5.6-sol`, `gpt-5.6-terra`
   and `gpt-5.6-luna`. Each has its own cost tier and price in `codex/cost.ts` (4/20,
   2/12 and 0.2/1.2 per Mtok). The picker shows them as version chips
-- `gpt-6.1-sol` (Codex CLI 0.160 or newer) is the newest Sol and a fourth id of its own,
-  priced 2/10 per Mtok with cached input at 0.10 in `codex/cost.ts`. Its catalog
-  carries `minCliVersion: '0.160.0'`, so Auto keeps `gpt-5.6-sol` on an older Codex
-  CLI. Its catalog `costTier` is `expensive` on purpose, like Astra: `mid` would make
-  it the codex mid model in place of Terra. The same model sits in the OpenRouter
-  catalog as `openrouter/openai/gpt-6.1-sol`. `gpt-5.6-sol` is `expensive` on both
-  Codex and OpenRouter: OpenAI's standard rate is 4/20, twice the newer Sol
+- `gpt-6.1-sol` (Codex CLI 0.160 or newer) is the newest Sol, the Codex turn default
+  and an id of its own, priced 2/10 per Mtok with cached input at 0.10 in
+  `codex/cost.ts`. Its catalog carries `minCliVersion: '0.160.0'`, so Auto keeps an
+  older Sol on an older Codex CLI. Its catalog `costTier` is `expensive` on purpose,
+  like Astra: `mid` would make it the codex mid model in place of Terra. The same
+  model sits in the OpenRouter catalog as `openrouter/openai/gpt-6.1-sol`.
+  `gpt-5.6-sol` is `expensive` on both Codex and OpenRouter: OpenAI's standard rate
+  is 4/20, twice the newer Sol
+- `gpt-6-sol` (2/10, cached 0.20, `expensive` like 6.1 Sol) sits between the two
+  Sols, and `gpt-6-luna` (0.10/0.50, cached 0.01, `cheap`) is the newest Luna, so
+  the Luna jobs run on it. Both need Codex CLI 0.162.1. OpenRouter carries both too
+- Codex context windows come from `codex debug models`: 500k for GPT-6.1 Sol and
+  272k for the others, not the 872k maximum. The orchestrator's context check
+  reads this number. The long context rate above 272k is not modeled yet
 - Cursor is the only provider whose `getCheapModel` is set by hand. It is set to
-  `auto` in `cli-defaults.ts`
+  `auto` in `cli-defaults.ts`. Every other provider takes the non-legacy cheap entry
+  with the highest catalog `order`, never the first one in the array, so a newer
+  cheap model (Haiku 5.5, GPT-6 Luna) wins wherever it sits
 - Old ids still work through `parseLegacyId.ts`. So an id missing from the catalog is
   not always dead
 - If a model does not support an effort level, Goodboy uses the highest level it does
@@ -789,7 +819,13 @@ What the catalogs do not tell you:
   `effort_args` in `apps/desktop/src-tauri/src/providers/cli_args.rs` builds all of them,
   for turns, the planner and the summarizer alike
 - There is no `ultracode` level. `claude --help` lists exactly
-  `low, medium, high, xhigh, max`. Run that check before you add a level to the union
+  `low, medium, high, xhigh, max`. Claude Code's model docs describe `ultracode` as
+  a separate setting (v2.1.203 or newer), not a level, so it stays out of the union.
+  Codex's `ultra` is its own fan-out across subagents and stays out too: Goodboy
+  owns fan-out. Run that check before you add a level to the union
+- A model that publishes no effort levels (Haiku 4.5, and on opencode Big Pickle,
+  MiMo and both Nemotrons) gets no effort flag at all. opencode Zen lists its
+  variants per model, so each catalog entry carries only those
 - Prices are looked up only within the provider that runs the model.
   `getProviderModelPrice({ provider, model })` reads that provider's `cost.ts`
   and returns `null` when it has no rate. The same key on two providers
@@ -800,14 +836,22 @@ What the catalogs do not tell you:
 - A rate the vendor has not published yet is copied from the model it follows and
   carries `assumed: true` in its `cost.ts` (Cursor `auto` does: Cursor bills Auto at
   the rate of the model it routes to), so `costCoverage` reports its spend as
-  approximate. Each provider has one price table, its `cost.ts`. Telemetry, budgets
+  approximate. Haiku 5.5 carries it too: Anthropic bills 0.10/0.50 (cached 0.01) for
+  a request up to 100,000 prompt tokens and 0.50/2.50 above, and `ModelPrice` holds
+  one rate, so Goodboy bills the lower one and marks the spend approximate. A long
+  Scout run that crosses the threshold reads low until two-level prices land Each provider has one price table, its `cost.ts`. Telemetry, budgets
   and estimates all read it; there is no second table that wins at runtime
 - Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
   `gemini/cost.ts` until December 31, 2026. Google lists 1.50/7.50 (cached 0.15)
   from January 1, 2027, so move the three rows then. `priceSources.test.ts` turns
   red on that day so the move cannot be forgotten
 - Cursor bills by its own list (`cursor.com/docs/models`), not the vendor's: Gemini
-  3.8 and 3.7 Flash are 0.75/3.5, 3.6 Flash 1.5/7.5 and Gemini 3 Flash 0.5/3
+  3.8 and 3.7 Flash are 0.75/3.75, 3.6 Flash 1.5/7.5, Gemini 3 Flash 0.5/3, Gemini 4
+  Argon 2/10 (cached 0.10), Sonnet 5.5 2/10 with cache reads at 0.10 and Haiku 5.5
+  0.10/0.50 (cached 0.01, `assumed` like the Claude row). Every Haiku 5.5 combo needs
+  Max Mode, which Cursor keeps only on legacy plans
+- Gemini 3.7 Flash is `legacy` on Gemini and OpenRouter, and Gemini 3.5 Flash on
+  OpenRouter: Google routes both to a newer Flash
 
 When a provider ships or retires a model, update these together:
 

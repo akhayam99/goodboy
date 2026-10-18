@@ -51,12 +51,14 @@ describe('the leftovers scene', () => {
 });
 
 describe('the stop confirm scene', () => {
-  it('asks before stopping a process Goodboy did not start, in a popover and not in the row', async () => {
+  it('asks before stopping a process, names who loses the port, in a popover and not in the row', async () => {
     renderScene('monitoring-stopconfirm');
 
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('Goodboy did not start this process. Stop it?')).toBeDefined();
-    expect(within(dialog).getByText('node in payments-api.')).toBeDefined();
+    expect(within(dialog).getByText('Stop node on :5005?')).toBeDefined();
+    expect(
+      within(dialog).getByText('payments-api · hl/fix-duplicate-credit stops with it.'),
+    ).toBeDefined();
     expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeDefined();
     expect(within(dialog).getByRole('button', { name: 'Stop' })).toBeDefined();
     expect(document.querySelector('[data-port-row="5005"]')?.contains(dialog)).toBe(false);

@@ -1040,7 +1040,7 @@ describe('moving across every place keeps one frame', () => {
       expect(currentDoors()).toEqual(['inbox']);
       expectColumnBesideStudio();
 
-      await openPalette(/^Board/, 'Back to board');
+      await openPalette(/^Sessions$/, 'Back to board');
       expect(studio()).toBeNull();
       expect(useAppStore.getState().currentSessionId).toBeNull();
       expect(currentDoors()).toEqual(['board']);

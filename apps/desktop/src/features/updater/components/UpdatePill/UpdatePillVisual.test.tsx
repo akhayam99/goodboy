@@ -7,6 +7,8 @@ import { UpdatePillVisual } from './UpdatePillVisual';
 
 const STYLES_CSS = readFileSync(join(__dirname, '..', '..', '..', '..', 'styles.css'), 'utf8');
 
+const LONG_VERSION = '0.27.2-beta.20261017.preview.build.8f3c2a91e7d54b6fa0c1d2e3f4a5b6c7';
+
 const animationTokensIn = ({ root }: { readonly root: Element }): ReadonlyArray<string> =>
   [root, ...root.querySelectorAll('*')].flatMap((node) =>
     [...node.classList]
@@ -30,28 +32,58 @@ const pillRoot = (): Element => {
   return root;
 };
 
+type ClassesParams = {
+  readonly element: Element;
+};
+
+const classesOf = ({ element }: ClassesParams): ReadonlyArray<string> => [...element.classList];
+
 afterEach(cleanup);
 
 describe('UpdatePillVisual', () => {
-  it('names the new version and enters with one finite animation', () => {
-    render(<UpdatePillVisual isQueued={false} isReady version="0.15.6" agentCount={0} />);
+  it('shows the version and nothing else, so it fits its row', () => {
+    render(<UpdatePillVisual state="ready" version="0.27.2" />);
+
+    expect(screen.getByTestId('update-pill').textContent).toBe('0.27.2');
+  });
+
+  it('stays on one line and truncates the version before it overflows', () => {
+    render(<UpdatePillVisual state="available" version={LONG_VERSION} />);
+
+    const pill = screen.getByTestId('update-pill');
+    const version = pill.querySelector('[data-update-pill-version]');
+    if (version === null) {
+      throw new Error('the pill has no version text');
+    }
+    expect(classesOf({ element: pill })).toEqual(
+      expect.arrayContaining(['whitespace-nowrap', 'min-w-0', 'max-w-full', 'shrink']),
+    );
+    expect(classesOf({ element: pill })).not.toContain('shrink-0');
+    expect(classesOf({ element: version })).toEqual(
+      expect.arrayContaining(['truncate', 'min-w-0']),
+    );
+    expect(classesOf({ element: pillRoot() })).toEqual(
+      expect.arrayContaining(['min-w-0', 'max-w-full']),
+    );
+    expect(version.textContent).toBe(LONG_VERSION);
+  });
+
+  it('enters with one finite animation', () => {
+    render(<UpdatePillVisual state="ready" version="0.27.2" />);
 
     const tokens = animationTokensIn({ root: pillRoot() });
 
-    screen.getByText('0.15.6 ready');
     expect(tokens).toHaveLength(1);
     expect(tokens.map((name) => animationValueOf({ name })).join(' ')).not.toContain('infinite');
   });
 
-  it('keeps the same node when the running count changes, so the entry never replays', () => {
-    const { rerender } = render(
-      <UpdatePillVisual isQueued isReady={false} version="0.15.6" agentCount={2} />,
-    );
+  it('keeps the same node when the state changes, so the entry never replays', () => {
+    const { rerender } = render(<UpdatePillVisual state="ready" version="0.27.2" />);
     const before = pillRoot();
 
-    rerender(<UpdatePillVisual isQueued isReady={false} version="0.15.6" agentCount={1} />);
+    rerender(<UpdatePillVisual state="queued" version="0.27.2" />);
 
     expect(pillRoot()).toBe(before);
-    screen.getByText('Restarts after 1 agent');
+    expect(screen.getByTestId('update-pill').textContent).toBe('0.27.2');
   });
 });

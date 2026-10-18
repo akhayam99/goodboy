@@ -1,7 +1,7 @@
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import type { IssueCandidate } from '../../integrations/fetchIssueCandidates';
 import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/AgentStart';
-import type { FirstSessionChoice } from './steps/FirstSessionStep';
 
 type ScoutParams = {
   readonly workspaceId: WorkspaceId;
@@ -30,14 +30,18 @@ export const startFirstScout = async ({ workspaceId, projectId, prompt }: ScoutP
 type HandOffParams = {
   readonly workspaceId: WorkspaceId;
   readonly projectId: ProjectId | null;
-  readonly choice: Exclude<FirstSessionChoice, 'agent'>;
+  readonly issue: IssueCandidate;
 };
 
-export const handOffFirstSession = ({ workspaceId, projectId, choice }: HandOffParams): void => {
+export const handOffFirstSession = ({ workspaceId, projectId, issue }: HandOffParams): void => {
   const state = useAppStore.getState();
   state.patchSessionDraft({
     workspaceId,
-    patch: { choice, projectIds: projectId === null ? [] : [projectId] },
+    patch: {
+      choice: 'task',
+      pickedIssues: [issue],
+      projectIds: projectId === null ? [] : [projectId],
+    },
   });
   state.openSessionDraft();
 };

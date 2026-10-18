@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, ScrollFade, useStudioRailFold } from '@goodboy/ui';
+import { ScrollFade, useStudioRailFold } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioRailLayout } from '@goodboy/ui';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -11,10 +11,12 @@ import { isInstalledRelease } from '../../isInstalledRelease';
 import { useInstalledVersion } from '../../hooks/useInstalledVersion';
 import type { ReleaseEntry } from '../../parseChangelog';
 import type { ChangelogScreen } from '../../changelogScreens';
-import { UpdateConfirm } from '../../../updater/components/UpdateConfirm';
+import { UpdateActions } from '../../../updater/components/UpdateActions';
+import { updateCardStateOf } from '../../../updater/updateCardState';
 import { ChangelogRail } from './ChangelogRail';
 import { CatchUpReader } from './CatchUpReader';
 import { ReleaseReader } from './ReleaseReader';
+import { releaseDateLabel } from '../../releaseDateLabel';
 import { searchReleases } from '../../searchReleases';
 import { upcomingEntries, withUpcomingReleases } from '../../upcomingReleases';
 
@@ -63,7 +65,14 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
   const markChangelogSeen = useAppStore((state) => state.markChangelogSeen);
   const focusChangelogRelease = useAppStore((state) => state.focusChangelogRelease);
   const updateVersion = useAppStore((state) =>
-    state.updaterStatus === 'available' ? state.updateVersion : null,
+    updateCardStateOf({
+      status: state.updaterStatus,
+      failure: state.updateFailure,
+      isQueued: state.updateQueuedUntilIdle,
+      runningCount: 0,
+    }) === null
+      ? null
+      : state.updateVersion,
   );
   const installedVersion = useInstalledVersion();
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
@@ -128,16 +137,7 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
     sameVersion({ tag: selected.version, version: updateVersion })
       ? updateVersion
       : null;
-  const updateAction =
-    updateRelease === null ? undefined : (
-      <UpdateConfirm
-        trigger={({ arm }) => (
-          <Button variant="primary" size="sm" onClick={arm}>
-            Download and restart
-          </Button>
-        )}
-      />
-    );
+  const updateAction = updateRelease === null ? undefined : <UpdateActions />;
 
   const selectRelease = (version: string): void => {
     setSelectedVersion(version);
@@ -172,6 +172,7 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
                 releases={filteredReleases}
                 selectedVersion={showCatchUp ? null : (selected?.version ?? null)}
                 installedVersion={installedVersion}
+                dates={dates}
                 query={query}
                 onQueryChange={setQuery}
                 catchUp={catchUp}
@@ -192,7 +193,7 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
               ) : selected !== null ? (
                 <ReleaseReader
                   release={selected}
-                  dateLabel={dates[selected.version] ?? null}
+                  dateLabel={releaseDateLabel({ publishedAt: dates[selected.version] })}
                   installedVersion={installedVersion}
                   onOpenScreen={onOpenScreen}
                   action={updateAction}

@@ -12,6 +12,7 @@ import {
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  markNotificationUnread,
   type Notification,
 } from './notification';
 
@@ -80,6 +81,21 @@ describe('notification queries', () => {
     const rows = await listNotifications({ db, workspaceId: null });
     expect(rows.find((row) => row.id === 'n1')?.read).toBe(true);
     expect(rows.find((row) => row.id === 'n2')?.read).toBe(false);
+  });
+
+  it('marks one notification unread again and leaves the others', async () => {
+    const db = await seed({});
+    await insertNotification(db, buildNotification({ id: 'n1', read: true }));
+    await insertNotification(
+      db,
+      buildNotification({ id: 'n2', ts: tsAt({ second: 5 }), read: true }),
+    );
+
+    await markNotificationUnread({ db, id: 'n1' });
+
+    const rows = await listNotifications({ db, workspaceId: null });
+    expect(rows.find((row) => row.id === 'n1')?.read).toBe(false);
+    expect(rows.find((row) => row.id === 'n2')?.read).toBe(true);
   });
 
   it('deletes a single notification and keeps the rest', async () => {

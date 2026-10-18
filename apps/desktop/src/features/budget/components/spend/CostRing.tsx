@@ -10,7 +10,7 @@ type Props = {
 };
 
 export const CostRing = ({ pct, centerLabel, subLabel, size = 132, warnAt }: Props) => {
-  const stroke = 12;
+  const stroke = Math.round(size / 12);
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const filled = Math.min(Math.max(pct, 0), 1) * c;

@@ -37,16 +37,16 @@ export const KickoffProjects = ({
   }
   const launchProject = launch === null ? null : (projectById(projects, launch.projectId) ?? null);
   return (
-    <section aria-label="Projects" className="flex min-w-0 flex-col gap-2">
+    <section aria-label="Folders" className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 items-baseline gap-2">
-        <span className="text-label text-foreground">Projects</span>
+        <span className="text-label text-foreground">Folders</span>
         <span className="text-meta text-faint-foreground">Optional</span>
       </div>
       <ProjectPicker
         projects={projects}
         value={projectIds}
         isDisabled={isDisabled}
-        emptyValueLabel="Add project"
+        emptyValueLabel="Add folder"
         {...(suggestedIds !== undefined && { suggestedIds })}
         onChange={(next) => patchSessionDraft({ workspaceId, patch: { projectIds: next } })}
       />

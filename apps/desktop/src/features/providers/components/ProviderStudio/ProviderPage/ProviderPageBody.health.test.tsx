@@ -204,10 +204,13 @@ describe('the page meta', () => {
         autoUpdate={false}
       />,
     );
-    expect(screen.getByText(/Signed in on this Mac\. Not confirmed by Cursor\./)).toBeDefined();
+    const account = within(screen.getByRole('region', { name: 'Account' }));
+    expect(account.getByText('Not confirmed')).toBeDefined();
+    expect(account.queryByText('Working')).toBeNull();
+    expect(account.queryByText(/checked/)).toBeNull();
   });
 
-  it('says who is signed in and when the server last confirmed it', () => {
+  it('says who is signed in and when the server last confirmed it, with one chip', () => {
     seed({ health: { standing: 'connected', evidence: GOOD_TWO_MINUTES_AGO } });
     render(
       <ProviderPage
@@ -216,6 +219,9 @@ describe('the page meta', () => {
         autoUpdate={false}
       />,
     );
-    expect(screen.getByText(/Signed in as ada@harborline\.dev\. Confirmed 2m ago/)).toBeDefined();
+    const account = within(screen.getByRole('region', { name: 'Account' }));
+    expect(account.getByText('Signed in as ada@harborline.dev')).toBeDefined();
+    expect(account.getByText(/checked 2m ago/)).toBeDefined();
+    expect(account.getByText('Working')).toBeDefined();
   });
 });

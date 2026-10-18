@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Check, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
 import { Button, FOCUS_RING, Tooltip, cn, tintClasses, IconButton } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -9,6 +9,9 @@ import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { mapNotificationAction, notificationContext } from '../NotificationToastBridge';
 import { NOTIFICATION_SEVERITY } from '../../severity';
 import { notificationActionIcon } from '../../actionIcon';
+import { ObjectMenuArea } from '../../../actions/ObjectMenuArea';
+import type { NotificationActionTarget } from '../../../actions/types';
+import { NotificationRowActions } from './NotificationRowActions';
 import { NotificationRowDetail } from './NotificationRowDetail';
 import { useNow } from '../../../../shared/hooks/useNow';
 
@@ -21,7 +24,6 @@ type Props = {
   readonly scrollKey?: string;
   readonly onOpen: () => void;
   readonly onDismiss: () => void;
-  readonly onMarkRead?: () => void;
   readonly onActed?: () => void;
 };
 
@@ -34,7 +36,6 @@ export const NotificationRow = ({
   scrollKey,
   onOpen,
   onDismiss,
-  onMarkRead,
   onActed,
 }: Props) => {
   const now = useNow(30_000);
@@ -133,79 +134,80 @@ export const NotificationRow = ({
     );
   }
 
+  const anchorKey = `notification:${scrollKey ?? latest.id}`;
+  const target: NotificationActionTarget = {
+    kind: 'notification',
+    facts: {
+      ids: notifications.map((notification) => notification.id),
+      unreadIds: notifications
+        .filter((notification) => !notification.read)
+        .map((notification) => notification.id),
+      title: latest.title,
+      body: latest.body ?? null,
+      severity: latest.severity,
+      open: action === undefined ? null : { label: action.label, run: runAction },
+    },
+  };
+
   return (
     <li
       data-notification-key={scrollKey}
       data-selected={isSelected}
       className={cn(
-        'group rounded-md motion-safe:transition-colors',
+        'group/row rounded-md motion-safe:transition-colors',
         isSelected ? 'bg-subtle ring-1 ring-inset ring-border-soft' : 'hover:bg-hover',
       )}
     >
-      <div className="relative grid grid-cols-[1rem_minmax(0,1fr)_4rem] items-start gap-x-3 px-3 py-2">
-        {overlay}
-        <SeverityIcon
-          size={ICON_SIZE.control}
-          className={cn('pointer-events-none relative mt-px', tintClasses(severity.tone).icon)}
-          aria-label={severity.label}
-        />
-        <div className="pointer-events-none relative flex min-w-0 flex-col gap-0.5">
-          <div className="flex min-w-0 items-center gap-2">
-            <h3
-              data-unread={isUnread ? '' : undefined}
-              className={cn(
-                'truncate',
-                isUnread ? 'text-row text-foreground' : 'text-label text-muted-foreground',
-              )}
-            >
-              {latest.title}
-            </h3>
-            {count}
+      <ObjectMenuArea target={target} anchorKey={anchorKey}>
+        <div className="relative grid grid-cols-[1rem_minmax(0,1fr)_4rem_3.5rem] items-start gap-x-3 px-3 py-2">
+          {overlay}
+          <SeverityIcon
+            size={ICON_SIZE.control}
+            className={cn('pointer-events-none relative mt-px', tintClasses(severity.tone).icon)}
+            aria-label={severity.label}
+          />
+          <div className="pointer-events-none relative flex min-w-0 flex-col gap-0.5">
+            <div className="flex min-w-0 items-center gap-2">
+              <h3
+                data-unread={isUnread ? '' : undefined}
+                className={cn(
+                  'truncate',
+                  isUnread ? 'text-row text-foreground' : 'text-label text-muted-foreground',
+                )}
+              >
+                {latest.title}
+              </h3>
+              {count}
+            </div>
+            {hasBody && !isSelected && (
+              <p
+                className={cn(
+                  'truncate text-label',
+                  isUnread ? 'text-muted-foreground' : 'text-faint-foreground',
+                )}
+              >
+                {latest.body}
+              </p>
+            )}
+            {context != null && (
+              <span className="inline-flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
+                <CONCEPT_ICONS.sessions size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
+                <span className="truncate">{context}</span>
+              </span>
+            )}
           </div>
-          {hasBody && !isSelected && (
-            <p
-              className={cn(
-                'truncate text-label',
-                isUnread ? 'text-muted-foreground' : 'text-faint-foreground',
-              )}
-            >
-              {latest.body}
-            </p>
-          )}
-          {context != null && (
-            <span className="inline-flex min-w-0 items-center gap-1 text-meta text-faint-foreground">
-              <CONCEPT_ICONS.sessions size={ICON_SIZE.mark} aria-hidden className="shrink-0" />
-              <span className="truncate">{context}</span>
-            </span>
-          )}
+          <div className="relative flex h-4 items-center justify-end">{age}</div>
+          <NotificationRowActions target={target} anchorKey={anchorKey} />
         </div>
-        <div className="relative flex h-4 items-center justify-end">{age}</div>
-      </div>
-      {isSelected ? (
-        <div data-notification-verbs="" className="flex items-center gap-1 pb-2 pl-10 pr-3">
-          {action != null ? (
+        {isSelected && action != null ? (
+          <div data-notification-verbs="" className="flex items-center gap-1 pb-2 pl-10 pr-3">
             <Button variant="secondary" size="xs" onClick={runAction}>
               {action.label}
             </Button>
-          ) : null}
-          {isUnread && onMarkRead != null ? (
-            <Button variant="ghost" size="xs" onClick={onMarkRead}>
-              <Check size={ICON_SIZE.row} aria-hidden />
-              Mark read
-            </Button>
-          ) : null}
-          <Button
-            variant="ghost-danger"
-            size="xs"
-            aria-label={`Delete "${latest.title}"`}
-            onClick={onDismiss}
-          >
-            <Trash2 size={ICON_SIZE.row} aria-hidden />
-            Delete
-          </Button>
-        </div>
-      ) : null}
-      {isSelected && <NotificationRowDetail notifications={notifications} />}
+          </div>
+        ) : null}
+        {isSelected && <NotificationRowDetail notifications={notifications} />}
+      </ObjectMenuArea>
     </li>
   );
 };

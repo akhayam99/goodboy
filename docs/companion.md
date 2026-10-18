@@ -25,12 +25,12 @@ a paired phone like a second keyboard, not like a viewer.
 
 - The desktop keeps a long-term Noise static key and an allow list of paired
   phone keys in `~/.goodboy/companion.json`. It never leaves the machine.
-- The pairing studio mints a one-time 256-bit token that expires after 60
+- Settings, iPhone mints a one-time 256-bit token that expires after 60
   seconds and shows it with the desktop's key and address as a QR code. A
   phone that completes the Noise XK handshake with a live token is added to
   the allow list and the token is burned. A known key reconnects without a
   token.
-- The allow list holds any number of phones. Disconnect in the pairing studio
+- The allow list holds any number of phones. Disconnect on Settings, iPhone
   clears all of them and drops every live connection; each phone must scan a
   new code to come back. A phone can never re-pair itself.
 
@@ -54,8 +54,8 @@ merges from the phone like it does on the desktop.
 
 ## Listener lifetime
 
-- Nothing listens at boot. The listener starts when the pairing studio opens.
-  Closing the studio with no phone paired stops it; with at least one phone
+- Nothing listens at boot. The listener starts when Settings, iPhone opens.
+  Leaving the page with no phone paired stops it; with at least one phone
   paired it stays up so that phone can reconnect, until the app quits or
   Disconnect runs.
 - It binds a random TCP port on all network interfaces, while the QR advertises

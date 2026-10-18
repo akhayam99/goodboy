@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -75,11 +75,12 @@ describe('the sessions filter scenes', () => {
     expect(document.querySelector('[data-filter-dot="active"]')).not.toBeNull();
   });
 
-  it('sessions-funnel-open lists the stages and a Clear filters action', async () => {
+  it('sessions-funnel-open lists the stages that have sessions and a Reset action', async () => {
     await mount('sessions-funnel-open');
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
-    expect(dialog.querySelectorAll('[role="checkbox"]').length).toBeGreaterThanOrEqual(5);
-    expect(screen.getByRole('button', { name: 'Clear filters' })).toBeDefined();
+    const status = within(dialog).getByRole('group', { name: 'Status' });
+    expect(within(status).getAllByRole('checkbox').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: 'Reset' })).toBeDefined();
   });
 
   it('sessions-hidden says how many sessions the filters hide', async () => {

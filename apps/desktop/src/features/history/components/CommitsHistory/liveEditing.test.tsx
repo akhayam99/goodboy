@@ -299,7 +299,7 @@ describe('live Commits page', () => {
   });
   it('opens the key hints beside their trigger', async () => {
     await mountPage();
-    fireEvent.click(screen.getByRole('button', { name: 'Keys' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Commits help' }));
     screen.getByText('Move the commit');
     screen.getByText('Rename');
   });

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { ExplorePane } from '../../../../../features/explore/components/ExplorePane';
+import { ExploreAddFolder } from '../../../ExploreAddFolder';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
 import { payloadString } from './ipcPayload';
@@ -307,7 +308,13 @@ export const ExploreScene = (props: Props) => {
     return null;
   }
 
-  const pane = <ExplorePane sessionId={SESSION_ID} onClose={() => undefined} />;
+  const pane = (
+    <ExplorePane
+      sessionId={SESSION_ID}
+      noFolderAction={<ExploreAddFolder sessionId={SESSION_ID} />}
+      onClose={() => undefined}
+    />
+  );
 
   return (
     <ShellFrame

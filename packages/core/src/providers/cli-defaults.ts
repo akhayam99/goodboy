@@ -1,13 +1,17 @@
-import type { ProviderId } from '@goodboy/types';
-import { PROVIDER_CAPABILITIES } from './capabilities';
+import type { CatalogModel, ProviderId } from '@goodboy/types';
+import { MODEL_CATALOGS } from './catalogs';
 import { CURSOR_AUTO_MODEL } from './cursor/models';
+import { defaultTurnModel } from './defaultTurnModel';
 
 export const getCheapModel = (providerId: ProviderId): string => {
   if (providerId === 'cursor') {
     return CURSOR_AUTO_MODEL;
   }
-  const caps = PROVIDER_CAPABILITIES[providerId];
-  return caps.models.find((model) => model.tier === 'cheap')?.id ?? caps.models[0]!.id;
+  const catalog: ReadonlyArray<CatalogModel> = MODEL_CATALOGS[providerId];
+  const newest = catalog
+    .filter((model) => model.tier === 'cheap' && model.legacy !== true)
+    .sort((left, right) => right.presentation.order - left.presentation.order)[0];
+  return newest?.key ?? defaultTurnModel({ provider: providerId }).key;
 };
 
 export const getDefaultBinary = (providerId: ProviderId): string => {

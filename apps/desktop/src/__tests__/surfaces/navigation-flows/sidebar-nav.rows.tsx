@@ -177,7 +177,7 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
         WAIT,
       );
       await clickButton(/^Back to session /);
-      const projects = within(within(sessionLevel()).getByRole('group', { name: 'Projects' }));
+      const projects = within(within(sessionLevel()).getByRole('group', { name: 'Folders' }));
       await click(projects.getByRole('button', { name: new RegExp(`, ${SECOND_BRANCH}(,|$)`) }));
       await settle(8);
     },

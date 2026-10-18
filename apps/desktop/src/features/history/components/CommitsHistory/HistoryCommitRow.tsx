@@ -134,7 +134,7 @@ const HistoryCommitRowView = ({
           menu.onKeyDown(event);
         }
       }}
-      className="group relative grid min-h-14 grid-cols-[72px_minmax(0,1fr)] items-start outline-none"
+      className="group group/row relative grid min-h-14 grid-cols-[72px_minmax(0,1fr)] items-start outline-none"
     >
       <span aria-hidden />
       <span

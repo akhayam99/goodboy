@@ -184,7 +184,7 @@ const bucketByProject = ({
     const bucket = buckets.get(key);
     if (bucket === undefined) {
       buckets.set(key, {
-        label: project === null ? 'No project' : project.name,
+        label: project === null ? 'No folder' : project.name,
         sessions: [session],
       });
       continue;

@@ -488,11 +488,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/app/components/AppEmptyState.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/app/components/AppOverlayRouter/index.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -823,11 +818,6 @@
   "apps/desktop/src/app/components/MockScene/scenes/audit/NotificationsScene.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/app/components/MockScene/scenes/audit/OnboardingScene.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/audit/ReviewModesScene.tsx": {
@@ -1290,7 +1280,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/frame.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 11
+      "count": 7
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/gitlab.test.tsx": {
@@ -2047,16 +2037,6 @@
   "apps/desktop/src/features/budget/components/SpendLimitFields.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
-    }
-  },
-  "apps/desktop/src/features/budget/components/spend/CapEditor.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/budget/components/spend/CapEditor.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
     }
   },
   "apps/desktop/src/features/budget/components/spend/ModelTable.test.tsx": {
@@ -2831,21 +2811,6 @@
       "count": 24
     }
   },
-  "apps/desktop/src/features/companion/components/CompanionStudio/PairedDevices.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/companion/components/CompanionStudio/PairingCode.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/companion/components/CompanionStudio/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/companion/mobileConfinement.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 12
@@ -3160,11 +3125,6 @@
       "count": 8
     }
   },
-  "apps/desktop/src/features/impact/components/ImpactStudio/OverviewEmpty.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/impact/components/ImpactStudio/TrendStatCard.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -3432,11 +3392,6 @@
   "apps/desktop/src/features/integrations/components/ExternalTaskChip/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/integrations/components/IntegrationConnectedRow/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/integrations/components/IntegrationCredentialPicker/index.test.tsx": {
@@ -4142,14 +4097,6 @@
       "count": 17
     }
   },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 6
-    },
-    "react-hooks/exhaustive-deps": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/onboarding/OnboardingWizard/hostFromRemote.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -4157,12 +4104,7 @@
   },
   "apps/desktop/src/features/onboarding/OnboardingWizard/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 6
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
+      "count": 4
     }
   },
   "apps/desktop/src/features/onboarding/OnboardingWizard/startFirstSession.test.ts": {
@@ -4170,59 +4112,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/CodeHostStep.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/FirstSessionStep.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/FirstSessionStep.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/FolderCard.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/HandOff.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/ProjectStep.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/ProjectsStep.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/ProviderCard.test.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/TasksStep.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/steps/TasksStep.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/onboarding/OnboardingWizard/useOnboardingWizard/index.test.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 3
+      "count": 2
     }
   },
   "apps/desktop/src/features/onboarding/OnboardingWizard/useOnboardingWizard/index.ts": {
@@ -4230,22 +4122,7 @@
       "count": 1
     },
     "@typescript-eslint/naming-convention": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/wizardCta.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 11
-    }
-  },
-  "apps/desktop/src/features/onboarding/OnboardingWizard/wizardSteps.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/onboarding/SetupChecklist/StepRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/onboarding/hooks/useOnboardingProgress/index.test.ts": {
@@ -4255,25 +4132,14 @@
   },
   "apps/desktop/src/features/onboarding/hooks/useOnboardingProgress/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 12
+      "count": 7
     },
     "react-hooks/exhaustive-deps": {
       "count": 4
     }
   },
-  "apps/desktop/src/features/onboarding/onboarding-store.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/onboarding/onboarding-store.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
     "@typescript-eslint/naming-convention": {
-      "count": 4
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     }
   },
@@ -4761,16 +4627,6 @@
       "count": 6
     }
   },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProvidersRail.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/providers/components/ProviderStudio/ProvidersRail.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/providers/components/ProviderStudio/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 8
@@ -4778,7 +4634,7 @@
   },
   "apps/desktop/src/features/providers/components/ProviderStudio/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 4
+      "count": 2
     }
   },
   "apps/desktop/src/features/providers/hooks/useProviderStanding/index.test.ts": {
@@ -6122,11 +5978,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/sessionArchive.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/session/sessionTitle.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
@@ -6251,16 +6102,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/settings/components/GuideStudio/parts/DefinitionList.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/settings/components/GuideStudio/parts/GuideContent.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/settings/components/GuideStudio/parts/ListensExtra.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -6321,14 +6162,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/UpdatesSection.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/UpdatesSection.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceAfterMergeSection.test.tsx": {
@@ -6363,7 +6199,7 @@
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProjectsSection.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 15
+      "count": 14
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceReviewRepliesSection.test.tsx": {
@@ -6484,14 +6320,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/storage/components/BranchesSection/LiveSessionCells.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/storage/components/BranchesSection/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 5
+      "count": 4
     },
     "react-hooks/exhaustive-deps": {
       "count": 1
@@ -6636,7 +6467,7 @@
       "count": 36
     },
     "@typescript-eslint/no-floating-promises": {
-      "count": 19
+      "count": 18
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
@@ -6653,16 +6484,6 @@
   "apps/desktop/src/features/suggestions/useTranscriptMountProposals/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/features/updater/components/UpdateConfirm/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
-  "apps/desktop/src/features/updater/components/UpdateConfirm/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/updater/hooks/useRestartWhenIdle/index.test.ts": {
@@ -7760,37 +7581,9 @@
       "count": 4
     }
   },
-  "apps/desktop/src/features/workspace/components/WorkspaceLauncher/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/components/WorkspaceLauncher/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/workspace/components/WorkspaceLinkStudio/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/workspace/components/WorkspaceListRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/OtherWorkspaceRow.tsx": {
@@ -8001,16 +7794,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/shared/components/DetectedRepoList/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/shared/components/DetectedRepoList/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 5
-    }
-  },
   "apps/desktop/src/shared/components/GenericTerminalPanel/index.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 4
@@ -8034,16 +7817,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/shared/components/NewProjectForm/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/shared/components/NewProjectForm/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/shared/components/OpenSessionButton/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -8055,21 +7828,6 @@
     }
   },
   "apps/desktop/src/shared/components/ProfileForm/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/shared/components/ProjectAdoptionNotice/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
-  "apps/desktop/src/shared/components/ProjectAdoptionNotice/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/shared/components/ProjectLinkList/ProjectAddPopover.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
     }
@@ -8097,19 +7855,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/shared/components/ProjectLinkList/ProjectLinkAddRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/shared/components/ProjectLinkList/ProjectLinkCompactRow.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/shared/components/ProjectLinkList/ProjectLinkRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/shared/components/ProjectLinkList/ProjectRowEditor.tsx": {
@@ -8258,7 +8006,7 @@
   },
   "apps/desktop/src/shared/components/StudioShell/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 4
     }
   },
   "apps/desktop/src/shared/components/Toast/index.test.tsx": {
@@ -8296,11 +8044,6 @@
   },
   "apps/desktop/src/shared/hooks/useChatDefaultModel/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/shared/hooks/useChildRepoDetection/index.test.ts": {
-    "@typescript-eslint/naming-convention": {
       "count": 3
     }
   },
@@ -8356,11 +8099,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/shared/hooks/useNewProject/index.ts": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/shared/hooks/useNow/index.ts": {
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -8392,11 +8130,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/shared/hooks/useProjectAdoption/index.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/shared/hooks/useProjectLinking/index.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -8404,7 +8137,7 @@
   },
   "apps/desktop/src/shared/hooks/useProjectLinking/index.ts": {
     "@typescript-eslint/naming-convention": {
-      "count": 3
+      "count": 1
     }
   },
   "apps/desktop/src/shared/hooks/useProviderRefreshOnFocus/index.test.ts": {
@@ -12049,9 +11782,6 @@
   "apps/desktop/src/store/slices/workspaces/addWorkspace.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
     }
   },
   "apps/desktop/src/store/slices/workspaces/checkReconnectCandidate.test.ts": {

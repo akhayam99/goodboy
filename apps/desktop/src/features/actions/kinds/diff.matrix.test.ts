@@ -38,6 +38,8 @@ const facts = (overrides: Partial<DiffFacts>): DiffFacts => ({
   isDiverged: false,
   onlyOnline: null,
   isRebasing: false,
+  rebaseConflict: null,
+  autoBlockedReason: null,
   comments: 0,
   canStartTurnsHere: false,
   isScribeWriting: false,

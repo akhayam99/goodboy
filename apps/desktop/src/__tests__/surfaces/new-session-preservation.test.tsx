@@ -202,10 +202,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     await mountScene({ name: 'c10-start-projects' });
 
     screen.getByText('Optional');
-    expect(screen.getByRole('combobox', { name: 'Search projects' })).toHaveProperty(
-      'value',
-      'pay',
-    );
+    expect(screen.getByRole('combobox', { name: 'Search folders' })).toHaveProperty('value', 'pay');
     screen.getByRole('button', { name: 'Remove payments-api' });
     screen.getByRole('button', { name: 'Remove ledger-core' });
   });
@@ -216,7 +213,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByRole('button', { name: 'Role: Scout' });
     screen.getByRole('textbox', { name: 'Scout focus' });
     expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
-    fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Folder' }));
     fireEvent.click(screen.getByRole('option', { name: 'ledger-core' }));
     fireEvent.click(screen.getByRole('button', { name: 'Remove payments-api' }));
     fireEvent.click(screen.getByRole('option', { name: 'payments-api' }));

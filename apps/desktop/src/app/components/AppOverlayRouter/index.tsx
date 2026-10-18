@@ -5,6 +5,7 @@ import { WorkspaceLauncher } from '../../../features/workspace/components/Worksp
 import type { SettingsScopeChange } from '../../../features/settings/settingsFocus';
 import type { ImpactScope } from '../../../features/impact/lib';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
+import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import type { InboxStudioFocus, StudioPlace } from '../../../store';
 import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import { StudioFrame } from '../StudioFrame';
@@ -66,11 +67,6 @@ const TerminalStudio = lazy(() =>
 const MonitoringStudio = lazy(() =>
   import('../../../features/monitoring/components/MonitoringStudio').then((module) => ({
     default: module.MonitoringStudio,
-  })),
-);
-const CompanionStudio = lazy(() =>
-  import('../../../features/companion/components/CompanionStudio').then((module) => ({
-    default: module.CompanionStudio,
   })),
 );
 
@@ -136,17 +132,8 @@ const renderStudio = ({
       );
     case 'guide':
       return <GuideStudio onClose={close} />;
-    case 'companion':
-      return <CompanionStudio onClose={close} />;
     case 'addWorkspace':
-      return (
-        <WorkspaceLinkStudio
-          variant="fullscreen"
-          isNewProject={overlay.start === 'new-project'}
-          onClose={close}
-          onOfferRepo={offerWorkspaceRepo}
-        />
-      );
+      return <WorkspaceLinkStudio onClose={close} onOfferRepo={offerWorkspaceRepo} />;
     case 'workflow':
       return currentWorkspace === null ? null : (
         <WorkflowStudio workspaceId={currentWorkspace.id} onClose={close} />
@@ -261,6 +248,7 @@ export const AppOverlayRouter = ({
   offerWorkspaceRepo,
   closeDeleteConfirm,
 }: Props) => {
+  const isInMainWindow = useIsMainWindow();
   if (isWorkspaceLauncherBranch) {
     const launcherStudio =
       overlay !== null && isAppScopeOverlay({ overlay }) ? (
@@ -278,17 +266,13 @@ export const AppOverlayRouter = ({
       ) : null;
     return (
       <Suspense fallback={null}>
-        {overlay?.kind === 'addWorkspace' ? (
-          <WorkspaceLinkStudio
-            variant="viewport"
-            isNewProject={overlay.start === 'new-project'}
-            onClose={close}
-            onOfferRepo={offerWorkspaceRepo}
-          />
-        ) : (
-          <WorkspaceLauncher />
-        )}
+        <WorkspaceLauncher
+          isCreating={overlay?.kind === 'addWorkspace'}
+          onCloseCreate={close}
+          onOfferRepo={offerWorkspaceRepo}
+        />
         <AppScopeOverlays studio={launcherStudio} palette={palette} closePalette={closePalette} />
+        <OnboardingWizard isMainWindow={isInMainWindow} />
       </Suspense>
     );
   }
@@ -303,7 +287,7 @@ export const AppOverlayRouter = ({
           onClose={closeDeleteConfirm}
         />
       ) : null}
-      <OnboardingWizard />
+      <OnboardingWizard isMainWindow={isInMainWindow} />
     </Suspense>
   );
 };

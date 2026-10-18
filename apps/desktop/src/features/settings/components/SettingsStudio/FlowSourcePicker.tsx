@@ -43,7 +43,7 @@ export const FlowSourcePicker = ({ sources, sourceId, onPick }: Props) => {
             />
             <span className="truncate text-foreground">{candidate.name}</span>
             <span className="truncate text-meta text-faint-foreground">
-              {pluralize(candidate.projectCount, 'project')} ·{' '}
+              {pluralize(candidate.projectCount, 'folder')} ·{' '}
               {differs === 0 ? 'nothing different' : `${pluralize(differs, 'setting')} different`}
             </span>
           </button>

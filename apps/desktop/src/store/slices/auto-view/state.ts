@@ -1,6 +1,6 @@
-import type { AutoArtifactLedgerRow, AutoDelegation, AutoTree } from '@goodboy/db';
+import type { AutoArtifactLedgerRow, AutoDelegation, AutoOutcome, AutoTree } from '@goodboy/db';
 import type { AutoBudgetFacts } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
+import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 
 export type AutoTreeView = Readonly<{
   tree: AutoTree;
@@ -8,6 +8,18 @@ export type AutoTreeView = Readonly<{
   artifacts: ReadonlyArray<AutoArtifactLedgerRow>;
   budget: AutoBudgetFacts | null;
   pendingRefusal: AutoPendingRefusal | null;
+  deliveredResults: ReadonlyArray<AutoDeliveredResult>;
+}>;
+
+export type AutoDeliveredResult = Readonly<{
+  runId: ProviderRunId;
+  delegationId: string;
+  childAgentId: AgentId;
+  role: string;
+  provider: string | null;
+  model: string | null;
+  outcome: AutoOutcome;
+  summary: string | null;
 }>;
 
 export type AutoPendingRefusal = Readonly<{

@@ -12,6 +12,10 @@ import { TASK_LIST_KIND } from './kinds/taskList';
 import { RUN_STEP_KIND } from './kinds/runStep';
 import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
 import { NOTIFICATIONS_KIND } from './kinds/notifications';
+import { NOTIFICATION_KIND } from './kinds/notification';
+import { PROVIDER_KIND } from './kinds/provider';
+import { INTEGRATION_KIND } from './kinds/integration';
+import { BRANCH_KIND } from './kinds/branch';
 import { PROJECT_ASK_KIND } from './kinds/projectAsk';
 import { PROJECT_KIND } from './kinds/project';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
@@ -64,6 +68,10 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['runStep', RUN_STEP_KIND.actions],
   ['workflowList', WORKFLOW_LIST_KIND.actions],
   ['notifications', NOTIFICATIONS_KIND.actions],
+  ['notification', NOTIFICATION_KIND.actions],
+  ['provider', PROVIDER_KIND.actions],
+  ['integration', INTEGRATION_KIND.actions],
+  ['branch', BRANCH_KIND.actions],
   ['projectAsk', PROJECT_ASK_KIND.actions],
   ['link', LINK_KIND.actions],
   ['review', REVIEW_KIND.actions],

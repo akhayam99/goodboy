@@ -31,6 +31,13 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { ASK_RESET_EVENT } from '../../session/ask/ASK_RESET_EVENT';
+import {
+  OPEN_WIZARD_EVENT,
+  finishWizard,
+  hydrateOnboardingFromDb,
+} from '../../onboarding/onboarding-store';
+import { GUIDE_CHAPTERS } from '../../settings/components/GuideStudio/guideChapters';
+import { peekGuideChapter } from '../../settings/components/GuideStudio/guideChapterRequest';
 import { useCommandEntries } from './useCommandEntries';
 
 const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -64,6 +71,90 @@ const entryKeys = (): ReadonlyArray<string> => {
   const { result } = renderHook(() => useCommandEntries(), { wrapper });
   return result.current.map((entry) => entry.key);
 };
+
+const entryFor = (key: string) => {
+  const { result } = renderHook(() => useCommandEntries(), { wrapper });
+  return result.current.find((entry) => entry.key === key);
+};
+
+describe('the palette entries of the workspace doors', () => {
+  beforeEach(async () => {
+    await hydrateOnboardingFromDb();
+  });
+
+  it('lists New workspace once, found by its former names, and opens the one door', () => {
+    const onNew = vi.fn();
+    window.addEventListener('goodboy:add-workspace', onNew);
+    const keys = entryKeys();
+    const entry = entryFor('action:new-workspace');
+    entry?.run();
+    window.removeEventListener('goodboy:add-workspace', onNew);
+
+    expect(keys.filter((key) => key === 'action:new-workspace')).toHaveLength(1);
+    expect(keys).not.toContain('goto:start-new-project');
+    expect(keys).not.toContain('goto:add-workspace');
+    expect(entry?.label).toBe('New workspace');
+    expect(entry?.secondary).toEqual(
+      expect.arrayContaining(['Open a folder', 'Start a new project']),
+    );
+    expect(onNew).toHaveBeenCalledOnce();
+  });
+
+  it('offers Resume setup while setup is unfinished and resumes it in the main window', () => {
+    const onOpen = vi.fn();
+    window.addEventListener(OPEN_WIZARD_EVENT, onOpen);
+    entryFor('action:resume-setup')?.run();
+    window.removeEventListener(OPEN_WIZARD_EVENT, onOpen);
+
+    expect(onOpen).toHaveBeenCalledOnce();
+    expect(onOpen.mock.lastCall?.[0]).toMatchObject({ detail: { mode: 'setup' } });
+  });
+
+  it('drops Resume setup once setup is done', async () => {
+    stubStoryInvoke({ db_select: [], db_execute: { rowsAffected: 1 } });
+    await act(async () => {
+      await finishWizard();
+    });
+
+    expect(entryKeys()).not.toContain('action:resume-setup');
+  });
+});
+
+describe('the palette groups', () => {
+  it('files places under Go to, creations under Create and helps under Help', () => {
+    const kindOf = (key: string) => entryFor(key)?.kind;
+
+    expect(kindOf('goto:board')).toBe('goto');
+    expect(kindOf('action:settings')).toBe('goto');
+    expect(kindOf('action:new-session')).toBe('create');
+    expect(kindOf('action:new-chat')).toBe('create');
+    expect(kindOf('action:new-terminal')).toBe('create');
+    expect(kindOf('action:new-workspace')).toBe('create');
+    expect(kindOf('action:toggle-theme')).toBe('action');
+    expect(kindOf('action:check-updates')).toBe('action');
+    expect(kindOf('goto:changelog')).toBe('help');
+    expect(kindOf('action:report-issue')).toBe('help');
+  });
+
+  it('names Pair an iPhone and still finds it by the old words', () => {
+    const entry = entryFor('action:pair-device');
+
+    expect(entry?.label).toBe('Pair an iPhone');
+    expect(entry?.secondary).toEqual(expect.arrayContaining(['Pair your iPhone']));
+  });
+
+  it('adds one typed-only Guide entry per chapter that opens that chapter', () => {
+    const keys = entryKeys();
+    const entry = entryFor('guide:commits');
+
+    expect(keys.filter((key) => key.startsWith('guide:'))).toHaveLength(GUIDE_CHAPTERS.length);
+    expect(entry?.label).toBe('Guide: Commits');
+    expect(entry?.kind).toBe('page');
+    entry?.run();
+
+    expect(peekGuideChapter()).toBe('commits');
+  });
+});
 
 describe('the palette entry for the inner column', () => {
   it('leaves it out on a page with no inner column and names the column once one shows', () => {

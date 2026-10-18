@@ -73,7 +73,7 @@ export const FirstLapBanner = ({ sessionId }: Props) => {
         role="status"
         className="bg-transparent"
         title="Moving your work into bootstrap"
-        body="The project folder stays as it is until the copy is checked."
+        body="The folder stays as it is until the copy is checked."
       >
         {notice !== null ? (
           <Notice tone="warning" placement="inline" role="alert" title={notice} />

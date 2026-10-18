@@ -1,5 +1,6 @@
 import { MODEL_CATALOGS } from '../catalogs';
 import { describe, expect, it } from 'vitest';
+import { AUTO_DEFAULTS } from './defaults';
 import { resolveAuto } from './resolveAuto';
 
 describe('resolveAuto', () => {
@@ -24,6 +25,27 @@ describe('resolveAuto', () => {
     });
   });
 
+  it('moves the Codex Luna jobs to GPT-6 Luna and keeps GPT-5.6 Luna below Codex 0.162.1', () => {
+    expect(
+      resolveAuto({ slot: { kind: 'task', id: 'summarizer' }, defaultProvider: 'codex' }),
+    ).toEqual({ provider: 'codex', model: 'gpt-6-luna', effort: 'low', step: 'curated' });
+    expect(
+      resolveAuto({
+        slot: { kind: 'task', id: 'summarizer' },
+        defaultProvider: 'codex',
+        cliVersions: { codex: '0.161.0' },
+      }),
+    ).toEqual({ provider: 'codex', model: 'gpt-5.6-luna', effort: 'low', step: 'next-in-column' });
+  });
+
+  it('lists the Codex Sol line newest first: 6.1, then 6, then 5.6', () => {
+    expect(AUTO_DEFAULTS.codex.implementer.map((choice) => choice.key)).toEqual([
+      'gpt-6.1-sol',
+      'gpt-6-sol',
+      'gpt-5.6-sol',
+    ]);
+  });
+
   it('runs Claude roles on the newest Sonnet and keeps the older one for an old CLI', () => {
     expect(
       resolveAuto({ slot: { kind: 'role', id: 'implementer' }, defaultProvider: 'anthropic' }),
@@ -40,6 +62,38 @@ describe('resolveAuto', () => {
       effort: 'medium',
       step: 'next-in-column',
     });
+  });
+
+  it('runs Scout on Haiku 5.5 and keeps Haiku 4.5 for a Claude CLI below 2.1.293', () => {
+    expect(
+      resolveAuto({ slot: { kind: 'role', id: 'scout' }, defaultProvider: 'anthropic' }),
+    ).toEqual({ provider: 'anthropic', model: 'haiku-5.5', effort: 'medium', step: 'curated' });
+    expect(
+      resolveAuto({
+        slot: { kind: 'role', id: 'scout' },
+        defaultProvider: 'anthropic',
+        cliVersions: { anthropic: '2.1.292' },
+      }),
+    ).toEqual({
+      provider: 'anthropic',
+      model: 'haiku-4.5',
+      effort: 'medium',
+      step: 'next-in-column',
+    });
+  });
+
+  it('moves the summarizer to Haiku 5.5 on its own and back to Haiku 4.5 on an old CLI', () => {
+    expect(
+      resolveAuto({ slot: { kind: 'task', id: 'summarizer' }, defaultProvider: 'anthropic' })
+        ?.model,
+    ).toBe('haiku-5.5');
+    expect(
+      resolveAuto({
+        slot: { kind: 'task', id: 'summarizer' },
+        defaultProvider: 'anthropic',
+        cliVersions: { anthropic: '2.1.292' },
+      })?.model,
+    ).toBe('haiku-4.5');
   });
 
   it('moves down the same column when the cli is too old for the first pick', () => {
@@ -186,11 +240,11 @@ describe('resolveAuto', () => {
     const pick = resolveAuto({
       slot: { kind: 'task', id: 'summarizer' },
       defaultProvider: 'anthropic',
-      hidden: { anthropic: ['haiku-4.5'] },
+      hidden: { anthropic: ['haiku-5.5', 'haiku-4.5'] },
     });
 
     expect(pick).not.toBeNull();
-    expect(pick?.provider === 'anthropic' && pick.model === 'haiku-4.5').toBe(false);
+    expect(pick?.provider === 'anthropic' && pick.model.startsWith('haiku-')).toBe(false);
     expect(pick).not.toHaveProperty('keptHidden');
   });
 
@@ -201,7 +255,7 @@ describe('resolveAuto', () => {
         defaultProvider: 'anthropic',
         connected: ['anthropic', 'gemini'],
         fallbackOrder: ['anthropic', 'gemini'],
-        hidden: { anthropic: ['haiku-4.5'] },
+        hidden: { anthropic: ['haiku-5.5', 'haiku-4.5'] },
       })?.provider,
     ).toBe('gemini');
   });
@@ -283,15 +337,24 @@ describe('resolveAuto', () => {
     expect(
       resolveAuto({
         slot: { kind: 'task', id: 'summarizer' },
-        defaultProvider: 'gemini',
-        hidden: { gemini: ['gemini-3.8-flash'] },
+        defaultProvider: 'anthropic',
+        hidden: { anthropic: ['haiku-5.5'] },
       }),
     ).toEqual({
-      provider: 'gemini',
-      model: 'gemini-3.7-flash',
-      effort: 'low',
+      provider: 'anthropic',
+      model: 'haiku-4.5',
+      effort: null,
       step: 'next-in-column',
     });
+  });
+
+  it('never lists the retired Gemini 3.7 Flash in the Flash line', () => {
+    expect(
+      resolveAuto({ slot: { kind: 'task', id: 'summarizer' }, defaultProvider: 'gemini' }),
+    ).toEqual({ provider: 'gemini', model: 'gemini-3.8-flash', effort: 'low', step: 'curated' });
+    expect(AUTO_DEFAULTS.gemini.summarizer.map((choice) => choice.key)).toEqual([
+      'gemini-3.8-flash',
+    ]);
   });
 
   it('skips a hidden model on a provider without a curated column', () => {

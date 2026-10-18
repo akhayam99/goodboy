@@ -33,7 +33,7 @@ describe('ModelPickerScene', () => {
       within(cursor.getByRole('group', { name: 'Version' }))
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['3.1', '3.7', '3.8']);
+    ).toEqual(['3.1', '3.7', '3.8', '4']);
     expect(
       within(cursor.getByRole('group', { name: 'Version' }))
         .getByRole('button', { name: '3.8' })

@@ -182,12 +182,12 @@ describe('the c10 New session scenes', () => {
       .getState()
       .projects.filter((project) => project.workspaceId === WORKSPACE_ID);
     expect(workspaceProjects).toHaveLength(50);
-    const search = screen.getByRole('combobox', { name: 'Search projects' });
+    const search = screen.getByRole('combobox', { name: 'Search folders' });
     expect(search).toHaveProperty('value', 'pay');
-    const listbox = screen.getByRole('listbox', { name: 'Project' });
+    const listbox = screen.getByRole('listbox', { name: 'Folder' });
     expect(within(listbox).getAllByRole('option')).toHaveLength(1);
     expect(within(listbox).getByRole('option', { name: /payments-api/ })).toBeDefined();
-    expect(within(listbox).queryAllByText(/^(Suggested|All projects)$/).length).toBeGreaterThan(0);
+    expect(within(listbox).queryAllByText(/^(Suggested|All folders)$/).length).toBeGreaterThan(0);
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
   });
 

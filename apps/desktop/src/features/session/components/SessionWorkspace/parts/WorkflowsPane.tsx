@@ -7,6 +7,7 @@ import { WorkflowStartButton } from '../../AgentTree/WorkflowStartButton';
 import { OrchestratedRunPage } from '../../OrchestratedRun';
 import { RunsGrid } from './RunsGrid';
 import { NAMES } from '../../../../../shared/names';
+import { SessionPageIntro } from '../../SessionPageIntro';
 
 type Props = {
   readonly session: Session;
@@ -41,6 +42,7 @@ export const WorkflowsPane = ({ session, isActive = true }: Props) => {
     <PaneShell
       page="runs"
       title={NAMES.runs}
+      subheader={<SessionPageIntro page="runs" />}
       actions={hasRuns ? <WorkflowAttachButton sessionId={sessionId} placement="header" /> : null}
     >
       {hasRuns ? (

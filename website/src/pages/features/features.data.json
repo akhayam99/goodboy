@@ -3,7 +3,7 @@
     {
       "id": "onboarding",
       "title": "Set up and start a task",
-      "lead": "Connect a provider, link your tools and begin from an issue, a workflow or a question.",
+      "lead": "Check your agents, make a workspace from your folders and begin from an issue, a workflow or a question.",
       "groups": ["Set up", "Start a task"],
       "mocks": ["session"],
       "guides": [
@@ -19,15 +19,29 @@
       "items": [
         {
           "title": "Welcome to Goodboy",
-          "text": "Five short steps take you from install to a first agent reading your project. Skip any step that does not apply to you.",
+          "text": "Four short steps take you from install to a first agent reading your code. Set up later pauses it, and the next launch picks up where you left.",
           "group": "Set up",
           "main": true
         },
         {
-          "title": "Provider connection",
-          "text": "Connect the provider you already use with a login or an API key. Each card shows whether it is connected, signed out or missing.",
+          "title": "Your agents",
+          "text": "Goodboy finds the coding agents already on this Mac. Each one shows what it needs: a sign in, an install or a look at why it cannot start. One ready agent is enough.",
           "group": "Set up",
           "main": true
+        },
+        {
+          "title": "Your first workspace",
+          "text": "Pick a repository, or a folder that holds several, and the workspace takes its name. Nothing is saved until you press Create.",
+          "group": "Set up",
+          "also": "first workspace",
+          "shown": true
+        },
+        {
+          "title": "Home",
+          "text": "A window with no workspace open lists your workspaces with their folders, and New workspace opens the same form in place.",
+          "group": "Set up",
+          "also": "Home",
+          "shown": true
         },
         {
           "title": "One page per provider",
@@ -324,9 +338,9 @@
     },
     {
       "id": "context",
-      "title": "Shared context and projects",
+      "title": "Shared context and folders",
       "lead": "What one agent learns, the next one reads, across every repo your work touches.",
-      "groups": ["Shared context", "Workspace and projects"],
+      "groups": ["Shared context", "Workspaces and folders"],
       "mocks": ["handoff"],
       "guides": [
         {
@@ -335,7 +349,7 @@
         },
         {
           "area": "workspace",
-          "label": "Workspace and projects"
+          "label": "Workspaces and folders"
         }
       ],
       "items": [
@@ -392,81 +406,81 @@
           "shown": true
         },
         {
-          "title": "Start a project from nothing",
+          "title": "Start from scratch",
           "text": "Begin with an empty folder. Goodboy starts the repository, a first session works in it, and Publish puts main on GitHub when you are ready.",
-          "group": "Workspace and projects",
-          "also": "new project"
+          "group": "Workspaces and folders",
+          "also": "start from scratch"
         },
         {
-          "title": "Workspace with several projects",
+          "title": "Workspace with several folders",
           "text": "Keep your repos together and let one session work across several of them. A repo gets a branch only when an agent needs to edit it.",
-          "group": "Workspace and projects",
+          "group": "Workspaces and folders",
           "main": true
         },
         {
-          "title": "Starred projects, descriptions and base branch",
-          "text": "Star a project and give it a one-line description, and agents read both in their brief. Starred projects come first in the pickers.",
-          "group": "Workspace and projects",
-          "also": "starred projects"
+          "title": "Starred folders, descriptions and base branch",
+          "text": "Star a folder and give it a one-line description, and agents read both in their brief. Starred folders come first in the pickers.",
+          "group": "Workspaces and folders",
+          "also": "starred folders"
         },
         {
           "title": "Worktrees",
           "text": "Each branch gets its own worktree, a separate folder next to your checkout. Agents edit in parallel without touching your own files.",
-          "group": "Workspace and projects",
+          "group": "Workspaces and folders",
           "main": true
         },
         {
-          "title": "Several branches per project",
+          "title": "Several branches per repo",
           "text": "Work on several branches of one repo in the same session. If a worktree drifts to another branch, a card offers clear choices.",
-          "group": "Workspace and projects",
+          "group": "Workspaces and folders",
           "also": "several branches",
           "shown": true
         },
         {
           "title": "Branch names",
           "text": "Pick how new session branches are named: task id first, without it, or your own template. The preview uses your last session.",
-          "group": "Workspace and projects",
+          "group": "Workspaces and folders",
           "also": "branch names",
           "shown": true
         },
         {
           "title": "Copy settings from another workspace",
           "text": "Take the settings of another workspace, or restore the defaults, page by page. You see every change before it is saved.",
-          "group": "Workspace and projects",
+          "group": "Workspaces and folders",
           "also": "copy settings"
         },
         {
           "title": "Workspace switcher and Reconnect",
-          "text": "Jump between workspaces and projects from one search. Disconnecting keeps the history, and adding the folder again offers Reconnect.",
-          "group": "Workspace and projects",
+          "text": "Jump between workspaces and folders from one search. Disconnecting keeps the history, and adding the folder again offers Reconnect.",
+          "group": "Workspaces and folders",
           "also": "workspace switcher",
           "shown": true
         },
         {
-          "title": "Repo status across projects",
+          "title": "Repo status across folders",
           "text": "See which repos are behind or diverged from origin, checked every few minutes, next to the workspace switcher. Pull the safe ones together, fast-forward only, and leave the rest to you.",
-          "group": "Workspace and projects",
+          "group": "Workspaces and folders",
           "also": "repo status",
           "shown": true
         },
         {
           "title": "Monitoring",
           "text": "See which ports are taken and by whom, a worktree or a script, terminal or agent Goodboy started. Stop what you started and clear what an earlier run left behind.",
-          "group": "Workspace and projects",
+          "group": "Workspaces and folders",
           "also": "monitoring",
           "shown": true
         },
         {
-          "title": "Locate moved projects",
+          "title": "Locate moved folders",
           "text": "If you moved your repos, pick the parent folder. Goodboy finds them again, fixes the paths and repairs the worktrees, with Undo move.",
-          "group": "Workspace and projects",
-          "also": "moved projects",
+          "group": "Workspaces and folders",
+          "also": "moved folders",
           "shown": true
         },
         {
           "title": "Keep .goodboy out of git",
           "text": "Keep Goodboy's own folder out of your commits with one click. The card shows only when git does not already ignore it.",
-          "group": "Workspace and projects",
+          "group": "Workspaces and folders",
           "also": "git ignore"
         }
       ]
@@ -1251,7 +1265,7 @@
         },
         {
           "title": "Keyboard shortcuts, back and forward",
-          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts, and ⌘[ and ⌘] move through history.",
+          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts. ⌘[ and ⌘] move through history. The Mac menu bar carries the same keys.",
           "group": "Keyboard and terminal",
           "main": true
         },
@@ -1388,7 +1402,7 @@
         },
         {
           "title": "Guide",
-          "text": "Learn how Goodboy works in short chapters that follow a task. Open Guide from the palette.",
+          "text": "Learn how Goodboy works in short chapters, one page each, that follow a task. Open Guide from the Help menu or the palette.",
           "group": "Security, backup and updates",
           "also": "guide"
         },

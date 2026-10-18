@@ -31,7 +31,7 @@ export const taskDragIntent = ({
   if (task.projectId != null && to.projectId !== null && to.projectId !== task.projectId) {
     return {
       kind: 'refused',
-      text: `Only ${nameOf(task.projectId) ?? 'its project'} branches`,
+      text: `Only ${nameOf(task.projectId) ?? 'its folder'} branches`,
     };
   }
   if (to.branch === sourceBranch) {

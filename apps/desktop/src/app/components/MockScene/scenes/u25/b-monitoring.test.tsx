@@ -85,10 +85,11 @@ describe('the busy Mac', () => {
     expect(workspace.querySelectorAll('[data-port-row="5001"]')).toHaveLength(1);
     const items = [...workspace.querySelectorAll(':scope > ul > li')];
     const sharedAt = items.findIndex((item) => item.hasAttribute('data-shared-pid'));
-    const foldAt = items.findIndex((item) => item.contains(fold));
+    const freeAt = items.findIndex((item) => item.getAttribute('data-port-row') === '5001');
 
     expect(sharedAt).toBeGreaterThanOrEqual(0);
-    expect(foldAt).toBeGreaterThan(sharedAt);
+    expect(freeAt).toBeGreaterThan(sharedAt);
+    expect(fold.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('keeps a pinned port with its description in use', async () => {
@@ -137,12 +138,12 @@ describe('the column header and the terminal rows', () => {
     expect(document.querySelectorAll('[data-column-header]')).toHaveLength(1);
   });
 
-  it('leaves the Port cell empty and shows the process, its pid and the place for a terminal row', async () => {
+  it('says no port in faint text and shows the process, its pid and the place for a terminal row', async () => {
     await ready({ name: 'b-monitoring-busy' });
     const goodboy = layer({ name: 'Run by Goodboy' });
     const row = goodboy.querySelector('[data-started-row]');
 
-    expect(row?.textContent).not.toContain('no port');
+    expect(row?.textContent).toContain('no port');
     expect(row?.textContent).toContain('zsh');
     expect(row?.textContent).toContain('6301');
     expect(row?.textContent).not.toContain('Terminal · zsh');

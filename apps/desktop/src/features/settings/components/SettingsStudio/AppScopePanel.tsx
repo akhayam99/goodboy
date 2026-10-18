@@ -3,12 +3,18 @@ import { PaneShell } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { APP_SECTIONS, type AppSection } from './appSections';
 import { BackupPage } from '../../../backup/components/BackupPage';
+import { iphoneSettingsPage } from '../../../companion/iphoneSettingsPage';
+import { APP_VERSION } from '../../../../shared/lib/appVersion';
+import { useAppStore } from '../../../../store';
 import { AppResetSection } from './AppResetSection';
 import { AppGeneralSection } from './AppGeneralSection';
 import { SecurityFindingsSection } from './SecurityFindingsSection';
 import { ShortcutsSection } from './ShortcutsSection';
+import { UpdatesSection } from './UpdatesSection';
+import { UpdatesWhatsNewBand } from './UpdatesWhatsNewBand';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { STORAGE_APP_PAGES } from '../../../storage/storageAppPages';
+import { useStorageMeta } from '../../../storage/useStorageMeta';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type Props = {
@@ -16,37 +22,44 @@ type Props = {
   readonly workspaceId: WorkspaceId | null;
 };
 
-const SECTION_META: Readonly<Partial<Record<AppSection, string>>> = {
-  shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
-  storage: 'What Goodboy keeps on this Mac.',
-  branches: 'Local branches of your projects.',
-  'security-findings': 'This text never leaves your Mac.',
+type PaneSection = Exclude<AppSection, 'iphone'>;
+
+type BodyProps = {
+  readonly section: PaneSection;
+  readonly workspaceId: WorkspaceId | null;
 };
 
-const SECTION_ACTIONS: Readonly<Partial<Record<AppSection, ReactNode>>> = {
+const SECTION_ACTIONS: Readonly<Partial<Record<PaneSection, ReactNode>>> = {
   storage: STORAGE_APP_PAGES.storage.actions,
-  branches: STORAGE_APP_PAGES.branches.actions,
 };
 
-const SectionBody = ({ section, workspaceId }: Props) => {
+const SectionBody = ({ section, workspaceId }: BodyProps) => {
   switch (section) {
     case 'general':
       return <AppGeneralSection />;
+    case 'updates':
+      return (
+        <>
+          <UpdatesSection />
+          <UpdatesWhatsNewBand />
+        </>
+      );
     case 'shortcuts':
       return <ShortcutsSection />;
+    case 'storage':
+      return (
+        <>
+          {STORAGE_APP_PAGES.storage.body}
+          <SecurityFindingsSection workspaceId={workspaceId} />
+        </>
+      );
     case 'backup':
       return (
-        <div className="flex flex-col gap-6">
+        <>
           <BackupPage />
           <AppResetSection />
-        </div>
+        </>
       );
-    case 'storage':
-      return STORAGE_APP_PAGES.storage.body;
-    case 'branches':
-      return STORAGE_APP_PAGES.branches.body;
-    case 'security-findings':
-      return <SecurityFindingsSection workspaceId={workspaceId} />;
     default: {
       const exhaustive: never = section;
       return exhaustive;
@@ -55,6 +68,19 @@ const SectionBody = ({ section, workspaceId }: Props) => {
 };
 
 export const AppScopePanel = ({ section, workspaceId }: Props) => {
+  const reportError = useAppStore((state) => state.reportError);
+  const storageMeta = useStorageMeta();
+  if (section === 'iphone') {
+    return iphoneSettingsPage({
+      animationClassName: SETTINGS_PANE_ENTRY,
+      onStopFailed: (failure) => void reportError(failure),
+    });
+  }
+  const meta: Readonly<Partial<Record<PaneSection, string>>> = {
+    updates: APP_VERSION === null ? undefined : `Goodboy ${APP_VERSION}`,
+    shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
+    storage: storageMeta,
+  };
   const label = APP_SECTIONS.find((entry) => entry.id === section)?.label ?? section;
   return (
     <PaneShell
@@ -62,7 +88,7 @@ export const AppScopePanel = ({ section, workspaceId }: Props) => {
       key={section}
       animationClassName={SETTINGS_PANE_ENTRY}
       title={label}
-      meta={SECTION_META[section]}
+      meta={meta[section]}
       actions={SECTION_ACTIONS[section]}
     >
       <SectionBody section={section} workspaceId={workspaceId} />

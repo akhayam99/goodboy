@@ -43,7 +43,7 @@ type LocationParams = {
 
 const holderLocation = ({ holder }: LocationParams): string => {
   if (holder.mountId === null) {
-    return 'in another worktree of this project';
+    return 'in another worktree of this folder';
   }
   if (holder.label === null) {
     return 'in another worktree of this session';

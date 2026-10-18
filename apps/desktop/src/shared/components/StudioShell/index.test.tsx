@@ -26,18 +26,6 @@ describe('StudioShell variant rendering', () => {
     expect(shell.hasAttribute('data-studio-overlay')).toBe(true);
   });
 
-  it('variant="viewport" covers the window, for the launcher where no shell exists', () => {
-    const { container } = render(
-      <StudioShell {...defaults} variant="viewport">
-        {() => <p>body</p>}
-      </StudioShell>,
-    );
-    const shell = container.firstElementChild as HTMLElement;
-    expect(shell.className).toContain('fixed');
-    expect(shell.className).toContain('inset-0');
-    expect(shell.className).toContain('z-studio');
-  });
-
   it('variant="slot" applies relative positioning, no fixed/z-studio', () => {
     const { container } = render(
       <StudioShell {...defaults} variant="slot">

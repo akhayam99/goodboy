@@ -142,7 +142,7 @@ describe('sendTurn, provider failure fallback', () => {
     expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
     expect(storySpies.runTurn.mock.calls[0]?.[0]?.model).toBe('claude-sonnet-4-5');
     expect(storySpies.runTurn.mock.calls[1]?.[0]).toEqual(
-      expect.objectContaining({ provider: 'anthropic', model: 'claude-haiku-4-5' }),
+      expect.objectContaining({ provider: 'anthropic', model: 'claude-haiku-5-5' }),
     );
     const transcript = useAppStore.getState().transcripts[AGENT_A] ?? [];
     const notice = transcript.find(

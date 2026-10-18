@@ -88,9 +88,9 @@ mod worktree_writer;
 mod command_threading;
 
 #[cfg(target_os = "macos")]
-mod fullscreen_escape;
+mod app_menu;
 #[cfg(target_os = "macos")]
-mod help_menu;
+mod fullscreen_escape;
 
 #[cfg(target_os = "macos")]
 fn suppress_webkit_media_remote() {
@@ -231,7 +231,7 @@ pub fn run() {
                 let _ = sweep_handle.emit("orphans-swept", serde_json::json!({ "count": count }));
             });
             #[cfg(target_os = "macos")]
-            help_menu::install(app.handle())?;
+            app_menu::install(app.handle())?;
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
@@ -255,6 +255,7 @@ pub fn run() {
             editor::open_in_editor,
             editor::open_file_in_workspace,
             editor::open_url,
+            editor::open_privacy_settings,
             remote_image::fetch_remote_image,
             remote_image::load_tool_image,
             local_image::local_image_read,

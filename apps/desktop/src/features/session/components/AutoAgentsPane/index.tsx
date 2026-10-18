@@ -13,13 +13,13 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptI
 import { NAMES } from '../../../../shared/names';
 import { AutoTreeRow } from './AutoTreeRow';
 import { RunWorkTime } from '../AgentTree/RunWorkTime';
+import { SessionPageIntro } from '../SessionPageIntro';
 
 type Props = {
   readonly session: Session;
 };
 
 const EMPTY_TITLE = 'No Auto agents yet';
-const EMPTY_DESCRIPTION = 'Auto answers itself, or starts the right agent.';
 
 export const AutoAgentsPane = ({ session }: Props) => {
   const sessionId = session.id;
@@ -72,6 +72,7 @@ export const AutoAgentsPane = ({ session }: Props) => {
       <PaneShell
         page="auto"
         title={NAMES.autoAgents}
+        subheader={<SessionPageIntro page="auto" />}
         actions={
           hasRows && isAutoOn ? (
             <Button variant="secondary" size="sm" onClick={start}>
@@ -92,7 +93,6 @@ export const AutoAgentsPane = ({ session }: Props) => {
             size="page"
             icon={CONCEPT_ICONS.auto}
             title={EMPTY_TITLE}
-            description={EMPTY_DESCRIPTION}
             action={
               isAutoOn ? (
                 <Button variant="primary" size="sm" onClick={start}>

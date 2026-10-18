@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   loadChangelogUpcoming: vi.fn(async () => undefined),
   updateNotes: null as ReleaseEntry | null,
   applyUpdate: vi.fn(async () => undefined),
+  downloadUpdate: vi.fn(async () => undefined),
   updater: { status: 'idle', version: null as string | null },
   installedVersion: null as string | null,
 }));
@@ -28,6 +29,8 @@ vi.mock('../../../../store', () => ({
       loadChangelogUpcoming: mocks.loadChangelogUpcoming,
       updateNotes: mocks.updateNotes,
       applyUpdate: mocks.applyUpdate,
+      downloadUpdate: mocks.downloadUpdate,
+      updateQueuedUntilIdle: false,
       updaterStatus: mocks.updater.status,
       updateVersion: mocks.updater.version,
       updateFailure: null,
@@ -93,10 +96,10 @@ describe('ChangelogStudio', () => {
     const rows = Array.from(rail.querySelectorAll('button'));
     const installedRow = rows.find((row) => row.textContent?.includes('0.5.5'));
     const newerRow = rows.find((row) => row.textContent?.includes('0.5.6'));
-    expect(installedRow?.textContent).toContain('installed');
-    expect(newerRow?.textContent).not.toContain('installed');
-    expect(newerRow?.textContent).toContain('in the update');
-    expect(installedRow?.textContent).not.toContain('in the update');
+    expect(installedRow?.textContent).toContain('Installed');
+    expect(newerRow?.textContent).not.toContain('Installed');
+    expect(newerRow?.textContent).toContain('In the update');
+    expect(installedRow?.textContent).not.toContain('In the update');
   });
 
   const threeReleases = () =>
@@ -141,7 +144,9 @@ describe('ChangelogStudio', () => {
 
     renderStudio();
 
-    expect(screen.getByRole('button', { name: 'Download and restart' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Update now' }));
+
+    expect(mocks.downloadUpdate).toHaveBeenCalledTimes(1);
   });
 
   it('renders the newest release body in full', () => {
@@ -184,7 +189,7 @@ describe('ChangelogStudio', () => {
 
     renderStudio();
 
-    const search = screen.getByRole('textbox', { name: 'Search releases' });
+    const search = screen.getByRole('searchbox', { name: 'Search releases' });
     fireEvent.change(search, { target: { value: 'xylophonemarmot' } });
 
     expect(screen.getByText(/No release mentions/)).toBeDefined();
@@ -219,12 +224,12 @@ describe('ChangelogStudio', () => {
 
     expect(mocks.loadChangelogUpcoming).toHaveBeenCalledWith({ target: '0.13.0' });
     expect(screen.getByRole('heading', { name: 'Goodboy 0.13.0' })).toBeDefined();
-    expect(screen.getByText('In the update')).toBeDefined();
+    expect(screen.getByText(/^In the update$/, { selector: 'span.inline-flex' })).toBeDefined();
     const rows = railVersions();
     expect(rows.map((text) => text.slice(0, 6))).toEqual(['0.13.0', '0.12.3', '0.12.2', '0.12.1']);
-    expect(rows[0]).toContain('in the update');
-    expect(rows[1]).toContain('in the update');
-    expect(rows[2]).toContain('installed');
+    expect(rows[0]).toContain('In the update');
+    expect(rows[1]).toContain('In the update');
+    expect(rows[2]).toContain('Installed');
   });
 
   it('falls back to the notes of the update while its changelog is not loaded', () => {
@@ -239,7 +244,7 @@ describe('ChangelogStudio', () => {
     renderStudio();
 
     expect(screen.getByRole('heading', { name: 'Goodboy 0.13.0' })).toBeDefined();
-    expect(railVersions()[0]).toContain('in the update');
+    expect(railVersions()[0]).toContain('In the update');
   });
 
   it('lands on the update instead of the catch-up when opened from the update', () => {

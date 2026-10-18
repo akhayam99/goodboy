@@ -2,7 +2,7 @@ import { AppWindow } from 'lucide-react';
 import { IconButton, Kbd, ROW_INTERACTIVE, StatusDot, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
-import { linkedProjectsLabel } from '../../linkedProjectsLabel';
+import { folderCountLabel } from '../../folderCountLabel';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs, type ShortcutId } from '../../../../shared/keyboard/registry';
@@ -29,7 +29,7 @@ export const OtherWorkspaceRow = ({
   const windowState = useWorkspaceWindowState({ workspaceId: workspace.id });
   const hasUnread = useWorkspaceHasUnread(workspace.id);
   const projectsLabel = useAppStore((state) =>
-    linkedProjectsLabel({ projects: state.projects, workspaceId: workspace.id }),
+    folderCountLabel({ projects: state.projects, workspaceId: workspace.id }),
   );
   const lastSeen = workspace.lastAccessedAt
     ? formatSpan({ from: workspace.lastAccessedAt, to: now })

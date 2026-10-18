@@ -1,30 +1,36 @@
 import { useMemo } from 'react';
-import { StatCard, formatUsd, formatUsdPrecise, PaneShell, Tooltip } from '@goodboy/ui';
+import {
+  ErrorStrip,
+  PanelLoading,
+  PaneShell,
+  StatCard,
+  StudioWidget,
+  Tooltip,
+  formatUsd,
+  formatUsdPrecise,
+} from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
-import { ErrorStrip } from '@goodboy/ui';
-import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
+import type { PaneFrame } from '../../../../shared/types/paneFrame';
+import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
-import { CapEditor } from './CapEditor';
+import type { ProviderBudgetEntry } from '../../hooks/useWorkspaceSpend';
+import { spendFigures } from '../../spendFigures';
+import { CapEditor, type SaveLimitParams } from './CapEditor';
+import { CostGuideLink } from './CostGuideLink';
 import { CostRing } from './CostRing';
 import { CoverageNotice } from './CoverageNotice';
 import { ModelTable } from './ModelTable';
 import { SpendAnchorTitle } from './SpendAnchorTitle';
 import { TurnsTable } from './TurnsTable';
-import { StudioWidget } from '@goodboy/ui';
 import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { ProviderBudgetEntry } from '../../hooks/useWorkspaceSpend';
-import {
-  budgetPctUsed,
-  budgetRingFraction,
-  budgetScopeNote,
-  budgetWarnFraction,
-} from '../../providerBudgetView';
-import type { PaneFrame } from '../../../../shared/types/paneFrame';
+
+const RING_SIZE = 96;
 
 type Props = {
   readonly frame: PaneFrame;
+  readonly rangeLabel: string;
   readonly onBack: () => void;
   readonly provider: ProviderName;
   readonly entry: ProviderBudgetEntry | null;
@@ -33,9 +39,8 @@ type Props = {
   readonly rulesResult: QueryResult<void>;
   readonly telemetryResult: QueryResult<void>;
   readonly isLoading: boolean;
-  readonly onSaveCap: (capUsd: number) => Promise<void>;
-  readonly onSaveThreshold: (thresholdPct: number) => Promise<void>;
-  readonly onRemoveCap: () => Promise<void>;
+  readonly onSaveLimit: (params: SaveLimitParams) => Promise<void>;
+  readonly onRemoveLimit: () => Promise<void>;
   readonly onRetryRules: () => void;
   readonly onRetryTelemetry: () => void;
   readonly onOpenSession: (sessionId: SessionId) => void;
@@ -43,6 +48,7 @@ type Props = {
 
 export const ProviderPanel = ({
   frame,
+  rangeLabel,
   onBack,
   provider,
   entry,
@@ -51,16 +57,14 @@ export const ProviderPanel = ({
   rulesResult,
   telemetryResult,
   isLoading,
-  onSaveCap,
-  onSaveThreshold,
-  onRemoveCap,
+  onSaveLimit,
+  onRemoveLimit,
   onRetryRules,
   onRetryTelemetry,
   onOpenSession,
 }: Props) => {
-  const spent = entry?.spentUsd ?? 0;
   const budget = entry?.budget ?? null;
-  const capUsd = budget?.capUsd ?? null;
+  const name = providerLabel({ provider });
 
   const filtered = useMemo(
     () => turns.filter((t) => t.record.provider === provider),
@@ -68,13 +72,24 @@ export const ProviderPanel = ({
   );
   const models = useMemo(() => buildModelBreakdown(filtered.map((t) => t.record)), [filtered]);
   const coverage = useMemo(() => coverageTurnCounts(models), [models]);
+  const figures = useMemo(
+    () =>
+      spendFigures({
+        records: filtered.map((turn) => turn.record),
+        nowMs: Date.now(),
+        sinceMs: null,
+        budget,
+      }),
+    [budget, filtered],
+  );
+  const rangeText = rangeLabel.toLowerCase();
 
   return (
     <PaneShell scroll="body" {...frame}>
       <SpendAnchorTitle
         glyph={<ProviderIcon provider={provider} size={ICON_SIZE.hero} />}
-        title={providerLabel({ provider })}
-        meta={`${formatUsd(spent)} total spend`}
+        title={name}
+        meta={`${formatUsd(figures.range.usd)} spent, ${rangeText}`}
         onBack={onBack}
       />
       <ErrorStrip label="limits" error={rulesResult.error} onRetry={onRetryRules} />
@@ -84,60 +99,74 @@ export const ProviderPanel = ({
         onRetry={onRetryTelemetry}
       />
       {isLoading && <PanelLoading label="Loading budget data" />}
-      {budget !== null && capUsd !== null ? (
-        <section className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-5">
-          <div className="flex items-center gap-6">
+      {figures.limit !== null && figures.month !== null ? (
+        <StudioWidget
+          label={`${name} this month`}
+          hint="Counted across all workspaces."
+          presentation="section"
+          action={
+            <span className="text-meta text-faint-foreground">
+              {`Resets ${formatDayMonth({ at: figures.limit.resetsAtMs })}`}
+            </span>
+          }
+        >
+          <div className="flex items-center gap-4">
             <CostRing
-              pct={budgetRingFraction({ status: budget })}
-              centerLabel={`${budgetPctUsed({ status: budget })}%`}
-              subLabel="of cap"
-              warnAt={budgetWarnFraction({ status: budget })}
+              pct={figures.limit.ringFraction}
+              centerLabel={`${figures.limit.pctUsed}%`}
+              subLabel="of the limit"
+              size={RING_SIZE}
+              {...(figures.limit.warnFraction !== undefined && {
+                warnAt: figures.limit.warnFraction,
+              })}
             />
-            <div className="grid flex-1 grid-cols-3 gap-3">
-              <Tooltip content={formatUsdPrecise(budget.spentUsd)}>
+            <div className="grid min-w-0 flex-1 grid-cols-3 gap-3">
+              <Tooltip content={formatUsdPrecise(figures.month.usd)}>
                 <div>
-                  <StatCard label="spent this month" value={formatUsd(budget.spentUsd)} />
+                  <StatCard
+                    label="Spent this month"
+                    value={formatUsd(figures.month.usd)}
+                    valueSize="lg"
+                  />
                 </div>
               </Tooltip>
-              <StatCard label="cap" value={formatUsd(capUsd)} />
-              <StatCard
-                label="remaining"
-                value={formatUsd(Math.max(capUsd - budget.spentUsd, 0))}
-              />
+              <StatCard label="Limit" value={formatUsd(figures.limit.limitUsd)} valueSize="lg" />
+              <StatCard label="Left" value={formatUsd(figures.limit.leftUsd)} valueSize="lg" />
             </div>
           </div>
-          <p className="text-meta text-muted-foreground">{budgetScopeNote({ status: budget })}</p>
-        </section>
+        </StudioWidget>
       ) : (
-        <section className="grid grid-cols-3 gap-3">
-          <Tooltip content={formatUsdPrecise(spent)}>
-            <div>
-              <StatCard label="spent" value={formatUsd(spent)} />
-            </div>
-          </Tooltip>
-          <StatCard label="turns" value={String(filtered.length)} />
-          <StatCard label="models" value={String(models.length)} />
-        </section>
+        <StudioWidget label={`${name}, ${rangeText}`} presentation="section">
+          <div className="grid grid-cols-3 gap-3">
+            <Tooltip content={formatUsdPrecise(figures.range.usd)}>
+              <div>
+                <StatCard label="Spent" value={formatUsd(figures.range.usd)} valueSize="lg" />
+              </div>
+            </Tooltip>
+            <StatCard label="Turns" value={String(filtered.length)} valueSize="lg" />
+            <StatCard label="Models" value={String(models.length)} valueSize="lg" />
+          </div>
+        </StudioWidget>
       )}
 
       <CoverageNotice counts={coverage} />
 
       <CapEditor
-        label="monthly cap"
-        hint="Cap the monthly spend for this provider"
+        key={provider}
+        label="Monthly limit"
+        hint="At the share you pick, Goodboy warns you and tries another provider."
         currentCapUsd={rule?.capUsd ?? null}
-        {...(rule !== null
-          ? { threshold: { pct: rule.alertThresholdPct, onSave: onSaveThreshold } }
-          : {})}
-        onSave={onSaveCap}
-        onRemove={onRemoveCap}
+        currentThresholdPct={rule?.alertThresholdPct ?? null}
+        onSave={onSaveLimit}
+        onRemove={onRemoveLimit}
       />
 
-      <StudioWidget label="by model">
+      <StudioWidget label="By model" presentation="section">
         <ModelTable entries={models} />
       </StudioWidget>
 
       <TurnsTable turns={filtered} showSession onOpenSession={onOpenSession} />
+      <CostGuideLink />
     </PaneShell>
   );
 };

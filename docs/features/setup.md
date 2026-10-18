@@ -1,32 +1,54 @@
 # Set up
 
-Get from install to a first agent. Connect a provider, check what it can do, link your tools and tell agents who you are.
+Get from install to a first agent. Check the agents on this Mac, make a workspace from your folders, link your tools and tell agents who you are.
 
 ### Welcome to Goodboy
 
-Five short steps take you from install to a first agent reading your project: **Provider**, **Project**, **Code host**, **Tasks** and **First session**. Code host and tasks are optional, and **Skip setup** takes you straight in. The last step hands you a session draft already filled in.
+Four short steps take you from install to a first agent reading your code: **Agents**, **Workspace**, **Tools**, which is optional, and **First session**. Welcome already names the agents it found on this Mac, and nothing is saved until you create a workspace. **Set up later** sits in the header, Escape goes back one step and never ends setup, and the next launch opens at the step you left. The Goodboy menu counts the four steps, **Setup · 2 of 4**, and offers **Resume setup** while setup is paused.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-light.webp" alt="The Welcome to Goodboy screen: a Setup stepper with Provider, Project, Code host, Tasks and First session, the line Five short steps, then an agent reads your project, four rows with their time, and a Get started button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-welcome-light.webp" alt="The Welcome to Goodboy screen: the Goodboy tile above the line Run coding agents side by side on your own repositories, Found Claude and Codex on this Mac, a Get started button, and the steps Agents, Workspace, Tools and First session with Set up later along the top">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
-### Provider connection
+### Your agents
 
-Connect the provider you already pay for, with a login or an API key. Each card says where it stands, such as **Connected** or **Not signed in**, and **Connect** walks you through the sign-in. You can add more providers later.
+Goodboy runs the coding agents already on this Mac, and one ready agent is enough. Each row says where its CLI stands: **Ready** with its version and account, **Not signed in** with **Sign in**, **Not installed** with **Install** and the exact command, or **Can't start** with the CLI's output and **Check again**. Rows check again when you come back to the window. The agent marked **Default** becomes the default of your first workspace, and providers billed by API key sit behind **Use an API key instead**.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-connection-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-connection-light.webp" alt="The Provider step of setup: Claude marked Connected, Cursor Not signed in with a Connect button, Codex with an Error status and a Connect button, and Gemini Not installed with a Set up manually button, above Back and Continue">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-agents-light.webp" alt="The Your agents step of setup: Claude Ready and marked Default with Claude Code 2.1.280 and its account, Codex Not signed in with Sign in, Cursor and Gemini Not installed with Install and Set up, the Use an API key instead row, the line 1 ready, checks again when you come back, and Back and Continue">
+</picture>
+
+<sub>Screenshot from Goodboy 0.27.1</sub>
+
+### Your first workspace
+
+A workspace is what you work on: one repository, or a folder that holds several. Drop a folder or press **Choose folder** (⌘O), and the workspace takes the folder's name, so acme-web becomes Acme web, which you can edit in place. A folder of repositories lists them checked, a plain folder offers git init, and a folder another workspace holds asks whether to move it here. **Start from scratch** makes a new repository instead. Nothing is saved until **Create**.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-light.webp" alt="The Workspace step of setup, Your first workspace: the line A workspace is what you work on, one repository or a folder that holds several, a drop area reading Drop a folder here, the link Start from scratch, and Back and Choose folder">
+</picture>
+
+<sub>Screenshot from Goodboy 0.27.1</sub>
+
+### Home
+
+A window with no workspace open shows Home: the Goodboy tile with the version, your workspaces with their folder count and where their folders live, and **New workspace** (⌘N), which opens the same form in place. With no workspace yet, Home says where setup paused and offers **Resume setup**. **Reopen the last workspace on launch** opens your last workspace at launch instead.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-home-light.webp" alt="Home with the Goodboy tile and its version, the Workspaces list with Harborline 3 folders, Northwind 2 folders, Acme web 1 folder and Cascadia 4 folders, each with where its folders live and when it was last opened, a New workspace button, and the switch Reopen the last workspace on launch">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### One page per provider
 
-Each provider has its own page in **Providers & models** with its usage, the models shown in the picker, its permissions and your account. Providers billed per token say so instead of showing usage windows.
+Each provider has its own page in **Providers and models** with its usage, the models shown in the picker, its permissions and your account. Providers billed per token say so instead of showing usage windows.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-provider-page-dark.webp">
@@ -59,7 +81,7 @@ See which permission modes a provider can honor before you pick one, from **Read
 
 ### Integrations
 
-Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page, and see the account behind each. A project can use a different account than its workspace. Keys stay in your system credential store.
+Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page, and see the account behind each. A folder can use a different account than its workspace. Keys stay in your system credential store. The left list shows a dot only on an integration that needs you, for example a key that left this Mac's keychain, with the reason as its tooltip. A page menu holds **Open in Tasks**, **Check again** and **Disconnect**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-integrations-dark.webp">

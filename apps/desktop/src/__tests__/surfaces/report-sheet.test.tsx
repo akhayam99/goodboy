@@ -4,7 +4,7 @@ const bridge = vi.hoisted(() => ({
   mode: 'gh-cli' as 'gh-cli' | 'absent',
   similar: '[]',
   lastCrash: null as null | Record<string, unknown>,
-  menuHandlers: [] as Array<() => void>,
+  menuHandlers: [] as Array<(event: { readonly payload: unknown }) => void>,
   calls: [] as Array<{
     readonly command: string;
     readonly args: ReadonlyArray<string>;
@@ -63,17 +63,28 @@ vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn(async () => '0.12.0') 
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 vi.mock('@tauri-apps/api/webviewWindow', () => ({
   getCurrentWebviewWindow: () => ({
-    listen: vi.fn(async (event: string, handler: () => void) => {
-      if (event === 'goodboy://report-open') {
-        bridge.menuHandlers.push(handler);
-      }
-      return () => undefined;
-    }),
+    listen: vi.fn(
+      async (event: string, handler: (event: { readonly payload: unknown }) => void) => {
+        if (event === 'goodboy://menu') {
+          bridge.menuHandlers.push(handler);
+        }
+        return () => undefined;
+      },
+    ),
   }),
 }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -83,6 +94,7 @@ import {
 import { ToastProvider } from '../../shared/components/Toast';
 import { seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import { ReportSheetHost } from '../../features/bug-report/components/ReportSheetHost';
+import { useMenuCommands } from '../../app/hooks/useMenuCommands';
 import { openReportSheet } from '../../features/bug-report/openReportSheet';
 import { LastCrashBridge } from '../../features/bug-report/components/LastCrashBridge';
 import { ReportBugButton } from '../../app/components/SideColumn/ReportBugButton';
@@ -340,15 +352,17 @@ describe('report sheet on the real store', () => {
     expect(await screen.findByText('Added to #1542')).toBeDefined();
   });
 
-  it('opens from the macOS Help menu item', async () => {
+  it('opens once from the macOS Help menu item, through the report key', async () => {
     mount();
+    renderHook(() => useMenuCommands());
     await waitFor(() => expect(bridge.menuHandlers).toHaveLength(1));
 
     act(() => {
-      bridge.menuHandlers[0]?.();
+      bridge.menuHandlers[0]?.({ payload: { id: 'report.open' } });
     });
 
     expect(await screen.findByRole('dialog', { name: 'Report a bug' })).toBeDefined();
+    expect(screen.getAllByRole('dialog', { name: 'Report a bug' })).toHaveLength(1);
   });
 
   it('offers the crash from last launch once and opens the sheet with it attached', async () => {

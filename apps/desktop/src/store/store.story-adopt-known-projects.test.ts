@@ -131,7 +131,9 @@ beforeEach(() => {
     isRepo: true,
     rootPath: path,
     resolvedPath: path,
+    defaultBranch: 'main',
     error: null,
+    errorKind: null,
   }));
   vi.mocked(dbMock.findProjectByRootPath).mockImplementation(async ({ rootPath }) => {
     if (rootPath === '/repos/storefront-web') {

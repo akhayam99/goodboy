@@ -40,7 +40,7 @@ export const FlowPanel = ({
   const countOrUnknown = (value: number | undefined): string =>
     value === undefined ? UNKNOWN_VALUE : String(value);
   return (
-    <PaneShell scroll="body" {...frame}>
+    <PaneShell scroll="body" page="impact" {...frame}>
       <ErrorStrip label="agent duration" error={agentDurations.error} onRetry={onRetry} />
       <ErrorStrip label="flow health" error={flowHealth.error} onRetry={onRetry} />
       {isLoading && agents === null && health === null ? (

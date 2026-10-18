@@ -3,7 +3,7 @@ import { PageColumn } from '@goodboy/ui';
 import type { ProjectId, SessionBudget, Skill, Workspace, WorkflowRun } from '@goodboy/types';
 import { CreatePrPanel } from '../../../../../features/integrations/github/components/PullRequest/CreatePrPanel';
 import { CreateMrForm } from '../../../../../features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm';
-import { WorkspaceLinkForm } from '../../../../../features/workspace/components/WorkspaceLinkForm';
+import { NewWorkspaceForm } from '../../../../../shared/components/NewWorkspaceForm';
 import { ConvertWorkspaceFlow } from '../../../../../features/workspace/components/ConvertWorkspaceFlow';
 import { SkillsPanel } from '../../../../../features/skills/components/SkillsPanel';
 import { CreateAgentPopover } from '../../../../../features/session/components/CreateAgentPopover';
@@ -114,7 +114,7 @@ const renderForm = ({ form }: { form: FormKey }): ReactNode => {
     case 'link':
       return (
         <PageColumn className="flex flex-col gap-6 py-8">
-          <WorkspaceLinkForm onComplete={noop} />
+          <NewWorkspaceForm mode="new" onCreated={noop} />
         </PageColumn>
       );
     case 'convert': {

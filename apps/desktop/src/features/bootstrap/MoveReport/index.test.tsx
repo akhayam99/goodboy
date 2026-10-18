@@ -68,7 +68,7 @@ describe('MoveReport', () => {
     expect(screen.getByText('Moved 1 file into this session')).toBeDefined();
     expect(screen.getByText(/changed again: README.md/)).toBeDefined();
     expect(screen.getByText(/refuses files over 100 MB.*video.mp4/)).toBeDefined();
-    expect(screen.getByText(/Ignored files stay in the project folder: .env/)).toBeDefined();
+    expect(screen.getByText(/Ignored files stay in the folder: .env/)).toBeDefined();
     expect(screen.getByText(/local main was left as it is/)).toBeDefined();
   });
 });

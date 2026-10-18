@@ -26,13 +26,12 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 it('shows the empty history sentence', () => {
-  render(<ConnectionHistory providerId="cursor" label="Cursor" />);
-  fireEvent.click(screen.getByRole('button', { name: 'History' }));
+  render(<ConnectionHistory providerId="cursor" label="Cursor" onClose={vi.fn()} />);
   expect(screen.getByText('No changes since Goodboy started.')).toBeDefined();
   expect(screen.queryByRole('dialog')).toBeNull();
 });
 
-it('shows only twenty events with the newest first and closes on Escape', () => {
+it('shows only twenty events with the newest first', () => {
   const health = store.getState().providerHealth;
   store.setState({
     providerHealth: {
@@ -48,12 +47,19 @@ it('shows only twenty events with the newest first and closes on Escape', () => 
       },
     },
   });
-  render(<ConnectionHistory providerId="cursor" label="Cursor" />);
-  fireEvent.click(screen.getByRole('button', { name: 'History' }));
+  render(<ConnectionHistory providerId="cursor" label="Cursor" onClose={vi.fn()} />);
   const rows = within(screen.getByRole('list')).getAllByRole('listitem');
   expect(rows).toHaveLength(20);
   expect(rows[0]?.textContent).toContain('Harborline event 24');
   expect(rows[19]?.textContent).toContain('Harborline event 5');
+});
+
+it('closes from its button and on Escape', () => {
+  const onClose = vi.fn();
+  render(<ConnectionHistory providerId="cursor" label="Cursor" onClose={onClose} />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Hide history' }));
   fireEvent.keyDown(document, { key: 'Escape' });
-  expect(screen.queryByRole('list')).toBeNull();
+
+  expect(onClose).toHaveBeenCalledTimes(2);
 });

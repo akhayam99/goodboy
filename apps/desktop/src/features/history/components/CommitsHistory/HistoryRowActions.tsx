@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const HistoryRowActions = ({ target, anchorKey }: Props) => (
-  <span className="flex shrink-0 items-center">
+  <span data-slot="commit-row-actions" className="row-actions flex w-7 shrink-0 items-center">
     <ObjectOverflowMenu
       target={target}
       anchorKey={anchorKey}

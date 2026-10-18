@@ -45,6 +45,8 @@ const facts = (overrides: Partial<MountFacts> = {}): MountFacts => ({
   isDiverged: false,
   onlyOnline: null,
   isRebasing: false,
+  rebaseConflict: null,
+  autoBlockedReason: null,
   comments: 0,
   canStartTurnsHere: false,
   isScribeWriting: false,

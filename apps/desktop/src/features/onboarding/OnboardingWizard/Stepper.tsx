@@ -1,24 +1,22 @@
 import { Check } from 'lucide-react';
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 import {
+  NUMBERED_WIZARD_STEPS,
+  OPTIONAL_WIZARD_STEPS,
   WIZARD_STEP_LABEL,
   isNumberedStep,
-  type NumberedWizardStepId,
   type WizardStepId,
 } from './wizardSteps';
 
 type StepState = 'done' | 'current' | 'later';
 
-const NODE_SIZE = 18;
-
-const stepState = ({
-  position,
-  currentPosition,
-}: {
+type StateParams = {
   readonly position: number;
   readonly currentPosition: number;
-}): StepState => {
+};
+
+const stepState = ({ position, currentPosition }: StateParams): StepState => {
   if (position === currentPosition) {
     return 'current';
   }
@@ -28,35 +26,39 @@ const stepState = ({
   return 'later';
 };
 
-const primaryTint = tintClasses('primary');
+const NODE_CLASS: Readonly<Record<StepState, string>> = {
+  done: 'bg-fill text-muted-foreground',
+  current: 'bg-primary text-on-tone',
+  later: 'ring-1 ring-inset ring-border-soft text-faint-foreground',
+};
+
+const LABEL_CLASS: Readonly<Record<StepState, string>> = {
+  done: 'text-muted-foreground',
+  current: 'text-foreground',
+  later: 'text-faint-foreground',
+};
 
 type Props = {
   readonly current: WizardStepId;
-  readonly steps: ReadonlyArray<WizardStepId>;
 };
 
-export const stepAnnouncement = ({ current, steps }: Props): string => {
-  const numbered = steps.filter(isNumberedStep);
+export const stepAnnouncement = ({ current }: Props): string => {
   if (!isNumberedStep(current)) {
     return '';
   }
-  const position = numbered.indexOf(current);
-  if (position < 0) {
-    return '';
-  }
-  return `Step ${position + 1} of ${numbered.length}, ${WIZARD_STEP_LABEL[current]}`;
+  const position = NUMBERED_WIZARD_STEPS.indexOf(current);
+  return `Step ${position + 1} of ${NUMBERED_WIZARD_STEPS.length}, ${WIZARD_STEP_LABEL[current]}`;
 };
 
-export const Stepper = ({ current, steps }: Props) => {
-  const numbered: ReadonlyArray<NumberedWizardStepId> = steps.filter(isNumberedStep);
-  const currentPosition = isNumberedStep(current) ? numbered.indexOf(current) : -1;
+export const Stepper = ({ current }: Props) => {
+  const currentPosition = isNumberedStep(current) ? NUMBERED_WIZARD_STEPS.indexOf(current) : -1;
 
   return (
     <nav aria-label="Setup steps" className="flex min-w-0 justify-center">
       <ol className="flex min-w-0 items-center gap-2">
-        {numbered.map((step, position) => {
+        {NUMBERED_WIZARD_STEPS.map((step, position) => {
           const state = stepState({ position, currentPosition });
-          const isLast = position === numbered.length - 1;
+          const isLast = position === NUMBERED_WIZARD_STEPS.length - 1;
           return (
             <li
               key={step}
@@ -67,27 +69,27 @@ export const Stepper = ({ current, steps }: Props) => {
               <span
                 aria-hidden
                 className={cn(
-                  'flex shrink-0 items-center justify-center rounded-full border text-chip',
-                  state === 'done' && cn('border-transparent bg-hover text-foreground'),
-                  state === 'current' && cn(primaryTint.solid, primaryTint.border),
-                  state === 'later' && 'border-border-soft text-faint-foreground',
+                  'flex size-4 shrink-0 items-center justify-center rounded-full text-chip motion-safe:transition-colors',
+                  NODE_CLASS[state],
                 )}
-                style={{ width: NODE_SIZE, height: NODE_SIZE }}
               >
                 {state === 'done' ? (
-                  <Check size={ICON_SIZE.row} aria-hidden className="wizard-stepper-check" />
+                  <Check
+                    size={ICON_SIZE.mark}
+                    strokeWidth={2.5}
+                    aria-hidden
+                    className="wizard-stepper-check"
+                  />
                 ) : (
                   position + 1
                 )}
               </span>
-              <span
-                className={cn(
-                  'truncate text-label',
-                  state === 'later' ? 'text-faint-foreground' : 'text-foreground',
-                )}
-              >
+              <span className={cn('truncate text-label', LABEL_CLASS[state])}>
                 {WIZARD_STEP_LABEL[step]}
               </span>
+              {OPTIONAL_WIZARD_STEPS.has(step) ? (
+                <span className="shrink-0 text-chip text-faint-foreground">Optional</span>
+              ) : null}
               {isLast ? null : (
                 <span
                   aria-hidden
@@ -95,7 +97,7 @@ export const Stepper = ({ current, steps }: Props) => {
                 >
                   <span
                     className={cn(
-                      'wizard-stepper-fill absolute inset-0 origin-left bg-muted-foreground',
+                      'wizard-stepper-fill absolute inset-0 origin-left bg-border',
                       position < currentPosition ? 'scale-x-100' : 'scale-x-0',
                     )}
                   />
@@ -106,7 +108,7 @@ export const Stepper = ({ current, steps }: Props) => {
         })}
       </ol>
       <p className="sr-only" aria-live="polite">
-        {stepAnnouncement({ current, steps })}
+        {stepAnnouncement({ current })}
       </p>
     </nav>
   );

@@ -64,6 +64,22 @@ describe('DrawerFrame', () => {
     expect(menu.compareDocumentPosition(close)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
+  it('draws no header of its own when the body brings one and still closes with Escape', () => {
+    const onClose = vi.fn();
+    const { container } = render(
+      <DrawerFrame title="Explore" isHeaderless onClose={onClose}>
+        <h1>Explore</h1>
+      </DrawerFrame>,
+    );
+
+    expect(container.querySelector('[data-drawer-header]')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Explore' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('closes with Escape and with its close button', () => {
     const onClose = vi.fn();
     render(

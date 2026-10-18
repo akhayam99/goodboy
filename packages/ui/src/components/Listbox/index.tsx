@@ -250,22 +250,12 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
           </span>
         ) : null}
         <span
-          className={cn(
-            'min-w-0',
-            selectedOptions.length > 1 || firstSelectedOption.tail === undefined
-              ? 'truncate'
-              : 'flex',
-            firstSelectedOption.isCode === true && 'text-code',
-          )}
+          className={cn('min-w-0 truncate', firstSelectedOption.isCode === true && 'text-code')}
         >
           {selectedOptions.length > 1 ? (
             `${selectedOptions.length} selected`
           ) : (
-            <HighlightedLabel
-              label={firstSelectedOption.label}
-              match={NO_MATCH}
-              tail={firstSelectedOption.tail}
-            />
+            <HighlightedLabel label={firstSelectedOption.label} match={NO_MATCH} />
           )}
         </span>
       </>

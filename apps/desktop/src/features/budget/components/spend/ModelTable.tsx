@@ -38,10 +38,10 @@ export const ModelTable = ({ entries, formatSpent = formatUsd }: Props) => {
     <table className={cn('w-full text-left text-label', STRIPED_TABLE)}>
       <thead className="text-eyebrow text-faint-foreground">
         <tr>
-          <th className="px-3 py-2">model</th>
-          <th className="px-3 py-2 text-right">in</th>
-          <th className="px-3 py-2 text-right">out</th>
-          <th className="px-3 py-2 text-right">cost</th>
+          <th className="px-3 py-2">Model</th>
+          <th className="px-3 py-2 text-right">In</th>
+          <th className="px-3 py-2 text-right">Out</th>
+          <th className="px-3 py-2 text-right">Cost</th>
         </tr>
       </thead>
       <tbody>

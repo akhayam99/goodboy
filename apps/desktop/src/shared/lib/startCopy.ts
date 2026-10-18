@@ -29,8 +29,6 @@ export const ORCHESTRATE_LINE = 'The orchestrator picks each next step until the
 export const AGENT_LINE = 'One agent in the role you pick.';
 export const AUTO_AGENT_LINE = 'Auto answers, or hands the work to the roles it picks.';
 
-export const WORKFLOW_CHOICE_LINE = 'Orchestrated, steps you describe, or a saved workflow.';
-
 export const reviewPullRequestLabel = ({ identifier }: IdentifierParams): string =>
   `${NAMES.reviewPullRequest} ${identifier}`;
 

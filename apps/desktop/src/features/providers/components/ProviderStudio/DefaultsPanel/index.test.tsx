@@ -247,7 +247,7 @@ describe('DefaultsPanel', () => {
 
     for (const label of TASK_LABELS) {
       expect(screen.getByRole('button', { name: `${label} routing model` }).textContent).toBe(
-        SONNET_TASK_LABELS.has(label) ? 'sonnet-5.5' : 'haiku-4.5',
+        SONNET_TASK_LABELS.has(label) ? 'sonnet-5.5' : 'haiku-5.5',
       );
     }
     expect(screen.queryByRole('button', { name: 'Step summaries routing reset' })).toBeNull();
@@ -354,7 +354,7 @@ describe('DefaultsPanel', () => {
     render(<DefaultsPanel workspaceId={'ws-1' as never} />);
 
     expect(roleRow('Planner').textContent).toContain('Opus 5.5');
-    expect(roleRow('Scout').textContent).toContain('Haiku 4.5');
+    expect(roleRow('Scout').textContent).toContain('Haiku 5.5');
     expect(roleRow('Planner').getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -908,7 +908,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('Saved model settings from 1 project no longer apply.')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 1 folder no longer apply.')).toBeDefined();
   });
 
   it('keeps the saved-models notice away when no project had model settings', () => {

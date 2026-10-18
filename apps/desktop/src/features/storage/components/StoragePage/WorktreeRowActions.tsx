@@ -14,10 +14,12 @@ type Props = {
 export const WorktreeRowActions = ({ folder, status, target, onEditor }: Props) => (
   <span className={STORAGE_COLUMN.actions}>
     <RowPrimaryAction folder={folder} status={status} onEditor={onEditor} />
-    <ObjectOverflowMenu
-      target={target}
-      label="More actions"
-      anchorKey={`worktree:${folder.path}`}
-    />
+    <span data-slot="worktree-row-actions" className="row-actions flex w-7 justify-center">
+      <ObjectOverflowMenu
+        target={target}
+        label="More actions"
+        anchorKey={`worktree:${folder.path}`}
+      />
+    </span>
   </span>
 );

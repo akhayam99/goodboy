@@ -7,7 +7,6 @@ import type { RunningScript } from '../../../features/scripts/hooks/useRunningSc
 import { ColumnToggleButton } from '../SideColumn/ColumnToggleButton';
 import { CommandCenter } from './CommandCenter';
 import { LimitsStrip } from './LimitsStrip';
-import { MonitoringSignal } from './MonitoringSignal';
 import { NowChip } from './NowChip';
 import { NavCluster } from './NavCluster';
 import { SpendButton } from './SpendButton';
@@ -55,8 +54,6 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null, si
           <NowChip onOpenScript={onOpenScript} />
 
           <LimitsStrip openProviderId={openProviderId} />
-
-          <MonitoringSignal />
 
           <SpendButton onOpenSpend={onOpenSpend} />
 

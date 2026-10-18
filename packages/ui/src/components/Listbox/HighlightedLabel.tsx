@@ -3,7 +3,6 @@ import type { ListboxMatch } from './filterOptions';
 type Props = {
   readonly label: string;
   readonly match: ListboxMatch;
-  readonly tail?: string;
 };
 
 type Segment = {
@@ -43,24 +42,8 @@ const markedNodes = ({ chars, match, offset }: MarkedProps) =>
     ),
   );
 
-export const HighlightedLabel = ({ label, match, tail = '' }: Props) => {
+export const HighlightedLabel = ({ label, match }: Props) => {
   const chars = Array.from(label);
-  const cut = chars.length - Array.from(tail).length;
-  if (tail !== '' && cut > 0) {
-    return (
-      <>
-        <span className="sr-only">{label}</span>
-        <span aria-hidden className="flex min-w-0">
-          <span data-slot="label-head" className="truncate">
-            {markedNodes({ chars: chars.slice(0, cut), match, offset: 0 })}
-          </span>
-          <span data-slot="label-tail" className="shrink-0">
-            {markedNodes({ chars: chars.slice(cut), match, offset: cut })}
-          </span>
-        </span>
-      </>
-    );
-  }
   if (match.length === 0) {
     return <>{label}</>;
   }

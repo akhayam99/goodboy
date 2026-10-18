@@ -22,6 +22,7 @@ import { ReviewCommentDrawerHost } from '../../features/resolve/components/Revie
 import { AutoChildPane } from './AutoChildPane';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
 import { RunStepDrawer } from '../../features/session/components/RunStepDrawer';
+import { ExploreAddFolder } from './ExploreAddFolder';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
@@ -144,7 +145,12 @@ export const DrawerHost = () => {
       );
     case 'explore':
       return (
-        <ExplorePane key={drawer.sessionId} sessionId={drawer.sessionId} onClose={closeDrawer} />
+        <ExplorePane
+          key={drawer.sessionId}
+          sessionId={drawer.sessionId}
+          noFolderAction={<ExploreAddFolder sessionId={drawer.sessionId} />}
+          onClose={closeDrawer}
+        />
       );
     case 'scripts':
       return (

@@ -69,7 +69,7 @@ describe('MoveCard', () => {
     render(<MoveCard project={project} changedCount={12} isTurnRunning={false} />);
 
     screen.getByText(
-      '12 changed files in the project folder move into a worktree session. The folder ends clean on main.',
+      '12 changed files in the folder move into a worktree session. The folder ends clean on main.',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Move my work' }));
 
@@ -80,7 +80,7 @@ describe('MoveCard', () => {
   it('uses the singular for one file', () => {
     render(<MoveCard project={project} changedCount={1} isTurnRunning={false} />);
 
-    screen.getByText(/1 changed file in the project folder/);
+    screen.getByText(/1 changed file in the folder/);
   });
 
   it('waits for a running turn instead of moving files under it', () => {
@@ -111,6 +111,6 @@ describe('MoveCard', () => {
 
     expect(screen.queryByRole('button', { name: 'Move my work' })).toBeNull();
     screen.getByRole('button', { name: 'Finish' });
-    screen.getByText('The project folder has no changed files. Finish to start worktree sessions.');
+    screen.getByText('The folder has no changed files. Finish to start worktree sessions.');
   });
 });

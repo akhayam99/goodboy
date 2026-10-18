@@ -232,14 +232,22 @@ fn probe_binary(id: &str, binary: &str, budget: Budget) -> ProviderStatus {
     }
     if out.code != Some(0) {
         log_probe_failure(id, ProbeErrorKind::Exit, out.elapsed.as_millis());
-        return ProviderStatus::failed(
-            id,
-            binary,
-            ProbeErrorKind::Exit,
-            format!("exited with code {}", out.code.unwrap_or(-1)),
-        );
+        return ProviderStatus::failed(id, binary, ProbeErrorKind::Exit, exit_failure_reason(&out));
     }
     ProviderStatus::found(id, binary, out.stdout)
+}
+
+fn last_line(text: &str) -> Option<&str> {
+    text.lines().map(str::trim).rfind(|line| !line.is_empty())
+}
+
+fn exit_failure_reason(out: &ProbeOutput) -> String {
+    let code = format!("exited with code {}", out.code.unwrap_or(-1));
+    let Some(line) = last_line(&out.stderr).or_else(|| last_line(&out.stdout)) else {
+        return code;
+    };
+    let said: String = line.chars().take(REASON_LIMIT).collect();
+    format!("{said} ({code})")
 }
 
 fn spawn_failure_reason(err: &std::io::Error) -> String {
@@ -1065,6 +1073,54 @@ mod tests {
         let s = parse_claude_auth_output(&out(Some(0), r#"{"authMethod":"none"}"#));
         assert_eq!(s.state, AuthStateKind::Unknown);
         assert!(s.reason.is_some());
+    }
+
+    #[test]
+    fn a_failed_version_check_keeps_the_last_stderr_line_and_the_code() {
+        let reason = exit_failure_reason(&ProbeOutput {
+            code: Some(1),
+            stdout: "codex-cli 0.48.0\n".to_string(),
+            stderr: "warning: config is old\nError: cannot find module 'node:sqlite'\n  \n"
+                .to_string(),
+            ..ProbeOutput::default()
+        });
+        assert_eq!(
+            reason,
+            "Error: cannot find module 'node:sqlite' (exited with code 1)"
+        );
+    }
+
+    #[test]
+    fn a_failed_version_check_falls_back_to_stdout_when_stderr_is_blank() {
+        let reason = exit_failure_reason(&ProbeOutput {
+            code: Some(3),
+            stdout: "loading\n  node 18 is too old  \n".to_string(),
+            stderr: " \n".to_string(),
+            ..ProbeOutput::default()
+        });
+        assert_eq!(reason, "node 18 is too old (exited with code 3)");
+    }
+
+    #[test]
+    fn a_silent_failed_version_check_reads_only_the_code() {
+        assert_eq!(
+            exit_failure_reason(&err_out(Some(2), "")),
+            "exited with code 2"
+        );
+        assert_eq!(
+            exit_failure_reason(&err_out(None, "\n")),
+            "exited with code -1"
+        );
+    }
+
+    #[test]
+    fn a_failed_version_check_caps_a_long_line() {
+        let long = "x".repeat(REASON_LIMIT * 2);
+        let reason = exit_failure_reason(&err_out(Some(1), &long));
+        assert_eq!(
+            reason,
+            format!("{} (exited with code 1)", "x".repeat(REASON_LIMIT))
+        );
     }
 
     #[test]

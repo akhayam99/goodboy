@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   moveProjectToWorkspace: vi.fn(),
   getProjectById: vi.fn(async () => null),
   reconnectProject: vi.fn(async () => undefined),
+  countRunningAdoptionAgents: vi.fn(async () => 0),
 }));
 
 vi.mock('@goodboy/db', async () =>
@@ -17,6 +18,7 @@ vi.mock('@goodboy/db', async () =>
     moveProjectToWorkspace: h.moveProjectToWorkspace,
     getProjectById: h.getProjectById,
     reconnectProject: h.reconnectProject,
+    countRunningAdoptionAgents: h.countRunningAdoptionAgents,
   }),
 );
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));

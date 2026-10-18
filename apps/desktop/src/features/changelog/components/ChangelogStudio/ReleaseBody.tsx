@@ -1,6 +1,5 @@
 import { Eyebrow, Markdown, Notice } from '@goodboy/ui';
-import { isInstalledRelease } from '../../isInstalledRelease';
-import { isNewerRelease } from '../../isNewerRelease';
+import { releaseMeta } from '../../releaseMeta';
 import { uniquePrs } from '../../releasePrs';
 import type { ChangelogScreen } from '../../changelogScreens';
 import type { ReleaseEntry } from '../../parseChangelog';
@@ -8,48 +7,12 @@ import { FeatureBlock } from './FeatureBlock';
 import { FixRow } from './FixRow';
 import { PrRef } from './PrRef';
 
-type ReleaseHeaderMetaParams = {
-  readonly release: ReleaseEntry;
-  readonly dateLabel: string | null;
-};
-
-const releaseHeaderMeta = ({ release, dateLabel }: ReleaseHeaderMetaParams): string => {
-  if (release.shape !== 'v2') {
-    return dateLabel ?? '';
-  }
-  const featureCount = release.sections.new.length + release.sections.improved.length;
-  const fixCount = release.sections.fixed.length;
-  const parts = [
-    dateLabel,
-    featureCount > 0 ? `${featureCount} feature${featureCount === 1 ? '' : 's'}` : null,
-    fixCount > 0 ? `${fixCount} fix${fixCount === 1 ? '' : 'es'}` : null,
-  ].filter((part): part is string => part !== null);
-  return parts.join(' · ');
-};
-
-export type ReleaseEyebrowLabel = 'Installed' | 'In the update' | null;
-
-const releaseEyebrowLabel = ({
-  release,
-  installedVersion,
-}: {
-  readonly release: ReleaseEntry;
-  readonly installedVersion: string | null;
-}): ReleaseEyebrowLabel => {
-  if (isInstalledRelease({ tag: release.version, installed: installedVersion })) {
-    return 'Installed';
-  }
-  if (isNewerRelease({ tag: release.version, installed: installedVersion })) {
-    return 'In the update';
-  }
-  return null;
-};
-
 type Props = {
   readonly release: ReleaseEntry;
   readonly dateLabel: string | null;
   readonly installedVersion: string | null;
   readonly featureHeadingLevel?: 2 | 3;
+  readonly isMetaShown?: boolean;
   readonly onOpenScreen?: (params: { readonly screen: ChangelogScreen }) => void;
 };
 
@@ -58,18 +21,17 @@ export const ReleaseBody = ({
   dateLabel,
   installedVersion,
   featureHeadingLevel = 2,
+  isMetaShown = true,
   onOpenScreen,
 }: Props) => {
   const prs = uniquePrs({ release });
   const showPrInMeta = prs.length === 1;
-  const eyebrowLabel = releaseEyebrowLabel({ release, installedVersion });
-  const metaLine = releaseHeaderMeta({ release, dateLabel });
+  const metaLine = releaseMeta({ release, dateLabel, installedVersion });
 
   return (
     <div className="flex flex-col gap-6">
-      {eyebrowLabel !== null || metaLine !== '' || showPrInMeta ? (
+      {isMetaShown && (metaLine !== '' || showPrInMeta) ? (
         <div className="flex items-center gap-2">
-          {eyebrowLabel !== null ? <Eyebrow label={eyebrowLabel} /> : null}
           <span className="text-label text-muted-foreground">{metaLine}</span>
           {showPrInMeta ? <PrRef prs={prs} /> : null}
         </div>

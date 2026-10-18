@@ -3,7 +3,7 @@ use super::branch_name::branch_name_problem;
 use super::error::WorktreeError;
 use super::exclude::ensure_goodboy_excluded;
 use super::foreign::{add_remote_backed_worktree, remote_backed_source};
-use super::git::{git, RunGit};
+use super::git::{git, git_english, RunGit};
 use super::inspect::parse_porcelain;
 use super::slug::sanitize_slug;
 use super::types::{CreateArgs, CreatedWorktree, WorktreeInfo};
@@ -330,7 +330,7 @@ fn find_existing(
 }
 
 pub(super) fn try_fetch_origin(repo_path: &Path, base: &str) -> Option<String> {
-    git(repo_path, &["fetch", "--", "origin", base])
+    git_english(repo_path, &["fetch", "--", "origin", base])
         .err()
         .map(|error| error.to_string())
 }

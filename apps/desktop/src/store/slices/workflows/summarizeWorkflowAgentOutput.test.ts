@@ -172,7 +172,7 @@ describe('summarizeWorkflowAgentOutput', () => {
     await call();
 
     expect(summarizeStepOutputSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-luna' }),
+      expect.objectContaining({ providerId: 'codex', model: 'gpt-6-luna' }),
     );
   });
 
@@ -275,7 +275,7 @@ describe('summarizeWorkflowAgentOutput', () => {
     summarizeStepOutputSpy
       .mockRejectedValueOnce(
         new Error(
-          "The 'gpt-5.6-luna' model is not supported when using Codex with a ChatGPT account",
+          "The 'gpt-6-luna' model is not supported when using Codex with a ChatGPT account",
         ),
       )
       .mockResolvedValueOnce('three files touched, suite green');
@@ -298,7 +298,7 @@ describe('summarizeWorkflowAgentOutput', () => {
     summarizeStepOutputSpy
       .mockRejectedValueOnce(
         new Error(
-          "The 'gpt-5.6-luna' model is not supported when using Codex with a ChatGPT account",
+          "The 'gpt-6-luna' model is not supported when using Codex with a ChatGPT account",
         ),
       )
       .mockResolvedValueOnce('three files touched, suite green');
@@ -316,15 +316,13 @@ describe('summarizeWorkflowAgentOutput', () => {
     expect(String(params?.body)).toContain('anthropic/');
     expect(String(params?.body)).toContain('Providers then Models');
     expect(params).toMatchObject({
-      coalesceKey: 'summarizer-model-unavailable:codex:gpt-5.6-luna',
+      coalesceKey: 'summarizer-model-unavailable:codex:gpt-6-luna',
     });
   });
 
   it('says the output was carried unsummarized when no alternative exists', async () => {
     summarizeStepOutputSpy.mockRejectedValue(
-      new Error(
-        "The 'gpt-5.6-luna' model is not supported when using Codex with a ChatGPT account",
-      ),
+      new Error("The 'gpt-6-luna' model is not supported when using Codex with a ChatGPT account"),
     );
     const { call, emitNotification } = buildHarness({
       connected: ['codex'],

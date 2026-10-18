@@ -8,6 +8,7 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
 import { projectById } from './projectIndex';
+import { refuseAdoptionWhileAgentsRun } from './refuseAdoptionWhileAgentsRun';
 
 type Input = {
   readonly projectId: ProjectId;
@@ -40,6 +41,7 @@ export const adoptProject = (set: SetFn, get: GetFn) => {
     if (info === null) {
       throw new Error(`project not found: ${projectId}`);
     }
+    await refuseAdoptionWhileAgentsRun({ get, project, info });
 
     const reconnectIfNeeded = async () => {
       if (project.disconnectedAt === undefined) {

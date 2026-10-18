@@ -7,7 +7,7 @@ import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ChatId, SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
-import { agentPlace } from '../../../store';
+import { agentPlace, sessionPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
@@ -16,7 +16,7 @@ import { sceneClock } from '../../../app/components/MockScene/sceneClock';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { pressShortcut } from '../../helpers/pressKey';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
-import { reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
+import { menuHandlers, reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
 import {
   type BridgeArgs,
   type Ctx,
@@ -43,6 +43,10 @@ const LATEST_ACTIVITY = sceneClock({ anchor: '2099-01-01T00:00:00.000Z' }).iso({
 });
 
 const ANCHOR = /^Search \(/;
+
+const undoRuns: Array<number> = [];
+
+const undoPrevented: Array<boolean> = [];
 
 const focusAnchor = async (): Promise<HTMLElement> => {
   const anchor = await screen.findByRole('button', { name: ANCHOR });
@@ -75,6 +79,18 @@ const press = (id: ShortcutId) => async (): Promise<void> => {
   hydrateBranches();
   await focusAnchor();
   await pressed(id);
+};
+
+type MenuItemParams = {
+  readonly id: string;
+};
+
+const pickMenuItem = async ({ id }: MenuItemParams): Promise<void> => {
+  await waitFor(() => expect(menuHandlers).toHaveLength(1), WAIT);
+  for (const handler of [...menuHandlers]) {
+    handler({ payload: { id } });
+  }
+  await settle();
 };
 
 const keyRow = (row: {
@@ -222,7 +238,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'workspace.switcher',
-    lands: () => visible('textbox', 'Find a workspace or project'),
+    lands: () => visible('textbox', 'Find a workspace or folder'),
   }),
   keyRow({
     id: 'workspace.1',
@@ -234,7 +250,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       await press('workspace.switcher')();
     },
     lands: async () => {
-      await visible('textbox', 'Find a workspace or project');
+      await visible('textbox', 'Find a workspace or folder');
       const wanted = ['Harborline Labs', 'Acme', 'Cascadia', 'Northwind'];
       for (const [index, name] of wanted.entries()) {
         const id = DIGIT_IDS[index] as ShortcutId;
@@ -561,6 +577,54 @@ const pressConnected =
 
 export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
+    id: 'app.close',
+    note: 'File > Close in the macOS menu bar closes one level, once',
+    open: async (ctx) => {
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId: ctx.sessionId }) });
+      await settle();
+      useAppStore.getState().openStudio({
+        studio: { kind: 'chat', chatId: brandedId<ChatId>({ value: 'keys-menu-close-chat' }) },
+      });
+      await settle();
+      await pickMenuItem({ id: 'app.close' });
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
+    },
+  }),
+  keyRow({
+    id: 'report.open',
+    note: 'Help > Report a Bug in the macOS menu bar opens one sheet',
+    open: async () => {
+      await pickMenuItem({ id: 'report.open' });
+    },
+    lands: async () => {
+      expect(await screen.findAllByRole('dialog', { name: 'Report a bug' }, WAIT)).toHaveLength(1);
+    },
+  }),
+  keyRow({
+    id: 'app.undo',
+    note: 'the web view takes the undo key once, so the native Undo item never runs too',
+    open: async () => {
+      undoRuns.length = 0;
+      useAppStore.getState().undoable({
+        message: 'Opened agents',
+        undo: async () => {
+          undoRuns.push(1);
+        },
+      });
+      await focusAnchor();
+      const event = pressShortcut({ id: 'app.undo' });
+      undoPrevented.push(event.defaultPrevented);
+      await settle();
+    },
+    lands: async () => {
+      await waitFor(() => expect(undoRuns).toEqual([1]), WAIT);
+      expect(undoPrevented.at(-1)).toBe(true);
+    },
+  }),
+  keyRow({
     id: 'session.new',
     note: 'off a session overview the new chord starts a session',
     open: async () => {
@@ -600,6 +664,20 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       await pressed('terminal.newHere', document.body);
     },
     lands: async () => waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT),
+  }),
+  keyRow({
+    id: 'home.newWorkspace',
+    note: 'on Home, with no workspace open, the new chord opens New workspace in place',
+    open: async () => {
+      useAppStore.setState({ currentWorkspaceId: null, currentSessionId: null });
+      await screen.findByRole('list', { name: 'Workspaces' }, WAIT);
+      await pressed('home.newWorkspace', document.body);
+    },
+    lands: async () => {
+      await screen.findByRole('form', { name: 'New workspace' }, WAIT);
+      expect(useAppStore.getState().appStudio?.kind).toBe('addWorkspace');
+      expect(screen.getByRole('heading', { level: 1, name: 'Goodboy' })).toBeDefined();
+    },
   }),
   keyRow({
     id: 'terminal.closeTab',
@@ -712,7 +790,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       seedWorkspaces();
       spawnedWindows.length = 0;
       await press('workspace.switcher')();
-      const field = await screen.findByRole('textbox', { name: 'Find a workspace or project' });
+      const field = await screen.findByRole('textbox', { name: 'Find a workspace or folder' });
       field.focus();
       await pressed('composer.submit', field);
     },
@@ -1502,6 +1580,11 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
         dbWrites(/UPDATE sessions/).filter((call) => call.params.includes(ctx.sessionId)),
       ).toHaveLength(0);
       await press('session.archive')();
+      const confirm = await screen.findByRole('dialog', { name: 'Archive session?' });
+      expect(
+        dbWrites(/archived_at/).filter((call) => call.params.includes(ctx.sessionId)),
+      ).toHaveLength(0);
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Archive session' }));
     },
     lands: async (ctx) =>
       waitFor(

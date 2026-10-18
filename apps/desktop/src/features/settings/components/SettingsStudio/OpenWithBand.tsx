@@ -8,7 +8,7 @@ import {
   SETTING_EDITOR_BINARY,
 } from '../../settings';
 import { useAppStore } from '../../../../store';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ToolChoiceField, type ToolChoice } from './ToolChoiceField';
 
 const BROWSER_LABELS: Readonly<Record<string, string>> = {
@@ -92,13 +92,7 @@ export const OpenWithBand = () => {
   ];
 
   return (
-    <Band
-      inset="content"
-      label="Open with"
-      hint="Which tools open worktrees and links on this computer."
-      icon={<CONCEPT_ICONS.editor size={ICON_SIZE.row} aria-hidden />}
-      headingLevel={2}
-    >
+    <Band inset="content" label="Open with" headingLevel={2}>
       <div className="flex flex-col">
         <ToolChoiceField
           label="Editor"

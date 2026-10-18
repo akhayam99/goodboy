@@ -46,7 +46,7 @@ export const InitGuide = ({ rootPath, state, onStart }: Props) => {
   };
 
   return (
-    <section aria-label="Set up git for this project" className="flex flex-col gap-3 p-3">
+    <section aria-label="Set up git for this folder" className="flex flex-col gap-3 p-3">
       <div className="flex flex-col gap-2">
         <Eyebrow label="Git setup" muted />
         <h3 className="text-label font-semibold text-foreground">{HEADLINE[state]}</h3>

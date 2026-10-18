@@ -115,8 +115,8 @@ describe('ProjectGroups', () => {
     );
 
     expect(screen.getByText('Starred')).toBeDefined();
-    expect(screen.getByText('Other projects')).toBeDefined();
-    expect(screen.queryByText('All projects')).toBeNull();
+    expect(screen.getByText('Other folders')).toBeDefined();
+    expect(screen.queryByText('All folders')).toBeNull();
   });
 
   it('draws no group label when nothing is starred, the one group needs none', () => {
@@ -131,7 +131,7 @@ describe('ProjectGroups', () => {
     );
 
     expect(screen.queryAllByRole('heading')).toHaveLength(0);
-    expect(screen.queryByText('Other projects')).toBeNull();
+    expect(screen.queryByText('Other folders')).toBeNull();
   });
 
   it('draws Starred and Other projects as two headed groups with their counts', () => {
@@ -150,11 +150,11 @@ describe('ProjectGroups', () => {
     );
 
     const starred = screen.getByRole('region', { name: 'Starred' });
-    const others = screen.getByRole('region', { name: 'Other projects' });
+    const others = screen.getByRole('region', { name: 'Other folders' });
     expect(within(starred).getByRole('heading', { name: 'Starred' })).toBeDefined();
     expect(within(starred).getByText('2')).toBeDefined();
     expect(within(starred).getByText('Agents and pickers list these first.')).toBeDefined();
-    expect(within(others).getByRole('heading', { name: 'Other projects' })).toBeDefined();
+    expect(within(others).getByRole('heading', { name: 'Other folders' })).toBeDefined();
     expect(within(others).getByText('1')).toBeDefined();
     expect(
       within(starred)

@@ -11,6 +11,18 @@ file holds those explanations. Everything below has been "fixed" at least once a
 
 ## Deliberate dead ends
 
+- The macOS menu bar and the web view share every ⌘ key, and the web view sees
+  the key first: a `preventDefault` in a shortcut handler stops the native menu
+  item, and a key nothing handles falls through to it. So a key runs once
+  whichever path takes it (`app_menu.rs`, `useMenuCommands`), and a menu row
+  must carry the registry's combo, never its own. Do not add a ⌘Z item or any
+  menu row for Undo: Edit > Undo stays the predefined item, because a custom
+  one would steal the press from the text field, the terminal and the Commits
+  page that own it. Do not add a second listener for `goodboy://menu`.
+- `worktree::foreign` Rust tests (and the origin fetch behind them) read git's
+  error text. Under a non-English git locale that text is translated, so the
+  fetch runs with `LC_ALL=C` (`git_english`); a test that shells out to git for
+  such text must do the same.
 - A CLI's Bash tool runs each command as its own session leader (measured: a
   shell under a Goodboy turn had a process group equal to its pid). Signalling
   the CLI's group at the end of a turn misses the dev servers and watchers an
@@ -492,6 +504,12 @@ fails silently at runtime.
 - A child of an Auto tree is found by its delegation row (`isAutoChildAgent`),
   never by a flag on the turn input: a reattached turn after a reload has no
   input, and the question and split gates must still hold for it.
+- A plain-folder session's marker is `.goodboy/session.json` inside a `.goodboy`
+  folder; older sessions may still hold `.goodboy` as one file. Only
+  `marker_read` in `session_dir.rs` knows both shapes, and `file_versions.rs`
+  must read the marker through it. A second reader that tests `.goodboy.is_file()`
+  broke file versions in every plain-folder turn from #1533 until it was fixed. Build
+  test session folders with `session_dir_create_blocking`, never by hand.
 
 ## Traps in the toolchain
 
@@ -635,6 +653,10 @@ filesystem write lock. Cleanup failure retains the stash instead of repeating re
 ## New drawer actions host
 
 The New drawer keeps the Start button in a sticky host at the end of its body (`actionsHost` in `NewDrawerBody`), not in the `DrawerFrame` `dock` slot: a dock is a footer bar and `forbidden-patterns` fails the build on it. The Run, Agent and Write panels portal their actions into that host through `Docked`, so each panel must render nothing until the host node exists. `WritePanel` lives in `features/artifacts` and reaches the drawer as the `writePanel` prop from `DrawerHost`, because `features/session` must not import artifacts components.
+
+## A tool's health has one author
+
+The rail dot, the folded Integrations dot, the page chip and the key-missing notice of an integration all read `toolHealthOf` (`features/integrations/toolHealthOf.ts`); a dot and a chip written separately drift. The keychain answer reaches it through `useToolSecrets` for the rail (keyed by binding id, so a late answer for a replaced binding is dropped) and `useCredentialSecret` for the page; **Check again** asks both to read again through `requestCredentialRecheck`. The Disconnect of a settings page is the header menu verb, so `IntegrationConnectedRow` takes `hasHeaderDisconnect` there and keeps its own Disconnect icon only where no page menu exists (the onboarding step, GitHub's account rows). A provider page does the same with `providerAccountChip`: it reads `providerRailStatus` with the usage window ignored, so the chip stays `Working` while the dot warns that a window is nearly used up.
 
 ## Hints when a fix starts
 

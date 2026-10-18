@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { EmptyLine, Button, SelectionBar, SelectionConfirm } from '@goodboy/ui';
+import { SelectionBar, SelectionConfirm } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import type { StorageFolder } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -9,13 +9,10 @@ import { pluralize } from '../../../../shared/utils/pluralize';
 import { storageScopeLabel } from '../../storageScopeLabel';
 
 type Props = {
-  readonly suggested: ReadonlyArray<StorageFolder>;
-  readonly suggestAfterDays: number;
   readonly workspaceName: string | null;
   readonly selected: ReadonlySet<string>;
   readonly total: number;
   readonly isConfirming: boolean;
-  readonly onStart: () => void;
   readonly onArm: () => void;
   readonly onCancel: () => void;
   readonly onClear: () => void;
@@ -31,13 +28,10 @@ const bytesOf = ({ folders }: TallyParams): number =>
   folders.reduce((sum, folder) => sum + (folder.sizeBytes ?? 0), 0);
 
 export const BulkRemoveBar = ({
-  suggested,
-  suggestAfterDays,
   workspaceName,
   selected,
   total,
   isConfirming,
-  onStart,
   onArm,
   onCancel,
   onClear,
@@ -51,26 +45,7 @@ export const BulkRemoveBar = ({
   const [isBusy, setIsBusy] = useState(false);
 
   if (selected.size === 0) {
-    if (suggested.length === 0) {
-      return (
-        <EmptyLine className="px-2 text-meta text-faint-foreground">
-          No clean folder has been idle for over {suggestAfterDays} days.
-        </EmptyLine>
-      );
-    }
-    return (
-      <div className="flex flex-wrap items-center gap-3 px-2 py-2">
-        <Button variant="secondary" size="sm" onClick={onStart}>
-          <Trash2 size={ICON_SIZE.row} aria-hidden />
-          Remove {suggested.length} safe {suggested.length === 1 ? 'folder' : 'folders'} {scope} ·{' '}
-          {formatBytes({ bytes: bytesOf({ folders: suggested }) })}
-        </Button>
-        <span className="text-meta text-faint-foreground">
-          Only clean folders idle for over {suggestAfterDays} days. Folders with changes are
-          skipped.
-        </span>
-      </div>
-    );
+    return null;
   }
 
   const chosen = folders.filter((folder) => selected.has(folder.path));

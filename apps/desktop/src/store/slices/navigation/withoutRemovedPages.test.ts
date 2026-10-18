@@ -47,6 +47,23 @@ describe('withoutRemovedPages', () => {
     expect(next.focus.drawer).toBeNull();
   });
 
+  it('opens Settings, iPhone in place of a stored pairing studio', () => {
+    const stored: Location = JSON.parse(
+      JSON.stringify({ ...storedAt({ lens: 'agents' }), studio: { kind: 'companion' } }),
+    );
+
+    const next = withoutRemovedPages({ location: stored });
+
+    expect(next.studio).toEqual({ kind: 'settings', focus: { scope: 'app', section: 'iphone' } });
+    expect(next.place).toEqual(stored.place);
+  });
+
+  it('keeps a live studio as it was', () => {
+    const location: Location = { ...storedAt({ lens: 'agents' }), studio: { kind: 'guide' } };
+
+    expect(withoutRemovedPages({ location })).toBe(location);
+  });
+
   it('keeps a live page as it was', () => {
     const location = storedAt({ lens: 'agents' });
 

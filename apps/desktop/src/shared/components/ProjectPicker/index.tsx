@@ -16,7 +16,7 @@ type Props = {
 
 type OptionParams = {
   readonly project: Project;
-  readonly group: 'Suggested' | 'All projects';
+  readonly group: 'Suggested' | 'All folders';
 };
 
 const NO_SUGGESTIONS: ReadonlyArray<ProjectId> = [];
@@ -26,7 +26,7 @@ export const ProjectPicker = ({
   value,
   suggestedIds = NO_SUGGESTIONS,
   isDisabled = false,
-  emptyValueLabel = 'No project',
+  emptyValueLabel = 'No folder',
   onChange,
 }: Props) => {
   const options = useMemo((): ReadonlyArray<ListboxOption<ProjectId>> => {
@@ -34,7 +34,7 @@ export const ProjectPicker = ({
     const optionOf = ({ project, group }: OptionParams): ListboxOption<ProjectId> => {
       const Glyph = projectGlyph({ kind: project.kind });
       const baseBranch = project.baseBranch ?? '';
-      const hasBaseBranch = group === 'All projects' && baseBranch !== '';
+      const hasBaseBranch = group === 'All folders' && baseBranch !== '';
       return {
         value: project.id,
         label: project.name,
@@ -45,7 +45,7 @@ export const ProjectPicker = ({
     };
     return [
       ...suggested.map((project) => optionOf({ project, group: 'Suggested' })),
-      ...all.map((project) => optionOf({ project, group: 'All projects' })),
+      ...all.map((project) => optionOf({ project, group: 'All folders' })),
     ];
   }, [projects, suggestedIds]);
   const picked = value.flatMap((id) => projects.filter((project) => project.id === id));
@@ -53,22 +53,22 @@ export const ProjectPicker = ({
     <div className="flex min-w-0 flex-col gap-2">
       <Listbox
         multiple
-        ariaLabel="Project"
+        ariaLabel="Folder"
         size="sm"
         isBlock
         popupWidth="trigger"
         searchable
-        searchLabel="Search projects"
-        searchPlaceholder="Search projects"
-        emptyLabel="No projects in this workspace"
-        noMatchLabel="No projects match"
+        searchLabel="Search folders"
+        searchPlaceholder="Search folders"
+        emptyLabel="No folders in this workspace"
+        noMatchLabel="No folders match"
         options={options}
         value={value}
         disabled={isDisabled}
         onChange={onChange}
         valueLabel={
           <span className="truncate text-muted-foreground">
-            {picked.length === 0 ? emptyValueLabel : 'Add project'}
+            {picked.length === 0 ? emptyValueLabel : 'Add folder'}
           </span>
         }
       />

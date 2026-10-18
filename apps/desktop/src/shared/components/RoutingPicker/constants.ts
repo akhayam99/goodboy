@@ -5,6 +5,7 @@ type RoutingPickerConstants = {
   readonly providers: ReadonlyArray<ProviderId>;
   readonly emptyModelKeys: ReadonlySet<string>;
   readonly providerChipGroupClassName: string;
+  readonly providerGlyphsClassName: string;
 };
 
 export const ROUTING_PICKER_CONSTANTS = {
@@ -12,5 +13,6 @@ export const ROUTING_PICKER_CONSTANTS = {
     (id): id is ProviderId => id in PROVIDER_CAPABILITIES,
   ),
   emptyModelKeys: new Set<string>(),
-  providerChipGroupClassName: 'flex gap-2 bg-subtle px-3 [&>*]:h-7 [&>*]:flex-1',
+  providerChipGroupClassName: 'flex gap-2 bg-subtle px-3',
+  providerGlyphsClassName: 'flex min-w-0 flex-1 gap-2 [&>*]:h-7 [&>*]:flex-1',
 } satisfies RoutingPickerConstants;

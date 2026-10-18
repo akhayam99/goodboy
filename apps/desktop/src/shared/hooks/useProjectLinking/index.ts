@@ -3,109 +3,33 @@ import type { Project, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { undoable } from '../../utils/undoable';
-import { usePickFolder } from '../usePickFolder';
-import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
-import { useChildRepoDetection } from '../useChildRepoDetection';
-import { useProjectAdoption } from '../useProjectAdoption';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
-  readonly initialConflicts?: ReadonlyArray<ProjectAttachConflict>;
+};
+
+type UnlinkParams = {
+  readonly project: Project;
 };
 
 const EMPTY_PROJECTS: ReadonlyArray<Project> = [];
 
-export const useProjectLinking = ({ workspaceId, initialConflicts }: Params) => {
-  const pickFolder = usePickFolder();
+export const useProjectLinking = ({ workspaceId }: Params) => {
   const projects = useAppStore((state) => state.projects ?? EMPTY_PROJECTS);
   const addProject = useAppStore((state) => state.addProject);
-  const addProjects = useAppStore((state) => state.addProjects);
   const removeProject = useAppStore((state) => state.removeProject);
-  const { detected, detect, clear } = useChildRepoDetection();
-  const [path, setPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const detectedPaths = useMemo(() => detected?.repos.map((repo) => repo.path) ?? [], [detected]);
-  const adoption = useProjectAdoption({ workspaceId, detectedPaths, initialConflicts });
 
   const linked = useMemo(
     () => projects.filter((project) => project.workspaceId === workspaceId),
     [projects, workspaceId],
   );
 
-  const run = async (action: () => Promise<void>) => {
+  const unlink = async ({ project }: UnlinkParams) => {
     setBusy(true);
     setError(null);
     try {
-      await action();
-    } catch (actionError) {
-      setError(formatError(actionError));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const linkPath = async ({
-    rootPath,
-    requireRepo,
-  }: {
-    readonly rootPath: string;
-    readonly requireRepo: boolean;
-  }) => {
-    clear();
-    if (requireRepo && (await detect({ path: rootPath }))) {
-      return;
-    }
-    const result = await addProject({ workspaceId, rootPath, requireRepo });
-    setPath('');
-    if (result.kind === 'conflict') {
-      adoption.noteConflicts([result.conflict]);
-    }
-  };
-
-  const link = ({ rootPath }: { readonly rootPath: string }) =>
-    run(() => linkPath({ rootPath, requireRepo: true }));
-
-  const linkDetected = ({ paths }: { readonly paths: ReadonlyArray<string> }) =>
-    run(async () => {
-      const knownConflicts = paths.flatMap((entry) => {
-        const conflict = adoption.knownConflicts[entry];
-        return conflict === undefined ? [] : [conflict];
-      });
-      const freshPaths = paths.filter((entry) => adoption.knownConflicts[entry] === undefined);
-      const result = await addProjects({ workspaceId, rootPaths: freshPaths });
-      for (const conflict of knownConflicts) {
-        await adoption.adoptConflict(conflict);
-      }
-      adoption.noteConflicts(result.conflicts);
-      clear();
-      setPath('');
-    });
-
-  const moveConflict = ({ conflict }: { readonly conflict: ProjectAttachConflict }) =>
-    run(() => adoption.adoptConflict(conflict));
-
-  const keepConflict = ({ conflict }: { readonly conflict: ProjectAttachConflict }) =>
-    adoption.dismissConflict(conflict.project.id);
-
-  const browse = async () => {
-    const picked = await pickFolder();
-    if (picked === null) {
-      return;
-    }
-    setPath(picked);
-  };
-
-  const linkPlainFolder = async () => {
-    const picked = await pickFolder();
-    if (picked === null) {
-      return;
-    }
-    await run(() => linkPath({ rootPath: picked, requireRepo: false }));
-  };
-
-  const unlink = ({ project }: { readonly project: Project }) =>
-    run(async () => {
       await removeProject({ projectId: project.id });
       undoable({
         message: `Unlinked ${project.name}`,
@@ -117,24 +41,12 @@ export const useProjectLinking = ({ workspaceId, initialConflicts }: Params) => 
           });
         },
       });
-    });
-
-  return {
-    linked,
-    path,
-    setPath,
-    busy,
-    error,
-    detected,
-    dismissDetection: clear,
-    knownRepos: adoption.knownRepos,
-    conflicts: adoption.conflicts,
-    link,
-    linkDetected,
-    moveConflict,
-    keepConflict,
-    browse,
-    linkPlainFolder,
-    unlink,
+    } catch (unlinkError) {
+      setError(formatError(unlinkError));
+    } finally {
+      setBusy(false);
+    }
   };
+
+  return { linked, busy, error, unlink };
 };

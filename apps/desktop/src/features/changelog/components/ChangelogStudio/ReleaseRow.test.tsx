@@ -20,54 +20,79 @@ afterEach(() => {
   cleanup();
 });
 
-const renderRow = (release: ReleaseEntry) =>
+type RenderRowParams = {
+  readonly release: ReleaseEntry;
+  readonly dateLabel?: string | null;
+  readonly installedVersion?: string | null;
+};
+
+const renderRow = ({ release, dateLabel = null, installedVersion = null }: RenderRowParams) =>
   render(
-    <ReleaseRow release={release} isActive={false} installedVersion={null} onSelect={vi.fn()} />,
+    <ReleaseRow
+      release={release}
+      dateLabel={dateLabel}
+      isActive={false}
+      installedVersion={installedVersion}
+      onSelect={vi.fn()}
+    />,
   );
 
 describe('ReleaseRow', () => {
-  it('never renders a date', () => {
-    renderRow(buildRelease({ version: '0.12.0', oneWayFrom: '0.11' }));
+  it('puts the version and its date on one line', () => {
+    renderRow({ release: buildRelease({ version: '0.27.2' }), dateLabel: '17 Oct' });
 
-    expect(screen.queryByText(/2026|ago|yesterday|today/i)).toBeNull();
+    expect(screen.getByText('0.27.2').nextElementSibling?.textContent).toBe('17 Oct');
+  });
+
+  it('shows no date line text when the date is unknown', () => {
+    renderRow({ release: buildRelease({ version: '0.27.2' }) });
+
+    expect(screen.getByText('0.27.2').nextElementSibling?.textContent).toBe('');
   });
 
   it('has no one-way mark on a patch release, even with one-way metadata', () => {
-    renderRow(buildRelease({ version: '0.12.1', oneWayFrom: '0.11' }));
+    renderRow({ release: buildRelease({ version: '0.12.1', oneWayFrom: '0.11' }) });
 
     expect(screen.queryByRole('img')).toBeNull();
   });
 
   it('has no one-way mark on a release without one-way metadata', () => {
-    renderRow(buildRelease({ version: '0.12.0', oneWayFrom: null }));
+    renderRow({ release: buildRelease({ version: '0.12.0', oneWayFrom: null }) });
 
     expect(screen.queryByRole('img')).toBeNull();
   });
 
   it('marks a minor one-way release with the door glyph', () => {
-    renderRow(buildRelease({ version: '0.12.0', oneWayFrom: '0.11' }));
+    renderRow({ release: buildRelease({ version: '0.12.0', oneWayFrom: '0.11' }) });
 
     const mark = screen.getByRole('img');
     expect(mark.getAttribute('aria-label')).toMatch(/changes your data/i);
   });
 
   it('marks a major one-way release with a distinct glyph', () => {
-    renderRow(buildRelease({ version: '1.0.0', oneWayFrom: '0.12' }));
+    renderRow({ release: buildRelease({ version: '1.0.0', oneWayFrom: '0.12' }) });
 
     const mark = screen.getByRole('img');
     expect(mark.getAttribute('aria-label')).toMatch(/major release/i);
   });
 
-  it('keeps the installed chip', () => {
-    render(
-      <ReleaseRow
-        release={buildRelease({ version: '0.12.0' })}
-        isActive={false}
-        installedVersion="0.12.0"
-        onSelect={vi.fn()}
-      />,
-    );
+  it('writes Installed in the meta, after the date, with no chip', () => {
+    renderRow({
+      release: buildRelease({ version: '0.12.0' }),
+      dateLabel: '5 Oct',
+      installedVersion: '0.12.0',
+    });
 
-    expect(screen.getByText('installed')).toBeDefined();
+    expect(screen.getByText('5 Oct · Installed')).toBeDefined();
+  });
+
+  it('writes In the update for a release newer than the installed one', () => {
+    renderRow({
+      release: buildRelease({ version: '0.12.1' }),
+      dateLabel: null,
+      installedVersion: '0.12.0',
+    });
+
+    expect(screen.getByText('In the update')).toBeDefined();
   });
 });

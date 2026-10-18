@@ -4,17 +4,24 @@ import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { ConnectForm } from '../components/ConnectForm';
 import { IntegrationConnectedRow } from '../components/IntegrationConnectedRow';
+import { disconnectDescriptionOf } from '../disconnectDescriptionOf';
 import { normalizeHostUrl } from '../shared/normalizeHostUrl';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly onConnected?: () => void;
   readonly shouldAutoFocus?: boolean;
+  readonly hasHeaderDisconnect?: boolean;
 };
 
 const DEFAULT_HOST = 'https://gitlab.com';
 
-export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = false }: Props) => {
+export const GitlabFormBody = ({
+  workspaceId,
+  onConnected,
+  shouldAutoFocus = false,
+  hasHeaderDisconnect = false,
+}: Props) => {
   const integrations = useAppStore(useShallow((s) => s.workspaceIntegrations[workspaceId] ?? []));
   const gitlab =
     integrations.find((i): i is GitlabIntegrationBinding => i.provider === 'gitlab') ?? null;
@@ -31,7 +38,8 @@ export const GitlabFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fal
         credentialId={gitlab?.credentialId ?? null}
         primary={`Connected as ${config.userName}`}
         secondary={config.host}
-        disconnectDescription="Disconnects this workspace from the GitLab personal API key. The key stays saved for your other workspaces."
+        disconnectDescription={disconnectDescriptionOf({ provider: 'gitlab' })}
+        hasHeaderDisconnect={hasHeaderDisconnect}
         onDisconnect={() => disconnectIntegration({ workspaceId, provider: 'gitlab' })}
       />
     );

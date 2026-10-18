@@ -2,12 +2,11 @@ import type { AnthropicModel, EffortLevel } from '@goodboy/types';
 
 const OPUS_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] satisfies ReadonlyArray<EffortLevel>;
 const OPUS_46_EFFORTS = ['low', 'medium', 'high', 'max'] satisfies ReadonlyArray<EffortLevel>;
-const SONNET_EFFORTS = ['low', 'medium', 'high'] satisfies ReadonlyArray<EffortLevel>;
+const SONNET_45_EFFORTS = ['low', 'medium', 'high'] satisfies ReadonlyArray<EffortLevel>;
 
 export const ANTHROPIC_CATALOG = [
   {
     key: 'opus-5',
-    defaultTurn: true,
     label: 'Opus 5',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -25,6 +24,7 @@ export const ANTHROPIC_CATALOG = [
   },
   {
     key: 'opus-5.5',
+    defaultTurn: true,
     label: 'Opus 5.5',
     tier: 'turn',
     contextWindow: 1_000_000,
@@ -145,7 +145,6 @@ export const ANTHROPIC_CATALOG = [
     cliId: 'claude-sonnet-5-5',
     efforts: OPUS_EFFORTS,
     defaultEffort: 'medium',
-
     minCliVersion: '2.1.284',
   },
   {
@@ -162,7 +161,7 @@ export const ANTHROPIC_CATALOG = [
     },
     provider: 'anthropic',
     cliId: 'claude-sonnet-5',
-    efforts: SONNET_EFFORTS,
+    efforts: OPUS_EFFORTS,
     defaultEffort: 'medium',
   },
   {
@@ -179,7 +178,7 @@ export const ANTHROPIC_CATALOG = [
     },
     provider: 'anthropic',
     cliId: 'claude-sonnet-4-6',
-    efforts: SONNET_EFFORTS,
+    efforts: OPUS_46_EFFORTS,
     defaultEffort: 'medium',
   },
   {
@@ -197,8 +196,26 @@ export const ANTHROPIC_CATALOG = [
     },
     provider: 'anthropic',
     cliId: 'claude-sonnet-4-5',
-    efforts: SONNET_EFFORTS,
+    efforts: SONNET_45_EFFORTS,
     defaultEffort: 'medium',
+  },
+  {
+    key: 'haiku-5.5',
+    label: 'Haiku 5.5',
+    tier: 'cheap',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'claude',
+      group: 'Haiku',
+      version: '5.5',
+      order: 11,
+      costTier: 'cheap',
+    },
+    provider: 'anthropic',
+    cliId: 'claude-haiku-5-5',
+    efforts: OPUS_EFFORTS,
+    defaultEffort: 'medium',
+    minCliVersion: '2.1.293',
   },
   {
     key: 'haiku-4.5',

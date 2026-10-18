@@ -1,4 +1,6 @@
 import { Button, Notice } from '@goodboy/ui';
+import { ObjectActionVerb } from '../../../../actions/ObjectActionVerb';
+import type { ProviderActionTarget } from '../../../../actions/types';
 import type { ProviderDisplayInfo } from '../../../providers';
 import { useNow } from '../../../../../shared/hooks/useNow';
 import { useProviderHealth } from '../../../../../shared/hooks/useProviderHealth';
@@ -15,10 +17,10 @@ type Props = {
   readonly info: ProviderDisplayInfo;
   readonly isChecking: boolean;
   readonly onCheckAgain: () => void;
-  readonly onSignIn?: () => void;
+  readonly target: ProviderActionTarget;
 };
 
-export const ProviderHealthNotice = ({ info, isChecking, onCheckAgain, onSignIn }: Props) => {
+export const ProviderHealthNotice = ({ info, isChecking, onCheckAgain, target }: Props) => {
   const health = useProviderHealth({ providerId: info.id });
   const nowMs = useNow(CLOCK_MS);
   if (health.isBreakerOpen) {
@@ -30,13 +32,7 @@ export const ProviderHealthNotice = ({ info, isChecking, onCheckAgain, onSignIn 
         title={breakerTitle({ providerId: info.id, health })}
         body={breakerBody({ providerId: info.id })}
         detail={health.lastRefusal}
-        actions={
-          onSignIn === undefined ? undefined : (
-            <Button size="sm" variant="secondary" onClick={onSignIn}>
-              Sign in again
-            </Button>
-          )
-        }
+        actions={<ObjectActionVerb target={target} actionId="provider.reauth" />}
       />
     );
   }

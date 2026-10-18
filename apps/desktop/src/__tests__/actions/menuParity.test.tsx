@@ -44,6 +44,9 @@ import { NO_EXPLORE_CHANGES } from '../../features/explore/exploreChanges';
 import { ExploreTree } from '../../features/explore/components/ExplorePane/ExploreTree';
 import { PaletteOverlay } from '../../features/palette/components/PaletteOverlay';
 import { ToastProvider } from '../../shared/components/Toast';
+import { ObjectMenuArea } from '../../features/actions/components/ObjectMenuArea';
+import { ObjectOverflowMenu } from '../../features/actions/components/ObjectOverflowMenu';
+import type { ObjectTarget } from '../../features/actions/types';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';
 import {
   AGENT,
@@ -747,5 +750,104 @@ describe('menus open from the keyboard and never for a session that is gone', ()
     fireEvent.contextMenu(container.querySelector('article') as HTMLElement);
     expect(screen.queryByRole('menu')).toBeNull();
     expect(useAppStore.getState().sessions[0]?.id).toBe(SESSION);
+  });
+});
+
+const REGISTRY_TARGETS: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<string>]> = [
+  [
+    'port',
+    {
+      kind: 'port',
+      facts: {
+        port: 4001,
+        layer: 'goodboy',
+        description: '',
+        holder: { pid: 6200, name: 'node', spawnId: null, owner: 'Terminal · payments-api' },
+      },
+    },
+    ['Open in browser', 'Pin', 'Stop', 'Force stop', 'Hide', 'Copy address'],
+  ],
+  [
+    'notification',
+    {
+      kind: 'notification',
+      facts: {
+        ids: ['n-1'],
+        unreadIds: ['n-1'],
+        title: 'Handoff degraded',
+        body: 'The summarizer timed out after 90s.',
+        severity: 'error',
+        open: { label: 'Open session', run: vi.fn() },
+      },
+    },
+    ['Open', 'Mark read', 'Report this', 'Copy text', 'Delete'],
+  ],
+  [
+    'provider',
+    {
+      kind: 'provider',
+      facts: {
+        label: 'Codex',
+        cliPath: '/usr/local/bin/codex',
+        isChecking: false,
+        canReauth: true,
+        willSignOutOnReauth: false,
+        canDisconnect: true,
+        onCheck: vi.fn(async () => undefined),
+        onReauth: vi.fn(async () => undefined),
+        onShowHistory: vi.fn(),
+        onDisconnect: vi.fn(async () => undefined),
+      },
+    },
+    ['Check again', 'Sign in again', 'History', 'Copy CLI path', 'Disconnect'],
+  ],
+  [
+    'integration',
+    {
+      kind: 'integration',
+      facts: {
+        label: 'Linear',
+        disconnectDescription: 'Goodboy stops reading Linear issues.',
+        onOpenTasks: vi.fn(),
+        onCheck: vi.fn(async () => undefined),
+        onDisconnect: vi.fn(async () => undefined),
+      },
+    },
+    ['Open in Tasks', 'Check again', 'Disconnect'],
+  ],
+  [
+    'branch',
+    {
+      kind: 'branch',
+      facts: {
+        name: 'hl/flaky-retry-test',
+        isSafe: true,
+        unmergedCommits: 0,
+        isBusy: false,
+        onOpenSession: vi.fn(),
+        onDelete: vi.fn(async () => undefined),
+      },
+    },
+    ['Open session', 'Copy branch name', 'Delete'],
+  ],
+];
+
+describe('the registry kinds of the secondary pages list the same verbs on ⋯ and right click', () => {
+  it.each(REGISTRY_TARGETS)('%s', async (kind, target, expected) => {
+    withMenus(
+      <div>
+        <ObjectOverflowMenu target={target} label={`More for ${kind}`} />
+        <ObjectMenuArea target={target} anchorKey={`${kind}-row`}>
+          <p>{`${kind} row`}</p>
+        </ObjectMenuArea>
+      </div>,
+    );
+    const { fromOverflow, fromContext } = await overflowThenContext({
+      overflow: screen.getByRole('button', { name: `More for ${kind}` }),
+      context: screen.getByText(`${kind} row`),
+    });
+
+    expect(fromOverflow).toEqual(expected);
+    expect(fromContext).toEqual(fromOverflow);
   });
 });

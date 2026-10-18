@@ -1,7 +1,7 @@
 import { ExploreScene } from '../audit/ExploreScene';
 
 const OPEN_SETTLEMENT: ReadonlyArray<string> = ['src', 'settlement'];
-const OPEN_PROJECT_MENU: ReadonlyArray<string> = ['Project payments-api'];
+const OPEN_PROJECT_MENU: ReadonlyArray<string> = ['Folder payments-api'];
 
 export const U24_EXPLORE_CHIP_SCENES = {
   exploremulti: () => <ExploreScene roots="multi" openLabels={OPEN_PROJECT_MENU} />,

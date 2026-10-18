@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ScrollFade, StudioRailLayout, useStudioRailFold } from '@goodboy/ui';
-import type { Workspace } from '@goodboy/types';
+import type { ProviderId, Workspace } from '@goodboy/types';
 import { ToolSettingsScope } from '../../../integrations/components/ToolSettingsScope';
 import { ProviderSettingsScope } from '../../../providers/components/ProviderStudio';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -19,7 +19,7 @@ import type { ScopeFrame } from './types';
 import type { SettingsFocus, SettingsPageScope, SettingsScopeChange } from '../../settingsFocus';
 import { WorkspaceScopePanel } from './WorkspaceScopePanel';
 import { useSettingsStatus } from '../../hooks/useSettingsStatus';
-import { settingsDirectory, settingsPageKey } from './settingsDirectory';
+import { settingsDirectory, settingsPageKey, type SettingsGroup } from './settingsDirectory';
 import { pageFocusOf, resolveSettingsFocus } from './resolveSettingsFocus';
 
 type Props = {
@@ -32,8 +32,6 @@ type Props = {
 };
 
 type Slots = Readonly<Partial<Record<NestedScope, HTMLDivElement>>>;
-
-const NESTED_SCOPES = ['providers', 'tools'] as const satisfies ReadonlyArray<NestedScope>;
 
 const withSlot = ({
   slots,
@@ -48,6 +46,26 @@ const withSlot = ({
     return slots;
   }
   return { ...slots, [scope]: element ?? undefined };
+};
+
+type SamePageParams = {
+  readonly left: SettingsFocus;
+  readonly right: SettingsFocus;
+};
+
+const isSamePage = ({ left, right }: SamePageParams): boolean =>
+  left.scope === right.scope && left.section === right.section;
+
+type LandingParams = {
+  readonly groups: ReadonlyArray<SettingsGroup>;
+  readonly hasWorkspace: boolean;
+};
+
+const landingProviderOf = ({ groups, hasWorkspace }: LandingParams): ProviderId | undefined => {
+  if (hasWorkspace) {
+    return undefined;
+  }
+  return groups.find((group) => group.scope === 'providers')?.pages[0]?.target.provider;
 };
 
 const pageScopeOf = ({
@@ -87,63 +105,42 @@ export const SettingsStudio = ({
   );
   const lastFocus = useAppStore((state) => state.lastSettingsFocus);
   const rememberFocus = useAppStore((state) => state.rememberSettingsFocus);
-  const isAlias = requestedFocus.scope === 'home';
-  const focus = isAlias
-    ? resolveSettingsFocus({ focus: requestedFocus, last: lastFocus, groups })
-    : requestedFocus;
+  const focus = resolveSettingsFocus({ focus: requestedFocus, last: lastFocus, groups });
+  const isRedirect = !isSamePage({ left: focus, right: requestedFocus });
   const availableScope = pageScopeOf({ focus, hasWorkspace });
+  const provider = focus.provider ?? landingProviderOf({ groups, hasWorkspace });
   const pageKey = settingsPageKey({
     scope: availableScope,
     section: focus.section,
-    provider: focus.provider,
+    provider,
     tool: focus.tool,
   });
 
   useEffect(() => {
-    if (isAlias) {
+    if (isRedirect) {
       onScopeChange(focus);
     }
-  }, [isAlias]);
+  }, [isRedirect]);
 
   useEffect(() => {
     rememberFocus(pageFocusOf({ scope: availableScope, focus }));
   }, [pageKey]);
 
-  const [shownScope, setShownScope] = useState<SettingsPageScope>(availableScope);
-  const [leaving, setLeaving] = useState<NestedScope | null>(null);
-  const [railSlots, setRailSlots] = useState<Slots>({});
   const [detailSlots, setDetailSlots] = useState<Slots>({});
 
-  if (shownScope !== availableScope) {
-    setShownScope(availableScope);
-    setLeaving(isNestedScope(shownScope) ? shownScope : null);
-  }
-
-  const slotRefs = useMemo(() => {
-    const refFor =
-      (update: typeof setRailSlots) => (scope: NestedScope) => (element: HTMLDivElement | null) =>
-        update((slots) => withSlot({ slots, scope, element }));
-    const rail = refFor(setRailSlots);
-    const detail = refFor(setDetailSlots);
-    return {
-      rail: { providers: rail('providers'), tools: rail('tools') },
-      detail: { providers: detail('providers'), tools: detail('tools') },
-    };
+  const detailRefs = useMemo(() => {
+    const refFor = (scope: NestedScope) => (element: HTMLDivElement | null) =>
+      setDetailSlots((slots) => withSlot({ slots, scope, element }));
+    return { providers: refFor('providers'), tools: refFor('tools') };
   }, []);
 
   const frameFor =
     (scope: NestedScope): ScopeFrame =>
-    ({ nested, detail }) => {
-      const railSlot = railSlots[scope];
+    ({ detail }) => {
       const detailSlot = detailSlots[scope];
-      return (
-        <>
-          {railSlot === undefined ? null : createPortal(nested, railSlot)}
-          {scope !== availableScope || detailSlot === undefined
-            ? null
-            : createPortal(detail, detailSlot)}
-        </>
-      );
+      return scope !== availableScope || detailSlot === undefined
+        ? null
+        : createPortal(detail, detailSlot);
     };
 
   const renderScope = (scope: NestedScope): ReactNode => {
@@ -152,7 +149,7 @@ export const SettingsStudio = ({
         <ProviderSettingsScope
           key="providers"
           workspaceId={currentWorkspace?.id ?? null}
-          initialFocus={focus.provider}
+          initialFocus={provider}
           initialAction={focus.action}
           {...(focus.section != null && { initialSection: focus.section })}
           frame={frameFor('providers')}
@@ -168,13 +165,14 @@ export const SettingsStudio = ({
         workspaceId={currentWorkspace.id}
         initialFocus={focus.tool}
         frame={frameFor('tools')}
+        onDefaultTool={({ tool }) => onScopeChange({ scope: 'tools', tool })}
       />
     );
   };
 
   const renderDetail = (requestClose: () => void): ReactNode => {
     if (isNestedScope(availableScope)) {
-      return <div key={availableScope} ref={slotRefs.detail[availableScope]} className="h-full" />;
+      return <div key={availableScope} ref={detailRefs[availableScope]} className="h-full" />;
     }
     if (availableScope === 'workspace' && currentWorkspace !== null) {
       return (
@@ -200,16 +198,13 @@ export const SettingsStudio = ({
       scope={availableScope}
       pageKey={pageKey}
       groups={groups}
-      nestedSlot={slotRefs.rail}
-      onNestedClosed={({ scope }) => setLeaving((current) => (current === scope ? null : current))}
+      workspaceName={workspaceName}
       onSelect={onScopeChange}
       isInColumn={isInColumn}
     />
   );
 
-  const nested = NESTED_SCOPES.filter((scope) => scope === availableScope || scope === leaving).map(
-    renderScope,
-  );
+  const nested = isNestedScope(availableScope) ? renderScope(availableScope) : null;
 
   if (isInColumnShell) {
     return (

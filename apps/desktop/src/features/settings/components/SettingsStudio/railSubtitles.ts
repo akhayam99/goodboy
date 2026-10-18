@@ -7,8 +7,8 @@ import { storageAttention } from '../../../../store/slices/storage/selectStorage
 import { pluralize } from '../../../../shared/utils/pluralize';
 
 export type RailSubtitles = {
-  readonly generalText: string | undefined;
-  readonly generalTone: Tone | undefined;
+  readonly updatesText: string | undefined;
+  readonly updatesTone: Tone | undefined;
   readonly storageText: string | undefined;
   readonly storageTone: Tone | undefined;
   readonly securityFindingsText: string | undefined;
@@ -62,8 +62,8 @@ export const railSubtitles = ({ state, workspaceId, nowMs }: Params): RailSubtit
   const missing = missingFolderCount({ state, workspaceId });
 
   return {
-    generalText: state.updaterStatus === 'available' ? 'Update available' : undefined,
-    generalTone: state.updaterStatus === 'available' ? 'info' : undefined,
+    updatesText: state.updaterStatus === 'available' ? 'Update available' : undefined,
+    updatesTone: state.updaterStatus === 'available' ? 'info' : undefined,
     storageText,
     storageTone,
     securityFindingsText,

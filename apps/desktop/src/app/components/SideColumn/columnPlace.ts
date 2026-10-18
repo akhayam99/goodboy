@@ -1,8 +1,9 @@
 import type { StudioKind } from '../../../store';
 
-export type ColumnDoorId = 'board' | 'inbox' | 'chat' | 'workflows' | 'terminal' | 'monitoring';
+export type ColumnDoorId =
+  'board' | 'inbox' | 'chat' | 'workflows' | 'terminal' | 'monitoring' | 'impact';
 
-export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | 'impact' | null;
+export type ColumnPlace = ColumnDoorId | 'new' | 'settings' | null;
 
 type Params = {
   readonly hasSession: boolean;
@@ -27,7 +28,6 @@ const studioPlace = ({ studio }: { readonly studio: StudioKind }): ColumnPlace =
     case 'impact':
       return 'impact';
     case 'guide':
-    case 'companion':
     case 'addWorkspace':
     case 'changelog':
     case 'notifications':

@@ -312,7 +312,7 @@ describe('SessionKickoff', () => {
     renderKickoff();
     fireEvent.click(tab('Start an agent'));
 
-    expect(screen.getByRole('button', { name: 'Start Scout on the whole project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start Scout on the whole folder' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Run a workflow' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Pick / })).toBeNull();
   });
@@ -480,7 +480,7 @@ describe('SessionKickoff', () => {
     fireEvent.click(tab('Start an agent'));
 
     expect(await screen.findByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
-    fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Folder' }));
     fireEvent.click(screen.getByRole('option', { name: 'northwind' }));
 
     expect(screen.getByRole('button', { name: 'Remove northwind' })).toBeDefined();

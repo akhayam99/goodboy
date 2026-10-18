@@ -1,7 +1,7 @@
 import { ChevronsUpDown } from 'lucide-react';
 import { ROW_INTERACTIVE, cn, AnchoredPopover, StatusDot, useDropdown, Tooltip } from '@goodboy/ui';
 import { useAppStore, useCurrentWorkspace, useHasUnreadElsewhere } from '../../../../store';
-import { linkedProjectsLabel } from '../../linkedProjectsLabel';
+import { folderCountLabel } from '../../folderCountLabel';
 import { WorkspaceSwitcher } from '../WorkspaceSwitcher';
 import { WorkspaceTile } from '../WorkspaceSwitcher/WorkspaceTile';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -9,7 +9,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 export const WorkspaceIdentityRow = () => {
   const currentWorkspace = useCurrentWorkspace();
   const subtitle = useAppStore((state) =>
-    linkedProjectsLabel({ projects: state.projects, workspaceId: currentWorkspace?.id ?? null }),
+    folderCountLabel({ projects: state.projects, workspaceId: currentWorkspace?.id ?? null }),
   );
   const hasUnreadElsewhere = useHasUnreadElsewhere(currentWorkspace?.id ?? null);
   const dropdown = useDropdown({

@@ -28,6 +28,7 @@ import type { HeldScope } from '../../types';
 type CommitScope = Extract<HeldScope, { kind: 'commit' }>;
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { PaletteOverlay } from './index';
+import type { AppStore } from '../../../../store/store';
 
 const elsewhere = vi.hoisted(() => ({ refs: [] as ReadonlyArray<SessionTitleRef> }));
 
@@ -196,7 +197,7 @@ describe('PaletteOverlay, the commands mode', () => {
     expect(screen.getByPlaceholderText('Filter actions…')).toBeDefined();
     expect(screen.getByText('Copy and export')).toBeDefined();
     expect(screen.getByText('Danger')).toBeDefined();
-    expect(optionNames()).toContain('Archive');
+    expect(optionNames()).toContain('Archive…');
 
     fireEvent.keyDown(input, { key: 'ArrowLeft' });
     expect(screen.getByPlaceholderText('Search or ask')).toBeDefined();
@@ -229,6 +230,30 @@ describe('PaletteOverlay, the commands mode', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(deleteTask).toHaveBeenCalledWith(PAYOUT);
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('asks before Archive and archives only after the confirm', async () => {
+    const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>(async () => ({
+      succeeded: [],
+      failed: [],
+    }));
+    useAppStore.setState({ bulkArchiveTask });
+    const { input } = openIn(PAYOUT);
+    type(input, 'archive');
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getByText('Archive session?')).toBeDefined();
+    expect(bulkArchiveTask).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.queryByText('Archive session?')).toBeNull();
+    expect(bulkArchiveTask).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' });
+    });
+    expect(bulkArchiveTask).toHaveBeenCalledWith([PAYOUT]);
   });
 
   it('refreshes the open session', () => {

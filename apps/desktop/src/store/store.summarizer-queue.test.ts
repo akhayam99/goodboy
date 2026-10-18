@@ -450,7 +450,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
 
     await vi.waitFor(() => expect(queues.has(SESSION_ID)).toBe(false));
     expect(summarizerConstructorCalls).toContainEqual(
-      expect.objectContaining({ providerId: 'codex', model: 'gpt-5.6-luna' }),
+      expect.objectContaining({ providerId: 'codex', model: 'gpt-6-luna' }),
     );
     useAppStore.setState({ workspaceOverrides: {} });
   });

@@ -1,11 +1,12 @@
-import { Activity } from 'lucide-react';
 import { EmptyState, HeaderActions, PaneShell, ScrollFade, SearchField } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { useIdleCounts } from '../../hooks/useIdleCounts';
 import { useLeftoverRows } from '../../hooks/useLeftoverRows';
 import { useMonitoringModel } from '../../hooks/useMonitoringModel';
 import { useMonitorPolling } from '../../hooks/useMonitorPolling';
+import type { PortSummary } from '../../portSummary';
 import { summaryMeta } from '../../summaryMeta';
 import { ColumnHeader } from './ColumnHeader';
 import { GoodboySection } from './GoodboySection';
@@ -16,6 +17,24 @@ import { PinnedSection } from './PinnedSection';
 import { PinPortPopover } from './PinPortPopover';
 import { ReadFailedNotice } from './ReadFailedNotice';
 import { WorkspaceSection } from './WorkspaceSection';
+
+type MetaParams = {
+  readonly isReady: boolean;
+  readonly isEmpty: boolean;
+  readonly summary: PortSummary;
+  readonly takenAt: number | null;
+  readonly now: number;
+};
+
+const metaOf = ({ isReady, isEmpty, summary, takenAt, now }: MetaParams): string | undefined => {
+  if (!isReady) {
+    return undefined;
+  }
+  if (isEmpty) {
+    return 'Nothing tracked';
+  }
+  return summaryMeta({ summary, takenAt, now }) ?? undefined;
+};
 
 export const MonitoringPage = () => {
   useMonitorPolling();
@@ -33,25 +52,21 @@ export const MonitoringPage = () => {
       page="monitoring"
       scroll="body"
       title="Monitoring"
-      meta={
-        isReady
-          ? (summaryMeta({ summary: model.summary, takenAt: model.takenAt, now }) ?? undefined)
-          : undefined
-      }
+      meta={metaOf({ isReady, isEmpty, summary: model.summary, takenAt: model.takenAt, now })}
       actions={
         <HeaderActions
           secondary={
-            isReady ? (
+            isReady && !isEmpty ? (
               <SearchField
                 ariaLabel="Filter ports"
-                placeholder="Port or project"
+                placeholder="Port or folder"
                 value={model.query}
                 onChange={model.setQuery}
                 className="w-56"
               />
             ) : null
           }
-          primary={isReady ? <PinPortPopover variant="primary" /> : null}
+          button={isReady && !isEmpty ? <PinPortPopover /> : null}
         />
       }
     >
@@ -59,13 +74,25 @@ export const MonitoringPage = () => {
         {model.status === 'loading' ? <MonitoringSkeleton /> : null}
         {model.status === 'failed' ? <ReadFailedNotice tone="danger" detail={model.error} /> : null}
         {model.status === 'unsupported' ? (
-          <EmptyState icon={Activity} title="Monitoring needs macOS or Linux." />
+          <EmptyState
+            icon={CONCEPT_ICONS.monitoring}
+            tone={CONCEPT_TONE.monitoring}
+            title="Monitoring needs macOS or Linux."
+          />
         ) : null}
         {isReady && model.error !== null ? (
           <ReadFailedNotice tone="warning" detail={model.error} />
         ) : null}
         {isEmpty ? (
-          <EmptyState icon={Activity} title="Goodboy found no ports in your projects" />
+          <EmptyState
+            icon={CONCEPT_ICONS.monitoring}
+            tone={CONCEPT_TONE.monitoring}
+            title="No ports in use"
+            description="Ports opened by agents, terminals and scripts appear here, with their process."
+            action={<PinPortPopover align="start" />}
+            size="page"
+            headingLevel={2}
+          />
         ) : null}
         {isReady && !isEmpty ? <ColumnHeader /> : null}
         {isReady && model.pinned.length > 0 ? (

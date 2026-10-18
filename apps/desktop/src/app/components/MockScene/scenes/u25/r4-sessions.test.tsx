@@ -94,32 +94,32 @@ describe('the r4 sessions scenes', () => {
     expect(screen.getAllByRole('button', { name: 'Filter sessions' })).toHaveLength(1);
   });
 
-  it('r4-sidebar-filter opens a menu whose rows start on the label, the check last', async () => {
+  it('r4-sidebar-filter opens Sort and Group as two value rows, then the filter checkboxes', async () => {
     await mount('r4-sidebar-filter');
 
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
-    const choices = [
-      ...within(dialog).getAllByRole('checkbox'),
-      ...within(dialog).getAllByRole('radio'),
-    ];
-    expect(choices.length).toBeGreaterThan(4);
-    for (const choice of choices) {
-      expect(choice.firstElementChild?.querySelector('svg')).toBeNull();
-      expect(choice.firstElementChild?.hasAttribute('data-filter-check')).toBe(false);
-      expect(choice.lastElementChild?.hasAttribute('data-filter-check')).toBe(true);
+    const display = within(within(dialog).getByRole('group', { name: 'Display' }));
+    expect(display.getByRole('combobox', { name: 'Sort' }).textContent).toContain(
+      'Needs you first',
+    );
+    expect(display.getByRole('combobox', { name: 'Group' })).toBeDefined();
+    const filter = within(dialog).getByRole('group', { name: 'Filter' });
+    for (const box of within(filter).getAllByRole('checkbox')) {
+      expect(box.getAttribute('aria-label')).toMatch(/, \d+$/);
+      expect(box.getAttribute('aria-label')).not.toMatch(/, 0$/);
     }
-    const sort = within(dialog).getByRole('radio', { name: 'Needs you first' });
-    expect(sort.getAttribute('aria-checked')).toBe('true');
-    expect(sort.lastElementChild?.querySelector('svg')).not.toBeNull();
+    expect(within(dialog).queryAllByRole('radio')).toHaveLength(0);
   });
 
   it('r4-sidebar-filter keeps its popover open while the list regroups under it', async () => {
     await mount('r4-sidebar-filter');
 
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
-    fireEvent.click(within(dialog).getByRole('radio', { name: 'Stage' }));
+    fireEvent.click(within(dialog).getByRole('combobox', { name: 'Group' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Stage' }));
     await settle();
-    fireEvent.click(within(dialog).getByRole('radio', { name: 'Project' }));
+    fireEvent.click(within(dialog).getByRole('combobox', { name: 'Group' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Folder' }));
     await settle();
 
     expect(screen.getByRole('dialog', { name: 'Filter sessions' })).toBe(dialog);

@@ -1,54 +1,48 @@
-import { useAppStore } from '../../../../store';
-import { useRunningAgentCount } from '../../hooks/useRunningAgentCount';
-import { UpdateConfirm } from '../UpdateConfirm';
-import { QueuedRestartPopover } from './QueuedRestartPopover';
+import { useRef } from 'react';
+import { Tooltip } from '@goodboy/ui';
+import { openChangelogStudio } from '../../../changelog/changelogStudioEvent';
+import { useUpdateCardState } from '../../hooks/useUpdateCardState';
+import { updatePillLabel } from '../../updateCardCopy';
+import { toggleUpdateCard } from '../../updateCardRequest';
+import { UpdateArrivalCard } from '../UpdateArrivalCard';
 import { UpdatePillVisual } from './UpdatePillVisual';
 
 type Props = {
+  readonly hasCard?: boolean;
+  readonly tooltipSide?: 'top' | 'bottom';
   readonly onOpenChangelog?: () => void;
 };
 
-export const UpdatePill = ({ onOpenChangelog }: Props) => {
-  const status = useAppStore((state) => state.updaterStatus);
-  const version = useAppStore((state) => state.updateVersion);
-  const isQueued = useAppStore((state) => state.updateQueuedUntilIdle);
-  const setUpdateQueuedUntilIdle = useAppStore((state) => state.setUpdateQueuedUntilIdle);
-  const runningCount = useRunningAgentCount();
-  const isReady = status === 'ready';
-  const isAvailable = status === 'available';
-  const isActive = isReady || isAvailable;
+export const UpdatePill = ({
+  hasCard = false,
+  tooltipSide = 'bottom',
+  onOpenChangelog = openChangelogStudio,
+}: Props) => {
+  const { state, version, runningCount } = useUpdateCardState();
+  const anchorRef = useRef<HTMLSpanElement>(null);
 
-  if (!isActive && !isQueued) {
+  if (state === null) {
     return null;
   }
 
-  const visual = (
-    <UpdatePillVisual
-      isQueued={isQueued}
-      isReady={isReady}
-      version={version}
-      agentCount={runningCount}
-    />
-  );
-
-  if (isQueued) {
-    return (
-      <QueuedRestartPopover
-        trigger={visual}
-        agentCount={runningCount}
-        onCancel={() => setUpdateQueuedUntilIdle({ queued: false })}
-      />
-    );
-  }
+  const label = updatePillLabel({ state, version, runningCount });
 
   return (
-    <UpdateConfirm
-      onOpenChangelog={onOpenChangelog}
-      trigger={({ arm }) => (
-        <button type="button" onClick={arm} className="rounded-full">
-          {visual}
+    <span ref={anchorRef} className="flex min-w-0 max-w-full">
+      <Tooltip content={label} side={tooltipSide}>
+        <button
+          type="button"
+          data-update-pill=""
+          aria-label={label}
+          onClick={toggleUpdateCard}
+          className="flex min-w-0 max-w-full rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        >
+          <UpdatePillVisual state={state} version={version} />
         </button>
-      )}
-    />
+      </Tooltip>
+      {hasCard ? (
+        <UpdateArrivalCard anchorRef={anchorRef} onOpenChangelog={onOpenChangelog} />
+      ) : null}
+    </span>
   );
 };

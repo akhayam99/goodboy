@@ -120,7 +120,15 @@ export type HistoryRun = {
     readonly files: ReadonlyArray<string>;
   };
   readonly carriedCount?: number;
+  readonly rebaseConflict?: RebaseConflict;
   readonly updatedAt: number;
+};
+
+type RebaseConflict = {
+  readonly ontoRef: string;
+  readonly baseBranch: string;
+  readonly head: string;
+  readonly autoAgentId: AgentId | null;
 };
 
 export type HistoryAppliedLine = {
@@ -194,7 +202,7 @@ export type RebaseBranchInput = HistoryMountInput & {
   readonly ontoBranch?: string;
 };
 
-export type RebaseBranchOutcome = 'rebased' | 'rewriting' | 'stopped' | 'busy';
+export type RebaseBranchOutcome = 'rebased' | 'conflict' | 'stopped' | 'busy';
 
 export type ApplyHistoryRewriteInput = HistoryMountInput & {
   readonly shouldStash?: boolean;

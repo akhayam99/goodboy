@@ -29,18 +29,13 @@ type Allowance = {
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx': {
-    count: 2,
+    count: 1,
     reason: 'chrome',
   },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx': {
     count: 1,
     reason: 'chrome',
-  },
-  'apps/desktop/src/features/budget/components/spend/CapEditor.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/companion/components/CompanionStudio/index.tsx': {
-    count: 1,
-    reason: 'debt',
   },
   'packages/ui/src/components/Listbox/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/palette/components/CommandsMode/CommandsBody.tsx': {
@@ -59,10 +54,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/features/integrations/jira/TransitionMenu.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/notifications/components/NotificationCenter/index.tsx': {
     count: 2,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/onboarding/OnboardingWizard/steps/ProviderCard.tsx': {
-    count: 1,
     reason: 'debt',
   },
   'apps/desktop/src/features/providers/components/ProviderConnect/ConnectDetails.tsx': {

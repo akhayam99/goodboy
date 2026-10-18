@@ -21,13 +21,13 @@ export const MoveReport = ({ sessionId }: Props) => {
   }
   const notes: ReadonlyArray<string> = [
     report.kept.length > 0
-      ? `Left in the project folder because they changed again: ${report.kept.join(', ')}`
+      ? `Left in the folder because they changed again: ${report.kept.join(', ')}`
       : null,
     report.largeFiles.length > 0
       ? `GitHub refuses files over 100 MB when you publish this session: ${report.largeFiles.join(', ')}`
       : null,
     report.ignoredAtRisk.length > 0
-      ? `Ignored files stay in the project folder: ${report.ignoredAtRisk.join(', ')}`
+      ? `Ignored files stay in the folder: ${report.ignoredAtRisk.join(', ')}`
       : null,
     report.aligned?.kind === 'skipped' && report.aligned.reason === 'histories-differ'
       ? 'Your local main was left as it is because it differs from the remote main.'
@@ -41,7 +41,7 @@ export const MoveReport = ({ sessionId }: Props) => {
       className="bg-transparent"
       role="status"
       title={`Moved ${report.movedCount} ${plural(report.movedCount)} into this session`}
-      body="The project folder is clean on main. Everything from now on starts from the published main."
+      body="The folder is clean on main. Everything from now on starts from the published main."
       actions={
         <Button size="sm" variant="ghost" onClick={() => dismiss({ projectId: report.projectId })}>
           Dismiss

@@ -1,4 +1,4 @@
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
 
 type SettingsRow = {
   key: string;
@@ -11,12 +11,20 @@ export const getSetting = async (db: Database, key: string): Promise<string | nu
   return rows[0]?.value ?? null;
 };
 
-export const setSetting = async (db: Database, key: string, value: string): Promise<void> => {
-  await db.execute(
-    `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)
+export type SettingWrite = {
+  readonly key: string;
+  readonly value: string;
+};
+
+export const setSettingStatement = ({ key, value }: SettingWrite): PlainStatement => ({
+  sql: `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
-    [key, value, Date.now()],
-  );
+  params: [key, value, Date.now()],
+});
+
+export const setSetting = async (db: Database, key: string, value: string): Promise<void> => {
+  const statement = setSettingStatement({ key, value });
+  await db.execute(statement.sql, statement.params);
 };
 
 type ReplaceParams = {

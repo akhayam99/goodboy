@@ -104,7 +104,7 @@ describe('the four layers', () => {
 
     expect(within(pinned).getByText('Payments web')).toBeDefined();
     expect(within(pinned).getByText('Mock API')).toBeDefined();
-    expect(within(pinned).getByRole('img', { name: 'Free' })).toBeDefined();
+    expect(within(pinned).getByText('Free')).toBeDefined();
   });
 
   it('puts what Goodboy ran, learned ports and agent processes in Run by Goodboy', async () => {
@@ -372,7 +372,7 @@ describe('the row menu of a pinned port', () => {
 });
 
 describe('Listening on this Mac', () => {
-  it('opens a menu per row that holds exactly Pin and Hide', async () => {
+  it('opens a menu per row with the port verbs, Pin and Hide among them', async () => {
     await ready({ name: 'ports-listening' });
     await waitFor(
       () =>
@@ -390,7 +390,7 @@ describe('Listening on this Mac', () => {
         within(menu)
           .getAllByRole('menuitem')
           .map((item) => item.textContent),
-      ).toEqual(['Pin', 'Hide']);
+      ).toEqual(['Open in browser', 'Pin', 'Stop', 'Force stop', 'Hide', 'Copy address']);
       fireEvent.keyDown(menu, { key: 'Escape' });
     }
   });

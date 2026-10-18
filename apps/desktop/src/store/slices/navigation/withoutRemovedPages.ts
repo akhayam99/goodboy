@@ -1,5 +1,7 @@
 import type { SessionId } from '@goodboy/types';
+import { IPHONE_SETTINGS_PLACE } from '../../../features/settings/iphoneSettingsPlace';
 import type { OpenDrawer } from '../drawer/state';
+import type { StudioPlace } from './studio';
 import type { Location } from './types';
 
 type Params = {
@@ -11,7 +13,15 @@ type PaneParams = {
   readonly sessionId: SessionId;
 };
 
+type StudioParams = {
+  readonly studio: StudioPlace | null;
+};
+
 const REMOVED_LENSES: ReadonlySet<string> = new Set(['terminal', 'explore', 'scripts']);
+
+const REMOVED_STUDIOS: ReadonlyMap<string, StudioPlace> = new Map<string, StudioPlace>([
+  ['companion', IPHONE_SETTINGS_PLACE],
+]);
 
 const paneOfLens = ({ lens, sessionId }: PaneParams): OpenDrawer | null => {
   if (lens === 'explore') {
@@ -23,7 +33,19 @@ const paneOfLens = ({ lens, sessionId }: PaneParams): OpenDrawer | null => {
   return null;
 };
 
-export const withoutRemovedPages = ({ location }: Params): Location => {
+const studioStillThere = ({ studio }: StudioParams): StudioPlace | null => {
+  if (studio === null) {
+    return null;
+  }
+  return REMOVED_STUDIOS.get(String(studio.kind)) ?? studio;
+};
+
+const withoutRemovedStudio = ({ location }: Params): Location => {
+  const studio = studioStillThere({ studio: location.studio });
+  return studio === location.studio ? location : { ...location, studio };
+};
+
+const withoutRemovedLens = ({ location }: Params): Location => {
   const { place } = location;
   if (place.at !== 'session') {
     return location;
@@ -49,3 +71,6 @@ export const withoutRemovedPages = ({ location }: Params): Location => {
     focus: { ...location.focus, drawer: location.focus.drawer ?? pane },
   };
 };
+
+export const withoutRemovedPages = ({ location }: Params): Location =>
+  withoutRemovedLens({ location: withoutRemovedStudio({ location }) });

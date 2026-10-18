@@ -120,7 +120,7 @@ export const PublishPanel = ({
       className="flex flex-col gap-4 rounded-lg border border-border-soft bg-subtle p-4"
     >
       <h3 id={headingId} className="text-heading text-foreground">
-        Publish this project
+        Publish this folder
       </h3>
       <SegmentedTabs
         size="sm"

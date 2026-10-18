@@ -36,10 +36,10 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Add storefront-web so Scout can use it in this session. It adds a third project to this session.',
+        'Add storefront-web so Scout can use it in this session. It adds a third folder to this session.',
       ),
     ).toBeTruthy();
-    expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Add project');
+    expect(screen.getByTestId('mount-suggestion-mount').textContent).toBe('Add folder');
     expect(screen.queryByTestId('mount-suggestion-dismiss')).toBeNull();
   });
 
@@ -48,7 +48,7 @@ describe('MountSuggestionCard', () => {
 
     expect(
       screen.getByText(
-        'Add storefront-web so Scout can use it in this session. This request has already added two projects.',
+        'Add storefront-web so Scout can use it in this session. This request has already added two folders.',
       ),
     ).toBeTruthy();
   });
@@ -56,7 +56,7 @@ describe('MountSuggestionCard', () => {
   it('keeps the reason and the dismissal behind the disclosure', () => {
     const { onDismiss } = renderCard();
 
-    fireEvent.click(screen.getByLabelText('Project suggestion details for storefront-web'));
+    fireEvent.click(screen.getByLabelText('Folder suggestion details for storefront-web'));
 
     expect(screen.getByText('Reason')).toBeTruthy();
     expect(screen.getByText('reading the router')).toBeTruthy();

@@ -201,7 +201,7 @@ on disk for the user to retry. Recovery never deletes a directory.
 
 A mount can also go `unavailable` because its project's whole folder moved,
 not because the mount itself was touched. That is not a recovery case: the
-fix is `Locate moved projects` (`features/workspace/components/
+fix is `Locate moved folders` (`features/workspace/components/
 LocateMovedProjects/`), which rewrites the project's and its mounts' paths
 and repairs git's worktree links; see
 [architecture.md](architecture.md#moving-a-projects-folder). Once the
@@ -490,8 +490,8 @@ action the user can see, or allows one on a mount the user sees as gone.
 
 ## Worktree rows and the Overview notices
 
-The Overview has no Projects section. A worktree is a one line row of the
-session level in the session rail (`WorktreeRow` in the Projects card: branch,
+The Overview has no Folders section. A worktree is a one line row of the
+session level in the session rail (`WorktreeRow` in the Folders card: branch,
 pull request number, the worst state as one dot, then its main pages one indent
 in: Pull request, Comments, Files with the diff stat, Checks) and drills into
 its worktree level, whose identity row
