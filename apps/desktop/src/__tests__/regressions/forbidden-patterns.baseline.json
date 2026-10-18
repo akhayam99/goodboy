@@ -384,7 +384,6 @@
   },
   "raw-leading": {
     "apps/desktop/src/app/components/BootSplash/NewerDatabaseScreen.tsx": 2,
-    "apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactBasedOnField.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactContextDisclosure.tsx": 1,
     "apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactContextRow.tsx": 2,

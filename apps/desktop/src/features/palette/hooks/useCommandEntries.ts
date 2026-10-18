@@ -39,7 +39,7 @@ import { getWizardState, resumeSetup } from '../../onboarding/onboarding-store';
 import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
 import { settingsPaletteEntries } from '../../settings/settingsPaletteEntries';
 import { guidePaletteEntries } from '../../settings/guidePaletteEntries';
-import { checkForUpdatesNow } from '../checkForUpdatesNow';
+import { checkForUpdatesNow } from '../../updater/checkForUpdatesNow';
 import type { SettingsFocus } from '../../settings/settingsFocus';
 import { useToast } from '../../../shared/components/Toast';
 import { agentEntries } from '../sources/agentEntries';

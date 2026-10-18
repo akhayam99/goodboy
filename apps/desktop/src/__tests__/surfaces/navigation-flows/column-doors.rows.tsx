@@ -9,6 +9,7 @@ import {
   both,
   click,
   clickButton,
+  clickMenuItem,
   heading,
   openPalette,
   settingsColumn,
@@ -268,7 +269,7 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await clickButton(/^Goodboy: setup/);
-      await clickButton(/^What's new/);
+      await clickMenuItem(/^What's new/);
     },
     lands: () => heading(/^Goodboy \d/),
   },
@@ -278,17 +279,17 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     door: 'visible',
     open: async () => {
       await clickButton(/^Goodboy: setup/);
-      await clickButton(/^Guide/);
+      await clickMenuItem(/^Guide/);
     },
     lands: () => studio('Guide'),
   },
   {
-    name: 'column: goodboy chip to pair your iPhone',
+    name: 'column: goodboy chip to pair an iPhone',
     covers: ['studio:settings', 'scope:app', 'settings:iphone'],
     door: 'visible',
     open: async () => {
       await clickButton(/^Goodboy: setup/);
-      await clickButton(/^Pair your iPhone/);
+      await clickMenuItem(/^Pair an iPhone/);
     },
     lands: both(
       () => settingsColumn(),

@@ -3,6 +3,7 @@ import { selectChatDoor } from '../../../store/slices/chat-last-open/selectChatD
 import { NAMES } from '../../../shared/names';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../../features/notifications/studioEvent';
 import { openImpactStudio } from '../../../features/impact/openImpactStudio';
+import { checkForUpdatesNow } from '../../../features/updater/checkForUpdatesNow';
 import { openChangelogStudio } from '../../../features/changelog/changelogStudioEvent';
 import { openSessionTerminalHere } from '../../../features/terminal/openSessionTerminalHere';
 import { openWorkspaceTerminal } from '../../../features/terminal/openWorkspaceTerminal';
@@ -20,8 +21,6 @@ type FireParams = {
 type GuardParams = {
   readonly run: () => void;
 };
-
-const CHECKABLE_STATUSES: ReadonlySet<string> = new Set(['idle', 'uptodate', 'error']);
 
 const fire = ({ name, detail }: FireParams): void => {
   window.dispatchEvent(
@@ -42,15 +41,6 @@ const openNotifications = (): void => {
   window.dispatchEvent(new CustomEvent(NOTIFICATIONS_STUDIO_EVENT, { detail: { door: true } }));
 };
 
-const checkForUpdates = (): void => {
-  fire({ name: 'goodboy:open-settings', detail: { scope: 'app', section: 'updates', door: true } });
-  const state = useAppStore.getState();
-  if (!CHECKABLE_STATUSES.has(state.updaterStatus)) {
-    return;
-  }
-  void state.checkForUpdates();
-};
-
 const openNewTerminal = (): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId;
@@ -66,7 +56,7 @@ const openNewTerminal = (): void => {
 };
 
 export const MENU_ACTIONS = {
-  'menu.checkForUpdates': { label: 'Check for updates', run: checkForUpdates },
+  'menu.checkForUpdates': { label: 'Check for updates', run: checkForUpdatesNow },
   'menu.newTerminal': { label: 'New terminal', run: openNewTerminal },
   'menu.newWorkspace': {
     label: 'New workspace',

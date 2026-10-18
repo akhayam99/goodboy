@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { AnchoredPopover, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import { useUpdateCardState } from '../../../features/updater/hooks/useUpdateCardState';
+import { updatePillLabel } from '../../../features/updater/updateCardCopy';
+import { toggleUpdateCard } from '../../../features/updater/updateCardRequest';
 import { UpdatePill } from '../../../features/updater/components/UpdatePill';
 import { collapse, hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
 import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
@@ -12,10 +14,10 @@ import { openUrl } from '../../../shared/lib/editor';
 import { SOCIAL_LINKS, SPONSOR_URL } from '../../../shared/lib/productLinks';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyChipEffects } from './GoodboyChipEffects';
+import { GoodboyMenu } from './GoodboyMenu';
 
 const OPEN_GOODBOY_MENU_EVENT = 'goodboy:open-goodboy-menu';
 const OPEN_PAIR_DEVICE_EVENT = 'goodboy:open-pair-device';
-import { GoodboyMenu } from './GoodboyMenu';
 
 type GoodboyChipVariant = 'column' | 'rail';
 
@@ -73,6 +75,17 @@ export const GoodboyChip = ({
     !progress.isCollapsed;
   const isInMainWindow = useIsMainWindow();
   const hasRowPill = variant === 'column' && hasUpdate;
+  const railUpdate =
+    variant === 'rail' && update.state !== null
+      ? {
+          label: updatePillLabel({
+            state: update.state,
+            version: update.version,
+            runningCount: update.runningCount,
+          }),
+          onOpen: toggleUpdateCard,
+        }
+      : null;
 
   useEffect(() => {
     if (!isPrimary || isInMainWindow) {
@@ -166,6 +179,8 @@ export const GoodboyChip = ({
           progress={progress}
           isMainWindow={isInMainWindow}
           hasDraft={hasDraft}
+          railUpdate={railUpdate}
+          onClose={close}
           onLeave={close}
           onReport={leaveFor({ action: () => openReportSheet() })}
           onOpenGuide={leaveFor({ action: onOpenGuide })}

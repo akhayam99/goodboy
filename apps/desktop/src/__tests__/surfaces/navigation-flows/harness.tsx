@@ -313,6 +313,10 @@ export const clickButton = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('button', { name }));
 };
 
+export const clickMenuItem = async (name: RegExp | string): Promise<void> => {
+  await click(await screen.findByRole('menuitem', { name }));
+};
+
 const leaveWorktreeLevel = async (): Promise<void> => {
   const back = document.querySelector<HTMLElement>(
     '[data-level-layer="worktree"]:not([inert]) [data-level-back] button',

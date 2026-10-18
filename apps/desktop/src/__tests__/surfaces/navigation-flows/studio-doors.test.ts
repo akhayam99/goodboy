@@ -49,7 +49,7 @@ describe('every studio has a door you can see', () => {
       'column: goodboy chip to the guide',
     );
     expect(visibleRowsOf('settings').map((row) => row.name)).toContain(
-      'column: goodboy chip to pair your iPhone',
+      'column: goodboy chip to pair an iPhone',
     );
   });
 });

@@ -190,19 +190,30 @@ describe('GoodboyChip', () => {
 
     const header = menu.querySelector('header');
     expect(header?.querySelector('[data-brand-chip]')?.textContent).toBe('Goodboy');
-    expect(header?.textContent).toBe(`GoodboyBetav${APP_VERSION}`);
+    expect(header?.textContent).toBe(`Goodboy${APP_VERSION} · Beta`);
     expect(within(menu).getByRole('region', { name: 'Setup' })).toBeDefined();
     [
       'Report a bug',
       'Guide',
       "What's new",
       'Keyboard shortcuts',
-      'Pair your iPhone',
+      'Pair an iPhone',
       'Sponsor on GitHub',
+      'Follow on X',
     ].forEach((row) => {
-      expect(within(menu).getByText(row)).toBeDefined();
+      expect(within(menu).getByRole('menuitem', { name: new RegExp(row) })).toBeDefined();
     });
+    expect(menu.textContent).not.toContain('Releases land often');
     expect(within(menu).queryByRole('button', { name: 'Restart to update' })).toBeNull();
+  });
+
+  it("opens what's new from the version in the header", () => {
+    const { onOpenChangelog } = renderChip();
+
+    fireEvent.click(within(openMenu()).getByRole('button', { name: "Open What's new" }));
+
+    expect(onOpenChangelog).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 
   it('hides setup from the popover', () => {
@@ -272,10 +283,19 @@ describe('GoodboyChip', () => {
 
     const menu = openMenu();
     const labels = within(menu)
-      .getAllByRole('button')
-      .map((button) => button.textContent ?? '');
-    expect(labels.indexOf('Guide')).toBeGreaterThan(-1);
-    expect(labels.indexOf('Guide')).toBeLessThan(labels.indexOf("What's new"));
+      .getAllByRole('menuitem')
+      .map((row) => row.getAttribute('data-menu-label'));
+    expect(labels).toEqual([
+      'Guide',
+      "What's new",
+      'Keyboard shortcuts',
+      'Report a bug',
+      'Pair an iPhone',
+      'Sponsor on GitHub',
+      'Follow on X',
+    ]);
+    expect(within(menu).getByText('Help')).toBeDefined();
+    expect(menu.querySelectorAll('[role="presentation"]')).toHaveLength(2);
 
     fireEvent.click(within(menu).getByText('Guide'));
 
@@ -283,12 +303,12 @@ describe('GoodboyChip', () => {
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 
-  it('asks the app to open the pairing studio from Pair your iPhone', () => {
+  it('asks the app to open Settings, iPhone from Pair an iPhone', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:open-pair-device', listener);
     renderChip();
 
-    fireEvent.click(within(openMenu()).getByText('Pair your iPhone'));
+    fireEvent.click(within(openMenu()).getByText('Pair an iPhone'));
 
     expect(listener).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
@@ -313,7 +333,7 @@ describe('GoodboyChip', () => {
     expect(SOCIAL_LINKS.x).toBe('https://x.com/GoodboyWorks');
   });
 
-  it('leads the help rows with report a bug, says a draft is saved, and hands off to the report sheet', () => {
+  it('ends the help rows with report a bug, says a draft is saved, and hands off to the report sheet', () => {
     mocks.hasDraft = true;
     mocks.progress.isFinished = true;
     const listener = vi.fn();
@@ -321,9 +341,9 @@ describe('GoodboyChip', () => {
     renderChip();
 
     const menu = openMenu();
-    expect(within(menu).getByText('Draft saved')).toBeDefined();
-    const rows = within(menu).getAllByRole('button');
-    expect(rows[0]?.textContent).toContain('Report a bug');
+    expect(within(menu).getByText(/^Draft saved/)).toBeDefined();
+    const helpRows = within(menu).getAllByRole('menuitem');
+    expect(helpRows[3]?.textContent).toContain('Report a bug');
     fireEvent.click(within(menu).getByText('Report a bug'));
 
     expect(listener).toHaveBeenCalledOnce();
@@ -397,6 +417,24 @@ describe('GoodboyChip in the column and on the rail', () => {
     expect(chip.textContent).toBe('');
     fireEvent.click(chip);
     expect(screen.getByRole('dialog', { name: 'Goodboy' })).toBeDefined();
+  });
+
+  it('opens the update card from a menu row on the rail, where no pill fits', () => {
+    useAppStore.setState({ updaterStatus: 'available' });
+    render(
+      <GoodboyChip
+        variant="rail"
+        onOpenChangelog={vi.fn()}
+        onOpenGuide={vi.fn()}
+        onOpenShortcuts={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('goodboy-chip'));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Goodboy 0.5.2 is available' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Goodboy 0.5.2 is available' })).toBeDefined();
   });
 
   it('opens itself only from the primary chip, so a peeked column never opens a second menu', async () => {

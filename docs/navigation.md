@@ -240,7 +240,8 @@ drawer instead of the Terminal page.
      `openGuideChapter`, also while the Guide is open) are typed only. Pair an
      iPhone answers to Pair your iPhone and the other former names of the page.
      Check for updates opens Settings > General and runs the updater check only
-     in a status the menu item also checks (`checkForUpdatesNow`).
+     in a status the menu item also checks. Palette and menu bar share one
+     function, `checkForUpdatesNow` in `features/updater`.
      The overlay is a compact window: 640px wide (search 720px), a 48px input row,
      28px rows, a list capped at 320px that scrolls, a 320px minimum height
      (`PALETTE_MIN_HEIGHT_PX`), and a key chip with a minimum width so a glyph
@@ -1858,11 +1859,16 @@ every column width: when the lockup and the pill have under 168px, the lockup
 drops to the dog mark (a container query on the row), and only a version too
 long for the row truncates.
 `validate-scenes.mjs --only update-pill` pins this at 200, 240 and 400px. The
-pill opens the update card; the menu holds no update. The popover leads with
-Report a bug (with ⌘I, and Draft saved when a draft waits), then the version and
-release notes, the setup checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
-your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
-iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
+pill opens the update card; the column menu holds no update. On the rail, which
+has no room for a pill, the menu's first row is the same pill label and opens
+the same card (`railUpdate` in `GoodboyChip/index.tsx`). The popover header is the
+lockup and "<version> · Beta", and the version opens What's new. Below it sit the
+setup checklist while setup is unfinished, then two labelled groups on the shared
+`MenuList` rows of `@goodboy/ui`: **Help** (Guide, What's new, Keyboard shortcuts
+with ⌘/, Report a bug last with ⌘I, and Draft saved when a draft waits) and
+**Goodboy** (`NAMES.pairIphone`, Sponsor on GitHub and Follow on X, the last two
+with the external mark). There is no paragraph under the groups. Guide opens the
+guide studio and Pair an iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
 `{ scope: 'app', section: 'iphone' }`), so neither waits behind the palette. Every
 studio keeps a door you can see: the flow table in
 `__tests__/surfaces/navigation-flows` gives each row that reaches a studio a
