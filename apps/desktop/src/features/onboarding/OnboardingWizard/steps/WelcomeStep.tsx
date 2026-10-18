@@ -4,9 +4,8 @@ import { BrandTile } from '../../../../shared/components/BrandTile';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { useAgentRows } from '../useAgentRows';
 import { useSplashAnchor } from '../useSplashAnchor';
+import { SPLASH_TILE_PX } from '../useSplashAnchor/splashShift';
 import { DetectionLine } from './DetectionLine';
-
-const WELCOME_TILE_PX = 84;
 
 type Props = {
   readonly isLocked: boolean;
@@ -36,15 +35,12 @@ export const WelcomeStep = ({ isLocked, onStart }: Props) => {
       className="welcome-entrance flex flex-col items-center gap-6 text-center"
     >
       <div ref={markRef} className="welcome-tile relative">
-        <BrandTile size={WELCOME_TILE_PX} />
+        <BrandTile size={SPLASH_TILE_PX} />
         <div
           aria-hidden
-          className="welcome-splash-word pointer-events-none absolute top-[90px] left-1/2 flex -translate-x-1/2 flex-col items-center gap-0.5 whitespace-nowrap"
+          className="welcome-splash-word pointer-events-none absolute top-25 left-1/2 -translate-x-1/2 whitespace-nowrap"
         >
-          <span className="text-title text-foreground">Goodboy</span>
-          <span className="text-label text-faint-foreground">
-            workspace orchestrator for coding agents
-          </span>
+          <span className="text-display text-foreground">Goodboy</span>
         </div>
       </div>
       <div className="flex flex-col items-center gap-2">

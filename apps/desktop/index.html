@@ -6,50 +6,54 @@
     <title>Goodboy</title>
     <style>
       html {
-        background: oklch(0.25 0.006 255);
+        --shell-chrome: oklch(0.17 0.006 255);
+        --shell-primary: oklch(0.74 0.13 210);
+        --shell-backdrop: radial-gradient(
+          ellipse 70% 90% at 0% 0%,
+          color-mix(in oklab, var(--shell-primary) 6%, transparent),
+          transparent
+        );
+        background-color: var(--shell-chrome);
+        background-image: var(--shell-backdrop);
         color-scheme: dark;
       }
       html[data-theme='light'] {
-        background: oklch(0.915 0.006 250);
+        --shell-chrome: oklch(0.952 0.005 250);
+        --shell-primary: oklch(0.455 0.14 210);
+        --shell-backdrop: radial-gradient(
+          ellipse 70% 90% at 0% 0%,
+          color-mix(in oklab, var(--shell-primary) 15%, transparent),
+          transparent
+        );
         color-scheme: light;
       }
       #boot-shell {
-        align-items: center;
-        color: #e6e8ec;
-        display: flex;
-        flex-direction: column;
-        font-family: system-ui, sans-serif;
-        gap: 0.5rem;
+        background-color: var(--shell-chrome);
+        background-image: var(--shell-backdrop);
         inset: 0;
-        justify-content: center;
         pointer-events: none;
         position: fixed;
       }
-      #boot-shell strong {
-        font-size: 1.125rem;
+      #boot-shell i {
+        background-color: #0b0b0d;
+        border-radius: 23.52px;
+        height: 84px;
+        left: 50%;
+        margin-left: -42px;
+        position: absolute;
+        top: calc(50% - 95px);
+        width: 84px;
       }
-      #boot-shell span {
-        font-size: 0.75rem;
-      }
-      #boot-shell small {
-        color: #92969e;
-        font-size: 0.625rem;
-      }
-      html[data-theme='light'] #boot-shell {
-        color: #303238;
-      }
-      html[data-theme='light'] #boot-shell small {
-        color: #666a72;
-      }
-      @media (prefers-reduced-motion: no-preference) {
-        #boot-shell small {
-          animation: boot-shell-pulse 2s ease-in-out infinite;
-        }
-      }
-      @keyframes boot-shell-pulse {
-        50% {
-          opacity: 0.45;
-        }
+      #boot-shell i::after {
+        background-color: #fff;
+        content: '';
+        height: 63.84px;
+        left: 10.08px;
+        position: absolute;
+        top: 10.08px;
+        width: 63.84px;
+        -webkit-mask: url(../../packages/ui/src/assets/mascot.png) center / contain no-repeat;
+        mask: url(../../packages/ui/src/assets/mascot.png) center / contain no-repeat;
       }
     </style>
     <script>
@@ -71,11 +75,7 @@
     </script>
   </head>
   <body class="bg-background text-foreground antialiased">
-    <div id="boot-shell">
-      <strong>Goodboy</strong>
-      <span>workspace orchestrator for coding agents</span>
-      <small>starting up</small>
-    </div>
+    <div id="boot-shell"><i></i></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

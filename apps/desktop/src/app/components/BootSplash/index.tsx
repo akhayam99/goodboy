@@ -6,20 +6,13 @@ import { BootBrand } from './BootBrand';
 import { BootErrorRecovery } from './BootErrorRecovery';
 import { NewerDatabaseScreen } from './NewerDatabaseScreen';
 import { BootSlowNotice } from './BootSlowNotice';
+import { BootStage } from './BootStage';
+import { prefersReducedMotion } from './prefersReducedMotion';
 import { useElapsedSincePhase } from './useElapsedSincePhase';
+import { useRevealWindow } from './useRevealWindow';
 
 const BOOT_SLOW_AFTER_MS = 10_000;
-
-const BOOT_PHASE_LABEL: Record<BootPhase, string> = {
-  pending: 'starting up',
-  migrating: 'updating your library',
-  'loading-settings': 'loading settings',
-  'detecting-cli': 'detecting agents',
-  'loading-workspaces': 'loading workspaces',
-  'restoring-session': 'restoring your session',
-  ready: 'ready',
-  error: 'something went wrong',
-};
+const BAR_FILL_MS = 200;
 
 type BootSplashProps = {
   phase: BootPhase;
@@ -47,18 +40,24 @@ export const BootSplash = ({
   const elapsedMs = useElapsedSincePhase({ phase });
   const isSlow = phase !== 'error' && phase !== 'ready' && elapsedMs >= BOOT_SLOW_AFTER_MS;
 
+  useRevealWindow();
+
   useEffect(() => {
     document.getElementById('boot-shell')?.remove();
   }, []);
 
   useEffect(() => {
-    if (finishedRef.current || hasError) {
+    if (finishedRef.current || hasError || phase !== 'ready') {
       return;
     }
-    if (phase === 'ready') {
-      finishedRef.current = true;
-      onFinished?.();
-    }
+    const timer = window.setTimeout(
+      () => {
+        finishedRef.current = true;
+        onFinished?.();
+      },
+      prefersReducedMotion() ? 0 : BAR_FILL_MS,
+    );
+    return () => window.clearTimeout(timer);
   }, [phase, hasError, onFinished]);
 
   if (hasError && newerDatabase !== null) {
@@ -74,7 +73,7 @@ export const BootSplash = ({
   if (hasError) {
     const isDatabaseFailure = error === DATABASE_UNAVAILABLE_MESSAGE;
     return (
-      <div className="relative flex h-screen flex-col items-center justify-center gap-8 bg-background text-foreground">
+      <div className="relative flex h-screen flex-col items-center justify-center gap-8 bg-backdrop-cover text-foreground">
         <BootBrand />
         <BootErrorRecovery
           error={error}
@@ -87,17 +86,13 @@ export const BootSplash = ({
 
   return (
     <div
-      className="relative flex h-screen flex-col items-center justify-center gap-8 bg-background text-foreground"
+      className="relative h-screen bg-backdrop-cover text-foreground"
       role="status"
       aria-label="Loading Goodboy"
     >
-      <BootBrand />
-      <div className="flex flex-col items-center gap-3">
-        <span className="text-label text-muted-foreground motion-safe:animate-soft-pulse">
-          {BOOT_PHASE_LABEL[phase]}
-        </span>
+      <BootStage phase={phase}>
         {isSlow ? <BootSlowNotice elapsedMs={elapsedMs} onRetry={onRetry} /> : null}
-      </div>
+      </BootStage>
     </div>
   );
 };

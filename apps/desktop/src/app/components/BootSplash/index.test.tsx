@@ -9,6 +9,11 @@ vi.mock('../../../shared/lib/editor', () => ({
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BootSplash, bootErrorCategory } from './index';
+import {
+  SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX,
+  SPLASH_TILE_PX,
+  splashShift,
+} from '../../../features/onboarding/OnboardingWizard/useSplashAnchor/splashShift';
 import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
 import { openUrl } from '../../../shared/lib/editor';
 
@@ -85,14 +90,154 @@ describe('BootSplash boot handoff', () => {
     expect(document.getElementById('boot-shell')).toBeNull();
   });
 
-  it('renders the bare mascot mark without a circle tile', () => {
+  it('draws the 84px brand tile and the name, with no tagline', () => {
     const { container } = render(<BootSplash phase="restoring-session" error={null} />);
 
-    const mark = container.querySelector('span[aria-hidden]');
-    expect(mark).not.toBeNull();
-    expect(container.querySelector('.rounded-full')).toBeNull();
-    expect(container.querySelector('.bg-subtle')).toBeNull();
+    const tile = container.querySelector<HTMLElement>('[data-brand-tile]');
+    expect(tile?.style.width).toBe('84px');
+    expect(screen.getByText('Goodboy')).toBeDefined();
+    expect(screen.queryByText(/workspace orchestrator/)).toBeNull();
   });
+
+  it('puts the tile where the Welcome tile lands', () => {
+    render(<BootSplash phase="migrating" error={null} />);
+
+    const stack = screen.getByTestId('boot-splash-stack');
+    const tileCenterAbove = SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX;
+    expect(stack.style.top).toBe(`calc(50% - ${tileCenterAbove + SPLASH_TILE_PX / 2}px)`);
+    expect(splashShift({ markCenter: 0, blockBottom: 0, viewportHeight: 900 })).toBe(
+      900 / 2 - tileCenterAbove,
+    );
+  });
+});
+
+const BOOT_PHASES = [
+  'pending',
+  'migrating',
+  'loading-settings',
+  'detecting-cli',
+  'loading-workspaces',
+  'restoring-session',
+  'ready',
+] as const;
+
+describe('BootSplash progress bar', () => {
+  afterEach(cleanup);
+
+  const fillWidth = (): string => screen.getByTestId('boot-progress-fill').style.width;
+
+  it('steps one sixth per real boot phase and never reads the clock', () => {
+    vi.useFakeTimers();
+    const { rerender } = render(<BootSplash phase="pending" error={null} />);
+    expect(fillWidth()).toBe('0%');
+
+    act(() => {
+      vi.advanceTimersByTime(8_000);
+    });
+    expect(fillWidth()).toBe('0%');
+    vi.useRealTimers();
+
+    const widths = BOOT_PHASES.map((phase) => {
+      rerender(<BootSplash phase={phase} error={null} />);
+      return Number.parseFloat(fillWidth());
+    });
+    const steps = widths.slice(1).map((width, index) => width - (widths[index] ?? 0));
+    steps.forEach((step) => expect(step).toBeCloseTo(100 / 6, 6));
+    expect(widths.at(-1)).toBe(100);
+  });
+
+  it('reports the phase word and the progress to assistive tech', () => {
+    render(<BootSplash phase="detecting-cli" error={null} />);
+
+    expect(screen.getByText('detecting agents')).toBeDefined();
+    expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('50');
+  });
+
+  it('animates the fill only when motion is allowed, so reduced motion jumps', () => {
+    render(<BootSplash phase="migrating" error={null} />);
+
+    const classes = screen.getByTestId('boot-progress-fill').className.split(' ');
+    expect(classes).toContain('motion-safe:transition-[width]');
+    expect(classes).not.toContain('transition-[width]');
+    expect(classes.filter((name) => name.startsWith('animate-'))).toEqual([]);
+  });
+});
+
+describe('BootSplash finish', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const stubReducedMotion = ({ isReduced }: { readonly isReduced: boolean }) => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: isReduced })),
+    );
+  };
+
+  it('lets the bar fill before it reports finished', () => {
+    stubReducedMotion({ isReduced: false });
+    const onFinished = vi.fn();
+    render(<BootSplash phase="ready" error={null} onFinished={onFinished} />);
+
+    expect(screen.getByTestId('boot-progress-fill').style.width).toBe('100%');
+    act(() => {
+      vi.advanceTimersByTime(199);
+    });
+    expect(onFinished).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(onFinished).toHaveBeenCalledOnce();
+  });
+
+  it('reports finished once even when the callback identity changes', () => {
+    stubReducedMotion({ isReduced: false });
+    const onFinished = vi.fn();
+    const { rerender } = render(<BootSplash phase="ready" error={null} onFinished={onFinished} />);
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    rerender(<BootSplash phase="ready" error={null} onFinished={() => onFinished()} />);
+    act(() => {
+      vi.advanceTimersByTime(1_000);
+    });
+
+    expect(onFinished).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not finish when the phase leaves ready before the bar fills', () => {
+    stubReducedMotion({ isReduced: false });
+    const onFinished = vi.fn();
+    const { rerender } = render(<BootSplash phase="ready" error={null} onFinished={onFinished} />);
+    rerender(<BootSplash phase="error" error="boom" onFinished={onFinished} />);
+    act(() => {
+      vi.advanceTimersByTime(1_000);
+    });
+
+    expect(onFinished).not.toHaveBeenCalled();
+  });
+
+  it('finishes at once under reduced motion', () => {
+    stubReducedMotion({ isReduced: true });
+    const onFinished = vi.fn();
+    render(<BootSplash phase="ready" error={null} onFinished={onFinished} />);
+    act(() => {
+      vi.advanceTimersByTime(0);
+    });
+
+    expect(onFinished).toHaveBeenCalledOnce();
+  });
+});
+
+describe('BootSplash error screens', () => {
+  afterEach(cleanup);
 
   it('offers retry on the error screen', () => {
     const onRetry = vi.fn();
