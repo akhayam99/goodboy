@@ -639,6 +639,25 @@ fails silently at runtime.
   window is created hidden and shown by `useRevealWindow` after first paint;
   never show it in Rust setup again, or light users see dark first.
 
+## Traps on Windows
+
+- `portable-pty` quotes arguments for programs that parse their command line
+  the C way, and writes `\"` for a quote. cmd does not read `\"`, so a
+  workspace script run through cmd breaks when its body holds a double quote.
+  Prefer PowerShell 7 or Git Bash for such scripts.
+- `ShellKind::script_args` runs PowerShell with `-NoProfile`: a variable or an
+  alias the user's profile defines is missing in a script, while the terminal
+  has it.
+- Git Bash switches to UTF-8 through a one-shot `PROMPT_COMMAND`. A
+  `.bash_profile` that assigns `PROMPT_COMMAND` replaces it, and output falls
+  back to the OEM code page.
+- `portable-pty`'s `kill()` on Windows reports the opposite of what happened.
+  Stop a terminal through its job (`process_group::Job`), never by the result
+  of `kill()`.
+- wine is not a ConPTY: a terminal opened under wine prints nothing. Job
+  objects, the registry and `PATHEXT` behave, so their tests run there; the
+  ConPTY test needs a real Windows host (the `windows` job of `rust.yml`).
+
 ## History stashes are shared across worktrees
 
 `refs/stash` belongs to the repository's common directory. Another worktree

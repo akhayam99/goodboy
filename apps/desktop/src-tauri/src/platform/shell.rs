@@ -45,6 +45,26 @@ impl ShellProfile {
         }
     }
 
+    pub fn script_args(&self, body: &str) -> Vec<String> {
+        match self.kind {
+            ShellKind::Posix | ShellKind::GitBash => vec!["-c".into(), body.into()],
+            ShellKind::PowerShell | ShellKind::WindowsPowerShell => vec![
+                "-NoLogo".into(),
+                "-NoProfile".into(),
+                "-NonInteractive".into(),
+                "-Command".into(),
+                body.into(),
+            ],
+            ShellKind::Cmd => vec!["/d".into(), "/s".into(), "/c".into(), body.into()],
+            ShellKind::Wsl => self
+                .distro
+                .iter()
+                .flat_map(|distro| ["-d".to_string(), distro.clone()])
+                .chain(["-e".into(), "sh".into(), "-c".into(), body.into()])
+                .collect(),
+        }
+    }
+
     pub fn startup_env(&self) -> Vec<(&'static str, &'static str)> {
         match self.kind {
             ShellKind::GitBash => vec![("PROMPT_COMMAND", GIT_BASH_UTF8)],
@@ -340,6 +360,56 @@ fn gather() -> Vec<ShellProfile> {
     posix_profiles(&sources, &|path| path.exists())
 }
 
+#[cfg(any(windows, test))]
+pub fn pick_script_shell(
+    profiles: &[ShellProfile],
+    preferred: Option<&str>,
+) -> Option<ShellProfile> {
+    let first = launch_order(profiles, preferred).into_iter().next()?;
+    if first.kind != ShellKind::WindowsPowerShell {
+        return Some(first);
+    }
+    let cmd = profiles
+        .iter()
+        .find(|profile| profile.kind == ShellKind::Cmd);
+    Some(cmd.cloned().unwrap_or(first))
+}
+
+fn bare_bash() -> ShellProfile {
+    ShellProfile {
+        id: "bash".into(),
+        kind: ShellKind::Posix,
+        label: "bash".into(),
+        program: PathBuf::from("bash"),
+        distro: None,
+        is_default: false,
+    }
+}
+
+#[cfg(windows)]
+pub fn script_shell(preferred: Option<&str>) -> ShellProfile {
+    pick_script_shell(&discover(), preferred).unwrap_or_else(bare_bash)
+}
+
+#[cfg(not(windows))]
+pub fn script_shell(_preferred: Option<&str>) -> ShellProfile {
+    bare_bash()
+}
+
+#[cfg(windows)]
+pub fn bash_program() -> PathBuf {
+    discover()
+        .into_iter()
+        .find(|profile| profile.kind == ShellKind::GitBash)
+        .map(|profile| profile.program)
+        .unwrap_or_else(|| bare_bash().program)
+}
+
+#[cfg(not(windows))]
+pub fn bash_program() -> PathBuf {
+    bare_bash().program
+}
+
 static DISCOVERED: Mutex<Option<Vec<ShellProfile>>> = Mutex::new(None);
 
 pub fn discover() -> Vec<ShellProfile> {
@@ -520,6 +590,66 @@ mod tests {
 
         assert_eq!(order.len(), 1);
         assert_eq!(order[0].id, "cmd");
+    }
+
+    #[test]
+    fn scripts_run_without_a_profile_or_a_prompt() {
+        let profile = |kind, distro: Option<&str>| ShellProfile {
+            id: "x".into(),
+            kind,
+            label: "x".into(),
+            program: PathBuf::from("x"),
+            distro: distro.map(str::to_string),
+            is_default: false,
+        };
+        let body = "yarn install && yarn dev";
+        assert_eq!(
+            profile(ShellKind::Posix, None).script_args(body),
+            ["-c", body]
+        );
+        assert_eq!(
+            profile(ShellKind::Cmd, None).script_args(body),
+            ["/d", "/s", "/c", body]
+        );
+        assert_eq!(
+            profile(ShellKind::PowerShell, None).script_args(body),
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", body]
+        );
+        assert_eq!(
+            profile(ShellKind::Wsl, Some("Ubuntu")).script_args(body),
+            ["-d", "Ubuntu", "-e", "sh", "-c", body]
+        );
+    }
+
+    #[test]
+    fn scripts_use_cmd_when_the_shell_is_windows_powershell() {
+        let inbox = joined(&[
+            "C:/Windows",
+            "System32",
+            "WindowsPowerShell",
+            "v1.0",
+            "powershell.exe",
+        ]);
+        let exists = present(&[&inbox, "C:/Windows/System32/cmd.exe"]);
+        let profiles = windows_profiles(&windows_sources(), &exists);
+
+        let chosen = pick_script_shell(&profiles, None).unwrap();
+
+        assert_eq!(chosen.kind, ShellKind::Cmd);
+    }
+
+    #[test]
+    fn scripts_follow_the_chosen_shell() {
+        let pwsh = joined(&["C:/Program Files", "PowerShell", "7", "pwsh.exe"]);
+        let bash = joined(&["C:/Program Files/Git", "bin", "bash.exe"]);
+        let exists = present(&[&pwsh, "C:/Windows/System32/cmd.exe", &bash]);
+        let profiles = windows_profiles(&windows_sources(), &exists);
+
+        assert_eq!(pick_script_shell(&profiles, None).unwrap().id, "pwsh");
+        assert_eq!(
+            pick_script_shell(&profiles, Some("gitbash")).unwrap().id,
+            "gitbash"
+        );
     }
 
     #[test]

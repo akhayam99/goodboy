@@ -265,18 +265,22 @@ fn start_lifecycle_pty(params: StartParams) -> Result<(), LifecycleError> {
             })
             .map_err(|e| LifecycleError::Io(e.to_string()))?;
 
-        let mut cmd = CommandBuilder::new("bash");
-        cmd.arg("-c");
-        cmd.arg(&command);
-        let cwd = std::env::var("HOME").unwrap_or_else(|_| "/".to_string());
+        let shell = crate::platform::shell::script_shell(None);
+        let mut cmd = CommandBuilder::new(&shell.program);
+        for arg in shell.script_args(&command) {
+            cmd.arg(arg);
+        }
+        let cwd = crate::platform::paths::home_dir()
+            .map(|home| home.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "/".to_string());
         cmd.cwd(&cwd);
         for (key, value) in crate::path_env::resolved_env() {
             cmd.env(key, value);
         }
         cmd.env("PATH", crate::path_env::resolved_path());
         cmd.env("TERM", "xterm-256color");
-        if let Ok(home) = std::env::var("HOME") {
-            cmd.env("HOME", home);
+        if !cfg!(windows) {
+            cmd.env("HOME", &cwd);
         }
         if let Ok(user) = std::env::var("USER") {
             cmd.env("USER", user);

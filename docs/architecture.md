@@ -70,7 +70,11 @@ A new console starts in the OEM code page, so every Windows shell switches to
 UTF-8 as it starts: PowerShell sets the console encodings, cmd runs
 `chcp 65001`, and Git Bash runs `chcp.com 65001` from a one-shot
 `PROMPT_COMMAND` (a profile that sets its own `PROMPT_COMMAND` replaces it).
-Without it an agent's `❯` arrives as three wrong characters.
+Without it an agent's `❯` arrives as three wrong characters. Workspace
+scripts and provider installs run through the same shell with its own
+non-interactive arguments (`script_args`), and through cmd when that shell is
+Windows PowerShell 5.1, which has no `&&`. A skill script still needs bash:
+on Windows it runs in Git Bash.
 When a shell fails to start the terminal tries the next default one and its
 first line names the shell that opened and why the first did not.
 

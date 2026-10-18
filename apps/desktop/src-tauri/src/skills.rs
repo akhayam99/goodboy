@@ -610,7 +610,8 @@ fn skill_run_script_blocking(
 }
 
 fn skill_script_command(script: &Path) -> std::process::Command {
-    let mut command = crate::path_env::command_with_login_env("bash");
+    let bash = crate::platform::shell::bash_program();
+    let mut command = crate::path_env::command_with_login_env(&bash.to_string_lossy());
     command.arg(script);
     command
 }

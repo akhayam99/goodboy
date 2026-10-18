@@ -171,9 +171,11 @@ fn exit_code_of(status: &portable_pty::ExitStatus) -> i32 {
 }
 
 fn build_script_command(body: &str, cwd: &str, login_env: &[(String, String)]) -> CommandBuilder {
-    let mut cmd = CommandBuilder::new("bash");
-    cmd.arg("-c");
-    cmd.arg(body);
+    let shell = crate::platform::shell::script_shell(None);
+    let mut cmd = CommandBuilder::new(&shell.program);
+    for arg in shell.script_args(body) {
+        cmd.arg(arg);
+    }
     cmd.cwd(cwd);
     for (key, value) in login_env {
         cmd.env(key, value);
