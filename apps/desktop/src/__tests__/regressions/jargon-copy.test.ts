@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import { AGENT_KIND_META, ROLE_LABEL } from '../../features/session/agent-kind';
 import { ACTIVITY_VIEW_LABEL } from '../../features/session/timeline/activityView';
+import { SESSION_PAGE_INTRO } from '../../features/session/sessionPageIntro';
 import { ROW_NODE_LABEL } from '../../features/workTreeModel/rowStateCopy';
 import baseline from './jargon-copy.baseline.json';
 import { describeCopy, scanCopy } from './scanCopy';
@@ -30,6 +31,7 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string>>> = {
   AGENT_KIND_META: Object.values(AGENT_KIND_META).flatMap((meta) => [meta.label, meta.hint]),
   ACTIVITY_VIEW_LABEL: Object.values(ACTIVITY_VIEW_LABEL),
   ROW_NODE_LABEL: Object.values(ROW_NODE_LABEL),
+  SESSION_PAGE_INTRO: Object.values(SESSION_PAGE_INTRO).flat(),
 };
 
 describe('on-screen copy says no internal word', () => {

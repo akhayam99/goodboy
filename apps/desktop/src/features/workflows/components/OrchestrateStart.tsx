@@ -13,7 +13,6 @@ export const OrchestrateStart = ({ sessionId }: Props) => (
     size="page"
     icon={CONCEPT_ICONS.orchestrator}
     title={ORCHESTRATED_COPY.emptyTitle}
-    description={ORCHESTRATED_COPY.emptyDescription}
     action={
       <Button variant="primary" size="sm" onClick={() => openOrchestrateForm({ sessionId })}>
         <CONCEPT_ICONS.orchestrator size={ICON_SIZE.row} aria-hidden className="shrink-0" />

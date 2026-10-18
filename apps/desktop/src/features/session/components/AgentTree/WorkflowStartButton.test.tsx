@@ -10,13 +10,13 @@ afterEach(cleanup);
 const SESSION_ID: SessionId = JSON.parse(JSON.stringify('session-1'));
 
 describe('the Runs first-time state', () => {
-  it('says what a run is and offers one primary, Run a workflow', () => {
+  it('keeps the title and one primary, Run a workflow, and leaves the teaching to the page intro', () => {
     const opened = vi.fn();
     window.addEventListener('goodboy:open-workflow-builder', opened);
     render(<WorkflowStartButton sessionId={SESSION_ID} />);
 
     expect(screen.getByRole('heading', { level: 2, name: 'No runs yet' })).toBeDefined();
-    expect(screen.getByText('A run is a workflow working on this session.')).toBeDefined();
+    expect(screen.queryByText('A run is a workflow working on this session.')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Run a workflow' }));
     window.removeEventListener('goodboy:open-workflow-builder', opened);
 

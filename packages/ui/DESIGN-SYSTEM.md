@@ -1691,6 +1691,12 @@ crumb names the structure and the `h1` the object, and a report's document title
 `h2`.
 There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
+The one exception is the four session pages that hold work (Runs, Orchestrated,
+Agents, Auto agents), which explain themselves on content and empty alike:
+each passes `SessionPageIntro` as its `subheader`, two muted `text-body` lines at
+the prose measure from the one copy map `SESSION_PAGE_INTRO`, and their empty
+states keep only a title and an action. Every other page, the secondary pages
+included, adds no description line.
 A detail that needs its own header row passes `HeaderBand` (also an `h1`, in the same
 fixed `h-8` row) through the custom `header` slot. The agent detail passes
 `AgentHeader` instead: one 32px title row with the role chip, the one-line title (full
