@@ -90,6 +90,7 @@ export const cliSupportedSibling = ({
       (candidate) =>
         candidate.key !== current.key &&
         candidate.presentation.group === current.presentation.group &&
+        candidate.presentation.checkpoint === current.presentation.checkpoint &&
         candidate.presentation.order < current.presentation.order &&
         gateForModel({ model: candidate, installedVersion, learned }) === null,
     )

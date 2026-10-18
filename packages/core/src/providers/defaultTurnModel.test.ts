@@ -24,6 +24,7 @@ describe('defaultTurnModel', () => {
   it('keeps the default when the catalog order changes', () => {
     const catalog: ReadonlyArray<CatalogModel> = MODEL_CATALOGS.openrouter;
     expect(catalog[0]?.key).not.toBe(defaultTurnModel({ provider: 'openrouter' }).key);
-    expect(defaultTurnModel({ provider: 'anthropic' }).key).toBe('opus-5');
+    expect(defaultTurnModel({ provider: 'anthropic' }).key).toBe('opus-5.5');
+    expect(defaultTurnModel({ provider: 'codex' }).key).toBe('gpt-6.1-sol');
   });
 });

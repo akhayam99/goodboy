@@ -49,13 +49,22 @@ describe('parseLegacyId', () => {
   });
 
   it('migrates retired opencode catalog keys persisted as bare ids to Big Pickle', () => {
-    for (const id of ['minimax-m2.5', 'nemotron-3-super', 'ring-2.6-1t']) {
+    for (const id of ['minimax-m2.5', 'nemotron-3-super', 'ring-2.6-1t', 'muse-spark-1.2']) {
       expect(parseLegacyId({ provider: 'opencode', id })).toEqual({ key: 'big-pickle' });
       expect(resolveStoredModelSelection({ provider: 'opencode', id })).toEqual({
         selection: { key: 'big-pickle' },
         report: { kind: 'legacy', id },
       });
     }
+  });
+
+  it('moves the retired MiMo V2.5 onto the MiMo V2.6 Flash that Zen lists now', () => {
+    for (const id of ['mimo-v2.5', 'opencode/mimo-v2.5-free']) {
+      expect(parseLegacyId({ provider: 'opencode', id })).toEqual({ key: 'mimo-v2.6-flash' });
+    }
+    expect(
+      parseLegacyId({ provider: 'opencode', id: 'opencode/muse-spark-1.2-contributor-free' }),
+    ).toEqual({ key: 'big-pickle' });
   });
 
   it('degrades the retired gemini flash id to the model that replaced it', () => {
@@ -114,7 +123,7 @@ describe('parseLegacyId', () => {
 
   it('defaults and reports an unknown stored id', () => {
     expect(resolveStoredModelSelection({ provider: 'codex', id: 'gpt-99' })).toEqual({
-      selection: { key: 'gpt-5.6-sol', effort: 'low', variant: 'default' },
+      selection: { key: 'gpt-6.1-sol', effort: 'low', variant: 'default' },
       report: { kind: 'unknown', id: 'gpt-99' },
     });
   });

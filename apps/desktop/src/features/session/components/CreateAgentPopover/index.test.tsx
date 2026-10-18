@@ -279,8 +279,8 @@ describe('CreateAgentPopover', () => {
       expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
         kindOverride: 'scout',
         provider: 'anthropic',
-        model: 'haiku-4.5',
-        effort: 'low',
+        model: 'haiku-5.5',
+        effort: 'medium',
         focus: 'agent',
       }),
     );

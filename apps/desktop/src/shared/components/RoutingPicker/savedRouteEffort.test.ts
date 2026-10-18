@@ -45,8 +45,8 @@ describe('savedRouteEffort', () => {
   it('keeps writing a saved effort, clamped to the model', () => {
     expect(
       savedRouteEffort({
-        route: { provider: 'anthropic', model: 'claude-sonnet-4-6', effort: 'max' },
-        requested: 'max',
+        route: { provider: 'anthropic', model: 'claude-sonnet-4-6', effort: 'xhigh' },
+        requested: 'xhigh',
         wasSaved: true,
       }),
     ).toBe('high');

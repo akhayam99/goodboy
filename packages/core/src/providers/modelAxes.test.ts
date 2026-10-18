@@ -21,7 +21,11 @@ describe('modelAxes', () => {
     expect(axes.version?.options).toContainEqual({ id: '6', label: '6', modelKey: 'gpt-6' });
     expect(axes.checkpoint).toEqual({
       label: 'Variant',
-      options: [{ id: 'Astra', label: 'Astra', modelKey: 'gpt-6' }],
+      options: [
+        { id: 'Luna', label: 'Luna', modelKey: 'gpt-6-luna' },
+        { id: 'Sol', label: 'Sol', modelKey: 'gpt-6-sol' },
+        { id: 'Astra', label: 'Astra', modelKey: 'gpt-6' },
+      ],
       activeId: 'Astra',
     });
     expect(axes.effort?.levels).toEqual([
@@ -145,23 +149,23 @@ describe('modelAxes', () => {
     expect(axes.version?.options).toEqual([
       { id: '5.5', label: '5.5', modelKey: 'gpt-5.5' },
       { id: '5.6', label: '5.6', modelKey: 'gpt-5.6-luna' },
-      { id: '6', label: '6', modelKey: 'gpt-6' },
+      { id: '6', label: '6', modelKey: 'gpt-6-luna' },
       { id: '6.1', label: '6.1', modelKey: 'gpt-6.1-sol' },
     ]);
     expect(axes.version?.activeId).toBe('5.6');
   });
 
   it('marks unsupported anthropic effort levels as unavailable instead of hiding them', () => {
-    const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'sonnet-4.6');
+    const model = ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'opus-4.6');
     if (model == null) {
-      throw new Error('missing anthropic sonnet-4.6');
+      throw new Error('missing anthropic opus-4.6');
     }
     expect(modelAxes({ model, selection: { key: model.key } }).effort?.levels).toEqual([
       { level: 'low', available: true },
       { level: 'medium', available: true },
       { level: 'high', available: true },
       { level: 'xhigh', available: false },
-      { level: 'max', available: false },
+      { level: 'max', available: true },
     ]);
   });
 
@@ -211,7 +215,7 @@ describe('modelAxes', () => {
       ANTHROPIC_CATALOG.find((candidate) => candidate.key === 'opus-5'),
       CODEX_CATALOG[0],
       CURSOR_CATALOG.find((candidate) => candidate.key === 'opus-5'),
-      OPENCODE_CATALOG[0],
+      OPENCODE_CATALOG.find((candidate) => candidate.key === 'ling-3.0-flash-fin'),
       OPENROUTER_CATALOG[0],
     ];
     for (const model of models) {
@@ -231,12 +235,13 @@ describe('modelAxes', () => {
     expect(options).toEqual([
       { id: 'Auto', label: 'Auto', modelKey: 'auto' },
       { id: 'Composer', label: 'Composer', modelKey: 'composer-2.5' },
+      { id: 'Haiku', label: 'Haiku', modelKey: 'haiku-5.5' },
       { id: 'Sonnet', label: 'Sonnet', modelKey: 'sonnet-5.5' },
       { id: 'Opus', label: 'Opus', modelKey: 'opus-5.5' },
       { id: 'Fable', label: 'Fable', modelKey: 'fable-5.1' },
       { id: 'GPT', label: 'GPT', modelKey: 'gpt-5.6' },
       { id: 'Grok', label: 'Grok', modelKey: 'grok-4.7' },
-      { id: 'Gemini', label: 'Gemini', modelKey: 'gemini-3.1-pro' },
+      { id: 'Gemini', label: 'Gemini', modelKey: 'gemini-4-argon' },
       { id: 'Muse Spark', label: 'Muse Spark', modelKey: 'muse-spark-1.3' },
       { id: 'Kimi', label: 'Kimi', modelKey: 'kimi-k3' },
       { id: 'GLM', label: 'GLM', modelKey: 'glm-5.2' },
@@ -258,6 +263,7 @@ describe('modelAxes', () => {
       { id: '3.6', label: '3.6', modelKey: 'gemini-3.6-flash' },
       { id: '3.7', label: '3.7', modelKey: 'gemini-3.7-flash' },
       { id: '3.8', label: '3.8', modelKey: 'gemini-3.8-flash' },
+      { id: '4', label: '4', modelKey: 'gemini-4-argon' },
     ]);
     expect(axes.version?.activeId).toBe('3.6');
     expect(axes.checkpoint).toEqual({

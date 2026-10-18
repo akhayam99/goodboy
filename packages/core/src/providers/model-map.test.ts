@@ -85,10 +85,10 @@ describe('resolveModelForProvider', () => {
     );
     expect(
       resolveModelForProvider({ provider: 'anthropic', modelId: 'totally-unknown-model' }),
-    ).toBe('opus-5');
+    ).toBe('opus-5.5');
   });
 
   it('falls back to the target model of the same tier', () => {
-    expect(resolveModelForProvider({ provider: 'anthropic', modelId: 'auto' })).toBe('haiku-4.5');
+    expect(resolveModelForProvider({ provider: 'anthropic', modelId: 'auto' })).toBe('haiku-5.5');
   });
 });

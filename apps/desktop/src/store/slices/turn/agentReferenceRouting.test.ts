@@ -66,7 +66,7 @@ describe('agentReferenceRouting', () => {
       }),
     });
 
-    expect(result).toEqual({ provider: 'anthropic', model: 'haiku-4.5', effort: 'low' });
+    expect(result).toEqual({ provider: 'anthropic', model: 'haiku-5.5', effort: 'medium' });
   });
 
   it('prefers the step pin over the role default', () => {
@@ -105,8 +105,8 @@ describe('agentReferenceRouting', () => {
       kindOverride: 'scout',
     });
 
-    expect(result.model).toBe('haiku-4.5');
-    expect(result.effort).toBe('low');
+    expect(result.model).toBe('haiku-5.5');
+    expect(result.effort).toBe('medium');
   });
 
   it('falls back to the session default when no agent is selected', () => {
@@ -171,7 +171,7 @@ describe('agentReferenceRouting', () => {
     expect(result.model).toBe(
       resolveModelForProvider({ provider: 'codex', modelId: getCheapModel('codex') }),
     );
-    expect(result.effort).toBe('low');
+    expect(result.effort).toBe('medium');
   });
 
   it('keeps the role preference above the session default', () => {

@@ -44,6 +44,11 @@ describe('OPENROUTER_MODELS', () => {
       'grok-4.6',
       'grok-4.5',
       'grok-4.3',
+      'haiku-5.5',
+      'gpt-6-sol',
+      'gpt-6-luna',
+      'gemini-4-argon',
+      'gemini-3.5-flash-lite',
     ]);
   });
 

@@ -70,6 +70,23 @@ describe('computeCodexCostUsd', () => {
     expect(computeCodexCostUsd({ usage, model: 'gpt-5.6-luna' })).toBeCloseTo(1.4);
   });
 
+  it('bills GPT-6 Sol at 2 / 10 with cache at 0.20 and GPT-6 Luna at 0.10 / 0.50', () => {
+    expect(computeCodexCostUsd({ usage, model: 'gpt-6-sol' })).toBeCloseTo(12);
+    expect(computeCodexCostUsd({ usage, model: 'gpt-6-luna' })).toBeCloseTo(0.6);
+    const cached: ProviderUsage = {
+      inputTokens: 1_000_000,
+      outputTokens: 0,
+      cachedInputTokens: 1_000_000,
+      estimatedCostUsd: 0,
+    };
+    expect(computeCodexCostUsd({ usage: cached, model: 'gpt-6-sol' })).toBeCloseTo(0.2);
+  });
+
+  it('no longer prices the gpt-5.4 ids Codex retired', () => {
+    expect(computeCodexCostUsd({ usage, model: 'gpt-5.4' })).toBe(0);
+    expect(computeCodexCostUsd({ usage, model: 'gpt-5.4-mini' })).toBe(0);
+  });
+
   it('bills cached input at ten percent of input', () => {
     const cachedUsage: ProviderUsage = {
       inputTokens: 2_000_000,
@@ -78,8 +95,8 @@ describe('computeCodexCostUsd', () => {
       estimatedCostUsd: 0,
     };
 
-    expect(computeCodexCostUsd({ usage: cachedUsage, model: 'gpt-5.4-mini' })).toBeCloseTo(
-      0.75 + 0.075,
+    expect(computeCodexCostUsd({ usage: cachedUsage, model: 'gpt-6-luna' })).toBeCloseTo(
+      0.1 + 0.01,
     );
   });
 

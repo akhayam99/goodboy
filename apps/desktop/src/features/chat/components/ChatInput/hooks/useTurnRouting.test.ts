@@ -29,8 +29,8 @@ const makeScoutRow = (overrides: Partial<Agent> = {}): Agent =>
     name: 'Scout',
     kind: 'scout',
     providerOverride: 'anthropic',
-    modelOverride: 'claude-haiku-4-5',
-    effort: 'low',
+    modelOverride: 'claude-haiku-5-5',
+    effort: 'medium',
     ...overrides,
   });
 
@@ -38,9 +38,9 @@ const selectScout = (overrides: Partial<Agent> = {}) => {
   useAppStore.setState({
     selectedAgentId: { [SESSION_ID]: AGENT_ID },
     sessionPhaseRuns: { [SESSION_ID]: [makeScoutRow(overrides)] },
-    agentModelOverride: { [AGENT_ID]: 'claude-haiku-4-5' },
+    agentModelOverride: { [AGENT_ID]: 'claude-haiku-5-5' },
     agentProviderOverride: { [AGENT_ID]: 'anthropic' },
-    agentEffortOverride: { [AGENT_ID]: 'low' },
+    agentEffortOverride: { [AGENT_ID]: 'medium' },
   });
 };
 
@@ -149,7 +149,7 @@ describe('useTurnRouting', () => {
 
   it('writes the effort a pick shows when the saved one only looks lower on the old model', () => {
     const session = makeSession({
-      effort: 'max',
+      effort: 'xhigh',
       providerPreference: {
         defaultProvider: 'anthropic',
         defaultModel: 'claude-sonnet-4-6',
@@ -178,8 +178,8 @@ describe('useTurnRouting', () => {
   });
 
   it('writes the effort of a pick on an agent when the saved one only looks lower', () => {
-    selectScout({ effort: 'max', modelOverride: 'claude-sonnet-4-6' });
-    useAppStore.setState({ agentEffortOverride: { [AGENT_ID]: 'max' } });
+    selectScout({ effort: 'xhigh', modelOverride: 'claude-sonnet-4-6' });
+    useAppStore.setState({ agentEffortOverride: { [AGENT_ID]: 'xhigh' } });
     const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
     expect(result.current.effectiveEffort).toBe('high');
 
@@ -258,8 +258,8 @@ describe('useTurnRouting, agent reference', () => {
     const { result } = renderHook(() => useTurnRouting({ session }));
 
     expect(result.current.referenceProvider).toBe('anthropic');
-    expect(result.current.referenceModel).toBe('haiku-4.5');
-    expect(result.current.referenceEffort).toBe('low');
+    expect(result.current.referenceModel).toBe('haiku-5.5');
+    expect(result.current.referenceEffort).toBe('medium');
     expect(result.current.effectiveProvider).toBe(result.current.referenceProvider);
     expect(result.current.effectiveModel).toBe(result.current.referenceModel);
   });
@@ -269,8 +269,8 @@ describe('useTurnRouting, agent reference', () => {
     const session = makeSession({ effort: 'high' });
     const { result } = renderHook(() => useTurnRouting({ session }));
 
-    expect(result.current.effort).toBe('low');
-    expect(result.current.effectiveEffort).toBe('low');
+    expect(result.current.effort).toBe('medium');
+    expect(result.current.effectiveEffort).toBe('medium');
   });
 
   it('reset returns the agent to its reference, not the session default', () => {
@@ -296,13 +296,13 @@ describe('useTurnRouting, agent reference', () => {
     });
 
     expect(result.current.effectiveProvider).toBe('anthropic');
-    expect(result.current.effectiveModel).toBe('haiku-4.5');
-    expect(result.current.effectiveEffort).toBe('low');
+    expect(result.current.effectiveModel).toBe('haiku-5.5');
+    expect(result.current.effectiveEffort).toBe('medium');
     expect(result.current.routingOverride?.explicit).toBe(false);
     expect(setAgentConfig).toHaveBeenLastCalledWith(SESSION_ID, AGENT_ID, {
       providerOverride: 'anthropic',
-      modelOverride: 'haiku-4.5',
-      effort: 'low',
+      modelOverride: 'haiku-5.5',
+      effort: 'medium',
     });
     expect(setSessionConfig).not.toHaveBeenCalled();
   });
@@ -322,11 +322,11 @@ describe('useTurnRouting, agent reference', () => {
     });
 
     expect(result.current.effectiveProvider).toBe('anthropic');
-    expect(result.current.effectiveModel).toBe('haiku-4.5');
+    expect(result.current.effectiveModel).toBe('haiku-5.5');
     expect(setAgentConfig).toHaveBeenLastCalledWith(SESSION_ID, AGENT_ID, {
       providerOverride: 'anthropic',
-      modelOverride: 'haiku-4.5',
-      effort: 'low',
+      modelOverride: 'haiku-5.5',
+      effort: 'medium',
     });
     expect(setSessionConfig).not.toHaveBeenCalled();
   });

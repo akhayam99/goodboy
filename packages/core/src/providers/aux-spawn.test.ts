@@ -119,7 +119,7 @@ describe('runAuxOneShot', () => {
 
 describe('cliModelId', () => {
   it('maps the anthropic cheap catalog key to its spawnable cli id', () => {
-    expect(getCheapModel('anthropic')).toBe('haiku-4.5');
+    expect(getCheapModel('anthropic')).toBe('haiku-5.5');
     expect(cliModelId({ provider: 'anthropic', model: 'haiku-4.5' })).toBe('claude-haiku-4-5');
   });
 

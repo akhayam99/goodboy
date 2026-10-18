@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
+import { PROVIDER_IDS, type CatalogModel, type ProviderId } from '@goodboy/types';
 import { MODEL_CATALOGS } from './catalogs';
+import { modelHasEffortAxis } from './modelHasEffortAxis';
 import { resolveModelArgs } from './resolveModelArgs';
 import { extractSpawnModel } from './providerArgFlags';
 
@@ -53,9 +54,10 @@ describe('extractSpawnModel', () => {
 describe('PROVIDER_ARG_FLAGS coverage', () => {
   it('matches the flags resolveModelArgs actually emits for every provider', () => {
     for (const provider of PROVIDER_IDS) {
-      const model = MODEL_CATALOGS[provider][0];
+      const catalog: ReadonlyArray<CatalogModel> = MODEL_CATALOGS[provider];
+      const model = catalog.find((candidate) => modelHasEffortAxis({ model: candidate }));
       if (model == null) {
-        throw new Error(`catalog empty for ${provider}`);
+        throw new Error(`no model with an effort axis for ${provider}`);
       }
       const resolved = resolveModelArgs({ provider, selection: { key: model.key } });
       const expected = EXPECTED_FLAGS_BY_PROVIDER[provider];
@@ -63,5 +65,14 @@ describe('PROVIDER_ARG_FLAGS coverage', () => {
         expect(resolved.args).toContain(expected.effortFlag);
       }
     }
+  });
+
+  it('sends no effort flag for a model that publishes no effort levels', () => {
+    expect(resolveModelArgs({ provider: 'opencode', selection: { key: 'big-pickle' } })).toEqual({
+      args: ['-m', 'opencode/big-pickle'],
+    });
+    expect(
+      resolveModelArgs({ provider: 'opencode', selection: { key: 'big-pickle', effort: 'high' } }),
+    ).toEqual({ args: ['-m', 'opencode/big-pickle'] });
   });
 });

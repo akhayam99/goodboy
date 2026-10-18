@@ -213,7 +213,7 @@ describe('OrchestratorRoutingRow', () => {
             workflow_orchestrator: {
               providerId: 'anthropic',
               model: 'claude-sonnet-4-6',
-              effort: 'max',
+              effort: 'xhigh',
             },
           },
         },

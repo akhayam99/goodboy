@@ -172,6 +172,7 @@ describe('a model the owner hid is not picked by the orchestrator path', () => {
         'sonnet-4.6',
         'sonnet-5',
         'sonnet-5.5',
+        'haiku-5.5',
         'haiku-4.5',
       ],
     };

@@ -89,6 +89,9 @@ export const resolveModelArgs = ({ provider, selection }: Params): ResolvedModel
     case 'openrouter':
     case 'moonshot': {
       const { modelFlag, effortFlag } = PROVIDER_ARG_FLAGS[model.provider];
+      if (model.efforts.length === 0) {
+        return { args: [modelFlag, model.cliId] };
+      }
       const requested = selection.effort ?? model.defaultEffort;
       const applied = clampEffort({ requested, available: model.efforts });
       return withClamp({

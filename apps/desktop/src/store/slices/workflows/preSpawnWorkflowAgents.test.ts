@@ -465,7 +465,7 @@ describe('preSpawnWorkflowAgents and agentReferenceRouting agree', () => {
     expect(persisted).toEqual({
       provider: 'codex',
       model: resolveModelForProvider({ provider: 'codex', modelId: getCheapModel('codex') }),
-      effort: 'low',
+      effort: 'medium',
     });
     expect(reference).toEqual(persisted);
   });

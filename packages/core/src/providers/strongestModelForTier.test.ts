@@ -21,7 +21,7 @@ describe('strongestModelForTier', () => {
     ).toBe('sonnet-5.5');
     expect(
       strongestModelForTier({ provider: 'anthropic', tier: 'cheap', wantsThinker: false })?.id,
-    ).toBe('haiku-4.5');
+    ).toBe('haiku-5.5');
   });
 
   it('falls to the nearest tier when the provider has none of the requested one', () => {

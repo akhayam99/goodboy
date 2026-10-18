@@ -537,11 +537,11 @@ describe('ChatRoom', () => {
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     expect(summarize).toHaveBeenCalledTimes(2);
     expect(summarize).toHaveBeenLastCalledWith(
-      expect.objectContaining({ provider: 'anthropic', model: 'haiku-4.5' }),
+      expect.objectContaining({ provider: 'anthropic', model: 'haiku-5.5' }),
     );
     expect(store.saveSetting).toHaveBeenCalledWith(
       'chat.workDrafter.ws-harborline',
-      JSON.stringify({ provider: 'anthropic', model: 'haiku-4.5' }),
+      JSON.stringify({ provider: 'anthropic', model: 'haiku-5.5' }),
     );
   });
 

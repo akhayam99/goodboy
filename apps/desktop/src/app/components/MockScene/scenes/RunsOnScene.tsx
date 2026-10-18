@@ -32,8 +32,8 @@ const SESSION = {
 } as unknown as Session;
 
 const PROVIDERS = [
-  { id: 'anthropic', connection: 'connected', version: '2.1.288', error: null },
-  { id: 'codex', connection: 'connected', version: '0.160.0', error: null },
+  { id: 'anthropic', connection: 'connected', version: '2.1.296', error: null },
+  { id: 'codex', connection: 'connected', version: '0.162.1', error: null },
   { id: 'cursor', connection: 'connected', version: null, error: null },
 ] as unknown as ReadonlyArray<ProviderDisplayInfo>;
 

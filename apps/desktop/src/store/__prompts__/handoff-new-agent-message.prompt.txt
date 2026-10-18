@@ -37,8 +37,9 @@ anthropic/fable-5.1 efforts low,medium,high,xhigh,max unassessed ctx 1000k $10/$
 anthropic/fable-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $10/$50
 anthropic/opus-4.8 efforts low,medium,high,xhigh,max unassessed ctx 1000k $5/$25
 anthropic/sonnet-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $2/$10
-anthropic/sonnet-5 efforts low,medium,high unassessed ctx 1000k $2/$10
-anthropic/sonnet-4.6 efforts low,medium,high unassessed ctx 1000k $3/$15
+anthropic/sonnet-5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $2/$10
+anthropic/sonnet-4.6 efforts low,medium,high,max unassessed ctx 1000k $3/$15
+anthropic/haiku-5.5 efforts low,medium,high,xhigh,max unassessed ctx 1000k $0.1/$0.5
 anthropic/haiku-4.5 efforts no effort control unassessed ctx 200k $1/$5
 
 ## shared context (already loaded by orchestrator, do not re-derive)

@@ -46,13 +46,13 @@ const ROWS: ReadonlyArray<Row> = [
     expected: { provider: 'anthropic', model: 'sonnet-5.5' },
   },
   {
-    name: 'rate limit on the cheapest model crosses to another provider',
+    name: 'rate limit on the older Haiku moves to the newer cheap sibling first',
     failure: 'rate_limit',
     provider: 'anthropic',
     model: 'haiku-4.5',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'codex', model: 'gpt-5.6-luna' },
+    expected: { provider: 'anthropic', model: 'haiku-5.5' },
   },
   {
     name: 'rate limit on the second attempt crosses to another provider',

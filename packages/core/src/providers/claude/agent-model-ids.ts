@@ -10,5 +10,6 @@ export const ANTHROPIC_AGENT_MODEL_IDS = [
   'claude-sonnet-5',
   'claude-sonnet-4-6',
   'claude-sonnet-4-5',
+  'claude-haiku-5-5',
   'claude-haiku-4-5',
 ] satisfies ReadonlyArray<string>;

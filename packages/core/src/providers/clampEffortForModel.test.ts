@@ -16,7 +16,7 @@ describe('clampEffortForModel', () => {
   });
 
   it('clamps down to the nearest lower level', () => {
-    expect(clampEffortForModel({ model: 'sonnet-4.6', effort: 'max' })).toBe('high');
+    expect(clampEffortForModel({ model: 'sonnet-4.5', effort: 'max' })).toBe('high');
   });
 
   it('clamps up when nothing lower exists', () => {
@@ -24,7 +24,7 @@ describe('clampEffortForModel', () => {
   });
 
   it('reads the ladder through a native cli id', () => {
-    expect(clampEffortForModel({ model: 'claude-sonnet-4-6', effort: 'max' })).toBe('high');
+    expect(clampEffortForModel({ model: 'claude-sonnet-4-5', effort: 'max' })).toBe('high');
   });
 
   it('drops xhigh from the opus 4.6 ladder', () => {

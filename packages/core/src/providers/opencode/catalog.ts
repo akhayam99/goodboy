@@ -1,12 +1,13 @@
 import type { EffortLevel, OpencodeModel } from '@goodboy/types';
 
-const EFFORTS = [
+const NO_EFFORTS = [] satisfies ReadonlyArray<EffortLevel>;
+const LING_EFFORTS = ['low', 'medium', 'high'] satisfies ReadonlyArray<EffortLevel>;
+const MUSE_SPARK_EFFORTS = [
   'minimal',
   'low',
   'medium',
   'high',
   'xhigh',
-  'max',
 ] satisfies ReadonlyArray<EffortLevel>;
 
 export const OPENCODE_CATALOG = [
@@ -25,24 +26,25 @@ export const OPENCODE_CATALOG = [
     },
     provider: 'opencode',
     cliId: 'opencode/big-pickle',
-    efforts: EFFORTS,
+    efforts: NO_EFFORTS,
     defaultEffort: 'medium',
   },
   {
-    key: 'mimo-v2.5',
-    label: 'MiMo V2.5',
+    key: 'mimo-v2.6-flash',
+    label: 'MiMo V2.6 Flash',
     tier: 'cheap',
     contextWindow: 200_000,
     presentation: {
       family: 'other',
       group: 'MiMo',
-      version: 'V2.5',
+      version: 'V2.6',
+      checkpoint: 'Flash',
       order: 10,
       costTier: 'cheap',
     },
     provider: 'opencode',
-    cliId: 'opencode/mimo-v2.5-free',
-    efforts: EFFORTS,
+    cliId: 'opencode/mimo-v2.6-flash-free',
+    efforts: NO_EFFORTS,
     defaultEffort: 'medium',
   },
   {
@@ -60,24 +62,7 @@ export const OPENCODE_CATALOG = [
     },
     provider: 'opencode',
     cliId: 'opencode/nemotron-3-ultra-free',
-    efforts: EFFORTS,
-    defaultEffort: 'medium',
-  },
-  {
-    key: 'muse-spark-1.2',
-    label: 'Muse Spark 1.2',
-    tier: 'cheap',
-    contextWindow: 1_048_576,
-    presentation: {
-      family: 'other',
-      group: 'Muse Spark',
-      version: '1.2',
-      order: 20,
-      costTier: 'cheap',
-    },
-    provider: 'opencode',
-    cliId: 'opencode/muse-spark-1.2-contributor-free',
-    efforts: EFFORTS,
+    efforts: NO_EFFORTS,
     defaultEffort: 'medium',
   },
   {
@@ -95,7 +80,7 @@ export const OPENCODE_CATALOG = [
     },
     provider: 'opencode',
     cliId: 'opencode/nemotron-3.5-lightning-free',
-    efforts: EFFORTS,
+    efforts: NO_EFFORTS,
     defaultEffort: 'medium',
   },
   {
@@ -113,7 +98,7 @@ export const OPENCODE_CATALOG = [
     },
     provider: 'opencode',
     cliId: 'opencode/ling-3.0-flash-fin-free',
-    efforts: EFFORTS,
+    efforts: LING_EFFORTS,
     defaultEffort: 'medium',
   },
   {
@@ -130,7 +115,7 @@ export const OPENCODE_CATALOG = [
     },
     provider: 'opencode',
     cliId: 'opencode/muse-spark-1.3-contributor-free',
-    efforts: EFFORTS,
+    efforts: MUSE_SPARK_EFFORTS,
     defaultEffort: 'medium',
   },
 ] satisfies ReadonlyArray<OpencodeModel>;

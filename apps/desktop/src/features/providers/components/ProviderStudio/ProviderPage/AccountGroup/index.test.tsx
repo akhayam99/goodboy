@@ -90,7 +90,9 @@ describe('AccountGroup CLI row', () => {
     const { container } = renderAccount();
 
     const account = screen.getByRole('region', { name: 'Account' });
-    const notice = screen.getByText('Fable 5.1, Opus 5.5 and Sonnet 5.5 need a newer Claude CLI');
+    const notice = screen.getByText(
+      'Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI',
+    );
     expect(within(account).getByText('2.1.240')).toBeDefined();
     expect(account.contains(notice)).toBe(false);
     expect(

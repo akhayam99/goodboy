@@ -20,6 +20,22 @@ const SONNET5_PRICE: ModelPrice = {
   outputPerMtok: 10,
   cachedInputPerMtok: 0.2,
 };
+const SONNET55_PRICE: ModelPrice = {
+  inputPerMtok: 2,
+  outputPerMtok: 10,
+  cachedInputPerMtok: 0.1,
+};
+const HAIKU55_PRICE: ModelPrice = {
+  inputPerMtok: 0.1,
+  outputPerMtok: 0.5,
+  cachedInputPerMtok: 0.01,
+  assumed: true,
+};
+const GEMINI_ARGON_PRICE: ModelPrice = {
+  inputPerMtok: 2,
+  outputPerMtok: 10,
+  cachedInputPerMtok: 0.1,
+};
 const OPUS_PRICE: ModelPrice = {
   inputPerMtok: 5,
   outputPerMtok: 25,
@@ -77,7 +93,7 @@ const GROK_FAST_PRICE: ModelPrice = {
 };
 const GEMINI_FLASH_PRICE: ModelPrice = {
   inputPerMtok: 0.75,
-  outputPerMtok: 3.5,
+  outputPerMtok: 3.75,
   cachedInputPerMtok: 0.075,
 };
 const GEMINI_36_FLASH_PRICE: ModelPrice = {
@@ -146,11 +162,21 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'claude-fable-5-thinking-high': FABLE_PRICE,
   'claude-fable-5-thinking-xhigh': FABLE_PRICE,
   'claude-fable-5-thinking-max': FABLE_PRICE,
-  'claude-sonnet-5-5-low': SONNET5_PRICE,
-  'claude-sonnet-5-5-medium': SONNET5_PRICE,
-  'claude-sonnet-5-5-high': SONNET5_PRICE,
-  'claude-sonnet-5-5-xhigh': SONNET5_PRICE,
-  'claude-sonnet-5-5-max': SONNET5_PRICE,
+  'claude-sonnet-5-5-low': SONNET55_PRICE,
+  'claude-sonnet-5-5-medium': SONNET55_PRICE,
+  'claude-sonnet-5-5-high': SONNET55_PRICE,
+  'claude-sonnet-5-5-xhigh': SONNET55_PRICE,
+  'claude-sonnet-5-5-max': SONNET55_PRICE,
+  'claude-haiku-5-5-low': HAIKU55_PRICE,
+  'claude-haiku-5-5-medium': HAIKU55_PRICE,
+  'claude-haiku-5-5-high': HAIKU55_PRICE,
+  'claude-haiku-5-5-xhigh': HAIKU55_PRICE,
+  'claude-haiku-5-5-max': HAIKU55_PRICE,
+  'claude-haiku-5-5-thinking-low': HAIKU55_PRICE,
+  'claude-haiku-5-5-thinking-medium': HAIKU55_PRICE,
+  'claude-haiku-5-5-thinking-high': HAIKU55_PRICE,
+  'claude-haiku-5-5-thinking-xhigh': HAIKU55_PRICE,
+  'claude-haiku-5-5-thinking-max': HAIKU55_PRICE,
   'claude-sonnet-5-high': SONNET5_PRICE,
   'claude-sonnet-5-xhigh': SONNET5_PRICE,
   'claude-sonnet-5-thinking-high': SONNET5_PRICE,
@@ -173,6 +199,9 @@ export const CURSOR_PRICES: Record<string, ModelPrice> = {
   'cursor-grok-4.6-medium-fast': GROK_FAST_PRICE,
 
   'gemini-3.1-pro': GEMINI_PRO_PRICE,
+  'gemini-4-argon-low': GEMINI_ARGON_PRICE,
+  'gemini-4-argon-medium': GEMINI_ARGON_PRICE,
+  'gemini-4-argon-high': GEMINI_ARGON_PRICE,
   'gemini-3.8-flash-low': GEMINI_FLASH_PRICE,
   'gemini-3.8-flash-medium': GEMINI_FLASH_PRICE,
   'gemini-3.8-flash-high': GEMINI_FLASH_PRICE,

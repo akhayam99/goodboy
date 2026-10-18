@@ -65,11 +65,11 @@ describe('resolveRoleRouting', () => {
 
   it('keeps the pinned model and defaults the effort when the ladder omits it', () => {
     const prefs: RoleModelPreferences = {
-      reviewer: { providerId: 'anthropic', model: 'claude-sonnet-4-6', effort: 'max' },
+      reviewer: { providerId: 'anthropic', model: 'claude-opus-4-6', effort: 'xhigh' },
     };
     const resolved = resolveRoleRouting({ role: 'reviewer', prefs });
 
-    expect(resolved.model).toBe('sonnet-4.6');
+    expect(resolved.model).toBe('opus-4.6');
     expect(resolved.effort).toBe('high');
     expect(resolved.isOverride).toBe(true);
   });

@@ -31,7 +31,7 @@ const providerInfo = ({ id, label, binary, connection }: ProviderParams): Provid
   binary,
   capabilities: CAPABILITIES,
   connection,
-  version: connection === 'connected' ? '2.1.290' : null,
+  version: connection === 'connected' ? '2.1.296' : null,
   identity: connection === 'connected' ? 'mara.quint@harborline.dev' : null,
   label,
   error: null,

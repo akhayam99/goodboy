@@ -56,14 +56,14 @@ describe('PlannerClient', () => {
       ({ stdout, stderr: '', exitCode: 0 }) as T;
     const client = new PlannerClient({
       providerId: 'codex',
-      model: 'gpt-5.4-mini',
+      model: 'gpt-6-luna',
       invokeFn,
     });
 
     const result = await client.plan({ process: 'Fix authentication.' });
 
-    expect(result.model).toBe('gpt-5.4-mini');
-    expect(result.usage.estimatedCostUsd).toBeCloseTo(5.25);
+    expect(result.model).toBe('gpt-6-luna');
+    expect(result.usage.estimatedCostUsd).toBeCloseTo(0.1 + 0.5);
   });
 
   it('reports a timed out plan as its own error', async () => {

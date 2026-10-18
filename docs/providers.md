@@ -222,10 +222,12 @@ and an arrow.
   is not connected. Each job names a model line, never a version, so a new model
   in the catalog reaches Auto on its own. On Claude, the Planner runs on the newest
   Opus (Opus 5.5, Opus 5 on an older CLI), the Debugger and the Reviewer on the
-  newest Sonnet at High, Docs on the newest Sonnet at Low, Scout and the small
-  writing jobs on Haiku 4.5, and plan drafting, Generalist, Report and the other
-  roles on the newest Sonnet at Medium (Sonnet 5.5 today, Sonnet 5 on a Claude CLI
-  older than 2.1.284)
+  newest Sonnet at High, Docs on the newest Sonnet at Low, Scout on the newest Haiku
+  at Medium, the small writing jobs on the newest Haiku (Haiku 5.5 today, Haiku 4.5
+  on a Claude CLI older than 2.1.293), and plan drafting, Generalist, Report and the
+  other roles on the newest Sonnet at Medium (Sonnet 5.5 today, Sonnet 5 on a Claude
+  CLI older than 2.1.284). On Codex the Luna jobs run on GPT-6 Luna (GPT-5.6 Luna
+  on a Codex CLI older than 0.162.1)
 - **Role model set**: a role with a set runs on one of its models. With no step size
   (or a large step) it takes the first model that can run; a medium step takes the
   first one at mid cost or cheaper, a small step the first cheap one, and when none
@@ -562,11 +564,12 @@ one detected after it (`cliUpdateResultOf`):
 ### CLI version gate
 
 - `minCliVersion` on a catalog model is the oldest CLI that runs it. Opus 5.5
-  needs Claude CLI 2.1.280 and Fable 5.1 needs 2.1.251
-- Sonnet 5.5 has no `minCliVersion`. Claude CLI 2.1.282 runs it (it prints an
-  `unrecognized_model` note and serves the model anyway), and no older floor is
-  known, so a refusal on an older CLI is left to `learnCliRequirement`. Write a
-  floor only when a refusal or a release note names it
+  needs Claude CLI 2.1.280, Sonnet 5.5 2.1.284, Haiku 5.5 2.1.293 and Fable 5.1
+  2.1.251. GPT-6.1 Sol needs Codex CLI 0.160.0, GPT-6 Sol and GPT-6 Luna 0.162.1,
+  the first version whose `codex debug models` was read; an older CLI may know
+  them too, so that floor can only fall
+- Write a floor only when a refusal, a release note or the CLI's own model list
+  names it; a refusal on an older CLI is left to `learnCliRequirement`
 - A `cli_too_old` refusal also teaches the gate. `learnCliRequirement` stores the
   required version per provider and model in the `provider.cliRequirements`
   setting, so the next time the gate warns before the send even for a model with
@@ -774,15 +777,24 @@ What the catalogs do not tell you:
 - That is why Codex Sol, Terra and Luna are three ids: `gpt-5.6-sol`, `gpt-5.6-terra`
   and `gpt-5.6-luna`. Each has its own cost tier and price in `codex/cost.ts` (4/20,
   2/12 and 0.2/1.2 per Mtok). The picker shows them as version chips
-- `gpt-6.1-sol` (Codex CLI 0.160 or newer) is the newest Sol and a fourth id of its own,
-  priced 2/10 per Mtok with cached input at 0.10 in `codex/cost.ts`. Its catalog
-  carries `minCliVersion: '0.160.0'`, so Auto keeps `gpt-5.6-sol` on an older Codex
-  CLI. Its catalog `costTier` is `expensive` on purpose, like Astra: `mid` would make
-  it the codex mid model in place of Terra. The same model sits in the OpenRouter
-  catalog as `openrouter/openai/gpt-6.1-sol`. `gpt-5.6-sol` is `expensive` on both
-  Codex and OpenRouter: OpenAI's standard rate is 4/20, twice the newer Sol
+- `gpt-6.1-sol` (Codex CLI 0.160 or newer) is the newest Sol, the Codex turn default
+  and an id of its own, priced 2/10 per Mtok with cached input at 0.10 in
+  `codex/cost.ts`. Its catalog carries `minCliVersion: '0.160.0'`, so Auto keeps an
+  older Sol on an older Codex CLI. Its catalog `costTier` is `expensive` on purpose,
+  like Astra: `mid` would make it the codex mid model in place of Terra. The same
+  model sits in the OpenRouter catalog as `openrouter/openai/gpt-6.1-sol`.
+  `gpt-5.6-sol` is `expensive` on both Codex and OpenRouter: OpenAI's standard rate
+  is 4/20, twice the newer Sol
+- `gpt-6-sol` (2/10, cached 0.20, `expensive` like 6.1 Sol) sits between the two
+  Sols, and `gpt-6-luna` (0.10/0.50, cached 0.01, `cheap`) is the newest Luna, so
+  the Luna jobs run on it. Both need Codex CLI 0.162.1. OpenRouter carries both too
+- Codex context windows come from `codex debug models`: 500k for GPT-6.1 Sol and
+  272k for the others, not the 872k maximum. The orchestrator's context check
+  reads this number. The long context rate above 272k is not modeled yet
 - Cursor is the only provider whose `getCheapModel` is set by hand. It is set to
-  `auto` in `cli-defaults.ts`
+  `auto` in `cli-defaults.ts`. Every other provider takes the non-legacy cheap entry
+  with the highest catalog `order`, never the first one in the array, so a newer
+  cheap model (Haiku 5.5, GPT-6 Luna) wins wherever it sits
 - Old ids still work through `parseLegacyId.ts`. So an id missing from the catalog is
   not always dead
 - If a model does not support an effort level, Goodboy uses the highest level it does
@@ -794,7 +806,13 @@ What the catalogs do not tell you:
   `effort_args` in `apps/desktop/src-tauri/src/providers/cli_args.rs` builds all of them,
   for turns, the planner and the summarizer alike
 - There is no `ultracode` level. `claude --help` lists exactly
-  `low, medium, high, xhigh, max`. Run that check before you add a level to the union
+  `low, medium, high, xhigh, max`. Claude Code's model docs describe `ultracode` as
+  a separate setting (v2.1.203 or newer), not a level, so it stays out of the union.
+  Codex's `ultra` is its own fan-out across subagents and stays out too: Goodboy
+  owns fan-out. Run that check before you add a level to the union
+- A model that publishes no effort levels (Haiku 4.5, and on opencode Big Pickle,
+  MiMo and both Nemotrons) gets no effort flag at all. opencode Zen lists its
+  variants per model, so each catalog entry carries only those
 - Prices are looked up only within the provider that runs the model.
   `getProviderModelPrice({ provider, model })` reads that provider's `cost.ts`
   and returns `null` when it has no rate. The same key on two providers
@@ -805,14 +823,22 @@ What the catalogs do not tell you:
 - A rate the vendor has not published yet is copied from the model it follows and
   carries `assumed: true` in its `cost.ts` (Cursor `auto` does: Cursor bills Auto at
   the rate of the model it routes to), so `costCoverage` reports its spend as
-  approximate. Each provider has one price table, its `cost.ts`. Telemetry, budgets
+  approximate. Haiku 5.5 carries it too: Anthropic bills 0.10/0.50 (cached 0.01) for
+  a request up to 100,000 prompt tokens and 0.50/2.50 above, and `ModelPrice` holds
+  one rate, so Goodboy bills the lower one and marks the spend approximate. A long
+  Scout run that crosses the threshold reads low until two-level prices land Each provider has one price table, its `cost.ts`. Telemetry, budgets
   and estimates all read it; there is no second table that wins at runtime
 - Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
   `gemini/cost.ts` until December 31, 2026. Google lists 1.50/7.50 (cached 0.15)
   from January 1, 2027, so move the three rows then. `priceSources.test.ts` turns
   red on that day so the move cannot be forgotten
 - Cursor bills by its own list (`cursor.com/docs/models`), not the vendor's: Gemini
-  3.8 and 3.7 Flash are 0.75/3.5, 3.6 Flash 1.5/7.5 and Gemini 3 Flash 0.5/3
+  3.8 and 3.7 Flash are 0.75/3.75, 3.6 Flash 1.5/7.5, Gemini 3 Flash 0.5/3, Gemini 4
+  Argon 2/10 (cached 0.10), Sonnet 5.5 2/10 with cache reads at 0.10 and Haiku 5.5
+  0.10/0.50 (cached 0.01, `assumed` like the Claude row). Every Haiku 5.5 combo needs
+  Max Mode, which Cursor keeps only on legacy plans
+- Gemini 3.7 Flash is `legacy` on Gemini and OpenRouter, and Gemini 3.5 Flash on
+  OpenRouter: Google routes both to a newer Flash
 
 When a provider ships or retires a model, update these together:
 

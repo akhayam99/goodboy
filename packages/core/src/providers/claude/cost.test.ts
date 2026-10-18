@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProviderUsage } from '@goodboy/types';
-import { computeCostUsd } from './cost';
+import { computeCostUsd, priceFor } from './cost';
 
 const usage: ProviderUsage = {
   inputTokens: 1_000_000,
@@ -44,6 +44,28 @@ describe('computeCostUsd', () => {
 
   it('sonnet-5-5 carries the measured sonnet 5 rate, not the sonnet fallback', () => {
     expect(computeCostUsd({ usage, model: 'claude-sonnet-5-5' })).toBeCloseTo(2 + 10);
+  });
+
+  it('sonnet-5-5 cached tokens are billed at 0.10, half the sonnet 5 cache rate', () => {
+    const partial: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 1_000_000,
+      estimatedCostUsd: 0,
+    };
+    expect(computeCostUsd({ usage: partial, model: 'claude-sonnet-5-5' })).toBeCloseTo(0.1);
+  });
+
+  it('haiku-5-5 bills the rate for prompts up to 100,000 tokens, marked assumed', () => {
+    const cached: ProviderUsage = {
+      inputTokens: 0,
+      outputTokens: 0,
+      cachedInputTokens: 1_000_000,
+      estimatedCostUsd: 0,
+    };
+    expect(computeCostUsd({ usage, model: 'claude-haiku-5-5' })).toBeCloseTo(0.1 + 0.5);
+    expect(computeCostUsd({ usage: cached, model: 'claude-haiku-5-5' })).toBeCloseTo(0.01);
+    expect(priceFor('claude-haiku-5-5').assumed).toBe(true);
   });
 
   it('sonnet-5 cached tokens are billed at 10% of input', () => {

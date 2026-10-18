@@ -9,7 +9,7 @@ describe('provider model display', () => {
       label: 'Astra',
       family: 'gpt',
       variantLabel: '6 Astra',
-      contextWindow: 1_000_000,
+      contextWindow: 272_000,
       costTier: 'expensive',
     });
   });
@@ -21,7 +21,7 @@ describe('provider model display', () => {
       label: 'GPT-6.1 Sol',
       family: 'gpt',
       variantLabel: '6.1 Sol',
-      contextWindow: 1_000_000,
+      contextWindow: 500_000,
       costTier: 'expensive',
     });
   });
@@ -42,8 +42,8 @@ describe('provider model display', () => {
   });
 
   it('resolves variant and combo slugs to authored windows', () => {
-    expect(getModelDescriptor({ id: 'gpt-5.6-sol' })?.contextWindow).toBe(1_000_000);
-    expect(getModelDescriptor({ id: 'gpt-6-astra' })?.contextWindow).toBe(1_000_000);
+    expect(getModelDescriptor({ id: 'gpt-5.6-sol' })?.contextWindow).toBe(272_000);
+    expect(getModelDescriptor({ id: 'gpt-6-astra' })?.contextWindow).toBe(272_000);
     expect(getModelDescriptor({ id: 'claude-4.6-sonnet-medium' })?.contextWindow).toBe(1_000_000);
     expect(getModelDescriptor({ id: 'composer-2.5-fast' })?.contextWindow).toBe(200_000);
   });

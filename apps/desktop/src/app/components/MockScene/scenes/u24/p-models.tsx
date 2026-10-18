@@ -37,7 +37,7 @@ const connected = ({ id, label, binary }: ProviderParams): ProviderDisplayInfo =
   binary,
   capabilities: CAPABILITIES,
   connection: 'connected',
-  version: '2.1.290',
+  version: '2.1.296',
   identity: 'mara.quint@harborline.dev',
   label,
   error: null,

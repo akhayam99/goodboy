@@ -60,7 +60,7 @@ describe('ModelsGroup', () => {
 
     fireEvent.click(screen.getByRole('switch', { name: 'Haiku' }));
 
-    expect(savedHidden()).toEqual({ anthropic: ['haiku-4.5'] });
+    expect(savedHidden()).toEqual({ anthropic: ['haiku-5.5', 'haiku-4.5'] });
   });
 
   it('never lets the last visible model go', () => {

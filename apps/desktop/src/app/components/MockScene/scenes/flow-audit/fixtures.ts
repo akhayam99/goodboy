@@ -283,7 +283,7 @@ export const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
       supportsCheapModel: true,
     },
     connection: 'connected',
-    version: '2.1.284',
+    version: '2.1.296',
     identity: 'harborline-platform',
     label: 'Claude',
     error: null,

@@ -83,10 +83,10 @@ describe('CliUpdateNotice', () => {
   it('names every model the installed CLI cannot run', () => {
     render(<CliUpdateNotice providerId="anthropic" autoStart={false} />);
     expect(
-      screen.getByText('Fable 5.1, Opus 5.5 and Sonnet 5.5 need a newer Claude CLI'),
+      screen.getByText('Fable 5.1, Opus 5.5, Sonnet 5.5 and Haiku 5.5 need a newer Claude CLI'),
     ).toBeDefined();
     expect(
-      screen.getByText('You have Claude CLI 2.1.240. Update to 2.1.284 or newer.'),
+      screen.getByText('You have Claude CLI 2.1.240. Update to 2.1.293 or newer.'),
     ).toBeDefined();
     expect(updateProviderCli).not.toHaveBeenCalled();
   });
