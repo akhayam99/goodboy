@@ -21,8 +21,9 @@ import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
-import { fixChecksSuggestionOf, isFixInProgress } from './fixChecksSuggestionOf';
+import { fixChecksSuggestionOf } from './fixChecksSuggestionOf';
 import { cleanupSuggestionOf } from './cleanupSuggestionOf';
+import { isOfferedByActivity } from './isOfferedByActivity';
 import type {
   FixChecksProgress,
   RebaseSuggestionTarget,
@@ -482,7 +483,7 @@ export const deriveNextSteps = ({
     if (pr.checks !== 'failure' && progress?.chain !== 'fixed-pushed') {
       continue;
     }
-    if (hasRunningAgent && !isFixInProgress({ progress })) {
+    if (hasRunningAgent) {
       continue;
     }
     suggestions.push(
@@ -634,7 +635,9 @@ export const deriveNextSteps = ({
       payload: { targets: shownRebaseTargets },
     });
   }
-  const deduped = dedupeByTargetKey({ suggestions });
+  const deduped = dedupeByTargetKey({
+    suggestions: suggestions.filter((suggestion) => !isOfferedByActivity({ suggestion })),
+  });
   const kept = applyDismissals({ suggestions: deduped, dismissedFingerprints });
   return sortNextSteps({ suggestions: kept, demotedKinds });
 };

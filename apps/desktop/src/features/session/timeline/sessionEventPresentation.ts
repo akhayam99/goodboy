@@ -1,4 +1,3 @@
-import { FolderMinus, GitBranch, Link2, Link2Off } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
@@ -76,12 +75,12 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
     tone: CONCEPT_TONE.worktree,
     label: 'Session folder',
   },
-  branch_created: { icon: GitBranch, tone: 'info', label: 'Branch' },
-  branch_switched: { icon: GitBranch, tone: 'info', label: 'Branch' },
+  branch_created: { icon: CONCEPT_ICONS.branch, tone: 'info', label: 'Branch' },
+  branch_switched: { icon: CONCEPT_ICONS.branch, tone: 'info', label: 'Branch' },
   branch_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Branch' },
   branch_restored: { icon: CONCEPT_ICONS.restore, tone: 'info', label: 'Branch' },
-  issue_linked: { icon: Link2, tone: 'neutral', label: 'Issue' },
-  issue_unlinked: { icon: Link2Off, tone: 'neutral', label: 'Issue' },
+  issue_linked: { icon: CONCEPT_ICONS.issueLink, tone: 'neutral', label: 'Issue' },
+  issue_unlinked: { icon: CONCEPT_ICONS.issueUnlink, tone: 'neutral', label: 'Issue' },
   pr_created: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_created], label: 'Pull request' },
   pr_discovered: {
     ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_discovered],
@@ -108,10 +107,14 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
     tone: CONCEPT_TONE.mount,
     label: 'Project',
   },
-  project_materialization_dismissed: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
-  project_detached: { icon: FolderMinus, tone: 'neutral', label: 'Project' },
-  external_task_created: { icon: Link2, tone: 'neutral', label: 'Issue' },
-  rebase_requested: { icon: GitBranch, tone: 'info', label: 'Branch' },
+  project_materialization_dismissed: {
+    icon: CONCEPT_ICONS.projectDetach,
+    tone: 'neutral',
+    label: 'Project',
+  },
+  project_detached: { icon: CONCEPT_ICONS.projectDetach, tone: 'neutral', label: 'Project' },
+  external_task_created: { icon: CONCEPT_ICONS.issueLink, tone: 'neutral', label: 'Issue' },
+  rebase_requested: { icon: CONCEPT_ICONS.branch, tone: 'info', label: 'Branch' },
   session_archived: { icon: CONCEPT_ICONS.archive, tone: 'neutral', label: 'Session' },
   session_restored: { icon: CONCEPT_ICONS.restore, tone: 'primary', label: 'Session' },
   write_destination_changed: {

@@ -1,10 +1,5 @@
 import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
-import { checkOutcomeOf } from '../../branch/checks/checkOutcomeOf';
-import { checkTargetOf } from '../../branch/checks/checkTargetOf';
 import { failingChecksOf } from '../../branch/checks/failingChecksOf';
-import { pushCheckFix } from '../../branch/checks/pushCheckFix';
-import { startCheckFix } from '../../branch/checks/startCheckFix';
-import { selectCheckChain } from '../../../store/slices/agents/selectCheckChain';
 import { NAMES } from '../../../shared/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -98,17 +93,6 @@ export const useSuggestionActions = ({
     ),
   );
   const spawnAgent = useAppStore((state) => state.spawnAgent);
-  useAppStore((state) =>
-    (state.sessionPhaseRuns[sessionId] ?? [])
-      .flatMap((agent) =>
-        agent.sourceKind === 'failed_check' && agent.sourceCommentUrl !== undefined
-          ? [
-              `${agent.id}:${selectCheckChain({ state, sessionId, url: agent.sourceCommentUrl }).state}`,
-            ]
-          : [],
-      )
-      .join(),
-  );
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const navigate = useAppStore((state) => state.navigate);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
@@ -405,98 +389,10 @@ export const useSuggestionActions = ({
           ...(routing !== undefined && { routing }),
         });
       };
-      const failing = readFailing();
-      const firstFailing = failing?.checks[0];
-      const target = checkTargetOf({
-        state: useAppStore.getState(),
-        sessionId,
-        mountId: suggestion.payload.mountId,
-        failingUrl:
-          firstFailing === undefined
-            ? null
-            : (firstFailing.detailsUrl ?? failing?.pullRequest.url ?? null),
-        failingName: firstFailing?.name ?? null,
-      });
-      const url = target?.url;
-      const chain =
-        url === undefined
-          ? null
-          : selectCheckChain({ state: useAppStore.getState(), sessionId, url });
-      if (url !== undefined && chain !== null && chain.state === 'proposal') {
-        return {
-          primary: {
-            label: 'Start fix',
-            shortLabel: 'Fix',
-            agentKind: 'implementer',
-            isDisabled: false,
-            failureTitle: "Couldn't start the Implementer",
-            run: async () => {
-              await startCheckFix({ sessionId, url, mountId: suggestion.payload.mountId });
-            },
-          },
-          onDismiss: null,
-        };
-      }
-      if (url !== undefined && chain !== null && chain.state === 'fixed-local') {
-        const fixAgentId = chain.fix?.id;
-        return {
-          primary: {
-            label: 'Push',
-            isDisabled: false,
-            failureTitle: "Couldn't push the branch",
-            run: () => pushCheckFix({ sessionId, mountId: suggestion.payload.mountId, fixAgentId }),
-          },
-          onDismiss: null,
-        };
-      }
-      if (url !== undefined && chain !== null && chain.state === 'fixed-pushed') {
-        const outcome = checkOutcomeOf({
-          checks: failing?.allChecks ?? [],
-          name: target?.name ?? null,
-          analyzedUrl: url,
-        });
-        if (outcome !== 'failed') {
-          return NO_ACTIONS;
-        }
-        return {
-          primary: {
-            label: 'Analyze again',
-            isDisabled: false,
-            failureTitle: "Couldn't start the Debugger",
-            run: () => analyze(),
-            runsOn: {
-              kind: 'debugger',
-              runWith: (routing) => analyze({ routing }),
-            },
-          },
-          onDismiss: null,
-        };
-      }
-      if (
-        url !== undefined &&
-        chain !== null &&
-        chain.state !== 'none' &&
-        chain.state !== 'no-fix'
-      ) {
-        return {
-          primary: {
-            label: 'Open',
-            isDisabled: false,
-            failureTitle: "Couldn't open the analysis",
-            run: async () => {
-              useAppStore.getState().openDrawer({
-                kind: 'check-analysis',
-                sessionId,
-                payload: { sessionId, mountId: suggestion.payload.mountId, checkUrl: url },
-              });
-            },
-          },
-          onDismiss: null,
-        };
-      }
+      const isAnalyzedBefore = suggestion.payload.progress?.chain === 'fixed-pushed';
       return {
         primary: {
-          label: 'Analyze',
+          label: isAnalyzedBefore ? 'Analyze again' : 'Analyze',
           agentKind: 'debugger',
           isDisabled: false,
           failureTitle: "Couldn't start the Debugger",

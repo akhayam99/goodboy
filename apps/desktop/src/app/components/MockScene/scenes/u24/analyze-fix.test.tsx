@@ -94,10 +94,9 @@ describe('analyze fix scenes', () => {
     show({ name: 'activity-check-chain' });
     expect(screen.getAllByText('CI fix · payments-api / test · #318').length).toBeGreaterThan(0);
     expect(screen.queryByText('Implementer')).toBeNull();
-    const next = screen.getByRole('region', { name: 'Next steps' });
-    expect(within(next).getByText('Fixing payments-api / test on #318')).toBeDefined();
-    expect(within(next).getByRole('button', { name: 'Open' })).toBeDefined();
-    expect(within(next).queryByRole('button', { name: 'Push' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Next steps' })).toBeNull();
+    expect(screen.queryByText('Fixing payments-api / test on #318')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Push' })).toBeNull();
     expect(screen.queryByText('Review the changes')).toBeNull();
   });
   it('opens the CI fix drawer from the Activity row while the pull request detail is unloaded', () => {

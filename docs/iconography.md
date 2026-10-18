@@ -152,8 +152,10 @@ A kind always renders through `AgentKindChip`
   glyph: a guessed Generalist is worse than none.
 
 A workflow row in the feed carries the same circle in a neutral tint with the
-glyph of its origin, `LayoutTemplate` for a preset, `PenLine` for a custom
-workflow and `Network` for an orchestrated one, and never the word Workflow.
+glyph the New menu and the Workflows lens use: `workflows` (`Waypoints`) for a
+preset or custom run, `orchestrator` (`Network`) for an orchestrated one, and
+never the word Workflow. The origin (Preset run, Custom run) is the tooltip and
+the accessible name.
 The scouts', reviewers' and testers' tints sit close together, so the shape of
 the icon has to carry the difference, not the colour.
 
@@ -240,21 +242,30 @@ trigger in the migrated areas.
 
 `TimelineRowMarker` draws every fact row as a `WorkNode` marker and sizes its
 glyph with `WORK_NODE_GLYPH_SIZE`, not `ICON_SIZE`, because every rail node is
-20px on every grade. The glyph itself still comes from the registry through
-`sessionEventGlyph`.
+20px on every grade. The glyph itself still comes from the registry: an event
+through `sessionEventGlyph`, every other row kind through `activityRowConcept`
+(`features/session/timeline/activityRowConcept.ts`), the one map from an
+Activity row kind to its concept. The run glyph (`RUN_KIND_GLYPH`) and the
+**Needs you** rows read the same function, and `activityRowConcept.test.ts`
+pins every kind and every event to a registry glyph.
 
-| Entry           | Glyph                                     |
-| --------------- | ----------------------------------------- |
-| Plan            | `plans`                                   |
-| Open question   | `questions`                               |
-| Answered        | `MessageSquareCheck`                      |
-| Branch artifact | `branch`                                  |
-| Session folder  | `worktree`                                |
-| Project mounted | `mount`                                   |
-| Pull request    | `PULL_REQUEST_PRESENTATION` per state     |
-| Workflow        | `workflows`, `delete` when deleted        |
-| Decisions       | `decisions`                               |
-| Issue           | `IntegrationGlyph` for the issue provider |
+| Entry           | Glyph                                                        |
+| --------------- | ------------------------------------------------------------ |
+| Plan            | `plans`                                                      |
+| Open question   | `questions`                                                  |
+| Answered        | `questionAnswered` (`MessageSquareCheck`)                    |
+| Explained       | `learning` (`BookOpen`)                                      |
+| Issue linked    | `issueLink` (`Link2`)                                        |
+| Issue unlinked  | `issueUnlink` (`Link2Off`)                                   |
+| Project removed | `projectDetach` (`FolderMinus`)                              |
+| Branch artifact | `branch`                                                     |
+| Session folder  | `worktree`                                                   |
+| Project mounted | `mount`                                                      |
+| Pull request    | `PULL_REQUEST_PRESENTATION` per state                        |
+| Workflow        | `workflows`, `delete` when deleted                           |
+| Needs you       | `resolve`, the run's glyph, `agents`, `questions`, `history` |
+| Decisions       | `decisions`                                                  |
+| Issue           | `IntegrationGlyph` for the issue provider                    |
 
 ## Row states
 

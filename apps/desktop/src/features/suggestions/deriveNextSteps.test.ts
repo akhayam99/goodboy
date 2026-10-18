@@ -111,7 +111,6 @@ describe('deriveNextSteps', () => {
     expect(suggestions.map((suggestion) => suggestion.kind)).toEqual([
       'answer-questions',
       'mount-project',
-      'workflow-next-step',
       'plan-ready',
       'resolve-threads',
       'rebase-project',
@@ -142,9 +141,13 @@ describe('deriveNextSteps', () => {
     ).toBe(false);
     expect(
       derive({ isOwnedByRun: true, isRunning: false }).some(
-        (suggestion) => suggestion.kind === 'workflow-next-step',
+        (suggestion) => suggestion.kind === 'plan-ready',
       ),
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('leaves the ready step of a started run to the Start of its Activity row', () => {
+    expect(derive({}).some((suggestion) => suggestion.kind === 'workflow-next-step')).toBe(false);
   });
 
   it('carries the fixable comment count of the selected source, on any host', () => {

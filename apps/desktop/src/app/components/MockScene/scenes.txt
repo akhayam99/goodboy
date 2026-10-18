@@ -5,6 +5,8 @@ activity-ci-fix-unloaded
 activity-empty
 activity-groups
 activity-jobs
+activity-kinds-dark
+activity-kinds-light
 activity-log
 activity-mark-seen
 activity-one-signal
@@ -527,6 +529,10 @@ onboarding-setup-menu-dark
 onboarding-setup-menu-light
 open-question-prose
 open-questions
+overview-after-analyze-dark
+overview-after-analyze-light
+overview-after-fix-dark
+overview-after-fix-light
 overview-branch-tasks
 overview-first-lap
 overview-full

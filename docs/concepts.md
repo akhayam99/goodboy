@@ -478,12 +478,22 @@ whether you clicked it on the board or in the session overview.
   Activity does not show, so it never sits above a question already in view.
   With one such question, **Answer** opens the agent that asked at that
   question (`useOpenAgentQuestion`); with more, it opens the questions view.
+- Next never offers what an Activity row already offers for the same run.
+  One rule, `isOfferedByActivity` (`features/suggestions/isOfferedByActivity.ts`,
+  exhaustive over the kinds), runs in `deriveNextSteps` before
+  `dedupeByTargetKey`: the hint that starts a run stays, and the run's
+  follow-ups live only on its row. Today that drops the ready step of a
+  workflow run (its row has **Start**) and every stage of a CI fix after
+  **Analyze** (its row opens the drawer, then has **Start fix** and **Push**).
+  **Resume all** after a restart stays, because no row resumes several
+  agents at once; a failed agent's **Retry** stays, because its row has none.
 - A permission has one place in the overview: the **Needs you** callout,
   whose button opens the blocked agent. The approve-tool
   suggestion for that same agent stays out of Next steps; a permission the
   callout does not name (a second blocked agent) still shows there.
 - Eighteen suggestion kinds ship: the original six (answer open questions,
-  continue a workflow's ready step, fix review conversations, rebase a
+  continue a workflow's ready step (derived, then left to its Activity row
+  by `isOfferedByActivity`), fix review conversations, rebase a
   project, run a ready plan, add a proposed project) plus twelve more that
   landed on the same engine, not a second one: approve a pending permission,
   sign back in after `auth_required`, resume every agent a restart stopped
@@ -1807,4 +1817,4 @@ is on the session again**, **HL-204 is on payments-api / hl/ledger-rounding**). 
 
 A check analysis agent has `sourceKind` `failed_check` and keeps the originating check URL in `sourceCommentUrl`. The latest non-deleted agent for that session and URL owns the check row status; its transcript owns the finding and **Proposed fix**. The source type is in `packages/types/src/workflow.ts`, and the selector is `apps/desktop/src/store/slices/agents/selectCheckAnalysis.ts`.
 
-The fix's commit comes from the repository, not from the fix agent's transcript. `readCheckFixCommit` in `apps/desktop/src/store/slices/check-fix-commits/readCheckFixCommit.ts` lists the mount branch and takes the newest commit made after the fix started. `selectCheckChain` turns that fact into `fixed-local` (committed, not pushed), `fixed-pushed` (on the remote) or `fix-failed` (the fix ended with no new commit). The transcript's `commitOf` stands in only when the repository cannot be read. The Next card for failing checks follows that state (`apps/desktop/src/features/suggestions/fixChecksSuggestionOf.ts`): **Analyzing**, **Fixing**, a success card with **Push**, then **is running again**. The generic **Review the changes** card never fires for an agent whose `sourceKind` is `failed_check`.
+The fix's commit comes from the repository, not from the fix agent's transcript. `readCheckFixCommit` in `apps/desktop/src/store/slices/check-fix-commits/readCheckFixCommit.ts` lists the mount branch and takes the newest commit made after the fix started. `selectCheckChain` turns that fact into `fixed-local` (committed, not pushed), `fixed-pushed` (on the remote) or `fix-failed` (the fix ended with no new commit). The transcript's `commitOf` stands in only when the repository cannot be read. The Next card for failing checks is only the first hint, **Analyze** (`apps/desktop/src/features/suggestions/fixChecksSuggestionOf.ts`). Once the Debugger runs, every follow-up lives on its one Activity row, "CI fix · check · #318": a click opens the Debugger drawer while it analyzes or fixes, **Start fix** sits on the row once a fix is proposed (`selectFixOffers`), and **Push** once the fix is committed and not pushed (`selectCheckPushOffers`, `pushCheckFix`). Next drops all of them through `isOfferedByActivity`, and it hides the plain push card for that branch meanwhile. It comes back only to start something new: **Analyze** after an analysis without a fix, **Analyze again** when the check still fails after the push. The generic **Review the changes** card never fires for an agent whose `sourceKind` is `failed_check`.
