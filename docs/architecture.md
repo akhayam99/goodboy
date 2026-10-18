@@ -63,8 +63,17 @@ probe runs in its own session and is killed and reaped on its deadline
 terminal and the environment check always agree because both ask it.
 
 If a push fails because a variable is missing, do not skip hooks with
-`git push --no-verify`. Pass the environment through instead. This layer runs
-on macOS and Linux.
+`git push --no-verify`. Pass the environment through instead. The login shell
+probe runs on macOS and Linux.
+
+On Windows there is no login shell to ask. `PATH` is the persisted one from
+the registry (system, then user, with `%VAR%` expanded, so a CLI installed
+while Goodboy is open is found), then the inherited one, then a static list:
+`%APPDATA%\npm`, `%LOCALAPPDATA%\pnpm`, and `.local\bin`, `.bun\bin`,
+`.cargo\bin`, `.deno\bin` and `scoop\shims` under the user profile. `which`
+tries each extension of `PATHEXT` in order, so `claude` finds `claude.exe`
+before `claude.cmd`. Lists are split and joined only by the helpers in
+`apps/desktop/src-tauri/src/platform/paths.rs`, never on a hand-written `:`.
 
 ### Processes Goodboy starts
 

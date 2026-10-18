@@ -3,6 +3,7 @@ use std::process::Command;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+use crate::platform::paths;
 use crate::proc::probe;
 
 struct Slot<T: 'static> {
@@ -62,26 +63,15 @@ pub fn command(binary: &str) -> Command {
 }
 
 pub fn which(binary: &str) -> Option<String> {
-    if binary.contains('/') {
+    let extensions = paths::program_extensions();
+    let found = paths::find_program_in(binary, resolved_path(), extensions.as_deref());
+    if let Some(found) = found {
+        return Some(found.to_string_lossy().into_owned());
+    }
+    if paths::is_explicit_path(binary) {
         return Some(binary.to_string());
     }
-    std::env::split_paths(resolved_path())
-        .map(|dir| dir.join(binary))
-        .find(|candidate| is_executable_file(candidate))
-        .map(|found| found.to_string_lossy().into_owned())
-}
-
-#[cfg(unix)]
-fn is_executable_file(path: &std::path::Path) -> bool {
-    use std::os::unix::fs::PermissionsExt;
-    std::fs::metadata(path)
-        .map(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
-        .unwrap_or(false)
-}
-
-#[cfg(not(unix))]
-fn is_executable_file(path: &std::path::Path) -> bool {
-    path.is_file()
+    None
 }
 
 pub fn resolved_env() -> &'static [(String, String)] {
@@ -112,6 +102,18 @@ pub fn login_shell() -> String {
     "/bin/sh".to_string()
 }
 
+#[cfg(windows)]
+fn compute_path() -> (String, bool) {
+    let inherited = std::env::var("PATH").unwrap_or_default();
+    let persisted = crate::platform::windows::registry::persisted_path();
+    let common = common_install_paths();
+    let mut sources: Vec<&str> = persisted.iter().map(String::as_str).collect();
+    sources.push(inherited.as_str());
+    sources.push(common.as_str());
+    (paths::merge_path_lists(&sources), true)
+}
+
+#[cfg(not(windows))]
 fn compute_path() -> (String, bool) {
     let inherited = std::env::var("PATH").unwrap_or_default();
     let (shell, npm_bin) = probe_login_shell();
@@ -119,23 +121,13 @@ fn compute_path() -> (String, bool) {
     let shell = shell.unwrap_or_default();
     let npm_bin = npm_bin.unwrap_or_default();
     let common = common_install_paths();
-
-    let mut parts: Vec<String> = Vec::new();
-    let mut seen: HashSet<String> = HashSet::new();
-    for source in [
+    let merged = paths::merge_path_lists(&[
         shell.as_str(),
         inherited.as_str(),
         npm_bin.as_str(),
         common.as_str(),
-    ] {
-        for segment in source.split(':') {
-            let segment = segment.trim();
-            if !segment.is_empty() && seen.insert(segment.to_string()) {
-                parts.push(segment.to_string());
-            }
-        }
-    }
-    (parts.join(":"), is_complete)
+    ]);
+    (merged, is_complete)
 }
 
 #[cfg(target_os = "macos")]
@@ -275,8 +267,26 @@ fn run_with_timeout(bin: &str, args: &[&str]) -> Option<String> {
     Some(out.stdout)
 }
 
+#[cfg(windows)]
 fn common_install_paths() -> String {
-    common_install_paths_for(&std::env::var("HOME").unwrap_or_default())
+    let Some(home) = paths::home_dir() else {
+        return String::new();
+    };
+    let app_data = paths::env_dir("APPDATA");
+    let local_app_data = paths::env_dir("LOCALAPPDATA");
+    paths::join_path_list(&paths::windows_install_dirs(
+        &home,
+        app_data.as_deref(),
+        local_app_data.as_deref(),
+    ))
+}
+
+#[cfg(not(windows))]
+fn common_install_paths() -> String {
+    let home = paths::home_dir()
+        .map(|home| home.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    common_install_paths_for(&home)
 }
 
 fn node_version_key(name: &str) -> Vec<u64> {
@@ -329,7 +339,8 @@ fn common_install_paths_for(home: &str) -> String {
         }
         parts.extend(nvm_bin_dirs(home));
     }
-    parts.join(":")
+    let parts: Vec<std::path::PathBuf> = parts.into_iter().map(std::path::PathBuf::from).collect();
+    paths::join_path_list(&parts)
 }
 
 #[cfg(test)]
@@ -348,12 +359,13 @@ mod tests {
         assert_eq!(which("goodboy-no-such-binary"), None);
     }
 
+    #[cfg(unix)]
     #[test]
     fn resolved_path_is_non_empty_and_contains_bin() {
         let p = resolved_path();
         assert!(!p.is_empty(), "resolved PATH must not be empty");
         assert!(
-            p.split(':').any(|seg| seg == "/bin"),
+            std::env::split_paths(p).any(|seg| seg == std::path::Path::new("/bin")),
             "resolved PATH should include /bin, got: {}",
             p
         );
@@ -374,13 +386,13 @@ mod tests {
     #[test]
     fn compute_path_dedups_segments() {
         let (merged, _) = compute_path();
-        let segments: Vec<&str> = merged.split(':').collect();
         let mut unique = HashSet::new();
-        for s in &segments {
+        for segment in std::env::split_paths(&merged) {
+            let key = segment.to_string_lossy().to_lowercase();
             assert!(
-                unique.insert(*s),
+                unique.insert(key),
                 "duplicate segment in resolved PATH: {}",
-                s
+                segment.display()
             );
         }
     }
@@ -455,11 +467,8 @@ mod tests {
     }
 
     #[cfg(unix)]
-    fn finds_in(paths: &str, binary: &str) -> Option<String> {
-        std::env::split_paths(paths)
-            .map(|dir| dir.join(binary))
-            .find(|candidate| is_executable_file(candidate))
-            .map(|found| found.to_string_lossy().into_owned())
+    fn finds_in(list: &str, binary: &str) -> Option<String> {
+        paths::find_program_in(binary, list, None).map(|found| found.to_string_lossy().into_owned())
     }
 
     #[cfg(unix)]

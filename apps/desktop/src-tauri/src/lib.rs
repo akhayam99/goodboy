@@ -45,6 +45,7 @@ mod monitor;
 mod path_env;
 mod permissions;
 mod planner;
+mod platform;
 mod proc;
 mod process_group;
 mod project_folder;
