@@ -94,3 +94,67 @@ jobs:
         if: steps.changes.outputs.rust == 'true'
         working-directory: apps/desktop/src-tauri
         run: cargo test --locked
+
+  windows:
+    name: windows build + test
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+
+      - name: detect rust changes
+        id: changes
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(git diff --name-only HEAD^1 HEAD 2>/dev/null || echo "__ERR__")
+          if [ "$files" = "__ERR__" ]; then
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s\n' "$files" | grep -qE '^(apps/desktop/src-tauri/|rust-toolchain\.toml$|\.github/workflows/rust\.yml$)'; then
+            echo "rust=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "rust=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        if: steps.changes.outputs.rust == 'true'
+        with:
+          toolchain: 1.98.1
+
+      - name: cache cargo
+        if: steps.changes.outputs.rust == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/src-tauri/target
+          key: cargo-windows-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: |
+            cargo-windows-${{ runner.os }}-
+
+      - name: stub frontend dist
+        if: steps.changes.outputs.rust == 'true'
+        run: |
+          mkdir -p apps/desktop/dist
+          echo '<!doctype html>' > apps/desktop/dist/index.html
+
+      - name: build every target
+        if: steps.changes.outputs.rust == 'true'
+        working-directory: apps/desktop/src-tauri
+        run: cargo test --locked --no-run
+
+      - name: test the windows-aware modules
+        if: steps.changes.outputs.rust == 'true'
+        working-directory: apps/desktop/src-tauri
+        run: 'cargo test --locked --lib -- platform:: terminal:: process_group::'

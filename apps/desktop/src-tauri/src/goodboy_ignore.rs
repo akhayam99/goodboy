@@ -416,11 +416,9 @@ mod tests {
         std::fs::remove_dir_all(&repo).unwrap();
     }
 
+    #[cfg(unix)]
     #[test]
     fn refuses_a_symlinked_project_gitignore() {
-        if !cfg!(unix) {
-            return;
-        }
         let home = test_home("symlink");
         let repo = test_repo("symlink");
         std::os::unix::fs::symlink(repo.join("missing"), repo.join(".gitignore")).unwrap();

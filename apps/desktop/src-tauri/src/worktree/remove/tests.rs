@@ -211,6 +211,7 @@ fn unexpected_directory_is_kept() {
     assert!(target.exists());
 }
 
+#[cfg(unix)]
 #[test]
 fn a_lease_taken_through_a_symlinked_path_keeps_the_worktree() {
     let root = init_repo("remove-leased-symlink");

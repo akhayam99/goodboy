@@ -290,6 +290,7 @@ fn primary_ipv4() -> Option<String> {
     }
 }
 
+#[cfg(unix)]
 fn device_name() -> String {
     let mut buf = [0u8; 256];
     let rc = unsafe { libc::gethostname(buf.as_mut_ptr() as *mut libc::c_char, buf.len()) };
@@ -303,4 +304,13 @@ fn device_name() -> String {
         }
     }
     "Goodboy Desktop".to_string()
+}
+
+#[cfg(windows)]
+fn device_name() -> String {
+    std::env::var("COMPUTERNAME")
+        .ok()
+        .map(|name| name.trim().to_string())
+        .filter(|name| !name.is_empty())
+        .unwrap_or_else(|| "Goodboy Desktop".to_string())
 }

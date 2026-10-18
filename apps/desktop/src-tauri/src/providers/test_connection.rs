@@ -98,7 +98,7 @@ pub async fn provider_test_connection(provider_id: String) -> ConnectionTestResu
     result_of(started, result)
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
     use crate::fake_cli::FakeCli;

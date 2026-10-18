@@ -173,7 +173,6 @@ fn open_scoped(_root: &Path, _relative: &Path) -> std::io::Result<File> {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(unix)]
     use super::open_scoped;
     use super::{open_scoped_error_message, read_image, resolve_root, MAX_IMAGE_BYTES};
     use rusqlite::Connection;

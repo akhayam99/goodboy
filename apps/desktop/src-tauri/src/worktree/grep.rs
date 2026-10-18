@@ -136,5 +136,5 @@ fn parse_row(row: &str) -> Option<GrepMatch> {
     })
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests;
