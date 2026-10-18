@@ -44,6 +44,29 @@ export const FORMER_NAME_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: 'searching Pair your iPhone finds Pair an iPhone',
+    covers: ['settings:iphone', 'palette:Pair an iPhone'],
+    door: 'palette',
+    open: () => openPalette(/^Pair an iPhone/, 'Pair your iPhone'),
+    lands: both(
+      () => studio('Settings'),
+      () => heading('iPhone'),
+    ),
+  },
+  {
+    name: 'searching Shortcuts finds Keyboard shortcuts',
+    covers: ['settings:shortcuts', 'palette:Keyboard shortcuts'],
+    open: () => openPalette(/^Keyboard shortcuts/, 'Shortcuts'),
+    lands: () => heading('Keyboard shortcuts'),
+  },
+  {
+    name: 'searching Guide: Commits opens that Guide chapter',
+    covers: ['studio:guide', 'palette:Guide: Commits'],
+    door: 'palette',
+    open: () => openPalette(/^Guide: Commits/, 'Guide: Commits'),
+    lands: () => studio('Guide'),
+  },
+  {
     name: 'searching Inbox finds Tasks',
     covers: ['studio:inbox'],
     door: 'palette',

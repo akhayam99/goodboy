@@ -64,7 +64,7 @@ export const PaletteOverlay = ({ mode = 'commands', initialQuery = '', onClose }
   return (
     <div
       ref={setLayer}
-      className="fixed inset-0 z-command-palette flex items-start justify-center px-4 pt-16"
+      className="fixed inset-0 z-command-palette flex items-start justify-center px-4 pt-14"
     >
       <div
         aria-hidden
@@ -79,7 +79,7 @@ export const PaletteOverlay = ({ mode = 'commands', initialQuery = '', onClose }
           aria-label={active.label}
           style={{ minHeight: PALETTE_MIN_HEIGHT_PX }}
           className={cn(
-            'relative flex max-h-[calc(100vh-8rem)] w-full flex-col overflow-hidden rounded-lg border border-border bg-floating shadow-lg motion-safe:animate-studio-in',
+            'relative flex max-h-[calc(100vh-7rem)] w-full flex-col overflow-hidden rounded-lg border border-border bg-floating shadow-lg motion-safe:animate-studio-in',
             active.widthClass,
           )}
         >

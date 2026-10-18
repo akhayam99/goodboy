@@ -364,7 +364,10 @@ export const CommandsBody = ({
     return entries.filter(
       (entry) =>
         !runsKeys.has(entry.key) &&
-        !((entry.kind === 'action' || entry.kind === 'page') && verbLabels.has(entry.label)) &&
+        !(
+          (entry.kind === 'action' || entry.kind === 'create' || entry.kind === 'page') &&
+          verbLabels.has(entry.label)
+        ) &&
         !(isSessionScope && REGISTRY_LENS_KEYS.has(entry.key)),
     );
   }, [entries, runs, sessionList, parentList, scopeTarget, parentTarget]);
@@ -756,13 +759,13 @@ export const CommandsBody = ({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex min-h-0 flex-1">
-            <ScrollFade className="max-h-[420px] min-h-0 min-w-0 flex-1" fadeFrom="floating">
+            <ScrollFade className="max-h-[320px] min-h-0 min-w-0 flex-1" fadeFrom="floating">
               <ul
                 ref={listRef}
                 id={listboxId}
                 role="listbox"
                 aria-label="Commands"
-                className="flex flex-col gap-0.5 p-2"
+                className="flex flex-col p-1"
               >
                 {rows.length === 0 ? (
                   <li role="presentation">
@@ -786,7 +789,7 @@ export const CommandsBody = ({
                           <li
                             key={`section:${section.title}`}
                             role="presentation"
-                            className="flex h-8 items-end px-3"
+                            className="flex h-6 items-end px-2"
                           >
                             <Eyebrow label={section.title} />
                           </li>,
@@ -810,7 +813,7 @@ export const CommandsBody = ({
                 <Divider orientation="vertical" className="hidden md:block" />
                 <aside
                   aria-label="Preview"
-                  className="hidden w-72 shrink-0 flex-col justify-between gap-4 p-4 md:flex"
+                  className="hidden w-64 shrink-0 flex-col justify-between gap-3 p-3 md:flex"
                 >
                   <EntryPreview entry={selected.item} subject={subject} />
                   <PreviewHints
@@ -824,7 +827,7 @@ export const CommandsBody = ({
             )}
           </div>
           {selected !== null && !layout.previewShown && (
-            <div className="px-4 py-2">
+            <div className="px-3 py-1">
               <PreviewHints
                 entry={selected.item}
                 isActionsLevel={level !== null}

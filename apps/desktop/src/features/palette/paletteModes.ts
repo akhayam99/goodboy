@@ -7,14 +7,14 @@ export const PALETTE_MODES: ReadonlyArray<PaletteMode> = [
     id: 'commands',
     label: 'Commands',
     shortcut: 'palette.open',
-    widthClass: 'max-w-[820px]',
+    widthClass: 'max-w-[640px]',
     Body: CommandsMode,
   },
   {
     id: 'search',
     label: 'Search',
     shortcut: 'search.open',
-    widthClass: 'max-w-[920px]',
+    widthClass: 'max-w-[720px]',
     Body: SearchMode,
   },
 ];

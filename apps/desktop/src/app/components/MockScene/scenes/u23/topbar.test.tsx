@@ -91,12 +91,12 @@ describe('the u23 top bar scenes', () => {
   });
 
   it.each(['palette-stable-height', 'palette-stable-height-typing'])(
-    'keeps the %s window on one 480 minimum height',
+    'keeps the %s window on one 320 minimum height',
     async (id) => {
       await renderScene(id);
 
       const dialog = screen.getByRole('dialog');
-      expect(dialog.style.minHeight).toBe('480px');
+      expect(dialog.style.minHeight).toBe('320px');
     },
   );
 

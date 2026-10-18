@@ -226,12 +226,25 @@ drawer instead of the Terminal page.
      from a typed `Run a workflow: Ship a fix` row, opens a confirm that names the
      session, the project, the model and the steps, and nothing starts until you
      confirm.
-  4. **Recent**, agents of this session first; then **Go to** (Board inside a
-     session, Tasks, Chat, Workflows, Impact, Notifications, What's new), **App**
-     (New session, New workspace, Resume setup while setup is unfinished in the
-     main window, Settings, Switch theme, Connect a provider, Pair your iPhone,
-     Report a bug) and **Help**. New workspace answers to its former names,
-     Open a folder and Start a new project (`formerNamesOf` in `shared/names.ts`).
+  4. **Recent**, agents of this session first; then four fixed groups, each
+     entry in the one its `kind` names (`EMPTY_SECTION_KINDS` in
+     `commandList.ts`): **Go to** (`goto`: Sessions, Tasks, Chat, Workflows,
+     Terminal, Impact, Monitoring, Notifications, Settings), **Create**
+     (`create`: New session, New chat, New terminal, New workspace), **App**
+     (`action`: Resume setup while setup is unfinished in the main window,
+     Switch theme, Check for updates, Connect a provider, Reset chat, the column
+     fold) and **Help** (`help`: Guide, What's new, Keyboard shortcuts, Report a
+     bug). New workspace answers to its former names, Open a folder and Start a
+     new project (`formerNamesOf` in `shared/names.ts`). Pair an iPhone and one
+     **Guide: {chapter}** entry per `GUIDE_CHAPTERS` row (opens it through
+     `openGuideChapter`, also while the Guide is open) are typed only. Pair an
+     iPhone answers to Pair your iPhone and the other former names of the page.
+     Check for updates opens Settings > General and runs the updater check only
+     in a status the menu item also checks (`checkForUpdatesNow`).
+     The overlay is a compact window: 640px wide (search 720px), a 48px input row,
+     28px rows, a list capped at 320px that scrolls, a 320px minimum height
+     (`PALETTE_MIN_HEIGHT_PX`), and a key chip with a minimum width so a glyph
+     like the Terminal one is never clipped.
      On the Board the first section is **Needs you**: the sessions the
      Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The session pages (Open Overview,
      Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out

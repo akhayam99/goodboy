@@ -50,7 +50,7 @@ export const SearchPreview = ({ hit, target, onOpen, onDone }: Props) => {
   return (
     <aside
       aria-label="Preview"
-      className="flex w-80 shrink-0 flex-col gap-4 border-l border-border-soft p-4"
+      className="flex w-64 shrink-0 flex-col gap-3 border-l border-border-soft p-3"
     >
       <div className="flex flex-col gap-2">
         <Eyebrow

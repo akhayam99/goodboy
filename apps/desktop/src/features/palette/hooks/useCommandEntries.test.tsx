@@ -36,6 +36,8 @@ import {
   finishWizard,
   hydrateOnboardingFromDb,
 } from '../../onboarding/onboarding-store';
+import { GUIDE_CHAPTERS } from '../../settings/components/GuideStudio/guideChapters';
+import { peekGuideChapter } from '../../settings/components/GuideStudio/guideChapterRequest';
 import { useCommandEntries } from './useCommandEntries';
 
 const WORKSPACE_ID = brandedId<WorkspaceId>({ value: 'workspace-harborline' });
@@ -115,6 +117,42 @@ describe('the palette entries of the workspace doors', () => {
     });
 
     expect(entryKeys()).not.toContain('action:resume-setup');
+  });
+});
+
+describe('the palette groups', () => {
+  it('files places under Go to, creations under Create and helps under Help', () => {
+    const kindOf = (key: string) => entryFor(key)?.kind;
+
+    expect(kindOf('goto:board')).toBe('goto');
+    expect(kindOf('action:settings')).toBe('goto');
+    expect(kindOf('action:new-session')).toBe('create');
+    expect(kindOf('action:new-chat')).toBe('create');
+    expect(kindOf('action:new-terminal')).toBe('create');
+    expect(kindOf('action:new-workspace')).toBe('create');
+    expect(kindOf('action:toggle-theme')).toBe('action');
+    expect(kindOf('action:check-updates')).toBe('action');
+    expect(kindOf('goto:changelog')).toBe('help');
+    expect(kindOf('action:report-issue')).toBe('help');
+  });
+
+  it('names Pair an iPhone and still finds it by the old words', () => {
+    const entry = entryFor('action:pair-device');
+
+    expect(entry?.label).toBe('Pair an iPhone');
+    expect(entry?.secondary).toEqual(expect.arrayContaining(['Pair your iPhone']));
+  });
+
+  it('adds one typed-only Guide entry per chapter that opens that chapter', () => {
+    const keys = entryKeys();
+    const entry = entryFor('guide:commits');
+
+    expect(keys.filter((key) => key.startsWith('guide:'))).toHaveLength(GUIDE_CHAPTERS.length);
+    expect(entry?.label).toBe('Guide: Commits');
+    expect(entry?.kind).toBe('page');
+    entry?.run();
+
+    expect(peekGuideChapter()).toBe('commits');
   });
 });
 

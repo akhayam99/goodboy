@@ -43,6 +43,7 @@ export type PaletteKind =
   | 'artifact'
   | 'workspace'
   | 'goto'
+  | 'create'
   | 'setting'
   | 'script'
   | 'workflow'

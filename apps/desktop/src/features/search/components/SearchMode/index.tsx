@@ -268,7 +268,7 @@ export const SearchMode = ({
         onGroupChange={changeGroup}
       />
       <div className="flex min-h-0 flex-1">
-        <ScrollFade className="min-h-64 min-w-0 flex-1">
+        <ScrollFade className="max-h-[320px] min-h-0 min-w-0 flex-1">
           {statuses.map((lookupStatus) => (
             <LookupStatusRow
               key={lookupStatus.key}
@@ -290,7 +290,7 @@ export const SearchMode = ({
             id={listboxId}
             role="listbox"
             aria-label={isEmptyQuery ? `Recent ${scopeName}` : 'Search results'}
-            className="flex flex-col gap-0.5 p-2"
+            className="flex flex-col p-1"
           >
             {lookupHits.map((hit) => {
               const id = `lookup:${hit.record.key}`;

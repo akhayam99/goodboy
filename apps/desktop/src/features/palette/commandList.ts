@@ -76,6 +76,7 @@ const RECENT_KINDS: ReadonlySet<PaletteKind> = new Set<PaletteKind>([
 
 const EMPTY_SECTION_KINDS: ReadonlyArray<readonly [string, ReadonlySet<PaletteKind>]> = [
   ['Go to', new Set<PaletteKind>(['goto'])],
+  ['Create', new Set<PaletteKind>(['create'])],
   ['App', new Set<PaletteKind>(['action'])],
   ['Help', new Set<PaletteKind>(['help'])],
 ];

@@ -114,9 +114,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('button', 'Show session rail'),
   },
   {
-    name: 'palette: Board',
-    covers: ['navigate', 'palette:Board'],
-    open: () => openPalette(/^Board$/),
+    name: 'palette: Sessions',
+    covers: ['navigate', 'palette:Sessions'],
+    open: () => openPalette(/^Sessions$/),
     lands: () => heading('Sessions'),
   },
   {
@@ -135,9 +135,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: New terminal in this session',
-    covers: ['palette:New terminal'],
+    covers: ['palette:New terminal in this session'],
     door: 'palette',
-    open: () => openPalette(/^New terminal in this session$/, 'new terminal'),
+    open: () => openPalette(/^New terminal in this session$/),
     lands: async () => {
       await screen.findByRole('button', { name: 'Open on Terminal page' }, WAIT);
       expect(useAppStore.getState().drawer?.kind).toBe('terminal');
@@ -365,6 +365,16 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: 'palette: Check for updates',
+    covers: ['openStudio', 'studio:settings', 'settings:general', 'palette:Check for updates'],
+    door: 'palette',
+    open: () => openPalette(/^Check for updates/),
+    lands: both(
+      () => settingsColumn(),
+      () => heading('General'),
+    ),
+  },
+  {
     name: 'palette: New chat',
     covers: ['openStudio', 'studio:chat', 'palette:New chat'],
     door: 'palette',
@@ -451,10 +461,10 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
-    name: 'palette: Pair your iPhone',
-    covers: ['openStudio', 'studio:settings', 'settings:iphone', 'palette:Pair your iPhone'],
+    name: 'palette: Pair an iPhone',
+    covers: ['openStudio', 'studio:settings', 'settings:iphone', 'palette:Pair an iPhone'],
     door: 'palette',
-    open: () => openPalette(/^Pair your iPhone/),
+    open: () => openPalette(/^Pair an iPhone/, 'iPhone'),
     lands: both(
       () => settingsColumn(),
       () => heading('iPhone'),

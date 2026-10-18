@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
+import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
 import { useCurrentInnerColumn } from '@goodboy/ui';
 import type { AgentId, Project, ProjectScript, SessionId } from '@goodboy/types';
 import {
@@ -38,6 +38,8 @@ import { useIsMainWindow } from '../../workspace/useIsMainWindow';
 import { getWizardState, resumeSetup } from '../../onboarding/onboarding-store';
 import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
 import { settingsPaletteEntries } from '../../settings/settingsPaletteEntries';
+import { guidePaletteEntries } from '../../settings/guidePaletteEntries';
+import { checkForUpdatesNow } from '../checkForUpdatesNow';
 import type { SettingsFocus } from '../../settings/settingsFocus';
 import { useToast } from '../../../shared/components/Toast';
 import { agentEntries } from '../sources/agentEntries';
@@ -220,27 +222,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           run: () => openLens({ sessionId, lens: destination.lens }),
         });
       }
-      out.push(
-        {
-          key: 'action:context',
-          label: SHORTCUTS['lens.context'].label,
-          kind: 'page',
-          group: 'action',
-          icon: CONCEPT_ICONS.context,
-          shortcut: 'lens.context',
-          run: () => toggleContextDrawer({ sessionId }),
-        },
-        {
-          key: 'goto:board',
-          label: 'Board',
-          secondary: ['Back to board'],
-          kind: 'goto',
-          group: null,
-          icon: CONCEPT_ICONS.workspace,
-          shortcut: 'session.board',
-          run: () => navigate({ to: BOARD_PLACE }),
-        },
-      );
+      out.push({
+        key: 'action:context',
+        label: SHORTCUTS['lens.context'].label,
+        kind: 'page',
+        group: 'action',
+        icon: CONCEPT_ICONS.context,
+        shortcut: 'lens.context',
+        run: () => toggleContextDrawer({ sessionId }),
+      });
     }
 
     for (const workspace of workspaces) {
@@ -260,6 +250,16 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     if (hasWorkspace) {
       const workspaceId = currentWorkspace.id;
       out.push(
+        {
+          key: 'goto:board',
+          label: 'Sessions',
+          secondary: ['Board', 'Back to board'],
+          kind: 'goto',
+          group: null,
+          icon: CONCEPT_ICONS.workspace,
+          shortcut: 'session.board',
+          run: () => navigate({ to: BOARD_PLACE }),
+        },
         {
           key: 'goto:inbox',
           label: NAMES.tasks,
@@ -281,6 +281,14 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
             }),
         },
         {
+          key: 'goto:workflows',
+          label: 'Workflows',
+          kind: 'goto',
+          group: null,
+          icon: CONCEPT_ICONS.workflows,
+          run: () => fire({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
+        },
+        {
           key: 'goto:terminal',
           label: 'Terminal',
           secondary: ['Go to Terminal', 'Terminals'],
@@ -292,26 +300,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
             switchStudio({
               studio: terminalStudioPlace({ sessionId: useAppStore.getState().currentSessionId }),
             }),
-        },
-        {
-          key: 'action:new-terminal',
-          label: isInSession ? 'New terminal in this session' : 'New terminal',
-          kind: 'page',
-          group: 'action',
-          icon: Plus,
-          secondary: ['Open terminal', 'New terminal'],
-          run: () =>
-            isInSession && sessionId !== null
-              ? void openSessionTerminalHere({ sessionId, isFresh: true })
-              : void openWorkspaceTerminal({ workspaceId }),
-        },
-        {
-          key: 'goto:workflows',
-          label: 'Workflows',
-          kind: 'goto',
-          group: null,
-          icon: CONCEPT_ICONS.workflows,
-          run: () => fire({ name: 'goodboy:open-workflow-studio', detail: { door: true } }),
         },
         {
           key: 'goto:run-defaults',
@@ -356,18 +344,9 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           run: openNotificationsDoor,
         },
         {
-          key: 'goto:changelog',
-          label: NAMES.whatsNew,
-          kind: 'goto',
-          group: null,
-          icon: CONCEPT_ICONS.changelog,
-          secondary: formerNamesOf(NAMES.whatsNew),
-          run: openChangelogStudio,
-        },
-        {
           key: 'action:new-session',
           label: 'New session',
-          kind: 'action',
+          kind: 'create',
           group: 'action',
           icon: Plus,
           shortcut: 'session.new',
@@ -376,11 +355,23 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         {
           key: 'action:new-chat',
           label: 'New chat',
-          kind: 'action',
+          kind: 'create',
           group: 'action',
           icon: Plus,
           shortcut: 'chat.new',
           run: () => openStudio({ studio: { kind: 'chat', chatId: null } }),
+        },
+        {
+          key: 'action:new-terminal',
+          label: isInSession ? 'New terminal in this session' : 'New terminal',
+          kind: 'create',
+          group: 'action',
+          icon: Plus,
+          secondary: ['Open terminal', 'New terminal'],
+          run: () =>
+            isInSession && sessionId !== null
+              ? void openSessionTerminalHere({ sessionId, isFresh: true })
+              : void openWorkspaceTerminal({ workspaceId }),
         },
       );
     }
@@ -388,7 +379,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       key: 'action:new-workspace',
       label: NAMES.newWorkspace,
       secondary: formerNamesOf(NAMES.newWorkspace),
-      kind: 'action',
+      kind: 'create',
       group: 'action',
       icon: Plus,
       run: openNewWorkspace,
@@ -523,7 +514,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         key: 'action:settings',
         label: 'Settings',
         secondary: ['Open settings'],
-        kind: 'action',
+        kind: 'goto',
         group: 'action',
         icon: CONCEPT_ICONS.settings,
         shortcut: 'settings.open',
@@ -542,6 +533,15 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         run: () => switchTheme({ to: oppositeOfApplied() }),
       },
       {
+        key: 'action:check-updates',
+        label: 'Check for updates',
+        kind: 'action',
+        group: 'action',
+        icon: CircleArrowUp,
+        secondary: ['update upgrade version'],
+        run: checkForUpdatesNow,
+      },
+      {
         key: 'action:connect-provider',
         label: 'Connect a provider',
         kind: 'action',
@@ -551,30 +551,12 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
       },
       {
         key: 'action:pair-device',
-        label: 'Pair your iPhone',
-        kind: 'action',
+        label: NAMES.pairIphone,
+        secondary: formerNamesOf(NAMES.pairIphone),
+        kind: 'page',
         group: 'action',
         icon: Smartphone,
         run: () => fire({ name: 'goodboy:open-pair-device' }),
-      },
-      {
-        key: 'action:report-issue',
-        label: 'Report a bug',
-        kind: 'action',
-        group: 'action',
-        icon: CONCEPT_ICONS.reportIssue,
-        shortcut: 'report.open',
-        secondary: ['bug report issue feedback crash broken'],
-        run: () => openReportSheet(),
-      },
-      {
-        key: 'help:shortcuts',
-        label: 'Keyboard shortcuts',
-        kind: 'help',
-        group: 'help',
-        icon: CONCEPT_ICONS.shortcuts,
-        shortcut: 'settings.shortcuts',
-        run: () => openSettings({ scope: 'app', section: 'shortcuts' }),
       },
       {
         key: 'help:guide',
@@ -584,6 +566,40 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         icon: CONCEPT_ICONS.guide,
         run: () => fire({ name: 'goodboy:open-guide' }),
       },
+      ...(hasWorkspace
+        ? [
+            {
+              key: 'goto:changelog',
+              label: NAMES.whatsNew,
+              kind: 'help',
+              group: 'help',
+              icon: CONCEPT_ICONS.changelog,
+              secondary: formerNamesOf(NAMES.whatsNew),
+              run: openChangelogStudio,
+            } satisfies PaletteEntry,
+          ]
+        : []),
+      {
+        key: 'help:shortcuts',
+        label: 'Keyboard shortcuts',
+        kind: 'help',
+        group: 'help',
+        icon: CONCEPT_ICONS.shortcuts,
+        shortcut: 'settings.shortcuts',
+        secondary: formerNamesOf(NAMES.keyboardShortcuts),
+        run: () => openSettings({ scope: 'app', section: 'shortcuts' }),
+      },
+      {
+        key: 'action:report-issue',
+        label: 'Report a bug',
+        kind: 'help',
+        group: 'help',
+        icon: CONCEPT_ICONS.reportIssue,
+        shortcut: 'report.open',
+        secondary: ['bug report issue feedback crash broken'],
+        run: () => openReportSheet(),
+      },
+      ...guidePaletteEntries(),
     );
     return out;
   }, [

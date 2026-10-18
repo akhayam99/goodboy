@@ -27,7 +27,7 @@ export const PaletteInputRow = ({
   onChange,
   onKeyDown,
 }: Props) => (
-  <div className="flex h-14 shrink-0 items-center gap-3 px-4">
+  <div className="flex h-12 shrink-0 items-center gap-2 px-3">
     <Search size={ICON_SIZE.control} aria-hidden className="shrink-0 text-muted-foreground" />
     {chip}
     <input
