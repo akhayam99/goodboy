@@ -6013,11 +6013,6 @@
       "count": 1
     }
   },
-  "apps/desktop/src/features/session/sessionArchive.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 3
-    }
-  },
   "apps/desktop/src/features/session/sessionTitle.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

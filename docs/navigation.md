@@ -448,9 +448,15 @@ never exists on one surface only.
   Turn off Autopilot (the session's autorun, the default of a run started
   without its own setting and of agents outside a workflow; the Agents page
   header has no switch), Start an agent, Link
-  work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
-  Delete with its confirm (Restore once archived). Several sessions: Copy
-  titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
+  work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with its
+  confirm and Undo, and Delete with its confirm (Restore once archived). Several sessions: Copy
+  titles, Archive N, Restore N, Delete N. Archive N asks once for all of them
+  with the same `archiveConfirmOf` as one session ("Archive 3 sessions?",
+  summing `runningAgentCountOf` over them, and saying running agents keep
+  running: archive never stops an agent). Cancel archives nothing; a partial
+  failure archives the rest with Undo on the toast and names the sessions it
+  could not archive above the bar, with Retry for those only. Archive instead
+  on the Delete N confirm archives at once, with no second ask. An agent: Open agent, Show its
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
   Move to Auto on a standalone agent of a standard role,
   Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
@@ -738,9 +744,12 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   click menu and the palette. An archived session shows none of them. The foot
   (`SessionLevel/SessionLevelFoot`) is one row: the session spend at the left
   (`SessionCostChip`, over `sessionSpendByAgent` and
-  `sessionSpendPresentation`, the one source of the number): `$3.47`, or
-  `$3.47 of $10.00 limit` once a limit is set, the warning tone from 80
-  percent and danger past it, `Paused · …` when a pausing limit stopped the
+  `sessionSpendPresentation`, the one source of the number): `$3.47`, or the
+  compact `$3.47 / $10` once a limit is set (`compactLabel`, a whole limit
+  without its cents), with the full sentence ("$3.47 spent of the $10.00 limit
+  in this session", `sentence`) in the tooltip and `Spend $3.47 of $10.00
+limit` as its name; the warning tone from 80 percent and danger past it, the
+  pause glyph and `Paused, …` in the tooltip when a pausing limit stopped the
   session, and `Set a limit` in faint gray while nothing is spent and no limit
   is set. A click opens the session spend popover (the limit editor, the
   agents and the context cost, Open in Impact); **Raise limit** on a paused
@@ -753,7 +762,7 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   (the trash icon, ⌘⇧⌫) in the danger tone. Archive asks first: the registry
   verb carries a confirm (`archiveConfirmOf`, "Archive session?", saying how
   many agents are still running in the session when any run, from
-  `runningAgentCountOf`), so the foot, the sidebar row's right click menu, the
+  `runningAgentCountOf`, and that they keep running after the archive), so the foot, the sidebar row's right click menu, the
   palette and ⌘⇧A (`SessionArchiveBridge` triggers the same verb and anchors
   its confirm at the window corner) all ask the same way, and Undo on the toast
   still restores it. Restore never asks. Delete opens `DeleteSessionConfirm`

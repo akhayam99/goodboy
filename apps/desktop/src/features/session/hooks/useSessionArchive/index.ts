@@ -25,8 +25,9 @@ export const useSessionArchive = (): SessionArchive => {
   );
 
   const archive = useCallback(
-    ({ sessions }: SessionsParams) =>
-      archiveSessions({ sessions, bulkArchiveTask, bulkUnarchiveTask, showToast }),
+    async ({ sessions }: SessionsParams) => {
+      await archiveSessions({ sessions, bulkArchiveTask, bulkUnarchiveTask, showToast });
+    },
     [bulkArchiveTask, bulkUnarchiveTask, showToast],
   );
 

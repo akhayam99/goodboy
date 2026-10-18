@@ -92,10 +92,7 @@ export const ObjectSelectionBar = ({
         {...(alt !== undefined && {
           altAction: {
             label: `${alt.shortLabel} instead`,
-            onClick: () => {
-              controls.cancel();
-              controls.trigger({ actionId: alt.id });
-            },
+            onClick: () => void controls.confirm({ insteadId: alt.id }),
           },
         })}
       />

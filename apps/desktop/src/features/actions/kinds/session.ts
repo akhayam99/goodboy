@@ -118,8 +118,9 @@ const lifecyclePorts = ({ env }: { readonly env: ActionEnv }) => ({
   showToast: env.showToast,
 });
 
-const archive = ({ env, session }: LifecycleParams): Promise<void> =>
-  archiveSessions({ sessions: [session], ...lifecyclePorts({ env }) });
+const archive = async ({ env, session }: LifecycleParams): Promise<void> => {
+  await archiveSessions({ sessions: [session], ...lifecyclePorts({ env }) });
+};
 
 const restore = ({ env, session }: LifecycleParams): Promise<void> =>
   restoreSessions({ sessions: [session], ...lifecyclePorts({ env }) });
@@ -457,7 +458,8 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     shortcut: 'session.archive',
     isUndoable: true,
     when: isLive,
-    confirm: ({ facts }) => archiveConfirmOf({ runningAgentCount: facts.runningAgentCount }),
+    confirm: ({ facts }) =>
+      archiveConfirmOf({ sessionCount: 1, runningAgentCount: facts.runningAgentCount }),
     run: ({ facts, env }) => archive({ env, session: facts.session }),
   },
   {

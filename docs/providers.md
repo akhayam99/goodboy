@@ -454,6 +454,11 @@ log with the provider, the kind and the milliseconds.
 
 - `ProviderStatus.errorKind` is `notFound`, `timeout` or `exit`. Only `notFound` means
   the CLI is not installed.
+- A CLI that exits non-zero on `--version` reports its own words: `ProviderStatus.error`
+  is its last non-empty line (stderr first, then stdout, trimmed, 160 characters at
+  most) followed by the code, as `<line> (exited with code N)`, or only
+  `exited with code N` when it printed nothing (`exit_failure_reason` in
+  `providers.rs`). The setup Agents step shows it under Can't start.
 - The sign-in parsers read the exit code and the output together. `claude auth status`
   and `codex login status` exit 1 when you are signed out, and that is read as
   disconnected. Output the parser does not recognise is `unknown`, with a `reason`.

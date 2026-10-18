@@ -525,7 +525,10 @@ describe('the session rail top row and foot', () => {
     const footRow = elementOf('[data-session-foot]', rail());
     const foot = within(footRow);
 
-    expect(elementOf('[data-session-spend]', footRow).textContent).toBe('$0 of $10.00 limit');
+    expect(elementOf('[data-session-spend]', footRow).textContent).toBe('$0 / $10');
+    expect(elementOf('[data-session-spend]', footRow).getAttribute('aria-label')).toBe(
+      'Spend $0 of $10.00 limit',
+    );
     const icons = Array.from(footRow.querySelectorAll('[data-session-foot-action]'));
     expect(icons.map((button) => button.getAttribute('aria-label'))).toEqual([
       'Archive session',
@@ -595,7 +598,11 @@ describe('the session rail top row and foot', () => {
 
     fireEvent.click(foot.getByRole('button', { name: 'Archive session' }));
     const dialog = within(screen.getByRole('dialog', { name: 'Archive session?' }));
-    expect(dialog.getByText(/1 agent is still running in this session/)).toBeDefined();
+    expect(
+      dialog.getByText(
+        /1 agent is still running in this session and keeps running after you archive it/,
+      ),
+    ).toBeDefined();
     await act(async () => {
       fireEvent.click(dialog.getByRole('button', { name: 'Archive session' }));
     });

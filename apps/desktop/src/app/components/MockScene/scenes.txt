@@ -836,6 +836,7 @@ transcript-long
 transcript-mount
 transcript-width
 turn-override-off
+u26-board-archive-confirm
 u26-filter-active
 u26-filter-default
 u26-intros-agents
@@ -848,6 +849,7 @@ u26-intros-runs
 u26-intros-runs-empty
 u26-rail-foot
 u26-rail-foot-archive
+u26-rail-foot-chip
 u26-rail-projects
 u26-rail-projects-focus
 u26-rail-projects-picker

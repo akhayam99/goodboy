@@ -65,7 +65,7 @@ fn detection_reads_the_version_each_fake_cli_prints() {
 }
 
 #[test]
-fn detection_reports_the_exit_code_of_a_cli_that_cannot_start() {
+fn detection_reports_the_last_line_and_exit_code_of_a_cli_that_cannot_start() {
     let fake = FakeCli::stage("version-fail");
     let path = fake.binary("codex");
 
@@ -73,7 +73,10 @@ fn detection_reports_the_exit_code_of_a_cli_that_cannot_start() {
 
     assert!(!status.available);
     assert_eq!(status.version, None);
-    assert_eq!(status.error.as_deref(), Some("exited with code 1"));
+    assert_eq!(
+        status.error.as_deref(),
+        Some("fake cli: cannot start (exited with code 1)")
+    );
     assert_eq!(status.error_kind, Some(ProbeErrorKind::Exit));
 }
 
