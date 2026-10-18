@@ -101,6 +101,7 @@ describe('usePageCountFacts', () => {
     seedColumn({ store: useAppStore, sessions: [base], currentSessionId: sessionId });
 
     expect(factsOf(base)).toEqual({
+      changedFiles: 0,
       runs: 0,
       runningRuns: 0,
       waitingRuns: 0,

@@ -1,6 +1,8 @@
-export type CountedPageId = 'runs' | 'orchestrated' | 'agents' | 'auto' | 'artifacts' | 'questions';
+export type CountedPageId =
+  'files' | 'runs' | 'orchestrated' | 'agents' | 'auto' | 'artifacts' | 'questions';
 
 export type PageCountFacts = {
+  readonly changedFiles: number;
   readonly runs: number;
   readonly runningRuns: number;
   readonly waitingRuns: number;
@@ -42,6 +44,8 @@ const runningOr = ({ running, total, noun, waiting = 0 }: RunningParams): string
 };
 
 const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => string | null>> = {
+  files: (facts) =>
+    facts.changedFiles > 0 ? nounOf({ count: facts.changedFiles, noun: 'file' }) : null,
   runs: (facts) =>
     runningOr({
       running: facts.runningRuns,

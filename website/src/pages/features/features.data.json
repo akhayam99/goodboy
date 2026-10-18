@@ -230,10 +230,10 @@
           "shown": true
         },
         {
-          "title": "File versions",
-          "text": "Undo an agent's edit without a branch. Each changed file is kept as it was, with a Restore button.",
+          "title": "Changes",
+          "text": "See what each turn changed in a folder without git, and restore a file or a whole turn. Undo restore puts your text back.",
           "group": "Overview and activity",
-          "also": "file versions"
+          "also": "changes, file versions"
         },
         {
           "title": "Session list",
@@ -410,6 +410,12 @@
           "text": "Begin with an empty folder. Goodboy starts the repository, a first session works in it, and Publish puts main on GitHub when you are ready.",
           "group": "Workspaces and folders",
           "also": "start from scratch"
+        },
+        {
+          "title": "Track a folder with git later",
+          "text": "Work in a plain folder and add git when you want it. The first commit is shown before it happens, and secrets stay out.",
+          "group": "Workspaces and folders",
+          "also": "plain folders, track with git"
         },
         {
           "title": "Workspace with several folders",

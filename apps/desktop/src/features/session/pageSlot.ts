@@ -18,6 +18,8 @@ type CountParams = {
 
 const countOf = ({ page, facts }: CountParams): number => {
   switch (page) {
+    case 'files':
+      return facts.changedFiles;
     case 'runs':
       return facts.runs;
     case 'orchestrated':
@@ -44,6 +46,7 @@ type LiveCount = {
 
 const liveCountOf = ({ page, facts }: CountParams): LiveCount | null => {
   const counts: Readonly<Record<CountedPageId, ReadonlyArray<LiveCount>>> = {
+    files: [],
     runs: [
       { tone: 'warning', count: facts.waitingRuns },
       { tone: 'info', count: facts.runningRuns },

@@ -70,13 +70,13 @@ const OVERVIEW_PAGE: Page = {
   currentLenses: [null],
 };
 
-const FILE_VERSIONS_PAGE: Page = {
+const CHANGES_PAGE: Page = {
   id: 'files',
   label: lensLabelFor({ lens: 'files', isBranchless: true }),
   icon: LENS_ICON.files,
   tint: 'files',
   shortcut: 'lens.files',
-  count: null,
+  count: 'files',
   group: 'work',
   lens: 'files',
   currentLenses: ['files'],
@@ -178,7 +178,7 @@ export const columnPagesOf = ({
   hasAutoAgents = false,
 }: ColumnParams): ReadonlyArray<Page> => [
   OVERVIEW_PAGE,
-  ...(isBranchless ? [FILE_VERSIONS_PAGE] : []),
+  ...(isBranchless ? [CHANGES_PAGE] : []),
   RUNS_PAGE,
   ORCHESTRATED_PAGE,
   AGENTS_PAGE,

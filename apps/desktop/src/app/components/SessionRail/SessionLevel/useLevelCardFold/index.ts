@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { STORAGE_KEYS, persistedPref } from '../../../../../shared/lib/storage-keys';
 
-type LevelCardId = 'projects' | 'linked';
+type LevelCardId = 'projects' | 'linked' | 'folder';
 
 type Params = {
   readonly card: LevelCardId;
@@ -13,7 +13,7 @@ export type LevelCardFold = {
 };
 
 const isCardId = (value: unknown): value is LevelCardId =>
-  value === 'projects' || value === 'linked';
+  value === 'projects' || value === 'linked' || value === 'folder';
 
 const foldedCardsPref = persistedPref<ReadonlyArray<LevelCardId>>({
   key: STORAGE_KEYS.sessionRailFoldedCards,

@@ -2,6 +2,7 @@ import { PaneShell } from '@goodboy/ui';
 import { useCallback, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
+import { FolderCard } from './FolderCard';
 import { HeaderBand } from './HeaderBand';
 import { OverviewTitle } from './OverviewTitle';
 import { OverviewHeaderActions } from './OverviewHeaderActions';
@@ -39,6 +40,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       <HeaderBand session={session} />
       {isArchived ? null : <OverviewNotices session={session} />}
       {isArchived ? null : <UnassignedNotes sessionId={sessionId} />}
+      {isArchived ? null : <FolderCard sessionId={sessionId} />}
       <TimelinePane
         session={session}
         onShownQuestionsChange={setShownQuestionIds}

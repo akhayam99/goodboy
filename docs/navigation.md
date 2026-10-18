@@ -518,7 +518,11 @@ never exists on one surface only.
   today): a menu that is given `onPreview` calls it with the descriptor while
   the row is hovered or focused and with `null` when it leaves or the menu
   closes, and the surface draws it (the Next tile shows the role). `iconClassName` tints
-  the icon of a verb in the menu (the role color). `ObjectOverflowMenu` also
+  the icon of a verb in the menu (the role color). A verb that opens a host page
+  writes no host word: its `label` is `Open`, its `iconOf` the host logo
+  (`shared/hostIconOf`) and its `ariaLabel` the spoken `Open on GitHub`, which
+  the menu row (`aria-label`), the bar verb, the button and the palette read
+  (rule 6: the host is a logo, never text, on a row, chip, hover or menu). `ObjectOverflowMenu` also
   takes `track`, which wraps every run of its rows (pending keys, accepted
   outcomes), and `isHeld`, which keeps a row visible but unable to run
   (`isDisabled` of a menu entry, `aria-disabled`, the description kept). All three
@@ -534,11 +538,26 @@ never exists on one surface only.
   the several chats kind in the chat list). On an unselected row it clears the
   selection and acts on that row alone.
 - **One selection bar.** The Board, the session list, the chat list, Review,
-  Branches and the Storage lists share `SelectionBar` (`packages/ui`). A checkbox shows on the
-  row under the pointer and on every row once one is picked; on the sidebar
-  session rows and the chat rows it takes the place of the state node
-  (`StateNode` `isCheckboxSlot`), so no row keeps an empty indent for it.
-  Modifier-click and the lasso stay. The bar floats at the bottom of the surface that owns the
+  Branches and the Storage lists share `SelectionBar` (`packages/ui`). The
+  sidebar session rows and the Board cards draw no checkbox at all: a row is
+  its optional ticket key, its title, then its state node at the right (the node
+  never hides), and the selection is the modifier click (Shift for a range,
+  Option, Command or Control to add or remove one), Shift+Enter, Alt+Enter and
+  Alt+Space on the focused row, Shift+Arrow in the sidebar, X on the hovered or
+  focused one, Command A, and **Select** in the row menu (`session.select`,
+  shown only when the menu is opened from a row or card, through
+  `viewing: { kind: 'selection' }`, and delivered to that row by
+  `requestSelect` and `useSelectRequest` like Rename). The sidebar lists are
+  listboxes (`aria-multiselectable`, each row an option with `aria-selected`,
+  the rows of a list falling back to buttons with `aria-pressed` while a rename
+  field sits in it, since a text field is not allowed in a listbox); a Board
+  card keeps `aria-pressed` on its title button because it holds quick
+  actions, and its state word is the button's description. The bar's
+  `aria-live="polite"` dock announces `n selected`. Under the sidebar list a
+  quiet line reads "Shift click for a range, Option click to add one" while
+  nothing is selected. The chat rows, Review, Branches and the Storage lists
+  keep their checkbox (on the chat rows it takes the place of the state node,
+  `StateNode` `isCheckboxSlot`). The lasso stays. The bar floats at the bottom of the surface that owns the
   selection with Clear, the count, Select all and the verbs. The sessions bar
   takes its verbs from the `sessions` kind through `ObjectSelectionBar`, so
   its words are the menu's words (`shortLabel` on the bar, `label` for the
@@ -807,18 +826,17 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   to another place. Only one level shows, so a session never carries a nested
   card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
-  Overview, File versions in a branchless session only, Runs, Agents, Auto
+  Overview, Changes (with the count of changed files) in a branchless session only, Runs, Agents, Auto
   agents (Auto is always on, so it always shows), Artifacts, and Questions last, always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
-  Two entries carry a marker: **Auto agents** reads **Experimental** ("Auto
-  starts agents on its own. Its choices are still being tuned.") and, while
-  Auto is shown, **Agents** reads **Deprecated** ("Start an auto on Auto
-  agents. Agents you start by hand keep running."). The marker is a quiet gray
-  `Chip` right of the label, beside the count, from `pageMarkerOf`
+  One entry carries a marker: **Auto agents** reads **Experimental** ("Auto
+  starts agents on its own. Its choices are still being tuned."). The marker
+  is a `Chip` in the `warning` tone (the attention yellow, through
+  `tintClasses`), right of the label, beside the count, from `pageMarkerOf`
   (`features/session/pageMarkerOf.ts`). Its words live in
   `SESSION_PAGE_MARKER_WHY` next to `SESSION_PAGE_INTRO`
-  (`features/session/sessionPageIntro.ts`), which share the sentences about
-  hand-started agents and Auto's tuning. The marker has its own shared
+  (`features/session/sessionPageIntro.ts`), which share the sentence about
+  Auto's tuning. Agents carries no marker. The marker has its own shared
   `Tooltip` with those words only, and the count has a separate one ("1
   agent"); a row never carries a native `title`. Start an agent stays
   available.
@@ -838,14 +856,15 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   its flyout read the same function; the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
 - **Folders and Linked are cards** (`SessionLevel/LevelCard`): a rounded
-  `bg-subtle` surface (`rounded-lg`, 4px inset) whose edges sit on the page
-  row highlight edges: pages and cards share one column inset
-  (`SessionLevel/railInset`, `RAIL_INSET`), and a card row adds 4px
-  (`CARD_ROW_INSET`) to the card's 4px, the page row's 8px, so the header
-  label and the project icon start on the page icons' line and every right
+  `bg-subtle` surface (`rounded-lg`) whose edges sit on the page row
+  highlight edges: pages and cards share one column inset
+  (`SessionLevel/railInset`, `RAIL_INSET`). The card pads its sides 8px and
+  its top and bottom 4px (`CARD_INSET`, one constant read by `LevelCard`, so
+  Folders, Linked and any later level card cannot drift) and a card row adds
+  4px (`CARD_ROW_INSET`), so text, chevrons, dots and counts sit 12px in and
+  a hover fill keeps 8px of card around it. Every right
   slot (counts, diff stat, the worst state dot, the `+` glyph at `size-5`)
-  ends on the page counts' line (guarded by the `r4-rail-session` scene
-  test). It has a header row inside it: the
+  ends on the card's inner line. It has a header row inside it: the
   title and a fold chevron as one button, then the quiet meta and a `+` icon
   button (`LevelAddTrigger`) at the right. A card folds from its header and
   remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);
@@ -858,7 +877,16 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   folder icon, name, then its branch count from 1 in quiet tabular gray beside
   a chevron in the right slot. Its worktrees sit one 16px indent in
   (`SessionLevel/WorktreeRow`): the pull request state icon in its GitHub color
-  (`pullRequestStateToneOf`, next to `pullRequestStateWordOf` and shared with
+  (`pullRequestStateToneOf`, next to `pullRequestStateWordOf`, whose words are
+  the labels of `PULL_REQUEST_PRESENTATION` so an open pull request reads
+  Open everywhere; one function, `features/branch/branchRowFactsOf`, holds a
+  row's title (the pull request title, else the branch name), state word,
+  number, host key, finished flag, order rank (queued, approved, open, draft,
+  none, merged, closed), check counts and the one signal worst first: `n
+failing`, then `Conflict`, then `n behind`; the check counts come from the
+  runs read for the request on any host, skipped kept apart from passed, and
+  the host is never written as text on a row, only its logo, with the host in
+  the accessible name) and shared with
   the worktree level identity row, the folded rail and the session hover card:
   draft gray, open or approved green, in the merge queue (`queued`) the warning
   amber, merged violet, closed red, no pull request a neutral branch glyph),
@@ -936,6 +964,16 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   the Branch page's own rail, portalled into the level (`worktreeLevelSlot`),
   so the page keeps one source for every number. ⌘[ in the rail and the
   back row go up one level each.
+- **Folder** takes the place of Projects in a session that edits a plain
+  folder in place (`SessionLevel/LevelFolder.tsx`, the folders of
+  `inPlaceFoldersOf`): a card with one row per folder, its name and what
+  agents do there from its face (`folderFaceLineOf`: "Documents · edits in
+  place", "No git yet · edits in place"). Mounting the card loads the
+  session's saved turns, so the Changes row shows its count before the page
+  is opened. The Changes page itself (`SessionWorkspace/parts/ChangesPane/`)
+  is described in [features/overview.md](features/overview.md#changes); an
+  older session that works in its own session folder keeps the list of file
+  versions on that same page.
 - **Linked** lists the session's linked work, one row per item: provider
   mark, key in one 72px mono column cut at the end (`LinkedKey`, the full
   key in the tooltip) so every title starts on one edge, title. A GitHub pull
@@ -1168,7 +1206,7 @@ the same compare and swap. Dragging is not built.
 
 **The session level of the rail carries one current sign.** `currentSignOf`
 (`SessionActivityBar/currentSign.ts`) returns a page id, `session` or
-`remembered`. A page with an entry (Overview, File versions, Runs, Agents,
+`remembered`. A page with an entry (Overview, Changes, Runs, Agents,
 Artifacts, and Questions while one is open) takes `bg-selected` and
 `aria-current="page"`; on the Branch page the worktree row of the shown mount
 (`useBranchIdentity`) takes it instead. In the column the open session row
@@ -1599,7 +1637,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   on the same address; a saved place is rewritten the same way when it is
   restored. A GitLab or Bitbucket merge request keeps the `pr` page (the old
   studio stays reachable from its strip until the host cleanup), a session
-  without a branch keeps File versions.
+  without a branch keeps Changes (page id `files`).
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment on the Branch (`s/{session}/review/t/{thread}/agent`). Back returns where
@@ -1988,10 +2026,24 @@ needs a workspace that is gone), in the main window only, on Home (see Home
 below); the Goodboy menu offers Resume setup while it is
 paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
 `nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
-`finish`, `later` and `setBusy`. Welcome is the cover: the boot splash dog stays on
-its pixel and the black tile fills in under it (`useSplashAnchor` puts the 84 px
-tile's centre where `BootSplash` draws the mark), the app backdrop shows behind it,
-and agent detection starts there. Agents lists one row per sign-in CLI (Claude,
+`finish`, `later` and `setBusy`. Welcome is the cover: the boot splash's 84 px
+black tile stays on its pixel with no morph (`useSplashAnchor` puts the tile's
+centre `SPLASH_TILE_CENTER_ABOVE_MIDDLE_PX` above the window middle, the spot
+`BootSplash` draws it), the splash name fades out, the 6% cover backdrop
+(`bg-backdrop-cover`, `--app-backdrop-cover-strength`) shows behind it, and
+agent detection starts there. The boot splash is the tile, the name, a 160 px
+determinate bar and the phase word on that same backdrop. The bar moves one
+sixth per real `bootPhase` write (`BOOT_PHASE_ORDER`, `bootProgressPercent`),
+never on a timer, and jumps under reduced motion. On `ready` the bar fills for
+200 ms, then `App` mounts the app or Welcome underneath and `BootSplashExit`
+crossfades the splash out over 200 ms on top of it (same `BootStage`, so the tile
+does not move); reduced motion skips both waits. The window opens hidden and
+`useRevealWindow` shows it after the first paint (Rust shows it after 3 s if the
+page never does), so a light theme never flashes dark. Before React, `index.html`
+paints the same chrome, 6% backdrop and tile in both themes, and the native
+window background is the dark chrome `#0e1012`
+(`boot-shell-paints-the-chrome.test.ts` pins both to `styles.css`). The sidebar
+and app shell stay at 3%. Agents lists one row per sign-in CLI (Claude,
 Codex, Cursor, Gemini) with its real state: Ready with version and account, Not
 signed in with Sign in, Not installed with the exact install command and Run,
 Can't start with the CLI's output and Check again. Rows check again on window
@@ -2027,8 +2079,7 @@ exists. Old checklist ids map to the four on hydrate.
 
 Auto is described in [auto.md](auto.md); this is where it sits. Auto is always
 on: Settings has no Auto switch, and the **Experimental** marker sits beside
-the count of the **Auto agents** entry of the session rail, the **Deprecated**
-one beside the count of **Agents**. The Work rail of an Auto agent, and of each
+the count of the **Auto agents** entry of the session rail. The Work rail of an Auto agent, and of each
 child of an Auto tree, is the session rail's Auto level (see Session rail), never
 a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The
@@ -2440,17 +2491,28 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   page on screen mounts, so Permissions and Replies and commits compute nothing
   while another page is open. The old anchors (`projects`, `profile`,
   `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
-  pick a page (`workspacePageOf`); `dev-project` lands on Folders with the
-  conversion open. The workspace is renamed from the `Name` field of the
+  pick a page (`workspacePageOf`); `track-with-git` (and the old
+  `dev-project`) lands on Folders with the first commit review of the first
+  plain code folder open. The workspace is renamed from the `Name` field of the
   Folders page, and its name is written once on that page, in the top bar
   (the disconnect row says `Disconnect this workspace`). The attribution line
   lives on New sessions only, and Replies and commits links to it. Replies
   and commits holds the reply voice and templates, `Mark thread as resolved`
   and the commit style (`review-replies` stays its page id and anchor); Run
   defaults live under Workflows.
-  Turning a plain folder into a git repository is an inline flow in the Folders
-  page (`ConvertWorkspaceFlow`), never a dialog: linking a plain folder opens
-  Settings there once the add workspace studio has closed. Skills stays
+  Tracking a plain folder with git is an inline flow in the Git repository band of the
+  Folders page (`TrackWithGitFlow`, `FolderGitBand`), never a dialog: the
+  first commit review, then `Publish to GitHub` through the same publish form
+  as the first lap (`PublishPanel`). Creating a workspace never opens this
+  band by itself: the pick row already offers **Track it with git** for a Code
+  folder. A documents folder gets no row in the band.
+  The **Plain folders** band (`FolderFacesBand`) lists each plain folder with
+  the switch Code project or Documents (`setFolderPurpose`; when the write
+  fails the old face stays, with the error beside it), one line of what the
+  face means, and its saved versions: the size against the cap
+  (`folderHistorySize`) with Review in Storage, or a failed first copy with
+  Retry. Every window reads the faces again on focus (`useFolderFacesOnFocus`,
+  in the top bar watch and on Home). Skills stays
   hidden behind its feature flag. Precedent: GitHub repository settings and
   Linear's settings pages.
 - **Restore defaults and copy from another workspace share one inline
@@ -3000,15 +3062,19 @@ it carries the lockup itself: the 40px `BrandTile`, the word and the version
 - **Workspaces.** One row per workspace, most recent first (`WorkspaceRow`):
   the identity tile, the name, the folder count (`folderCountLabel`, "3
   folders") and the folders' common parent (`workspaceFolderPath`, the home
-  folder as `~`), Open in a new window, Disconnect behind an inline confirm, and
+  folder as `~`); a workspace of one plain folder says its face instead of
+  "1 folder" ("Documents", "Code, no git yet": `workspaceFaceLabel`, which
+  falls back to `folderCountLabel`), Open in a new window, Disconnect behind an
+  inline confirm, and
   when it was last opened. A click opens it here, or in a new window while
   agents run here. The search field shows from five workspaces on.
 - **New workspace** (⌘N on Home, `home.newWorkspace`) fires
   `goodboy:add-workspace` through `openNewWorkspace`, like the switcher, the
   palette, the Goodboy menu and the menu bar. On Home the `addWorkspace` place
   swaps the list for `NewWorkspaceForm` in place, the lockup stays put, Cancel
-  or Escape goes back, and Create opens the new workspace. A workspace of plain
-  folders only is offered a repository after it opens, as from the studio.
+  or Escape goes back, and Create opens the new workspace and lands in it,
+  whatever the folders are: a plain Code folder was already offered git on its
+  pick row.
 - **No workspace yet.** A card that says how a workspace starts, with New
   workspace and, while setup is unfinished in the main window, "Setup paused at
   Workspace · 1 of 4 done" and **Resume setup** (`useSetupResume`, counted by
@@ -3558,7 +3624,7 @@ left (page unmounted, navigation, Cancel, a `missing` answer) is closed as
 cancelled in the database; `missing` says `The push was already handled or
 cancelled. Nothing changed.` in the outcome line. `Publish N replies` and `Retry N` stay the header primary of their state. A blocked primary stays visible, disabled, with its
 reason. `⋯` holds the rare lifecycle (Edit title and description, Request
-review, Convert to draft, Close or Reopen, Open on GitHub, Copy link) and the
+review, Convert to draft, Close or Reopen, Open with the host logo, named Open on GitHub, Copy link) and the
 branch actions (Change base branch…, Open terminal, Open in editor, Copy
 branch name, Copy patch); a queued request with auto-merge adds `Cancel auto-merge`.
 

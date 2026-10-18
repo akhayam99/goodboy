@@ -99,14 +99,14 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(level.queryByRole('button', { name: 'Back to Sessions' })).toBeNull();
     expect(level.queryByText('Retry failed webhook deliveries')).toBeNull();
     expect(
-      within(mainSidebar()).getByRole('button', { name: /^Retry failed webhook deliveries/ }),
+      within(mainSidebar()).getByRole('option', { name: /^Retry failed webhook deliveries/ }),
     ).toBeDefined();
     const pages = within(level.getByRole('list', { name: 'Pages' }));
     expect(pages.getAllByRole('button').map((row) => row.textContent)).toEqual([
       'Overview',
       'Runs1',
       'Orchestrated',
-      'AgentsDeprecated3',
+      'Agents3',
       'Auto agentsExperimental',
       'Artifacts3',
       'Questions1',
@@ -134,32 +134,22 @@ describe('the c02 sidebar and session rail scenes', () => {
     await mount('c02-level-session-agents');
 
     const current = Array.from(sessionLayer().querySelectorAll('[aria-current="page"]'));
-    expect(current.map((row) => row.textContent)).toEqual(['AgentsDeprecated3']);
+    expect(current.map((row) => row.textContent)).toEqual(['Agents3']);
   });
 
-  it('c02-level-session sets the Experimental and Deprecated markers beside the count, with the why on hover', async () => {
+  it('c02-level-session sets the Experimental marker beside the count, with the why on hover', async () => {
     await mount('c02-level-session');
 
     const pages = within(sessionLayer()).getByTestId('session-pages');
     const agents = within(pages).getByRole('button', { name: /^Agents/ });
     const auto = within(pages).getByRole('button', { name: /^Auto agents/ });
-    const deprecated = within(agents).getByTestId('page-marker-agents');
+    expect(within(agents).queryByTestId('page-marker-agents')).toBeNull();
     const experimental = within(auto).getByTestId('page-marker-auto');
-    expect(deprecated.textContent).toBe('Deprecated');
     expect(experimental.textContent).toBe('Experimental');
-    const deprecatedTrigger = deprecated.parentElement;
     const experimentalTrigger = experimental.parentElement;
-    expect(deprecatedTrigger).not.toBeNull();
     expect(experimentalTrigger).not.toBeNull();
-    expect(deprecatedTrigger?.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
     expect(experimentalTrigger?.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
 
-    fireEvent.mouseEnter(deprecatedTrigger ?? agents);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
-    expect(screen.getByRole('tooltip').textContent).toContain(SESSION_PAGE_MARKER_WHY.agents);
-    fireEvent.mouseLeave(deprecatedTrigger ?? agents);
     fireEvent.mouseEnter(experimentalTrigger ?? auto);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(SETTLE_MS);
@@ -167,11 +157,11 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(screen.getByRole('tooltip').textContent).toContain(SESSION_PAGE_MARKER_WHY.auto);
   });
 
-  it('c02-level-branchless shows File versions and no Projects', async () => {
+  it('c02-level-branchless shows Changes and no Projects', async () => {
     await mount('c02-level-branchless');
 
     const level = within(sessionLayer());
-    expect(level.getByRole('button', { name: /^File versions/ })).toBeDefined();
+    expect(level.getByRole('button', { name: /^Changes/ })).toBeDefined();
     expect(level.queryByRole('group', { name: 'Folders' })).toBeNull();
   });
 
