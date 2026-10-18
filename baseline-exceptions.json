@@ -5,5 +5,12 @@
     "count": 1,
     "reason": "moved, net 3 to 2 files",
     "release": "0.27.0"
+  },
+  {
+    "rule": "dog-mascot-only-marks-the-brand",
+    "file": "shared/components/BrandTile.tsx",
+    "count": 1,
+    "reason": "owner-approved brand tile on Welcome, setup header and Home",
+    "release": "0.27.2"
   }
 ]

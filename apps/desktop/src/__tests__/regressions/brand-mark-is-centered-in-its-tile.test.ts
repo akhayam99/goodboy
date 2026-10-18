@@ -15,7 +15,7 @@ const CHROME_MARK = join(
   'GoodboyChip',
   'BrandLockup.tsx',
 );
-const BRAND_TILE = join(__dirname, '..', '..', 'app', 'components', 'BrandTile.tsx');
+const BRAND_TILE = join(__dirname, '..', '..', 'shared', 'components', 'BrandTile.tsx');
 const DESKTOP_STYLES = join(__dirname, '..', '..', 'styles.css');
 const DESKTOP_ICONS = join(__dirname, '..', '..', '..', 'src-tauri', 'icons');
 const SITE_LOGO = join(REPOSITORY_ROOT, 'website', 'src', 'components', 'Logo.tsx');

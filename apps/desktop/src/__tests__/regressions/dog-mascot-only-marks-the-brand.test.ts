@@ -8,9 +8,9 @@ const SKIP_SEGMENTS = new Set(['__tests__', 'node_modules']);
 const ALLOWED = new Set([
   'app/components/GoodboyChip/BrandLockup.tsx',
   'app/components/BootSplash/BootBrand.tsx',
-  'app/components/BrandTile.tsx',
+  'shared/components/BrandTile.tsx',
 ]);
-const BRAND_TILE_FILE = 'app/components/BrandTile.tsx';
+const BRAND_TILE_FILE = 'shared/components/BrandTile.tsx';
 const BRAND_TILE_IMPORTERS = new Set([
   'features/onboarding/OnboardingWizard/steps/WelcomeStep.tsx',
   'features/onboarding/OnboardingWizard/WizardHeader.tsx',

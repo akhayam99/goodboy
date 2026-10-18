@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { applyDocumentTheme } from '../../shared/lib/theme';
-import { BOOT_MARK_PX } from './BootSplash/bootMark';
+import { applyDocumentTheme } from '../lib/theme';
+import { BOOT_MARK_PX } from '../../app/components/BootSplash/bootMark';
 import { BrandTile } from './BrandTile';
 
 const HERO_TILE_PX = 84;

@@ -1,5 +1,5 @@
 import { Button } from '@goodboy/ui';
-import { BrandTile } from '../../../app/components/BrandTile';
+import { BrandTile } from '../../../shared/components/BrandTile';
 import { Stepper } from './Stepper';
 import type { WizardMode, WizardStepId } from './wizardSteps';
 

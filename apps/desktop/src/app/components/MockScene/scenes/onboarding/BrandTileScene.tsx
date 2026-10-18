@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
-import { BrandTile } from '../../../BrandTile';
+import { BrandTile } from '../../../../../shared/components/BrandTile';
 
 type Props = {
   readonly theme: 'dark' | 'light';
