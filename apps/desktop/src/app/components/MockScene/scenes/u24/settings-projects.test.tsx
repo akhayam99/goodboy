@@ -52,7 +52,7 @@ describe('the settings projects scenes', () => {
     mount({ id: 'settings-projects-rows' });
 
     const starred = await screen.findByRole('region', { name: 'Starred' }, WAIT);
-    const others = screen.getByRole('region', { name: 'Other projects' });
+    const others = screen.getByRole('region', { name: 'Other folders' });
     expect(within(starred).getByText('4')).toBeDefined();
     expect(within(others).getByText('6')).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Scripts of/ })).toBeNull();
@@ -91,7 +91,7 @@ describe('the settings projects scenes', () => {
     mount({ id: 'settings-projects-nostar' });
 
     await screen.findAllByRole('button', { name: /^Edit / }, WAIT);
-    expect(screen.queryByRole('heading', { name: 'Projects', level: 2 })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Folders', level: 2 })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Starred' })).toBeNull();
   });
 
@@ -99,7 +99,7 @@ describe('the settings projects scenes', () => {
     mount({ id: 'picker-starred' });
 
     await screen.findByText('Starred', undefined, WAIT);
-    screen.getByText('Other projects');
+    screen.getByText('Other folders');
     const names = screen
       .getAllByRole('button', { name: /^Add / })
       .map((button) => button.textContent);

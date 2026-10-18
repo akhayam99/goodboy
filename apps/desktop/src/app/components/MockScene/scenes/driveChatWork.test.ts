@@ -25,7 +25,7 @@ describe('driveChatWork', () => {
     mount('<button id="start">Start work from chat</button>');
     document.getElementById('start')?.addEventListener('click', () => {
       clicked.push('start');
-      mount('<div role="combobox" aria-label="Project" id="project"></div>');
+      mount('<div role="combobox" aria-label="Folder" id="project"></div>');
       document.getElementById('project')?.addEventListener('click', () => clicked.push('project'));
     });
 

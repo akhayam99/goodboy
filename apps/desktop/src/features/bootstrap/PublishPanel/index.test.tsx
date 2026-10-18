@@ -182,11 +182,11 @@ describe('PublishPanel on GitHub', () => {
     screen.getByRole('button', { name: 'Publish' });
   });
 
-  it('shows the visible heading Publish this project over the form', () => {
+  it('shows the visible heading Publish this folder over the form', () => {
     renderPanel();
 
-    expect(screen.getByRole('heading', { name: 'Publish this project' })).toBeDefined();
-    expect(screen.getByRole('region', { name: 'Publish this project' })).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'Publish this folder' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Publish this folder' })).toBeDefined();
   });
 
   it('says when GitHub is not signed in and offers the connect form', () => {

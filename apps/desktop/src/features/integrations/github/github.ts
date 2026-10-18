@@ -198,7 +198,7 @@ export const ghIssueByNumber = async (
 ): Promise<GithubIssue> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (slug == null) {
-    throw new Error('could not detect a GitHub repository for this project');
+    throw new Error('could not detect a GitHub repository for this folder');
   }
   return ghIssueInRepo({ repo: slug, issueNumber, cwd, workspaceId });
 };
@@ -252,7 +252,7 @@ export const ghUpdateIssueBody = async ({
 }: UpdateIssueBodyParams): Promise<string> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (slug == null) {
-    throw new Error('could not detect a GitHub repository for this project');
+    throw new Error('could not detect a GitHub repository for this folder');
   }
   return updateIssueBody({
     runner: tauriGhRunner,
@@ -276,7 +276,7 @@ export const ghIssueComments = async ({
 }: IssueCommentsParams): Promise<ReadonlyArray<GithubIssueComment>> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (slug == null) {
-    throw new Error('could not detect a GitHub repository for this project');
+    throw new Error('could not detect a GitHub repository for this folder');
   }
   return listIssueComments({
     runner: tauriGhRunner,
@@ -301,7 +301,7 @@ export const ghCreateIssueComment = async ({
 }: CreateIssueCommentParams): Promise<GithubIssueComment> => {
   const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
   if (slug == null) {
-    throw new Error('could not detect a GitHub repository for this project');
+    throw new Error('could not detect a GitHub repository for this folder');
   }
   return createIssueComment({
     runner: tauriGhRunner,

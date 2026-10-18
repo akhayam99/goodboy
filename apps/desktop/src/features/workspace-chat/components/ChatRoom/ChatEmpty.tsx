@@ -53,11 +53,11 @@ export const ChatEmpty = ({
             <p className="text-body text-muted-foreground">
               {hasProjects
                 ? `Answers read the code and history of ${joinNames({ names: projectNames })}.`
-                : 'Add a project so answers can read its code.'}
+                : 'Add a folder so answers can read its code.'}
             </p>
             {hasProjects ? null : (
               <Button variant="secondary" size="sm" onClick={onAddProject}>
-                Add project
+                Add folder
               </Button>
             )}
           </div>

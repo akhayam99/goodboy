@@ -35,7 +35,7 @@ export const ScriptEditor = ({
   onSave,
   onCancel,
 }: Props) => {
-  const projectName = projectById(projects, projectId)?.name ?? 'this project';
+  const projectName = projectById(projects, projectId)?.name ?? 'this folder';
 
   return (
     <section
@@ -67,7 +67,7 @@ export const ScriptEditor = ({
           <ProjectSelect
             projects={projects}
             projectId={projectId}
-            ariaLabel="Script project"
+            ariaLabel="Script folder"
             onChange={onProjectChange}
           />
         ) : (

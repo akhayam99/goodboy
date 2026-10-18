@@ -28,13 +28,13 @@ export const projectAnswerOf = ({ picks, roleNoun }: Params): ProjectAnswer => {
   const names = picks.map((pick) => pick.name);
   const only = names[0];
   if (names.length === 0 || only === undefined) {
-    return { label: 'Choose a project', message: null };
+    return { label: 'Choose a folder', message: null };
   }
   if (names.length === 1) {
     return { label: `Use ${only}`, message: `Use ${only} for the ${roleNoun}.` };
   }
   return {
-    label: names.length === 2 ? 'Use both' : `Use ${names.length} projects`,
-    message: `Use ${listOf({ names })}: start one ${roleNoun} per project.`,
+    label: names.length === 2 ? 'Use both' : `Use ${names.length} folders`,
+    message: `Use ${listOf({ names })}: start one ${roleNoun} per folder.`,
   };
 };

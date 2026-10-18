@@ -33,7 +33,7 @@ describe('LaunchMountRow', () => {
       <LaunchMountRow mount={ONE} selectedId={PAYMENTS} disabled={false} onChange={vi.fn()} />,
     );
 
-    const chip = screen.getByRole('combobox', { name: 'Project to work in' });
+    const chip = screen.getByRole('combobox', { name: 'Folder to work in' });
     expect(chip.textContent).toContain('Works in payments-api');
     expect(screen.getByText('from GitHub repo harborline/payments-api')).toBeDefined();
     const row = container.firstElementChild;
@@ -46,13 +46,13 @@ describe('LaunchMountRow', () => {
     const { rerender } = render(
       <LaunchMountRow mount={TWO} selectedId={LEDGER} disabled={false} onChange={vi.fn()} />,
     );
-    expect(screen.getByRole('combobox', { name: 'Project to work in' }).textContent).toContain(
+    expect(screen.getByRole('combobox', { name: 'Folder to work in' }).textContent).toContain(
       'Works in ledger-core',
     );
 
     rerender(<LaunchMountRow mount={ONE} selectedId={null} disabled={false} onChange={vi.fn()} />);
-    expect(screen.getByRole('combobox', { name: 'Project to work in' }).textContent).toContain(
-      'No project',
+    expect(screen.getByRole('combobox', { name: 'Folder to work in' }).textContent).toContain(
+      'No folder',
     );
   });
 
@@ -84,6 +84,6 @@ describe('LaunchMountRow', () => {
       />,
     );
 
-    expect(screen.getByRole('combobox', { name: 'Project to work in' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Folder to work in' })).toBeDefined();
   });
 });

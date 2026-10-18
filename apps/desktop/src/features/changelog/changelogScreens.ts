@@ -10,7 +10,7 @@ export const CHANGELOG_SCREENS = {
   'settings/app/storage': 'Storage',
   'settings/providers': 'Providers',
   'settings/tools': 'Integrations',
-  'settings/workspace/projects': 'Projects',
+  'settings/workspace/projects': 'Folders',
   'settings/workspace/review-replies': 'Replies and commits',
 } as const satisfies Record<string, string>;
 

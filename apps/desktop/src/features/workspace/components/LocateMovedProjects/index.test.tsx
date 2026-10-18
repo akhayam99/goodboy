@@ -40,7 +40,7 @@ describe('LocateMovedProjects', () => {
     const onChoose = vi.fn();
     render(<LocateMovedProjects workspaceId={WORKSPACE_ID} onChoose={onChoose} />);
 
-    const move = screen.getByRole('button', { name: 'Move 1 project' });
+    const move = screen.getByRole('button', { name: 'Move 1 folder' });
     const cancel = screen.getByRole('button', { name: 'Cancel' });
     const choose = screen.getByRole('button', { name: 'Choose another folder' });
     expect(move.closest('[data-slot="form-actions"]')).not.toBeNull();

@@ -23,10 +23,10 @@ const consequenceSentence = ({ projectName, agentName, cause }: SentenceParams):
   const lead = `Add ${projectName} so ${agentName} can use it in this session`;
   switch (cause) {
     case 'batch':
-      return `${lead}. This request has already added two projects.`;
+      return `${lead}. This request has already added two folders.`;
     case 'scope':
     case null:
-      return `${lead}. It adds a third project to this session.`;
+      return `${lead}. It adds a third folder to this session.`;
     default: {
       const exhaustive: never = cause;
       return exhaustive;
@@ -69,7 +69,7 @@ export const MountSuggestionCard = ({
 
   return (
     <section
-      aria-label={`Project suggestion for ${projectName}`}
+      aria-label={`Folder suggestion for ${projectName}`}
       data-testid="mount-suggestion-card"
       className={cn(
         'flex min-w-0 flex-col gap-2 rounded-lg border px-3 py-2 text-label',
@@ -93,12 +93,12 @@ export const MountSuggestionCard = ({
           onClick={() => void handleMount()}
           data-testid="mount-suggestion-mount"
         >
-          Add project
+          Add folder
         </Button>
         <IconButton
           icon={ChevronRight}
           variant="ghost"
-          label={`Project suggestion details for ${projectName}`}
+          label={`Folder suggestion details for ${projectName}`}
           aria-expanded={isOpen}
           iconSize={ICON_SIZE.row}
           className={cn('shrink-0 motion-safe:transition-transform', isOpen && 'rotate-90')}

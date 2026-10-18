@@ -28,7 +28,7 @@ type Answered = Readonly<{
 
 const ANOTHER_LINE = 'Not in this session. A worktree is created from main.';
 
-const JUST_ANSWER = 'No project, just answer';
+const JUST_ANSWER = 'No folder, just answer';
 
 type ReplyParams = {
   readonly content: string;
@@ -147,7 +147,7 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           {inSession.length === 0 ? null : (
             <p className="text-eyebrow text-muted-foreground">In this session</p>
           )}
-          <ul aria-label="Projects" className="flex min-w-0 flex-col">
+          <ul aria-label="Folders" className="flex min-w-0 flex-col">
             {(isAnotherOpen ? all : inSession).map((candidate) => (
               <li key={candidate.key} className="flex h-7 min-w-0 items-center gap-2">
                 <Checkbox
@@ -167,8 +167,8 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           </ul>
           {isAnotherOpen ? (
             <Input
-              aria-label="Type a project name"
-              placeholder="Type a project name"
+              aria-label="Type a folder name"
+              placeholder="Type a folder name"
               value={query}
               disabled={isBusy}
               onChange={(event) => setQuery(event.target.value)}
@@ -183,7 +183,7 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           <span className="flex items-center gap-1">
             {isAnotherOpen ? null : (
               <Button variant="quiet" size="sm" onClick={() => setIsAnotherOpen(true)}>
-                Another project…
+                Another folder…
               </Button>
             )}
             <ObjectActionVerb
@@ -213,11 +213,11 @@ export const AutoProjectAsk = ({ sessionId, rootAgentId, ask }: Props) => {
           disabled={isBusy}
           onClick={() =>
             void run({
-              label: 'No project',
+              label: 'No folder',
               work: () =>
                 reply({
-                  content: 'No project, just answer in the chat.',
-                  word: 'Answered: no project',
+                  content: 'No folder, just answer in the chat.',
+                  word: 'Answered: no folder',
                 }),
             })
           }

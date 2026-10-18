@@ -133,12 +133,12 @@ item, New workspace) now opens that workspace's own window instead of
 touching this one. `⌘Enter` on a workspace row always opens a new window,
 no question asked.
 
-**Disconnect** keeps a workspace and its projects in the database with
+**Disconnect** keeps a workspace and its folders in the database with
 everything they hold, it only hides them. Re-adding the same folder through
-New workspace, or a project through Add project, reconnects it and its
+New workspace, or a folder through Add folder, reconnects it and its
 sessions instead of creating a duplicate. If the folder moved since it was
 disconnected, Goodboy recognizes it by repository identity and offers to
-locate it the same way a moved project is located while connected.
+locate it the same way a moved folder is located while connected.
 
 Moving a project's folder on disk does not lose anything either: the
 database keeps its rows, but every saved path still points at the old
@@ -1571,16 +1571,18 @@ task up again in Goodboy.
 - Each word has one meaning. **workspace** is the container, **folder** is
   what it holds on screen (a repository or a plain folder; `project` in code),
   **session** is the goal, **agent** is the chat.
-- No screen may use a different word for any of these four. The surfaces that
-  create, add or list what a workspace holds say folder; the in-session and
-  settings surfaces still say project until they move too
+- No screen may use a different word for any of these four. Every surface that
+  creates, adds, lists or manages what a workspace holds says folder: the
+  session rail, the session overview, Settings, palette labels, notices and
+  aria-labels alike. The old words stay findable as former names
+  (`formerNamesOf` in `shared/names.ts`: Projects, Add project, Dev project)
 - Internal words stay in code and technical docs. The screen says the word the
   user already knows from git, the file system or the rest of the app:
 
   | Internal word       | On screen                                         |
   | ------------------- | ------------------------------------------------- |
-  | mount, branch mount | branch (repo), folder (folder project), project   |
-  | mount a project     | Add project                                       |
+  | mount, branch mount | branch (repo), folder (plain folder)              |
+  | mount a project     | Add folder                                        |
   | fork a mount        | New branch                                        |
   | unmount             | Close branch, and Reopen for a closed row         |
   | spawn               | Start (an agent, a reviewer, an implementer)      |

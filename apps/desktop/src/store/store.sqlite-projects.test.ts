@@ -221,7 +221,7 @@ describe('store on sqlite: mounting a project in a session', () => {
     const result = await useAppStore.getState().ensureProjectMounted({
       sessionId,
       projectId: LEDGER_ID,
-      reason: 'the session works in this project',
+      reason: 'the session works in this folder',
     });
 
     expect(result.status).toBe('created');
@@ -240,7 +240,7 @@ describe('store on sqlite: mounting a project in a session', () => {
       useAppStore.getState().ensureProjectMounted({
         sessionId,
         projectId: LEDGER_ID,
-        reason: 'the session works in this project',
+        reason: 'the session works in this folder',
       }),
     ).rejects.toThrow();
 

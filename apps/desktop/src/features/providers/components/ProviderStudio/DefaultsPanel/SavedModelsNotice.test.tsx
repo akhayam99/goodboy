@@ -145,7 +145,7 @@ describe('SavedModelsNotice', () => {
     open();
 
     expect(
-      await screen.findByText('Saved model settings from 2 projects no longer apply.'),
+      await screen.findByText('Saved model settings from 2 folders no longer apply.'),
     ).toBeDefined();
   });
 
@@ -155,7 +155,7 @@ describe('SavedModelsNotice', () => {
     open();
 
     expect(
-      await screen.findByText('Saved model settings from 1 project no longer apply.'),
+      await screen.findByText('Saved model settings from 1 folder no longer apply.'),
     ).toBeDefined();
   });
 
@@ -171,7 +171,7 @@ describe('SavedModelsNotice', () => {
     fireEvent.click(show);
 
     expect(screen.getByRole('button', { name: 'Hide' }).getAttribute('aria-expanded')).toBe('true');
-    const list = screen.getByRole('list', { name: 'Projects with saved model settings' });
+    const list = screen.getByRole('list', { name: 'Folders with saved model settings' });
     expect(
       within(list)
         .getAllByRole('listitem')
@@ -244,7 +244,7 @@ describe('SavedModelsNotice', () => {
       false,
     );
     expect(await getSetting(storySqlite(), `legacy.projectModels.${PAYMENTS.id}`)).not.toBeNull();
-    expect(screen.getByText('Saved model settings from 1 project no longer apply.')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 1 folder no longer apply.')).toBeDefined();
     expect(useAppStore.getState().workspaceOverrides[WORKSPACE_ID]?.taskModels ?? null).toBeNull();
   });
 
@@ -266,9 +266,7 @@ describe('SavedModelsNotice', () => {
     );
 
     await waitFor(() =>
-      expect(
-        screen.getByText('Saved model settings from 1 project no longer apply.'),
-      ).toBeDefined(),
+      expect(screen.getByText('Saved model settings from 1 folder no longer apply.')).toBeDefined(),
     );
     expect(await getSetting(storySqlite(), `legacy.projectModels.${LEDGER.id}`)).toBeNull();
     expect(await getSetting(storySqlite(), `legacy.projectModels.${PAYMENTS.id}`)).not.toBeNull();

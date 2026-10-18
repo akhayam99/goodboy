@@ -49,15 +49,15 @@ afterEach(cleanup);
 
 const openPicker = () => {
   render(<KickoffProjects workspaceId={WORKSPACE_ID} />);
-  fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
-  return within(screen.getByRole('listbox', { name: 'Project' }));
+  fireEvent.click(screen.getByRole('combobox', { name: 'Folder' }));
+  return within(screen.getByRole('listbox', { name: 'Folder' }));
 };
 
 describe('KickoffProjects', () => {
-  it('reads Add project and Optional while no project is picked, with no extra line', () => {
+  it('reads Add folder and Optional while no project is picked, with no extra line', () => {
     render(<KickoffProjects workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByRole('combobox', { name: 'Project' }).textContent).toContain('Add project');
+    expect(screen.getByRole('combobox', { name: 'Folder' }).textContent).toContain('Add folder');
     expect(screen.getByText('Optional')).toBeDefined();
     expect(screen.queryByText(/Goodboy adds one/)).toBeNull();
   });
@@ -66,7 +66,7 @@ describe('KickoffProjects', () => {
     const list = openPicker();
 
     expect(list.getByText('Suggested')).toBeDefined();
-    expect(list.getByText('All projects')).toBeDefined();
+    expect(list.getByText('All folders')).toBeDefined();
     expect(list.getAllByRole('option').map((option) => option.textContent)).toEqual([
       'ledger-core',
       'notify-relay',
@@ -74,12 +74,12 @@ describe('KickoffProjects', () => {
     ]);
   });
 
-  it('keeps Add project once a project is picked', () => {
+  it('keeps Add folder once a project is picked', () => {
     const list = openPicker();
 
     fireEvent.click(list.getByRole('option', { name: 'payments-api' }));
 
-    expect(screen.getByRole('combobox', { name: 'Project' }).textContent).toContain('Add project');
+    expect(screen.getByRole('combobox', { name: 'Folder' }).textContent).toContain('Add folder');
     expect(screen.getByRole('button', { name: 'Remove payments-api' })).toBeDefined();
   });
 });

@@ -55,7 +55,7 @@ export const useProjectFilterOptions = ({
     }
     return [
       ...projectOptions,
-      { id: NO_PROJECT_FILTER_ID, label: 'No project', count: noProjectCount, isStarred: false },
+      { id: NO_PROJECT_FILTER_ID, label: 'No folder', count: noProjectCount, isStarred: false },
     ];
   }, [projects, sessionProjectMounts, sessions, workspaceId]);
 };

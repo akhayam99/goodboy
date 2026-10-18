@@ -16,6 +16,8 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'copy-as-brief', pattern: /\bCopy as brief\b/i, use: NAMES.copyContext },
   { id: 'budget-cap', pattern: /\b[Bb]udget cap\b/i, use: NAMES.spendCap },
   { id: 'link-plain-folder', pattern: /\bLink a plain folder\b/i, use: NAMES.addPlainFolder },
+  { id: 'add-project', pattern: /\bAdd project\b/, use: NAMES.addFolder },
+  { id: 'dev-project', pattern: /\b[Dd]ev project\b/, use: NAMES.gitRepository },
   { id: 'link-existing', pattern: /\bLink existing\b/i, use: NAMES.addExisting },
   {
     id: 'link-integration',

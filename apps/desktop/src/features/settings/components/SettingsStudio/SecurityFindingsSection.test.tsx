@@ -65,7 +65,7 @@ describe('SecurityFindingsSection', () => {
 
     expect(
       screen.getByText(
-        'Goodboy checks a project script for anything that looks like a key or a token each time you save it. This text never leaves your Mac.',
+        'Goodboy checks a folder script for anything that looks like a key or a token each time you save it. This text never leaves your Mac.',
       ),
     ).toBeDefined();
   });

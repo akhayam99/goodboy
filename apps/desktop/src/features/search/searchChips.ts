@@ -13,7 +13,7 @@ export type SearchChipKey = SearchChip['key'];
 
 export const CHIP_KEY_LABEL: Readonly<Record<SearchChipKey, string>> = {
   type: 'Type',
-  project: 'Project',
+  project: 'Folder',
   provider: 'Provider',
   status: 'Status',
   archived: 'Archived',

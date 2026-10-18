@@ -7,6 +7,7 @@ import { useAppStore } from '../../../../../store';
 import { MountProjectList } from './MountProjectList';
 import { starredProjectsFirst } from '../../../../../shared/utils/starredProjectsFirst';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../../shared/names';
 import { LevelAddTrigger } from '../../../../../shared/components/LevelAddTrigger';
 import { isProjectInFirstLap } from '../../../../../store/slices/bootstrap/firstLap';
 
@@ -16,7 +17,7 @@ type Props = {
   readonly presentation?: 'icon' | 'button' | 'add';
 };
 
-const LABEL = 'Add project';
+const LABEL = NAMES.addFolder;
 
 export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
   const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 320 });
@@ -87,8 +88,8 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
           projects={orderedProjects}
           emptyHint={
             hasWorkspaceProjects
-              ? 'Every workspace project is already in this session.'
-              : 'This workspace has no project yet.'
+              ? 'Every workspace folder is already in this session.'
+              : 'This workspace has no folder yet.'
           }
           onDone={() => {
             setIsComplete(true);

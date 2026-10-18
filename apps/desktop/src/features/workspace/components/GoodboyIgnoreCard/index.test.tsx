@@ -37,17 +37,17 @@ describe('GoodboyIgnoreCard', () => {
   it('asks the question once for every unanswered project', () => {
     render(<GoodboyIgnoreCard workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText("Git doesn't ignore .goodboy in 2 projects")).toBeDefined();
-    expect(screen.getByText('Save for 2 projects')).toBeDefined();
+    expect(screen.getByText("Git doesn't ignore .goodboy in 2 folders")).toBeDefined();
+    expect(screen.getByText('Save for 2 folders')).toBeDefined();
   });
 
   it('saves this-mac by default for every pending project, then hides the card', async () => {
     render(<GoodboyIgnoreCard workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByText('Save for 2 projects'));
+    fireEvent.click(screen.getByText('Save for 2 folders'));
 
     await waitFor(() =>
-      expect(screen.queryByText("Git doesn't ignore .goodboy in 2 projects")).toBeNull(),
+      expect(screen.queryByText("Git doesn't ignore .goodboy in 2 folders")).toBeNull(),
     );
     expect(h.saveGoodboyIgnore).toHaveBeenCalledWith({ projectId: 'acme', mode: 'this-mac' });
     expect(h.saveGoodboyIgnore).toHaveBeenCalledWith({ projectId: 'cascadia', mode: 'this-mac' });
@@ -56,10 +56,10 @@ describe('GoodboyIgnoreCard', () => {
   it('hides the card without saving when choosing per project', () => {
     render(<GoodboyIgnoreCard workspaceId={WORKSPACE_ID} />);
 
-    fireEvent.click(screen.getByText('Choose per project'));
+    fireEvent.click(screen.getByText('Choose per folder'));
 
     expect(h.saveGoodboyIgnore).not.toHaveBeenCalled();
-    expect(screen.queryByText("Git doesn't ignore .goodboy in 2 projects")).toBeNull();
+    expect(screen.queryByText("Git doesn't ignore .goodboy in 2 folders")).toBeNull();
   });
 
   it('renders nothing once every project already has an answer', () => {

@@ -19,9 +19,9 @@ type FailureTextParams = {
 const failureText = ({ failure }: FailureTextParams): string => {
   switch (failure.kind) {
     case 'children':
-      return 'That folder holds several repositories. Pick them in workspace projects.';
+      return 'That folder holds several repositories. Pick them in workspace folders.';
     case 'conflict':
-      return `${failure.projectName} belongs to ${failure.workspaceName}. Move it from workspace projects.`;
+      return `${failure.projectName} belongs to ${failure.workspaceName}. Move it from workspace folders.`;
     case 'error':
       return failure.message;
     default: {
@@ -62,7 +62,7 @@ export const ConnectProjectRow = ({ workspaceId, onConnected }: Props) => {
             {failureText({ failure })}
           </p>
           <Button variant="ghost" size="sm" onClick={openWorkspaceProjects}>
-            Open workspace projects
+            Open workspace folders
           </Button>
         </div>
       )}

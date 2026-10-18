@@ -54,7 +54,7 @@ const GROUP_OPTIONS: ReadonlyArray<ListboxOption<SessionGroupKey>> = [
   { value: 'none', label: 'None' },
   { value: 'pr', label: 'PR state' },
   { value: 'stage', label: 'Stage' },
-  { value: 'project', label: 'Project' },
+  { value: 'project', label: 'Folder' },
 ];
 
 const MENU_WIDTH = 240;
@@ -217,9 +217,9 @@ export const SessionFilterPopover = ({
               </div>
             ) : null}
             {isProjectFacet ? (
-              <div role="group" aria-label="Project" className="flex flex-col">
+              <div role="group" aria-label="Folder" className="flex flex-col">
                 <span aria-hidden className={SUBHEAD}>
-                  Project
+                  Folder
                 </span>
                 {projectOptions.map((option) => (
                   <FilterCheckRow

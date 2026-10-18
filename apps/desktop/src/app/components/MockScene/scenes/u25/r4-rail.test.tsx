@@ -120,7 +120,7 @@ describe('r4 session rail scenes', () => {
   it('r4-rail-session draws the cards with each worktree pages inline, the tools outside the rail', async () => {
     await mount('r4-rail-session');
 
-    const projects = card('Projects');
+    const projects = card('Folders');
     expect(entryLabels(projects)).toEqual(['Pull request', 'Comments', 'Files', 'Checks']);
     expect(
       within(projects)
@@ -153,7 +153,7 @@ describe('r4 session rail scenes', () => {
     const navRow = elementIn(rail(), '[data-testid="session-pages"] button');
     const navIcon = elementIn(navRow, 'svg');
     const navSlot = elementIn(rail(), '[data-page-value="runs"]');
-    const projects = card('Projects');
+    const projects = card('Folders');
     const headerLabel = elementIn(projects, 'h2 button span');
     const projectIcon = elementIn(
       projects,
@@ -194,11 +194,11 @@ describe('r4 session rail scenes', () => {
     await mount('r4-rail-cards-folded');
 
     expect(
-      within(card('Projects'))
-        .getByRole('button', { name: 'Projects' })
+      within(card('Folders'))
+        .getByRole('button', { name: 'Folders' })
         .getAttribute('aria-expanded'),
     ).toBe('false');
-    expect(card('Projects').querySelector('[data-card-signal]')).not.toBeNull();
+    expect(card('Folders').querySelector('[data-card-signal]')).not.toBeNull();
     expect(
       within(card('Linked')).getByRole('button', { name: 'Linked' }).getAttribute('aria-expanded'),
     ).toBe('false');
@@ -236,7 +236,7 @@ describe('r4 session rail scenes', () => {
   it('r4-rail-tree draws many branches with their pull request icons, two open at once', async () => {
     await mount('r4-rail-tree');
 
-    const projects = card('Projects');
+    const projects = card('Folders');
     const states = [...projects.querySelectorAll('[data-pr-state]')].map((icon) =>
       icon.getAttribute('data-pr-state'),
     );

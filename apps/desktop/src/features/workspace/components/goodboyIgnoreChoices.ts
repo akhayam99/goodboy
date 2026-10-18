@@ -14,12 +14,12 @@ export const GOODBOY_IGNORE_CHOICES: ReadonlyArray<GoodboyIgnoreChoice> = [
   },
   {
     mode: 'project',
-    label: "The project's .gitignore",
+    label: "The folder's .gitignore",
     hint: 'Teammates get it after you commit and push.',
   },
   {
     mode: 'global',
     label: 'All my repositories',
-    hint: 'Adds .goodboy/ to your global git ignore. No project file changes.',
+    hint: 'Adds .goodboy/ to your global git ignore. No folder file changes.',
   },
 ];

@@ -66,4 +66,36 @@ describe('settingsPaletteEntries', () => {
     entry?.run();
     expect(open).toHaveBeenCalledWith({ scope: 'workspace', section: 'review-replies' });
   });
+
+  it('opens the folders page under its new name and still answers to Projects', () => {
+    const open = vi.fn();
+    const page = workspacePageEntry({ page: 'projects' });
+    const workspaceGroup: SettingsGroup = {
+      scope: 'workspace',
+      label: 'Workspace',
+      concept: 'workspace',
+      place: 'Workspace',
+      attention: undefined,
+      tone: undefined,
+      needsWorkspace: true,
+      pages: [
+        {
+          key: `workspace:${page.id}`,
+          label: page.label,
+          glyph: { kind: 'concept', concept: page.concept },
+          tone: 'primary',
+          attention: null,
+          target: { scope: 'workspace', section: page.id },
+        },
+      ],
+    };
+    const entry = settingsPaletteEntries({ groups: [workspaceGroup], open }).find(
+      (candidate) => candidate.key === `setting:workspace:${page.id}`,
+    );
+
+    expect(entry?.label).toBe('Workspace settings: Folders');
+    expect(entry?.secondary).toEqual(expect.arrayContaining(['Projects', 'Workspace projects']));
+    entry?.run();
+    expect(open).toHaveBeenCalledWith({ scope: 'workspace', section: 'projects' });
+  });
 });

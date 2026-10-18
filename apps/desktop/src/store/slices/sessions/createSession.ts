@@ -221,7 +221,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
           reason:
             trimmedExisting !== undefined && trimmedExisting !== ''
               ? `adopted existing branch ${trimmedExisting}`
-              : (projectReason ?? 'the session works in this project'),
+              : (projectReason ?? 'the session works in this folder'),
           taskIdentifiers: (externalTasks ?? []).map((task) => task.identifier),
         });
       } catch (error) {
@@ -234,7 +234,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
         await get().ensureProjectMounted({
           sessionId: session.id,
           projectId: extra.id,
-          reason: projectReason ?? 'the session works in this project',
+          reason: projectReason ?? 'the session works in this folder',
           taskIdentifiers: [],
         });
       } catch (error) {

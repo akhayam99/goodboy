@@ -51,7 +51,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-body text-muted-foreground">
-        Goodboy checks a project script for anything that looks like a key or a token each time you
+        Goodboy checks a folder script for anything that looks like a key or a token each time you
         save it. This text never leaves your Mac.
       </p>
       {open.length > 0 && (

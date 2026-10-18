@@ -617,7 +617,7 @@ export const deriveNextSteps = ({
       ? `${firstRebaseTarget.behind} behind`
       : isSingleProject
         ? `${shownRebaseTargets.length} branches behind`
-        : `${projectCount} projects behind`;
+        : `${projectCount} folders behind`;
     suggestions.push({
       id: `rebase-project:${sessionId}`,
       kind: 'rebase-project',

@@ -52,7 +52,7 @@ describe('the explore chip scenes', () => {
   it('exploremulti opens the menu with both projects and a check on the one shown', async () => {
     mount({ id: 'exploremulti' });
 
-    const menu = await screen.findByRole('menu', { name: 'Projects' }, WAIT);
+    const menu = await screen.findByRole('menu', { name: 'Folders' }, WAIT);
     const rows = within(menu).getAllByRole('menuitemradio');
     expect(rows).toHaveLength(2);
     expect(within(menu).getByRole('group', { name: 'payments-api' })).toBeDefined();
@@ -64,13 +64,13 @@ describe('the explore chip scenes', () => {
   it('exploremulti browses the second project when you pick it', async () => {
     mount({ id: 'exploremulti' });
 
-    const menu = await screen.findByRole('menu', { name: 'Projects' }, WAIT);
+    const menu = await screen.findByRole('menu', { name: 'Folders' }, WAIT);
     fireEvent.click(within(menu).getByRole('menuitemradio', { name: /hl\/surface-retry/ }));
 
     expect(await screen.findByRole('treeitem', { name: 'retry-policy.md' }, WAIT)).toBeDefined();
     expect(screen.queryByRole('treeitem', { name: 'apps' })).toBeNull();
     expect(
-      screen.getByRole('button', { name: 'Project notify-relay, hl/surface-retry-state' }),
+      screen.getByRole('button', { name: 'Folder notify-relay, hl/surface-retry-state' }),
     ).toBeDefined();
   });
 
@@ -78,8 +78,8 @@ describe('the explore chip scenes', () => {
     mount({ id: 'explorefirstlap' });
 
     await screen.findByRole('treeitem', { name: 'rounding.ts' }, WAIT);
-    expect(screen.getByText('payments-api, project folder')).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^Project / })).toBeNull();
+    expect(screen.getByText('payments-api, folder')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /^Folder / })).toBeNull();
   });
 
   it('explore-nomount says there is nothing to browse yet and has no retry', async () => {

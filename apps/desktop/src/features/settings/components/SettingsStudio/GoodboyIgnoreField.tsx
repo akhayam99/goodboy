@@ -24,7 +24,7 @@ const statusLabel = ({ project }: { readonly project: Project }): string | null 
     return 'Hidden on this Mac only';
   }
   if (project.goodboyIgnore === 'project') {
-    return "Added to the project's .gitignore";
+    return "Added to the folder's .gitignore";
   }
   if (project.goodboyIgnore === 'global') {
     return 'Ignored in your global git ignore';

@@ -67,7 +67,7 @@ describe('the Models page scenes', () => {
   it('modelswilluse shows the saved project settings, the skipped pins and the page line', async () => {
     await mount('modelswilluse');
 
-    expect(screen.getByText('Saved model settings from 1 project no longer apply.')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 1 folder no longer apply.')).toBeDefined();
     expect(
       screen.getByText(
         'With Codex as the only provider, 7 of 11 agents use a pin that cannot run. Auto picks apply.',

@@ -307,7 +307,7 @@ describe('StageBoard git gate', () => {
 
     expect(
       screen.getByRole('heading', {
-        name: 'This project needs a git repository with one commit first',
+        name: 'This folder needs a git repository with one commit first',
       }),
     ).toBeDefined();
     expect(screen.queryByText('No sessions yet')).toBeNull();
@@ -323,9 +323,7 @@ describe('StageBoard git gate', () => {
     gitStatuses.current = { 'proj-1': statusOf('missing') };
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
 
-    expect(
-      screen.getByRole('heading', { name: 'The project folder is unreachable' }),
-    ).toBeDefined();
+    expect(screen.getByRole('heading', { name: 'The folder is unreachable' })).toBeDefined();
     expect(screen.getByText(/Relink it in workspace settings/)).toBeDefined();
   });
 });

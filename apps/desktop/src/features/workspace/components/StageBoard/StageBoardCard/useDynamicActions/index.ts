@@ -176,7 +176,7 @@ export const useDynamicActions = (
             void emitNotification({
               kind: 'error',
               severity: 'error',
-              title: "Couldn't add the project",
+              title: "Couldn't add the folder",
               body: formatError(error),
               sessionId: id,
             });

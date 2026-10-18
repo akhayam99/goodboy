@@ -148,7 +148,7 @@ describe('useChatPrefix, script quick action', () => {
     const { result } = renderScripts('$');
 
     expect(result.current.filteredQuickItems).toEqual([]);
-    expect(result.current.quickEmptyHint).toBe('Add a project to this session to run its scripts.');
+    expect(result.current.quickEmptyHint).toBe('Add a folder to this session to run its scripts.');
   });
 
   it('points to the Scripts page when a mounted project has no scripts', () => {

@@ -190,7 +190,7 @@ describe('palette verbs follow the session state', () => {
       'Delete',
     ]);
     expect(sessionView({ facts, query: 'files' })).toEqual([
-      'Open files (Add a project to this session first)',
+      'Open files (Add a folder to this session first)',
     ]);
     expect(sessionView({ facts, query: 'editor' })).toEqual([
       'Open in editor (This session has no worktree yet)',

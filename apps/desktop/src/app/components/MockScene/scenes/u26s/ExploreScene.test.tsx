@@ -86,9 +86,9 @@ describe('the secondary Explore scenes', () => {
 
     expect(await screen.findByRole('heading', { name: 'No folder to browse' }, WAIT)).toBeDefined();
     const offered = screen
-      .getAllByRole('button', { name: 'Add project' })
+      .getAllByRole('button', { name: 'Add folder' })
       .filter((button) => !button.hasAttribute('data-level-add'));
     expect(offered).toHaveLength(1);
-    expect(offered[0]?.textContent).toBe('Add project');
+    expect(offered[0]?.textContent).toBe('Add folder');
   });
 });

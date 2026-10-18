@@ -53,7 +53,7 @@ export const moveSessionExternalTask = ({ set, get }: Params) => {
       to.projectId !== task.projectId
     ) {
       throw new Error(
-        `${task.identifier} belongs to ${nameOf(task.projectId) ?? 'another project'}. ${nameOf(to.projectId) ?? 'This project'} has no place for it.`,
+        `${task.identifier} belongs to ${nameOf(task.projectId) ?? 'another folder'}. ${nameOf(to.projectId) ?? 'This folder'} has no place for it.`,
       );
     }
     const key = taskIdentityKey({ task });

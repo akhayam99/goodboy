@@ -34,7 +34,7 @@ const SUGGESTION: SessionSuggestion = {
   priority: 40,
   band: 2,
   title: `Rebase ${TARGETS.length} branches`,
-  detail: `${TARGETS.length} projects behind`,
+  detail: `${TARGETS.length} folders behind`,
   sessionId: SESSION_ID,
   fingerprint: `rebase-project:${SESSION_ID}:u26`,
   targetKey: null,

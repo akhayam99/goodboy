@@ -236,12 +236,12 @@ describe('SPEC3 9.3 worktree actions from the worktree level', () => {
     expect(screen.getByRole('dialog', { name: 'Switch branch' })).toBeDefined();
   });
 
-  it('Add project on the card and New branch on each repo row stay one click away', async () => {
+  it('Add folder on the card and New branch on each repo row stay one click away', async () => {
     await mount('c04-session-worktrees');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
     await advance();
-    const picker = within(screen.getByRole('dialog', { name: 'Add project' }));
+    const picker = within(screen.getByRole('dialog', { name: 'Add folder' }));
     expect(picker.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
     fireEvent.keyDown(window, { key: 'Escape' });
     await advance();

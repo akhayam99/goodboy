@@ -1162,7 +1162,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   brief into the latest agent's composer draft (`landOnSession.ts`). The
   panel starts on the keyboard with cmd or ctrl plus Enter.
   The Project field is a searchable multiple `Listbox` (`ProjectField.tsx`)
-  with removable chips and a "No project" state; it starts with the projects the
+  with removable chips and a "No folder" state; it starts with the projects the
   answer named files in, or none, and hides in "Add to a session" mode. The first
   picked project is `createSession`'s `projectId`; the others go in
   `additionalProjectIds`. The Session

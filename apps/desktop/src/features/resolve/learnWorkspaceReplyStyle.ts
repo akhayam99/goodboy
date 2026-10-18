@@ -3,7 +3,7 @@ import { detectRepoSlug, learnReplyStyle, listMyReviewReplies } from '@goodboy/c
 import type { TaskModelPreference, WorkspaceId } from '@goodboy/types';
 import { tauriGhRunner } from '../integrations/github/github';
 
-export const NO_WORKSPACE_REPO = 'No project in this workspace is a GitHub repository.';
+export const NO_WORKSPACE_REPO = 'No folder in this workspace is a GitHub repository.';
 export const NO_REVIEW_REPLIES = "Couldn't find review replies you wrote in this workspace.";
 export const NO_STYLE_NOTE = "Couldn't write a style note from your replies. Try again.";
 

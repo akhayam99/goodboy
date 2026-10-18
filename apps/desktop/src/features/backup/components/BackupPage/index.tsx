@@ -146,7 +146,7 @@ export const BackupPage = () => {
             title="Imported"
             body={
               importResult.stats.unresolvedProjects > 0
-                ? `${importResult.stats.unresolvedProjects} projects stay unresolved: choose their folder and import again.`
+                ? `${importResult.stats.unresolvedProjects} folders stay unresolved: choose where they are and import again.`
                 : null
             }
             actions={

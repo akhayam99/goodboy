@@ -54,7 +54,7 @@ export const MountProjectList = ({
     const others = filtered.filter((project) => project.starredAt === undefined);
     return [
       { key: 'starred', label: 'Starred', projects: starred },
-      { key: 'other', label: 'Other projects', projects: others },
+      { key: 'other', label: 'Other folders', projects: others },
     ].filter((group) => group.projects.length > 0);
   }, [filtered, isGrouped]);
   const selectedProject = projectById(projects, selectedProjectId) ?? null;
@@ -85,7 +85,7 @@ export const MountProjectList = ({
       void emitNotification({
         kind: 'error',
         severity: 'warning',
-        title: "Couldn't add the project",
+        title: "Couldn't add the folder",
         body: formatError(error),
         sessionId,
         workspaceId: project.workspaceId,
@@ -117,8 +117,8 @@ export const MountProjectList = ({
         <input
           type="text"
           value={query}
-          aria-label="Search projects"
-          placeholder="Search projects…"
+          aria-label="Search folders"
+          placeholder="Search folders…"
           autoComplete="off"
           onChange={(event) => setQuery(event.target.value)}
           className="border-b border-border-soft bg-transparent px-3 py-2 text-body text-foreground outline-none placeholder:text-faint-foreground"
@@ -127,7 +127,7 @@ export const MountProjectList = ({
       {projects.length === 0 ? (
         <p className="px-3 py-2 text-label text-muted-foreground">{emptyHint}</p>
       ) : filtered.length === 0 ? (
-        <EmptyLine className="px-3">No matching projects</EmptyLine>
+        <EmptyLine className="px-3">No matching folders</EmptyLine>
       ) : (
         <ScrollFade className="max-h-56" viewportClassName="py-0.5" fadeFrom="subtle">
           <div className="flex flex-col">

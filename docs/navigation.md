@@ -293,7 +293,7 @@ A task row shows a result glyph, its duration and age in gray, and the last
 line of a failure. **Pin**, **Restart** and the rest are in the row's right
 click menu. A project with nothing pinned shows a dimmed **Suggested** band (its
 root `dev`, `build`, `test`, `lint` and `typecheck`, first match each) with a
-**Pin** on every row. Scripts that are not pinned stay on the workspace Projects
+**Pin** on every row. Scripts that are not pinned stay on the workspace Folders
 page in Settings, where they are pinned. A row's sublabel names its package (the
 manifest name, or `root`) and shows the script's body, not its invocation; the
 trailing badge is `Running` or the package's short name (`web`, not
@@ -696,7 +696,7 @@ hide animation or overlay can move it.
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
 
-**The Projects card of the session level shows which projects a session has
+**The Folders card of the session level shows which folders a session has
 materialized.** It lives in the session rail, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
 row that folds its worktrees, each worktree folds its main pages one more
@@ -725,7 +725,7 @@ deeper level shows, and the hidden ones are `inert`. The rail is 240px by
 default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
 rows are the column's rows (28px, `SelectableRow`, the same type roles).
 
-- **Level 1 reads top to bottom:** the pages, then the Projects card and the
+- **Level 1 reads top to bottom:** the pages, then the Folders card and the
   Linked card, then the foot. The session level has no identity row: the
   selected main sidebar row is the session's identity (its title and state
   node). The Overview h1 is the session title, the linked key in gray mono
@@ -817,7 +817,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
   its flyout read the same function; the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
-- **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
+- **Folders and Linked are cards** (`SessionLevel/LevelCard`): a rounded
   `bg-subtle` surface (`rounded-lg`, 4px inset) whose edges sit on the page
   row highlight edges: pages and cards share one column inset
   (`SessionLevel/railInset`, `RAIL_INSET`), and a card row adds 4px
@@ -829,11 +829,11 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   title and a fold chevron as one button, then the quiet meta and a `+` icon
   button (`LevelAddTrigger`) at the right. A card folds from its header and
   remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);
-  folded, Projects keeps the worst state of its worktrees as one dot in the
+  folded, Folders keeps the worst state of its worktrees as one dot in the
   header (`useProjectsSignal`) and Linked its item count from 2, so a state
   that needs you never hides in a fold. Cards sit 8px apart, 16px under the
   pages.
-- **Projects is a tree** you fold at two depths, many nodes open at once. A
+- **Folders is a tree** you fold at two depths, many nodes open at once. A
   project row (`SessionLevel/ProjectTree`) is one toggle (`aria-expanded`):
   folder icon, name, then its branch count from 1 in quiet tabular gray beside
   a chevron in the right slot. Its worktrees sit one 16px indent in
@@ -875,7 +875,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   state dot on its corner (`useWorktreeRowState`, shared with the open row); the
   folded rail never draws the session node. A worktree row drills into the worktree level
   (level 2) on its landing entry. The card header carries one `+`
-  (`LevelAddTrigger`, a ghost `xs` icon button named Add project: no border,
+  (`LevelAddTrigger`, a ghost `xs` icon button named Add folder: no border,
   no fill at rest, so the rail stays light) that opens the project picker
   straight away (`MountProjectAction`, no menu first): the workspace projects
   not yet in the session, then `Connect a repo or folder`, which picks a folder,
@@ -921,7 +921,7 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   key in the tooltip) so every title starts on one edge, title. A GitHub pull
   request a worktree row of the session already owns is not listed again
   (`githubRefOf`, same owner/repo and number). The row opens the item; its right-click menu holds
-  Unlink and Move. It is a card like Projects, and its header carries the same
+  Unlink and Move. It is a card like Folders, and its header carries the same
   `+` (`LevelAddTrigger`, named Link work), opening Link work (L). Every card
   header of the session level uses this one control, never a bordered chip.
 - **Back.** On level 2 the back row goes up to level 1, and so does ⌘[ while
@@ -1242,12 +1242,12 @@ The draft asks one question, "How do you want to start?", with four choices
 on one row as compact tabs (`StartChoiceTabs`, `SegmentedTabs` pill variant):
 Pick up a task, Run a workflow, Run an orchestrator and Start an agent. **Start blank** sits
 in the page header. Run a workflow, Run an orchestrator and Start an agent each hold
-**Projects** (`KickoffProjects` over the shared `ProjectPicker`): optional, a
+**Folders** (`KickoffProjects` over the shared `ProjectPicker`): optional, a
 searchable multiple `Listbox` with the picked projects as removable chips under
 it, in two groups (`projectPickerGroups`): "Suggested" holds at most five (the
 picked issue's project, then the most recently used, then starred ones) and
-"All projects" lists the rest by name with the base branch at the right. The
-trigger reads `Add project` with or without a pick (`emptyValueLabel`) and no
+"All folders" lists the rest by name with the base branch at the right. The
+trigger reads `Add folder` with or without a pick (`emptyValueLabel`) and no
 line sits under it (mounts stay lazy). The draft keeps them as `projectIds`; the first is
 the session's project and the rest are added with it (`additionalProjectIds`).
 When a picked issue maps to a project, the picker starts with it and one line
@@ -1336,7 +1336,7 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   for Run a workflow, `dynamic` for Run an orchestrator; the choice is the mode, so
   there is no mode switch and no remembered mode): goal card with the paperclip
   and Polish (no title field: the run is named from the preset or the goal, and
-  renamed on its page), Projects, Can use (only with two or more providers), the
+  renamed on its page), Folders, Can use (only with two or more providers), the
   preset with its editable steps and a model per step or the orchestrator row
   with its model right after the label, guidance, then one actions row with
   Autonomy, Starts and Limit at the left and Discard, the estimate and the
@@ -1364,14 +1364,14 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
 - **Start an agent** opens the role list (`AgentStart`, below): Auto being always
   available does not make it the start here. `SessionKickoff` takes `isAuto`
   (false by default, set only by a scene) to draw the Auto composer instead
-  (`AutoStart`): one goal with files, Projects, then one actions row with the
+  (`AutoStart`): one goal with files, Folders, then one actions row with the
   Model chip and the Auto limit chip at the left and Discard and **Start an auto**
   at the right, no role list, no guidance; `Experimental` is a gray word after
   the choice line, on the page and in the drawer. Its goal and
   model live in the draft (`autoGoal`, `autoRouting`) and count as written for
   Discard. Start runs `startSessionFromDraft` kind `scout` with an Auto agent
   (`agentKind: 'auto'`), the goal as its prompt and the chosen routing.
-- **Start an agent** (`AgentStart`) is the goal field, then Projects, then one
+- **Start an agent** (`AgentStart`) is the goal field, then Folders, then one
   actions row with Role and Model as `ControlChip`s (`AgentStartFields`,
   `ModelControlChip`) and the primary, opening the same role list and model
   picker the New drawer and the Start an agent popover use (`AgentStartBlock`:
@@ -2333,7 +2333,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   Backup, Storage, Security findings) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The Workspace pages (Projects, About you, New sessions, After
+  the pointer. The Workspace pages (Folders, About you, New sessions, After
   merge, Replies and commits, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
   shows one item at a time. Providers & models nests
@@ -2358,15 +2358,15 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   page on screen mounts, so Permissions and Replies and commits compute nothing
   while another page is open. The old anchors (`projects`, `profile`,
   `general`, `after-merge`, `review-replies`, `permissions`, `danger`) now
-  pick a page (`workspacePageOf`); `dev-project` lands on Projects with the
+  pick a page (`workspacePageOf`); `dev-project` lands on Folders with the
   conversion open. The workspace is renamed from the `Name` field of the
-  Projects page, and its name is written once on that page, in the top bar
+  Folders page, and its name is written once on that page, in the top bar
   (the disconnect row says `Disconnect this workspace`). The attribution line
   lives on New sessions only, and Replies and commits links to it. Replies
   and commits holds the reply voice and templates, `Mark thread as resolved`
   and the commit style (`review-replies` stays its page id and anchor); Run
   defaults live under Workflows.
-  Turning a plain folder into a dev project is an inline flow in the Projects
+  Turning a plain folder into a git repository is an inline flow in the Folders
   page (`ConvertWorkspaceFlow`), never a dialog: linking a plain folder opens
   Settings there once the add workspace studio has closed. Skills stays
   hidden behind its feature flag. Precedent: GitHub repository settings and
@@ -2374,7 +2374,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
 - **Restore defaults and copy from another workspace share one inline
   flow.** The page menu (⋯ in the title row) of every page that owns settings
   offers `Restore defaults` and `Copy from…`; under a separator, the menu of
-  every workspace page (Projects included) offers `Copy all pages from…` and
+  every workspace page (Folders included) offers `Copy all pages from…` and
   `Restore all workspace defaults` for every page at once. The flow opens under the title as a band, never as a
   popover: pick the workspace, then a preview grouped by page with a
   checkbox per page and the from and to values, then the action row (`Copy N
@@ -2489,18 +2489,18 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   workspace). A connected tool shows a quiet success dot named by its identity;
   an Integrations row says nothing more. No rail row is red: the destructive actions sit at the
   bottom of their page, Reset (Delete all data) at the end of Backup and
-  Disconnect at the end of Projects, and turn red only in their inline
+  Disconnect at the end of Folders, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
   them and no `Divider`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
   renamed in place. One `Terminal folder` row sits above the projects: the
   computed folder (`workspaceFolder`) with `Change` (the folder dialog) and,
-  when overridden, `Use the default` (`setTerminalWorkspaceFolder`). Projects
-  group `Starred` ahead of `Other projects` (never in both; one `Projects`
+  when overridden, `Use the default` (`setTerminalWorkspaceFolder`). Folders
+  group `Starred` ahead of `Other folders` (never in both; one `Folders`
   heading with `Star the ones you use most.` while nothing is starred), 16px
   apart with no divider, each a `SectionHeader` with its count and, for
   Starred, `Agents and pickers list these first.`; Starred is never folded and
-  `Show N more` stays under Other projects. Each project is a 32px row on the
+  `Show N more` stays under Other folders. Each project is a 32px row on the
   group grid (star, kind, name, description, a base-branch chip only when set
   by hand, a Folder-not-found flag) with Open in editor, Copy path and Remove
   link in a reserved column, dim at rest. The star shows at rest only on
@@ -2512,7 +2512,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   right of the name. `starredProjectsFirst({ projects, inside })` is the one
   order: starred first, then the rest, by `name` in Settings and by `recency`
   in pickers (`groupProjects` calls it). A project picker (the session Add
-  project list, the Sessions project filter) with a starred project and six or
+  folder list, the Sessions folder filter) with a starred project and six or
   more projects shows the same two headings and a small filled star on starred
   rows (`shouldGroupStarred`); a search flattens them. New session defaults sit in a
   two-column grid with each help behind an info mark, followed by the
@@ -2639,7 +2639,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `warning` `Notice` with `Use this branch here`, `Keep both branches` and
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
-  Activity. Projects, Linked work, Artifacts and Add project live on the
+  Activity. Folders, Linked work, Artifacts and Add folder live on the
   session rail's session level. Next and Unassigned notes open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:
@@ -2800,7 +2800,7 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
   "This worktree is gone", and a session with nothing to browse reads "No
-  folder to browse" with one action, Add project (`DrawerHost` hands it
+  folder to browse" with one action, Add folder (`DrawerHost` hands it
   in as `noFolderAction`, so `features/explore` does not import the session
   feature). Every empty state is an
   `EmptyState` at page size: a title, one line that says what fills it and at
@@ -3935,7 +3935,7 @@ shows once: in the `Pinned` strip at the top of the lens only when the session
 has more than one project (one click runs one in its group's worktree), and
 only in the rows otherwise. The palette lists pinned scripts under `$` with the
 project name (`scriptPinEntries`, run through `runPinnedScript`; saved scripts show
-their project name too). On the workspace Projects page the open editor card
+their project name too). On the workspace Folders page the open editor card
 of a project ends with a `Scripts` field (`ProjectScriptsField`, label
 `Scripts · N pinned`): it reads the project folder when the card opens
 (`loadProjectRootScripts`, kept in memory by root path), says `On <base>` and

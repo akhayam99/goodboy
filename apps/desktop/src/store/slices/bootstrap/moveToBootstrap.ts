@@ -207,7 +207,7 @@ const continueMove = async ({
   } catch (error) {
     return refused(
       'failed',
-      `Your work is safe in the bootstrap session, but the project folder was not cleared. ${formatError(error)}`,
+      `Your work is safe in the bootstrap session, but the folder was not cleared. ${formatError(error)}`,
     );
   }
   const aligned = await bootstrapAlignMain({ projectPath: project.rootPath, baseBranch }).catch(
@@ -262,7 +262,7 @@ export const moveToBootstrap = (set: SetFn, get: GetFn) => {
     const project = projectById(get().projects, projectId);
     const phase = get().bootstrapPhase[projectId];
     if (project === undefined || project.kind !== 'repo' || phase?.stage !== 'first-lap') {
-      return refused('not-ready', 'This project is not in its first lap.');
+      return refused('not-ready', 'This folder is not in its first lap.');
     }
     const probe = get().bootstrapRemoteProbe[projectId]?.probe;
     if (probe?.kind !== 'main-present') {
@@ -322,7 +322,7 @@ export const moveToBootstrap = (set: SetFn, get: GetFn) => {
         isApplied: false,
       });
     }
-    return refused('refused', 'Every bootstrap session name is taken in this project.');
+    return refused('refused', 'Every bootstrap session name is taken in this folder.');
   };
 };
 

@@ -272,7 +272,7 @@ describe('New session page, Start an agent', () => {
     await openPage({ choice: 'scout' });
 
     expect(textBox('Scout focus')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start Scout on the whole project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start Scout on the whole folder' })).toBeDefined();
     expect(screen.queryByRole('region', { name: 'Auto' })).toBeNull();
   });
 
@@ -330,7 +330,7 @@ describe('New session page, Start an agent drawn as the Auto composer', () => {
     expect(screen.getByText('Experimental')).toBeDefined();
     expect(screen.queryByText('It may not work well yet.')).toBeNull();
     expect(screen.getAllByRole('button', { name: /^Model:/ })).toHaveLength(1);
-    expect(screen.getByRole('combobox', { name: 'Project' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Folder' })).toBeDefined();
     expect(screen.queryByText(/guidance/i)).toBeNull();
   });
 

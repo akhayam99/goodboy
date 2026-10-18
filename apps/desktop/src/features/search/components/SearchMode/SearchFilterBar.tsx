@@ -91,10 +91,10 @@ export const SearchFilterBar = ({ chips, projects, now, onGroupChange }: Props) 
         multiple
         trigger="chip"
         size="sm"
-        placeholder="Project"
-        ariaLabel="Filter by project"
+        placeholder="Folder"
+        ariaLabel="Filter by folder"
         searchable
-        noun="project"
+        noun="folder"
         options={projects.map((project) => ({ value: project.id, label: project.name }))}
         value={valuesOf({ chips, group: 'project' })}
         onChange={(values) =>

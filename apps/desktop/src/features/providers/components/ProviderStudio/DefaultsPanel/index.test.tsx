@@ -908,7 +908,7 @@ describe('DefaultsPanel', () => {
     };
     render(<DefaultsPanel workspaceId={WORKSPACE_ID} />);
 
-    expect(screen.getByText('Saved model settings from 1 project no longer apply.')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 1 folder no longer apply.')).toBeDefined();
   });
 
   it('keeps the saved-models notice away when no project had model settings', () => {

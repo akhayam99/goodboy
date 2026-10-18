@@ -8,7 +8,7 @@ Begin with an empty folder and no repository. **Start from scratch**, inside **N
 
 ### Workspace with several projects
 
-Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of a session lists each repo it touches, with its branch and the size of its changes. A project gets a branch only when an agent needs to edit it. The **+** on the section adds another workspace project, or connects a new repo or folder to the workspace from the same list.
+Keep your repos together as one workspace, and let one session work across several of them. The **Folders** card of a session lists each repo it touches, with its branch and the size of its changes. A folder gets a branch only when an agent needs to edit it. The **+** on the card adds another workspace folder, or connects a new repo or folder to the workspace from the same list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-dark.webp">

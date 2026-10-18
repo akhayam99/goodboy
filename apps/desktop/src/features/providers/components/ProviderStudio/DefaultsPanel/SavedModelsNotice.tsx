@@ -21,7 +21,7 @@ export const SavedModelsNotice = ({ workspaceId }: Props) => {
 
   useEffect(() => {
     void loadSavedProjectModels().catch((error: unknown) =>
-      reportError({ title: 'Could not read the saved project model settings', error, workspaceId }),
+      reportError({ title: 'Could not read the saved folder model settings', error, workspaceId }),
     );
   }, [loadSavedProjectModels, reportError, workspaceId]);
 
@@ -38,7 +38,7 @@ export const SavedModelsNotice = ({ workspaceId }: Props) => {
       tone="info"
       placement="inline"
       role="status"
-      title={`Saved model settings from ${pluralize(entries.length, 'project')} no longer apply.`}
+      title={`Saved model settings from ${pluralize(entries.length, 'folder')} no longer apply.`}
       actions={
         <Button
           variant="ghost"
@@ -51,7 +51,7 @@ export const SavedModelsNotice = ({ workspaceId }: Props) => {
       }
     >
       {isExpanded ? (
-        <ul aria-label="Projects with saved model settings" className="flex flex-col gap-1">
+        <ul aria-label="Folders with saved model settings" className="flex flex-col gap-1">
           {entries.map((entry) => (
             <SavedModelsRow
               key={entry.projectId}

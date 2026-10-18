@@ -115,7 +115,7 @@ describe('WorkspaceProjectsSection', () => {
     repoMocks.dialogOpen.mockResolvedValueOnce('/new');
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
-    screen.getByText('1 project is not where Goodboy left it.');
+    screen.getByText('1 folder is not where Goodboy left it.');
     fireEvent.click(screen.getByRole('button', { name: 'Locate folders' }));
 
     await waitFor(() =>
@@ -156,7 +156,7 @@ describe('WorkspaceProjectsSection', () => {
     screen.getByText('Same repository');
     screen.getByText('Different repository');
     expect((screen.getByLabelText('Move payments-api') as HTMLInputElement).disabled).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Move 1 project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move 1 folder' }));
     expect(state.relocateProjects).toHaveBeenCalledOnce();
   });
 

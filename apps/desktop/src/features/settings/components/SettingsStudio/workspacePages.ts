@@ -25,7 +25,7 @@ type WorkspacePageEntry = {
 const ALL_WORKSPACE_PAGES = [
   {
     id: 'projects',
-    label: 'Projects',
+    label: NAMES.folders,
     concept: 'projectRepo',
     hint: 'The repositories and folders agents work in.',
   },

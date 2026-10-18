@@ -262,8 +262,8 @@ describe('ChatRoom', () => {
     store.projects = [];
     renderRoom({ chat: null });
 
-    expect(screen.getByText('Add a project so answers can read its code.')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(screen.getByText('Add a folder so answers can read its code.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
     expect(screen.queryByRole('list', { name: 'Suggested questions' })).toBeNull();
   });
 
@@ -348,13 +348,13 @@ describe('ChatRoom', () => {
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     expect(screen.getByRole('button', { name: 'Remove payments-api' })).toBeDefined();
 
-    fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
-    fireEvent.change(screen.getByRole('combobox', { name: 'Search projects' }), {
+    fireEvent.click(screen.getByRole('combobox', { name: 'Folder' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search folders' }), {
       target: { value: 'ledger' },
     });
     expect(screen.queryByRole('option', { name: /payments-api/ })).toBeNull();
     fireEvent.click(screen.getByRole('option', { name: /ledger-core/ }));
-    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search projects' }), {
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search folders' }), {
       key: 'Escape',
     });
     expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
@@ -377,11 +377,11 @@ describe('ChatRoom', () => {
     fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
 
-    const trigger = screen.getByRole('combobox', { name: 'Project' });
+    const trigger = screen.getByRole('combobox', { name: 'Folder' });
     expect(trigger.className).toContain('w-full');
     const field = trigger.closest('div.flex-col');
     expect(field?.parentElement?.className).toContain('flex-col');
-    expect(field?.previousElementSibling?.textContent).toBe('Project');
+    expect(field?.previousElementSibling?.textContent).toBe('Folder');
     const chip = screen.getByRole('button', { name: 'Remove payments-api' });
     expect(trigger.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(chip.parentElement?.className).toContain('flex-wrap');
@@ -394,7 +394,7 @@ describe('ChatRoom', () => {
     fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('button', { name: 'Remove payments-api' }));
-    expect(screen.getByRole('combobox', { name: 'Project' }).textContent).toContain('No project');
+    expect(screen.getByRole('combobox', { name: 'Folder' }).textContent).toContain('No folder');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
@@ -428,7 +428,7 @@ describe('ChatRoom', () => {
     fireEvent.click(startWork());
     await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
     fireEvent.click(screen.getByRole('tab', { name: 'Add to a session' }));
-    expect(screen.queryByRole('combobox', { name: 'Project' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Folder' })).toBeNull();
     const primary = screen.getByRole('button', { name: 'Add to session' });
     expect(primary.hasAttribute('disabled')).toBe(true);
 

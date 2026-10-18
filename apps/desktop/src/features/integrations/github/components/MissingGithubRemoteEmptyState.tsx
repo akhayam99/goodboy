@@ -9,7 +9,7 @@ export const MissingGithubRemoteEmptyState = ({ compact = false, wrapped = true 
   const panel = (
     <IntegrationConnectPanel
       provider="github"
-      description="This project isn't on GitHub yet. Publish it from the project's git pill to review pull requests and issues here."
+      description="This folder isn't on GitHub yet. Publish it from the folder's git pill to review pull requests and issues here."
       headingLevel={compact ? undefined : 2}
     >
       <p className="text-meta text-muted-foreground">

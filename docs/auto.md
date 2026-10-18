@@ -403,14 +403,14 @@ delivered with the next turn under REFUSED, NOT DONE; such a turn counts as no p
 refused children; while it is pending for the current generation, `readAutoTreeViews` reads it as
 `pendingRefusal` and the tail says it in the user voice (`refusalNoticeOf`, reasons from
 `AUTO_REFUSAL_USER_REASON`): "Auto tried to start an Implementer. Not started: more than one
-project fits and it did not say which. Auto is choosing again." A refusal about the project
+folder fits and it did not say which. Auto is choosing again." A refusal about the project
 (`mount_ambiguous`, `mount_missing`) is asked instead (`projectAskOf`, `AutoProjectAsk`): "Where
 should the Implementer work?" lists the session's projects with their branch, **Another
-project...** opens a filter over the workspace's other projects ("Not in this session. A worktree
-is created from main."), and the primary follows the choice (**Choose a project** disabled, **Use
-payments-api**, **Use both**, **Use 3 projects**) next to **No project, just answer**, one
+folder...** opens a filter over the workspace's other projects ("Not in this session. A worktree
+is created from main."), and the primary follows the choice (**Choose a folder** disabled, **Use
+payments-api**, **Use both**, **Use 3 folders**) next to **No folder, just answer**, one
 action row under the list, with **Discard request** as a quiet verb (the `projectAsk` kind of
-the action registry, drawn by `ObjectActionVerb`). The composer reads "Pick a project, or write
+the action registry, drawn by `ObjectActionVerb`). The composer reads "Pick a folder, or write
 to Auto", so a reply in the chat answers too. The answer is a message to Auto through
 `sendTurn` ("Use payments-api and ledger-core: start one Implementer per project."); a project not
 in the session is mounted first (`ensureProjectMounted`, the button says "Creating a worktree for

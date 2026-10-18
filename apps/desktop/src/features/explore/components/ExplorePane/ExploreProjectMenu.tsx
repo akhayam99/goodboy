@@ -12,7 +12,7 @@ export const ExploreProjectMenu = ({ groups, onChoose }: Props) => (
       <div
         key={group.id}
         role="group"
-        aria-label={group.label ?? 'Projects'}
+        aria-label={group.label ?? 'Folders'}
         className="flex flex-col"
       >
         {group.label === null ? null : (

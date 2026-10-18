@@ -368,9 +368,9 @@ describe('the worktree rows of the session level', () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await mountRail();
 
-    const card = within(screen.getByRole('group', { name: 'Projects' }));
-    fireEvent.click(card.getByRole('button', { name: 'Add project' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    const card = within(screen.getByRole('group', { name: 'Folders' }));
+    fireEvent.click(card.getByRole('button', { name: 'Add folder' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
 
     expect(picker.getByRole('button', { name: 'Add notify-relay' })).toBeDefined();
     expect(picker.queryByRole('button', { name: 'Add payments-api' })).toBeNull();
@@ -399,8 +399,8 @@ describe('the worktree rows of the session level', () => {
     vi.mocked(openDialog).mockResolvedValueOnce('/repos/acme-docs');
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
@@ -425,15 +425,15 @@ describe('the worktree rows of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
     await settle();
 
     expect(picker.getByRole('alert').textContent).toContain('folder not found');
-    expect(picker.getByRole('button', { name: 'Open workspace projects' })).toBeDefined();
+    expect(picker.getByRole('button', { name: 'Open workspace folders' })).toBeDefined();
     expect(picker.getByRole('button', { name: 'Add notify-relay' })).toBeDefined();
     expect(useAppStore.getState().projects).toHaveLength(before);
   });
@@ -442,7 +442,7 @@ describe('the worktree rows of the session level', () => {
     seedTwoProjects({ status: worktreeStatusOf({ behind: 3 }) });
     await mountRail();
 
-    const card = screen.getByRole('group', { name: 'Projects' });
+    const card = screen.getByRole('group', { name: 'Folders' });
     await waitFor(() => expect(card.querySelector('[data-rebase-all]')).not.toBeNull());
     const rebaseAll = card.querySelector<HTMLElement>('[data-rebase-all]');
     if (rebaseAll === null) {
@@ -453,7 +453,7 @@ describe('the worktree rows of the session level', () => {
     expect(card.querySelector('[data-project-row]')?.compareDocumentPosition(rebaseAll)).toBe(
       Node.DOCUMENT_POSITION_PRECEDING,
     );
-    expect(within(card).getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Add folder' })).toBeDefined();
     expect(within(card).getByRole('button', { name: 'New branch in ledger-core' })).toBeDefined();
   });
 
@@ -462,7 +462,7 @@ describe('the worktree rows of the session level', () => {
     await mountRail();
 
     expect(
-      screen.getByRole('group', { name: 'Projects' }).querySelector('[data-rebase-all]'),
+      screen.getByRole('group', { name: 'Folders' }).querySelector('[data-rebase-all]'),
     ).toBeNull();
   });
 
@@ -484,15 +484,15 @@ describe('the worktree rows of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
     await settle();
 
     expect(picker.getByRole('alert').textContent).toContain("can't read that folder");
-    expect(picker.getByRole('button', { name: 'Open workspace projects' })).toBeDefined();
+    expect(picker.getByRole('button', { name: 'Open workspace folders' })).toBeDefined();
     expect(useAppStore.getState().projects).toHaveLength(before);
   });
 
@@ -518,15 +518,15 @@ describe('the worktree rows of the session level', () => {
     const before = useAppStore.getState().projects.length;
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
     await act(async () => {
       fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
     });
     await settle();
 
     expect(picker.getByRole('alert').textContent).toContain('several repositories');
-    expect(picker.getByRole('button', { name: 'Open workspace projects' })).toBeDefined();
+    expect(picker.getByRole('button', { name: 'Open workspace folders' })).toBeDefined();
     expect(useAppStore.getState().projects).toHaveLength(before);
   });
 
@@ -540,7 +540,7 @@ describe('the worktree rows of the session level', () => {
     fireEvent.click(plus);
 
     expect(await screen.findByRole('dialog', { name: 'New branch in ledger-core' })).toBeDefined();
-    expect(screen.queryByRole('dialog', { name: 'Add project' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Add folder' })).toBeNull();
   });
 
   it('opens the same new branch form when the registry action runs', async () => {
@@ -601,7 +601,7 @@ describe('the worktree rows of the session level', () => {
     );
     await settle();
 
-    expect(screen.queryByRole('button', { name: 'Add project' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add folder' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^New branch in/ })).toBeNull();
   });
 });
@@ -747,7 +747,7 @@ describe('the worktree pages inside the Projects card', () => {
   it('folds the card from its header, remembers it, and keeps a state dot on the folded header', async () => {
     seedTwoProjects({ status: worktreeStatusOf({ behind: 3 }) });
     await mountRail();
-    const toggle = screen.getByRole('button', { name: 'Projects' });
+    const toggle = screen.getByRole('button', { name: 'Folders' });
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
 
     fireEvent.click(toggle);
@@ -760,7 +760,7 @@ describe('the worktree pages inside the Projects card', () => {
       throw new Error('the Projects toggle sits in no card');
     }
     await waitFor(() => expect(card.querySelector('[data-card-signal]')).not.toBeNull());
-    expect(within(card).getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Add folder' })).toBeDefined();
   });
 });
 

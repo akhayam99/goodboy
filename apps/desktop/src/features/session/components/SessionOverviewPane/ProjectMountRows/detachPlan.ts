@@ -232,7 +232,7 @@ const integrationDetails = ({ measured }: MeasuredListParams): DetachDetails => 
   };
 };
 
-const CHECK_AGAIN_SENTENCE = 'Check again, or set the base branch for this project in Settings.';
+const CHECK_AGAIN_SENTENCE = 'Check again, or set the base branch for this folder in Settings.';
 
 type UnverifiedParams = {
   readonly unknown: ReadonlyArray<Measured>;

@@ -211,7 +211,7 @@ export const MountActionsMenu = ({
       });
       setIsConfirming(false);
     } catch (error) {
-      fail({ title: "Couldn't remove the project from the session", error });
+      fail({ title: "Couldn't remove the folder from the session", error });
     } finally {
       setIsBusy(false);
       setStage(null);

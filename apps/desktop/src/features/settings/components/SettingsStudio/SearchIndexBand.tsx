@@ -100,15 +100,15 @@ export const SearchIndexBand = () => {
         </FieldRow>
         <FieldRow
           label="Leave out"
-          help="Sessions, messages and branches of these projects stop showing in search."
+          help="Sessions, messages and branches of these folders stop showing in search."
         >
           <Listbox
             multiple
             size="sm"
             searchable
-            noun="project"
-            placeholder="No project"
-            ariaLabel="Projects search leaves out"
+            noun="folder"
+            placeholder="No folder"
+            ariaLabel="Folders search leaves out"
             options={options}
             value={excluded}
             onChange={(values) => void changeExcluded({ next: values as ReadonlyArray<ProjectId> })}

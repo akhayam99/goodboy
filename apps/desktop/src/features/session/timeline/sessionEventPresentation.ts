@@ -100,19 +100,19 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
     tone: CONCEPT_TONE.decisions,
     label: 'Context',
   },
-  project_materialized: { icon: CONCEPT_ICONS.mount, tone: CONCEPT_TONE.mount, label: 'Project' },
-  project_materialization_refused: { icon: CONCEPT_ICONS.mount, tone: 'warning', label: 'Project' },
+  project_materialized: { icon: CONCEPT_ICONS.mount, tone: CONCEPT_TONE.mount, label: 'Folder' },
+  project_materialization_refused: { icon: CONCEPT_ICONS.mount, tone: 'warning', label: 'Folder' },
   project_materialization_proposed: {
     icon: CONCEPT_ICONS.mount,
     tone: CONCEPT_TONE.mount,
-    label: 'Project',
+    label: 'Folder',
   },
   project_materialization_dismissed: {
     icon: CONCEPT_ICONS.projectDetach,
     tone: 'neutral',
-    label: 'Project',
+    label: 'Folder',
   },
-  project_detached: { icon: CONCEPT_ICONS.projectDetach, tone: 'neutral', label: 'Project' },
+  project_detached: { icon: CONCEPT_ICONS.projectDetach, tone: 'neutral', label: 'Folder' },
   external_task_created: { icon: CONCEPT_ICONS.issueLink, tone: 'neutral', label: 'Issue' },
   rebase_requested: { icon: CONCEPT_ICONS.branch, tone: 'info', label: 'Branch' },
   session_archived: { icon: CONCEPT_ICONS.archive, tone: 'neutral', label: 'Session' },
@@ -383,7 +383,7 @@ export const sessionEventLabel = ({
               { kind: 'value', text: branch, variant: 'branch' },
             ];
       if (payload?.projectName == null) {
-        return [{ kind: 'text', text: 'Project added' }, ...onBranch];
+        return [{ kind: 'text', text: 'Folder added' }, ...onBranch];
       }
       return [
         { kind: 'text', text: 'Added ' },
@@ -394,7 +394,7 @@ export const sessionEventLabel = ({
     case 'project_materialization_refused': {
       const reason = payload?.reason ?? 'unknown failure';
       if (payload?.projectName == null) {
-        return [{ kind: 'text', text: `Couldn't add a project: ${reason}` }];
+        return [{ kind: 'text', text: `Couldn't add a folder: ${reason}` }];
       }
       return [
         { kind: 'text', text: "Couldn't add " },
@@ -404,21 +404,21 @@ export const sessionEventLabel = ({
     }
     case 'project_materialization_proposed':
       return payload?.projectName == null
-        ? [{ kind: 'text', text: 'Asked to add a project' }]
+        ? [{ kind: 'text', text: 'Asked to add a folder' }]
         : [
             { kind: 'text', text: 'Asked to add ' },
             { kind: 'value', text: payload.projectName, variant: 'project' },
           ];
     case 'project_materialization_dismissed':
       return payload?.projectName == null
-        ? [{ kind: 'text', text: 'Declined adding a project' }]
+        ? [{ kind: 'text', text: 'Declined adding a folder' }]
         : [
             { kind: 'text', text: 'Declined adding ' },
             { kind: 'value', text: payload.projectName, variant: 'project' },
           ];
     case 'project_detached':
       return payload?.projectName == null
-        ? [{ kind: 'text', text: 'Removed a project' }]
+        ? [{ kind: 'text', text: 'Removed a folder' }]
         : [
             { kind: 'text', text: 'Removed ' },
             { kind: 'value', text: payload.projectName, variant: 'project' },

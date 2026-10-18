@@ -58,7 +58,7 @@ export type AgentFacts = {
   readonly autoRest: AutoRest | null;
 };
 
-const NO_MOUNT_REASON = 'This session has no project yet';
+const NO_MOUNT_REASON = 'This session has no folder yet';
 const WAIT_FOR_TURN_REASON = 'Wait for the turn to end first.';
 
 type OpenAgentParams = {

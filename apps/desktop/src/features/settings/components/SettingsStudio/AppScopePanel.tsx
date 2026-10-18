@@ -19,7 +19,7 @@ type Props = {
 const SECTION_META: Readonly<Partial<Record<AppSection, string>>> = {
   shortcuts: `${SHORTCUT_ROW_COUNT} shortcuts`,
   storage: 'What Goodboy keeps on this Mac.',
-  branches: 'Local branches of your projects.',
+  branches: 'Local branches of your folders.',
   'security-findings': 'This text never leaves your Mac.',
 };
 

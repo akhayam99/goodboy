@@ -141,7 +141,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
     [
       'session.open',
       'session.review',
-      'session.diff (Add a project to this session first)',
+      'session.diff (Add a folder to this session first)',
       'session.editor (This session has no worktree yet)',
       'session.rename',
       'session.pin',
@@ -629,7 +629,7 @@ const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArray<st
     { agents: [agentFixture({ status: 'completed' })] },
     [
       'agent.open',
-      'agent.changes (This session has no project yet)',
+      'agent.changes (This session has no folder yet)',
       'agent.message',
       'agent.rename',
       'agent.moveToAuto',

@@ -67,11 +67,11 @@ describe('the resolver runtime scenes', () => {
   it('models-saved-project says the saved settings no longer apply and lists both projects', async () => {
     await mount('models-saved-project');
 
-    expect(screen.getByText('Saved model settings from 2 projects no longer apply.')).toBeDefined();
+    expect(screen.getByText('Saved model settings from 2 folders no longer apply.')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show' }));
 
-    const list = screen.getByRole('list', { name: 'Projects with saved model settings' });
+    const list = screen.getByRole('list', { name: 'Folders with saved model settings' });
     const rows = within(list).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
     for (const row of rows) {

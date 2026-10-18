@@ -60,7 +60,7 @@ export const ownerPresentation = ({
             worktreePath: null,
             projects,
             sessionMounts,
-          }) ?? 'Project',
+          }) ?? 'Folder',
         sessionId: null,
         isGoodboy: true,
       };

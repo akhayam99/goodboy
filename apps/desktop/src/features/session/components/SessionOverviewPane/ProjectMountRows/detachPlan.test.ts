@@ -412,7 +412,7 @@ describe('buildDetachPlan', () => {
       reason: 'unverified',
       lines: [
         'Whether ak/feat is merged into its base branch is unknown; removing it will keep its files at /worktrees/api.',
-        'Check again, or set the base branch for this project in Settings.',
+        'Check again, or set the base branch for this folder in Settings.',
       ],
       details: { totals: [], worktrees: [] },
     });
@@ -461,7 +461,7 @@ describe('buildDetachPlan', () => {
       reason: 'unverified',
       lines: [
         'Whether 1 branch in api reached the base branch is unknown; removing it will keep every directory.',
-        'Check again, or set the base branch for this project in Settings.',
+        'Check again, or set the base branch for this folder in Settings.',
       ],
       details: { totals: [], worktrees: ['ak/b at /b: merge state unknown'] },
     });

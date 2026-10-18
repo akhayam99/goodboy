@@ -87,7 +87,7 @@ export const sessionObjectKey = ({ sessionId }: { readonly sessionId: SessionId 
 
 export const SESSION_HEADER_ANCHOR = 'session-header';
 
-const NO_MOUNT_REASON = 'Add a project to this session first';
+const NO_MOUNT_REASON = 'Add a folder to this session first';
 
 const NO_WORKTREE_REASON = 'This session has no worktree yet';
 

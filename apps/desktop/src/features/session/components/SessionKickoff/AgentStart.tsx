@@ -23,7 +23,7 @@ type Props = {
 };
 
 const SCOUT_BRIEF =
-  'Read this project and suggest where to start: what needs doing, and which piece to pick up first.';
+  'Read this folder and suggest where to start: what needs doing, and which piece to pick up first.';
 
 type BriefParams = {
   readonly focus: string;
@@ -66,7 +66,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
     isEnabled: hasProject,
     notices: {
       ambiguous: 'Drop the file on the instructions box to attach it.',
-      disabled: 'Pick a project to attach files.',
+      disabled: 'Pick a folder to attach files.',
       unavailable: 'File drop is unavailable. Use Attach files instead.',
     },
   });
@@ -102,7 +102,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
     ? 'Optional: an area, a file or a question'
     : `What should ${kindLabel} do?`;
   const startLabel =
-    isScout && !hasPrompt ? 'Start Scout on the whole project' : `Start ${kindLabel}`;
+    isScout && !hasPrompt ? 'Start Scout on the whole folder' : `Start ${kindLabel}`;
 
   return (
     <div className="flex flex-col gap-6">

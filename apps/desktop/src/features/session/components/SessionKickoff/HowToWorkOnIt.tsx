@@ -107,7 +107,7 @@ export const HowToWorkOnIt = ({ workspaceId, candidates, title, goal, onGoalChan
     isEnabled: hasProject && how === 'agent',
     notices: {
       ambiguous: 'Drop the file on the instructions box to attach it.',
-      disabled: 'Pick a project to attach files.',
+      disabled: 'Pick a folder to attach files.',
       unavailable: 'File drop is unavailable. Use Attach files instead.',
     },
   });

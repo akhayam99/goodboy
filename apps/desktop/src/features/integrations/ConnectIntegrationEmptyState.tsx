@@ -13,11 +13,11 @@ type Props = {
 };
 
 const PROVIDER_DESCRIPTIONS: Record<Provider, string> = {
-  linear: 'Connect Linear to review issues from this project',
-  sentry: 'Connect Sentry to review errors from this project',
-  gitlab: 'Connect GitLab to review merge requests from this project',
-  jira: 'Connect Jira to review issues from this project',
-  bitbucket: 'Connect Bitbucket to review pull requests from this project',
+  linear: 'Connect Linear to review issues from this folder',
+  sentry: 'Connect Sentry to review errors from this folder',
+  gitlab: 'Connect GitLab to review merge requests from this folder',
+  jira: 'Connect Jira to review issues from this folder',
+  bitbucket: 'Connect Bitbucket to review pull requests from this folder',
   slack: 'Connect Slack to read the threads a task came out of',
 };
 

@@ -401,7 +401,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               {mode === 'new' ? (
                 <>
                   <div className="flex flex-col gap-2">
-                    <span className="text-label text-muted-foreground">Project</span>
+                    <span className="text-label text-muted-foreground">Folder</span>
                     <ProjectPicker
                       projects={projects}
                       value={projectIds}

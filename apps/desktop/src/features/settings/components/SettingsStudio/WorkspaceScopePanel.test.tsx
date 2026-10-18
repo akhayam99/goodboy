@@ -123,7 +123,7 @@ describe('WorkspaceScopePanel pages', () => {
   it('opens on Projects with the workspace name, and one page per section', () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Projects');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Folders');
     expect(screen.getByLabelText<HTMLInputElement>('Workspace name').value).toBe('Harborline');
     expect(screen.queryByRole('region', { name: 'Branches and comments' })).toBeNull();
     screen.getByRole('region', { name: 'Disconnect workspace' });
@@ -310,7 +310,7 @@ describe('copy from another workspace', () => {
 
     expect(flow.textContent).toContain('Will change 3 settings on 1 page.');
     within(flow).getByText('Voice: Friendly → Formal, Mark thread as resolved: On → Off, 1 more');
-    expect(flow.textContent).toContain('Stays: projects, folders, accounts, permission history.');
+    expect(flow.textContent).toContain('Stays: folders, accounts, permission history.');
     fireEvent.click(within(flow).getByRole('button', { name: 'Copy 3 settings' }));
 
     await screen.findByText('Copied 3 settings from Northwind.');
@@ -336,7 +336,7 @@ describe('copy from another workspace', () => {
     renderPage({ section: 'projects' });
 
     fireEvent.click(
-      within(pageMenu('Projects')).getByRole('menuitem', { name: /Copy all pages from/ }),
+      within(pageMenu('Folders')).getByRole('menuitem', { name: /Copy all pages from/ }),
     );
     const flow = screen.getByRole('region', { name: 'Copy settings from another workspace' });
     fireEvent.click(await within(flow).findByRole('radio', { name: /Northwind/ }));
@@ -371,14 +371,14 @@ describe('dev project', () => {
     });
     renderPage({ section: 'dev-project' });
 
-    const region = screen.getByRole('region', { name: 'Turn this into a dev project' });
+    const region = screen.getByRole('region', { name: 'Turn this into a git repository' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(
       within(region).getByText(/Git starts tracking \/work\/harborline\/runbooks/),
     ).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide' }));
-    expect(screen.queryByRole('region', { name: 'Turn this into a dev project' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Turn this into a git repository' })).toBeNull();
     act(() => undefined);
   });
 });

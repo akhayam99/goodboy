@@ -30,7 +30,7 @@ export const RecentlyDeletedBranches = ({ scope }: Props) => {
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const projectNameOf = (entry: DeletedBranch): string =>
-    projectById(projects, entry.projectId)?.name ?? 'a removed project';
+    projectById(projects, entry.projectId)?.name ?? 'a removed folder';
 
   const restore = async (entry: DeletedBranch) => {
     setBusyId(entry.id);

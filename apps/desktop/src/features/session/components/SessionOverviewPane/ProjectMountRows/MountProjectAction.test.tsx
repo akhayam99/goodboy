@@ -35,7 +35,7 @@ const project = ({ id, name }: { readonly id: string; readonly name: string }) =
 });
 
 const openPicker = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
 };
 
 describe('MountProjectAction', () => {
@@ -55,7 +55,7 @@ describe('MountProjectAction', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
   });
 
   it('tells the workspace has no projects and offers to connect one in the same picker', () => {
@@ -69,7 +69,7 @@ describe('MountProjectAction', () => {
     );
     openPicker();
 
-    expect(screen.getByText('This workspace has no project yet.')).toBeDefined();
+    expect(screen.getByText('This workspace has no folder yet.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Add workspace project' })).toBeNull();
   });
@@ -89,7 +89,7 @@ describe('MountProjectAction', () => {
 
     openPicker();
     expect(screen.queryByRole('button', { name: 'Project actions' })).toBeNull();
-    expect(screen.getByText('Every workspace project is already in this session.')).toBeDefined();
+    expect(screen.getByText('Every workspace folder is already in this session.')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
   });
 

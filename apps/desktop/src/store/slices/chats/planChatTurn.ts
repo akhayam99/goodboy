@@ -19,7 +19,7 @@ import {
 import type { ChatTurnRequest } from '../../../features/workspace-chat/runChatTurn';
 import type { GetFn } from './types';
 
-export const NO_PROJECT_MESSAGE = 'Add a project to this workspace to ask about its code.';
+export const NO_PROJECT_MESSAGE = 'Add a folder to this workspace to ask about its code.';
 
 export type ChatTurnPlan =
   | {

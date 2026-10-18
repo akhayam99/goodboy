@@ -85,7 +85,7 @@ afterEach(() => {
 
 describe('ProjectLinkList', () => {
   it('opens the one form in add mode for this workspace behind Add folder', () => {
-    render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No projects yet" />);
+    render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No folders yet" />);
 
     expect(screen.queryByRole('form', { name: 'Add a folder' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
@@ -95,7 +95,7 @@ describe('ProjectLinkList', () => {
   });
 
   it('adds the picked folder to this workspace and closes the form once it lands', async () => {
-    render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No projects yet" />);
+    render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No folders yet" />);
     fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
     fireEvent.click(screen.getByRole('button', { name: /choose folder/i }));
     await screen.findByRole('list', { name: 'Folders' });
@@ -111,7 +111,7 @@ describe('ProjectLinkList', () => {
   });
 
   it('closes the form on Cancel without writing anything', () => {
-    render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No projects yet" />);
+    render(<ProjectLinkList workspaceId={NORTHWIND.id} emptyHint="No folders yet" />);
     fireEvent.click(screen.getByRole('button', { name: 'Add folder' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

@@ -49,12 +49,12 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   }, [hasSentry, loadProjectSentryLinks, workspaceId]);
 
   return (
-    <section aria-label="Workspace projects" className="flex flex-col gap-2">
+    <section aria-label="Workspace folders" className="flex flex-col gap-2">
       {!isRelocationOpen && missing.length > 0 && (
         <Notice
           tone="warning"
           placement="inline"
-          title={`${missing.length} ${missing.length === 1 ? 'project is' : 'projects are'} not where Goodboy left ${missing.length === 1 ? 'it' : 'them'}.`}
+          title={`${missing.length} ${missing.length === 1 ? 'folder is' : 'folders are'} not where Goodboy left ${missing.length === 1 ? 'it' : 'them'}.`}
           body={`${missing.map((entry) => entry.project.name).join(', ')} ${missing.length === 1 ? 'was' : 'were'} at the saved folder. Sessions that use ${missing.length === 1 ? 'it are' : 'them are'} paused until you locate ${missing.length === 1 ? 'it' : 'them'}. Nothing was deleted.`}
           actions={
             <Button variant="secondary" size="sm" onClick={() => void chooseFolder()}>
@@ -68,7 +68,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       {hasProjects ? <WorkspaceTerminalFolderRow workspaceId={workspaceId} /> : null}
       <ProjectLinkList
         workspaceId={workspaceId}
-        emptyHint="No projects yet"
+        emptyHint="No folders yet"
         editorExtra={({ project }) =>
           project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null
         }

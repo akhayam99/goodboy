@@ -327,7 +327,7 @@ describe('the session level pages', () => {
     mountColumn();
 
     expect(pages().getByRole('button', { name: /^File versions/ })).toBeDefined();
-    expect(within(sessionLayer()).queryByRole('group', { name: 'Projects' })).toBeNull();
+    expect(within(sessionLayer()).queryByRole('group', { name: 'Folders' })).toBeNull();
   });
 });
 
@@ -348,7 +348,7 @@ describe('the session level projects and linked work', () => {
     });
     mountColumn();
 
-    const projects = within(within(sessionLayer()).getByRole('group', { name: 'Projects' }));
+    const projects = within(within(sessionLayer()).getByRole('group', { name: 'Folders' }));
     const paymentsRows = within(projects.getByRole('list', { name: 'payments-api worktrees' }));
     const worktree = paymentsRows.getByRole('button', { name: /^payments-api, / });
     expect(worktree.textContent).toBe(`goodboy/${openId}#418`);

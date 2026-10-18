@@ -137,7 +137,7 @@ describe('runConfirmFacts', () => {
       }),
     ).toEqual([
       { label: 'Session', value: 'Fix webhook retries' },
-      { label: 'Project', value: 'payments-api' },
+      { label: 'Folder', value: 'payments-api' },
       { label: 'Model', value: 'Each step follows its role' },
       { label: 'Steps', value: 'Plan · Implement' },
     ]);

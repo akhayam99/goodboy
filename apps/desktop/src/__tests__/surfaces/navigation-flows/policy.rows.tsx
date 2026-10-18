@@ -152,7 +152,7 @@ export const POLICY_ROWS: ReadonlyArray<Row> = [
       useAppStore.setState({ refreshGithubStatus: refresh });
 
       await clickButton('Publish');
-      const panel = await screen.findByRole('region', { name: 'Publish this project' });
+      const panel = await screen.findByRole('region', { name: 'Publish this folder' });
       expect(
         within(panel)
           .getByRole('tab', { name: 'Use an existing repository' })
@@ -166,7 +166,7 @@ export const POLICY_ROWS: ReadonlyArray<Row> = [
       expect(refresh).toHaveBeenCalledOnce();
     },
     lands: async () => {
-      const panel = await screen.findByRole('region', { name: 'Publish this project' });
+      const panel = await screen.findByRole('region', { name: 'Publish this folder' });
       expect(
         await within(panel).findByText('Connected as dana-reyes', undefined, WAIT),
       ).toBeDefined();

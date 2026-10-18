@@ -119,7 +119,7 @@ describe('the r4 sessions scenes', () => {
     fireEvent.click(screen.getByRole('option', { name: 'Stage' }));
     await settle();
     fireEvent.click(within(dialog).getByRole('combobox', { name: 'Group' }));
-    fireEvent.click(screen.getByRole('option', { name: 'Project' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Folder' }));
     await settle();
 
     expect(screen.getByRole('dialog', { name: 'Filter sessions' })).toBe(dialog);

@@ -194,19 +194,19 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     projectGitStatuses.every(({ status }) => status?.state === 'missing');
   const statusesPending = projectGitStatuses.some(({ status }) => status === null);
   const blockedReason = !hasProjects
-    ? 'Link a project first'
+    ? 'Add a folder first'
     : statusesPending
       ? 'Reading git status'
       : areAllRepoProjectsMissing
-        ? 'The project folder is unreachable'
-        : 'This project needs a git repository with one commit first';
+        ? 'The folder is unreachable'
+        : 'This folder needs a git repository with one commit first';
   const unreachableDescription =
     projectGitStatuses.length === 1
-      ? 'Goodboy cannot reach the folder this project points to. Relink it in workspace settings.'
-      : 'Goodboy cannot reach the folders these projects point to. Relink them in workspace settings.';
+      ? 'Goodboy cannot reach this folder. Relink it in workspace settings.'
+      : 'Goodboy cannot reach these folders. Relink them in workspace settings.';
   const blockedDescription = areAllRepoProjectsMissing
     ? unreachableDescription
-    : 'Sessions branch from the latest commit. Open the git pill on the project and make the first commit, or link another project in workspace settings.';
+    : 'Sessions branch from the latest commit. Open the git pill on the folder and make the first commit, or add another folder in workspace settings.';
   const boardShown = groups.reduce((count, group) => count + group.sessions.length, 0);
   const shownArchived = prefs.isArchivedShown ? projectArchived : EMPTY_ARRAY;
   const listGroups = listStageGroupsOf({

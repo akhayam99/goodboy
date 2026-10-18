@@ -36,7 +36,7 @@ const labelOf = ({ target }: LabelParams): ChipLabel | null => {
     };
   }
   if (target.kind === 'root') {
-    const text = `${target.projectName}, project folder`;
+    const text = `${target.projectName}, folder`;
     return { node: <span className="truncate">{text}</span>, text };
   }
   if (target.branch === '') {
@@ -91,7 +91,7 @@ export const ExploreProjectChip = ({ target, groups, rowCount }: Props) => {
     <AnchoredPopover
       dropdown={dropdown}
       role="menu"
-      ariaLabel="Projects"
+      ariaLabel="Folders"
       anchorClassName="flex min-w-0 max-w-full"
       trigger={
         <Chip
@@ -110,7 +110,7 @@ export const ExploreProjectChip = ({ target, groups, rowCount }: Props) => {
               className="shrink-0"
             />
           }
-          ariaLabel={`Project ${label.text}`}
+          ariaLabel={`Folder ${label.text}`}
           testId="explore-project"
           hasPopup="menu"
           expanded={dropdown.open}

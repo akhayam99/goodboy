@@ -5,7 +5,7 @@ import type { PagePlan, PlanItem } from '../../workspaceSettings/plan';
 import type { FlowMode } from './WorkspaceSettingsFlow';
 import { planPageLabel } from './workspacePages';
 
-const STAYS = 'Stays: projects, folders, accounts, permission history.';
+const STAYS = 'Stays: folders, accounts, permission history.';
 
 const summaryOf = ({ items }: { readonly items: ReadonlyArray<PlanItem> }): string => {
   const shown = items.slice(0, 2).map((item) => `${item.label}: ${item.from} → ${item.to}`);

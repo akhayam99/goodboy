@@ -4,6 +4,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../store';
 import { useBranchIdentity } from '../../../../features/branch/hooks/useBranchIdentity';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
 import { useWorktreeStatusSnapshot } from '../../../../features/session/hooks/useWorktreeStatuses';
 import { worktreeStatusTargetsOf } from '../../../../features/session/hooks/useWorktreeStatuses/targets';
@@ -53,7 +54,7 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   return (
     <LevelCard
       id={LABEL_ID}
-      label="Projects"
+      label={NAMES.folders}
       isOpen={fold.isOpen}
       onToggle={fold.toggle}
       {...(signal.tone !== null && {

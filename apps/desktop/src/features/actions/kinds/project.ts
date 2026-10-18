@@ -34,7 +34,7 @@ export type ProjectFacts = {
 };
 
 export const PROJECT_KIND: ObjectKindDefinition<ProjectActionTarget, ProjectFacts> = {
-  noun: 'project',
+  noun: 'folder',
   facts: ({ state, target }) => {
     const views = state.sessionMounts?.[target.sessionId] ?? null;
     const mounts = state.sessionProjectMounts[target.sessionId] ?? [];

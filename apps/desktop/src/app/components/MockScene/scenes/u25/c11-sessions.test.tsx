@@ -232,7 +232,7 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
     fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
     await settle();
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
-    expect(within(dialog).getByRole('group', { name: 'Project' })).toBeDefined();
+    expect(within(dialog).getByRole('group', { name: 'Folder' })).toBeDefined();
     expect(within(dialog).getByRole('combobox', { name: 'Sort' })).toBeDefined();
     expect(within(dialog).queryByRole('group', { name: 'Repositories' })).toBeNull();
     expect(within(dialog).queryByRole('group', { name: 'Status' })).toBeNull();

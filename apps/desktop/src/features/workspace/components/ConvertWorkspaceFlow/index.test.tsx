@@ -120,7 +120,7 @@ describe('ConvertWorkspaceFlow', () => {
   it('sits in the page as a region, never in a dialog', () => {
     renderFlow();
 
-    screen.getByRole('region', { name: 'Turn this into a dev project' });
+    screen.getByRole('region', { name: 'Turn this into a git repository' });
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
@@ -132,7 +132,7 @@ describe('ConvertWorkspaceFlow', () => {
       expect(screen.getByLabelText<HTMLButtonElement>('Repository').disabled).toBe(false),
     );
     chooseListboxValue({ trigger: screen.getByLabelText('Repository'), value: 'acme/widgets' });
-    fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Convert to git repository' }));
 
     await waitFor(() =>
       expect(convertProjectToRepo).toHaveBeenCalledWith({
@@ -163,7 +163,7 @@ describe('ConvertWorkspaceFlow', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     expect(screen.getByText('GitHub is not connected yet')).toBeDefined();
     expect(
-      screen.getByRole('button', { name: 'Convert to dev project' }).hasAttribute('disabled'),
+      screen.getByRole('button', { name: 'Convert to git repository' }).hasAttribute('disabled'),
     ).toBe(true);
   });
 
@@ -176,7 +176,7 @@ describe('ConvertWorkspaceFlow', () => {
     fireEvent.change(screen.getByPlaceholderText('https://gitlab.com/owner/repo.git'), {
       target: { value: 'git@gitlab.com:acme/widgets.git' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Convert to git repository' }));
 
     await waitFor(() =>
       expect(convertProjectToRepo).toHaveBeenCalledWith({
@@ -198,13 +198,13 @@ describe('ConvertWorkspaceFlow', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'GitLab' }));
 
     expect(
-      screen.getByRole('button', { name: 'Convert to dev project' }).hasAttribute('disabled'),
+      screen.getByRole('button', { name: 'Convert to git repository' }).hasAttribute('disabled'),
     ).toBe(true);
 
     fireEvent.change(screen.getByPlaceholderText('https://gitlab.com/owner/repo.git'), {
       target: { value: 'git@gitlab.com:acme/widgets.git' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Convert to git repository' }));
 
     await waitFor(() =>
       expect(convertProjectToRepo).toHaveBeenCalledWith({
@@ -221,7 +221,7 @@ describe('ConvertWorkspaceFlow', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Add existing' }));
     await waitFor(() => screen.getByText('the GitHub CLI is installed but not signed in'));
     expect(
-      screen.getByRole('button', { name: 'Convert to dev project' }).hasAttribute('disabled'),
+      screen.getByRole('button', { name: 'Convert to git repository' }).hasAttribute('disabled'),
     ).toBe(true);
   });
 

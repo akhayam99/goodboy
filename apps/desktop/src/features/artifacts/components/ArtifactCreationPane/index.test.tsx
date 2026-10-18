@@ -348,24 +348,24 @@ describe('ArtifactCreationPane', () => {
     state.phaseTemplates = { [WORKSPACE_ID]: [{ id: 'wf-1', name: 'Ship it', steps: [] }] };
     renderPane({ runs: [{ id: RUN_ID, workflowId: 'wf-1', ordinal: 0 }] });
     expect(
-      screen.queryByText('No project in this session, so no local change evidence.'),
+      screen.queryByText('No folder in this session, so no local change evidence.'),
     ).toBeNull();
     openContext();
     chooseListboxValue({ trigger: screen.getByTestId('artifact-based-on'), value: RUN_ID });
     screen.getByText(
       'Agents and artifacts come from this run. Session events, checks and the local change are session wide either way.',
     );
-    screen.getByText('No project in this session, so no local change evidence.');
+    screen.getByText('No folder in this session, so no local change evidence.');
   });
 
   it('folds Read from, Based on and the repository line into one Context disclosure', () => {
     renderPane();
     expect(screen.queryByTestId('artifact-based-on')).toBeNull();
-    expect(screen.queryByText(/No project in this session/)).toBeNull();
+    expect(screen.queryByText(/No folder in this session/)).toBeNull();
     openContext();
     const basedOn = screen.getByTestId('artifact-based-on').closest('section');
     expect(basedOn?.querySelectorAll('span.text-meta')).toHaveLength(1);
-    expect(screen.getByText(/No project in this session/)).toBeDefined();
+    expect(screen.getByText(/No folder in this session/)).toBeDefined();
   });
 
   it('lists what the pack carries and what it cuts short', async () => {

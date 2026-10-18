@@ -32,7 +32,7 @@ export const useMountProposalActions = ({ sessionId }: Params): MountProposalAct
         await emitNotification({
           kind: 'error',
           severity: 'error',
-          title: "Couldn't add the project",
+          title: "Couldn't add the folder",
           body: `Could not add ${projectName}. Try again. ${formatError(error)}`,
           sessionId,
         });
