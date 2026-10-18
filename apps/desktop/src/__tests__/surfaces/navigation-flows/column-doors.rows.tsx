@@ -100,13 +100,13 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:Open a folder'],
     door: 'palette',
     open: () => openPalette(/^Open a folder/, 'Open a folder'),
-    lands: () => studio('Add workspace'),
+    lands: () => studio('New workspace'),
   },
   {
     name: 'palette: Start a new project',
     covers: ['palette:Start a new project'],
     open: () => openPalette(/^Start a new project/, 'Start a new project'),
-    lands: () => studio('Start a new project'),
+    lands: () => studio('New workspace'),
   },
   {
     name: 'column: inbox',
@@ -314,6 +314,6 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Switch workspace/);
       await clickButton(/^Open a folder/);
     },
-    lands: () => studio('Add workspace'),
+    lands: () => studio('New workspace'),
   },
 ];

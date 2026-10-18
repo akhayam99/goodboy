@@ -1,6 +1,6 @@
 import type { WizardStepId } from './wizardSteps';
 
-export type WizardCtaAction = 'next' | 'commit-project' | 'finish';
+export type WizardCtaAction = 'next' | 'finish';
 
 type WizardCta = {
   readonly label: string;
@@ -20,9 +20,6 @@ export const PROVIDER_GATE_HINT =
 type Params = {
   readonly step: WizardStepId;
   readonly providersConnected: number;
-  readonly hasWorkspace: boolean;
-  readonly workspaceName: string;
-  readonly projectCount: number;
   readonly codeHostConnected: boolean;
   readonly taskSourceConnected: boolean;
   readonly isLastStep: boolean;
@@ -72,9 +69,6 @@ const optionalStep = ({
 export const wizardActions = ({
   step,
   providersConnected,
-  hasWorkspace,
-  workspaceName,
-  projectCount,
   codeHostConnected,
   taskSourceConnected,
   isLastStep,
@@ -89,14 +83,7 @@ export const wizardActions = ({
         hint: providersConnected === 0 ? PROVIDER_GATE_HINT : null,
       });
     case 'workspace':
-      return actions({
-        primary: cta({
-          label: 'Continue',
-          action: 'commit-project',
-          disabled:
-            busy || !hasWorkspace || projectCount === 0 || workspaceName.trim().length === 0,
-        }),
-      });
+      return actions({ primary: null });
     case 'tools':
       return optionalStep({
         isConnected: codeHostConnected || taskSourceConnected,

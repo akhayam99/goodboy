@@ -4,9 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IsoDateTime, Project, ProjectId, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
-import type { FolderPick } from './steps/ProjectStep';
 
-const { hookState, setupStore, storeActions, repoLib, tools, firstSession } = vi.hoisted(() => ({
+const { hookState, setupStore, storeActions, tools, firstSession } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
   setupStore: {
     finishWizard: vi.fn(async () => undefined),
@@ -17,18 +16,7 @@ const { hookState, setupStore, storeActions, repoLib, tools, firstSession } = vi
     markStepComplete: vi.fn(),
   },
   storeActions: {
-    createWorkspace: vi.fn(),
-    renameWorkspace: vi.fn(),
     setCurrentWorkspace: vi.fn(),
-    addProject: vi.fn(),
-    addProjects: vi.fn(),
-    removeProject: vi.fn(),
-    adoptProject: vi.fn(),
-    previewProjectAdoption: vi.fn(),
-  },
-  repoLib: {
-    validateGitRepo: vi.fn(),
-    scanChildRepos: vi.fn(),
   },
   tools: {
     connected: {
@@ -49,10 +37,6 @@ const { hookState, setupStore, storeActions, repoLib, tools, firstSession } = vi
 
 vi.mock('../../../store', () => ({
   useAppStore: (selector: (state: typeof storeActions) => unknown) => selector(storeActions),
-}));
-vi.mock('../../../shared/lib/repo', () => repoLib);
-vi.mock('../../../shared/hooks/useProjectAdoption', () => ({
-  useProjectAdoption: () => ({ knownRepos: {}, knownConflicts: {} }),
 }));
 vi.mock('../../integrations/useToolConnections', () => ({
   useToolConnections: () => ({ connected: tools.connected, githubIdentity: null }),
@@ -100,42 +84,18 @@ vi.mock('./steps/ProvidersStep', async () => {
 });
 vi.mock('./steps/ProjectStep', () => ({
   ProjectStep: ({
-    name,
-    onNameChange,
-    onPickFolder,
-    detection,
-    onConfirmDetection,
+    onCreated,
+    onBack,
   }: {
-    name: string;
-    onNameChange: (name: string) => void;
-    onPickFolder: (pick: FolderPick) => void;
-    detection: { parentPath: string; repos: ReadonlyArray<{ path: string }> } | null;
-    onConfirmDetection: (params: { paths: ReadonlyArray<string> }) => void;
+    onCreated: (params: { workspaceId: WorkspaceId }) => void;
+    onBack?: () => void;
   }) => (
     <div data-testid="ProjectStep">
-      <button
-        type="button"
-        onClick={() =>
-          onPickFolder({ path: '/Users/me/code/northwind/ledger-core', replaces: null })
-        }
-      >
-        pick folder
+      <button type="button" onClick={() => onCreated({ workspaceId: WORKSPACE.id })}>
+        create workspace
       </button>
-      <input
-        aria-label="Workspace name"
-        value={name}
-        onChange={(event) => onNameChange(event.target.value)}
-      />
-      <span data-testid="detection-count">
-        {detection === null ? 'none' : String(detection.repos.length)}
-      </span>
-      <button
-        type="button"
-        onClick={() =>
-          onConfirmDetection({ paths: (detection?.repos ?? []).map((repo) => repo.path) })
-        }
-      >
-        confirm detected
+      <button type="button" onClick={onBack}>
+        form back
       </button>
     </div>
   ),
@@ -269,30 +229,7 @@ beforeEach(() => {
     linear: false,
     jira: false,
   });
-  storeActions.createWorkspace
-    .mockReset()
-    .mockImplementation(async ({ name }: { name: string }) => ({ ...WORKSPACE, name }));
-  storeActions.renameWorkspace.mockReset().mockResolvedValue(WORKSPACE);
   storeActions.setCurrentWorkspace.mockReset().mockResolvedValue(undefined);
-  storeActions.addProject
-    .mockReset()
-    .mockResolvedValue({ kind: 'linked', project: project({ kind: 'repo' }) });
-  storeActions.addProjects
-    .mockReset()
-    .mockImplementation(async ({ rootPaths }: { rootPaths: ReadonlyArray<string> }) => ({
-      linked: rootPaths.map((rootPath) => ({ rootPath })),
-      conflicts: [],
-    }));
-  storeActions.removeProject.mockReset().mockResolvedValue(undefined);
-  storeActions.adoptProject.mockReset().mockResolvedValue(undefined);
-  storeActions.previewProjectAdoption.mockReset().mockResolvedValue(null);
-  repoLib.scanChildRepos.mockReset().mockResolvedValue([]);
-  repoLib.validateGitRepo.mockReset().mockResolvedValue({
-    isRepo: true,
-    rootPath: '/Users/me/code/northwind/ledger-core',
-    resolvedPath: '/Users/me/code/northwind/ledger-core',
-    error: null,
-  });
 });
 
 afterEach(() => {
@@ -412,7 +349,7 @@ describe('OnboardingWizard', () => {
     classes.push(screen.getByTestId('wizard-column').className);
     click(/^continue$/i);
     classes.push(screen.getByTestId('wizard-column').className);
-    click(/^continue$/i);
+    click(/create workspace/i);
     await waitFor(() => expect(stepOf()).toBe('tools'));
     classes.push(screen.getByTestId('wizard-column').className);
     click(/skip for now/i);
@@ -459,98 +396,33 @@ describe('OnboardingWizard', () => {
   });
 
   describe('workspace step', () => {
-    const reachWorkspace = () => {
+    it('leaves the action row to the form, so the frame draws none', () => {
       setHook({ providersConnected: 1 });
       render(<OnboardingWizard />);
       click(/get started/i);
       click(/^continue$/i);
       expect(screen.getByTestId('ProjectStep')).toBeDefined();
-    };
-
-    it('names the workspace after the picked folder, never its parent', async () => {
-      reachWorkspace();
-      click(/pick folder/i);
-      await waitFor(() => expect(storeActions.addProject).toHaveBeenCalled());
-      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Ledger core' });
-      expect(storeActions.addProject).toHaveBeenCalledWith({
-        workspaceId: WORKSPACE.id,
-        rootPath: '/Users/me/code/northwind/ledger-core',
-        requireRepo: false,
-      });
-      expect(screen.getByTestId('ProjectStep')).toBeDefined();
+      expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
     });
 
-    it('links a folder without git as a plain folder project', async () => {
-      repoLib.validateGitRepo.mockResolvedValue({
-        isRepo: false,
-        rootPath: null,
-        resolvedPath: '/Users/me/notes/research-notes',
-        error: null,
-      });
-      reachWorkspace();
-      click(/pick folder/i);
-      await waitFor(() => expect(storeActions.addProject).toHaveBeenCalled());
-      expect(storeActions.addProject).toHaveBeenCalledWith({
-        workspaceId: WORKSPACE.id,
-        rootPath: '/Users/me/notes/research-notes',
-        requireRepo: false,
-      });
-    });
-
-    it('offers the git folders found inside and links the ones picked', async () => {
-      repoLib.validateGitRepo.mockResolvedValue({
-        isRepo: false,
-        rootPath: null,
-        resolvedPath: '/Users/me/code/northwind',
-        error: null,
-      });
-      repoLib.scanChildRepos.mockResolvedValue([
-        { name: 'ledger-core', path: '/Users/me/code/northwind/ledger-core' },
-        { name: 'payments-api', path: '/Users/me/code/northwind/payments-api' },
-      ]);
-      reachWorkspace();
-      click(/pick folder/i);
-      await waitFor(() => expect(screen.getByTestId('detection-count').textContent).toBe('2'));
-      expect(storeActions.addProject).not.toHaveBeenCalled();
-
-      click(/confirm detected/i);
-      await waitFor(() => expect(storeActions.addProjects).toHaveBeenCalled());
-      expect(storeActions.createWorkspace).toHaveBeenCalledWith({ name: 'Northwind' });
-      expect(storeActions.addProjects).toHaveBeenCalledWith({
-        workspaceId: WORKSPACE.id,
-        rootPaths: [
-          '/Users/me/code/northwind/ledger-core',
-          '/Users/me/code/northwind/payments-api',
-        ],
-      });
-    });
-
-    it('keeps the step and shows the cause when a pick fails, then retries', async () => {
-      repoLib.validateGitRepo.mockRejectedValueOnce(new Error('Permission denied'));
-      reachWorkspace();
-      click(/pick folder/i);
-      await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Permission'));
-      expect(storeActions.createWorkspace).not.toHaveBeenCalled();
-      click(/pick folder/i);
-      await waitFor(() => expect(storeActions.addProject).toHaveBeenCalledOnce());
-      expect(screen.queryByRole('alert')).toBeNull();
-    });
-
-    it('renames the workspace on Continue only when the name changed, then goes to Tools', async () => {
+    it('makes the created workspace current, then goes on to Tools', async () => {
       setHook(readyState({ kind: 'repo' }));
       render(<OnboardingWizard />);
       click(/get started/i);
       click(/^continue$/i);
-      fireEvent.change(screen.getByRole('textbox', { name: 'Workspace name' }), {
-        target: { value: 'Northwind Labs' },
-      });
+      click(/create workspace/i);
+      await waitFor(() => expect(stepOf()).toBe('tools'));
+      expect(storeActions.setCurrentWorkspace).toHaveBeenCalledWith(WORKSPACE.id);
+    });
+
+    it('takes the form Back to the agents step', () => {
+      setHook({ providersConnected: 1 });
+      render(<OnboardingWizard />);
+      click(/get started/i);
       click(/^continue$/i);
-      await waitFor(() => expect(screen.getByTestId('CodeHostStep')).toBeDefined());
-      expect(stepOf()).toBe('tools');
-      expect(storeActions.renameWorkspace).toHaveBeenCalledWith({
-        workspaceId: WORKSPACE.id,
-        name: 'Northwind Labs',
-      });
+      click(/form back/i);
+      expect(stepOf()).toBe('agents');
     });
   });
 
@@ -560,7 +432,7 @@ describe('OnboardingWizard', () => {
       render(<OnboardingWizard />);
       click(/get started/i);
       click(/^continue$/i);
-      click(/^continue$/i);
+      click(/create workspace/i);
       await waitFor(() => expect(stepOf()).toBe('tools'));
     };
 
@@ -602,7 +474,7 @@ describe('OnboardingWizard', () => {
       render(<OnboardingWizard />);
       click(/get started/i);
       click(/^continue$/i);
-      click(/^continue$/i);
+      click(/create workspace/i);
       await waitFor(() => expect(stepOf()).toBe('tools'));
       click(/skip for now/i);
       expect(screen.getByTestId('FirstSessionStep')).toBeDefined();

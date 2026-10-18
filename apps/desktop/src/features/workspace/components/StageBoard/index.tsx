@@ -26,7 +26,7 @@ import { ObjectSelectionBar } from '../../../../shared/components/ObjectSelectio
 import type { ObjectTarget } from '../../../actions/types';
 import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
 import { attentionPlace } from '../../../session/attentionPlace';
-import { ProjectsStep } from '../../../onboarding/OnboardingWizard/steps/ProjectsStep';
+import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
 import { BoardLanes } from './BoardLanes';
 import { boardLanesOf, rootRemPx } from './boardLanesOf';
 import { BOARD_STAGES } from './boardStages';
@@ -253,7 +253,7 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
             viewportClassName="flex items-center justify-center"
           >
             <div className="w-full max-w-xl py-6">
-              <ProjectsStep workspace={workspace} />
+              <NewWorkspaceForm mode="add" workspaceId={workspace.id} />
             </div>
           </ScrollFade>
         )}

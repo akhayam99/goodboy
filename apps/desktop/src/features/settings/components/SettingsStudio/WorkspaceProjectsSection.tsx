@@ -68,7 +68,6 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
       {hasProjects ? <WorkspaceTerminalFolderRow workspaceId={workspaceId} /> : null}
       <ProjectLinkList
         workspaceId={workspaceId}
-        density="compact"
         emptyHint="No projects yet"
         editorExtra={({ project }) =>
           project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null

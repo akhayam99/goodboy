@@ -94,9 +94,6 @@
   "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionFilterPopover/index.tsx": {
     "filter at the end of the Sessions door row: the end edge stays on the trigger": 1
   },
-  "apps/desktop/src/shared/components/ProjectLinkList/ProjectAddPopover.tsx": {
-    "+ Add at the end of a label row": 1
-  },
   "packages/ui/src/components/ConfirmPopover.tsx": {
     "a confirm keeps its end edge on its trigger": 1
   },

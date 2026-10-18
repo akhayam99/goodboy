@@ -255,6 +255,7 @@ pub fn run() {
             editor::open_in_editor,
             editor::open_file_in_workspace,
             editor::open_url,
+            editor::open_privacy_settings,
             remote_image::fetch_remote_image,
             remote_image::load_tool_image,
             local_image::local_image_read,

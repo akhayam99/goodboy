@@ -1,11 +1,9 @@
 import { PageColumn, ScrollFade } from '@goodboy/ui';
-import type { Workspace } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { isWizardDone, reopenWizard } from '../../../onboarding/onboarding-store';
+import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
 import { useAppStore } from '../../../../store';
-import { WorkspaceLinkForm, type WorkspaceLinkMode } from '../WorkspaceLinkForm';
-import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
 
 type Props = {
   readonly variant: 'fullscreen' | 'viewport';
@@ -14,9 +12,8 @@ type Props = {
   readonly isNewProject?: boolean;
 };
 
-type CompleteParams = {
-  readonly mode: WorkspaceLinkMode;
-  readonly workspace: Workspace;
+type CreatedParams = {
+  readonly workspaceId: WorkspaceId;
   readonly requestClose: () => void;
 };
 
@@ -26,19 +23,12 @@ export const WorkspaceLinkStudio = ({
   onOfferRepo,
   isNewProject = false,
 }: Props) => {
-  const onComplete = ({ mode, workspace, requestClose }: CompleteParams) => {
+  const onCreated = ({ workspaceId, requestClose }: CreatedParams) => {
     requestClose();
-    if (!isWizardDone()) {
-      reopenWizard('setup');
-      return;
-    }
-    if (mode !== 'project') {
-      return;
-    }
-    const project = useAppStore
+    const folders = useAppStore
       .getState()
-      .projects.find((candidate) => candidate.workspaceId === workspace.id);
-    if (project?.kind === 'folder') {
+      .projects.filter((project) => project.workspaceId === workspaceId);
+    if (folders.length > 0 && folders.every((project) => project.kind === 'folder')) {
       onOfferRepo();
     }
   };
@@ -47,25 +37,19 @@ export const WorkspaceLinkStudio = ({
     <StudioShell
       icon={CONCEPT_ICONS.workspace}
       tone={CONCEPT_TONE.workspace}
-      title={isNewProject ? 'Start a new project' : 'Add workspace'}
-      subtitle={
-        isNewProject
-          ? 'A new folder with git on main, and a first session that works in it.'
-          : 'Open a folder as a workspace, or group several projects in one.'
-      }
+      title="New workspace"
       variant={variant}
       onClose={onClose}
     >
       {(requestClose) => (
         <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
           <PageColumn className="flex flex-col gap-6 py-5">
-            {isNewProject ? (
-              <NewProjectForm onCreated={requestClose} onCancel={requestClose} />
-            ) : (
-              <WorkspaceLinkForm
-                onComplete={({ mode, workspace }) => onComplete({ mode, workspace, requestClose })}
-              />
-            )}
+            <NewWorkspaceForm
+              mode="new"
+              start={isNewProject ? 'scratch' : 'folder'}
+              titleRole="title"
+              onCreated={({ workspaceId }) => onCreated({ workspaceId, requestClose })}
+            />
           </PageColumn>
         </ScrollFade>
       )}

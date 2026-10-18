@@ -1,144 +1,15 @@
-import { useState } from 'react';
-import { FolderOpen, FolderPlus, Plus } from 'lucide-react';
-import { Button, Input } from '@goodboy/ui';
-import type { Project, ProjectId } from '@goodboy/types';
-import type { DetectedChildRepos } from '../../../../shared/hooks/useChildRepoDetection';
-import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
-import { DetectedRepoList, type KnownRepo } from '../../../../shared/components/DetectedRepoList';
-import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
-import type { ProjectAttachConflict } from '../../../../store/slices/projects/addProject';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
-import { FolderCard } from './FolderCard';
-import { StepHeading } from './StepHeading';
+import type { WorkspaceId } from '@goodboy/types';
+import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
 
-export type FolderPick = {
-  readonly path: string;
-  readonly replaces: ProjectId | null;
+type CreatedParams = {
+  readonly workspaceId: WorkspaceId;
 };
 
 type Props = {
-  readonly projects: ReadonlyArray<Project>;
-  readonly name: string;
-  readonly onNameChange: (name: string) => void;
-  readonly busy: boolean;
-  readonly onPickFolder: (pick: FolderPick) => void;
-  readonly detection: DetectedChildRepos | null;
-  readonly knownRepos: Readonly<Record<string, KnownRepo>>;
-  readonly conflict: ProjectAttachConflict | null;
-  readonly onMoveConflict: () => void;
-  readonly onKeepConflict: () => void;
-  readonly onConfirmDetection: (params: { readonly paths: ReadonlyArray<string> }) => void;
-  readonly onDismissDetection: () => void;
-  readonly onNewProjectCreated: () => void;
+  readonly onCreated: (params: CreatedParams) => void;
+  readonly onBack?: () => void;
 };
 
-export const ProjectStep = ({
-  projects,
-  name,
-  onNameChange,
-  busy,
-  onPickFolder,
-  detection,
-  knownRepos,
-  conflict,
-  onMoveConflict,
-  onKeepConflict,
-  onConfirmDetection,
-  onDismissDetection,
-  onNewProjectCreated,
-}: Props) => {
-  const pickFolder = usePickFolder();
-  const [isStarting, setIsStarting] = useState(false);
-  const pick = async (replaces: ProjectId | null) => {
-    const path = await pickFolder();
-    if (path !== null) {
-      onPickFolder({ path, replaces });
-    }
-  };
-  const hasProjects = projects.length > 0;
-
-  return (
-    <div className="flex flex-col gap-6">
-      <StepHeading
-        title="Pick a project"
-        line="A folder with code, or any folder with documents."
-      />
-      {hasProjects ? (
-        <ul className="flex flex-col gap-2">
-          {projects.map((project) => (
-            <FolderCard
-              key={project.id}
-              project={project}
-              busy={busy}
-              onChange={() => void pick(project.id)}
-            />
-          ))}
-        </ul>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <Button
-              size="md"
-              variant="primary"
-              disabled={busy || isStarting}
-              onClick={() => setIsStarting(true)}
-            >
-              <FolderPlus size={ICON_SIZE.control} aria-hidden />
-              Start a new project
-            </Button>
-            <Button size="md" variant="secondary" disabled={busy} onClick={() => void pick(null)}>
-              <FolderOpen size={ICON_SIZE.control} aria-hidden />
-              Open a folder
-            </Button>
-          </div>
-          {isStarting ? (
-            <NewProjectForm onCreated={onNewProjectCreated} onCancel={() => setIsStarting(false)} />
-          ) : null}
-        </div>
-      )}
-      {detection !== null ? (
-        <DetectedRepoList
-          repos={detection.repos}
-          busy={busy}
-          known={knownRepos}
-          onConfirm={onConfirmDetection}
-          onDismiss={onDismissDetection}
-        />
-      ) : null}
-      {conflict !== null ? (
-        <ProjectAdoptionNotice
-          conflict={conflict}
-          busy={busy}
-          onMove={onMoveConflict}
-          onKeep={onKeepConflict}
-        />
-      ) : null}
-      {hasProjects && (
-        <>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="onboarding-workspace-name" className="text-label text-foreground">
-              Workspace name
-            </label>
-            <Input
-              id="onboarding-workspace-name"
-              value={name}
-              disabled={busy}
-              placeholder="Your company or team name"
-              onChange={(event) => onNameChange(event.target.value)}
-            />
-            <p className="text-meta text-muted-foreground">
-              Groups projects that ship together. Named after the parent folder.
-            </p>
-          </div>
-          <div>
-            <Button variant="ghost" size="sm" disabled={busy} onClick={() => void pick(null)}>
-              <Plus size={ICON_SIZE.control} aria-hidden />
-              Add another project
-            </Button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
+export const ProjectStep = ({ onCreated, onBack }: Props) => (
+  <NewWorkspaceForm mode="first-run" onCreated={onCreated} onCancel={onBack} backLabel="Back" />
+);

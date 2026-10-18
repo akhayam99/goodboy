@@ -7,6 +7,5 @@
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/AutonomyChip.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/StartsChip.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowRulesPanel/RulesAutonomyBand.tsx": 1,
-  "apps/desktop/src/features/workspace/components/ConvertWorkspaceFlow/index.tsx": 1,
-  "apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx": 1
+  "apps/desktop/src/features/workspace/components/ConvertWorkspaceFlow/index.tsx": 1
 }

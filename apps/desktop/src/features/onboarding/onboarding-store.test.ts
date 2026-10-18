@@ -32,11 +32,9 @@ import {
   getWizardState,
   getWizardStep,
   hydrateOnboardingFromDb,
-  isWizardDone,
   markStepComplete,
   OPEN_WIZARD_EVENT,
   pauseWizard,
-  reopenWizard,
   resumeSetup,
 } from './onboarding-store';
 
@@ -69,18 +67,18 @@ describe('onboarding-store wizard flag', () => {
   it('hydrates wizardDone=true only when the stored value is "done"', async () => {
     db.settings.set('onboarding.wizard', 'done');
     await hydrateOnboardingFromDb();
-    expect(isWizardDone()).toBe(true);
+    expect(getWizardState()).toBe('done');
   });
 
   it('treats any non-"done" stored value as not finished', async () => {
     db.settings.set('onboarding.wizard', '');
     await hydrateOnboardingFromDb();
-    expect(isWizardDone()).toBe(false);
+    expect(getWizardState()).not.toBe('done');
   });
 
   it('marks the wizard done and persists "done"', async () => {
     await finishWizard();
-    expect(isWizardDone()).toBe(true);
+    expect(getWizardState()).toBe('done');
     expect(db.setSetting).toHaveBeenCalledWith('onboarding.wizard', 'done');
   });
 
@@ -91,55 +89,25 @@ describe('onboarding-store wizard flag', () => {
     expect(db.setSetting).not.toHaveBeenCalled();
   });
 
-  it('reopenWizard resets the done flag and persists the cleared value', async () => {
+  it('resuming setup resets the done flag and persists the cleared value', async () => {
     await finishWizard();
     db.setSetting.mockClear();
-    reopenWizard();
-    await vi.waitFor(() => expect(isWizardDone()).toBe(false));
+    resumeSetup({ hasWorkspace: true });
+    await vi.waitFor(() => expect(getWizardState()).not.toBe('done'));
     expect(db.setSetting).toHaveBeenCalledWith('onboarding.wizard', '');
   });
 
-  it('reopenWizard dispatches the open-wizard event', () => {
+  it('resuming setup dispatches the open-wizard event', () => {
     const spy = vi.fn();
     window.addEventListener(OPEN_WIZARD_EVENT, spy);
-    reopenWizard();
+    resumeSetup({ hasWorkspace: true });
     expect(spy).toHaveBeenCalledOnce();
     window.removeEventListener(OPEN_WIZARD_EVENT, spy);
   });
 
-  it('reopenWizard skips the db write when the wizard was never finished', () => {
-    reopenWizard();
+  it('resuming setup skips the db write when the wizard was never finished', () => {
+    resumeSetup({ hasWorkspace: true });
     expect(db.setSetting).not.toHaveBeenCalled();
-  });
-
-  it('reopenWizard still dispatches the event when nothing was persisted', () => {
-    const spy = vi.fn();
-    window.addEventListener(OPEN_WIZARD_EVENT, spy);
-    reopenWizard();
-    expect(spy).toHaveBeenCalledOnce();
-    window.removeEventListener(OPEN_WIZARD_EVENT, spy);
-  });
-
-  it('reopenWizard defaults to full mode in the event detail', () => {
-    let detail: unknown;
-    const spy = (e: Event) => {
-      detail = (e as CustomEvent).detail;
-    };
-    window.addEventListener(OPEN_WIZARD_EVENT, spy);
-    reopenWizard();
-    window.removeEventListener(OPEN_WIZARD_EVENT, spy);
-    expect(detail).toEqual({ mode: 'full' });
-  });
-
-  it('reopenWizard forwards the requested setup mode in the event detail', () => {
-    let detail: unknown;
-    const spy = (e: Event) => {
-      detail = (e as CustomEvent).detail;
-    };
-    window.addEventListener(OPEN_WIZARD_EVENT, spy);
-    reopenWizard('setup');
-    window.removeEventListener(OPEN_WIZARD_EVENT, spy);
-    expect(detail).toEqual({ mode: 'setup' });
   });
 });
 
@@ -170,7 +138,7 @@ describe('onboarding-store setup progress', () => {
     expect(db.settings.get('onboarding.wizard')).toBe('later');
     expect(db.settings.get('onboarding.step')).toBe('tools');
     expect(getWizardState()).toBe('later');
-    expect(isWizardDone()).toBe(false);
+    expect(getWizardState()).not.toBe('done');
   });
 
   it('resumes from the last written step', async () => {

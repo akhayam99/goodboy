@@ -33,7 +33,6 @@ const FIXED_PX_ALLOWLIST: ReadonlySet<string> = new Set([
 const CENTRED_ALLOWLIST: ReadonlySet<string> = new Set([
   'features/workspace/components/StageBoard/index.tsx',
   'features/companion/components/CompanionStudio/index.tsx',
-  'features/onboarding/OnboardingWizard/steps/ProjectsStep.tsx',
 ]);
 
 const FORBIDDEN_WIDTHS: ReadonlyArray<Forbidden> = [

@@ -1,4 +1,4 @@
-import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../../shared/lib/remoteHost';
+import { classifyRemoteHost } from '../../../shared/lib/remoteHost';
 
 export type CodeHost = 'github' | 'gitlab' | 'bitbucket';
 
@@ -27,18 +27,6 @@ export const hostFromRemote = (url: string | null): CodeHost | null => {
   }
   const kind = classifyRemoteHost(url, []);
   return kind === 'github' || kind === 'gitlab' ? kind : null;
-};
-
-export const remoteLabel = (url: string | null): string | null => {
-  if (url === null) {
-    return null;
-  }
-  const name = hostName(url);
-  const path = projectPathFromRemoteUrl(url);
-  if (name === null || path === null) {
-    return null;
-  }
-  return `${name}/${path}`;
 };
 
 export const hostsInOrder = (preferred: CodeHost | null): ReadonlyArray<CodeHost> =>

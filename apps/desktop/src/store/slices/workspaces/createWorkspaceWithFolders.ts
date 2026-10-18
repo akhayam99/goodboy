@@ -33,7 +33,7 @@ import { rescanWorkspaceSkills } from './workspaceSkills';
 import { workspaceSlug } from './slug';
 import type { GetFn, SetFn } from './types';
 
-type NewWorkspaceFolder =
+export type NewWorkspaceFolder =
   | {
       readonly kind: 'repository';
       readonly rootPath: string;
@@ -43,7 +43,7 @@ type NewWorkspaceFolder =
   | { readonly kind: 'git-init'; readonly rootPath: string }
   | { readonly kind: 'scratch'; readonly parentPath: string; readonly name: string };
 
-type FolderMove = {
+export type FolderMove = {
   readonly projectId: ProjectId;
   readonly fromWorkspaceId: WorkspaceId;
 };

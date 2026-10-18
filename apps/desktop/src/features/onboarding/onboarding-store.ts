@@ -193,8 +193,6 @@ export const finish = (): void => {
 
 export const getWizardState = (): WizardState => cache.wizard;
 
-export const isWizardDone = (): boolean => cache.wizard === 'done';
-
 export const getWizardStep = (): NumberedWizardStepId | null => cache.step;
 
 type WizardWriteParams = {
@@ -224,7 +222,7 @@ export const pauseWizard = (): Promise<void> => writeWizard({ next: 'later' });
 
 export const finishWizard = (): Promise<void> => writeWizard({ next: 'done' });
 
-export const reopenWizard = (mode: WizardMode = 'full', step?: WizardStepId): void => {
+const reopenWizard = (mode: WizardMode, step?: WizardStepId): void => {
   if (cache.wizard !== 'open') {
     void writeWizard({ next: 'open' });
   }

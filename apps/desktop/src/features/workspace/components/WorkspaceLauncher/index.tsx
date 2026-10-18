@@ -16,7 +16,7 @@ import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdatePill } from '../../../updater/components/UpdatePill';
 import { WorkspaceListRow } from '../WorkspaceListRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
-import { NewProjectForm } from '../../../../shared/components/NewProjectForm';
+import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
 import { ConceptTile } from '../../../../shared/components/ConceptTile';
 
 export const WorkspaceLauncher = () => {
@@ -95,7 +95,15 @@ export const WorkspaceLauncher = () => {
           <h1 className="text-title text-foreground">Open a workspace</h1>
         </div>
 
-        {isStarting ? <NewProjectForm onCancel={() => setIsStarting(false)} /> : null}
+        {isStarting ? (
+          <NewWorkspaceForm
+            mode="new"
+            start="scratch"
+            onCreated={() => setIsStarting(false)}
+            onCancel={() => setIsStarting(false)}
+            backLabel="Cancel"
+          />
+        ) : null}
 
         <div className="relative">
           <Search

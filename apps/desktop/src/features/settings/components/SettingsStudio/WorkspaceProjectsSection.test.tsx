@@ -79,18 +79,6 @@ import { WorkspaceProjectsSection } from './WorkspaceProjectsSection';
 
 const WORKSPACE_ID = 'ws-target' as WorkspaceId;
 
-const conflict = {
-  project: {
-    id: 'proj-known',
-    name: 'storefront-web',
-    rootPath: '/repos/storefront-web',
-    kind: 'repo',
-  },
-  sourceWorkspace: { id: 'ws-legacy', name: 'storefront-web' },
-  sessionCount: 4,
-  isShell: true,
-};
-
 beforeEach(() => {
   vi.clearAllMocks();
   state.projects = [];
@@ -108,13 +96,6 @@ beforeEach(() => {
   state.projectRootScripts = {};
 });
 afterEach(cleanup);
-
-const addPath = async (path: string) => {
-  fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-  fireEvent.change(screen.getByLabelText('Project path'), { target: { value: path } });
-  fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-  await waitFor(() => expect(state.addProject).toHaveBeenCalled());
-};
 
 const openEditor = (name: string) =>
   fireEvent.click(screen.getByRole('button', { name: `Edit ${name}` }));
@@ -177,89 +158,6 @@ describe('WorkspaceProjectsSection', () => {
     expect((screen.getByLabelText('Move payments-api') as HTMLInputElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Move 1 project' }));
     expect(state.relocateProjects).toHaveBeenCalledOnce();
-  });
-
-  it('shows an inline conflict row when the path belongs to another workspace', async () => {
-    state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
-    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
-
-    await addPath('/repos/storefront-web');
-
-    await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
-  });
-
-  it('adopts the project into this workspace through Move it here', async () => {
-    state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
-    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
-    await addPath('/repos/storefront-web');
-    await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Move it here' }));
-
-    await waitFor(() =>
-      expect(state.adoptProject).toHaveBeenCalledWith({
-        projectId: 'proj-known',
-        targetWorkspaceId: WORKSPACE_ID,
-      }),
-    );
-    await waitFor(() =>
-      expect(screen.queryByText('already in storefront-web with 4 sessions')).toBeNull(),
-    );
-  });
-
-  it('dismisses the conflict row through Keep there without adopting', async () => {
-    state.addProject.mockResolvedValueOnce({ kind: 'conflict', conflict });
-    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
-    await addPath('/repos/storefront-web');
-    await waitFor(() => screen.getByText('already in storefront-web with 4 sessions'));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Keep there' }));
-
-    expect(screen.queryByText('already in storefront-web with 4 sessions')).toBeNull();
-    expect(state.adoptProject).not.toHaveBeenCalled();
-  });
-
-  it('links a fresh path and clears the field', async () => {
-    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
-
-    await addPath('/repos/api');
-
-    expect(state.addProject).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE_ID,
-      rootPath: '/repos/api',
-      requireRepo: true,
-    });
-    await waitFor(() => expect(screen.queryByLabelText('Project path')).toBeNull());
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-    await waitFor(() =>
-      expect((screen.getByLabelText('Project path') as HTMLInputElement).value).toBe(''),
-    );
-  });
-
-  it('keeps paths out of the rows and the add controls behind one button', () => {
-    state.projects = [
-      {
-        id: 'proj-ledger',
-        name: 'ledger-core',
-        rootPath: '/repos/ledger-core',
-        kind: 'repo',
-        workspaceId: WORKSPACE_ID,
-      },
-    ];
-    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
-
-    expect(screen.queryByText('/repos/ledger-core')).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Projects' })).toBeNull();
-    expect(screen.getByRole('img', { name: 'Repository' })).toBeDefined();
-    expect(screen.queryByLabelText('Project path')).toBeNull();
-    expect(screen.queryByRole('button', { name: /plain folder/i })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
-    const popover = screen.getByRole('dialog', { name: 'Add project' });
-    expect(within(popover).getByLabelText('Project path')).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'Browse' })).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'Start a new project' })).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'Add a plain folder' })).toBeDefined();
   });
 
   it('shows the base branch picker in the editor, repo rows only', () => {

@@ -22,7 +22,7 @@ import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/names';
 import { tauriGhRunner } from '../../../integrations/github/github';
-import { lastPathSegment } from '../WorkspaceLinkForm/lastPathSegment';
+import { lastPathSegment } from './lastPathSegment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {

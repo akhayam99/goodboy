@@ -58,9 +58,11 @@ vi.mock('../../hooks/useProjectGitStatuses', () => ({
       .map((project) => ({ project, status: gitStatuses.current[project.id] ?? null })),
 }));
 
-vi.mock('../../../onboarding/OnboardingWizard/steps/ProjectsStep', () => ({
-  ProjectsStep: ({ workspace }: { workspace: Workspace }) => (
-    <div data-testid="projects-step">{workspace.name}</div>
+vi.mock('../../../../shared/components/NewWorkspaceForm', () => ({
+  NewWorkspaceForm: ({ mode, workspaceId }: { mode: string; workspaceId: WorkspaceId }) => (
+    <div data-testid="projects-step">
+      {mode === 'add' ? state.workspaces.find((entry) => entry.id === workspaceId)?.name : null}
+    </div>
   ),
 }));
 

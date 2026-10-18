@@ -5,9 +5,6 @@ import { WIZARD_STEPS } from './wizardSteps';
 
 const BASE = {
   providersConnected: 1,
-  hasWorkspace: true,
-  workspaceName: 'Northwind',
-  projectCount: 1,
   codeHostConnected: false,
   taskSourceConnected: false,
   isLastStep: false,
@@ -19,7 +16,7 @@ describe('wizardActions', () => {
     expect(WIZARD_STEPS.map((step) => wizardActions({ ...BASE, step }).primary?.action)).toEqual([
       'next',
       'next',
-      'commit-project',
+      undefined,
       'next',
       undefined,
     ]);
@@ -33,14 +30,10 @@ describe('wizardActions', () => {
     expect(wizardActions({ ...BASE, step: 'agents' }).hint).toBeNull();
   });
 
-  it('keeps the project step closed until a project and a workspace name exist', () => {
-    expect(wizardActions({ ...BASE, step: 'workspace', projectCount: 0 }).primary?.disabled).toBe(
-      true,
-    );
-    expect(
-      wizardActions({ ...BASE, step: 'workspace', workspaceName: ' ' }).primary?.disabled,
-    ).toBe(true);
-    expect(wizardActions({ ...BASE, step: 'workspace' }).primary?.disabled).toBe(false);
+  it('leaves the workspace step to the form, which owns its own action row', () => {
+    const workspace = wizardActions({ ...BASE, step: 'workspace' });
+    expect(workspace.primary).toBeNull();
+    expect(workspace.skip).toBeNull();
   });
 
   it('offers Skip for now on tools until a code host or a task source is connected', () => {

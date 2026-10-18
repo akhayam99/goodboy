@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, EmptyState } from '@goodboy/ui';
-import { NewProjectForm } from '../../shared/components/NewProjectForm';
+import { NewWorkspaceForm } from '../../shared/components/NewWorkspaceForm';
 import { ConceptTile } from '../../shared/components/ConceptTile';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../shared/components/conceptIcons';
 
@@ -30,7 +30,13 @@ export const NoWorkspaceScreen = ({ onAddWorkspace, startOpen = false }: Props) 
             <ConceptTile icon={Plus} tone="primary" />
             <h2 className="text-title text-foreground">Start a new project</h2>
           </div>
-          <NewProjectForm onCancel={() => setIsStarting(false)} />
+          <NewWorkspaceForm
+            mode="new"
+            start="scratch"
+            onCreated={() => setIsStarting(false)}
+            onCancel={() => setIsStarting(false)}
+            backLabel="Cancel"
+          />
         </div>
       ) : (
         <EmptyState

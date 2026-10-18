@@ -2840,17 +2840,35 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
 
 ## Starting a project from nothing
 
-The empty screen, the workspace launcher, the workspace switcher and the
-command palette offer **Start a new project** and **Open a folder**, in that
-order. The wizard's project step offers the same two. Settings, Workspace,
-Projects names its form **Start a new project** too and opens the same form in
-line. **Add workspace** names only the studio that groups projects. Start opens
-one inline form (`NewProjectForm`), never a dialog: a name, a location (the
-last parent folder, else the home folder, changed with the system picker) and
-the four things the click does. A name that exists in the parent says so and
-offers **Open it instead**. Create project makes the folder, a repository on
-`main` with a first commit that holds `.gitignore` and nothing else, one
-workspace and project named after it, and opens the first lap session.
+Every door that creates or adds folders opens one inline form,
+`NewWorkspaceForm` (`shared/components/NewWorkspaceForm/`), never a dialog. It
+runs in three modes: `first-run` (the setup Workspace step, title "Your first
+workspace"), `new` (the New workspace studio, Home and the empty screen) and
+`add` (the empty board and Settings, Workspace, folders, which add folders to
+the workspace they name by id). The form owns its action row.
+
+- **Pick or drop a folder.** Choose folder (Cmd+O) or a drop on the drop area
+  only reads: `validate_git_repo`, `scan_child_repos` and the move preview fill
+  a draft in memory (`useWorkspaceDraft`). Each read carries a pick number and a
+  late answer for an older pick is dropped. A repository shows Git and its
+  default branch; a subfolder of one snaps to its root and says so; a folder of
+  repositories lists them checked; a plain folder offers git init on Create; a
+  folder that cannot be read says why (macOS privacy opens Privacy settings
+  through `open_privacy_settings`) and keeps Create off with the reason.
+- **Name.** The workspace takes the picked folder's name through
+  `nameFromFolder` and is edited in place; Escape while editing restores it.
+- **A folder another workspace holds** asks Move it here or Leave it out; Create
+  stays off until one is chosen, and Move is off while agents run there. The
+  move happens on Create, never on the click.
+- **Start from scratch** (the old Start a new project) asks a folder name and a
+  location (the last parent folder, else the home folder, changed with the
+  system picker). Create makes the folder, a repository on `main` with a first
+  commit that holds `.gitignore` and nothing else, and the workspace named
+  after it. Outside setup it then opens the first lap session; in setup it goes
+  on to the next step.
+- **Create** calls `createWorkspaceWithFolders` once, with a workspace id the
+  draft made before the write; Retry reuses it. Nothing is written before
+  Create. The New workspace studio never reopens setup.
 
 The first lap session shows one notice under the goal of its Overview,
 `Not published yet`, with **Publish**. Publish

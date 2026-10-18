@@ -182,11 +182,36 @@ import { FixRunScene } from '../scenes/FixRunScene';
 import { CrashReportScene } from '../scenes/audit/ReportScenes';
 import { BrandTileScene } from '../scenes/onboarding/BrandTileScene';
 import { SetupMenuScene } from '../scenes/onboarding/SetupMenuScene';
+import {
+  NewWorkspaceScene,
+  type NewWorkspaceSceneState,
+} from '../scenes/onboarding/NewWorkspaceScene';
 
 const OnboardingBrandTileDarkScene = () => createElement(BrandTileScene, { theme: 'dark' });
 const OnboardingBrandTileLightScene = () => createElement(BrandTileScene, { theme: 'light' });
 const OnboardingSetupMenuDarkScene = () => createElement(SetupMenuScene, { theme: 'dark' });
 const OnboardingSetupMenuLightScene = () => createElement(SetupMenuScene, { theme: 'light' });
+
+const NEW_WORKSPACE_STATES: ReadonlyArray<NewWorkspaceSceneState> = [
+  'empty',
+  'repo',
+  'many',
+  'plain',
+  'conflict',
+  'denied',
+  'scratch',
+];
+
+const SCENE_THEMES: ReadonlyArray<'dark' | 'light'> = ['dark', 'light'];
+
+const NEW_WORKSPACE_SCENES = Object.fromEntries(
+  NEW_WORKSPACE_STATES.flatMap((state) =>
+    SCENE_THEMES.map((theme) => [
+      `onboarding-new-workspace-${state}-${theme}`,
+      () => createElement(NewWorkspaceScene, { state, theme }),
+    ]),
+  ),
+);
 
 export const BASE_SCENES = {
   workspace: WorkspaceScene,
@@ -380,4 +405,5 @@ export const BASE_SCENES = {
   'onboarding-brand-tile-light': OnboardingBrandTileLightScene,
   'onboarding-setup-menu-dark': OnboardingSetupMenuDarkScene,
   'onboarding-setup-menu-light': OnboardingSetupMenuLightScene,
+  ...NEW_WORKSPACE_SCENES,
 };
