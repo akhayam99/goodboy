@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { WORKFLOW_CHOICE_LINE, reviewPullRequestLabel, startFromLabel } from './startCopy';
+import { reviewPullRequestLabel, startFromLabel } from './startCopy';
 
 describe('startCopy', () => {
   it('says Start from the identifier, the same way for an issue and a pull request', () => {
@@ -11,9 +11,5 @@ describe('startCopy', () => {
 
   it('reviews a pull request by its number', () => {
     expect(reviewPullRequestLabel({ identifier: '#318' })).toBe('Review pull request #318');
-  });
-
-  it('names the three ways to run a workflow with the builder switch words', () => {
-    expect(WORKFLOW_CHOICE_LINE).toBe('Orchestrated, steps you describe, or a saved workflow.');
   });
 });

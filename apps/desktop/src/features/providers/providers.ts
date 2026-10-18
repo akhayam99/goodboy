@@ -20,7 +20,7 @@ export type AuthState = {
   readonly reason?: string | null;
 };
 
-export type { ProviderId, ProviderConnectionState };
+export type { ProviderId };
 
 export type ProviderStatus = {
   readonly id: string;

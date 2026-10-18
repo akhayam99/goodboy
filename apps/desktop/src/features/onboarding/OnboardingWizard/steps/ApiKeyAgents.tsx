@@ -8,6 +8,7 @@ import { useAppStore } from '../../../../store';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { ProviderInlineConnect } from '../../../providers/components/ProviderInlineConnect';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { readyAgents } from '../readyAgents';
 import { AgentGlyph } from './AgentGlyph';
 import { StepListRow } from './StepListRow';
 import { StepStatus } from './StepStatus';
@@ -23,11 +24,7 @@ type Props = {
 export const ApiKeyAgents = ({ defaultId, isLocked, onMakeDefault }: Props) => {
   const readyIds = useAppStore(
     useShallow((state) =>
-      state.providers
-        .filter(
-          (provider) => isApiProvider({ id: provider.id }) && provider.connection === 'connected',
-        )
-        .map((provider) => provider.id),
+      readyAgents({ providers: state.providers }).filter((id) => isApiProvider({ id })),
     ),
   );
   const [isOpen, setIsOpen] = useState(() => readyIds.length > 0);

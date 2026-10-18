@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ExternalLink, SquareTerminal } from 'lucide-react';
-import { Button, CopyButton, Reveal } from '@goodboy/ui';
+import { Button, CopyButton, Reveal, useEscapeLayer } from '@goodboy/ui';
 import { InlineTerminal } from '../../../providers/components/InlineTerminal';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
@@ -15,6 +15,7 @@ type Props = {
 
 export const AgentRowPanel = ({ row, isLocked, onRun }: Props) => {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  useEscapeLayer(() => setIsTerminalOpen(false), isTerminalOpen);
 
   if (row.state === 'missing' && row.installCommand !== null) {
     return (

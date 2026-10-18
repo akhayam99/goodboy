@@ -134,6 +134,8 @@ describe('FirstSessionStep', () => {
       expect(screen.getByRole('alert').textContent).toContain('the worktree could not be created'),
     );
     expect(handlers.onStart).toHaveBeenCalledWith({
+      workspaceId: ACME,
+      projectId: ACME_WEB.id,
       prompt: expect.stringContaining('Explain how acme-web is organized'),
     });
     expect(screen.getByRole('button', { name: /^retry/i })).toBeDefined();
@@ -181,6 +183,8 @@ describe('FirstSessionStep', () => {
     fireEvent.click(screen.getByRole('button', { name: /draft the brief/i }));
 
     expect(handlers.onDraft).toHaveBeenCalledWith({
+      workspaceId: ACME,
+      projectId: ACME_WEB.id,
       issue: expect.objectContaining({ identifier: 'ACM-112' }),
     });
   });

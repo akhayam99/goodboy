@@ -96,29 +96,16 @@ export const WizardStepBody = ({ step, nav, wizard }: Props) => {
           isLocked={nav.isLocked}
           onBack={nav.goBack}
           onSkip={() => nav.finish()}
-          onStart={async ({ prompt }) => {
+          onStart={async (target) => {
             nav.setBusy(true);
             try {
-              await startFirstScout({
-                workspaceId: workspace.id,
-                projectId: folder?.id ?? null,
-                prompt,
-              });
+              await startFirstScout(target);
               nav.finish();
             } finally {
               nav.setBusy(false);
             }
           }}
-          onDraft={({ issue }) =>
-            nav.finish({
-              after: () =>
-                handOffFirstSession({
-                  workspaceId: workspace.id,
-                  projectId: folder?.id ?? null,
-                  issue,
-                }),
-            })
-          }
+          onDraft={(target) => nav.finish({ after: () => handOffFirstSession(target) })}
           onOpenTools={toTools}
         />
       );

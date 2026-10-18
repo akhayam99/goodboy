@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, FormActions, KeyHint, SegmentedTabs, cn, formatError } from '@goodboy/ui';
-import type { Project, ProviderId, WorkspaceId } from '@goodboy/types';
+import type { Project, ProjectId, ProviderId, WorkspaceId } from '@goodboy/types';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
@@ -16,11 +16,16 @@ import { StepHeading } from './StepHeading';
 
 export type FirstSessionTab = 'ask' | 'task';
 
-type StartParams = {
+type Target = {
+  readonly workspaceId: WorkspaceId;
+  readonly projectId: ProjectId | null;
+};
+
+type StartParams = Target & {
   readonly prompt: string;
 };
 
-type DraftParams = {
+type DraftParams = Target & {
   readonly issue: IssueCandidate;
 };
 
@@ -82,8 +87,8 @@ export const FirstSessionStep = ({
   onDraft,
   onOpenTools,
 }: Props) => {
-  const [boundId] = useState(workspaceId);
-  const issues = useFirstIssues({ workspaceId: boundId });
+  const [target] = useState<Target>(() => ({ workspaceId, projectId: folder?.id ?? null }));
+  const issues = useFirstIssues({ workspaceId: target.workspaceId });
   const folderName = folder?.name ?? 'this workspace';
   const [tab, setTab] = useState<FirstSessionTab>(initialTab);
   const [starter, setStarter] = useState(0);
@@ -115,13 +120,13 @@ export const FirstSessionStep = ({
     }
     if (isTask) {
       if (pickedIssue !== null) {
-        onDraft({ issue: pickedIssue });
+        onDraft({ ...target, issue: pickedIssue });
       }
       return;
     }
     setIsStarting(true);
     setError(null);
-    void onStart({ prompt: prompt.trim() })
+    void onStart({ ...target, prompt: prompt.trim() })
       .catch((cause: unknown) => setError(formatError(cause)))
       .finally(() => setIsStarting(false));
   };

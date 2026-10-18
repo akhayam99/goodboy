@@ -9,8 +9,6 @@ import {
 import { AGENT_ROW_IDS } from '../agentRowIds';
 import { agentCheckEngine, type AgentChecks } from './agentChecks';
 
-export type { AgentCheck, AgentChecks } from './agentChecks';
-
 type CheckParams = {
   readonly providerId: AgentProviderId;
 };

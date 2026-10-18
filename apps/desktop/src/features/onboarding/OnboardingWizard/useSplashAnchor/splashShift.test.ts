@@ -1,12 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { BOOT_MARK_PX } from '../../../../app/components/BootSplash/bootMark';
-import { SPLASH_MARK_ABOVE_MIDDLE_PX, SPLASH_MARK_PX, splashShift } from './splashShift';
+import { splashShift } from './splashShift';
 
 describe('splashShift', () => {
-  it('reads the same mark size as the boot splash', () => {
-    expect(SPLASH_MARK_PX).toBe(BOOT_MARK_PX);
-    expect(SPLASH_MARK_ABOVE_MIDDLE_PX).toBe(53);
+  it('aims at the boot splash mark, 53 px above the middle of the window', () => {
+    expect(splashShift({ markCenter: 0, blockBottom: 0, viewportHeight: 1000 })).toBe(447);
   });
 
   it('moves the tile down onto the pixel where the splash dog sits', () => {

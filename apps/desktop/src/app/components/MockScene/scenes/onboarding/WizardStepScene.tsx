@@ -297,8 +297,8 @@ const FOLLOW_UP: Partial<Readonly<Record<WizardSceneState, string>>> = {
   'first-task': 'Pick up an issue',
 };
 
-const SETTLED_ENTRANCE =
-  '.welcome-entrance *, .welcome-entrance-frame > header { animation: none !important; }';
+const SETTLED_MOTION =
+  '*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition: none !important; }';
 
 export const WizardStepScene = ({ state, theme }: Props) => {
   const [isReady, setIsReady] = useState(false);
@@ -327,7 +327,7 @@ export const WizardStepScene = ({ state, theme }: Props) => {
   const projects = workspace === null ? [] : [isNoGit ? ACME_DOCS_FOLDER : ACME_WEB_FOLDER];
   return (
     <>
-      <style>{SETTLED_ENTRANCE}</style>
+      <style>{SETTLED_MOTION}</style>
       <WizardFrame
         mode="full"
         start={step === 'welcome' ? null : step}

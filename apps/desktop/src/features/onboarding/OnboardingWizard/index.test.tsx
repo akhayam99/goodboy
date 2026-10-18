@@ -130,13 +130,25 @@ vi.mock('./steps/ToolsStep', () => ({
 }));
 vi.mock('./steps/FirstSessionStep', () => ({
   FirstSessionStep: ({
+    workspaceId,
+    folder,
     onStart,
     onDraft,
     onSkip,
     onOpenTools,
   }: {
-    onStart: (params: { prompt: string }) => Promise<void>;
-    onDraft: (params: { issue: { identifier: string } }) => void;
+    workspaceId: WorkspaceId;
+    folder: Project | null;
+    onStart: (params: {
+      workspaceId: WorkspaceId;
+      projectId: string | null;
+      prompt: string;
+    }) => Promise<void>;
+    onDraft: (params: {
+      workspaceId: WorkspaceId;
+      projectId: string | null;
+      issue: { identifier: string };
+    }) => void;
     onSkip: () => void;
     onOpenTools: (() => void) | null;
   }) => (
@@ -144,12 +156,21 @@ vi.mock('./steps/FirstSessionStep', () => ({
       <button
         type="button"
         onClick={() =>
-          void onStart({ prompt: 'Explain how ledger-core is organized' }).catch(() => undefined)
+          void onStart({
+            workspaceId,
+            projectId: folder?.id ?? null,
+            prompt: 'Explain how ledger-core is organized',
+          }).catch(() => undefined)
         }
       >
         start scout
       </button>
-      <button type="button" onClick={() => onDraft({ issue: { identifier: 'ACM-112' } })}>
+      <button
+        type="button"
+        onClick={() =>
+          onDraft({ workspaceId, projectId: folder?.id ?? null, issue: { identifier: 'ACM-112' } })
+        }
+      >
         draft the brief
       </button>
       <button type="button" onClick={onSkip}>
