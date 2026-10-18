@@ -41,7 +41,7 @@ Catch up in one place. Everything Goodboy has to tell you, from a pull request o
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-light.webp" alt="The Notifications page for Harborline filtered on Needs action: Session reached 80% of its cap, Handoff degraded and 1 session folder left on disk, with Mark all read, Delete all and Close, and a left column of views, severity, source and workspace filters">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-light.webp" alt="The Notifications page for Harborline filtered on Needs action: Session reached 80% of its limit, Handoff degraded and 1 session folder left on disk, with a More notification actions menu holding Mark all read and Delete all, and a left column of views, severity, source and workspace filters">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

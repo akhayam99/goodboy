@@ -166,7 +166,7 @@ order, each with one line of copy at most.
 - **Providers**: a row **When a provider is out** with the policy in one line
   ("Claude, Codex · Cursor as backup") and a link, **Open Providers and models**.
   It holds no switch and lists no provider: the order and the **Send new steps
-  to the provider with the most room** option live in Settings > Providers &
+  to the provider with the most room** option live in Settings > Providers and
   models, the one home of the provider policy
 - **Guidance**: text every run starts with, with its own **Polish**
 

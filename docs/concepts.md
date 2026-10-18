@@ -12,8 +12,8 @@ The other docs link here instead of explaining them again.
 ## At a glance
 
 - **Workspace**: where you work, named after what you work on
-- **Project**: one repository or folder inside a workspace
-- **Session**: one task, with its own goal, budget and shared notes
+- **Folder**: one repository or plain folder inside a workspace (the code calls it a project)
+- **Session**: one task, with its own goal, limit and shared notes
 - **Agent**: one chat inside a session, with its own provider and model
 - **Workflow**: a list of steps you can reuse, and each step gets its own agent
 - **Artifact**: a plan, report or wireframe an agent saves as its own page
@@ -1625,6 +1625,21 @@ task up again in Goodboy.
   the change keep their stored text, and the `budget-cap` kind id stays, **Copy context** the drawer button, **Context window**
   the share of a model window a turn filled, and **What's new** the release
   notes page. The old words are ⌘K aliases or retired names.
+- **General**, **Updates**, **Keyboard shortcuts**, **Storage**, **Backup and
+  reset** and **iPhone** are the App pages of Settings (Keyboard shortcuts was
+  Shortcuts, iPhone was Pair device and Companion; Security findings is a
+  section at the end of Storage). **Branches** is a Workspace page that starts
+  with After merge. **Pair an iPhone** is the one verb that opens the iPhone
+  page, **Providers and models** is its group in the rail (it was Providers &
+  models), and **Edit commits** is the one name for changing the commits of a
+  branch (it was Rewrite history). The old words are palette aliases and
+  `RETIRED_NAMES` keeps them out of copy. A dot on a settings row means only
+  that something needs you; a connected provider or tool shows none.
+- **The Guide is one page per chapter**, in the app's voice: at most 60 words
+  a point, 7 points a chapter and 4,000 words in all, pinned by
+  `guideChapters.test.ts`. **Impact** and **Monitoring** are doors of their own
+  with a header of one title and one meta line; `pageLayout.test.ts` and
+  `secondaryHeaders.test.ts` keep every secondary page on that header.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
   request. Tools connect from Settings > Integrations.

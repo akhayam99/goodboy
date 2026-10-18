@@ -11,7 +11,7 @@ import type { BranchScope } from '../../branches/branchScope';
 import { classifyBranchScan } from '../../branches/classifyBranchScan';
 import {
   isSafeVerdict,
-  matchesBranchFilter,
+  isListedBranch,
   matchesBranchTab,
   type BranchTab,
   type ClassifiedBranch,
@@ -98,7 +98,7 @@ export const BranchesSection = ({ scope }: Props) => {
         project,
         scan: scans[project.id],
         entries: classifyBranchScan({ scan: scans[project.id], now }).filter((entry) =>
-          matchesBranchFilter({ entry, filter: 'all' }),
+          isListedBranch({ entry }),
         ),
       })),
     [projects, scans, now],

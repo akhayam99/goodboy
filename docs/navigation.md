@@ -239,7 +239,7 @@ drawer instead of the Terminal page.
      **Guide: {chapter}** entry per `GUIDE_CHAPTERS` row (opens it through
      `openGuideChapter`, also while the Guide is open) are typed only. Pair an
      iPhone answers to Pair your iPhone and the other former names of the page.
-     Check for updates opens Settings > General and runs the updater check only
+     Check for updates opens Settings > Updates and runs the updater check only
      in a status the menu item also checks. Palette and menu bar share one
      function, `checkForUpdatesNow` in `features/updater`.
      The overlay is a compact window: 640px wide (search 720px), a 48px input row,
@@ -1666,8 +1666,8 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   Comments tab, so the trail reads Session, Branch, Comments.
 - **Settings draws no band in the column.** On Home, where it covers the
   window, it claims its studio band with Settings, the scope and the App
-  section. The scope segment lists App, the workspace, Providers & models and
-  Tools; the section segment lists the App sections. Neither carries an
+  section. The scope segment lists App, the workspace, Providers and models and
+  Integrations; the section segment lists the App sections. Neither carries an
   action: Settings has no project scope, so there is no `Use workspace values`
   to offer. A segment without an action is plain text and has no hover state.
   The first segment of a studio has no menu because studios change from the
@@ -1766,7 +1766,7 @@ covered.
   on a provider under `+N`, opens the Providers menu anchored under the strip
   (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >
-  Providers & models. Without a workspace a chip still opens that usage page.
+  Providers and models. Without a workspace a chip still opens that usage page.
   The strip is a toolbar: arrow keys move between chips. With no provider
   connected the strip is one `Connect a provider` chip that pulses and opens
   the same menu, and nothing shows while providers are still being detected.
@@ -1893,6 +1893,43 @@ first agent finishes a turn, and never while the setup wizard is open; the
 checklist has no floating card. Only the pinned row does that (and reports the
 update arrival); the copy inside a peeked column is quiet.
 
+**What's new** is the changelog studio (`ChangelogStudio`): a rail of releases
+grouped by minor, with an Older group below 0.4 (`ChangelogRail`, filtered by
+`RailSearch`), and a reader beside it. `CatchUpReader` (`page="whatsNew"`)
+opens first and sums up everything since the version you last read;
+`ReleaseReader` (`page="release"`) shows one release. Close is the last action
+of the reader's title row (`close: 'header'`), and only when no page header
+renders does the studio fall back to a Close in its band
+(`StudioFrame/index.test.tsx` pins both). A release that is the pending update
+shows `UpdateActions`, the same verbs as the update card, and never a confirm of
+its own.
+
+## Menu bar
+
+On macOS the app has seven menus: the Goodboy menu (About, Check for Updates,
+Settings, Services, Hide, Quit), File (New Session, New Chat, New Terminal,
+New Workspace, Close), Edit, View (sidebar, Command Palette, zoom, Reload, full
+screen), Go (Back, Forward, Sessions, Tasks, Chat, Workflows, Terminal,
+Impact, Notifications, Monitoring), Window and Help (Guide, What's New,
+Keyboard Shortcuts, Report a Bug). One table lays all of them out
+(`SECTIONS` in `src-tauri/src/app_menu.rs`); a row is either a native item
+(About, Quit, Undo, Cut, Copy, Paste, Select All, Full Screen, Minimize, Zoom)
+or a command with an id, a title-case label and an optional combo.
+
+One rule runs the bar: a command row emits one event, `goodboy://menu` with
+`{ id }`, to the focused window, and `useMenuCommands` is the one listener
+(mounted by `useAppShortcuts`). `runMenuCommand` reads the id. A registry
+shortcut id (`session.new`, `app.close`, `search.open`) replays its combo
+through the dispatcher, so a scoped owner keeps its place; any other id runs
+its `MENU_ACTIONS` entry (`menuActions.ts`: Check for Updates, New Terminal,
+New Workspace, the Go doors, Guide, What's New). An id with neither warns once
+and does nothing. A new menu item therefore adds a row to the table and an id,
+never an event or a listener. The menu labels the registry's Board as
+Sessions (`session.board`), and the Go doors that need a workspace do nothing
+without one. `menuBar.parity.test.ts` reads the Rust table and fails when an id
+has no registry entry or action, a combo differs from the registry's, a label
+is not title case, or a key has two owners.
+
 ## Report sheet
 
 One sheet files every report. `ReportSheetHost`
@@ -1901,8 +1938,9 @@ the window, centred, with no overlay: the page under it stays live. Every door
 lands there: ⌘I from anywhere, the bug icon at the column foot, Report a bug in
 the Goodboy menu, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken),
-**Help > Report a bug** in the macOS menu bar (`help_menu.rs`
-emits `goodboy://report-open` to the focused window), and Report this on a
+**Help > Report a Bug** in the macOS menu bar (`app_menu.rs` emits
+`goodboy://menu` with `report.open` to the focused window; `useMenuCommands`
+replays the shortcut), and Report this on a
 warning or error notification, which attaches that notification. Opening the sheet reads the screen you are on
 before anything moves, so Settings stays open under it.
 
@@ -2005,9 +2043,9 @@ at first), with or without a workspace; Workspace settings opens only from the
 gear on the current-workspace row of the workspace popover. Impact is a
 destination, so it has a door, the icon beside the bell; it opens its Overview
 tab, while the spend figure in the top bar and the `Impact: Spend` palette entry
-open its Spend tab. The **Providers menu** is not a door to the Providers &
+open its Spend tab. The **Providers menu** is not a door to the Providers and
 models page: it changes things in place (`app/components/ProvidersMenu`, opened
-from the Limits strip). Settings > Providers & models is the one home for
+from the Limits strip). Settings > Providers and models is the one home for
 providers and usage; the menu holds no usage figure and sends there with
 **Manage providers** (a door). It lists the same `ProviderPolicyList` as the
 Models row When a provider is out, writing through the same
@@ -2025,7 +2063,7 @@ filter is the tool door, and Connect a tool lives in Settings > Integrations.
 - **Before any workspace exists, the column keeps its app half**: Settings,
   the Goodboy row and the bug. New session, the doors and the sessions belong
   to a workspace and wait for one. Settings then opens its home with only the
-  App and Providers & models groups, and Providers opens on an account instead
+  App and Providers and models groups, and Providers opens on an account instead
   of on the workspace defaults. Precedent: VS Code keeps its status bar and
   Manage gear with no folder open.
 
@@ -2054,7 +2092,7 @@ its plain keys with `useShortcut` and an enabled flag, never with its own
 window listener.
 Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Lists, Comments, Files, Window; ids stay `review` and
-`diff`), and Settings > App > Shortcuts lists the
+`diff`), and Settings > App > Keyboard shortcuts lists the
 groups in that order, read top to bottom per column. An entry that works only in
 one place carries a `scope` (Tasks and Notifications lists, the Branch page,
 the terminal, a chat composer, an activity row, a workspace
@@ -2353,7 +2391,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   amends the history entry to the concrete page. The rail is the only index,
   portaled into the column (`SettingsColumnNav`, `Back to app` first, then
   `Search settings`, then the groups) in both sidebar states, or drawn beside
-  the page on Home: its four groups (App, Workspace, Providers &
+  the page on Home: its four groups (App, Workspace, Providers and
   models, Integrations) come from `settingsDirectory`. Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
@@ -2373,14 +2411,14 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   scan, no provider refresh). Without a workspace the Workspace and
   Integrations groups are left out. Precedent: the VS Code settings editor and
   Linear's settings sidebar.
-- **Settings nests items in its rail.** The App items (General, Shortcuts,
-  Backup, Storage, Security findings) always sit under the
+- **Settings nests items in its rail.** The App items (General, Updates,
+  Keyboard shortcuts, Storage, Backup and reset, iPhone) always sit under the
   App row as indented
   rows, whichever scope is active, so switching scope never moves a row above
-  the pointer. The Workspace pages (Folders, About you, New sessions, After
-  merge, Replies and commits, Permissions) sit the same way under the
+  the pointer. The Workspace pages (Folders, About you, New sessions,
+  Branches, Replies and commits, Permissions) sit the same way under the
   Workspace row (`workspacePages.ts`, `SettingsRailPageGroup`). The panel
-  shows one item at a time. Providers & models nests
+  shows one item at a time. Providers and models nests
   Models and one row per provider, and Integrations nests one row per tool. Those
   two lists open and close with `Reveal`, and the rail stays one mounted
   element across scopes: `SettingsStudio` portals each scope's nested list and
@@ -2389,11 +2427,11 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
-- **Providers & models names its scope in the page header.** Every page of
+- **Providers and models names its scope in the page header.** Every page of
   the scope (Models and each provider) carries the scope as the meta line of
   its title: the workspace name when one is open, `All workspaces` when there
   is none (`ProviderSettingsScope` passes `scopeLabel`). The legacy trail
-  reads `Workspace` and `Providers & models` without a name, so the name
+  reads `Workspace` and `Providers and models` without a name, so the name
   appears once per page.
 - **Workspace settings is one page per area, each part in a card.** A
   workspace page carries the page title and one line of
@@ -2426,7 +2464,7 @@ settings`, `Back`, `Cancel`). It ends on a status line with `Undo`. The
   preview is computed when the flow opens (`loadFlowSources`), not on every
   render. Which keys a page owns comes from `pageKeys` (`features/settings/
 pageKeys.ts`), typed so a new override key does not compile until it has
-  an owner; provider defaults belong to Providers & models and are never
+  an owner; provider defaults belong to Providers and models and are never
   copied, and neither are projects, folders, integration accounts,
   permission history or `bootstrap.*` keys. Restoring writes `null`; every
   override change of one copy or restore is one `patchWorkspaceOverrides`
@@ -2508,7 +2546,9 @@ workspaces` (folders whose owning workspace is gone or was never linked),
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete, which asks in a `ConfirmPopover` beside its button. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
-- **Security findings is its own App page, workspace-scoped.** It scans the
+- **Security findings is a section at the end of the Storage page,
+  workspace-scoped** (`SecurityFindingsSection`; the old `security-findings`
+  address lands on Storage, and its warning dot sits on Storage). It scans the
   text Goodboy keeps for a workspace (saved scripts today; workflow steps,
   the profile, reply templates and permission rules are named in the design
   but not wired to a scan call yet) for known token shapes
@@ -2526,18 +2566,20 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   calls it once per studio and hands the result to the rail and the home, and
   a test mounts the home on the strict `invoke` mock to keep it free of
   commands and loads at render. A dot appears only
-  when something needs doing: warning on Providers & models when a connected
+  when something needs doing: warning on Providers and models when a connected
   CLI is too old for a model it serves or no provider is connected
   (`selectProviderAttention`, with the reason as the dot's label), info on
-  General while an app update is ready, info on Storage with "N GB can go" as
+  Updates while an app update is ready (`updatesText`), info on Storage with "N GB can go" as
   its label once clean idle folders pass 10 GB (warning when the disk has
   under 10 GB free and at least 1 GB can go, `storageAttention`),
-  warning on Security findings with "N open" once the current workspace has
-  an undismissed finding (`selectSecurityFindingsAttention`), and warning on
+  warning on Storage with "N open" once the current workspace has
+  an undismissed finding (`selectSecurityFindingsAttention`; Storage shows the
+  worse of its two dots, `appAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
   `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). A connected tool shows a quiet success dot named by its identity;
-  an Integrations row says nothing more. No rail row is red: the destructive actions sit at the
+  workspace). A dot means only "needs you": a connected tool and a ready
+  provider show none (no green dot for connected), and an Integrations row says
+  nothing. No rail row is red: the destructive actions sit at the
   bottom of their page, Reset (Delete all data) at the end of Backup and
   Disconnect at the end of Folders, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between
@@ -3301,7 +3343,7 @@ The drawer sits on the `subtle` panel surface, like every `DrawerFrame`.
 closed, it says `Updated 2 min ago`, `Queued`, `Updating…` or `Couldn't update`;
 open, it lists the last round (`summarizerRounds`: when, how many turns or a
 full pass, model and effort, tokens and cost, what changed as a comma list of
-links to the tabs, every value on the same column), **Change model** (Settings, Providers & models, Models, scrolled to
+links to the tabs, every value on the same column), **Change model** (Settings, Providers and models, Models, scrolled to
 Step summaries) and **Update now**. Update now queues a consolidation pass
 through `requestContextUpdate`, behind any pass in flight and never beside it;
 `summarizerPending` holds the turns waiting and whether a requested update is

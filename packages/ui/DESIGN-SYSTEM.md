@@ -1090,7 +1090,7 @@ The switcher is the palette frame (`z-command-palette`, a scrim, the floating
 surface) at `max-w-105`. Its rows are 36px `SelectableRow` options: node, title
 and age. Its foot shows two gestures, `⌃Tab next` (the real control glyph from
 `shortcutGlyphs('session.switcher')`) and `Release to open`; back and Esc still
-work and live in the Shortcuts list. It stays hidden for the first
+work and live in the Keyboard shortcuts list. It stays hidden for the first
 120ms of a hold, so a quick tap flips sessions without drawing it. With pins it
 adds a `Pinned` eyebrow and listbox of up to eight sessions above `Recent
 sessions`; the first `Tab` still selects the previous session wherever it sits.
@@ -2106,7 +2106,7 @@ holds the constants, the guide chapter How Goodboy listens prints them, and
   new line with Shift+Enter and sends now with ⌘↵. A document takes a new line on
   Enter and saves or sends with ⌘↵. Every ⌘↵ check reads the `composer.submit`
   id through `isSubmitChord`, and every hint prints `shortcutGlyphs`.
-- **A key you can see works.** The rail hints, the pills and the Shortcuts page
+- **A key you can see works.** The rail hints, the pills and the Keyboard shortcuts page
   read the registry. `navigation-flows/keys.test.tsx` presses every id on the
   real app and has a short exemption list that may only shrink.
 

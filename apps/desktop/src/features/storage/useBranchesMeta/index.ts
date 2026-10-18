@@ -4,7 +4,7 @@ import { useAppStore } from '../../../store';
 import { branchesMetaOf } from '../branches/branchesMetaOf';
 import type { BranchScope } from '../branches/branchScope';
 import { classifyBranchScan } from '../branches/classifyBranchScan';
-import { matchesBranchFilter } from '../branches/classifyBranch';
+import { isListedBranch } from '../branches/classifyBranch';
 import { useBranchProjects } from '../useBranchProjects';
 
 type Params = {
@@ -20,7 +20,7 @@ export const useBranchesMeta = ({ workspaceId }: Params): string | undefined => 
     () =>
       projects
         .flatMap((project) => classifyBranchScan({ scan: scans[project.id], now }))
-        .filter((entry) => matchesBranchFilter({ entry, filter: 'all' })),
+        .filter((entry) => isListedBranch({ entry })),
     [projects, scans, now],
   );
   const isReady = projects.some((project) => scans[project.id]?.status === 'ready');

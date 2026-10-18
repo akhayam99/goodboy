@@ -23,7 +23,7 @@ Point agents at the right repo without naming it. Star a folder and give it a on
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-light.webp" alt="The Harborline workspace settings, Folders: Starred 2 with ledger-core and payments-api, each with a one-line description and the base branch main, Other projects 2 with notify-relay and runbooks, the Dev project section with Convert, and a note about a session folder left on disk with Review in Storage">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-starred-light.webp" alt="The Harborline workspace settings, Folders: Starred 2 with ledger-core and payments-api, each with a one-line description and the base branch main, Other folders 2 with notify-relay and runbooks, the Git repository section with Convert, and a note about a session folder left on disk with Review in Storage">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

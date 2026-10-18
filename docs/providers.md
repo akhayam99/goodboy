@@ -22,7 +22,7 @@ what each provider needs and how to connect it, then how it works under the hood
 Every provider lives in the same place:
 
 1. Open **Settings** (`⌘,` on macOS)
-2. Pick the provider under **Providers & models**
+2. Pick the provider under **Providers and models**
 
 The card shows whether the provider is installed, which account is signed in, and
 its **API keys**. Goodboy runs the provider's own sign-in, so your credentials never
@@ -142,7 +142,7 @@ Goodboy stores keys in your system keychain, not in its own database.
 
 ## Defaults and task models
 
-Go to **Settings** → **Providers & models** → **Models** to choose what a workspace
+Go to **Settings** → **Providers and models** → **Models** to choose what a workspace
 uses when you leave a model on **Auto**. It is one page in three parts.
 
 - **When a provider is out**: the workspace's provider policy, summed up on the row
@@ -271,7 +271,7 @@ header says how many show (`Showing 6 of 11`) next to **Show all**.
 
 ## The provider page
 
-Each provider page in **Settings > Providers & models** has four groups, in the
+Each provider page in **Settings > Providers and models** has four groups, in the
 same order for every provider: **Usage**, **Models in the picker**,
 **Permissions** and **Account**. The header carries the plan (`Team plan`), the
 Account group the signed-in account and the CLI version (`Claude CLI 2.1.282`), and

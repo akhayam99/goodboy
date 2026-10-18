@@ -8,6 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
+import { SETTING_REPO_CHECK_MINUTES } from '../../../../../features/settings/settings';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -57,6 +58,16 @@ describe('the secondary Notifications scenes', () => {
     expect(MOCK_SCENES['u26s-notifications-rows']).toBe(
       U26S_NOTIFICATIONS_SCENES['u26s-notifications-rows'],
     );
+  });
+
+  it('u26s-notifications-rows boots without a repo check read, so no error row reaches the list', async () => {
+    mount({ id: 'u26s-notifications-rows' });
+
+    await screen.findAllByText(/Session reached/, undefined, WAIT);
+
+    const state = (await importStore()).getState();
+    expect(state.settings[SETTING_REPO_CHECK_MINUTES]).toBe('0');
+    expect(state.notifications.filter((row) => /how often to check/.test(row.title))).toEqual([]);
   });
 
   it('u26s-notifications-header-menu offers Mark all read and Delete all', async () => {

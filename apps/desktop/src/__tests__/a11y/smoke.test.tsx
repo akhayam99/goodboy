@@ -251,6 +251,12 @@ describe('a11y smoke, QuickActionsPopover', () => {
 
 describe('a11y smoke, SettingsStudio app scope', () => {
   it('panel open', async () => {
+    storeSeed.current = {
+      storageFolders: [],
+      storageRoots: [],
+      storageStats: null,
+      storageArtifacts: [],
+    };
     const { container } = renderInToasts(<AppScopePanel section="general" workspaceId={null} />);
     await expectBaseline({ name: 'AppScopePanel open', container });
   });

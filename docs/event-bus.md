@@ -57,7 +57,7 @@ Every event on this page is a browser CustomEvent sent via `window.dispatchEvent
 
 ## Cross-window events
 
-Events between app windows use Tauri `emit`/`listen`, not the window bus. `features/workspace/window.ts` owns `goodboy:presence`, `goodboy:presence-request` and `goodboy:window-closing` (which workspace each window shows). `features/review/prWriteBus.ts` owns `goodboy:pr-write`, which claims and releases a pull request write so two windows never push the same PR at once. `src-tauri/src/help_menu.rs` emits `goodboy://report-open` to the focused window only when you choose **Help > Report a bug** on macOS; `ReportSheetHost` listens on its own webview window and opens the report sheet.
+Events between app windows use Tauri `emit`/`listen`, not the window bus. `features/workspace/window.ts` owns `goodboy:presence`, `goodboy:presence-request` and `goodboy:window-closing` (which workspace each window shows). `features/review/prWriteBus.ts` owns `goodboy:pr-write`, which claims and releases a pull request write so two windows never push the same PR at once. `src-tauri/src/app_menu.rs` emits one event, `goodboy://menu` with `{ id }`, to the focused window only, when you choose any item of the macOS menu bar; `useMenuCommands` listens on its own webview window and replays the registry shortcut or runs the menu action of that id (`runMenuCommand`). There is one listener and no per-item event, so a new menu item never adds an event.
 
 ## Git and request state is not on the bus
 

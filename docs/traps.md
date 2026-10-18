@@ -11,6 +11,18 @@ file holds those explanations. Everything below has been "fixed" at least once a
 
 ## Deliberate dead ends
 
+- The macOS menu bar and the web view share every ⌘ key, and the web view sees
+  the key first: a `preventDefault` in a shortcut handler stops the native menu
+  item, and a key nothing handles falls through to it. So a key runs once
+  whichever path takes it (`app_menu.rs`, `useMenuCommands`), and a menu row
+  must carry the registry's combo, never its own. Do not add a ⌘Z item or any
+  menu row for Undo: Edit > Undo stays the predefined item, because a custom
+  one would steal the press from the text field, the terminal and the Commits
+  page that own it. Do not add a second listener for `goodboy://menu`.
+- `worktree::foreign` Rust tests (and the origin fetch behind them) read git's
+  error text. Under a non-English git locale that text is translated, so the
+  fetch runs with `LC_ALL=C` (`git_english`); a test that shells out to git for
+  such text must do the same.
 - A CLI's Bash tool runs each command as its own session leader (measured: a
   shell under a Goodboy turn had a process group equal to its pid). Signalling
   the CLI's group at the end of a turn misses the dev servers and watchers an

@@ -10,8 +10,10 @@ mounted, and unregistering it restores global handling. Undo and Redo yield
 while a text field, editable surface or terminal owns input.
 
 ⌘W closes the nearest thing and never quits the app (⌘Q quits). On macOS the
-File menu item `goodboy-close` owns the chord and emits `goodboy://close-current`,
-which the web view replays as the chord; elsewhere the chord is Ctrl+Shift+W.
+File menu item Close (`app.close`) owns the chord and emits `goodboy://menu`
+with that id (`app_menu.rs`); `useMenuCommands` replays it as the registry
+shortcut, so the same dispatcher runs the press; elsewhere the chord is
+Ctrl+Shift+W.
 Each press closes one level: a popover or dialog, then the terminal tab (a
 running process asks first), then the open drawer, then a studio, then the
 session view back to the previous place. The Sessions page does nothing.

@@ -388,7 +388,7 @@ describe('the session level projects and linked work', () => {
     expect(linked.getByRole('button', { name: 'Link work' })).toBeDefined();
   });
 
-  it('starts every linked title on one edge and cuts a long key in the middle', () => {
+  it('starts every linked title on one edge and keeps a long key whole, cut at the end by the column', () => {
     seed();
     useAppStore.setState({
       sessionExternalTasks: {
@@ -408,7 +408,7 @@ describe('the session level projects and linked work', () => {
     mountColumn();
 
     const key = sessionLayer().querySelector('[data-linked-key]');
-    expect(key?.textContent).toBe('PAYM…-3F2');
+    expect(key?.textContent).toBe('PAYMENTS-API-3F2');
   });
 
   it('lists a pull request once: a worktree that owns it hides the same number from Linked', () => {

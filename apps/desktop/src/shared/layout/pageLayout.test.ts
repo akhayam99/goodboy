@@ -44,6 +44,15 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     prop: 'page="guideChapter"',
   },
   {
+    page: 'guideChapter',
+    files: ['features/settings/components/GuideStudio/parts/ChapterPage.tsx'],
+  },
+  { page: 'explore', files: ['features/explore/components/ExplorePane/index.tsx'] },
+  {
+    page: 'settings',
+    files: ['features/companion/components/IphonePage/index.tsx'],
+  },
+  {
     page: 'whatsNew',
     files: ['features/changelog/components/ChangelogStudio/CatchUpReader.tsx'],
   },
@@ -111,6 +120,8 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   monitoring: 'column',
   notifications: 'column',
   guide: 'column',
+  guideChapter: 'column',
+  explore: 'column',
   whatsNew: 'column',
   release: 'column',
   impact: 'column',

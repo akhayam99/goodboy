@@ -5,7 +5,7 @@ import type { ProjectBranch } from '../../worktree/branchCleanup';
 import { verdictCopy } from './branchCopy';
 import {
   classifyBranch,
-  matchesBranchFilter,
+  isListedBranch,
   matchesBranchTab,
   unmergedCommits,
 } from './classifyBranch';
@@ -100,13 +100,13 @@ describe('classifyBranch', () => {
 });
 
 describe('filters and tabs', () => {
-  it('keeps protected branches out of every filter', () => {
+  it('keeps protected branches out of the list', () => {
     const entry = classify({ name: 'main', mergeState: { kind: 'protected' } });
 
-    expect(matchesBranchFilter({ entry, filter: 'all' })).toBe(false);
+    expect(isListedBranch({ entry })).toBe(false);
   });
 
-  it('narrows Made by Goodboy, Yours and All local', () => {
+  it('lists every branch that is not protected, whoever made it', () => {
     const mine = classify({
       name: 'spike/ledger-v2',
       mergeState: { kind: 'not-merged', ahead: 3 },
@@ -118,10 +118,8 @@ describe('filters and tabs', () => {
       now: NOW,
     });
 
-    expect(matchesBranchFilter({ entry: mine, filter: 'goodboy' })).toBe(false);
-    expect(matchesBranchFilter({ entry: mine, filter: 'yours' })).toBe(true);
-    expect(matchesBranchFilter({ entry: other, filter: 'yours' })).toBe(false);
-    expect(matchesBranchFilter({ entry: other, filter: 'all' })).toBe(true);
+    expect(isListedBranch({ entry: mine })).toBe(true);
+    expect(isListedBranch({ entry: other })).toBe(true);
   });
 
   it('splits Safe to delete from Needs a look', () => {

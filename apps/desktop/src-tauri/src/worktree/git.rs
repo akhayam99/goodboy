@@ -89,6 +89,18 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
     Ok(Git::new().cwd(cwd).args(args).batch_auth().stdout()?)
 }
 
+pub(crate) fn git_english(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
+    #[cfg(test)]
+    git_argv_log::record(args);
+
+    Ok(Git::new()
+        .cwd(cwd)
+        .args(args)
+        .batch_auth()
+        .env("LC_ALL", "C")
+        .stdout()?)
+}
+
 #[cfg(test)]
 pub(crate) mod git_argv_log {
     use std::cell::RefCell;

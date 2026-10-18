@@ -41,6 +41,13 @@ const DAY = 86_400_000;
 const isoAgo = (offsetMs: number): IsoDateTime =>
   new Date(Date.now() - offsetMs).toISOString() as IsoDateTime;
 
+const isoToday = (offsetMs: number): IsoDateTime => {
+  const nowMs = Date.now();
+  const dayStart = new Date(nowMs);
+  dayStart.setHours(0, 0, 0, 0);
+  return isoAgo(Math.min(offsetMs, nowMs - dayStart.getTime()));
+};
+
 const OVERRIDES = {
   defaultProviderId: null,
   defaultWorkflowId: null,
@@ -697,7 +704,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-telemetry-signing-secret',
           sessionId: BUILDING_SECRET,
           costUsd: 0.46,
-          recordedAt: isoAgo(90 * MINUTE),
+          recordedAt: isoToday(90 * MINUTE),
         }),
       ],
       [RUNNING_EXPORT]: [
@@ -705,7 +712,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-telemetry-payout-export',
           sessionId: RUNNING_EXPORT,
           costUsd: 0.88,
-          recordedAt: isoAgo(12 * MINUTE),
+          recordedAt: isoToday(12 * MINUTE),
         }),
       ],
       [BUILDING_RATE_LIMIT]: [
@@ -713,7 +720,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-telemetry-rate-limit',
           sessionId: BUILDING_RATE_LIMIT,
           costUsd: 0.34,
-          recordedAt: isoAgo(2 * HOUR),
+          recordedAt: isoToday(2 * HOUR),
         }),
       ],
       [BUILDING_ONBOARDING]: [
@@ -721,7 +728,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-telemetry-onboarding',
           sessionId: BUILDING_ONBOARDING,
           costUsd: 1.2,
-          recordedAt: isoAgo(40 * MINUTE),
+          recordedAt: isoToday(40 * MINUTE),
         }),
       ],
       [RUNNING_CHECKOUT_RETRY]: [
@@ -729,7 +736,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-telemetry-checkout-retry',
           sessionId: RUNNING_CHECKOUT_RETRY,
           costUsd: 2.15,
-          recordedAt: isoAgo(25 * MINUTE),
+          recordedAt: isoToday(25 * MINUTE),
         }),
       ],
       [ATTENTION_BACKOFF]: [
@@ -737,7 +744,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-telemetry-notify-backoff',
           sessionId: ATTENTION_BACKOFF,
           costUsd: 0.02,
-          recordedAt: isoAgo(5 * HOUR),
+          recordedAt: isoToday(5 * HOUR),
         }),
       ],
       [ATTENTION_ERROR]: [
@@ -745,7 +752,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-telemetry-settlement-rounding',
           sessionId: ATTENTION_ERROR,
           costUsd: 0.58,
-          recordedAt: isoAgo(HOUR),
+          recordedAt: isoToday(HOUR),
         }),
       ],
       [REVIEW_PAGINATION]: [
@@ -753,7 +760,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-telemetry-admin-pagination',
           sessionId: REVIEW_PAGINATION,
           costUsd: 3.47,
-          recordedAt: isoAgo(6 * HOUR),
+          recordedAt: isoToday(6 * HOUR),
         }),
       ],
       [REVIEW_RECONCILIATION]: [
