@@ -830,6 +830,8 @@ transcript-long
 transcript-mount
 transcript-width
 turn-override-off
+u26-filter-active
+u26-filter-default
 u26-intros-agents
 u26-intros-agents-empty
 u26-intros-auto
@@ -838,6 +840,11 @@ u26-intros-orchestrated
 u26-intros-orchestrated-empty
 u26-intros-runs
 u26-intros-runs-empty
+u26-rail-foot
+u26-rail-foot-archive
+u26-rail-projects
+u26-rail-projects-focus
+u26-rail-projects-picker
 u26-rebase-all-idle-dark
 u26-rebase-all-running-dark
 u26-rebase-all-running-light
@@ -845,6 +852,9 @@ u26-rebase-conflict-dark
 u26-rebase-conflict-light
 u26-rebase-picker-dark
 u26-rebase-picker-light
+u26-sidebar-impact
+u26-sidebar-ports
+u26-sidebar-signals
 u26s-explore-drawer
 u26s-explore-empty
 u26s-explore-nomount
@@ -852,6 +862,11 @@ u26s-explore-rows
 u26s-impact-empty
 u26s-impact-overview
 u26s-impact-spend
+u26s-monitoring-confirm
+u26s-monitoring-empty
+u26s-monitoring-hover
+u26s-monitoring-menu
+u26s-monitoring-rows
 update-card
 update-card-long-version
 update-card-narrow

@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
-import { portLabel } from '../../portLabel';
+import { groupPortRows } from '../../groupPortRows';
 import { shownRowCount } from '../../shownRowCount';
-import { PortRowMenu } from '../../../actions/PortRowMenu';
 import { PortGroupList } from './PortGroupList';
 import { PortRowItem } from './PortRowItem';
 
@@ -44,20 +43,20 @@ export const ListeningSection = ({ rows, processOf, now, isForcedOpen }: Props) 
       </button>
       {isOpen ? (
         <PortGroupList
-          rows={rows}
+          layer="listening"
+          grouped={groupPortRows({ rows })}
+          isFreeOpen
           processOf={processOf}
           now={now}
           renderRow={({ row, isNested }) => (
             <PortRowItem
               key={row.key}
               row={row}
+              layer="listening"
               process={processOf(row.pid)}
               now={now}
               name=""
               isNested={isNested}
-              actions={
-                <PortRowMenu port={row.port} layer="listening" description={portLabel({ row })} />
-              }
             />
           )}
         />

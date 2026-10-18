@@ -1,7 +1,7 @@
 import { Fragment, useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
 import { ROW_INTERACTIVE, EmptyLine, Eyebrow, ScrollFade, cn, formatError } from '@goodboy/ui';
-import type { Project, SessionId } from '@goodboy/types';
+import type { Project, SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
 import { shouldGroupStarred } from '../../../../../shared/utils/shouldGroupStarred';
@@ -9,17 +9,26 @@ import { MountPreflightCard } from './MountPreflightCard';
 import { mountFailure, type MountFailure } from './mountFailure';
 import { useMountPreflight } from './useMountPreflight';
 import { projectById } from '../../../../../store/slices/projects/projectIndex';
+import { ConnectProjectRow } from './ConnectProjectRow';
 
 const MANUAL_REASON = 'added manually by the user';
 const SEARCH_THRESHOLD = 8;
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
   readonly projects: ReadonlyArray<Project>;
+  readonly emptyHint: string;
   readonly onDone: () => void;
 };
 
-export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
+export const MountProjectList = ({
+  sessionId,
+  workspaceId,
+  projects,
+  emptyHint,
+  onDone,
+}: Props) => {
   const ensureProjectMounted = useAppStore((state) => state.ensureProjectMounted);
   const emitNotification = useAppStore((state) => state.emitNotification);
   const [query, setQuery] = useState('');
@@ -103,7 +112,7 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-1">
       {isSearchable ? (
         <input
           type="text"
@@ -115,7 +124,9 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
           className="border-b border-border-soft bg-transparent px-3 py-2 text-body text-foreground outline-none placeholder:text-faint-foreground"
         />
       ) : null}
-      {filtered.length === 0 ? (
+      {projects.length === 0 ? (
+        <p className="px-3 py-2 text-label text-muted-foreground">{emptyHint}</p>
+      ) : filtered.length === 0 ? (
         <EmptyLine className="px-3">No matching projects</EmptyLine>
       ) : (
         <ScrollFade className="max-h-56" viewportClassName="py-0.5" fadeFrom="subtle">
@@ -168,6 +179,13 @@ export const MountProjectList = ({ sessionId, projects, onDone }: Props) => {
           </div>
         </ScrollFade>
       )}
+      <ConnectProjectRow
+        workspaceId={workspaceId}
+        onConnected={(project) => {
+          setFailure(null);
+          setSelectedProjectId(project.id);
+        }}
+      />
     </div>
   );
 };

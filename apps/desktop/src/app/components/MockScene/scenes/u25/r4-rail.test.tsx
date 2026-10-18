@@ -139,7 +139,12 @@ describe('r4 session rail scenes', () => {
     expect(top.queryByRole('button', { name: 'More session actions' })).toBeNull();
     expect(top.getByRole('button', { name: 'Refresh session' })).toBeDefined();
     const foot = rail().querySelector<HTMLElement>('[data-session-foot]');
-    expect(foot?.textContent).toBe('ArchiveDelete…');
+    expect(
+      Array.from(foot?.querySelectorAll('[data-session-foot-action]') ?? []).map((button) =>
+        button.getAttribute('aria-label'),
+      ),
+    ).toEqual(['Archive session', 'Delete session']);
+    expect(foot?.querySelector('[data-session-spend]')).not.toBeNull();
   });
 
   it('r4-rail-session lines the cards up with the page rows, edges, icons and slots', async () => {
@@ -150,7 +155,10 @@ describe('r4 session rail scenes', () => {
     const navSlot = elementIn(rail(), '[data-page-value="runs"]');
     const projects = card('Projects');
     const headerLabel = elementIn(projects, 'h2 button span');
-    const projectIcon = elementIn(projects, '[data-card-project] > button > svg');
+    const projectIcon = elementIn(
+      projects,
+      '[data-card-project] [data-project-row] > button > svg',
+    );
 
     const navLeft = insetOf({ element: navIcon, side: 'left', isOwnPaddingCounted: false });
     expect(insetOf({ element: headerLabel, side: 'left', isOwnPaddingCounted: false })).toBe(

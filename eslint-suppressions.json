@@ -1290,7 +1290,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/frame.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 11
+      "count": 7
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/gitlab.test.tsx": {

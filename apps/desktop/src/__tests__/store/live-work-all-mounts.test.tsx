@@ -207,6 +207,9 @@ describe('live work across every mount of a session', () => {
   let session: Session;
   let agent: Agent;
   let NowChip: Awaited<typeof import('../../app/components/AppTopBar/NowChip')>['NowChip'];
+  let useDoorSignals: Awaited<
+    typeof import('../../app/components/SideColumn/useDoorSignals')
+  >['useDoorSignals'];
   let useRunningAgentCount: Awaited<
     typeof import('../../features/updater/hooks/useRunningAgentCount')
   >['useRunningAgentCount'];
@@ -214,6 +217,8 @@ describe('live work across every mount of a session', () => {
   beforeAll(async () => {
     useAppStore = await importStore();
     NowChip = (await import('../../app/components/AppTopBar/NowChip')).NowChip;
+    useDoorSignals = (await import('../../app/components/SideColumn/useDoorSignals'))
+      .useDoorSignals;
     useRunningAgentCount = (await import('../../features/updater/hooks/useRunningAgentCount'))
       .useRunningAgentCount;
   }, STORE_IMPORT_TIMEOUT_MS);
@@ -248,6 +253,7 @@ describe('live work across every mount of a session', () => {
     const stage = renderHook(() => useSessionStageInfo(session));
     const here = renderHook(() => useRunningHere());
     const footer = renderHook(() => useRunningAgentCount());
+    const doors = renderHook(() => useDoorSignals({}));
     render(<NowChip onOpenScript={vi.fn()} />);
     const columnOf = () =>
       board.result.current.find((group) => group.sessions.some((s) => s.id === session.id))?.key ??
@@ -257,6 +263,7 @@ describe('live work across every mount of a session', () => {
       stage: () => stage.result.current,
       here: () => here.result.current,
       footer: () => footer.result.current,
+      needsYou: () => doors.result.current.board?.count ?? 0,
       chipLabel: () =>
         screen.queryByRole('button', { name: /need|running/ })?.getAttribute('aria-label') ?? null,
     };
@@ -277,7 +284,8 @@ describe('live work across every mount of a session', () => {
 
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'ci-failed' });
     expect(view.columnOf()).toBe('attention');
-    expect(view.chipLabel()).toBe('1 session needs you');
+    expect(view.needsYou()).toBe(1);
+    expect(view.chipLabel()).toBeNull();
   });
 
   it('reads a Bitbucket-only session from its request instead of leaving it on no PR yet', () => {
@@ -307,7 +315,8 @@ describe('live work across every mount of a session', () => {
 
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'ci-failed' });
     expect(view.columnOf()).toBe('attention');
-    expect(view.chipLabel()).toBe('1 session needs you');
+    expect(view.needsYou()).toBe(1);
+    expect(view.chipLabel()).toBeNull();
   });
 
   it('asks for the changes a Bitbucket reviewer requested', () => {
@@ -406,7 +415,8 @@ describe('live work across every mount of a session', () => {
 
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'needs-approval' });
     expect(view.columnOf()).toBe('attention');
-    expect(view.chipLabel()).toBe('1 session needs you');
+    expect(view.needsYou()).toBe(1);
+    expect(view.chipLabel()).toBeNull();
     expect(view.here()).toBe(1);
     expect(view.footer()).toBe(1);
   });
@@ -433,7 +443,8 @@ describe('live work across every mount of a session', () => {
       reason: 'PR #8: checks failing',
     });
     expect(view.columnOf()).toBe('attention');
-    expect(view.chipLabel()).toBe('1 session needs you');
+    expect(view.needsYou()).toBe(1);
+    expect(view.chipLabel()).toBeNull();
   });
 
   it('shows work that is only deciding its next step on the stage, the board and the chip', () => {

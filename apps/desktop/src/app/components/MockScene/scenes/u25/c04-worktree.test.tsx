@@ -103,7 +103,7 @@ describe('the c04 worktree level scenes', () => {
         .querySelector('[data-pr-state]')
         ?.getAttribute('data-pr-state'),
     ).toBe('merged');
-    expect(screen.getByRole('button', { name: 'Add to this session' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 
   it('c04-worktree-pr-behind shows identity, the status line with Rebase and the property block', async () => {

@@ -266,11 +266,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Now chip',
-        desc: 'The top bar counts sessions that need you and running ones, from any screen.',
+        desc: 'The top bar counts running sessions and scripts, from any screen. Sessions that need you put an amber dot on Sessions in the sidebar.',
       },
       {
         term: 'Top bar',
-        desc: 'Now, Limits, Spend and the bell sit on the right, with +N for providers past the first few. Impact opens from Spend, and a button switches between light and dark. Settings, App, General keeps the choice of following your system. Monitoring, the pulse icon, shows the ports in use and says Pinned port down when a pinned one drops.',
+        desc: 'Now, Limits, Spend and the bell sit on the right, with +N for providers past the first few. Spend opens Impact on its Spend tab, Impact is also the last sidebar entry, and a button switches between light and dark. Settings, App, General keeps the choice of following your system. Monitoring, the pulse icon, shows the ports in use and says Pinned port down when a pinned one drops.',
       },
     ],
     links: [{ label: 'Go to the board', target: { kind: 'board' } }],
@@ -285,7 +285,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Sidebar',
-        desc: 'New session comes first, then the doors Sessions, Tasks, Chat, Workflows and Terminal. A + on Chat and on Terminal starts a new chat or terminal, a number counts what runs, and a dot says a chat has a new reply. Pinned and Sessions follow, then Settings, the Goodboy row and the Report a bug button. The Goodboy row opens a menu with the Guide. The sidebar never changes level: it looks the same on every screen, and in a session it only marks the open session row.',
+        desc: 'New session comes first, then the doors Sessions, Tasks, Chat, Workflows, Terminal, Impact and Monitoring. A + on Chat and on Terminal starts a new chat or terminal, a number counts what runs, a dot says a chat has a new reply, and an amber dot on Sessions says sessions need you, on Monitoring that a pinned port is down. Pinned and Sessions follow, then Settings, the Goodboy row and the Report a bug button. The Goodboy row opens a menu with the Guide. The sidebar never changes level: it looks the same on every screen, and in a session it only marks the open session row.',
       },
       {
         term: 'Hide the sidebar',
@@ -301,7 +301,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rail',
-        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. Its top row holds the fold button, then Pin, pressed while it is on, and Refresh. Then come its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions. Auto agents carries an Experimental marker beside its count and Agents a Deprecated one; rest on the row to read why. A dot beside a count says something runs, and a warning dot says a question waits. The Projects card is a tree: click a project to fold its branches, and the arrow before a branch to fold its Pull request, Comments, Files with the lines added and removed, and Checks, one click from the session. Each branch starts with its pull request icon in its color, gray for a draft, green when open, amber in the merge queue, violet when merged and red when closed, then its number and one dot for its worst state. A branch that needs you starts open, and the rail remembers what you open. The Linked card lists the work linked to the session. Each card folds from its title and has a + to add. The foot shows what the session spent, against its limit when it has one, and opens the spend and limit; Archive and Delete sit under it; rename the session from its Overview title or its row in the sidebar. Drag the rail's edge to resize it.",
+        desc: "Click a session and the session rail opens at the left of the page, beside the sidebar. Its top row holds the fold button, then Pin, pressed while it is on, and Refresh. Then come its pages with their counts: Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions. Auto agents carries an Experimental marker beside its count and Agents a Deprecated one; rest on the row to read why. A dot beside a count says something runs, and a warning dot says a question waits. The Projects card is a tree: click a project to fold its branches, and the arrow before a branch to fold its Pull request, Comments, Files with the lines added and removed, and Checks, one click from the session. Each branch starts with its pull request icon in its color, gray for a draft, green when open, amber in the merge queue, violet when merged and red when closed, then its number and one dot for its worst state. A branch that needs you starts open, and the rail remembers what you open. The Linked card lists the work linked to the session. Each card folds from its title and has a + to add: on Projects it adds a workspace project or connects a new repo or folder, and the + at the end of a repo row starts a new branch in it. The foot shows what the session spent, against its limit when it has one, and opens the spend and limit; Archive and Delete sit beside it as icons, and Archive asks first, saying when agents are still running; rename the session from its Overview title or its row in the sidebar. Drag the rail's edge to resize it.",
       },
       {
         term: 'Levels',

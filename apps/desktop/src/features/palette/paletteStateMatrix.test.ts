@@ -38,6 +38,7 @@ const LIVE: SessionFacts = {
   mounts: [],
   worktreePaths: ['/worktrees/ledger-core'],
   prUrl: 'https://example.test/harborline/ledger-core/pull/318',
+  runningAgentCount: 0,
 };
 
 const AGENT: AgentFacts = {

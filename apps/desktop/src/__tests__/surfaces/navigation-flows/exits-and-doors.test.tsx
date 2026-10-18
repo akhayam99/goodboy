@@ -34,12 +34,11 @@ type Door = {
 const DOORS: ReadonlyArray<Door> = [
   { name: 'Tasks', kind: 'inbox', isSidebarPage: true },
   { name: 'Workflows', kind: 'workflow', isSidebarPage: true },
-  { name: 'Impact', kind: 'impact', isSidebarPage: false },
+  { name: 'Impact', kind: 'impact', isSidebarPage: true },
   { name: 'Settings', kind: 'settings', isSidebarPage: false },
   { name: 'Chat', kind: 'chat', isSidebarPage: true },
+  { name: 'Monitoring', kind: 'monitoring', isSidebarPage: true },
 ];
-
-const COLUMN_DOORS: ReadonlyArray<Door> = DOORS.filter((door) => door.kind !== 'impact');
 
 const historyButton = (verb: 'Back' | 'Forward'): HTMLElement => {
   const found = Array.from(
@@ -109,10 +108,6 @@ const currentMarks = (): ReadonlyArray<string> => {
 };
 
 const openDoor = async ({ door }: { readonly door: Door }) => {
-  if (door.kind === 'impact') {
-    await clickButton(/^Spend today/);
-    return;
-  }
   const id = door.kind === 'workflow' ? 'workflows' : door.kind;
   const control = document.querySelector<HTMLElement>(
     `[data-side-column] [data-column-door="${id}"]`,
@@ -218,7 +213,7 @@ describe('doors replace the open studio and content links stack', () => {
 });
 
 describe('exactly one door in the frame is marked current', () => {
-  it.each(COLUMN_DOORS.map((door) => [door.name, door] as const))(
+  it.each(DOORS.map((door) => [door.name, door] as const))(
     'marks only %s while its studio is open',
     async (_name, door) => {
       await boot({ seed: 'pr' });
@@ -241,7 +236,7 @@ describe('exactly one door in the frame is marked current', () => {
   it('marks one door at a time while the doors replace each other', async () => {
     await boot({ seed: 'pr' });
 
-    for (const door of COLUMN_DOORS.filter((candidate) => candidate.kind !== 'settings')) {
+    for (const door of DOORS.filter((candidate) => candidate.kind !== 'settings')) {
       await openDoor({ door });
       expect(currentMarks()).toEqual([door.name]);
     }
@@ -258,7 +253,7 @@ describe('exactly one door in the frame is marked current', () => {
 
     await clickButton(/^Sessions/);
 
-    expect(currentMarks()).toEqual(['Sessions']);
+    expect(currentMarks()).toEqual([expect.stringMatching(/^Sessions\b/)]);
   });
 });
 

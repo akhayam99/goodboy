@@ -25,6 +25,7 @@ const actions = (): ColumnActions => ({
   openNewChat: vi.fn(),
   openNewTerminal: vi.fn(),
   openMonitoring: vi.fn(),
+  openImpact: vi.fn(),
   openSettings: vi.fn(),
   openChangelog: vi.fn(),
   openGuide: vi.fn(),

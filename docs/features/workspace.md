@@ -8,7 +8,7 @@ Begin with an empty folder and no repository. **Start a new project** makes the 
 
 ### Workspace with several projects
 
-Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of a session lists each repo it touches, with its branch and the size of its changes. A project gets a branch only when an agent needs to edit it.
+Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of a session lists each repo it touches, with its branch and the size of its changes. A project gets a branch only when an agent needs to edit it. The **+** on the section adds another workspace project, or connects a new repo or folder to the workspace from the same list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-dark.webp">
@@ -30,7 +30,7 @@ Point agents at the right repo without naming it. Star a project and give it a o
 
 ### Worktrees
 
-Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder with its own changes and pull request, named gb- and six characters such as gb-7k2q9x, with the session and the branch shown next to it. **New branch** adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept.
+Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder with its own changes and pull request, named gb- and six characters such as gb-7k2q9x, with the session and the branch shown next to it. **New branch**, the **+** at the end of a repo's row in the session sidebar, adds one, **Close branch** clears a merged one, and **Reopen** brings back one whose files were kept.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-dark.webp">
@@ -86,7 +86,9 @@ Choose how new session branches are named: a **Branch prefix**, with or without 
 
 ### Monitoring
 
-See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Every group shares one column grid under one sticky header (Port, Label, Opened by, Process, Up, CPU, Memory), a process on many ports is one expandable row, and free ports fold into one quiet line after the ports in use. Expanded rows sit one step in. A terminal or script with no port leaves the Port cell empty and shows its process. A port also open in another worktree shows the warning dot and "+2" after its owner, the worktrees in the tooltip. Leftovers sit on the same grid with their age under Up. Any row can be pinned, hidden with Undo, or stopped. It works on macOS and Linux.
+See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Every group shares one column grid under one sticky header (Port, Label, Opened by, Process, Up, CPU, Memory), a process on many ports is one expandable row, and a group's header carries its count and its free ports (`3 · 2 free`); the free count opens the free ports under the ports in use. Expanded rows sit one step in. A terminal or script with no port says "no port" in faint text and shows its process. A port also open in another worktree shows the warning dot and "+2" after its owner, the worktrees in the tooltip. Leftovers sit on the same grid with their age under Up.
+
+Rows rest quiet. **Stop** and the **⋯** button live in one fixed cell that fills when you rest on a row, tab into it or open its menu, and a right click on any row opens the same menu: Open in browser, Pin or Edit description, Stop, Force stop, Hide or Unpin, Copy address. Stop asks first and names who loses the port; a process that does not exit in time shows **Force stop** in its place, which asks again. A refused stop leaves the row and reports why. With nothing tracked the page says **No ports in use** and offers **Pin a port**. It works on macOS and Linux.
 
 ### Copy settings from another workspace
 

@@ -18,9 +18,9 @@
   **List** switch
   (`SessionViewPrefs.pageView`, kept per workspace in the session view prefs,
   a version 3 record without it reads Board), and **Filter sessions**
-  (`SessionFilterPopover`). Its icon carries one neutral 6px dot while a filter
-  is on. On the Board the filter holds Project and Sort; the List adds Status
-  and Archive (no Group: the List always groups by stage). Repository state is
+  (`SessionFilterPopover`). Its icon carries one primary 6px dot while a filter
+  is on. On the Board the filter holds Sort and Project; the List adds Status
+  and Show archived (no Group: the List always groups by stage). Repository state is
   not here: it lives on the Repositories entry of the top bar (`RepoEntry`).
   New session is not
   here: it is the first row of the column. Nothing else sits on that line, and
@@ -86,20 +86,25 @@
   presence ("where do I go, what else is going on"): its doors and the sessions
   list. The ⌘K palette is transit ("where do I want to be"). There is no footer.
 - **The top bar carries state, identity and movement.** Movement is Back,
-  Forward and Search, clustered in the centre. It never holds a destination
-  again, with one exception: Impact is an icon door beside the bell, because it
-  reads like a figure, not a place you work in. The spend chip is state that
-  opens the studio that owns that number, on Impact's Spend tab, and the Limits
-  chips open the Providers menu. The bar never edits a record in place.
+  Forward and Search, clustered in the centre. It never holds a destination.
+  The spend chip is state that opens the studio that owns that number, on
+  Impact's Spend tab, and the Limits chips open the Providers menu. The bar
+  never edits a record in place.
 - **The column holds every door and never changes level.** New session comes first, then the doors Sessions (the board, ⌘⇧H),
-  Tasks, Chat, Workflows and Terminal; Chat and Terminal each end in a plus
+  Tasks, Chat, Workflows, Terminal, Impact and Monitoring; Chat and Terminal each end in a plus
   (New chat, New terminal) that is always visible. No separator: the Pinned and
   Sessions lists follow, and Settings and the Goodboy row sit at the foot. A
   door's trailing slot is a 6px dot (running, unread, warning); the count is in
-  its tooltip and accessible name, never a colored number. Monitoring is not a
-  door: it is the top bar signal (`MonitoringSignal`), an `activity` icon with a
-  dot while ports are in use and the words "Pinned port down" when a pinned
-  port is free. Inside a session the column stays the same and marks the open
+  its tooltip and accessible name, never a colored number. Sessions carries the
+  warning dot while sessions need you, named "Sessions, 2 need you: Checks
+  failing, 1 question for you" (`doorSignalOf`, `needsYouReasonsOf`). It reads
+  `useNowSessions`, the attention group of the same `useStageGroupedSessions`
+  the board lanes use, and the palette's Needs you rows read it too.
+  Monitoring is the door after Impact, its page has no band and no Close, and
+  it is the one way to the page in the chrome: the top bar holds no Monitoring
+  icon. A pinned port that is down puts the warning dot on it, named "Monitoring,
+  pinned port :5173 is down" (`monitoringSignal` lists the down pins,
+  `doorSignalOf` names them). Inside a session the column stays the same and marks the open
   session's row; the session's own levels live in the session rail at the left
   of the page (see Session rail). The column is on every screen with a workspace: the board, a
   session, the draft and every studio but Settings, which swaps the column's
@@ -225,8 +230,8 @@ drawer instead of the Terminal page.
      session, Tasks, Chat, Workflows, Impact, Notifications, What's new), **App**
      (New session, Settings, Switch theme, Connect a provider, Pair your iPhone,
      Report a bug) and **Help**.
-     On the Board the first section is **Needs you**: the sessions the Now chip
-     lists, each opening its `attentionPlace`. The session pages (Open Overview,
+     On the Board the first section is **Needs you**: the sessions the
+     Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The session pages (Open Overview,
      Questions, Artifacts and the rest), Run defaults, Impact: Spend, Start a new
      project and Open a folder stay out of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:
@@ -588,7 +593,7 @@ dot means attention without a number. Chat with none running shows a primary dot
 The folded column draws the same marks, and its New session icon is as neutral as the open row.
 Terminal counts the terminal tabs still alive, all owners, and Monitoring counts the pinned ports
 and the ports Goodboy started that are in use; a pinned port that is down swaps Monitoring's count
-for a warning dot. The door's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
+for a warning dot and names the port (`Monitoring, pinned port :5173 is down`). The door's accessible name carries the fact (`Chat, unread`, `Terminal, 2 running`,
 `Monitoring, 3 in use`), and all read the store (`useDoorSignals`). While the Monitoring page is closed,
 `useMonitoringSignalRefresh` rescans only the pinned, learned and Goodboy-run ports every 30 seconds
 (`monitor_snapshot` with a port list, merged into the snapshot), only while the window is visible and
@@ -729,8 +734,8 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   the palette). Autopilot has no rail control: Turn on Autopilot and Turn off
   Autopilot (`session.autopilotOn` / `Off`) stay in the sidebar row's right
   click menu and the palette. An archived session shows none of them. The foot
-  (`SessionLevel/SessionLevelFoot`) starts with one quiet line, the session
-  spend (`SessionCostChip`, over `sessionSpendByAgent` and
+  (`SessionLevel/SessionLevelFoot`) is one row: the session spend at the left
+  (`SessionCostChip`, over `sessionSpendByAgent` and
   `sessionSpendPresentation`, the one source of the number): `$3.47`, or
   `$3.47 of $10.00 limit` once a limit is set, the warning tone from 80
   percent and danger past it, `Paused · …` when a pausing limit stopped the
@@ -739,12 +744,19 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   agents and the context cost, Open in Impact); **Raise limit** on a paused
   run opens it on the editor from any session level: off the session level an
   edit host in `SessionFrame` opens it at the rail foot (`sessionSpendLines`).
-  Under it sit **Archive** (⌘⇧A, the registry
-  `session.archive`; **Restore** on an archived session) in gray text and
-  **Delete…** (⌘⇧⌫) in red text (`ghost-danger`: no fill, no border), side by
-  side, half the rail width each, text only, no `⋯`; Delete opens
-  `DeleteSessionConfirm` anchored to the button (end aligned, the `ConfirmPopover` default, flipped above
-  it and kept inside the window by `useDropdownDirection`). Rename has no rail
+  At the right of the same row sit two `sm` icon buttons, no text and no
+  ellipsis, each with a tooltip that names it and its key: **Archive session**
+  (the archive icon, ⌘⇧A, the registry `session.archive`; **Restore session**
+  with the restore icon on an archived session) in gray, and **Delete session**
+  (the trash icon, ⌘⇧⌫) in the danger tone. Archive asks first: the registry
+  verb carries a confirm (`archiveConfirmOf`, "Archive session?", saying how
+  many agents are still running in the session when any run, from
+  `runningAgentCountOf`), so the foot, the sidebar row's right click menu, the
+  palette and ⌘⇧A (`SessionArchiveBridge` triggers the same verb and anchors
+  its confirm at the window corner) all ask the same way, and Undo on the toast
+  still restores it. Restore never asks. Delete opens `DeleteSessionConfirm`
+  anchored to the button (end aligned, the `ConfirmPopover` default, flipped
+  above it and kept inside the window by `useDropdownDirection`). Rename has no rail
   control: a rename
   request (`session-header`, from the palette, the sidebar row's right click
   menu or the shortcut) edits the Overview title in place while that session's
@@ -852,11 +864,22 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   state dot on its corner (`useWorktreeRowState`, shared with the open row); the
   folded rail never draws the session node. A worktree row drills into the worktree level
   (level 2) on its landing entry. The card header carries one `+`
-  (`LevelAddTrigger`, a ghost `xs` icon button named Add to this session: no
-  border, no fill at rest, so the rail stays light), opening `LevelAddMenu`:
-  Add project, Add workspace project, and `New branch in`
-  each repo project of the session; each opens today's popover
-  (`MountProjectAction`, `NewBranchMountAction`) anchored under the label.
+  (`LevelAddTrigger`, a ghost `xs` icon button named Add project: no border,
+  no fill at rest, so the rail stays light) that opens the project picker
+  straight away (`MountProjectAction`, no menu first): the workspace projects
+  not yet in the session, then `Connect a repo or folder`, which picks a folder,
+  links it to the workspace (`useConnectProject`, `addProject`) and lands on its
+  preflight to add it here. A folder of repositories, a project of another
+  workspace or a failure says why in the picker and offers Open workspace
+  projects. Each repo project row ends in its own `+`, named `New branch in
+<project>` (`ProjectRowAdd`), which opens the new branch form
+  (`NewBranchMountAction`) at once. It is the registry verb `project.newBranch`
+  (`features/actions/kinds/project.ts`, offered on a repo project with a mount
+  of a session that is not archived), so any surface that runs the verb opens
+  the same form. It is quiet (`faint-foreground`, `foreground` on row hover or
+  focus) but visible at rest and in the tab order, never hover only; a folder
+  project keeps an empty slot of the same width so the counts line up. An
+  archived session draws neither `+`.
 - **Level 2, the worktree.** Showing the Branch lens is being on level 2
   (`useSessionRailLevel` reads `activeLens === 'branch'`, so history, links and
   keys drill the rail without extra state). It reads: the back row
@@ -994,8 +1017,8 @@ the pull request with its checks (the state word only for Draft, Merged or
 Closed: the stage line already says In review), the linked task chips, one chip
 per project, the
 agent count, the spend and the age, and one ghost action, **Open what needs
-you**, when the session needs you. That action lands where the Now chip lands
-(`attentionPlace`). Moving to another row swaps the card at once, with no second
+you**, when the session needs you. That action lands where the palette's Needs
+you rows land (`attentionPlace`). Moving to another row swaps the card at once, with no second
 wait. Esc and opening a session close it, and the pointer may move onto the
 card. The row, the card and the board card all read `useSessionSummary`, so they
 say the same things in the same words. The board card keeps one signal and
@@ -1005,20 +1028,27 @@ chips.
 **The user chooses what the list shows and in what order.** The sidebar list
 has no "Sessions" eyebrow and no filter row of its own: the Sessions door row
 holds one funnel button in its action slot at the right, **Filter sessions**
-(`SidebarSessionsFilter` over `SessionFilterPopover`), with a neutral 6px dot
-while a filter is on. The door row never regroups, so the popover stays open
+(`SidebarSessionsFilter` over `SessionFilterPopover`), with a primary 6px dot
+while a filter is on (a status, a project or Show archived; `displayStateOf`
+owns that count). The door row never regroups, so the popover stays open
 while the list under it changes grouping. The Sessions page header holds the
-same button. Its popover is a labelled dialog, not a menu of menus. Every
-choice starts on its label at the section's left edge, with its count after
-it (from one; a zero row is dimmed with no number) and one check slot last,
-as in every other menu (`FilterChoice`). Status lists Needs you,
-Running, In review, Building and Done with their counts (`statusFilter` in the
-prefs). Project lists the projects of the sessions with their counts and shows
-only when two or more projects have sessions (the same selection as the board's
-project filter). Archive holds Show archived. Sort offers Needs you first
-[default], Alphabetical, Last activity and Created; Group offers None
-[default], PR state, Stage and Project (the Sessions page drops Group). **Clear filters** shows while a filter
-is active. The choices persist per workspace in the browser storage
+same button. Its popover is a labelled dialog laid out like a display menu,
+in sections spaced by `gap-3` (no unlabeled line inside a floating surface, see
+docs/styling.md). On top, Display: two compact rows, **Sort**
+and **Group**, the label at the left and the current value at the right
+(`DisplayValueRow`); the value is a quiet `Listbox` that opens its choices.
+Sort offers Needs you first [default], Alphabetical, Last activity and Created;
+Group offers None [default], PR state, Stage and Project (the Sessions page
+drops Group). Then **Filter** (an `Eyebrow`), with the captions Status and
+Project over real `Checkbox` rows (`FilterCheckRow`), each named with its count
+("Running, 3"). Status lists only the stages that have sessions, from Needs
+you, Running, In review, Building and Done (`statusFilter` in the prefs; a
+checked stage stays listed at zero so it can be cleared). Project lists the
+projects of the sessions with their counts and shows only when two or more
+projects have sessions (the same selection as the board's project filter).
+Last in Filter, **Show archived**, a `Switch` with the archived count. **Reset** shows
+only while the popover is off its default (a filter on, or Sort or Group
+changed) and puts every choice back. The choices persist per workspace in the browser storage
 (`goodboy:session-view:<workspace id>`, version 3: a version 2 record loads with
 an empty status filter); nothing goes to the database.
 
@@ -1143,7 +1173,7 @@ session is listed once. The first press still lands on the previous session
 wherever it sits. `Tab` and `⇧Tab`
 move while `⌃` is held, releasing `⌃` opens the chosen session and Esc cancels.
 A quick tap flips to the previous session and never draws the list. `⌥⌘↓`
-lands on the next session that needs you, in the Now chip's order, on its
+lands on the next session that needs you, in the board's Needs you order, on its
 `attentionPlace`. A focused terminal and an open dialog keep both keys.
 
 **Peek is a way of showing the column, not a second column.** The overlay
@@ -1556,7 +1586,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   a branch fact and is not counted here), Runs
   `2 running` in the info tone (else `4 runs`, every kept run), Agents `1 running` (else `3 agents`), Artifacts
   `4 artifacts`, Questions `2 open`. The sidebar row and the menu read it
-  through `usePageSummaries`; `Session`
+  through `pageSlotOf` (`features/session/pageSlot.ts`); `Session`
   has no menu once it has children. A run lists the session's runs (Running,
   Finished, a chained run indented under its own with `after ...`); a step
   lists every step of its run in order, the ones not started switched off; an
@@ -1683,16 +1713,18 @@ covered.
   overview with nothing drafted.
 - Left of Back and Forward: the main sidebar toggle (`ColumnToggleButton`, ⌘B), the one
   toggle of the column; the column itself has no toggle row.
-- Right, in this order: the Now chip (needs you, running, scripts, each
-  only when above zero, from `deriveSessionStage` so needs you wins over running; its dots are
-  static, and its tooltip names the unit: "1 session needs you, 2 sessions running"), Limits,
+- Right, in this order: the Now chip (running, scripts, each
+  only when above zero, from `deriveSessionStage` through `useNowSessions`, so a running
+  session that needs you is not counted as running; its dots are static, and its tooltip
+  names the unit: "2 sessions running, 1 script running"), Limits,
   today's spend (hidden until the first cent today) and the bell (a 6px dot at its corner,
   primary when unread, warning when an unread item carries an action; the count is the Unread
   tab badge in its popover). There is no storage chip:
   a control that appears when a threshold is crossed breaks the rule above,
   and "Free 7 GB" read as free disk, not what can go. The "N GB can go" line
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
-  three, and a group with no rows is not drawn. A script row moves to its
+  two, and a group with no rows is not drawn. Sessions that need you are not in
+  the bar: the Sessions door of the column carries their warning dot. A script row moves to its
   session and opens that run's output in the right drawer. `Limits`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and one bar of
@@ -1708,10 +1740,11 @@ covered.
   connected the strip is one `Connect a provider` chip that pulses and opens
   the same menu, and nothing shows while providers are still being detected.
   A bar in the chrome is always a provider window; money is always a figure.
-  Then Spend, the one door to Impact: the figure with `today`, named `Spend
+  Then Spend: the figure with `today`, named `Spend
 today. Open Impact`, opening the Impact studio on its Spend tab (it is never
-  merged with a count). The other Impact tabs are reached inside the studio and
-  from ⌘K. The bar holds no Impact icon. Last the bell, which opens the
+  merged with a count). Impact itself is the last sidebar door, a page like
+  Tasks with no band and no Close, and ⌘K reaches every tab. The bar holds no
+  Impact icon. Last the bell, which opens the
   notification popover.
 
 The bar is an `@container/topbar` and degrades on its own width, never the
@@ -1721,12 +1754,12 @@ viewport, so app zoom takes the same path as a narrow window:
    at every width; the workspace name lives in its tooltip) and
    Limits keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
-   (`need you`, `running`, `scripts`, `today`) drop and Limits keeps
+   (`running`, `scripts`, `today`) drop and Limits keeps
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
 The traffic lights, identity, the movement cluster, the command center, the
-needs-you count, the spend figure, the first Limits chip and the bell
+spend figure, the first Limits chip and the bell
 never hide. A Limits chip is
 the provider glyph and one bar, the percent beside it only above 70%; every
 window lives in its tooltip and its accessible name. A provider with no
@@ -2074,11 +2107,11 @@ one is open at a time.
 - **One title per page; the band holds no title.** `StudioBand` never draws a
   crumb title, an icon or a subtitle; the page `h1` is the one title.
   `STUDIO_META[kind].close` places Close: `none` for the sidebar door pages
-  (Tasks, Chat, Workflows, Terminal: no band, no Close, the top bar Back and
-  Escape leave them), `header` for Monitoring, Notifications and the guide
+  (Tasks, Chat, Workflows, Terminal, Impact, Monitoring: no band, no Close, the
+  top bar Back and Escape leave them), `header` for Notifications and the guide
   (`StudioFrame` passes Close through `PaneActionsContext`, so it is the last
   action of the page title row), `band` for the rest (Settings over the window,
-  Impact, What's new, pairing, Add workspace), whose 40px band holds only Close
+  What's new, pairing, Add workspace), whose 40px band holds only Close
   inside a `PageColumn` of the studio's tier. A band also appears when the body
   claims it with a `StudioTrail` or passes a header accessory. While it draws a
   band, the frame hands its body `UnderTrailContext`, so a studio title does not

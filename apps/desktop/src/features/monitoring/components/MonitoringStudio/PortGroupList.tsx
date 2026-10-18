@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
-import { groupPortRows } from '../../groupPortRows';
-import { FreeFold } from './FreeFold';
+import type { PortLayer } from '../../../actions/kinds/port';
+import type { GroupedPortRows } from '../../groupPortRows';
 import { SharedProcessRow } from './SharedProcessRow';
 
 type RenderParams = {
@@ -10,34 +10,41 @@ type RenderParams = {
 };
 
 type Props = {
-  readonly rows: ReadonlyArray<PortRow>;
+  readonly layer: PortLayer;
+  readonly grouped: GroupedPortRows;
+  readonly isFreeOpen: boolean;
   readonly processOf: (pid: number | null) => MonitorProcess | null;
   readonly now: number;
   readonly renderRow: (params: RenderParams) => ReactNode;
   readonly extraRows?: ReactNode;
 };
 
-export const PortGroupList = ({ rows, processOf, now, renderRow, extraRows }: Props) => {
-  const { inUse, free } = groupPortRows({ rows });
-
-  return (
-    <ul className="flex flex-col">
-      {inUse.map((item) =>
-        item.kind === 'single' ? (
-          renderRow({ row: item.row, isNested: false })
-        ) : (
-          <SharedProcessRow
-            key={item.key}
-            pid={item.pid}
-            rows={item.rows}
-            process={processOf(item.pid)}
-            now={now}
-            renderRow={renderRow}
-          />
-        ),
-      )}
-      {extraRows}
-      {free.length > 0 ? <FreeFold rows={free} renderRow={renderRow} /> : null}
-    </ul>
-  );
-};
+export const PortGroupList = ({
+  layer,
+  grouped,
+  isFreeOpen,
+  processOf,
+  now,
+  renderRow,
+  extraRows,
+}: Props) => (
+  <ul className="flex flex-col">
+    {grouped.inUse.map((item) =>
+      item.kind === 'single' ? (
+        renderRow({ row: item.row, isNested: false })
+      ) : (
+        <SharedProcessRow
+          key={item.key}
+          layer={layer}
+          pid={item.pid}
+          rows={item.rows}
+          process={processOf(item.pid)}
+          now={now}
+          renderRow={renderRow}
+        />
+      ),
+    )}
+    {extraRows}
+    {isFreeOpen ? grouped.free.map((row) => renderRow({ row, isNested: false })) : null}
+  </ul>
+);

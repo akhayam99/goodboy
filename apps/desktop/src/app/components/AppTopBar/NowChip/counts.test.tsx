@@ -27,6 +27,8 @@ import {
   sessionOf,
 } from '../../../../features/workspace/testing/sessionColumn';
 import { NowChip } from './index';
+import { SideColumn } from '../../SideColumn';
+import type { ColumnActions } from '../../SideColumn/columnDoors';
 
 let useAppStore: StoryStore;
 
@@ -56,68 +58,90 @@ const seed = (sessions: ReadonlyArray<Session>, questions: ReadonlyArray<Session
   seedColumn({ store: useAppStore, sessions, questions });
 };
 
-const trigger = () => screen.getByRole('button', { name: /need|running/ });
+const trigger = () => screen.getByRole('button', { name: /running/ });
 
-const wordOf = (word: string) => screen.queryByText(word);
+const noop = () => undefined;
 
-describe('the Now chip counts sessions by their stage', () => {
-  it('counts a running session that has a question as one that needs you', () => {
+const ACTIONS: ColumnActions = {
+  openBoard: noop,
+  openInbox: noop,
+  openChat: noop,
+  openWorkflows: noop,
+  openTerminalStudio: noop,
+  openNewChat: noop,
+  openNewTerminal: noop,
+  openMonitoring: noop,
+  openImpact: noop,
+  openSettings: noop,
+  openChangelog: noop,
+  openGuide: noop,
+  openShortcuts: noop,
+};
+
+const renderShell = () =>
+  render(
+    <>
+      <NowChip onOpenScript={vi.fn()} />
+      <SideColumn
+        scope="workspace"
+        workspaceId={useAppStore.getState().currentWorkspaceId}
+        currentSessionId={null}
+        place={null}
+        actions={ACTIONS}
+      />
+    </>,
+  );
+
+const sessionsDoor = (): HTMLElement => {
+  const door = document.querySelector<HTMLElement>('[data-side-column] [data-column-door="board"]');
+  if (door === null) {
+    throw new Error('no Sessions door');
+  }
+  return door;
+};
+
+describe('the Sessions door and the Now chip count sessions by their stage', () => {
+  it('marks a running session that has a question on the Sessions door, not in the top bar', () => {
     seed([asking], [asking]);
-    render(<NowChip onOpenScript={vi.fn()} />);
+    const { container } = renderShell();
 
-    expect(trigger().getAttribute('aria-label')).toBe('1 session needs you');
-    expect(wordOf('session needs you')).not.toBeNull();
-    expect(wordOf('sessions need you')).toBeNull();
-    expect(screen.queryByText('running')).toBeNull();
+    expect(sessionsDoor().getAttribute('aria-label')).toBe(
+      'Sessions, 1 needs you: 1 question for you',
+    );
+    expect(sessionsDoor().querySelector('[data-door-signal="warning"]')).not.toBeNull();
+    expect(container.textContent).not.toContain('need you');
+    expect(screen.queryByRole('button', { name: /running/ })).toBeNull();
   });
 
-  it('says sessions need you from two on, and counts a held plan', () => {
+  it('counts a held plan beside the question, each reason once', () => {
     seed([asking, planHeld], [asking]);
-    render(<NowChip onOpenScript={vi.fn()} />);
+    renderShell();
 
-    expect(trigger().getAttribute('aria-label')).toBe('2 sessions need you');
-    expect(wordOf('sessions need you')).not.toBeNull();
-    expect(wordOf('session needs you')).toBeNull();
+    expect(sessionsDoor().getAttribute('aria-label')).toBe(
+      'Sessions, 2 need you: 1 question for you, The plan waits for your approval',
+    );
   });
 
-  it('keeps a running session with nothing waiting on you under running', () => {
+  it('keeps a running session with nothing waiting on you under running in the Now chip', async () => {
     seed([asking, working], [asking]);
-    render(<NowChip onOpenScript={vi.fn()} />);
+    renderShell();
 
-    expect(trigger().getAttribute('aria-label')).toBe('1 session needs you, 1 session running');
-  });
-
-  it('lists the running session with a question under needs you, in the words of its reason', async () => {
-    seed([asking, working], [asking]);
-    render(<NowChip onOpenScript={vi.fn()} />);
-
+    expect(trigger().getAttribute('aria-label')).toBe('1 session running');
     await act(async () => {
       fireEvent.click(trigger());
     });
     const panel = screen.getByRole('dialog', { name: 'Now' });
-    const needs = within(within(panel).getByRole('list', { name: 'Needs you' }));
     const running = within(within(panel).getByRole('list', { name: 'Running' }));
-
-    expect(needs.getByText('Running and asking')).toBeDefined();
-    expect(needs.getByText('1 question for you')).toBeDefined();
+    expect(within(panel).queryByRole('list', { name: 'Needs you' })).toBeNull();
     expect(running.queryByText('Running and asking')).toBeNull();
     expect(running.getByText('Running and quiet')).toBeDefined();
   });
 
-  it('goes to the run page when the row is a held plan', async () => {
-    seed([planHeld]);
-    render(<NowChip onOpenScript={vi.fn()} />);
+  it('drops the dot once nothing needs you', () => {
+    seed([working]);
+    renderShell();
 
-    await act(async () => {
-      fireEvent.click(trigger());
-    });
-    const panel = screen.getByRole('dialog', { name: 'Now' });
-    expect(within(panel).getByText('The plan waits for your approval')).toBeDefined();
-    await act(async () => {
-      fireEvent.click(within(panel).getByText('Plan held'));
-    });
-
-    expect(useAppStore.getState().activeLens[planHeld.id]).toBe('workflows');
-    expect(useAppStore.getState().focusedWorkflowRunId[planHeld.id]).toBe('run-plan-held');
+    expect(sessionsDoor().getAttribute('aria-label')).toBe('Sessions');
+    expect(sessionsDoor().querySelector('[data-door-signal]')).toBeNull();
   });
 });

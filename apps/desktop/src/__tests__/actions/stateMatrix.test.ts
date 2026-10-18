@@ -18,9 +18,12 @@ vi.mock('../../features/actions/dispatchAfterNavigation', () => ({
 }));
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { brandId } from '@goodboy/types';
 import type {
   AgentId,
+  IsoDateTime,
   MountId,
+  Project,
   SessionProjectMount,
   TurnState,
   WorktreeStatus,
@@ -1519,9 +1522,37 @@ describe('Create PR while Scribe writes, on the real store', () => {
   });
 });
 
+const FOLDER_KIND: Project['kind'] = 'folder';
+
+const ARCHIVED_AT = brandId<IsoDateTime>({ value: '2026-10-06T10:00:00.000Z' });
+
 describe('project actions, on the real store', () => {
-  it('offers Remove from session while the project has a mount', () => {
+  it('offers New branch and Remove from session while a repo project has a mount', () => {
     seedMount({ pr: null });
+    expect(
+      slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),
+    ).toEqual(['project.newBranch inline', 'project.detach menu']);
+  });
+
+  it('offers no New branch on a folder project', () => {
+    seedMount({ pr: null });
+    useAppStore.setState((state) => ({
+      projects: state.projects.map((project) =>
+        project.id === LEDGER_MOUNT.projectId ? { ...project, kind: FOLDER_KIND } : project,
+      ),
+    }));
+    expect(
+      slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),
+    ).toEqual(['project.detach menu']);
+  });
+
+  it('offers no New branch once the session is archived', () => {
+    seedMount({ pr: null });
+    useAppStore.setState((state) => ({
+      sessions: state.sessions.map((session) =>
+        session.id === SESSION ? { ...session, archivedAt: ARCHIVED_AT } : session,
+      ),
+    }));
     expect(
       slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),
     ).toEqual(['project.detach menu']);

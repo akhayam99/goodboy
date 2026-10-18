@@ -1,15 +1,15 @@
 import { ObjectOverflowMenu } from './components/ObjectOverflowMenu';
-import type { PortLayer } from './kinds/port';
+import { portAnchorKey, portMenuLabel } from './portAnchorKey';
+import type { PortActionTarget } from './types';
 
 type Props = {
-  readonly port: number;
-  readonly layer: PortLayer;
-  readonly description: string;
+  readonly target: PortActionTarget;
 };
 
-export const PortRowMenu = ({ port, layer, description }: Props) => (
+export const PortRowMenu = ({ target }: Props) => (
   <ObjectOverflowMenu
-    label={`Actions for :${port}`}
-    target={{ kind: 'port', facts: { port, layer, description } }}
+    label={portMenuLabel({ target })}
+    target={target}
+    anchorKey={portAnchorKey({ target })}
   />
 );

@@ -755,6 +755,20 @@ body {
   }
 }
 
+@utility row-actions {
+  opacity: 0;
+  @media (prefers-reduced-motion: no-preference) {
+    transition: opacity var(--motion-fast) ease-out;
+  }
+  :where(.group\/row:hover) &,
+  :where(.group\/row:focus-within) &,
+  :where(.group\/row[data-menu-open]) &,
+  &:focus-within,
+  &:has([aria-expanded='true']) {
+    opacity: 1;
+  }
+}
+
 @utility text-eyebrow {
   font-size: var(--text-xs);
   line-height: 16px;

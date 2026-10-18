@@ -147,7 +147,7 @@ export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
   terminal: 'full',
 };
 
-const BAND_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['impact', 'whatsNew', 'release']);
+const BAND_PAGES: ReadonlySet<FramePage> = new Set<FramePage>(['whatsNew', 'release']);
 
 export const frameGeometryOf = ({ page }: FramePageParams): FrameGeometry => {
   const type = PAGE_FRAME[page];

@@ -109,23 +109,10 @@ describe('the u23 frame scenes', () => {
     await waitFor(() => expect(visibleH1s()).toHaveLength(1));
   });
 
-  it('draws the Impact band with its Close on the column of its title', async () => {
-    const { container } = await renderScene('frame-studio-impact');
-
-    const band = container.querySelector('[data-studio-band]') as HTMLElement;
-    expect(band).not.toBeNull();
-    const bandColumn = band.querySelector('[data-page-column]') as HTMLElement;
-    expect(bandColumn.getAttribute('data-width')).toBe('column');
-    expect(within(bandColumn).getByRole('button', { name: /^Close/ })).toBeDefined();
-    await waitFor(() => expect(visibleH1s()).toHaveLength(1));
-    const title = visibleH1s()[0] as HTMLElement;
-    expect(title.closest('[data-page-column]')?.getAttribute('data-width')).toBe('column');
-    expect(title.closest('[data-slot="pane-header"]')?.hasAttribute('data-under-trail')).toBe(true);
-  });
-
   it.each([
     ['frame-studio-inbox', false],
     ['frame-studio-workflows', false],
+    ['frame-studio-impact', false],
     ['frame-studio-guide', true],
   ] as const)('draws no band around %s, its title alone on the column', async (id, hasClose) => {
     const { container } = await renderScene(id);
@@ -153,14 +140,13 @@ describe('the u23 frame scenes', () => {
     expect(screen.getAllByRole('button', { name: 'New workflow' })).toHaveLength(1);
   });
 
-  it('moves the Impact period selector into the title row and keeps the band to crumb and Close', async () => {
+  it('keeps the Impact period selector in the title row of its bandless page', async () => {
     const { container } = await renderScene('frame-studio-impact');
 
     const title = await screen.findByRole('heading', { level: 1, name: 'Impact' });
     const row = title.closest('[data-slot="pane-title-row"]') as HTMLElement;
     expect(within(row).getByRole('tablist', { name: 'Impact window' })).toBeDefined();
-    const band = container.querySelector('[data-studio-band]') as HTMLElement;
-    expect(within(band).queryByRole('tablist')).toBeNull();
+    expect(container.querySelector('[data-studio-band]')).toBeNull();
   });
 
   it('puts the Questions list under the title in one column', async () => {

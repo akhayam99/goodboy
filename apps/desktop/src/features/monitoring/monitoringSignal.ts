@@ -6,7 +6,7 @@ type Params = {
 
 export type MonitoringSignal = {
   readonly inUse: number;
-  readonly hasDownPin: boolean;
+  readonly downPins: ReadonlyArray<number>;
 };
 
 export const monitoringSignal = ({ split }: Params): MonitoringSignal => ({
@@ -15,5 +15,7 @@ export const monitoringSignal = ({ split }: Params): MonitoringSignal => ({
       .filter((row) => row.state === 'listening')
       .map((row) => row.port),
   ).size,
-  hasDownPin: split.pinned.some((row) => row.state === 'free'),
+  downPins: [
+    ...new Set(split.pinned.filter((row) => row.state === 'free').map((row) => row.port)),
+  ].sort((a, b) => a - b),
 });

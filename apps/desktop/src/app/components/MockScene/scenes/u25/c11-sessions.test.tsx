@@ -233,19 +233,19 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
     await settle();
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
     expect(within(dialog).getByRole('group', { name: 'Project' })).toBeDefined();
-    expect(within(dialog).getByRole('group', { name: 'Sort' })).toBeDefined();
+    expect(within(dialog).getByRole('combobox', { name: 'Sort' })).toBeDefined();
     expect(within(dialog).queryByRole('group', { name: 'Repositories' })).toBeNull();
     expect(within(dialog).queryByRole('group', { name: 'Status' })).toBeNull();
   });
 
-  it('the List view filter keeps Status and Archive, and no Group: the list groups by stage', async () => {
+  it('the List view filter keeps Status and Show archived, and no Group: the list groups by stage', async () => {
     await mount('c11-sessions-list');
     fireEvent.click(screen.getByRole('button', { name: 'Filter sessions' }));
     await settle();
     const dialog = screen.getByRole('dialog', { name: 'Filter sessions' });
     expect(within(dialog).getByRole('group', { name: 'Status' })).toBeDefined();
-    expect(within(dialog).getByRole('group', { name: 'Archive' })).toBeDefined();
-    expect(within(dialog).queryByRole('group', { name: 'Group' })).toBeNull();
+    expect(within(dialog).getByRole('switch', { name: /^Show archived/ })).toBeDefined();
+    expect(within(dialog).queryByRole('combobox', { name: 'Group' })).toBeNull();
   });
 
   it('a List row opens its session', async () => {

@@ -77,6 +77,7 @@ const sessionFacts: SessionFacts = {
   mounts: [],
   worktreePaths: ['/work/payments-api'],
   prUrl: null,
+  runningAgentCount: 0,
 };
 
 type Surface = {

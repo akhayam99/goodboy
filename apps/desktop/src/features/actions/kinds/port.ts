@@ -21,7 +21,7 @@ export type PortEditRequest = {
 
 export type PortLayer = 'pinned' | HiddenPortSource;
 
-type PortHolder = {
+export type PortHolder = {
   readonly pid: number | null;
   readonly name: string;
   readonly spawnId: string | null;
@@ -29,7 +29,7 @@ type PortHolder = {
 };
 
 export type PortFacts = {
-  readonly port: number;
+  readonly port: number | null;
   readonly layer: PortLayer;
   readonly description: string;
   readonly holder?: PortHolder;
@@ -53,9 +53,13 @@ type HolderParams = {
   readonly holder: PortHolder;
 };
 
-const isPinned = ({ facts }: FactsParams): boolean => facts.layer === 'pinned';
+const hasPort = ({ facts }: FactsParams): boolean => facts.port !== null;
 
-const isListening = ({ facts }: FactsParams): boolean => facts.holder !== undefined;
+const isPinned = ({ facts }: FactsParams): boolean =>
+  hasPort({ facts }) && facts.layer === 'pinned';
+
+const isListening = ({ facts }: FactsParams): boolean =>
+  hasPort({ facts }) && facts.holder !== undefined;
 
 const canStop = ({ facts }: FactsParams): boolean =>
   facts.holder !== undefined && facts.holder.pid !== null;
@@ -71,6 +75,12 @@ type AddressParams = {
 };
 
 const addressOf = ({ port }: AddressParams): string => `localhost:${port}`;
+
+type WhereParams = {
+  readonly port: number | null;
+};
+
+const whereOf = ({ port }: WhereParams): string => (port === null ? '' : ` on :${port}`);
 
 const stop = async ({ facts, env, isForced }: StopParams): Promise<'done' | 'unchanged'> => {
   const holder = facts.holder;
@@ -102,15 +112,23 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
       icon: SquareArrowOutUpRight,
       group: 'open',
       when: isListening,
-      run: ({ facts }) => openUrl(`http://${addressOf({ port: facts.port })}`),
+      run: ({ facts }) => {
+        if (facts.port === null) {
+          return;
+        }
+        return openUrl(`http://${addressOf({ port: facts.port })}`);
+      },
     },
     {
       id: 'port.pin',
       label: 'Pin',
       icon: Pin,
       group: 'act',
-      when: ({ facts }) => !isPinned({ facts }),
+      when: ({ facts }) => hasPort({ facts }) && !isPinned({ facts }),
       run: async ({ facts, env }) => {
+        if (facts.port === null) {
+          return;
+        }
         await env.getState().pinPort({ port: facts.port, description: facts.description });
       },
     },
@@ -121,6 +139,9 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
       group: 'act',
       when: isPinned,
       run: ({ facts }) => {
+        if (facts.port === null) {
+          return;
+        }
         window.dispatchEvent(
           new CustomEvent<PortEditRequest>(PORT_EDIT_EVENT, { detail: { port: facts.port } }),
         );
@@ -134,6 +155,9 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
       isUndoable: true,
       when: isPinned,
       run: async ({ facts, env }) => {
+        if (facts.port === null) {
+          return;
+        }
         await env.getState().unpinPort({ port: facts.port });
       },
     },
@@ -151,7 +175,7 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
         facts.holder === undefined
           ? null
           : {
-              title: `Stop ${facts.holder.name} on :${facts.port}?`,
+              title: `Stop ${facts.holder.name}${whereOf({ port: facts.port })}?`,
               description: whoLoses({ holder: facts.holder }),
               confirmLabel: 'Stop',
               role: 'alert',
@@ -173,7 +197,7 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
         facts.holder === undefined
           ? null
           : {
-              title: `Force stop ${facts.holder.name} on :${facts.port}?`,
+              title: `Force stop ${facts.holder.name}${whereOf({ port: facts.port })}?`,
               description: `Ends it at once, without letting it save or clean up. ${whoLoses({ holder: facts.holder })}`,
               confirmLabel: 'Force stop',
               role: 'danger',
@@ -186,9 +210,9 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
       icon: EyeOff,
       group: 'act',
       isUndoable: true,
-      when: ({ facts }) => !isPinned({ facts }),
+      when: ({ facts }) => hasPort({ facts }) && !isPinned({ facts }),
       run: async ({ facts, env }) => {
-        if (facts.layer === 'pinned') {
+        if (facts.layer === 'pinned' || facts.port === null) {
           return;
         }
         await env.getState().hidePort({ port: facts.port, source: facts.layer });
@@ -200,7 +224,12 @@ export const PORT_KIND: ObjectKindDefinition<PortActionTarget, PortKindFacts> = 
       icon: Copy,
       group: 'copy',
       when: isListening,
-      run: ({ facts, env }) => env.copyText({ text: addressOf({ port: facts.port }) }),
+      run: ({ facts, env }) => {
+        if (facts.port === null) {
+          return;
+        }
+        return env.copyText({ text: addressOf({ port: facts.port }) });
+      },
     },
   ],
 };

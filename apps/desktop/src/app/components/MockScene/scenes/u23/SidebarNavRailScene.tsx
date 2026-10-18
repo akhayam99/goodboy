@@ -20,6 +20,7 @@ const ACTIONS: ColumnActions = {
   openNewChat: noop,
   openNewTerminal: noop,
   openMonitoring: noop,
+  openImpact: noop,
   openSettings: noop,
   openChangelog: noop,
   openGuide: noop,

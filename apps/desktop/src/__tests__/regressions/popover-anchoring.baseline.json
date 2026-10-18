@@ -11,9 +11,6 @@
   "apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx": {
     "top bar right cluster: the end edge stays on the trigger": 1
   },
-  "apps/desktop/src/app/components/SessionRail/SessionLevel/LevelAddMenu.tsx": {
-    "+ at the end of a rail card header row: the end edge stays on the trigger": 1
-  },
   "apps/desktop/src/features/actions/components/ObjectOverflowMenu/ObjectOverflowTrigger.tsx": {
     "a more menu sits at the end of its row: align right maps to end": 1,
     "a more menu defaults to the end edge of its trigger": 1

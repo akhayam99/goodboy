@@ -39,6 +39,15 @@ const DOOR_PAGES: ReadonlyArray<PageRoot> = [
     files: ['features/notifications/components/NotificationsStudio/index.tsx'],
   },
   { page: 'guide', files: ['features/settings/components/GuideStudio/parts/GuideContent.tsx'] },
+  {
+    page: 'impact',
+    files: [
+      'features/impact/components/ImpactStudio/OverviewPanel.tsx',
+      'features/impact/components/ImpactStudio/ShippedPanel.tsx',
+      'features/impact/components/ImpactStudio/FlowPanel.tsx',
+      'features/impact/components/ImpactStudio/SpendPanel.tsx',
+    ],
+  },
 ];
 
 const SESSION_PAGES: ReadonlyArray<PageRoot> = [
@@ -90,6 +99,7 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   monitoring: 'column',
   notifications: 'column',
   guide: 'column',
+  impact: 'column',
   overview: 'column',
   runs: 'column',
   run: 'column',

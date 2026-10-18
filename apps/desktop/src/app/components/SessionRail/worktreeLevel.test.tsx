@@ -7,6 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../store/storyHarness')).tauriEventModuleMock(),
 );
 vi.mock('@goodboy/db', async () => (await import('../../../store/storyHarness')).dbModuleMock());
+vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../../store/storyHarness')).dbLibModuleMock(),
 );
@@ -14,7 +15,13 @@ vi.mock('../../../shared/lib/db', async () =>
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId } from '@goodboy/types';
-import type { IsoDateTime, MountId, PullRequestState, WorktreeStatus } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountId,
+  Project,
+  PullRequestState,
+  WorktreeStatus,
+} from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import type { MountGitlabMrState } from '../../../store/slices/gitlab-mr/state';
 import {
@@ -38,6 +45,8 @@ import {
   sessionOf,
 } from '../../../features/workspace/testing/sessionColumn';
 import { SessionRail } from './index';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { runObjectAction } from '../../../features/actions/registry';
 
 let useAppStore: StoryStore;
 
@@ -112,6 +121,8 @@ const worktreeLayer = (): HTMLElement => {
 };
 
 const ledgerMount = mountOf({ session, project: ledgerCore });
+
+const FOLDER: Project['kind'] = 'folder';
 
 const seedTwoProjects = ({ status }: SeedParams) => {
   seed({ status });
@@ -353,25 +364,245 @@ describe('the worktree rows of the session level', () => {
     );
   });
 
-  it('adds from one Add word: a project, a workspace project or a new branch in each repo', async () => {
+  it('opens the project picker straight from the card plus, with Connect a repo or folder in it', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await mountRail();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add to this session' }));
-    const panel = within(screen.getByRole('dialog', { name: 'Add to this session' }));
-    const labels = panel.getAllByRole('button').map((item) => item.textContent ?? '');
-    expect(labels).toEqual([
-      'Add project',
-      'Add workspace project',
-      'New branch in payments-api',
-      'New branch in ledger-core',
-    ]);
+    const card = within(screen.getByRole('group', { name: 'Projects' }));
+    fireEvent.click(card.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
 
-    fireEvent.click(panel.getByRole('button', { name: 'New branch in ledger-core' }));
+    expect(picker.getByRole('button', { name: 'Add notify-relay' })).toBeDefined();
+    expect(picker.queryByRole('button', { name: 'Add payments-api' })).toBeNull();
+    expect(picker.getByRole('button', { name: 'Connect a repo or folder' })).toBeDefined();
+    expect(picker.queryByRole('button', { name: /^New branch in/ })).toBeNull();
+  });
+
+  it('connects a new repo from the picker and lands on its preflight to add it here', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({}),
+      worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+      detect_editors: () => [],
+      validate_git_repo: () => ({
+        isRepo: true,
+        rootPath: '/repos/acme-docs',
+        resolvedPath: '/repos/acme-docs',
+        defaultBranch: 'main',
+        error: null,
+        errorKind: null,
+      }),
+      scan_child_repos: () => [],
+      repo_identity: () => ({ rootCommits: [], remoteUrl: null }),
+      worktree_list_branch_names: () => ['main'],
+    });
+    vi.mocked(openDialog).mockResolvedValueOnce('/repos/acme-docs');
+    await mountRail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    await act(async () => {
+      fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
+    });
+    await settle();
+
+    const added = useAppStore.getState().projects.find((project) => project.name === 'acme-docs');
+    expect(added?.workspaceId).toBe(session.workspaceId);
+    expect(added?.kind).toBe('repo');
+    expect(await screen.findByRole('region', { name: 'Add acme-docs' })).toBeDefined();
+  });
+
+  it('keeps the picker and offers workspace projects when the folder cannot connect', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({}),
+      detect_editors: () => [],
+      validate_git_repo: () => {
+        throw new Error('folder not found');
+      },
+    });
+    vi.mocked(openDialog).mockResolvedValueOnce('/repos/gone');
+    const before = useAppStore.getState().projects.length;
+    await mountRail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    await act(async () => {
+      fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
+    });
+    await settle();
+
+    expect(picker.getByRole('alert').textContent).toContain('folder not found');
+    expect(picker.getByRole('button', { name: 'Open workspace projects' })).toBeDefined();
+    expect(picker.getByRole('button', { name: 'Add notify-relay' })).toBeDefined();
+    expect(useAppStore.getState().projects).toHaveLength(before);
+  });
+
+  it('shows Rebase all as the first line of the Projects card when two branches are behind', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({ behind: 3 }) });
+    await mountRail();
+
+    const card = screen.getByRole('group', { name: 'Projects' });
+    await waitFor(() => expect(card.querySelector('[data-rebase-all]')).not.toBeNull());
+    const rebaseAll = card.querySelector<HTMLElement>('[data-rebase-all]');
+    if (rebaseAll === null) {
+      throw new Error('the Rebase all line is missing');
+    }
+    expect(rebaseAll.textContent).toContain('2 branches behind');
+    expect(within(rebaseAll).getByRole('button', { name: /Rebase all/ })).toBeDefined();
+    expect(card.querySelector('[data-project-row]')?.compareDocumentPosition(rebaseAll)).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING,
+    );
+    expect(within(card).getByRole('button', { name: 'Add project' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'New branch in ledger-core' })).toBeDefined();
+  });
+
+  it('keeps Rebase all out of the Projects card when only one branch is behind', async () => {
+    seed({ status: worktreeStatusOf({ behind: 3 }) });
+    await mountRail();
+
+    expect(
+      screen.getByRole('group', { name: 'Projects' }).querySelector('[data-rebase-all]'),
+    ).toBeNull();
+  });
+
+  it('names the reason in the picker when the folder cannot be read', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({}),
+      detect_editors: () => [],
+      validate_git_repo: () => ({
+        isRepo: false,
+        rootPath: null,
+        resolvedPath: '/repos/locked',
+        defaultBranch: null,
+        error: null,
+        errorKind: 'permission_denied',
+      }),
+    });
+    vi.mocked(openDialog).mockResolvedValueOnce('/repos/locked');
+    const before = useAppStore.getState().projects.length;
+    await mountRail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    await act(async () => {
+      fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
+    });
+    await settle();
+
+    expect(picker.getByRole('alert').textContent).toContain("can't read that folder");
+    expect(picker.getByRole('button', { name: 'Open workspace projects' })).toBeDefined();
+    expect(useAppStore.getState().projects).toHaveLength(before);
+  });
+
+  it('sends a folder holding several repos to workspace projects instead of adding it', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({}),
+      detect_editors: () => [],
+      validate_git_repo: () => ({
+        isRepo: false,
+        rootPath: null,
+        resolvedPath: '/repos/harborline',
+        defaultBranch: null,
+        error: null,
+        errorKind: 'not_a_repository',
+      }),
+      scan_child_repos: () => [
+        { name: 'acme-docs', path: '/repos/harborline/acme-docs', defaultBranch: 'main' },
+        { name: 'acme-web', path: '/repos/harborline/acme-web', defaultBranch: 'main' },
+      ],
+    });
+    vi.mocked(openDialog).mockResolvedValueOnce('/repos/harborline');
+    const before = useAppStore.getState().projects.length;
+    await mountRail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add project' }));
+    const picker = within(await screen.findByRole('dialog', { name: 'Add project' }));
+    await act(async () => {
+      fireEvent.click(picker.getByRole('button', { name: 'Connect a repo or folder' }));
+    });
+    await settle();
+
+    expect(picker.getByRole('alert').textContent).toContain('several repositories');
+    expect(picker.getByRole('button', { name: 'Open workspace projects' })).toBeDefined();
+    expect(useAppStore.getState().projects).toHaveLength(before);
+  });
+
+  it('starts a new branch from the plus on each repo row, with no menu between', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    await mountRail();
+
+    const plus = screen.getByRole('button', { name: 'New branch in ledger-core' });
+    expect(plus.closest('[data-project-row]')?.textContent).toContain('ledger-core');
+    expect(screen.getByRole('button', { name: 'New branch in payments-api' })).toBeDefined();
+    fireEvent.click(plus);
+
+    expect(await screen.findByRole('dialog', { name: 'New branch in ledger-core' })).toBeDefined();
+    expect(screen.queryByRole('dialog', { name: 'Add project' })).toBeNull();
+  });
+
+  it('opens the same new branch form when the registry action runs', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    await mountRail();
+
+    await act(async () => {
+      await runObjectAction({
+        target: { kind: 'project', sessionId, projectId: ledgerCore.id },
+        actionId: 'project.newBranch',
+        env: {
+          getState: useAppStore.getState,
+          showToast: vi.fn(),
+          copyText: vi.fn(async () => undefined),
+          origin: 'palette',
+          anchorKey: null,
+          viewing: null,
+        },
+      });
+    });
+    await settle();
     await settle();
     await settle();
 
     expect(await screen.findByRole('dialog', { name: 'New branch in ledger-core' })).toBeDefined();
+  });
+
+  it('gives a folder project no branch plus and keeps its row aligned', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    useAppStore.setState((state) => ({
+      projects: state.projects.map((project) =>
+        project.id === ledgerCore.id ? { ...project, kind: FOLDER } : project,
+      ),
+    }));
+    await mountRail();
+
+    expect(screen.queryByRole('button', { name: 'New branch in ledger-core' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'New branch in payments-api' })).toBeDefined();
+    const folderRow = document.querySelector(
+      '[data-card-project="ledger-core"] [data-project-row]',
+    );
+    expect(folderRow?.querySelector('[data-project-row-slot]')).not.toBeNull();
+  });
+
+  it('draws neither plus on an archived session', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    const archived = {
+      ...session,
+      archivedAt: brandId<IsoDateTime>({ value: '2026-10-06T10:00:00.000Z' }),
+    };
+    useAppStore.setState((state) => ({
+      sessions: state.sessions.map((entry) => (entry.id === sessionId ? archived : entry)),
+    }));
+    render(
+      <ToastProvider>
+        <SessionRail session={archived} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(screen.queryByRole('button', { name: 'Add project' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^New branch in/ })).toBeNull();
   });
 });
 
@@ -529,7 +760,7 @@ describe('the worktree pages inside the Projects card', () => {
       throw new Error('the Projects toggle sits in no card');
     }
     await waitFor(() => expect(card.querySelector('[data-card-signal]')).not.toBeNull());
-    expect(within(card).getByRole('button', { name: 'Add to this session' })).toBeDefined();
+    expect(within(card).getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 });
 

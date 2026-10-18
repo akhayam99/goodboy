@@ -1566,6 +1566,11 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
         dbWrites(/UPDATE sessions/).filter((call) => call.params.includes(ctx.sessionId)),
       ).toHaveLength(0);
       await press('session.archive')();
+      const confirm = await screen.findByRole('dialog', { name: 'Archive session?' });
+      expect(
+        dbWrites(/archived_at/).filter((call) => call.params.includes(ctx.sessionId)),
+      ).toHaveLength(0);
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Archive session' }));
     },
     lands: async (ctx) =>
       waitFor(

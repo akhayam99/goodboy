@@ -117,7 +117,7 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(projects.getByText('#331')).toBeDefined();
     expect(within(level.getByRole('group', { name: 'Linked' })).getByText('NW-142')).toBeDefined();
     const adds = [
-      projects.getByRole('button', { name: 'Add to this session' }),
+      projects.getByRole('button', { name: 'Add project' }),
       within(level.getByRole('group', { name: 'Linked' })).getByRole('button', {
         name: 'Link work',
       }),

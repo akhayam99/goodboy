@@ -137,6 +137,27 @@ describe('the port kind, live verbs', () => {
     expect(ids).toEqual(['port.openInBrowser', 'port.pin', 'port.hide', 'port.copyAddress']);
   });
 
+  it('offers only Stop and Force stop on a process that holds no port', () => {
+    const facts: PortFacts = {
+      port: null,
+      layer: 'goodboy',
+      description: '',
+      holder: {
+        pid: 6301,
+        name: 'zsh',
+        spawnId: 'terminal-6301',
+        owner: 'Terminal · payments-api',
+      },
+    };
+    const stop = bound({ facts })
+      .resolve()
+      .find((action) => action.id === 'port.stop');
+
+    expect(idsOf({ facts })).toEqual(['port.stop', 'port.forceStop']);
+    expect(stop?.confirm?.title).toBe('Stop zsh?');
+    expect(stop?.confirm?.description).toBe('Terminal · payments-api stops with it.');
+  });
+
   it('asks before Stop and names who loses the port', () => {
     const stop = bound({ facts: OWNED })
       .resolve()

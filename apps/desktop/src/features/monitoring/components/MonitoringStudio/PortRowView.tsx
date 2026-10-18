@@ -1,59 +1,54 @@
 import { useState, type ReactNode } from 'react';
 import { ROW_HOVER, StatusDot, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
-import { ActionsCell } from './ActionsCell';
+import type { PortLayer } from '../../../actions/kinds/port';
+import { portAnchorKey } from '../../../actions/portAnchorKey';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { usePortTarget } from '../../hooks/usePortTarget';
 import { CommandLine } from './CommandLine';
 import { MetricCells } from './MetricCells';
 import { OwnerCell } from './OwnerCell';
 import { PORT_GRID } from './portGrid';
+import { PortRowActions } from './PortRowActions';
 import { ProcessCell } from './ProcessCell';
-import { StopControl } from './StopControl';
-import { folderName } from '../../../../store/slices/terminal/terminalOwner';
 
 type Props = {
   readonly row: PortRow;
+  readonly layer: PortLayer;
   readonly process: MonitorProcess | null;
   readonly now: number;
   readonly name: string;
   readonly nameSlot?: ReactNode;
-  readonly actions?: ReactNode;
   readonly isNested?: boolean;
 };
 
 export const PortRowView = ({
   row,
+  layer,
   process,
   now,
   name,
   nameSlot,
-  actions,
   isNested = false,
 }: Props) => {
   const [isCommandOpen, setIsCommandOpen] = useState(false);
-  const isExternal = row.owner?.kind === 'external';
+  const target = usePortTarget({ row, layer });
+  const menu = useObjectMenuTrigger({ target, anchorKey: portAnchorKey({ target }) });
   const hasCollision = row.collision !== undefined;
-  const tone = hasCollision ? 'warning' : 'neutral';
-  const spawnId =
-    row.owner?.kind === 'script' || row.owner?.kind === 'terminal' || row.owner?.kind === 'agent'
-      ? row.owner.spawnId
-      : null;
-  const stopName = row.processName ?? `Process ${row.pid ?? ''}`.trim();
   const canOpen = process !== null && !isNested;
 
   return (
     <li
       data-port-row={row.port}
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
       className={cn('group/row relative flex flex-col rounded-md', canOpen && ROW_HOVER)}
     >
       <div className={cn(PORT_GRID, 'min-h-8 text-label')}>
-        {isNested ? null : (
-          <StatusDot
-            tone={tone}
-            size="md"
-            className={cn(isExternal && !hasCollision && 'opacity-40')}
-            role="status"
-            ariaLabel={hasCollision ? 'Collision' : 'In use'}
-          />
+        {isNested ? null : hasCollision ? (
+          <StatusDot tone="warning" size="md" role="status" ariaLabel="Collision" />
+        ) : (
+          <span aria-hidden />
         )}
         <span
           className={cn(
@@ -87,19 +82,7 @@ export const PortRowView = ({
         ) : (
           <MetricCells process={process} now={now} />
         )}
-        <ActionsCell
-          stop={
-            row.pid === null || isNested ? null : (
-              <StopControl
-                pid={row.pid}
-                name={stopName}
-                folder={folderName({ path: process?.cwd ?? null })}
-                spawnId={spawnId}
-              />
-            )
-          }
-          actions={actions}
-        />
+        <PortRowActions target={target} hasStop={!isNested} hasMenu />
         {isCommandOpen && process !== null ? <CommandLine args={process.argsMasked} /> : null}
       </div>
     </li>

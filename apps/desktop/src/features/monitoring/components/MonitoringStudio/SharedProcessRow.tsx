@@ -3,13 +3,12 @@ import { ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_HOVER, cn } from '@goodboy/ui';
 import type { MonitorProcess, PortRow } from '@goodboy/core';
 import { portListText } from '../../portListText';
-import { ActionsCell } from './ActionsCell';
+import type { PortLayer } from '../../../actions/kinds/port';
 import { MetricCells } from './MetricCells';
 import { OwnerCell } from './OwnerCell';
 import { PORT_GRID } from './portGrid';
 import { ProcessCell } from './ProcessCell';
-import { StopControl } from './StopControl';
-import { folderName } from '../../../../store/slices/terminal/terminalOwner';
+import { SharedProcessActions } from './SharedProcessActions';
 
 type RenderParams = {
   readonly row: PortRow;
@@ -17,6 +16,7 @@ type RenderParams = {
 };
 
 type Props = {
+  readonly layer: PortLayer;
   readonly pid: number;
   readonly rows: ReadonlyArray<PortRow>;
   readonly process: MonitorProcess | null;
@@ -26,7 +26,7 @@ type Props = {
 
 const PORTS_SHOWN = 3;
 
-export const SharedProcessRow = ({ pid, rows, process, now, renderRow }: Props) => {
+export const SharedProcessRow = ({ layer, pid, rows, process, now, renderRow }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const first = rows[0];
   if (first === undefined) {
@@ -34,12 +34,6 @@ export const SharedProcessRow = ({ pid, rows, process, now, renderRow }: Props) 
   }
   const processName = first.processName ?? `Process ${pid}`;
   const portCount = new Set(rows.map((row) => row.port)).size;
-  const spawnId =
-    first.owner?.kind === 'script' ||
-    first.owner?.kind === 'terminal' ||
-    first.owner?.kind === 'agent'
-      ? first.owner.spawnId
-      : null;
 
   return (
     <li data-shared-pid={pid} className="flex flex-col">
@@ -65,16 +59,7 @@ export const SharedProcessRow = ({ pid, rows, process, now, renderRow }: Props) 
             onToggle={() => setIsOpen((wasOpen) => !wasOpen)}
           />
           <MetricCells process={process} now={now} />
-          <ActionsCell
-            stop={
-              <StopControl
-                pid={pid}
-                name={processName}
-                folder={folderName({ path: process?.cwd ?? null })}
-                spawnId={spawnId}
-              />
-            }
-          />
+          <SharedProcessActions row={first} layer={layer} />
         </div>
       </div>
       {isOpen ? (

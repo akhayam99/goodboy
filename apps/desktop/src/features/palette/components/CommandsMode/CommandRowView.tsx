@@ -29,7 +29,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
   const { item, positions } = row;
   const Icon = item.icon;
   const isBlocked = item.isBlocked === true;
-  const isDanger = item.action?.group === 'danger' && item.action.confirm !== null;
+  const isDanger = item.action?.group === 'danger' && item.action.confirm?.role === 'danger';
   const label =
     item.action?.confirm != null || item.confirm != null ? `${item.label}…` : item.label;
   const hasLevel = item.level !== undefined && item.level.kind !== 'confirm-run';

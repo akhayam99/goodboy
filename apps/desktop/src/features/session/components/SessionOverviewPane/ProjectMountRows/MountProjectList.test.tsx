@@ -58,7 +58,15 @@ vi.mock('./useMountPreflight', () => ({ useMountPreflight: () => h.preflight }))
 import { MountProjectList } from './MountProjectList';
 
 const renderList = () =>
-  render(<MountProjectList sessionId={SID} projects={[repoProject]} onDone={vi.fn()} />);
+  render(
+    <MountProjectList
+      sessionId={SID}
+      workspaceId={WID}
+      emptyHint=""
+      projects={[repoProject]}
+      onDone={vi.fn()}
+    />,
+  );
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -179,7 +187,15 @@ describe('MountProjectList groups', () => {
 
   it('heads Starred and Other projects at six projects with a star', () => {
     const projects = NAMES.map((name, index) => named({ name, isStarred: index < 2 }));
-    render(<MountProjectList sessionId={SID} projects={projects} onDone={vi.fn()} />);
+    render(
+      <MountProjectList
+        sessionId={SID}
+        workspaceId={WID}
+        emptyHint=""
+        projects={projects}
+        onDone={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText('Starred')).toBeDefined();
     expect(screen.getByText('Other projects')).toBeDefined();
@@ -189,13 +205,27 @@ describe('MountProjectList groups', () => {
   it('shows no headings under six projects or with nothing starred', () => {
     const fewer = NAMES.slice(0, 5).map((name, index) => named({ name, isStarred: index < 2 }));
     const { unmount } = render(
-      <MountProjectList sessionId={SID} projects={fewer} onDone={vi.fn()} />,
+      <MountProjectList
+        sessionId={SID}
+        workspaceId={WID}
+        emptyHint=""
+        projects={fewer}
+        onDone={vi.fn()}
+      />,
     );
     expect(screen.queryByText('Starred')).toBeNull();
     unmount();
 
     const none = NAMES.map((name) => named({ name, isStarred: false }));
-    render(<MountProjectList sessionId={SID} projects={none} onDone={vi.fn()} />);
+    render(
+      <MountProjectList
+        sessionId={SID}
+        workspaceId={WID}
+        emptyHint=""
+        projects={none}
+        onDone={vi.fn()}
+      />,
+    );
     expect(screen.queryByText('Other projects')).toBeNull();
   });
 });

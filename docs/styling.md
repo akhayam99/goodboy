@@ -287,7 +287,7 @@ A page with no entry fails typecheck. Four frame types:
 | split  | Chat, Guide, What's new, Tasks, Notifications, Branch                                                                             | `[rail 288][detail]`                | the detail's column, in its detail |
 
 `frameGeometryOf({ page })` returns the type, the space above the title (the 12px
-header inset, or the 40px band on Impact, What's new and a release), the title row
+header inset, or the 40px band on What's new and a release), the title row
 (32px), the title centre (28px, 56px under a band), the drawer row (28px) and
 `titleLeft` read from the type.
 `STUDIO_META[kind].page` names the page of a studio and `frameTierOf` gives the tier its band
@@ -553,6 +553,20 @@ draws it. Every control in the top bar, every switch and every checkbox composes
 `FOCUS_RING`, and the `controls` journey tabs through the bar and a Settings row
 and checks the ring by the constant, not by a class written in a test. A
 selected card is a fill plus a check, never a ring, a border and a wash together.
+
+## Row actions rest quiet
+
+A row that carries verbs keeps them in one fixed cell and draws them with
+`row-actions` (`styles.css`), on a row that is a `group/row`. The cell is empty
+at rest and fills on hover, on focus inside the row, while a menu or confirm
+opened from it is open (`aria-expanded`), and while the row's right click menu
+is open (`data-menu-open`). The verbs stay in the tab order, so the keyboard
+reaches them without a hover. Every verb is also in the row's registry menu on
+right click and Shift+F10. Write the reveal as `row-actions`, never as
+`opacity-0` with `group-hover:opacity-100`: `no-hover-only-actions.test.ts`
+counts the second form. A status the user must see (Stopping, Force stop) is
+not a verb and sits outside the reveal. `MonitoringStudio/ActionsCell.tsx` is
+the reference.
 
 ## An expanded row is one group, not two
 

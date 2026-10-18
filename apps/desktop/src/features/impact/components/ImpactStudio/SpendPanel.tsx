@@ -17,7 +17,7 @@ type Props = {
 };
 
 export const SpendPanel = ({ frame, spend, metrics, onSelectProvider, onSelectSession }: Props) => (
-  <PaneShell scroll="body" {...frame}>
+  <PaneShell scroll="body" page="impact" {...frame}>
     <SpendSection
       providers={spend.providers}
       alerts={spend.alerts}

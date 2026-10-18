@@ -85,6 +85,10 @@ describe('the secondary Explore scenes', () => {
     mount({ id: 'u26s-explore-nomount' });
 
     expect(await screen.findByRole('heading', { name: 'No folder to browse' }, WAIT)).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
+    const offered = screen
+      .getAllByRole('button', { name: 'Add project' })
+      .filter((button) => !button.hasAttribute('data-level-add'));
+    expect(offered).toHaveLength(1);
+    expect(offered[0]?.textContent).toBe('Add project');
   });
 });

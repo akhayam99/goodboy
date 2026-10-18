@@ -87,10 +87,6 @@ vi.mock('../../../features/workspace/components/RepoEntry', () => ({
   RepoEntry: () => <span data-testid="repo-entry" />,
 }));
 
-vi.mock('./MonitoringSignal', () => ({
-  MonitoringSignal: () => <span data-testid="monitoring-signal" />,
-}));
-
 beforeEach(() => {
   hooks.sessions = [];
   hooks.groups = [];
@@ -233,7 +229,8 @@ describe('AppTopBar', () => {
     const onOpenSpend = vi.fn();
     renderBar({ onOpenSpend });
 
-    fireEvent.click(screen.getByRole('button', { name: '1 session needs you, 1 session running' }));
+    expect(screen.queryByRole('button', { name: /need you/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '1 session running' }));
     expect(onOpenSpend).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog', { name: 'Now' })).toBeDefined();
     fireEvent.keyDown(window, { key: 'Escape' });

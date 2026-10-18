@@ -24,6 +24,8 @@ import { branchPlace } from '../../../store/slices/navigation/place';
 import { openSessionTerminal } from '../../terminal/openSessionTerminal';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
+import { archiveConfirmOf } from '../../session/archiveConfirmOf';
+import { runningAgentCountOf } from '../../../store/slices/live-work/runningAgentCountOf';
 import { createAgentEventName } from '../../session/createAgentEventName';
 import { refreshSession } from '../../session/refreshSession';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
@@ -65,6 +67,7 @@ export type SessionFacts = {
   readonly worktreePaths: ReadonlyArray<string>;
   readonly prUrl: string | null;
   readonly hasLinkedIssues: boolean;
+  readonly runningAgentCount: number;
 };
 
 type SessionWorktree = {
@@ -454,6 +457,7 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     shortcut: 'session.archive',
     isUndoable: true,
     when: isLive,
+    confirm: ({ facts }) => archiveConfirmOf({ runningAgentCount: facts.runningAgentCount }),
     run: ({ facts, env }) => archive({ env, session: facts.session }),
   },
   {
@@ -544,6 +548,7 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       mounts,
       worktreePaths,
       prUrl: state.sessionGithub[target.sessionId]?.pr?.url ?? null,
+      runningAgentCount: runningAgentCountOf({ state, sessionId: target.sessionId }),
     };
   },
   actions: SESSION_ACTIONS,

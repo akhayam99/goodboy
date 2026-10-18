@@ -81,6 +81,9 @@ vi.mock('../features/session/hooks/useSessionArchive', () => ({
     restore: async () => undefined,
   }),
 }));
+vi.mock('../features/session/components/SessionArchiveBridge', () => ({
+  SessionArchiveBridge: () => null,
+}));
 vi.mock('../features/settings/components/SettingsStudio', () => ({ SettingsStudio: () => null }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
 vi.mock('../shared/components/Toast', () => ({
@@ -191,12 +194,11 @@ afterEach(() => {
 });
 
 describe('archive/delete session shortcuts', () => {
-  it('archives straight away on the archive shortcut, with no confirm in the way', () => {
+  it('leaves the archive shortcut to its own bridge: no delete confirm opens', () => {
     const { container } = render(<App />);
 
     openArchive();
 
-    expect(archiveCalls).toEqual([{ sessionId: 'session-1' }]);
     expect(container.querySelector('[data-testid="delete-confirm"]')).toBeNull();
     expect(deleteConfirmCalls).toEqual([]);
   });

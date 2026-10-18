@@ -8,6 +8,7 @@ import { countSlotText } from '../../../../shared/utils/countSlotText';
 import type { EntryDiffStat } from '../../../../features/branch/worktreeEntryFacts';
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';
 import { WorktreeRow } from './WorktreeRow';
+import { ProjectRowAdd } from './ProjectRowAdd';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -37,34 +38,41 @@ export const ProjectTree = ({
 
   return (
     <div data-card-project={group.projectName} className="flex flex-col">
-      <SelectableRow
-        selected={false}
-        isExpanded={isOpen}
-        ariaLabel={`${group.projectName}, ${rows.length} ${branchWord}`}
-        onClick={() => tree.toggle(node)}
-        className="h-7 items-center gap-2 pl-1 pr-0 text-ui"
-      >
-        <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <span className="min-w-0 flex-1 truncate text-left">{group.projectName}</span>
-        {count === null ? null : (
-          <span
-            data-project-count=""
-            className="shrink-0 text-meta tabular-nums text-faint-foreground"
-          >
-            {count}
+      <div data-project-row="" className="group/project-row flex min-w-0 items-center">
+        <SelectableRow
+          selected={false}
+          isExpanded={isOpen}
+          ariaLabel={`${group.projectName}, ${rows.length} ${branchWord}`}
+          onClick={() => tree.toggle(node)}
+          className="h-7 min-w-0 flex-1 items-center gap-2 pl-1 pr-0 text-ui"
+        >
+          <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+          <span className="min-w-0 flex-1 truncate text-left">{group.projectName}</span>
+          {count === null ? null : (
+            <span
+              data-project-count=""
+              className="shrink-0 text-meta tabular-nums text-faint-foreground"
+            >
+              {count}
+            </span>
+          )}
+          <span className="flex w-6 shrink-0 items-center justify-center">
+            <ChevronDown
+              size={ICON_SIZE.row}
+              aria-hidden
+              className={cn(
+                'text-faint-foreground motion-safe:transition-transform',
+                !isOpen && '-rotate-90',
+              )}
+            />
           </span>
-        )}
-        <span className="flex w-6 shrink-0 items-center justify-center">
-          <ChevronDown
-            size={ICON_SIZE.row}
-            aria-hidden
-            className={cn(
-              'text-faint-foreground motion-safe:transition-transform',
-              !isOpen && '-rotate-90',
-            )}
-          />
-        </span>
-      </SelectableRow>
+        </SelectableRow>
+        <ProjectRowAdd
+          sessionId={sessionId}
+          projectId={group.projectId}
+          projectName={group.projectName}
+        />
+      </div>
       <Reveal open={isOpen} id={branchesId}>
         <ul aria-label={`${group.projectName} worktrees`} className="flex flex-col">
           {rows.map((row) => (

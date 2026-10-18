@@ -7,28 +7,19 @@ import { useAppStore } from '../../../../../store';
 import { MountProjectList } from './MountProjectList';
 import { starredProjectsFirst } from '../../../../../shared/utils/starredProjectsFirst';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { LevelAddTrigger } from '../../../../../shared/components/LevelAddTrigger';
 import { isProjectInFirstLap } from '../../../../../store/slices/bootstrap/firstLap';
-import { openWorkspaceProjects } from './openWorkspaceProjects';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
-  readonly presentation?: 'icon' | 'button' | 'anchor';
-  readonly openEvent?: string;
+  readonly presentation?: 'icon' | 'button' | 'add';
 };
 
-export const MountProjectAction = ({
-  sessionId,
-  workspaceId,
-  presentation = 'icon',
-  openEvent,
-}: Props) => {
-  const dropdown = useDropdown({
-    align: presentation === 'anchor' ? 'start' : 'end',
-    width: 'w-80',
-    expectedHeight: 320,
-    ...(openEvent !== undefined && { openEvent }),
-  });
+const LABEL = 'Add project';
+
+export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'icon' }: Props) => {
+  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedHeight: 320 });
   const [isComplete, setIsComplete] = useState(false);
   const availableProjects = useAppStore(
     useShallow((state) => {
@@ -48,72 +39,57 @@ export const MountProjectAction = ({
   const hasWorkspaceProjects = useAppStore((state) =>
     state.projects.some((project) => project.workspaceId === workspaceId),
   );
-  const label = 'Add project';
+  const toggle = () => {
+    setIsComplete(false);
+    dropdown.toggle();
+  };
 
   return (
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel={label}
+      ariaLabel={LABEL}
       anchorClassName="shrink-0"
       trigger={
-        presentation === 'anchor' ? (
-          <span aria-hidden className="block h-0 w-px" />
+        presentation === 'add' ? (
+          <LevelAddTrigger ariaLabel={LABEL} isExpanded={dropdown.open} onClick={toggle} />
         ) : presentation === 'icon' ? (
           <IconButton
             size="xs"
             variant="ghost"
             icon={FolderPlus}
             iconSize={ICON_SIZE.row}
-            label={label}
+            label={LABEL}
             aria-haspopup="dialog"
             aria-expanded={dropdown.open}
-            onClick={() => {
-              setIsComplete(false);
-              dropdown.toggle();
-            }}
+            onClick={toggle}
             className="shrink-0"
           />
         ) : (
           <Button
             variant="ghost"
             size="sm"
-            aria-label={label}
+            aria-label={LABEL}
             aria-haspopup="dialog"
             aria-expanded={dropdown.open}
-            onClick={() => {
-              setIsComplete(false);
-              dropdown.toggle();
-            }}
+            onClick={toggle}
           >
             <FolderPlus size={ICON_SIZE.row} aria-hidden />
-            {label}
+            {LABEL}
           </Button>
         )
       }
     >
-      {availableProjects.length === 0 || isComplete ? (
-        <div className="flex flex-col gap-2 px-3 py-2">
-          <p className="text-label text-muted-foreground">
-            {hasWorkspaceProjects
-              ? 'Every workspace project is already in this session.'
-              : 'Add a project in workspace settings to use it here.'}
-          </p>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              dropdown.close();
-              openWorkspaceProjects();
-            }}
-          >
-            Add workspace project
-          </Button>
-        </div>
-      ) : (
+      {isComplete ? null : (
         <MountProjectList
           sessionId={sessionId}
+          workspaceId={workspaceId}
           projects={orderedProjects}
+          emptyHint={
+            hasWorkspaceProjects
+              ? 'Every workspace project is already in this session.'
+              : 'This workspace has no project yet.'
+          }
           onDone={() => {
             setIsComplete(true);
             dropdown.close();

@@ -1331,8 +1331,9 @@ A bar has one control height. Every control in the top bar is 28 and
 Spend, the Limits chips and the Now chip all take
 `TOP_BAR_CONTROL` (height `h-7`, square `size-7`, radius `rounded-md`) and
 `FOCUS_RING`. The bar container stays `h-9`. The right cluster reads Now, Limits,
-Spend, the bell, and Spend is the one door to Impact (`Spend today. Open
-Impact`): there is no Impact icon and no theme toggle in the bar. The command
+Spend, the bell, and Spend opens Impact on its Spend tab (`Spend today. Open
+Impact`): Impact is a sidebar door, and the bar has no Impact icon and no theme
+toggle. The command
 centre says `Search` with its chord as bare text; the workspace name lives in its
 tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
 number. The trail keeps the first crumb's word until every other ancestor has
@@ -1677,12 +1678,11 @@ adds no top padding; outside both, a bare page keeps 12px above.
 **One title per page, no studio title band.** The studio band never draws a
 title, a crumb of its own, an icon or a subtitle: the page `h1` is the one
 title. `STUDIO_META[kind].close` says where Close lives. A sidebar door page
-(`none`: Tasks, Chat, Workflows, Terminal) has no band and no Close; the top bar
-Back and Escape leave it. A closable overlay (`header`: Monitoring,
-Notifications, Guide) has no band either: `StudioFrame` hands its Close button
+(`none`: Tasks, Chat, Workflows, Terminal, Impact, Monitoring) has no band and no Close; the top bar
+Back and Escape leave it. A closable overlay (`header`: Notifications, Guide) has no band either: `StudioFrame` hands its Close button
 to the page through `PaneActionsContext`, so `PaneShell` draws it as the last
 action of the title row. The other overlays (`band`: Settings over the window,
-Impact, What's new, Pair device, Add workspace) keep a 40px band that holds only
+What's new, Pair device, Add workspace) keep a 40px band that holds only
 Close. A band also appears when the body hands it a trail (`StudioTrail`, the
 workflow editor and the Settings crumbs) or a header accessory, and only then is
 the body `UnderTrailContext`. The bandless pages, the Board and Settings included,
@@ -1838,7 +1838,7 @@ orchestrated document) shows Pause run or Resume run and Stop run (which
 confirms) as visible header buttons while the run lives, and Restore alone once
 it is archived. The tail never repeats them: it carries a step verb ("Stop step
 2", "Start step 3", "Approve plan", "Raise limit") or none ("Paused by you"). An
-overlay page (Monitoring, Notifications, the guide) ends its header with Close,
+overlay page (Notifications, the guide) ends its header with Close,
 which `StudioFrame` hands it; a sidebar door page has no Close.
 
 **One filled primary per surface.** A page header region, a drawer, a card and an `InlineConfirm` each hold at most one `Button variant="primary"` (the `data-variant` attribute is how the ratchet counts them, `scene-primaries.test.tsx`). While a header's own confirm is open the header primary turns `secondary` (`BranchHeader` `isPrimaryYielding`, also while an action confirm of the page is armed) and the confirm's button is the one primary. `InlineConfirm` has no card of its own: a host that wants a surface (the push banner) gives it `bg-subtle`, never a tinted fill or border. A card that opens a drawer keeps a ghost Open, and the drawer takes its action in its header. A retry says what it retries, and only one Retry is filled.
@@ -1856,7 +1856,7 @@ A verb blocked for a moment stays visible with its reason in the tooltip; a verb
 
 **Row verbs.** The action ladder of a row in a list of objects (the Overview's worktrees) has three rungs, left to right: the verb the state asks for as a quiet text button (Rebase, Push, Create PR, Reopen), the one verb every row can need as a quiet `IconButton` that asks in a `ConfirmPopover` (Close branch; a closed row keeps Remove from session in its menu), then the `...` with the rare verbs. The menu does not exist when it would hold fewer than two. Rows nest by one constant: a child row's leading glyph sits under the parent's name, `MOUNT_CHILD_INDENT = 22` (the 14px parent glyph and its 8px gap, `ProjectMountRows/mountGrid.ts`), every row of a band has the same 8px left edge and every trailing control ends 8px from the band's right edge. A "Show finished (n)" `CountToggle` and an empty line start on the child rail too.
 
-A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
+A confirm has one placement: anchored. A destructive or one-shot trigger (icon button, sidebar row action, header action, rail row, a text button) opens `ConfirmPopover`, which draws the `plain` surface of `InlineConfirm` in an `AnchoredPopover` beside the trigger, so the page under it never moves. Anything restorable does not ask: it acts at once and offers Undo. Archiving a session is the one exception the owner asked for: it asks (`archiveConfirmOf`) and still offers Undo. A confirmation detached in the body, or a destructive footer dock, is not another zone. Notifications uses it: `Delete all` in the studio header opens it aligned to its end edge, with the scope's count in the title, and the title row never changes height. Push review stays in its banner.
 
 - **Focus**: on open it lands on Cancel for `role="danger"` and on the confirm button for `primary` and `alert`. Enter activates the focused button, `Cmd+Enter` confirms from anywhere inside, Tab cycles between the buttons, Escape and a click outside cancel. After the confirm, if the trigger is gone, `returnFocusTo={{ rowSelector }}` puts focus on the next row, else the previous one, else the list; otherwise it returns to the trigger.
 - **Trigger**: it takes the open state (`aria-expanded`), so a hover-revealed trigger stays visible while its popover is open (`group-has-[[aria-expanded=true]]/slot:opacity-100`, as in `ChatListRow`).

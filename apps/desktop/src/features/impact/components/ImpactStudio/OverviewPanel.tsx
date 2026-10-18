@@ -84,7 +84,7 @@ export const OverviewPanel = ({
       : shippedSessions({ entries: prs.entries, durations: data.sessions, limit: SHIPPED_LIMIT });
 
   return (
-    <PaneShell scroll="body" {...frame}>
+    <PaneShell scroll="body" page="impact" {...frame}>
       {overview.error === null ? null : (
         <Notice
           tone="danger"

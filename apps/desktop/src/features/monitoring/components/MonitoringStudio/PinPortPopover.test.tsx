@@ -45,7 +45,7 @@ const openPopover = (): HTMLElement => {
 describe('pin a port popover', () => {
   it('keeps the popover open with the draft when updating an existing pin fails', async () => {
     await store.getState().pinPort({ port: 3000, description: 'Billing' });
-    render(<PinPortPopover variant="secondary" />);
+    render(<PinPortPopover />);
     const dialog = openPopover();
     fireEvent.change(within(dialog).getByLabelText('Port'), { target: { value: '3000' } });
     fireEvent.change(within(dialog).getByLabelText('Description'), {
@@ -67,7 +67,7 @@ describe('pin a port popover', () => {
   });
 
   it('closes once the pin was saved', async () => {
-    render(<PinPortPopover variant="secondary" />);
+    render(<PinPortPopover />);
     const dialog = openPopover();
     fireEvent.change(within(dialog).getByLabelText('Port'), { target: { value: '4000' } });
 

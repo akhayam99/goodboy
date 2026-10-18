@@ -49,6 +49,7 @@ describe('frameGeometryOf', () => {
       'monitoring',
       'notifications',
       'guide',
+      'impact',
     ] as const) {
       expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_PAGE_HEADER_INSET_PX);
     }
@@ -57,8 +58,8 @@ describe('frameGeometryOf', () => {
   it('keeps the 40px band only where the band still holds Close', () => {
     expect(
       FRAME_PAGES.filter((page) => frameGeometryOf({ page }).bandHeight === FRAME_BAND_PX),
-    ).toEqual(['impact', 'whatsNew', 'release']);
-    for (const page of ['impact', 'whatsNew'] as const) {
+    ).toEqual(['whatsNew', 'release']);
+    for (const page of ['whatsNew'] as const) {
       expect(frameGeometryOf({ page }).bandHeight, page).toBe(FRAME_BAND_PX);
     }
     expect(FRAME_PAGES.every((page) => frameGeometryOf({ page }).titleRowHeight === 32)).toBe(true);

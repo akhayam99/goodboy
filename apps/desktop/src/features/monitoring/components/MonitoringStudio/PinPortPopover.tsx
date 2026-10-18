@@ -1,23 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { Pin } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Button,
-  ICON_SIZE,
-  Input,
-  useDropdown,
-  type ButtonVariant,
-} from '@goodboy/ui';
+import { AnchoredPopover, Button, ICON_SIZE, Input, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { isValidPort } from '../../../../store/slices/monitoring/isValidPort';
 import { PIN_DESCRIPTION_MAX } from '../../../../store/slices/monitoring/pinDescription';
 
 type Props = {
-  readonly variant: ButtonVariant;
+  readonly align?: 'start' | 'end';
 };
 
-export const PinPortPopover = ({ variant }: Props) => {
-  const dropdown = useDropdown({ align: 'end', width: 'w-80', expectedWidth: 320 });
+export const PinPortPopover = ({ align = 'end' }: Props) => {
+  const dropdown = useDropdown({ align, width: 'w-80', expectedWidth: 320 });
   const pinPort = useAppStore((state) => state.pinPort);
   const [portText, setPortText] = useState('');
   const [description, setDescription] = useState('');
@@ -49,7 +42,12 @@ export const PinPortPopover = ({ variant }: Props) => {
       hasBackdrop
       className="p-3"
       trigger={
-        <Button size="sm" variant={variant} onClick={dropdown.toggle} aria-expanded={dropdown.open}>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={dropdown.toggle}
+          aria-expanded={dropdown.open}
+        >
           <Pin size={ICON_SIZE.row} aria-hidden />
           Pin a port
         </Button>

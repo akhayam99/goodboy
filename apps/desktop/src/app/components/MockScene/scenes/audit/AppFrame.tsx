@@ -74,6 +74,7 @@ export const AppFrame = ({
       openNewChat: overlays.openNewChat,
       openNewTerminal: overlays.openNewTerminal,
       openMonitoring: overlays.openMonitoring,
+      openImpact: overlays.openImpact,
       openSettings: overlays.openSettings,
       openChangelog: overlays.openChangelog,
       openGuide: overlays.openGuide,

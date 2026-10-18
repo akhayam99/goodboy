@@ -151,7 +151,7 @@ describe('StudioFrame', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it.each(['inbox', 'chat', 'workflow', 'terminal'] as const)(
+  it.each(['inbox', 'chat', 'workflow', 'terminal', 'impact', 'monitoring'] as const)(
     'draws no band, no title and no Close around the %s door page',
     (kind) => {
       const { container } = render(
@@ -171,7 +171,6 @@ describe('StudioFrame', () => {
   );
 
   it.each([
-    ['monitoring', 'Close monitoring'],
     ['notifications', 'Close notifications'],
     ['guide', 'Close guide'],
   ] as const)('puts Close as the last action of the %s page header', (kind, label) => {
@@ -196,14 +195,14 @@ describe('StudioFrame', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     render(
-      <StudioFrame kind="monitoring" onClose={onClose}>
-        <PaneShell title="Monitoring">
+      <StudioFrame kind="notifications" onClose={onClose}>
+        <PaneShell title="Notifications">
           <p>body</p>
         </PaneShell>
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close monitoring' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close notifications' }));
     act(() => {
       vi.advanceTimersByTime(300);
     });
@@ -308,12 +307,12 @@ describe('StudioFrame', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     render(
-      <StudioFrame kind="impact" onClose={onClose}>
-        <p>impact body</p>
+      <StudioFrame kind="addWorkspace" onClose={onClose}>
+        <p>add workspace body</p>
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close impact' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close add workspace' }));
     act(() => {
       vi.advanceTimersByTime(300);
     });
@@ -325,7 +324,7 @@ describe('StudioFrame', () => {
 describe('StudioFrame grid', () => {
   const columnOf = (node: HTMLElement) => node.closest('[data-page-column]') as HTMLElement | null;
 
-  it.each(['impact', 'addWorkspace'] as const)(
+  it.each(['addWorkspace'] as const)(
     'draws the %s band inside the page column, like the title under it',
     (kind) => {
       render(
@@ -375,20 +374,20 @@ describe('StudioFrame grid', () => {
 
   it('keeps Close at the right edge of the band column, with no crumb of its own', () => {
     render(
-      <StudioFrame kind="impact" onClose={() => undefined}>
+      <StudioFrame kind="addWorkspace" onClose={() => undefined}>
         <p>body</p>
       </StudioFrame>,
     );
 
     const column = screen.getByRole('banner').querySelector('[data-page-column]') as HTMLElement;
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
-    expect(column.contains(screen.getByRole('button', { name: 'Close impact' }))).toBe(true);
+    expect(column.contains(screen.getByRole('button', { name: 'Close add workspace' }))).toBe(true);
   });
 
   it('sits the studio title right under the band, with no extra top inset', () => {
     const { container } = render(
-      <StudioFrame kind="impact" onClose={() => undefined}>
-        <PaneShell title="Impact">
+      <StudioFrame kind="addWorkspace" onClose={() => undefined}>
+        <PaneShell title="Add workspace">
           <p>body</p>
         </PaneShell>
       </StudioFrame>,

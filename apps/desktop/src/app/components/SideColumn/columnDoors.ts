@@ -22,6 +22,8 @@ export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = [
     icon: CONCEPT_ICONS.terminal,
     shortcutId: 'terminal.studio',
   },
+  { id: 'impact', label: 'Impact', icon: CONCEPT_ICONS.impact },
+  { id: 'monitoring', label: 'Monitoring', icon: CONCEPT_ICONS.monitoring },
 ];
 
 export type ColumnActions = {
@@ -33,6 +35,7 @@ export type ColumnActions = {
   readonly openNewChat: () => void;
   readonly openNewTerminal: () => void;
   readonly openMonitoring: () => void;
+  readonly openImpact: () => void;
   readonly openSettings: () => void;
   readonly openChangelog: () => void;
   readonly openGuide: () => void;
@@ -63,6 +66,9 @@ export const openColumnDoor = ({ id, actions }: OpenDoorParams): void => {
       return;
     case 'monitoring':
       actions.openMonitoring();
+      return;
+    case 'impact':
+      actions.openImpact();
       return;
     default: {
       const unreachable: never = id;
