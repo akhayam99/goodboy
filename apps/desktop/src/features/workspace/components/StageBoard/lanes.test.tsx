@@ -426,7 +426,9 @@ describe('StageBoard header', () => {
 
 describe('StageBoard selection over every lane', () => {
   const checkboxesIn = (name: (typeof LANES)[number]) =>
-    within(lane(name)).getAllByRole('checkbox');
+    Array.from(
+      lane(name).querySelectorAll<HTMLElement>('article[data-select-id] button[aria-pressed]'),
+    );
 
   const doneCards = (count: number): ReadonlyArray<Session> =>
     Array.from({ length: count }, (_, index) =>
@@ -442,14 +444,14 @@ describe('StageBoard selection over every lane', () => {
     seed({ active: building, done, archived: shelved });
     mountBoard([...building, ...done]);
 
-    fireEvent.click(checkboxesIn('building')[0] as HTMLElement);
+    fireEvent.click(checkboxesIn('building')[0] as HTMLElement, { altKey: true });
     fireEvent.click(screen.getByRole('button', { name: 'Select all 62' }));
 
     expect(within(toolbar()).getByText('62 selected')).toBeDefined();
     expect(
-      checkboxesIn('done').filter((box) => box.getAttribute('aria-checked') === 'true'),
+      checkboxesIn('done').filter((box) => box.getAttribute('aria-pressed') === 'true'),
     ).toHaveLength(60);
-    expect(checkboxesIn('archived')[0]?.getAttribute('aria-checked')).toBe('true');
+    expect(checkboxesIn('archived')[0]?.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('extends a Shift range from the Done half into the Archived half of the stacked lane', () => {
@@ -465,15 +467,15 @@ describe('StageBoard selection over every lane', () => {
 
     const doneBoxes = checkboxesIn('done');
     const archivedBoxes = checkboxesIn('archived');
-    fireEvent.click(doneBoxes[1] as HTMLElement);
+    fireEvent.click(doneBoxes[1] as HTMLElement, { altKey: true });
     fireEvent.click(archivedBoxes[0] as HTMLElement, { shiftKey: true });
 
     expect(within(toolbar()).getByText('3 selected')).toBeDefined();
-    expect(doneBoxes[0]?.getAttribute('aria-checked')).toBe('false');
-    expect(doneBoxes[1]?.getAttribute('aria-checked')).toBe('true');
-    expect(doneBoxes[2]?.getAttribute('aria-checked')).toBe('true');
-    expect(archivedBoxes[0]?.getAttribute('aria-checked')).toBe('true');
-    expect(archivedBoxes[1]?.getAttribute('aria-checked')).toBe('false');
+    expect(doneBoxes[0]?.getAttribute('aria-pressed')).toBe('false');
+    expect(doneBoxes[1]?.getAttribute('aria-pressed')).toBe('true');
+    expect(doneBoxes[2]?.getAttribute('aria-pressed')).toBe('true');
+    expect(archivedBoxes[0]?.getAttribute('aria-pressed')).toBe('true');
+    expect(archivedBoxes[1]?.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('offers Archive for the active cards and Restore for the archived ones in one selection', () => {
@@ -482,7 +484,7 @@ describe('StageBoard selection over every lane', () => {
     seed({ done, archived: shelved });
     mountBoard(done);
 
-    fireEvent.click(checkboxesIn('done')[0] as HTMLElement);
+    fireEvent.click(checkboxesIn('done')[0] as HTMLElement, { altKey: true });
     fireEvent.click(checkboxesIn('archived')[0] as HTMLElement, { metaKey: true });
 
     expect(within(toolbar()).getByText('2 selected')).toBeDefined();

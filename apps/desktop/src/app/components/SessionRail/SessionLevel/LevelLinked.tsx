@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { SelectableRow } from '@goodboy/ui';
+import { SelectableRow, cn } from '@goodboy/ui';
 import type { Session, SessionExternalTaskProvider } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
 import { externalTaskLinkKey } from '../../../../store/slices/sessions/externalTaskLinkKey';
@@ -11,6 +11,7 @@ import { useMountRows } from '../../../../features/session/components/SessionOve
 import { githubRefOf } from './githubRefOf';
 import { countSlotText } from '../../../../shared/utils/countSlotText';
 import { LevelCard } from './LevelCard';
+import { CARD_ROW_INSET } from './railInset';
 import { useLevelCardFold } from './useLevelCardFold';
 import { LinkedKey } from './LinkedKey';
 import { LinkedTaskRow } from './LinkedTaskRow';
@@ -115,7 +116,7 @@ export const LevelLinked = ({ session, isActive }: Props) => {
                   setFocusedGithubIssueNumber(sessionId, issue.number);
                   openLens({ sessionId, lens: 'github_issue' });
                 }}
-                className="h-7 items-center gap-2 px-1 text-ui"
+                className={cn('h-7 items-center gap-2 text-ui', CARD_ROW_INSET)}
               >
                 <IntegrationGlyph provider="github" size="xs" className="shrink-0" />
                 <LinkedKey identifier={`#${issue.number}`} />

@@ -11,6 +11,7 @@ const action = (label: string): ResolvedAction => ({
   id: 'workflowRun.close',
   label,
   shortLabel: label,
+  ariaLabel: null,
   icon: Square,
   iconClassName: null,
   group: 'danger',

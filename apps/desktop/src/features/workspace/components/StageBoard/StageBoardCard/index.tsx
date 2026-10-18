@@ -1,13 +1,5 @@
-import { memo } from 'react';
-import {
-  cn,
-  Input,
-  SelectionCheckbox,
-  Tooltip,
-  InlineMarkdown,
-  inlineMarkdownText,
-  ToneBar,
-} from '@goodboy/ui';
+import { memo, useId } from 'react';
+import { cn, Input, Tooltip, InlineMarkdown, inlineMarkdownText, ToneBar } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { useSessionSummary } from '../../../hooks/useSessionSummary';
@@ -20,15 +12,14 @@ import type { BoardNavigation } from '../useBoardNavigation';
 import { useDynamicActions } from './useDynamicActions';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
 import { useRenameRequest } from '../../../../actions/useRenameRequest';
+import { useSelectRequest } from '../../../../actions/useSelectRequest';
+import { sessionNodeOf } from '../../../../session/sessionNode';
 import { sessionObjectKey } from '../../../../actions/kinds/session';
 import { sessionSelectionTarget } from '../../../../actions/sessionSelectionTarget';
 import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitleRename';
 import { SessionSignal } from '../SessionSignal';
 import { useSessionSignal } from '../useSessionSignal';
 import { projectLineOf } from '../projectLineOf';
-
-const TRACK_UNDER_CHECKBOX =
-  'group-hover/select-row:top-9 group-focus-within/select-row:top-9 group-data-[selecting=true]/select-list:top-9';
 
 type CardSelectionEvent = {
   readonly shiftKey: boolean;
@@ -50,7 +41,6 @@ type StageBoardCardProps = {
   readonly getSelectedIds?: () => ReadonlyArray<SessionId>;
   readonly onClearSelection?: () => void;
   readonly onModifierClick?: (id: SessionId, event: CardSelectionEvent) => void;
-  readonly onToggleSelect?: (id: SessionId, event: { readonly shiftKey: boolean }) => void;
   readonly onRestore?: (session: Session) => void;
   readonly onHoverEnter?: (target: CardHover) => void;
   readonly onHoverLeave?: () => void;
@@ -67,17 +57,18 @@ export const StageBoardCard = memo(function StageBoardCard({
   getSelectedIds = noSelectedIds,
   onClearSelection,
   onModifierClick,
-  onToggleSelect,
   onRestore,
   onHoverEnter,
   onHoverLeave,
 }: StageBoardCardProps) {
   const id = session.id as SessionId;
+  const stateWordId = useId();
   const summary = useSessionSummary({ session });
   const { stage } = summary;
   const rowTitle = sessionRowTitle({ session, tasks: summary.tasks });
   const { title } = rowTitle;
   const isArchived = archived === true;
+  const node = sessionNodeOf({ info: summary.info, isArchived });
   const signal = useSessionSignal({ session, isArchived });
   const track = stageTrackOf({ stage, isArchived });
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
@@ -92,9 +83,16 @@ export const StageBoardCard = memo(function StageBoardCard({
     anchorKeys: [anchorKey],
     onRename: rename.start,
   });
+  useSelectRequest({
+    objectKey: sessionObjectKey({ sessionId: id }),
+    anchorKey,
+    onSelect: () =>
+      onModifierClick?.(id, { shiftKey: false, metaKey: false, ctrlKey: false, altKey: true }),
+  });
   const menu = useObjectMenuTrigger({
     target: { kind: 'session', sessionId: id },
     anchorKey,
+    viewing: { kind: 'selection', id },
     onBeforeOpen: () =>
       sessionSelectionTarget({
         sessionId: id,
@@ -129,25 +127,11 @@ export const StageBoardCard = memo(function StageBoardCard({
         nav.selectCard(session);
       }}
       className={cn(
-        'group/session-card group/select-row grid h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_1.25rem] gap-x-2 gap-y-1 p-3 text-left select-none',
-        onToggleSelect === undefined ? 'pl-5' : 'pl-7',
+        'group/session-card grid h-24 shrink-0 cursor-pointer grid-cols-[minmax(0,1fr)_auto] grid-rows-[minmax(0,1fr)_1.25rem] gap-x-2 gap-y-1 p-3 pl-5 text-left select-none',
         sessionCardShell({ selected }),
       )}
     >
-      <ToneBar
-        tone={track.tone}
-        density="card"
-        isBreathing={track.isBreathing}
-        {...(onToggleSelect === undefined ? {} : { className: TRACK_UNDER_CHECKBOX })}
-      />
-      {onToggleSelect !== undefined && (
-        <SelectionCheckbox
-          checked={selected === true}
-          label={`Select ${inlineMarkdownText({ text: title })}`}
-          onToggle={(event) => onToggleSelect(id, event)}
-          className="absolute top-2.5 left-1"
-        />
-      )}
+      <ToneBar tone={track.tone} density="card" isBreathing={track.isBreathing} />
       {rename.editing ? (
         <Input
           autoFocus
@@ -165,7 +149,8 @@ export const StageBoardCard = memo(function StageBoardCard({
           <button
             type="button"
             aria-pressed={selected === true}
-            aria-keyshortcuts="Alt+Enter Shift+F10"
+            aria-describedby={stateWordId}
+            aria-keyshortcuts="Alt+Enter Shift+Enter Shift+F10"
             onKeyDown={(event) => {
               menu.onKeyDown(event);
               if (event.key !== 'Enter' && event.key !== ' ') {
@@ -173,7 +158,10 @@ export const StageBoardCard = memo(function StageBoardCard({
               }
               event.preventDefault();
               event.stopPropagation();
-              if (event.altKey && selectFromEvent(event)) {
+              if (
+                (event.altKey || (event.shiftKey && event.key === 'Enter')) &&
+                selectFromEvent(event)
+              ) {
                 return;
               }
               nav.selectCard(session);
@@ -184,6 +172,9 @@ export const StageBoardCard = memo(function StageBoardCard({
           </button>
         </Tooltip>
       )}
+      <span id={stateWordId} className="sr-only">
+        {node.label}
+      </span>
 
       <span className="col-start-2 row-start-1 flex items-center gap-1 self-start">
         <CardActionSlot label="Session quick actions">

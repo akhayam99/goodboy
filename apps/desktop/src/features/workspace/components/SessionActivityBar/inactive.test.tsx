@@ -78,7 +78,7 @@ type Row = {
 
 const rowsOf = ({ root }: RootParams): ReadonlyArray<Row> =>
   Array.from(root.querySelectorAll<HTMLElement>('button[data-select-id]')).map((button) => ({
-    title: button.lastElementChild?.textContent ?? '',
+    title: button.firstElementChild?.textContent ?? '',
   }));
 
 const inactiveGroup = (): HTMLElement | null => {
@@ -151,7 +151,7 @@ describe('the Inactive group of the session list', () => {
     renderBar({ onSelectSession: (id) => void useAppStore.getState().setCurrentSession(id) });
     await waitFor(() => expect(screen.getByText('Inactive')).toBeDefined());
 
-    fireEvent.click(screen.getByRole('button', { name: /^Write the notify-relay digest/ }));
+    fireEvent.click(screen.getByRole('option', { name: /^Write the notify-relay digest/ }));
 
     await waitFor(() =>
       expect(rowsOf({ root: inactiveGroup() ?? document }).map((row) => row.title)).toEqual([

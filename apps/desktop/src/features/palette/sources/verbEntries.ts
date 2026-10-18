@@ -34,9 +34,10 @@ const sentenceNoun = ({ noun }: NounParams): string =>
   PROPER_NOUNS.has(noun) ? noun : `${noun.charAt(0).toLowerCase()}${noun.slice(1)}`;
 
 const verbLabel = ({ action }: VerbSelectParams): string =>
-  action.group === 'open' && !action.label.includes(' ') && action.label !== 'Open'
+  action.ariaLabel ??
+  (action.group === 'open' && !action.label.includes(' ') && action.label !== 'Open'
     ? `Open ${sentenceNoun({ noun: action.label })}`
-    : action.label;
+    : action.label);
 
 export const verbEntries = ({
   target,

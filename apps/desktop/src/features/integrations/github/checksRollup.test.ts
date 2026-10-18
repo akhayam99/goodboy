@@ -49,7 +49,7 @@ describe('checksCountsOf', () => {
           run('unknown'),
         ],
       }),
-    ).toEqual({ failing: 3, running: 2, passed: 2 });
+    ).toEqual({ failing: 3, running: 2, passed: 1, skipped: 1 });
   });
 });
 
@@ -105,6 +105,7 @@ describe('checksWordOf', () => {
       '2 failing',
     );
     expect(checksWordOf({ runs: [run('success'), run('pending')] })).toBe('1 running');
-    expect(checksWordOf({ runs: [run('success'), run('skipped')] })).toBe('2 passed');
+    expect(checksWordOf({ runs: [run('success'), run('skipped')] })).toBe('1 passed');
+    expect(checksWordOf({ runs: [run('skipped'), run('neutral')] })).toBe('2 skipped');
   });
 });

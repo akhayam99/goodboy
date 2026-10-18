@@ -61,7 +61,7 @@ const askToRename = () =>
 const field = () => screen.getByRole<HTMLInputElement>('textbox', { name: 'Session title' });
 
 describe('the sidebar row rename', () => {
-  it('uses the compact title field with the state node and the limit ring', () => {
+  it('uses the compact title field with the limit ring and no leading state node', () => {
     seedColumn({ store: useAppStore, sessions: [webhook] });
     renderBar();
     askToRename();
@@ -69,7 +69,7 @@ describe('the sidebar row rename', () => {
     expect(field().value).toBe('Fix webhook retries');
     expect(field().maxLength).toBe(120);
     expect(field().closest('[data-title-field]')?.getAttribute('data-title-field')).toBe('row');
-    expect(field().closest('[data-title-field]')?.querySelector('[data-node-kind]')).not.toBeNull();
+    expect(field().closest('[data-title-field]')?.querySelector('[data-node-kind]')).toBeNull();
     const ring = screen.getByRole('img', { name: '19 of 120 characters' });
     expect(ring.hasAttribute('data-near-limit')).toBe(false);
 
@@ -77,6 +77,20 @@ describe('the sidebar row rename', () => {
     expect(
       screen.getByRole('img', { name: '110 of 120 characters' }).hasAttribute('data-near-limit'),
     ).toBe(true);
+  });
+
+  it('gives up the listbox while a title field sits in it, and takes it back after', () => {
+    seedColumn({ store: useAppStore, sessions: [webhook] });
+    renderBar();
+    expect(screen.getAllByRole('listbox')).toHaveLength(1);
+    askToRename();
+
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(screen.queryByRole('option')).toBeNull();
+
+    fireEvent.keyDown(field(), { key: 'Escape' });
+    expect(screen.getAllByRole('listbox')).toHaveLength(1);
+    expect(screen.getAllByRole('option')).toHaveLength(1);
   });
 
   it('saves on Enter only after the write lands, and Escape leaves the title alone', async () => {

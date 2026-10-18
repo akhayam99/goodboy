@@ -20,7 +20,7 @@ describe('failedRunCopy', () => {
 
   it('keeps the push out of the thread: a failed push has no verb of its own', () => {
     expect(failedVerbOf({ action: 'retry' })).toBe('Retry');
-    expect(failedVerbOf({ action: 'open_github' })).toBe('Open on GitHub');
+    expect(failedVerbOf({ action: 'open_github' })).toBe('Open');
   });
 
   it('follows the picked model and the hint in the primary label', () => {

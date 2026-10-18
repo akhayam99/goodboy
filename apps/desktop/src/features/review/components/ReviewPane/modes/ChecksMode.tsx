@@ -1,3 +1,4 @@
+import type { ReviewSourceKind } from '@goodboy/core';
 import type { PrCheckRun } from '@goodboy/types';
 import {
   PrChecks,
@@ -8,7 +9,7 @@ type Props = {
   readonly renderCheckRow?: RenderCheckRow;
   readonly checks: ReadonlyArray<PrCheckRun>;
   readonly fallbackUrl: string;
-  readonly hostLabel: string;
+  readonly host: ReviewSourceKind;
   readonly isLoading?: boolean;
   readonly onOpenUrl: (url: string) => void;
 };
@@ -17,7 +18,7 @@ export const ChecksMode = ({
   renderCheckRow,
   checks,
   fallbackUrl,
-  hostLabel,
+  host,
   isLoading,
   onOpenUrl,
 }: Props) => (
@@ -26,7 +27,7 @@ export const ChecksMode = ({
       renderCheckRow={renderCheckRow}
       checks={checks}
       fallbackUrl={fallbackUrl}
-      hostLabel={hostLabel}
+      host={host}
       isLoading={isLoading}
       onOpenUrl={onOpenUrl}
     />

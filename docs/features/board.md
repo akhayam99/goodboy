@@ -34,4 +34,4 @@ Read a task at a glance: its title on two lines, its project in gray, and one si
 
 ### Bulk select
 
-Tidy many sessions at once. Tick cards, lasso them or press **⌘A**, then **Archive**, **Restore** or **Delete** them from the bar at the bottom. Archive asks once for all of them, saying when agents are still running (they keep running), and Delete asks first. Archive and Restore can be undone, and when some sessions could not be archived the bar names them with **Retry**.
+Tidy many sessions at once. A card has no checkbox: **Shift** click picks a range, **Option** click adds or removes one card, a lasso with Option held picks the cards it crosses, **Shift+Enter** and **Alt+Enter** do the same from the keyboard, **Select** in a card's right click menu picks it, and **⌘A** picks them all. Then **Archive**, **Restore** or **Delete** them from the bar at the bottom. Archive asks once for all of them, saying when agents are still running (they keep running), and Delete asks first. Archive and Restore can be undone, and when some sessions could not be archived the bar names them with **Retry**.

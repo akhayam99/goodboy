@@ -63,6 +63,8 @@ const card = (name: string): HTMLElement => within(rail()).getByRole('group', { 
 
 const SPACING_PX = 4;
 
+const CARD_EXTRA_SIDE_PX = SPACING_PX;
+
 type Side = 'left' | 'right';
 
 const SIDE_CLASS: Readonly<Record<Side, RegExp>> = {
@@ -162,10 +164,10 @@ describe('r4 session rail scenes', () => {
 
     const navLeft = insetOf({ element: navIcon, side: 'left', isOwnPaddingCounted: false });
     expect(insetOf({ element: headerLabel, side: 'left', isOwnPaddingCounted: false })).toBe(
-      navLeft,
+      navLeft + CARD_EXTRA_SIDE_PX,
     );
     expect(insetOf({ element: projectIcon, side: 'left', isOwnPaddingCounted: false })).toBe(
-      navLeft,
+      navLeft + CARD_EXTRA_SIDE_PX,
     );
     expect(insetOf({ element: projects, side: 'left', isOwnPaddingCounted: false })).toBe(
       insetOf({ element: navRow, side: 'left', isOwnPaddingCounted: false }),
@@ -180,14 +182,14 @@ describe('r4 session rail scenes', () => {
         side: 'right',
         isOwnPaddingCounted: false,
       }),
-    ).toBe(navRight);
+    ).toBe(navRight + CARD_EXTRA_SIDE_PX);
     expect(
       insetOf({
         element: elementIn(projects, '[data-worktree-dot]'),
         side: 'right',
         isOwnPaddingCounted: false,
       }),
-    ).toBe(navRight);
+    ).toBe(navRight + CARD_EXTRA_SIDE_PX);
   });
 
   it('r4-rail-cards-folded folds both cards and keeps the failing check as one header dot', async () => {

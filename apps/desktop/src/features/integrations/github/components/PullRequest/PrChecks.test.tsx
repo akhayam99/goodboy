@@ -18,12 +18,12 @@ const FALLBACK = 'https://github.com/harborline/payments-api/pull/318/checks';
 
 const draw = ({
   checks,
-  hostLabel = 'GitHub',
+  host = 'github',
   isLoading,
   onOpenUrl = vi.fn(),
 }: {
   readonly checks: ReadonlyArray<PrCheckRun>;
-  readonly hostLabel?: string;
+  readonly host?: 'github' | 'gitlab' | 'bitbucket';
   readonly isLoading?: boolean;
   readonly onOpenUrl?: (url: string) => void;
 }) =>
@@ -31,7 +31,7 @@ const draw = ({
     <PrChecks
       checks={checks}
       fallbackUrl={FALLBACK}
-      hostLabel={hostLabel}
+      host={host}
       isLoading={isLoading}
       onOpenUrl={onOpenUrl}
     />,
@@ -112,10 +112,11 @@ describe('PrChecks with nothing reported', () => {
     expect(onOpenUrl).toHaveBeenCalledWith(FALLBACK);
   });
 
-  it('names the host it was given', () => {
-    draw({ checks: [], hostLabel: 'Bitbucket' });
+  it('names the host it was given only to a screen reader', () => {
+    draw({ checks: [], host: 'bitbucket' });
 
-    expect(screen.getByRole('button', { name: /View on Bitbucket/ })).toBeDefined();
+    const button = screen.getByRole('button', { name: /View on Bitbucket/ });
+    expect(button.textContent).toBe('View');
     expect(screen.queryByRole('button', { name: /GitHub/ })).toBeNull();
   });
 });

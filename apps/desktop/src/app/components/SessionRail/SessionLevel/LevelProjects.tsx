@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { StatusDot, Tooltip } from '@goodboy/ui';
+import { StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useMountDiffStats } from '../../../../store';
 import { useBranchIdentity } from '../../../../features/branch/hooks/useBranchIdentity';
@@ -14,6 +14,7 @@ import { MountProjectAction } from '../../../../features/session/components/Sess
 import { RebaseAllCard } from '../../../../features/history/RebaseAllCard';
 import { LevelCard } from './LevelCard';
 import { ProjectTree } from './ProjectTree';
+import { CARD_ROW_INSET } from './railInset';
 import { useLevelCardFold } from './useLevelCardFold';
 import { useProjectsSignal } from './useProjectsSignal';
 import { useRailTreeOpen } from './useRailTreeOpen';
@@ -80,7 +81,10 @@ export const LevelProjects = ({ session, isActive }: Props) => {
       {lapName === null ? null : (
         <div
           data-lap-project=""
-          className="flex h-7 min-w-0 items-center gap-2 px-1 text-ui text-muted-foreground"
+          className={cn(
+            'flex h-7 min-w-0 items-center gap-2 text-ui text-muted-foreground',
+            CARD_ROW_INSET,
+          )}
         >
           <CONCEPT_ICONS.projectFolder size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           <span className="truncate">{lapName}</span>

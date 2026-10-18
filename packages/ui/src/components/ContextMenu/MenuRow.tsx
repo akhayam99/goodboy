@@ -28,6 +28,7 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
       role="menuitem"
       tabIndex={-1}
       data-menu-label={entry.label}
+      aria-label={entry.ariaLabel ?? undefined}
       aria-disabled={isBlocked || undefined}
       aria-haspopup={hasChoices ? 'menu' : undefined}
       aria-expanded={hasChoices ? isExpanded : undefined}

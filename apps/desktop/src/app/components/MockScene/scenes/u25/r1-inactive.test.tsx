@@ -80,7 +80,7 @@ const sidebarRows = ({ root }: RootParams) =>
   Array.from(root.querySelectorAll<HTMLElement>('button[data-select-id]')).map((button) => {
     const trailing = button.querySelector('[data-row-trailing]');
     return {
-      title: (trailing?.previousElementSibling ?? button.lastElementChild)?.textContent ?? '',
+      title: (trailing?.previousElementSibling ?? button.firstElementChild)?.textContent ?? '',
       trailing: trailing?.textContent ?? null,
     };
   });

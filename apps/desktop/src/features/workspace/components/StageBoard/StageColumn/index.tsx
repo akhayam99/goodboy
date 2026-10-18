@@ -130,7 +130,6 @@ export const StageColumn = ({
                 archived={view.archived}
                 selected={isSelected(session.id as SessionId)}
                 onModifierClick={selection.onItemClick}
-                onToggleSelect={selection.onToggle}
                 getSelectedIds={selection.getSelectedIds}
                 onClearSelection={onClearSelection}
                 onRestore={onRestore}

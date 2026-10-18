@@ -2,11 +2,10 @@ import { StatusDot } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountRowView } from '../../../store/slices/project-mounts/mountRowModel';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { branchRowFactsOf } from '../../../features/branch/branchRowFactsOf';
 import { pullRequestStateToneOf } from '../../../features/branch/pullRequestStateToneOf';
-import { pullRequestStateWordOf } from '../../../features/branch/pullRequestStateWordOf';
 import { switchBranchMount } from '../../../features/branch/switchBranchMount';
 import { RailButton } from '../SideColumn/RailButton';
-import { requestStateOf } from './SessionLevel/requestStateOf';
 import { useWorktreeRowState } from './SessionLevel/useWorktreeRowState';
 
 type Props = {
@@ -18,22 +17,23 @@ type Props = {
 
 export const RailWorktreeButton = ({ sessionId, row, status, isShown }: Props) => {
   const state = useWorktreeRowState({ sessionId, row, status });
-  const branch = row.branch === '' ? row.mountName : row.branch;
+  const facts = branchRowFactsOf({
+    branch: row.branch,
+    mountName: row.mountName,
+    request: row.request,
+    checks: null,
+    behind: null,
+    conflicts: null,
+  });
   const path = row.worktreePath ?? row.lastWorktreePath;
-  const requestState = requestStateOf({ request: row.request });
-  const mark = pullRequestStateToneOf({ state: requestState });
+  const mark = pullRequestStateToneOf({ state: facts.state });
   return (
     <RailButton
       id={`worktree-${row.mountId}`}
       icon={mark.icon}
       iconSize={ICON_SIZE.row}
       iconClassName={mark.iconClass}
-      label={[
-        row.projectName,
-        branch,
-        pullRequestStateWordOf({ state: requestState }),
-        state.reason,
-      ]
+      label={[row.projectName, facts.branch, facts.stateWord, state.reason]
         .filter((part): part is string => part !== null && part !== '')
         .join(', ')}
       isCurrent={isShown}

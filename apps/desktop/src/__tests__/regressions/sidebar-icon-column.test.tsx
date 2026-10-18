@@ -174,7 +174,7 @@ const expectOneColumn = ({ marks }: ExpectParams): void => {
 
 describe('the main sidebar keeps one icon column', () => {
   it.each(['r4-column-dark', 'r4-column-light'] as const)(
-    '%s centers the workspace tile, New session, the doors, the session nodes and Settings on one x',
+    '%s centers the workspace tile, New session, the doors and Settings on one x, with the session state on the right of its row',
     async (name) => {
       await mount({ name });
 
@@ -186,9 +186,7 @@ describe('the main sidebar keeps one icon column', () => {
       expect(names).toContain('Terminal');
       expect(names).toContain('Impact');
       expect(names).toContain('Settings');
-      expect(
-        document.querySelectorAll('button[data-select-id] [data-nav-icon]').length,
-      ).toBeGreaterThan(0);
+      expect(document.querySelectorAll('button[data-select-id] [data-nav-icon]').length).toBe(0);
       expectOneColumn({ marks });
     },
   );

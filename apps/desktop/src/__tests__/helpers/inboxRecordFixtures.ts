@@ -266,7 +266,7 @@ export const INBOX_RECORD_FIXTURES: ReadonlyArray<InboxRecord> = [
     state: 'open',
     updatedAt: '2026-08-01T10:00:00Z',
     url: 'https://github.com/harborline/ledger-core/pull/12',
-    stateLabel: 'In review',
+    stateLabel: 'Open',
     context: 'harborline/ledger-core',
     payload: {
       provider: 'github',

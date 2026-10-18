@@ -13,14 +13,33 @@ type Params = {
   readonly verb?: 'Delete' | 'Archive';
 };
 
-const clickIfFound = ({ selector }: { readonly selector: () => HTMLElement | null }): boolean => {
+const clickIfFound = ({
+  selector,
+  isOption = false,
+}: {
+  readonly selector: () => HTMLElement | null;
+  readonly isOption?: boolean;
+}): boolean => {
   const node = selector();
   if (node === null) {
     return false;
   }
+  if (isOption) {
+    node.dispatchEvent(new MouseEvent('click', { bubbles: true, altKey: true }));
+    return true;
+  }
   node.click();
   return true;
 };
+
+type CardParams = {
+  readonly goal: string;
+};
+
+const cardTitleOf = ({ goal }: CardParams): HTMLElement | null =>
+  Array.from(
+    document.querySelectorAll<HTMLElement>('article[data-select-id] button[aria-pressed]'),
+  ).find((button) => button.textContent === goal) ?? null;
 
 export const useSelectBoardCards = ({ isConfirming, verb = 'Delete' }: Params): void => {
   useEffect(() => {
@@ -29,8 +48,8 @@ export const useSelectBoardCards = ({ isConfirming, verb = 'Delete' }: Params): 
       const goal = SELECTED_GOALS[step];
       if (goal !== undefined) {
         const isClicked = clickIfFound({
-          selector: () =>
-            document.querySelector<HTMLElement>(`[role="checkbox"][aria-label="Select ${goal}"]`),
+          selector: () => cardTitleOf({ goal }),
+          isOption: true,
         });
         step += isClicked ? 1 : 0;
         return;

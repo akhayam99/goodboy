@@ -98,7 +98,6 @@ describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) 
         getSelectedIds={() => []}
         onClearSelection={noop}
         onModifierClick={noop}
-        onToggleSelect={noop}
         onSelect={noop}
         onRowEnter={noop}
         onRowLeave={noop}
@@ -182,7 +181,6 @@ describe('a session in the merge queue', () => {
         getSelectedIds={() => []}
         onClearSelection={noop}
         onModifierClick={noop}
-        onToggleSelect={noop}
         onSelect={noop}
         onRowEnter={noop}
         onRowLeave={noop}

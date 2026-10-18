@@ -74,7 +74,7 @@ describe('what a session row re-renders on', () => {
     mount(null);
     summaryReads.current = 0;
     const row = screen
-      .getAllByRole('button')
+      .getAllByRole('option')
       .filter((button) => button.hasAttribute('data-select-id'))[3] as HTMLElement;
     fireEvent.click(row, { altKey: true });
     expect(summaryReads.current).toBe(1);
@@ -83,7 +83,7 @@ describe('what a session row re-renders on', () => {
   it('no row when the hover card opens and closes', () => {
     mount(null);
     summaryReads.current = 0;
-    const row = screen.getByRole('button', { name: 'session 2' });
+    const row = screen.getByRole('option', { name: 'session 2' });
     fireEvent.mouseEnter(row);
     fireEvent.mouseLeave(row);
     expect(summaryReads.current).toBe(0);

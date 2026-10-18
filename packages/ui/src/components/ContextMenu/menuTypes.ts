@@ -30,6 +30,7 @@ export type MenuItemEntry = {
   readonly kind: 'item';
   readonly key: string;
   readonly label: string;
+  readonly ariaLabel?: string | null;
   readonly icon?: ComponentType<IconProps>;
   readonly iconClassName?: string | null;
   readonly hint?: string | null;

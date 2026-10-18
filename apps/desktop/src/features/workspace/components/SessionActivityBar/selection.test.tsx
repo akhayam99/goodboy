@@ -66,7 +66,7 @@ const mount = ({
 };
 
 const tick = (goal: string) =>
-  fireEvent.click(screen.getByRole('checkbox', { name: `Select ${goal}` }));
+  fireEvent.click(screen.getByRole('option', { name: goal }), { altKey: true });
 
 beforeEach(async () => {
   await resetStoryStore();

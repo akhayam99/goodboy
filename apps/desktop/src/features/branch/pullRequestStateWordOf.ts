@@ -1,17 +1,11 @@
-import type { PullRequestPresentationState } from '../../shared/pullRequestPresentation';
+import {
+  PULL_REQUEST_PRESENTATION,
+  type PullRequestPresentationState,
+} from '../../shared/pullRequestPresentation';
 
 type Params = {
   readonly state: PullRequestPresentationState;
 };
 
-const STATE_WORD: Readonly<Record<PullRequestPresentationState, string | null>> = {
-  none: null,
-  draft: 'Draft',
-  open: 'Open',
-  approved: 'Approved',
-  queued: 'Queued',
-  merged: 'Merged',
-  closed: 'Closed',
-};
-
-export const pullRequestStateWordOf = ({ state }: Params): string | null => STATE_WORD[state];
+export const pullRequestStateWordOf = ({ state }: Params): string | null =>
+  state === 'none' ? null : PULL_REQUEST_PRESENTATION[state].label;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Eyebrow,
@@ -37,9 +37,10 @@ import { SessionHoverCard } from '../SessionHoverCard';
 import { useHoverCardTarget } from '../SessionHoverCard/useHoverCardTarget';
 import { sessionGroupPresentation } from './groupPresentation';
 import { useClearSessionFilters } from './useClearSessionFilters';
-import { SessionActivityItem } from './SessionActivityItem';
+import { SessionActivityItem, type EditingChange } from './SessionActivityItem';
 import { SessionGroupHeader } from './SessionGroupHeader';
 
+const SELECTION_HINT = 'Shift click for a range, Option click to add one';
 const SUB_ROW_INSET = 'pl-7';
 const SELECTION_VERB_IDS = ['sessions.archive', 'sessions.restore', 'sessions.delete'];
 
@@ -57,6 +58,11 @@ type Props = {
 
 type GroupParams = {
   readonly group: SessionColumnLayout['groups'][number];
+};
+
+type MoveParams = {
+  readonly delta: number;
+  readonly isExtending: boolean;
 };
 
 type OpenAttention = {
@@ -81,6 +87,15 @@ export const SessionActivityBar = ({
   const clearFilters = useClearSessionFilters({ workspaceId });
   const hover = useHoverCardTarget();
   const { close: closeHover } = hover;
+  const [editingIds, setEditingIds] = useState<ReadonlyArray<SessionId>>([]);
+  const isListbox = editingIds.length === 0;
+  const onEditingChange = useCallback(({ sessionId, isEditing }: EditingChange) => {
+    setEditingIds((current) =>
+      isEditing
+        ? [...current.filter((id) => id !== sessionId), sessionId]
+        : current.filter((id) => id !== sessionId),
+    );
+  }, []);
 
   const filteredArchived = useProjectFilteredSessions({
     workspaceId,
@@ -125,16 +140,6 @@ export const SessionActivityBar = ({
   const listRef = useRef<HTMLDivElement | null>(null);
   const barRef = useRef<HTMLDivElement | null>(null);
   const { selectIds, toggle, selectRange, selectAll } = selection;
-  const onToggleSelect = useCallback(
-    (id: SessionId, event: { readonly shiftKey: boolean }) => {
-      if (event.shiftKey) {
-        selectRange(id);
-        return;
-      }
-      toggle(id);
-    },
-    [selectRange, toggle],
-  );
   const selectedIds = useMemo(
     () => selectedSessions.map((session) => session.id as SessionId),
     [selectedSessions],
@@ -200,7 +205,7 @@ export const SessionActivityBar = ({
     [closeHover, navigate],
   );
 
-  const moveFocus = (delta: number) => {
+  const moveFocus = ({ delta, isExtending }: MoveParams) => {
     const rows = [
       ...(listRef.current?.querySelectorAll<HTMLElement>(
         '[data-select-id], [data-selected], [data-fold]',
@@ -210,7 +215,16 @@ export const SessionActivityBar = ({
     if (index === -1) {
       return;
     }
-    rows[Math.max(0, Math.min(rows.length - 1, index + delta))]?.focus();
+    const next = rows[Math.max(0, Math.min(rows.length - 1, index + delta))];
+    const fromId = visibleOrder.find((id) => id === rows[index]?.getAttribute('data-select-id'));
+    const toId = visibleOrder.find((id) => id === next?.getAttribute('data-select-id'));
+    if (isExtending && fromId !== undefined && toId !== undefined && fromId !== toId) {
+      if (selection.selected.length === 0) {
+        toggle(fromId);
+      }
+      selectRange(toId);
+    }
+    next?.focus();
   };
 
   const hoveredId = hover.target?.sessionId ?? null;
@@ -232,16 +246,17 @@ export const SessionActivityBar = ({
       session,
       isArchived,
       isSelected: isSelected(id),
+      isListbox,
+      onEditingChange,
       getSelectedIds,
       onClearSelection: clearSelection,
       onModifierClick: selection.handleItemClick,
-      onToggleSelect,
       onSelect: selectSession,
       onRowEnter: hover.enter,
       onRowLeave: hover.leave,
     };
     return (
-      <li key={session.id} className="flex flex-col">
+      <li key={session.id} role={isListbox ? 'none' : undefined} className="flex flex-col">
         <SessionActivityItem
           {...rowProps}
           isActive={isActive}
@@ -281,7 +296,12 @@ export const SessionActivityBar = ({
           />
         ) : null}
         {group.isCollapsed ? null : (
-          <ul role="list" className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}>
+          <ul
+            role={isListbox ? 'listbox' : undefined}
+            aria-multiselectable={isListbox ? true : undefined}
+            aria-label={presentation?.label ?? group.label ?? 'Sessions'}
+            className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}
+          >
             {group.sessions.map((session) => renderRow(session, false))}
           </ul>
         )}
@@ -298,7 +318,10 @@ export const SessionActivityBar = ({
           onKeyDown={(event) => {
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
               event.preventDefault();
-              moveFocus(event.key === 'ArrowDown' ? 1 : -1);
+              moveFocus({
+                delta: event.key === 'ArrowDown' ? 1 : -1,
+                isExtending: event.shiftKey,
+              });
             }
           }}
           data-selecting={selectedIds.length > 0}
@@ -353,7 +376,12 @@ export const SessionActivityBar = ({
                   <Eyebrow label="Archived" muted />
                 </span>
               ) : null}
-              <ul role="list" className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}>
+              <ul
+                role={isListbox ? 'listbox' : undefined}
+                aria-multiselectable={isListbox ? true : undefined}
+                aria-label="Archived sessions"
+                className={cn('flex flex-col', PANE_RHYTHM.sessionList.rowGap)}
+              >
                 {shownArchived.map((session) => renderRow(session, true))}
               </ul>
             </div>
@@ -386,6 +414,12 @@ export const SessionActivityBar = ({
           ) : null}
         </div>
       </ScrollFade>
+
+      {hasSelection || total + shownArchived.length < 2 ? null : (
+        <p data-selection-hint="" className="px-2 text-meta text-faint-foreground">
+          {SELECTION_HINT}
+        </p>
+      )}
 
       <SessionHoverCard
         session={hoveredSession}

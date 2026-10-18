@@ -216,13 +216,14 @@ describe('SPEC3 9.9: every Sessions page capability is reachable from its new ho
     expect(items.some((item) => item.startsWith('Archive'))).toBe(true);
   });
 
-  it('bulk select: the card tick and Select all reach the selection bar', async () => {
+  it('bulk select: an Option click on a card reaches the selection bar, with no checkbox', async () => {
     await mount('c11-sessions-board');
-    const [box] = screen.getAllByRole('checkbox');
-    if (box === undefined) {
-      throw new Error('no card checkbox');
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    const [title] = screen.getAllByRole('button', { pressed: false });
+    if (title === undefined) {
+      throw new Error('no card title');
     }
-    fireEvent.click(box);
+    fireEvent.click(title, { altKey: true });
     await settle();
     expect(within(screen.getByRole('toolbar')).getByText('1 selected')).toBeDefined();
   });

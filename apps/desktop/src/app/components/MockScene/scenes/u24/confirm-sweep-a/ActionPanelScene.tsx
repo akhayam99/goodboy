@@ -9,6 +9,7 @@ const MERGE: ResolvedAction = {
   id: 'pullRequest.merge',
   label: 'Merge',
   shortLabel: 'Merge',
+  ariaLabel: null,
   icon: GitMerge,
   iconClassName: null,
   group: 'act',

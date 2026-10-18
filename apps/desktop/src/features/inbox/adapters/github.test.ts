@@ -92,7 +92,7 @@ describe('adaptGithubPrs', () => {
       identifier: '#12',
       title: 'Retry ledger sync',
       state: 'open',
-      stateLabel: 'In review',
+      stateLabel: 'Open',
       updatedAt: '2026-09-25T10:00:00Z',
       url: 'https://github.com/harborline/ledger-core/pull/12',
       context: 'harborline/ledger-core',

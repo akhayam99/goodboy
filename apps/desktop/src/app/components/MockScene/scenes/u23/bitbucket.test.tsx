@@ -162,7 +162,7 @@ describe('the Pull request tab on Bitbucket, controls', () => {
       .map((item) => item.textContent);
     expect(labels.some((label) => /draft/i.test(label ?? ''))).toBe(false);
     expect(labels.some((label) => /Reopen/.test(label ?? ''))).toBe(false);
-    expect(labels).toContain('Open on Bitbucket');
+    expect(labels).toContain('Open');
     expect(labels).toContain('Close pull request');
   });
 
@@ -264,7 +264,7 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
       .getAllByRole('menuitem')
       .map((item) => item.textContent ?? '');
     expect(labels.some((label) => /Reopen|Close pull request/.test(label))).toBe(false);
-    expect(labels).toContain('Open on Bitbucket');
+    expect(labels).toContain('Open');
   });
 });
 
@@ -319,7 +319,7 @@ describe('the Checks tab on Bitbucket', () => {
 });
 
 describe('the session marks scene on Bitbucket', () => {
-  const rowOf = (title: string): HTMLElement => screen.getByRole('button', { name: title });
+  const rowOf = (title: string): HTMLElement => screen.getByRole('option', { name: title });
 
   const markOf = (title: string) => {
     const row = rowOf(title);

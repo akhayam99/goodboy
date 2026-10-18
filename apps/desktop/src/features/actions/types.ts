@@ -126,7 +126,7 @@ export type ActionMenuBehavior = {
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
 export type ActionViewing = {
-  readonly kind: 'artifact' | 'agent' | 'workflowRun';
+  readonly kind: 'artifact' | 'agent' | 'workflowRun' | 'selection';
   readonly id: string;
 };
 
@@ -156,7 +156,9 @@ export type ActionDefinition<F> = {
   readonly id: string;
   readonly label: string | ((params: FactsParams<F>) => string);
   readonly shortLabel?: (params: FactsParams<F>) => string;
+  readonly ariaLabel?: (params: FactsParams<F>) => string;
   readonly icon: LucideIcon;
+  readonly iconOf?: (params: FactsParams<F>) => LucideIcon;
   readonly iconClassName?: string;
   readonly group: ActionGroup;
   readonly shortcut?: ShortcutId;
@@ -193,6 +195,7 @@ export type ResolvedAction = {
   readonly id: string;
   readonly label: string;
   readonly shortLabel: string;
+  readonly ariaLabel: string | null;
   readonly icon: LucideIcon;
   readonly iconClassName: string | null;
   readonly group: ActionGroup;

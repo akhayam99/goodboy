@@ -2,7 +2,7 @@ import { useId, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { FOCUS_RING, Reveal, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { CARD_ROW_INSET } from './railInset';
+import { CARD_INSET, CARD_ROW_INSET } from './railInset';
 
 type Props = {
   readonly id: string;
@@ -22,7 +22,7 @@ export const LevelCard = ({ id, label, isOpen, onToggle, meta, action, children 
       aria-labelledby={id}
       data-level-card={label}
       data-open={isOpen ? '' : undefined}
-      className="flex min-w-0 flex-col rounded-lg bg-subtle p-1"
+      className={cn('flex min-w-0 flex-col rounded-lg bg-subtle', CARD_INSET)}
     >
       <div className="flex h-7 min-w-0 items-center justify-between gap-2">
         <h2 id={id} className="flex h-full min-w-0">

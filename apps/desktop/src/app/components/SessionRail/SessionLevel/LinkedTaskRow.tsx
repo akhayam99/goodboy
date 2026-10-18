@@ -1,4 +1,4 @@
-import { SelectableRow } from '@goodboy/ui';
+import { SelectableRow, cn } from '@goodboy/ui';
 import type { SessionExternalTask, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
@@ -7,6 +7,7 @@ import { taskKeyOf } from '../../../../features/actions/kinds/task';
 import type { ObjectTarget } from '../../../../features/actions/types';
 import { useTaskDrag } from '../../../../features/session/hooks/useTaskDrag';
 import { LinkedKey } from './LinkedKey';
+import { CARD_ROW_INSET } from './railInset';
 import { taskPlacementLabel } from '../../../../shared/utils/taskPlacementLabel';
 
 type Props = {
@@ -47,7 +48,7 @@ export const LinkedTaskRow = ({ sessionId, task, branches, isShown }: Props) => 
               : `${task.identifier} ${task.title}. ${placement}`
           }
           onClick={() => openExternalTaskLens(sessionId, task)}
-          className="h-7 items-center gap-2 px-1 text-ui"
+          className={cn('h-7 items-center gap-2 text-ui', CARD_ROW_INSET)}
         >
           <IntegrationGlyph provider={task.provider} size="xs" className="shrink-0" />
           <LinkedKey identifier={task.identifier} />

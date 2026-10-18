@@ -37,7 +37,10 @@ import { bindTarget } from '../../../actions/registry';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import type { AppStore } from '../../../../store/store';
 import { borderOf, spacingOf } from '../../../../test/boxGeometry';
-import { inFlowBefore, isLaidOver } from '../../../../test/flowLayout';
+import { inFlowBefore } from '../../../../test/flowLayout';
+import { brandedId } from '../../../history/testing/brandedId';
+import { sessionObjectKey } from '../../../actions/kinds/session';
+import { requestSelect } from '../../../actions/selectRequest';
 import { StageBoard } from './index';
 
 const workspace = aWorkspace({ name: 'Harborline', slug: 'harborline' });
@@ -93,8 +96,12 @@ const markArchived = (ids: ReadonlyArray<SessionId>): void => {
   }));
 };
 
-const checkboxOf = (goal: string): HTMLElement =>
-  screen.getByRole('checkbox', { name: `Select ${goal}` });
+const titleOf = (goal: string): HTMLElement => screen.getByRole('button', { name: goal });
+
+const pressedOf = (goal: string): string | null => titleOf(goal).getAttribute('aria-pressed');
+
+const tick = (goal: string, init: Parameters<typeof fireEvent.click>[1] = { altKey: true }) =>
+  fireEvent.click(titleOf(goal), init);
 
 const toolbar = (): HTMLElement => screen.getByRole('toolbar');
 
@@ -111,15 +118,15 @@ describe('StageBoard selection bar', () => {
     mountBoard(sessionsOf(GOALS));
     expect(screen.queryByRole('toolbar')).toBeNull();
 
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    tick(GOALS[0] ?? '');
 
     expect(within(toolbar()).getByText('1 selected')).toBeDefined();
     expect(screen.getAllByRole('toolbar')).toHaveLength(1);
-    expect(checkboxOf(GOALS[0] ?? '').getAttribute('aria-checked')).toBe('true');
-    expect(checkboxOf(GOALS[1] ?? '').getAttribute('aria-checked')).toBe('false');
+    expect(pressedOf(GOALS[0] ?? '')).toBe('true');
+    expect(pressedOf(GOALS[1] ?? '')).toBe('false');
   });
 
-  it('lines each title up with its meta line at rest and lays the checkbox over the rail', () => {
+  it('lines each title up with its meta line at rest', () => {
     const sessions = sessionsOf(GOALS);
     useAppStore.setState({
       sessionOpenQuestions: Object.fromEntries(
@@ -144,13 +151,10 @@ describe('StageBoard selection bar', () => {
     mountBoard(sessions);
 
     for (const goal of GOALS) {
-      const box = checkboxOf(goal);
-      const title = screen.getByRole('button', { name: goal });
-      const card = box.closest('article');
+      const title = titleOf(goal);
+      const card = title.closest('article');
       expect(card?.contains(title)).toBe(true);
       expect(inFlowBefore(title)).toEqual([]);
-      expect(title.contains(box)).toBe(false);
-      expect(card === null ? false : isLaidOver(box, card)).toBe(true);
       const signal = card?.querySelector<HTMLElement>('[data-slot="card-signal"]') ?? null;
       expect(
         signal === null ? null : within(signal).getByRole('img').getAttribute('aria-label'),
@@ -158,60 +162,83 @@ describe('StageBoard selection bar', () => {
     }
   });
 
-  it('keeps 6px between the checkbox, the card edge and the title, and gaps the rail under it', () => {
+  it('draws no checkbox and keeps the card padding and the rail where they are at rest', () => {
     mountBoard(sessionsOf(GOALS));
-    const shown = [
-      new Set(['group-hover/select-row']),
-      new Set(['group-focus-within/select-row']),
-      new Set(['group-data-[selecting=true]/select-list']),
-    ];
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    tick(GOALS[0] ?? '');
 
     for (const goal of GOALS) {
-      const box = checkboxOf(goal);
-      const card = box.closest('article');
-      const anchor = box.parentElement;
-      const square = box.querySelector('span[aria-hidden]');
+      const card = titleOf(goal).closest('article');
       const rail = card?.querySelector('[data-testid="tone-bar"]');
-      if (card == null || anchor == null || square == null || rail == null) {
+      if (card == null || rail == null) {
         throw new Error(`card parts missing for ${goal}`);
       }
       const border = borderOf({ element: card });
-      const inset =
-        (spacingOf({ element: anchor, property: 'size' }) -
-          spacingOf({ element: square, property: 'size' })) /
-        2;
-      const squareSize = spacingOf({ element: square, property: 'size' });
-      const left = border + spacingOf({ element: anchor, property: 'left' }) + inset;
-      const top = border + spacingOf({ element: anchor, property: 'top' }) + inset;
-      const titleLeft = border + spacingOf({ element: card, property: 'pl' });
-
-      expect(squareSize).toBe(16);
-      expect(left).toBeGreaterThanOrEqual(6);
-      expect(top).toBeGreaterThanOrEqual(6);
-      expect(titleLeft - (left + squareSize)).toBeGreaterThanOrEqual(6);
-      for (const states of shown) {
-        expect(border + spacingOf({ element: rail, property: 'top', states })).toBeGreaterThan(
-          top + squareSize,
+      expect(border + spacingOf({ element: card, property: 'pl' })).toBeLessThanOrEqual(24);
+      for (const states of [
+        new Set(['group-hover/select-row']),
+        new Set(['group-focus-within/select-row']),
+        new Set(['group-data-[selecting=true]/select-list']),
+      ]) {
+        expect(spacingOf({ element: rail, property: 'top', states })).toBe(
+          spacingOf({ element: rail, property: 'top' }),
         );
       }
     }
   });
 
-  it('reaches the checkbox from the keyboard on a focused card', () => {
+  it('reads the state word with the card title and the pressed state on a selected card', () => {
+    mountBoard(sessionsOf(GOALS));
+    tick(GOALS[1] ?? '');
+
+    const title = titleOf(GOALS[1] ?? '');
+    const described = title.getAttribute('aria-describedby');
+    expect(described).not.toBeNull();
+    expect(document.getElementById(described ?? '')?.textContent?.length).toBeGreaterThan(0);
+    expect(title.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('extends a range from the keyboard with Shift Enter and toggles with Alt Enter', () => {
+    mountBoard(sessionsOf(GOALS));
+    const first = titleOf(GOALS[0] ?? '');
+    fireEvent.keyDown(first, { key: 'Enter', altKey: true });
+    expect(pressedOf(GOALS[0] ?? '')).toBe('true');
+    fireEvent.keyDown(titleOf(GOALS[2] ?? ''), { key: 'Enter', shiftKey: true });
+    expect(within(toolbar()).getByText(/\d selected/)).toBeDefined();
+  });
+
+  it('selects the card a Select menu item names', () => {
+    const sessions = sessionsOf(GOALS);
+    mountBoard(sessions);
+    const target = sessions[1];
+    if (target === undefined) {
+      throw new Error('session missing');
+    }
+    act(() => {
+      requestSelect({
+        objectKey: sessionObjectKey({ sessionId: brandedId<SessionId>({ value: target.id }) }),
+        anchorKey: `board:${target.id}`,
+      });
+    });
+    expect(pressedOf(GOALS[1] ?? '')).toBe('true');
+    expect(pressedOf(GOALS[0] ?? '')).toBe('false');
+  });
+
+  it('reaches the selection from the keyboard on a focused card', () => {
     mountBoard(sessionsOf(GOALS));
     const title = screen.getByRole('button', { name: GOALS[2] ?? '' });
 
     title.focus();
     fireEvent.keyDown(title, { key: 'x', code: 'KeyX' });
 
-    expect(checkboxOf(GOALS[2] ?? '').getAttribute('aria-checked')).toBe('true');
+    expect(pressedOf(GOALS[2] ?? '')).toBe('true');
     expect(within(toolbar()).getByText('1 selected')).toBeDefined();
     expect(document.activeElement).toBe(title);
   });
 
   it('offers every card on the board, and selects them all from the bar', () => {
     mountBoard(sessionsOf(GOALS));
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    tick(GOALS[0] ?? '');
 
     fireEvent.click(screen.getByRole('button', { name: 'Select all 4' }));
 
@@ -221,9 +248,9 @@ describe('StageBoard selection bar', () => {
 
   it('extends to a range on a shift-click of a checkbox inside a column', () => {
     mountBoard(sessionsOf(GOALS));
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    tick(GOALS[0] ?? '');
 
-    fireEvent.click(checkboxOf(GOALS[2] ?? ''), { shiftKey: true });
+    tick(GOALS[2] ?? '', { altKey: false, shiftKey: true });
 
     expect(within(toolbar()).getByText(/\d selected/)).toBeDefined();
   });
@@ -233,7 +260,7 @@ describe('StageBoard selection bar', () => {
 
     fireEvent.mouseOver(screen.getByText(GOALS[1] ?? ''));
     fireEvent.keyDown(window, { key: 'x', code: 'KeyX' });
-    expect(checkboxOf(GOALS[1] ?? '').getAttribute('aria-checked')).toBe('true');
+    expect(pressedOf(GOALS[1] ?? '')).toBe('true');
     expect(within(toolbar()).getByText('1 selected')).toBeDefined();
 
     fireEvent.keyDown(window, { key: 'a', code: 'KeyA', ctrlKey: true });
@@ -246,8 +273,8 @@ describe('StageBoard selection bar', () => {
   it('names the verbs with the same words as the context menu of the selection', () => {
     const sessions = sessionsOf(GOALS);
     mountBoard(sessions);
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
-    fireEvent.click(checkboxOf(GOALS[1] ?? ''));
+    tick(GOALS[0] ?? '');
+    tick(GOALS[1] ?? '');
 
     const menu =
       bindTarget({
@@ -284,9 +311,9 @@ describe('StageBoard selection bar', () => {
         [second.id]: [anAgent({ sessionId: second.id, status: 'running' })],
       },
     });
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
-    fireEvent.click(checkboxOf(GOALS[1] ?? ''));
-    fireEvent.click(checkboxOf(GOALS[2] ?? ''));
+    tick(GOALS[0] ?? '');
+    tick(GOALS[1] ?? '');
+    tick(GOALS[2] ?? '');
 
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 3 sessions' }));
 
@@ -304,8 +331,8 @@ describe('StageBoard selection bar', () => {
     const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>();
     mountBoard(sessionsOf(GOALS));
     useAppStore.setState({ bulkArchiveTask });
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
-    fireEvent.click(checkboxOf(GOALS[1] ?? ''));
+    tick(GOALS[0] ?? '');
+    tick(GOALS[1] ?? '');
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
 
     fireEvent.click(
@@ -334,8 +361,8 @@ describe('StageBoard selection bar', () => {
     }));
     mountBoard(sessions);
     useAppStore.setState({ bulkArchiveTask, bulkUnarchiveTask });
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
-    fireEvent.click(checkboxOf(GOALS[2] ?? ''));
+    tick(GOALS[0] ?? '');
+    tick(GOALS[2] ?? '');
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
 
     fireEvent.click(
@@ -369,8 +396,8 @@ describe('StageBoard selection bar', () => {
       .mockImplementationOnce(async (ids) => ({ succeeded: [...ids], failed: [] }));
     mountBoard(sessions);
     useAppStore.setState({ bulkArchiveTask });
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
-    fireEvent.click(checkboxOf(GOALS[1] ?? ''));
+    tick(GOALS[0] ?? '');
+    tick(GOALS[1] ?? '');
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Archive 2 sessions' }));
 
     fireEvent.click(
@@ -401,7 +428,7 @@ describe('StageBoard selection bar', () => {
     const sessions = sessionsOf(GOALS);
     mountBoard(sessions);
     useAppStore.setState({ bulkArchiveTask });
-    fireEvent.click(checkboxOf(GOALS[3] ?? ''));
+    tick(GOALS[3] ?? '');
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Delete 1 session' }));
 
     fireEvent.click(
@@ -416,8 +443,8 @@ describe('StageBoard selection bar', () => {
 
   it('asks above the bar before deleting, says what goes and what stays, and puts focus on Cancel', () => {
     mountBoard(sessionsOf(GOALS));
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
-    fireEvent.click(checkboxOf(GOALS[1] ?? ''));
+    tick(GOALS[0] ?? '');
+    tick(GOALS[1] ?? '');
 
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Delete 2 sessions' }));
 
@@ -434,7 +461,7 @@ describe('StageBoard selection bar', () => {
 
   it('opens the confirmation from the Delete key and returns focus to the board when it closes', async () => {
     mountBoard(sessionsOf(GOALS));
-    fireEvent.click(checkboxOf(GOALS[0] ?? ''));
+    tick(GOALS[0] ?? '');
 
     fireEvent.mouseOver(screen.getByText(GOALS[0] ?? ''));
     fireEvent.keyDown(window, { key: 'Delete', code: 'Delete' });
@@ -455,7 +482,7 @@ describe('StageBoard selection bar', () => {
     const sessions = sessionsOf(GOALS);
     mountBoard(sessions);
     useAppStore.setState({ bulkDeleteTask });
-    fireEvent.click(checkboxOf(GOALS[2] ?? ''));
+    tick(GOALS[2] ?? '');
     fireEvent.click(within(toolbar()).getByRole('button', { name: 'Delete 1 session' }));
 
     fireEvent.click(
@@ -478,7 +505,7 @@ describe('StageBoard selection cost', () => {
     act(() => undefined);
     renders.length = 0;
 
-    fireEvent.click(checkboxOf('Reconcile batch 7'));
+    tick('Reconcile batch 7');
 
     expect(renders.length).toBeLessThanOrEqual(2);
     expect(within(toolbar()).getByText('1 selected')).toBeDefined();
@@ -486,11 +513,11 @@ describe('StageBoard selection cost', () => {
 
   it('redraws at most two cards when the selection moves from one card to another', () => {
     mountBoard(many(100));
-    fireEvent.click(checkboxOf('Reconcile batch 7'));
+    tick('Reconcile batch 7');
     renders.length = 0;
 
-    fireEvent.click(checkboxOf('Reconcile batch 7'));
-    fireEvent.click(checkboxOf('Reconcile batch 8'));
+    tick('Reconcile batch 7');
+    tick('Reconcile batch 8');
 
     expect(renders.length).toBeLessThanOrEqual(4);
   });

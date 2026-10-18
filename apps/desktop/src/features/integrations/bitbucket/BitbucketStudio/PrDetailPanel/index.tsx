@@ -166,7 +166,7 @@ export const PrDetailPanel = ({
         <PrChecks
           checks={detail.checks}
           fallbackUrl={webUrl}
-          hostLabel="Bitbucket"
+          host="bitbucket"
           onOpenUrl={(url) => void openUrl(url)}
         />
       ),

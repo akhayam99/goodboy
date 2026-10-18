@@ -125,7 +125,7 @@ const MARKS: ReadonlyArray<Mark> = [
   },
 ];
 
-const rowOf = (title: string): HTMLElement => screen.getByRole('button', { name: title });
+const rowOf = (title: string): HTMLElement => screen.getByRole('option', { name: title });
 
 describe('the session marks scene', () => {
   it.each(MARKS.map((mark) => [mark.title, mark] as const))(
@@ -181,7 +181,7 @@ describe('the session marks scene', () => {
     await waitFor(() => expect(rowOf('Billing export fails on large files')).toBeDefined());
 
     const red = Array.from(document.querySelectorAll('[data-node-tone="danger"]')).map(
-      (node) => node.closest('button')?.textContent?.replace(/^!/, '') ?? '',
+      (node) => node.closest('button')?.firstElementChild?.textContent ?? '',
     );
     expect(red.sort()).toEqual(
       [

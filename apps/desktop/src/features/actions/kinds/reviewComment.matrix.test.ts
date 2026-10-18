@@ -13,6 +13,7 @@ const BASE: ReviewCommentFacts = {
   isNote: false,
   hasPr: true,
   provider: 'GitHub',
+  host: 'github',
   canResolve: true,
   agentId: 'resolver' as AgentId,
   path: 'src/webhooks/retryPolicy.ts',
@@ -42,13 +43,14 @@ const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict
 
 const OPEN = ['reviewComment.openInDiff menu Open in Files'];
 const TRANSCRIPT = ['reviewComment.transcript menu Agent transcript'];
-const GITHUB = ['reviewComment.openOnGithub menu Open on GitHub'];
+const GITHUB = ['reviewComment.openOnGithub menu Open'];
 const BITBUCKET: Partial<ReviewCommentFacts> = {
   provider: 'Bitbucket',
+  host: 'bitbucket',
   canResolve: false,
   url: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12/_/diff#comment-4',
 };
-const BITBUCKET_LINK = ['reviewComment.openOnGithub menu Open on Bitbucket'];
+const BITBUCKET_LINK = ['reviewComment.openOnGithub menu Open'];
 const COPY = ['reviewComment.copyLink menu Copy link'];
 const DECIDE = [
   'reviewComment.reply secondary Reply',
@@ -381,12 +383,13 @@ const MATRIX: ReadonlyArray<Row> = [
       state: 'new',
       agentId: null,
       provider: 'Bitbucket',
+      host: 'bitbucket',
       canResolve: false,
       url: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12/_/diff#comment-4',
     },
     expected: [
       ...OPEN,
-      'reviewComment.openOnGithub menu Open on Bitbucket',
+      'reviewComment.openOnGithub menu Open',
       'reviewComment.draft primary Fix',
       'reviewComment.reply secondary Reply',
       'reviewComment.skip secondary Skip',

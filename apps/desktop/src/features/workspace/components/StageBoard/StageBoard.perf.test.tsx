@@ -98,10 +98,12 @@ describe('StageBoard with 300 Done sessions, performance', () => {
     const mountElapsed = performance.now() - mountStarted;
 
     const lane = screen.getByRole('group', { name: 'done' });
-    expect(within(lane).getAllByRole('checkbox')).toHaveLength(DONE_COUNT);
+    expect(lane.querySelectorAll('article[data-select-id]')).toHaveLength(DONE_COUNT);
     expect(mountElapsed).toBeLessThan(MOUNT_BUDGET_MS);
 
-    fireEvent.click(within(lane).getAllByRole('checkbox')[0] as HTMLElement);
+    fireEvent.click(within(lane).getAllByRole('button', { pressed: false })[0] as HTMLElement, {
+      altKey: true,
+    });
     const selectStarted = performance.now();
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: `Select all ${DONE_COUNT}` }));
