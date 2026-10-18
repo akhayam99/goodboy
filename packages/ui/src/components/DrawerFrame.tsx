@@ -30,6 +30,7 @@ export type DrawerFrameProps = {
   readonly onClose: () => void;
   readonly dock?: ReactNode;
   readonly scroll?: 'frame' | 'self';
+  readonly isHeaderless?: boolean;
   readonly children: ReactNode;
 };
 
@@ -80,6 +81,7 @@ export const DrawerFrame = ({
   onClose,
   dock,
   scroll = 'frame',
+  isHeaderless = false,
   children,
 }: DrawerFrameProps) => {
   const [trigger] = useState(focusableTrigger);
@@ -163,40 +165,42 @@ export const DrawerFrame = ({
       tabIndex={-1}
       className="flex h-full min-h-0 min-w-0 flex-col bg-subtle outline-none motion-safe:animate-nav-step-in"
     >
-      <header
-        data-drawer-header=""
-        className={cn(
-          'flex shrink-0 flex-col pb-2',
-          PANE_RHYTHM.headerInset,
-          hasToolbar && 'gap-2',
-        )}
-      >
-        <div
-          data-drawer-header-row=""
+      {isHeaderless ? null : (
+        <header
+          data-drawer-header=""
           className={cn(
-            'flex min-w-0 gap-2 pl-4 pr-2',
-            hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,
-            hasToolbar ? 'items-start' : 'items-center',
+            'flex shrink-0 flex-col pb-2',
+            PANE_RHYTHM.headerInset,
+            hasToolbar && 'gap-2',
           )}
         >
-          {titleRow}
-        </div>
-        {meta == null ? null : (
-          <p
-            data-drawer-meta=""
-            style={{ paddingLeft: Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX }}
-            className="min-w-0 truncate pr-2 text-meta text-muted-foreground"
+          <div
+            data-drawer-header-row=""
+            className={cn(
+              'flex min-w-0 gap-2 pl-4 pr-2',
+              hasToolbar ? 'min-h-8' : PANE_RHYTHM.headerRow,
+              hasToolbar ? 'items-start' : 'items-center',
+            )}
           >
-            {meta}
-          </p>
-        )}
-        {hasToolbar ? (
-          <div data-drawer-toolbar="" className="flex min-w-0 flex-col gap-2 px-4">
-            {toolbar}
+            {titleRow}
           </div>
-        ) : null}
-      </header>
-      {back === undefined ? null : (
+          {meta == null ? null : (
+            <p
+              data-drawer-meta=""
+              style={{ paddingLeft: Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX }}
+              className="min-w-0 truncate pr-2 text-meta text-muted-foreground"
+            >
+              {meta}
+            </p>
+          )}
+          {hasToolbar ? (
+            <div data-drawer-toolbar="" className="flex min-w-0 flex-col gap-2 px-4">
+              {toolbar}
+            </div>
+          ) : null}
+        </header>
+      )}
+      {back === undefined || isHeaderless ? null : (
         <div data-drawer-back="" className="flex shrink-0 px-2 pt-2">
           <Button variant="quiet" size="xs" onClick={back.onBack}>
             <ArrowLeft size={ICON_SIZE.row} aria-hidden />
@@ -204,7 +208,7 @@ export const DrawerFrame = ({
           </Button>
         </div>
       )}
-      {scroll === 'self' ? (
+      {scroll === 'self' || isHeaderless ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       ) : (
         <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-3" fadeSize={24}>

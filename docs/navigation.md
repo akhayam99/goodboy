@@ -2724,9 +2724,15 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed, opens as a pane (see The session tools), and
-  browses one project of the session at a time as a tree (`role="tree"`). A
-  project chip under the title (`ExploreProjectChip`) names it, `ledger-core ·
-hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
+  browses one project of the session at a time as a tree (`role="tree"`). It
+  draws the shared page header (`PaneShell` `page="explore"` inside the
+  drawer's `DrawerFrame isHeaderless`, which keeps Esc and focus): the title
+  with no glyph, counts on the meta line (`exploreMetaOf`: `3 folders · 4 files`
+  for the root, `7 files changed` in the Changed view, nothing while the root
+  loads or is empty), then Refresh and Close at the right of the title row. A
+  project chip on the row under the meta (`ExploreProjectChip`) names the
+  folder, `ledger-core · hl/ledger-rounding`, and with two or more mounts opens
+  a menu grouped by
   project; a first-lap session reads `ledger-core, project folder` and a
   session without a project reads `Session scratch folder`. Picking a row is
   view only: it sets `exploreMountPath` in the session-view slice and never
@@ -2734,8 +2740,13 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   moves it. Until you pick, Explore follows the write destination
   (`selectExploreMount` in `features/explore`, built on
   `resolveWriteDestination`). A pick whose worktree lost its files reads
-  "This worktree is gone", and a session with nothing to browse reads "Nothing
-  to browse yet". The `mount.browseFiles` action (Browse files) opens the
+  "This worktree is gone", and a session with nothing to browse reads "No
+  folder to browse" with one action, Add project (`DrawerHost` hands it
+  in as `noFolderAction`, so `features/explore` does not import the session
+  feature). Every empty state is an
+  `EmptyState` at page size: a title, one line that says what fills it and at
+  most one action ("This folder is empty", "No changes against main", "Couldn't
+  read this session folder" with Retry). The `mount.browseFiles` action (Browse files) opens the
   Explore pane on a given mount (`openExplorePane`). An `explore` target in a
   stored place (`s/{session}/explore/{mount}`) still parses and lands on the
   Overview with the pane open. Rows are 40px
@@ -2758,7 +2769,7 @@ hl/ledger-rounding`, and with two or more mounts opens a menu grouped by
   git answers and that has changes (or while you are in Changed). Changed
   filters the same tree to the changed paths and their folders, all open, with
   deleted files as faint struck rows that do not open; with nothing left it
-  says "No changes against main." A changed file's drawer offers
+  says "No changes against main". A changed file's drawer offers
   `Preview | Changes` in its toolbar: Changes is the file's diff in the peek
   presentation with a ghost Open in Files that opens the Files tab on the file. The folders you opened
   are kept per session and project in the session-view slice (`exploreExpanded`,

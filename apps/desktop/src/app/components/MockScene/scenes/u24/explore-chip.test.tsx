@@ -85,8 +85,10 @@ describe('the explore chip scenes', () => {
   it('explore-nomount says there is nothing to browse yet and has no retry', async () => {
     mount({ id: 'explore-nomount' });
 
-    expect(await screen.findByText('Nothing to browse yet', {}, WAIT)).toBeDefined();
-    expect(screen.getByText('Files show here once this session has a project.')).toBeDefined();
+    expect(await screen.findByText('No folder to browse', {}, WAIT)).toBeDefined();
+    expect(
+      screen.getByText('Explore lists the files of a folder this session works in.'),
+    ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 });

@@ -373,11 +373,34 @@ describe('the Explore project chip without a mounted project', () => {
     useAppStore.setState({ projects: [LEDGER_PROJECT] });
     mountPane();
 
-    expect(await screen.findByText('Nothing to browse yet')).toBeDefined();
-    expect(screen.getByText('Files show here once this session has a project.')).toBeDefined();
+    expect(await screen.findByText('No folder to browse')).toBeDefined();
+    expect(
+      screen.getByText('Explore lists the files of a folder this session works in.'),
+    ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
     expect(screen.queryByTestId('explore-project')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Refresh the files' })).toBeNull();
+  });
+});
+
+describe('the Explore pane with nothing to browse and an action', () => {
+  it('shows the action it is given under the line', async () => {
+    h.scratch.current = new Error('The scratch folder is not available');
+    useAppStore.setState({ projects: [LEDGER_PROJECT] });
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <ExplorePane
+            sessionId={SESSION_ID}
+            noFolderAction={<button type="button">Add project</button>}
+            onClose={vi.fn()}
+          />
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'No folder to browse' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
   });
 });
 
@@ -415,7 +438,7 @@ describe('the Explore project chip when the worktree is gone', () => {
     seedGone();
     mountPane();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Show the current project' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show the current folder' }));
 
     expect(await rowNamed('rounding.ts')).toBeDefined();
     await waitFor(() =>

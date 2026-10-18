@@ -215,6 +215,74 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('ExplorePane header', () => {
+  const header = (): HTMLElement => {
+    const element = document.querySelector<HTMLElement>('[data-page-header]');
+    if (element === null) {
+      throw new Error('the page header is not drawn');
+    }
+    return element;
+  };
+
+  it('draws the page header with the title, the counts and no glyph before the title', async () => {
+    list({
+      relPath: '',
+      entries: [folder('docs'), folder('src'), entry({ relPath: 'notes.txt' })],
+    });
+    mount();
+
+    await rowNamed('docs');
+    const title = screen.getByRole('heading', { level: 1, name: 'Explore' });
+    expect(header().getAttribute('data-page')).toBe('explore');
+    expect(title.previousElementSibling).toBeNull();
+    expect(screen.getByText('2 folders · 1 file').getAttribute('data-slot')).toBe('pane-meta');
+  });
+
+  it('puts the refresh and Close in the title row and closes from the button', async () => {
+    const onClose = vi.fn();
+    list({ relPath: '', entries: [entry({ relPath: 'notes.txt' })] });
+    render(
+      <ToastProvider>
+        <ObjectMenuProvider>
+          <ExplorePane sessionId={SESSION_ID} onClose={onClose} />
+        </ObjectMenuProvider>
+      </ToastProvider>,
+    );
+
+    await rowNamed('notes.txt');
+    const row = within(header());
+    const refresh = row.getByRole('button', { name: 'Refresh the files' });
+    const close = row.getByRole('button', { name: 'Close' });
+    expect(refresh.compareDocumentPosition(close)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    fireEvent.click(close);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('counts the changed files while the Changed view is open', async () => {
+    mountRepo();
+    list({ relPath: '', entries: [folder('src'), entry({ relPath: 'notes.txt' })] });
+    list({ relPath: 'src', entries: [entry({ relPath: 'src/a.ts' })] });
+    summarise([{ path: 'src/a.ts', status: 'modified' }]);
+    mount();
+
+    await rowNamed('src');
+    expect(screen.getByText('1 folder · 1 file')).toBeDefined();
+    fireEvent.click(await screen.findByRole('tab', { name: /Changed/ }));
+
+    expect(await screen.findByText('1 file changed')).toBeDefined();
+  });
+
+  it('keeps the header and shows no counts for an empty root', async () => {
+    list({ relPath: '', entries: [] });
+    mount();
+
+    await screen.findByRole('heading', { name: 'This folder is empty' });
+    expect(screen.getByRole('heading', { level: 1, name: 'Explore' })).toBeDefined();
+    expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
+  });
+});
+
 describe('ExplorePane tree', () => {
   it('lists the root as a tree and opens a folder when you click it', async () => {
     list({ relPath: '', entries: [folder('docs'), entry({ relPath: 'notes.txt' })] });
@@ -272,7 +340,10 @@ describe('ExplorePane tree', () => {
     list({ relPath: '', entries: [] });
     mount();
 
-    expect(await screen.findByText('This folder is empty')).toBeDefined();
+    expect(await screen.findByRole('heading', { name: 'This folder is empty' })).toBeDefined();
+    expect(
+      screen.getByText('Files that agents write here show up as soon as they are saved.'),
+    ).toBeDefined();
     expect(screen.queryByRole('tree')).toBeNull();
   });
 
@@ -1063,7 +1134,8 @@ describe('ExplorePane changed files', () => {
     summarise([]);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh the files' }));
 
-    expect(await screen.findByText('No changes against main.')).toBeDefined();
+    expect(await screen.findByText('No changes against main')).toBeDefined();
+    expect(screen.getByText('Files that differ from main appear here.')).toBeDefined();
     expect(screen.getByRole('tab', { name: 'All files' })).toBeDefined();
   });
 

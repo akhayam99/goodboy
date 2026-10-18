@@ -408,6 +408,7 @@ export {
   countNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  markNotificationUnread,
   deleteNotification,
   clearAllNotifications,
   clearResolvedHelperNotifications,

@@ -270,6 +270,13 @@ export const markNotificationRead = async ({ db, id }: SingleNotificationParams)
   await db.execute('UPDATE notifications SET read = 1 WHERE id = ?', [id]);
 };
 
+export const markNotificationUnread = async ({
+  db,
+  id,
+}: SingleNotificationParams): Promise<void> => {
+  await db.execute('UPDATE notifications SET read = 0 WHERE id = ?', [id]);
+};
+
 export const deleteNotification = async ({ db, id }: SingleNotificationParams): Promise<void> => {
   await db.execute('DELETE FROM notifications WHERE id = ?', [id]);
 };

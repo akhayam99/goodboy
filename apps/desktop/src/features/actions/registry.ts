@@ -18,6 +18,10 @@ import { TASK_LIST_KIND } from './kinds/taskList';
 import { RUN_STEP_KIND } from './kinds/runStep';
 import { WORKFLOW_LIST_KIND } from './kinds/workflowList';
 import { NOTIFICATIONS_KIND } from './kinds/notifications';
+import { NOTIFICATION_KIND } from './kinds/notification';
+import { PROVIDER_KIND } from './kinds/provider';
+import { INTEGRATION_KIND } from './kinds/integration';
+import { BRANCH_KIND } from './kinds/branch';
 import { PROJECT_ASK_KIND } from './kinds/projectAsk';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { MESSAGE_KIND } from './kinds/message';
@@ -165,6 +169,14 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: WORKFLOW_LIST_KIND, state, target });
     case 'notifications':
       return bind({ definition: NOTIFICATIONS_KIND, state, target });
+    case 'notification':
+      return bind({ definition: NOTIFICATION_KIND, state, target });
+    case 'provider':
+      return bind({ definition: PROVIDER_KIND, state, target });
+    case 'integration':
+      return bind({ definition: INTEGRATION_KIND, state, target });
+    case 'branch':
+      return bind({ definition: BRANCH_KIND, state, target });
     case 'projectAsk':
       return bind({ definition: PROJECT_ASK_KIND, state, target });
     case 'link':
