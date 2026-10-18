@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { ChevronRight, History, Search } from 'lucide-react';
+import { ChevronRight, History } from 'lucide-react';
 import { EmptyLine, Eyebrow, SelectableRow } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { RailSearch } from '../../../../shared/components/RailSearch';
 import type { ChangelogCatchUp } from '../../changelogCatchUp';
 import type { ReleaseEntry } from '../../parseChangelog';
+import { releaseDateLabel } from '../../releaseDateLabel';
 import { ReleaseRow } from './ReleaseRow';
 
 const OLDEST_GROUPED_MINOR = 4;
@@ -65,6 +67,7 @@ type Props = {
   readonly releases: ReadonlyArray<ReleaseEntry>;
   readonly selectedVersion: string | null;
   readonly installedVersion: string | null;
+  readonly dates: Readonly<Record<string, string>>;
   readonly query: string;
   readonly onQueryChange: (query: string) => void;
   readonly catchUp: ChangelogCatchUp | null;
@@ -77,6 +80,7 @@ export const ChangelogRail = ({
   releases,
   selectedVersion,
   installedVersion,
+  dates,
   query,
   onQueryChange,
   catchUp,
@@ -90,18 +94,7 @@ export const ChangelogRail = ({
 
   return (
     <nav className="flex flex-col gap-2 p-3" aria-label="Releases">
-      <div className="flex h-7 items-center gap-2 rounded-md border border-border-soft bg-background px-2 focus-within:border-primary">
-        <Search size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search releases"
-          aria-label="Search releases"
-          autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"
-        />
-      </div>
+      <RailSearch label="Search releases" value={query} onChange={onQueryChange} />
       {catchUp !== null && !isSearching ? (
         <SelectableRow
           selected={isCatchUpSelected}
@@ -142,6 +135,7 @@ export const ChangelogRail = ({
                     <ReleaseRow
                       key={release.version}
                       release={release}
+                      dateLabel={releaseDateLabel({ publishedAt: dates[release.version] })}
                       isActive={release.version === selectedVersion}
                       installedVersion={installedVersion}
                       onSelect={onSelect}
@@ -158,6 +152,7 @@ export const ChangelogRail = ({
               <ReleaseRow
                 key={release.version}
                 release={release}
+                dateLabel={releaseDateLabel({ publishedAt: dates[release.version] })}
                 isActive={release.version === selectedVersion}
                 installedVersion={installedVersion}
                 onSelect={onSelect}

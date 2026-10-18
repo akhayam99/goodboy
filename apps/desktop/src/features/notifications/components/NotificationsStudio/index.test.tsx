@@ -81,9 +81,23 @@ const seedNotifications = ({ notifications }: { notifications: ReadonlyArray<Not
 
 const renderStudio = () => render(<NotificationsStudio onClose={vi.fn()} />);
 
-const deleteAll = (): void => {
-  fireEvent.click(screen.getByRole('button', { name: /^delete all$/i }));
+const openHeaderMenu = (): void => {
+  fireEvent.click(screen.getByRole('button', { name: 'More notification actions' }));
 };
+
+const deleteAll = (): void => {
+  openHeaderMenu();
+  fireEvent.click(screen.getByRole('menuitem', { name: /^delete all/i }));
+};
+
+const openRowMenu = ({ title }: { readonly title: string }): void => {
+  fireEvent.click(screen.getByRole('button', { name: `Actions for "${title}"` }));
+};
+
+const WORKSPACES = [
+  { id: 'ws-1', name: 'Harborline' },
+  { id: 'ws-2', name: 'Northwind' },
+];
 
 const openFilterRail = (): HTMLElement => {
   const shown = screen.queryByRole('navigation', { name: 'Filter notifications' });
@@ -95,6 +109,7 @@ const openFilterRail = (): HTMLElement => {
 };
 
 beforeEach(() => {
+  state.workspaces = [{ id: 'ws-1', name: 'Harborline' }];
   state.notifications = [];
   state.notificationCounts = [];
   state.notificationsLoading = false;
@@ -216,6 +231,7 @@ describe('NotificationsStudio', () => {
   });
 
   it('defaults to this workspace and switches to every workspace', () => {
+    state.workspaces = WORKSPACES;
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
     openFilterRail();
@@ -226,6 +242,14 @@ describe('NotificationsStudio', () => {
     fireEvent.click(screen.getByRole('tab', { name: /all/i }));
 
     expect(state.setNotificationScope).toHaveBeenCalledWith('all');
+  });
+
+  it('has no workspace switch while there is one workspace', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    expect(screen.queryByRole('region', { name: 'Workspace' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /harborline/i })).toBeNull();
   });
 
   it('marks every member in a group read', async () => {
@@ -257,13 +281,62 @@ describe('NotificationsStudio', () => {
     });
     renderStudio();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Summarizer failed' }));
+    openRowMenu({ title: 'Summarizer failed' });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /delete "summarizer failed"/i }));
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
     });
 
     expect(state.dismissNotificationGroup).toHaveBeenCalledTimes(1);
     expect(state.dismissNotificationGroup).toHaveBeenCalledWith({ ids: ['first', 'second'] });
+  });
+
+  it('marks a row read from its hover check and keeps the row when the write fails', async () => {
+    state.markNotificationRead.mockRejectedValueOnce(new Error('database is locked'));
+    seedNotifications({ notifications: [buildNotification({ id: 'only' })] });
+    renderStudio();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Mark read' }));
+    });
+
+    expect(state.markNotificationRead).toHaveBeenCalledWith('only');
+    expect(screen.getByText('Summarizer failed')).toBeDefined();
+    expect(
+      screen.getByRole('heading', { name: 'Summarizer failed' }).hasAttribute('data-unread'),
+    ).toBe(true);
+  });
+
+  it('keeps the row and reports when a delete from the menu fails', async () => {
+    state.dismissNotificationGroup.mockRejectedValueOnce(new Error('database is locked'));
+    seedNotifications({ notifications: [buildNotification({ id: 'only' })] });
+    renderStudio();
+
+    openRowMenu({ title: 'Summarizer failed' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
+    });
+
+    expect(screen.getByText('Summarizer failed')).toBeDefined();
+  });
+
+  it('offers Open, Mark read, Report this, Copy text and Delete from the row menu', () => {
+    seedNotifications({ notifications: [buildNotification({ id: 'only' })] });
+    renderStudio();
+
+    openRowMenu({ title: 'Summarizer failed' });
+
+    const names = screen.getAllByRole('menuitem').map((item) => item.textContent);
+    expect(names).toEqual(['Mark read', 'Report this', 'Copy text', 'Delete']);
+  });
+
+  it('offers Mark unread instead of Mark read on a read row', () => {
+    seedNotifications({ notifications: [buildNotification({ id: 'only', read: true })] });
+    renderStudio();
+
+    openRowMenu({ title: 'Summarizer failed' });
+
+    expect(screen.getByRole('menuitem', { name: 'Mark unread' })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: 'Mark read' })).toBeNull();
   });
 
   it('moves and deletes with the list keys, and leaves the row list keyboard only', () => {
@@ -308,7 +381,7 @@ describe('NotificationsStudio', () => {
     expect(screen.queryByRole('img', { name: 'Unread' })).toBeNull();
   });
 
-  it('keeps the row verbs on the opened row, none at rest', () => {
+  it('keeps the primary verb on the opened row only, and Open in the row menu', () => {
     seedNotifications({
       notifications: [
         buildNotification({
@@ -333,9 +406,9 @@ describe('NotificationsStudio', () => {
       throw new Error('the opened row has no verbs');
     }
     expect(within(verbs).getByRole('button', { name: 'Retry' })).toBeDefined();
-    expect(
-      within(verbs).getByRole('button', { name: /delete "summarizer failed"/i }),
-    ).toBeDefined();
+    expect(within(verbs).queryByRole('button', { name: /delete/i })).toBeNull();
+    openRowMenu({ title: 'Summarizer failed' });
+    expect(screen.getByRole('menuitem', { name: 'Open' })).toBeDefined();
   });
 
   it('offers older notifications and says how many are loaded', () => {
@@ -364,20 +437,53 @@ describe('NotificationsStudio', () => {
     renderStudio();
 
     expect(screen.queryByRole('button', { name: /mark all read/i })).toBeNull();
-    expect(screen.getByRole('button', { name: /^delete all$/i })).toBeDefined();
+    openHeaderMenu();
+    expect(screen.getByRole('menuitem', { name: /^delete all/i })).toBeDefined();
+    expect(screen.queryByRole('menuitem', { name: /mark all read/i })).toBeNull();
   });
 
-  it('draws Delete all as a quiet verb after Mark all read, with no page menu', () => {
+  it('puts Mark all read, then the menu with Delete all, in the header', () => {
     seedNotifications({ notifications: [buildNotification()] });
     renderStudio();
 
     const markAllRead = screen.getByRole('button', { name: /mark all read/i });
-    const deleteAllVerb = screen.getByRole('button', { name: /^delete all$/i });
-    expect(deleteAllVerb.getAttribute('data-variant')).toBe('quiet');
-    expect(
-      markAllRead.compareDocumentPosition(deleteAllVerb) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    const more = screen.getByRole('button', { name: 'More notification actions' });
+    expect(screen.queryByRole('button', { name: /^delete all$/i })).toBeNull();
+    expect(markAllRead.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    openHeaderMenu();
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      expect.stringMatching(/^Mark all read/),
+      expect.stringMatching(/^Delete all/),
+    ]);
+  });
+
+  it('names the workspace in the Mark all read menu entry', () => {
+    seedNotifications({ notifications: [buildNotification()] });
+    renderStudio();
+
+    openHeaderMenu();
+
+    expect(screen.getByRole('menuitem', { name: /mark all read/i }).textContent).toMatch(
+      /Harborline/,
+    );
+  });
+
+  it('shows the count and the unread count under the title', () => {
+    seedNotifications({
+      notifications: [buildNotification({ id: 'a' }), buildNotification({ id: 'b', read: true })],
+    });
+    renderStudio();
+
+    expect(screen.getByText('2 notifications · 1 unread')).toBeDefined();
+  });
+
+  it('has no header actions for an empty list', () => {
+    renderStudio();
+
     expect(screen.queryByRole('button', { name: 'More notification actions' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /mark all read/i })).toBeNull();
   });
 
   it('asks in a popover beside Delete all, not inside the title row', async () => {
@@ -480,7 +586,6 @@ describe('NotificationsStudio', () => {
     const rail = screen.getByRole('complementary', { name: 'Notification filters' });
     expect(within(rail).getByRole('navigation', { name: 'Filter notifications' })).toBeDefined();
     expect(within(rail).getByRole('group', { name: 'Severity' })).toBeDefined();
-    expect(within(rail).getByRole('region', { name: 'Workspace' })).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Filters/ })).toBeNull();
     expect(screen.getByRole('heading', { level: 1, name: 'Notifications' })).toBeDefined();
   });

@@ -885,6 +885,9 @@ u26s-monitoring-empty
 u26s-monitoring-hover
 u26s-monitoring-menu
 u26s-monitoring-rows
+u26s-notifications-header-menu
+u26s-notifications-row-menu
+u26s-notifications-rows
 u26s-palette-empty
 u26s-palette-guide
 u26s-palette-pair
@@ -896,6 +899,8 @@ u26s-settings-nows
 u26s-settings-pair
 u26s-settings-storage
 u26s-settings-updates
+u26s-whatsnew-release
+u26s-whatsnew-search
 update-card
 update-card-long-version
 update-card-narrow

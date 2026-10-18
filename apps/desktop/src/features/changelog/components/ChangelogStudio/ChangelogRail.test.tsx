@@ -18,15 +18,30 @@ afterEach(() => {
   cleanup();
 });
 
-const renderRail = (releases: ReadonlyArray<ReleaseEntry>) =>
+type RenderRailParams = {
+  readonly releases: ReadonlyArray<ReleaseEntry>;
+  readonly dates?: Readonly<Record<string, string>>;
+  readonly query?: string;
+  readonly onQueryChange?: (query: string) => void;
+  readonly catchUp?: Parameters<typeof ChangelogRail>[0]['catchUp'];
+};
+
+const renderRail = ({
+  releases,
+  dates = {},
+  query = '',
+  onQueryChange = vi.fn(),
+  catchUp = null,
+}: RenderRailParams) =>
   render(
     <ChangelogRail
       releases={releases}
       selectedVersion={null}
       installedVersion={null}
-      query=""
-      onQueryChange={vi.fn()}
-      catchUp={null}
+      dates={dates}
+      query={query}
+      onQueryChange={onQueryChange}
+      catchUp={catchUp}
       isCatchUpSelected={false}
       onSelect={vi.fn()}
       onSelectCatchUp={vi.fn()}
@@ -35,12 +50,14 @@ const renderRail = (releases: ReadonlyArray<ReleaseEntry>) =>
 
 describe('ChangelogRail', () => {
   it('gives every minor from 0.4 on its own eyebrow, and collapses older ones', () => {
-    renderRail([
-      buildRelease('0.7.0'),
-      buildRelease('0.6.0'),
-      buildRelease('0.3.14'),
-      buildRelease('0.1.0'),
-    ]);
+    renderRail({
+      releases: [
+        buildRelease('0.7.0'),
+        buildRelease('0.6.0'),
+        buildRelease('0.3.14'),
+        buildRelease('0.1.0'),
+      ],
+    });
 
     expect(screen.getByText('0.7')).toBeDefined();
     expect(screen.getByText('0.6')).toBeDefined();
@@ -50,7 +67,7 @@ describe('ChangelogRail', () => {
   });
 
   it('expands the older group on click', () => {
-    renderRail([buildRelease('0.7.0'), buildRelease('0.3.14')]);
+    renderRail({ releases: [buildRelease('0.7.0'), buildRelease('0.3.14')] });
 
     fireEvent.click(screen.getByText(/Older/));
 
@@ -58,22 +75,32 @@ describe('ChangelogRail', () => {
   });
 
   it('shows the catch-up row when one is provided', () => {
-    renderRail([buildRelease('0.7.0'), buildRelease('0.6.0')]);
-    cleanup();
-    render(
-      <ChangelogRail
-        releases={[buildRelease('0.7.0'), buildRelease('0.6.0')]}
-        selectedVersion={null}
-        installedVersion={null}
-        query=""
-        onQueryChange={vi.fn()}
-        catchUp={{ fromVersion: '0.5.3', releases: [buildRelease('0.7.0'), buildRelease('0.6.0')] }}
-        isCatchUpSelected
-        onSelect={vi.fn()}
-        onSelectCatchUp={vi.fn()}
-      />,
-    );
+    renderRail({
+      releases: [buildRelease('0.7.0'), buildRelease('0.6.0')],
+      catchUp: { fromVersion: '0.5.3', releases: [buildRelease('0.7.0'), buildRelease('0.6.0')] },
+    });
 
     expect(screen.getByText(/Since 0.5.3/)).toBeDefined();
+  });
+
+  it('dates every row from the dates table', () => {
+    renderRail({
+      releases: [buildRelease('0.7.0'), buildRelease('0.6.0')],
+      dates: { '0.7.0': '2026-10-17T09:00:00Z' },
+    });
+
+    expect(screen.getByText('0.7.0').nextElementSibling?.textContent).toMatch(/Oct/);
+    expect(screen.getByText('0.6.0').nextElementSibling?.textContent).toBe('');
+  });
+
+  it('searches with the shared rail field', () => {
+    const onQueryChange = vi.fn();
+    renderRail({ releases: [buildRelease('0.7.0')], query: 'export', onQueryChange });
+
+    const field = screen.getByRole('searchbox', { name: 'Search releases' });
+    fireEvent.change(field, { target: { value: 'exports' } });
+
+    expect(onQueryChange).toHaveBeenCalledWith('exports');
+    expect(document.querySelector('[data-rail-search]')).not.toBeNull();
   });
 });

@@ -15,6 +15,7 @@ import { UpdateConfirm } from '../../../updater/components/UpdateConfirm';
 import { ChangelogRail } from './ChangelogRail';
 import { CatchUpReader } from './CatchUpReader';
 import { ReleaseReader } from './ReleaseReader';
+import { releaseDateLabel } from '../../releaseDateLabel';
 import { searchReleases } from '../../searchReleases';
 import { upcomingEntries, withUpcomingReleases } from '../../upcomingReleases';
 
@@ -172,6 +173,7 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
                 releases={filteredReleases}
                 selectedVersion={showCatchUp ? null : (selected?.version ?? null)}
                 installedVersion={installedVersion}
+                dates={dates}
                 query={query}
                 onQueryChange={setQuery}
                 catchUp={catchUp}
@@ -192,7 +194,7 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
               ) : selected !== null ? (
                 <ReleaseReader
                   release={selected}
-                  dateLabel={dates[selected.version] ?? null}
+                  dateLabel={releaseDateLabel({ publishedAt: dates[selected.version] })}
                   installedVersion={installedVersion}
                   onOpenScreen={onOpenScreen}
                   action={updateAction}

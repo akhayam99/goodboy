@@ -2242,10 +2242,15 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   All) and in the studio (`cozy`, opens in place with the body, the older
   members and Report this). Both lead with the severity glyph alone: unread is
   the title weight (500 in foreground), read rows recede, and no second leading
-  dot. In the studio the time owns the last fixed column; the row's action,
-  Mark read and Delete live on the opened row (one line of buttons under it), so
-  the row never changes width and no row carries a wall of icons. The facets (view, severity,
-  source and the workspace scope) are a page rail docked beside the list, in
+  dot. In the studio the time owns the third column and a fixed fourth column
+  holds the hover controls (`NotificationRowActions`): the registry's hover
+  action (Mark read, one click) and the `⋯` menu of the `notification` kind
+  (Open, Mark read or unread, Report this, Copy text, Delete), also opened by
+  right click. They show on hover and keyboard focus, never change the row's
+  width, and the opened row keeps only the notification's own action (Retry) as
+  a button under it. A failed write shows a "Couldn't finish that" toast and
+  leaves the row as it was (`runVerb`). The facets (view, severity,
+  source and, with more than one workspace, the workspace scope) are a page rail docked beside the list, in
   Chat's frame (`StudioRailLayout`, `placement="page"`, surface `notifications`,
   288px), with counts that come from SQL (`countNotifications`), so they stay
   true past the loaded page; a facet count shows from two, a zero facet is dimmed
@@ -2255,12 +2260,12 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   Notifications whichever view is picked. Both surfaces default to this workspace: a row belongs to
   its own workspace, or its session's, and a row with neither is app-wide and
   shows in every workspace. Mark all read and Delete all act on that same scope.
-  The studio header draws them through `HeaderActions`: the shared `FilterButton`
-  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the quiet
-  `Delete all` (the `notifications` kind of the action registry, drawn by
-  `ObjectActionVerb`, since a `⋯` of one item draws nothing), which opens a
-  `ConfirmPopover` anchored to it, aligned to its end edge, titled with the scope's count ("Delete 7 notifications?") and naming the
-  workspace or "every workspace"; it never swaps the title row. A row's Delete acts
+  The studio header draws them through `NotificationsHeaderActions`: the shared `FilterButton`
+  only while the rail is folded, then the ghost `Mark all read` (only while something is unread), then the `⋯` menu of the
+  `notifications` kind of the action registry (Mark all read, which names the scope, and Delete all). Delete all
+  opens a `ConfirmPopover` anchored to the `⋯`, aligned to its end edge, titled with the scope's count ("Delete 7 notifications?") and naming the
+  workspace or "every workspace"; it never swaps the title row. The title row's meta reads the
+  count and the unread count ("6 notifications · 4 unread"). A row's Delete acts
   at once and pushes "Notification deleted" with Undo (`dismissNotificationGroup`
   re-inserts the rows through `insertNotification`; ⌘Z works too).
   In the studio, rows are grouped by day (Today, Yesterday, This week, Older),
