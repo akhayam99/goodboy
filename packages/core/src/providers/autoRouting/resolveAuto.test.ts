@@ -218,7 +218,7 @@ describe('resolveAuto', () => {
   it('writes a cursor thinking pick as the slug the cli runs', () => {
     expect(
       resolveAuto({ slot: { kind: 'role', id: 'reviewer' }, defaultProvider: 'cursor' })?.model,
-    ).toBe('claude-4.6-sonnet-medium-thinking');
+    ).toBe('sonnet-5.5');
   });
 
   it('never proposes a hidden model for a role and moves to the next one of the line', () => {
@@ -301,8 +301,8 @@ describe('resolveAuto', () => {
       cliVersions: { anthropic: '2.1.290' },
     });
 
-    expect(oldCli?.model).not.toBe('sonnet-5.5');
-    expect(newCli?.model).toBe('sonnet-5.5');
+    expect(oldCli?.provider === 'anthropic' && oldCli.model === 'sonnet-5.5').toBe(false);
+    expect(newCli).toMatchObject({ provider: 'anthropic', model: 'sonnet-5.5' });
   });
 
   it('never falls back to a Cursor model that only runs in Max Mode while Max Mode is off', () => {
@@ -343,7 +343,7 @@ describe('resolveAuto', () => {
     ).toEqual({
       provider: 'anthropic',
       model: 'haiku-4.5',
-      effort: null,
+      effort: 'low',
       step: 'next-in-column',
     });
   });

@@ -1100,8 +1100,8 @@ disappear.
 
 A run whose `execution_mode` is `dynamic` has no list of steps to walk.
 Between steps, `orchestrateNextStep` asks the orchestrator model for one
-decision: the next step (name, role, prompt, expected output and a proposed
-model), `done`, or `blocked`. A `next` decision adds the step and starts its
+decision: the next step (name, role, prompt, expected output and a task type
+and difficulty), `done`, or `blocked`. A `next` decision adds the step and starts its
 agent. `done` and `blocked` are saved as the run's outcome with the reason,
 and `blocked` sends a notification. Every decision lands in the transcript as
 an `orchestrator_decision` event, and its spend is recorded against the run.
@@ -1160,6 +1160,22 @@ an `orchestrator_decision` event, and its spend is recorded against the run.
   orchestrator task model. A saved model the catalog dropped is ignored, never
   started. Steps take their role models from the resolved settings. A run has
   no per-role model overrides of its own.
+- **Who picks a step's model.** The orchestrator states how hard a step is
+  (`difficulty`: light, standard or heavy, which `stepSizeForDifficulty` reads as
+  small, medium or large) and the code picks the model: `modelForStep`
+  (`providers/autoRouting/modelForStep.ts`) turns the step's role and size into a
+  rung on the preferred provider's ladder. The prompt tells the orchestrator not
+  to name a provider, model or effort, and `resolveProposedRouting` drops those
+  fields when it still sends them. The opt-in workflow rule
+  `canOrchestratorPickModel` (`WorkflowRules`, saved in the run's `rulesSnapshot`)
+  gives the old behavior back: the orchestrator sees the model menu and its own
+  pick wins when it can run (`ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT`). When the
+  pick it named cannot run, or a generated step has none, the step takes the pick
+  Auto sized for it (`kind_default` in the decision, "Auto sized the step by its
+  difficulty") unless a role model set pins the role; only then the older
+  heuristic (`recommendWorkflowModel`, aimed at the tier of the failed pick) runs.
+  Pins still come first: a step lock, a role model set and a session model
+  override beat the sized pick
 - **Its provider pool.** `provider_pool` on `session_workflows` (m170) holds
   the providers picked in **Can use**, as a JSON list. Empty means every
   connected provider. `workflowAvailabilitySnapshot` drops the providers

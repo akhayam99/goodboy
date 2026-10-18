@@ -80,6 +80,7 @@ export const resolveChildRouting = ({
     session,
     role: request.role,
     fields: request.fields,
+    isModelPickEnabled: false,
     promptText: request.promptText,
     emittingProvider: 'anthropic',
     defaultProvider: providerOf({

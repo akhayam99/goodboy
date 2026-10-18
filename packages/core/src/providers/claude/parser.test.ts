@@ -263,6 +263,65 @@ describe('parseStreamJsonLine', () => {
     });
   });
 
+  it('reports each request above 100,000 prompt tokens once, by message id', () => {
+    const turnContext: ParseContext = { ...ctx };
+    const large = {
+      input_tokens: 10_000,
+      output_tokens: 40,
+      cache_read_input_tokens: 95_000,
+      cache_creation_input_tokens: 0,
+    };
+    const small = { input_tokens: 500, output_tokens: 10, cache_read_input_tokens: 1_000 };
+    const lines = [
+      { id: 'msg_a', usage: small },
+      { id: 'msg_b', usage: large },
+      { id: 'msg_b', usage: { ...large, output_tokens: 90 } },
+    ];
+    for (const message of lines) {
+      parseStreamJsonLine(
+        JSON.stringify({ type: 'assistant', message: { content: [], ...message } }),
+        turnContext,
+      );
+    }
+    const events = parseStreamJsonLine(
+      JSON.stringify({ type: 'result', subtype: 'success', usage: { input_tokens: 10_500 } }),
+      turnContext,
+    );
+
+    expect(events[0]).toMatchObject({
+      kind: 'usage',
+      usage: {
+        largeRequests: [
+          {
+            inputTokens: 10_000,
+            outputTokens: 90,
+            cachedInputTokens: 95_000,
+            cacheCreationInputTokens: 0,
+          },
+        ],
+      },
+    });
+    expect(turnContext.largeRequests).toBeUndefined();
+  });
+
+  it('omits large requests when every request stays within 100,000 prompt tokens', () => {
+    const turnContext: ParseContext = { ...ctx };
+    parseStreamJsonLine(
+      JSON.stringify({
+        type: 'assistant',
+        message: { id: 'msg_a', content: [], usage: { input_tokens: 500 } },
+      }),
+      turnContext,
+    );
+    const events = parseStreamJsonLine(
+      JSON.stringify({ type: 'result', subtype: 'success', usage: { input_tokens: 500 } }),
+      turnContext,
+    );
+
+    expect(events[0]).toMatchObject({ kind: 'usage' });
+    expect(events[0]).not.toHaveProperty('usage.largeRequests');
+  });
+
   it('leaves context tokens unknown without assistant usage', () => {
     const turnContext: ParseContext = {
       runId: 'run_without_context' as ProviderRunId,

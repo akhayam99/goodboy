@@ -72,6 +72,7 @@ export const resolveStepRouting = ({
   const fallback = resolveRoleRouting({
     role: KIND_TO_ROLE[kind],
     prefs: roleModels,
+    size: step?.size ?? null,
     ...(auto !== undefined && { auto }),
   });
   const decided = step?.routingLock?.pick ?? step?.routingDecision?.selected ?? null;

@@ -816,7 +816,7 @@ describe('scout child routing lifecycle', () => {
     });
     for (const args of hoisted.insertArgs) {
       const decision = args.routingDecision as WorkflowRoutingDecision;
-      expect(decision.source).toBe('heuristic');
+      expect(decision.source).toBe('kind_default');
       expect(decision.proposal).toBeNull();
       expect(args.routingLock).toBeUndefined();
     }

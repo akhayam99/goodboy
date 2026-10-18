@@ -49,7 +49,10 @@ export const RoleModelSet = ({
         ) : null}
       </div>
       <p className="text-meta text-muted-foreground">{hasSet ? HINT_SET : HINT_EMPTY}</p>
-      <div role="list" aria-label={`${label} models`} className="flex flex-wrap items-center gap-2">
+      <div
+        {...(entries.length > 0 && { role: 'list', 'aria-label': `${label} models` })}
+        className="flex flex-wrap items-center gap-2"
+      >
         {entries.map((entry, index) => (
           <span role="listitem" key={`${entry.choice.providerId}:${entry.choice.model}`}>
             <RoleModelChip

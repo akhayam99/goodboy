@@ -30,7 +30,7 @@ Keep a task moving when a provider runs out. With another eligible provider conn
 
 ### Provider order and Auto
 
-Choose which providers a workspace uses and in what order. **When a provider is out** in Defaults lists them, and you set each one to **On**, **Backup only** or **Off**. Auto starts new work on the first On provider that can work, and each role shows what Auto picks for it on fixed columns (model with its mark, effort, Auto or Pinned). A pin that cannot run shows a warning glyph whose tooltip says why, and one line above the roles offers **Back to Auto** for those.
+Choose which providers a workspace uses and in what order. **When a provider is out** in Defaults lists them, and you set each one to **On**, **Backup only** or **Off**. Auto starts new work on the first On provider that can work, and each role shows what Auto picks for it on fixed columns (model with its mark, effort, Auto or Pinned). A pin that cannot run shows a warning glyph whose tooltip says why, and one line above the roles offers **Back to Auto** for those. Auto also sizes each agent by its step: open a role to read what a small, a normal and a large step run, and each background task shows the model it uses. Under **Choosing models**, two switches are off by default: **Models in workflows** lets the workflow orchestrator name the model of each step itself (otherwise it says how hard the step is and Goodboy picks), and **Typed requests** lets a small model read the request you type to Auto and start a Scout, Planner, Debugger or Reviewer when it is sure.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/providers-fallback-auto-dark.webp">

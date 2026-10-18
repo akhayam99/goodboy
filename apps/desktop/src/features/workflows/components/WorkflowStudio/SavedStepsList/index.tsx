@@ -59,6 +59,7 @@ export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props)
       role: draft.role,
       provider: draft.provider !== '' ? draft.provider : defaultProvider,
       roleModels,
+      size: draft.size,
     });
 
   const open = (target: SavedStepTarget | null) => {

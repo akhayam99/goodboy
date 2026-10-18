@@ -108,6 +108,7 @@ export const WorkflowEditor = ({ workspaceId, workingDir, connectedProviders, ed
       role: step.role,
       provider: resolvedProvider(step),
       roleModels,
+      size: step.size,
     });
   const resolvedModel = (step: StepDraft): string =>
     step.model !== '' ? step.model : recommendedModel(step);

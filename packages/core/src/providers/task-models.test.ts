@@ -57,6 +57,7 @@ describe('resolveTaskModel', () => {
     ).toEqual({
       providerId: 'anthropic',
       model: 'haiku-5.5',
+      effort: 'low',
     });
   });
 
@@ -78,7 +79,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'codex',
-      model: 'gpt-5.6-terra',
+      model: 'gpt-6.1-sol',
       effort: 'medium',
     });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid plan_generation model'));
@@ -109,7 +110,7 @@ describe('resolveTaskModel', () => {
       }),
     ).toEqual({
       providerId: 'codex',
-      model: 'gpt-5.6-terra',
+      model: 'gpt-6.1-sol',
     });
   });
 
@@ -128,7 +129,7 @@ describe('resolveTaskModel', () => {
     });
 
     expect(anthropic).toEqual({ providerId: 'anthropic', model: 'sonnet-5.5', effort: 'medium' });
-    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-5.6-terra', effort: 'medium' });
+    expect(codex).toEqual({ providerId: 'codex', model: 'gpt-6.1-sol', effort: 'medium' });
     expect(anthropic.model).not.toBe(getCheapModel('anthropic'));
     expect(codex.model).not.toBe(getCheapModel('codex'));
   });
@@ -178,7 +179,7 @@ describe('resolveTaskModel', () => {
 
   it('preserves an explicit codex model variant', () => {
     const preferences: TaskModelPreferences = {
-      summarizer: { providerId: 'codex', model: 'gpt-5.6-terra', effort: 'high' },
+      summarizer: { providerId: 'codex', model: 'gpt-6.1-sol', effort: 'high' },
     };
 
     expect(
@@ -188,7 +189,7 @@ describe('resolveTaskModel', () => {
         workspaceDefaultProviderId: 'anthropic',
         sessionDefaultProviderId: 'anthropic',
       }),
-    ).toEqual({ providerId: 'codex', model: 'gpt-5.6-terra', effort: 'high' });
+    ).toEqual({ providerId: 'codex', model: 'gpt-6.1-sol', effort: 'high' });
   });
 
   it('passes a real effort for automatic tasks, so the CLI config never decides it', () => {
@@ -239,7 +240,7 @@ describe('resolveTaskModel', () => {
         sessionDefaultProviderId: 'codex',
         connectedProviders: ['anthropic'],
       }),
-    ).toEqual({ providerId: 'anthropic', model: 'haiku-5.5' });
+    ).toEqual({ providerId: 'anthropic', model: 'haiku-5.5', effort: 'low' });
   });
 
   it('uses the pinned fallback when the pinned provider is disconnected', () => {

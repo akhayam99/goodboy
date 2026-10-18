@@ -435,6 +435,47 @@ describe('resolveWorkflowRouting effort', () => {
     expect(decision.selected.model).toBe('gpt-5.6-sol');
   });
 
+  it('falls back to the pick Auto sized for the step when the emitted pick cannot run', () => {
+    const decision = ready(
+      resolve({
+        proposal: emitted(pick('anthropic', 'opus-5')),
+        kindDefault: pick('codex', 'gpt-6.1-sol', 'high'),
+        availability: snapshot({ connectedProviders: ['codex'] }),
+      }),
+    );
+
+    expect(decision.source).toBe('kind_default');
+    expect(decision.adjustment).toBe('disconnected');
+    expect(decision.selected).toEqual(pick('codex', 'gpt-6.1-sol', 'high'));
+    expect(decision.reason).toContain('Auto sized the step');
+  });
+
+  it('keeps the recommendation when the sized pick cannot run either', () => {
+    const decision = ready(
+      resolve({
+        proposal: emitted(pick('anthropic', 'opus-5')),
+        kindDefault: pick('anthropic', 'sonnet-5.5', 'high'),
+        availability: snapshot({ connectedProviders: ['codex'] }),
+      }),
+    );
+
+    expect(decision.source).toBe('heuristic');
+    expect(decision.selected.provider).toBe('codex');
+  });
+
+  it('takes the pick Auto sized under the deterministic rule when no role pin is set', () => {
+    const decision = ready(
+      resolve({
+        missingProposal: 'deterministic_pick',
+        kindDefault: pick('anthropic', 'sonnet-5.5', 'high'),
+      }),
+    );
+
+    expect(decision.source).toBe('kind_default');
+    expect(decision.selected).toEqual(pick('anthropic', 'sonnet-5.5', 'high'));
+    expect(decision.proposal).toBeNull();
+  });
+
   it('blocks the deterministic rule when nothing is available', () => {
     const result = blocked(
       resolve({

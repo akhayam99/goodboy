@@ -27,6 +27,7 @@ export type ResolveProposedRoutingParams = Readonly<{
   session: Session;
   role: AgentRole;
   fields: WorkflowRoutingWireFields;
+  isModelPickEnabled: boolean;
   promptText: string;
   emittingProvider: ProviderId;
   defaultProvider: ProviderId;
@@ -60,12 +61,27 @@ const sessionDefaultOf = ({
         effort: session.effort ?? null,
       };
 
+type WireParams = {
+  readonly fields: WorkflowRoutingWireFields;
+  readonly isModelPickEnabled: boolean;
+};
+
+const wireFieldsOf = ({ fields, isModelPickEnabled }: WireParams): WorkflowRoutingWireFields =>
+  isModelPickEnabled
+    ? fields
+    : {
+        taskType: fields.taskType,
+        difficulty: fields.difficulty,
+        modelReason: fields.modelReason,
+      };
+
 export const resolveProposedRouting = ({
   state,
   sessionId,
   session,
   role,
   fields,
+  isModelPickEnabled,
   promptText,
   emittingProvider,
   defaultProvider,
@@ -74,7 +90,10 @@ export const resolveProposedRouting = ({
   providerPool,
   availability,
 }: ResolveProposedRoutingParams): ProposedRouting => {
-  const parsedProposal = parseWorkflowRoutingProposal({ fields, emittingProvider });
+  const parsedProposal = parseWorkflowRoutingProposal({
+    fields: wireFieldsOf({ fields, isModelPickEnabled }),
+    emittingProvider,
+  });
   const routingProposal = keepProposalInRoleSet({
     outcome: hintedRoutingOutcome({ outcome: parsedProposal, promptText }),
     setMenu: roleModelSetMenu({ menu: modelMenu, role, prefs: roleModels }),

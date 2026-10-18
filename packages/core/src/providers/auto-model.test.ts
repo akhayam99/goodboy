@@ -76,15 +76,15 @@ describe('autoModelForRole', () => {
       expect(['gemini', 'codex']).toContain(result?.provider);
     });
 
-    it('cursor provider: picks the curated thinking slug for a review role, not auto', () => {
+    it('cursor provider: picks Sonnet 5.5 for a review role, not auto', () => {
       const result = autoModelForRole({ role: 'reviewer', providers: ['cursor'] });
-      expect(result).toEqual({ provider: 'cursor', model: 'claude-4.6-sonnet-medium-thinking' });
+      expect(result).toEqual({ provider: 'cursor', model: 'sonnet-5.5' });
       expect(CURSOR_MODELS.some((m) => m.id === 'sonnet-4.6')).toBe(true);
     });
 
     it('cursor provider: plans on a model that needs no Max Mode', () => {
       const result = autoModelForRole({ role: 'planner', providers: ['cursor'] });
-      expect(result).toEqual({ provider: 'cursor', model: 'claude-4.6-sonnet-medium-thinking' });
+      expect(result).toEqual({ provider: 'cursor', model: 'sonnet-5.5' });
     });
 
     it('falls back from an unavailable pin to the curated default, never a thinker', () => {

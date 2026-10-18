@@ -194,8 +194,8 @@ describe('CreateAgentPopover', () => {
       expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
         kindOverride: 'docs',
         provider: 'anthropic',
-        model: 'sonnet-5.5',
-        effort: 'low',
+        model: 'haiku-5.5',
+        effort: 'medium',
         focus: 'agent',
       }),
     );
@@ -387,16 +387,16 @@ describe('CreateAgentPopover', () => {
     expect(container.querySelector('select')).toBeNull();
     expect(screen.getByRole('button', { name: '5.6' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sol' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Terra' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Terra' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Luna' })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Terra' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Luna' }));
     confirm();
     await waitFor(() =>
       expect(h.spawnAgent).toHaveBeenCalledWith(SID, {
         kindOverride: 'generic',
         provider: 'codex',
-        model: 'gpt-5.6-terra',
+        model: 'gpt-5.6-luna',
         effort: 'high',
         focus: 'agent',
       }),

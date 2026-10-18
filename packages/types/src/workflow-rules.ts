@@ -14,6 +14,7 @@ export type WorkflowRules = Readonly<{
   standingGuidance: string;
   guidanceRoles: ReadonlyArray<AgentRole>;
   planApproved?: boolean;
+  canOrchestratorPickModel?: boolean;
 }>;
 
 export const DEFAULT_WORKFLOW_RULES: WorkflowRules = {
@@ -82,6 +83,7 @@ export const parseWorkflowRules = ({
     standingGuidance: typeof value.standingGuidance === 'string' ? value.standingGuidance : '',
     guidanceRoles: rolesOf(value.guidanceRoles),
     ...(value.planApproved === true && { planApproved: true }),
+    ...(value.canOrchestratorPickModel === true && { canOrchestratorPickModel: true }),
   };
 };
 

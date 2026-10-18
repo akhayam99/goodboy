@@ -19,7 +19,6 @@ const CATALOG_LAYER =
 
 const ALLOWED_TODAY: ReadonlyArray<string> = [
   'apps/desktop/src/features/workspace-chat/mockChatSeed.ts',
-  'packages/core/src/providers/autoRouting/defaults.ts',
   'packages/db/src/test-helpers/search-fixtures.ts',
 ];
 

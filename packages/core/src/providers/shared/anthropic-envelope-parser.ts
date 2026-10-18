@@ -1,5 +1,12 @@
-import type { IsoDateTime, ProviderLimits, ProviderRunId, TurnEvent } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  ProviderLimits,
+  ProviderRunId,
+  RequestUsage,
+  TurnEvent,
+} from '@goodboy/types';
 import { devWarn } from '../../dev-log';
+import { LARGE_REQUEST_MIN_PROMPT_TOKENS, requestPromptTokens } from '../priceLevels';
 import { parseJsonAllowingControlChars } from './parseJsonAllowingControlChars';
 import { createPermissionRequestEvent } from '../../permissions/events';
 import { blockBoundaryPrefix, resetTextBoundary } from './text-boundary';
@@ -10,6 +17,7 @@ export type ParseContext = {
   readonly onUnknown?: (type: string, payload: unknown) => void;
   readonly onProviderLimits?: (limits: ProviderLimits) => void;
   lastAssistantContextTokens?: number;
+  largeRequests?: Map<string, RequestUsage>;
 };
 
 export type AnthropicEnvelopeParserOptions = {
@@ -20,6 +28,7 @@ export type AnthropicEnvelopeParserOptions = {
 const KNOWN_PAYLOAD_TYPES: ReadonlySet<string> = new Set(['system', 'assistant', 'user', 'result']);
 
 type AssistantMessage = {
+  readonly id?: string;
   readonly content?: ReadonlyArray<AssistantContentBlock>;
   readonly usage?: UsagePayload;
 };
@@ -65,6 +74,30 @@ type CacheCreationParams = {
 
 const cacheCreationTokens = ({ usage }: CacheCreationParams): number | undefined =>
   usage.cache_creation_input_tokens ?? usage.cacheCreationInputTokens ?? usage.cacheWriteTokens;
+
+type LargeRequestParams = {
+  readonly ctx: ParseContext;
+  readonly messageId: string | undefined;
+  readonly usage: UsagePayload | undefined;
+};
+
+const recordLargeRequest = ({ ctx, messageId, usage }: LargeRequestParams): void => {
+  if (usage == null) {
+    return;
+  }
+  const request: RequestUsage = {
+    inputTokens: usage.input_tokens ?? usage.inputTokens ?? 0,
+    outputTokens: usage.output_tokens ?? usage.outputTokens ?? 0,
+    cachedInputTokens: usage.cache_read_input_tokens ?? usage.cacheReadTokens ?? 0,
+    cacheCreationInputTokens: cacheCreationTokens({ usage }) ?? 0,
+  };
+  if (requestPromptTokens({ request, isCacheInInput: false }) <= LARGE_REQUEST_MIN_PROMPT_TOKENS) {
+    return;
+  }
+  const requests = ctx.largeRequests ?? new Map<string, RequestUsage>();
+  requests.set(messageId ?? `request-${requests.size}`, request);
+  ctx.largeRequests = requests;
+};
 
 const contextTokensFromUsage = ({ usage }: ContextTokenParams): number | null => {
   if (usage == null) {
@@ -187,6 +220,7 @@ export const parseAnthropicEnvelopeValue = ({
       if (contextTokens != null) {
         ctx.lastAssistantContextTokens = contextTokens;
       }
+      recordLargeRequest({ ctx, messageId: message?.id, usage: message?.usage });
       return parseAssistant(message, ctx, at);
     }
 
@@ -201,6 +235,8 @@ export const parseAnthropicEnvelopeValue = ({
       const cacheCreation = cacheCreationTokens({ usage });
       const contextTokens = ctx.lastAssistantContextTokens;
       delete ctx.lastAssistantContextTokens;
+      const largeRequests = [...(ctx.largeRequests?.values() ?? [])];
+      delete ctx.largeRequests;
       const events: TurnEvent[] = [];
       if (
         typeof input === 'number' ||
@@ -218,6 +254,7 @@ export const parseAnthropicEnvelopeValue = ({
             cachedInputTokens: cached ?? 0,
             cacheCreationInputTokens: cacheCreation ?? 0,
             ...(contextTokens != null && { contextTokens }),
+            ...(largeRequests.length > 0 && { largeRequests }),
             estimatedCostUsd: 0,
           },
           at,

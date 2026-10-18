@@ -5,7 +5,11 @@ import { computeProviderCostUsd } from '../providers/provider-cost';
 import { cliModelId } from '../providers/cliModelId';
 import { getDefaultBinary } from '../providers/cli-defaults';
 import { parseOrchestratorDecision } from './parser';
-import { buildOrchestratorUserPrompt, ORCHESTRATOR_SYSTEM_PROMPT } from './prompt';
+import {
+  buildOrchestratorUserPrompt,
+  ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT,
+  ORCHESTRATOR_SYSTEM_PROMPT,
+} from './prompt';
 import type { OrchestratorDecision, OrchestratorInput } from './types';
 
 export type OrchestratorUsage = {
@@ -97,7 +101,10 @@ export class OrchestratorClient {
             model: this.model,
             binary: this.binary,
             userMessage,
-            systemPrompt: ORCHESTRATOR_SYSTEM_PROMPT,
+            systemPrompt:
+              input.isModelPickEnabled === true
+                ? ORCHESTRATOR_MODEL_PICK_SYSTEM_PROMPT
+                : ORCHESTRATOR_SYSTEM_PROMPT,
             toolsDisabled: true,
             ...(this.effort != null && { effort: this.effort }),
             ...(this.workingDir != null && { workingDir: this.workingDir }),

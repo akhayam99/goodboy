@@ -209,7 +209,20 @@ shape for Auto through `RoutingPicker`'s `autoTrigger="resolved"`. Open, it show
 **How Scout runs**, read only, built from the engine and never from copy: the role's
 `explain` entry in `ROLE_REGISTRY`, the pick from `useResolution` with `isAutoOnly`, and the split
 limits from `roleSplitLimits` (`FAN_OUT_MAX_CHILDREN`, `SCOUT_DEPTH_CAP`,
-`FAN_OUT_DEPTH_CAP` in `@goodboy/core`, the same constants `scoutTree` enforces). When
+`FAN_OUT_DEPTH_CAP` in `@goodboy/core`, the same constants `scoutTree` enforces). A
+**By step size** line follows (`roleRunFacts` `bySize`): Auto resolved for a small, a normal and a
+large step through `resolveSlot` with `size`, the same call the run makes, so it reads
+`Auto sizes it by the step: small Haiku 5.5 Medium, normal Sonnet 5.5 Medium, large Sonnet 5.5 High.`
+(or one model when the size moves nothing). A workflow step that follows its role names
+the pick with `sized for a small step` or `sized for a large step` when its size moved the
+rung (`isSizeMovingRung`). The background task rows (`TaskModelRow`) name the model Auto runs
+on their closed trigger. A **Choosing models** section holds two switches, off by default:
+**Models in workflows** (`canOrchestratorPickModel` in the workspace `workflowRules`, read
+from the run's `rulesSnapshot`) and **Typed requests** (the `models.classifyRequests`
+setting, read by `classifyTypedRequest` when Auto starts: a request is classified by the
+Agent naming task model, Haiku 5.5 Low on Claude, and a Scout, Planner, Debugger or Reviewer
+starts when it is sure, otherwise Auto; a model pinned for Auto is never overruled and
+nothing is asked while the switch is off). When
 Parallel agents is off for the workspace, the split line says the role runs as one
 agent. Below it, **Models for planning** is the role's set: up to three models added
 with the same picker and its **Add** button, which adds the model in view once however
@@ -219,15 +232,32 @@ and an arrow.
 - **Auto** picks the same way for roles and tasks: the model chosen for that job on
   the default provider, then the next model in that list when your CLI is too old
   for the first one, then the next provider in the fallback order when the default
-  is not connected. Each job names a model line, never a version, so a new model
-  in the catalog reaches Auto on its own. On Claude, the Planner runs on the newest
-  Opus (Opus 5.5, Opus 5 on an older CLI), the Debugger and the Reviewer on the
-  newest Sonnet at High, Docs on the newest Sonnet at Low, Scout on the newest Haiku
-  at Medium, the small writing jobs on the newest Haiku (Haiku 5.5 today, Haiku 4.5
-  on a Claude CLI older than 2.1.293), and plan drafting, Generalist, Report and the
-  other roles on the newest Sonnet at Medium (Sonnet 5.5 today, Sonnet 5 on a Claude
-  CLI older than 2.1.284). On Codex the Luna jobs run on GPT-6 Luna (GPT-5.6 Luna
-  on a Codex CLI older than 0.162.1)
+  is not connected. A job names a rung, never a model: `effortLadder.ts` gives
+  each curated provider five rungs (Quick, Light, Standard, Hard, Top), each a model
+  line plus an effort, and `slotRungs.ts` gives each role and task its rung for a
+  normal step. A line is never a version, so a new model in the catalog reaches
+  Auto on its own. On Claude the rungs are Haiku Low, Haiku Medium, Sonnet Medium,
+  Sonnet High and Opus High (Opus 5.5 today, Opus 5 on an older CLI). The Planner
+  sits on Top, the Debugger and the Reviewer on Hard, Scout, Docs and Scribe on
+  Light, the five small writing jobs (step summaries, learnings, prose polish,
+  agent naming, issue briefs) on Quick, re-checks on Light, and the Implementer,
+  Tester, Resolver, plan drafting, Generalist, Report and the other roles on
+  Standard. On Codex the rungs are GPT-6 Luna Low and Medium, GPT-6.1 Sol Medium and
+  High, and Astra High; on Gemini Flash Low and Medium, then Pro Low, High and High;
+  on Cursor Auto, Haiku Medium (Auto without Max Mode), Sonnet Medium, Sonnet High,
+  and Opus High (Sonnet Very high without Max Mode). Each rung keeps the older
+  models of its line behind the newest for a CLI that is too old
+- **The step size moves the rung.** `modelForStep` (`autoRouting/modelForStep.ts`) is
+  the one function that turns a slot, a step size and the connection state into a
+  model: Auto for roles and tasks (`resolveAuto` is its size-less call), the
+  Models page, Auto's children and workflow steps all call it. A small step moves
+  an agent role one rung down, a large one rung up (`SLOT_RUNGS` holds both for
+  each role, so agents never sit on Quick and the Planner never below Hard), a
+  background task never moves. When the rung's newest model cannot run it tries
+  the older models of the line, then the rungs below (a large step climbs first),
+  then the strongest visible model of the rung's cost tier, and only then the next
+  provider in the user's order at the same rung. OpenRouter, Moonshot and
+  opencode follow the cost tier of the Claude model on the same rung
 - **Role model set**: a role with a set runs on one of its models. With no step size
   (or a large step) it takes the first model that can run; a medium step takes the
   first one at mid cost or cheaper, a small step the first cheap one, and when none
@@ -793,17 +823,18 @@ What the catalogs do not tell you:
 - `gpt-6.1-sol` (Codex CLI 0.160 or newer) is the newest Sol, the Codex turn default
   and an id of its own, priced 2/10 per Mtok with cached input at 0.10 in
   `codex/cost.ts`. Its catalog carries `minCliVersion: '0.160.0'`, so Auto keeps an
-  older Sol on an older Codex CLI. Its catalog `costTier` is `expensive` on purpose,
-  like Astra: `mid` would make it the codex mid model in place of Terra. The same
-  model sits in the OpenRouter catalog as `openrouter/openai/gpt-6.1-sol`.
-  `gpt-5.6-sol` is `expensive` on both Codex and OpenRouter: OpenAI's standard rate
-  is 4/20, twice the newer Sol
-- `gpt-6-sol` (2/10, cached 0.20, `expensive` like 6.1 Sol) sits between the two
+  older Sol on an older Codex CLI. Its catalog `costTier` is `mid`: it is the Codex
+  mid model, and `gpt-5.6-terra` (2/12, older and dearer) is `legacy`, hidden until
+  the user shows legacy models. The same model sits in the OpenRouter catalog as
+  `openrouter/openai/gpt-6.1-sol`. `gpt-5.6-sol` is `expensive` on both Codex and
+  OpenRouter: OpenAI's standard rate is 4/20, twice the newer Sol
+- `gpt-6-sol` (2/10, cached 0.20, `mid` like 6.1 Sol) sits between the two
   Sols, and `gpt-6-luna` (0.10/0.50, cached 0.01, `cheap`) is the newest Luna, so
   the Luna jobs run on it. Both need Codex CLI 0.162.1. OpenRouter carries both too
 - Codex context windows come from `codex debug models`: 500k for GPT-6.1 Sol and
   272k for the others, not the 872k maximum. The orchestrator's context check
-  reads this number. The long context rate above 272k is not modeled yet
+  reads this number. The long context rate above 272k is in `codex/cost.ts` as an
+  `aboveLevel`, billed per request once the Codex parser lists requests
 - Cursor is the only provider whose `getCheapModel` is set by hand. It is set to
   `auto` in `cli-defaults.ts`. Every other provider takes the non-legacy cheap entry
   with the highest catalog `order`, never the first one in the array, so a newer
@@ -836,10 +867,18 @@ What the catalogs do not tell you:
 - A rate the vendor has not published yet is copied from the model it follows and
   carries `assumed: true` in its `cost.ts` (Cursor `auto` does: Cursor bills Auto at
   the rate of the model it routes to), so `costCoverage` reports its spend as
-  approximate. Haiku 5.5 carries it too: Anthropic bills 0.10/0.50 (cached 0.01) for
-  a request up to 100,000 prompt tokens and 0.50/2.50 above, and `ModelPrice` holds
-  one rate, so Goodboy bills the lower one and marks the spend approximate. A long
-  Scout run that crosses the threshold reads low until two-level prices land Each provider has one price table, its `cost.ts`. Telemetry, budgets
+  approximate
+- A vendor that charges more above a prompt size gives the row an `aboveLevel`
+  (`ModelPrice` in `provider-registry.ts`). Haiku 5.5 bills 0.10/0.50 (cached 0.01)
+  up to 100,000 prompt tokens and 0.50/2.50 (cached 0.05) above, Codex models above
+  272k, Gemini 3.1 Pro above 200k. The size is per request and counts cached
+  tokens: `priceLevels.ts` bills each request in `ProviderUsage.largeRequests` at its
+  own level and the rest of the turn at the lower one. Only the Claude parser
+  (`anthropic-envelope-parser.ts`, one entry per assistant message id above
+  100,000 prompt tokens) fills `largeRequests`; Codex and Gemini report one total
+  per turn, so their turns bill at the lower rate until their parsers list the
+  requests
+- Each provider has one price table, its `cost.ts`. Telemetry, budgets
   and estimates all read it; there is no second table that wins at runtime
 - Gemini 3.6, 3.7 and 3.8 Flash bill 0.75/3.75 per Mtok (cached 0.075) in
   `gemini/cost.ts` until December 31, 2026. Google lists 1.50/7.50 (cached 0.15)
@@ -848,7 +887,7 @@ What the catalogs do not tell you:
 - Cursor bills by its own list (`cursor.com/docs/models`), not the vendor's: Gemini
   3.8 and 3.7 Flash are 0.75/3.75, 3.6 Flash 1.5/7.5, Gemini 3 Flash 0.5/3, Gemini 4
   Argon 2/10 (cached 0.10), Sonnet 5.5 2/10 with cache reads at 0.10 and Haiku 5.5
-  0.10/0.50 (cached 0.01, `assumed` like the Claude row). Every Haiku 5.5 combo needs
+  0.10/0.50 (cached 0.01, `assumed` until Cursor's request sizes are read). Every Haiku 5.5 combo needs
   Max Mode, which Cursor keeps only on legacy plans
 - Gemini 3.7 Flash is `legacy` on Gemini and OpenRouter, and Gemini 3.5 Flash on
   OpenRouter: Google routes both to a newer Flash
@@ -868,10 +907,9 @@ When a provider ships or retires a model, update these together:
    price page. A rate you cannot confirm keeps `assumed: true`.
 4. `catalogDescriptor.ts`: a `WEIGHT_BY_KEY` row. `catalogDescriptor.test.ts` fails
    on a model without one.
-5. Nothing else. Auto (`autoRouting/defaults.ts`) and the chat default
+5. Nothing else. Auto (`autoRouting/effortLadder.ts`) and the chat default
    (`workspace-chat/defaultChatModel.ts`) name a line (`{ group: 'Sonnet' }`) and pick
-   its newest model through `latestInGroup`. A cell that must hold a version back
-   names the key with a written `pinnedBecause`. A source scan
+   its newest model through `latestInGroup`. A source scan
    (`model-versions-live-in-the-catalog.test.ts`) fails when product code outside
    the catalog layer writes a versioned id.
 

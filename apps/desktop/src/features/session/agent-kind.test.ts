@@ -327,9 +327,9 @@ describe('AGENT_KIND_DEFAULTS', () => {
     }
   });
 
-  it('scout → haiku medium, docs → sonnet low, generic → sonnet medium', () => {
+  it('scout → haiku medium, docs → haiku medium, generic → sonnet medium', () => {
     expect(kindRouting({ kind: 'scout' })).toMatchObject({ model: 'haiku-5.5', effort: 'medium' });
-    expect(kindRouting({ kind: 'docs' })).toMatchObject({ model: 'sonnet-5.5', effort: 'low' });
+    expect(kindRouting({ kind: 'docs' })).toMatchObject({ model: 'haiku-5.5', effort: 'medium' });
     expect(kindRouting({ kind: 'generic' })).toMatchObject({
       model: 'sonnet-5.5',
       effort: 'medium',

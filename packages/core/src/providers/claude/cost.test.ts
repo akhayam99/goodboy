@@ -56,7 +56,49 @@ describe('computeCostUsd', () => {
     expect(computeCostUsd({ usage: partial, model: 'claude-sonnet-5-5' })).toBeCloseTo(0.1);
   });
 
-  it('haiku-5-5 bills the rate for prompts up to 100,000 tokens, marked assumed', () => {
+  it('haiku-5-5 bills a request above 100,000 prompt tokens at five times the rate', () => {
+    const request = {
+      inputTokens: 20_000,
+      outputTokens: 1_000_000,
+      cachedInputTokens: 90_000,
+      cacheCreationInputTokens: 0,
+    };
+    const turn: ProviderUsage = {
+      inputTokens: 30_000,
+      outputTokens: 1_500_000,
+      cachedInputTokens: 130_000,
+      cacheCreationInputTokens: 0,
+      largeRequests: [request],
+      estimatedCostUsd: 0,
+    };
+    const large = (20_000 * 0.5 + 90_000 * 0.05 + 1_000_000 * 2.5) / 1_000_000;
+    const rest = (10_000 * 0.1 + 40_000 * 0.01 + 500_000 * 0.5) / 1_000_000;
+    expect(computeCostUsd({ usage: turn, model: 'claude-haiku-5-5' })).toBeCloseTo(large + rest);
+  });
+
+  it('haiku-5-5 bills a request of exactly 100,000 prompt tokens at the lower rate', () => {
+    const request = {
+      inputTokens: 100_000,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 0,
+    };
+    const turn: ProviderUsage = { ...request, largeRequests: [request], estimatedCostUsd: 0 };
+    expect(computeCostUsd({ usage: turn, model: 'claude-haiku-5-5' })).toBeCloseTo(0.01);
+  });
+
+  it('a model without a size level ignores large requests', () => {
+    const request = {
+      inputTokens: 200_000,
+      outputTokens: 0,
+      cachedInputTokens: 0,
+      cacheCreationInputTokens: 0,
+    };
+    const turn: ProviderUsage = { ...request, largeRequests: [request], estimatedCostUsd: 0 };
+    expect(computeCostUsd({ usage: turn, model: 'claude-sonnet-5-5' })).toBeCloseTo(0.4);
+  });
+
+  it('haiku-5-5 bills the rate for prompts up to 100,000 tokens, measured', () => {
     const cached: ProviderUsage = {
       inputTokens: 0,
       outputTokens: 0,
@@ -65,7 +107,7 @@ describe('computeCostUsd', () => {
     };
     expect(computeCostUsd({ usage, model: 'claude-haiku-5-5' })).toBeCloseTo(0.1 + 0.5);
     expect(computeCostUsd({ usage: cached, model: 'claude-haiku-5-5' })).toBeCloseTo(0.01);
-    expect(priceFor('claude-haiku-5-5').assumed).toBe(true);
+    expect(priceFor('claude-haiku-5-5').assumed).toBeUndefined();
   });
 
   it('sonnet-5 cached tokens are billed at 10% of input', () => {

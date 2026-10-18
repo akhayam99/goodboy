@@ -31,6 +31,6 @@ export const DefaultRow = ({
       {summary}
     </TruncatedText>
     {status === undefined ? null : <span className="flex shrink-0 items-center">{status}</span>}
-    <div className="w-[220px] min-w-0 shrink-0">{children}</div>
+    <div className="w-[264px] min-w-0 shrink-0">{children}</div>
   </BandRow>
 );

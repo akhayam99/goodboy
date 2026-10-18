@@ -18,12 +18,8 @@ import { resolveModelArgs } from './resolveModelArgs';
 import { resolvedStoredModelId } from './resolvedStoredModelId';
 import { resolveStoredModelSelection } from './resolveStoredModelSelection';
 import { unusableReason } from './autoRouting/providerCandidates';
-import {
-  resolveAuto,
-  type AutoContext,
-  type AutoSlot,
-  type AutoStep,
-} from './autoRouting/resolveAuto';
+import { modelForStep } from './autoRouting/modelForStep';
+import type { AutoContext, AutoSlot, AutoStep } from './autoRouting/autoTypes';
 import type { SkippedChoice } from './resolve/types';
 
 export type PinnedUnavailable = Readonly<{
@@ -180,15 +176,17 @@ const choiceBySize = ({ usable, size }: BySizeParams): ResolvedRoleChoice | null
 type AutoRoleParams = {
   readonly role: AgentRole;
   readonly auto: AutoContext;
+  readonly size: StepSize | null | undefined;
 };
 
-const autoRoleRouting = ({ role, auto }: AutoRoleParams): ResolvedRoleRouting => {
+const autoRoleRouting = ({ role, auto, size }: AutoRoleParams): ResolvedRoleRouting => {
   const slot: AutoSlot = { kind: 'role', id: role };
   const allowed =
-    resolveAuto({ slot, ...auto }) ??
-    (auto.hidden == null ? resolveAuto({ slot, ...REFERENCE_CONTEXT }) : null);
-  const isBlockedByHidden = allowed == null && resolveAuto({ slot, ...auto, hidden: null }) != null;
-  const pick = allowed ?? resolveAuto({ slot, ...REFERENCE_CONTEXT });
+    modelForStep({ slot, size, ...auto }) ??
+    (auto.hidden == null ? modelForStep({ slot, size, ...REFERENCE_CONTEXT }) : null);
+  const isBlockedByHidden =
+    allowed == null && modelForStep({ slot, size, ...auto, hidden: null }) != null;
+  const pick = allowed ?? modelForStep({ slot, size, ...REFERENCE_CONTEXT });
   if (pick == null) {
     throw new Error(`no curated default for role ${role}`);
   }
@@ -308,7 +306,7 @@ const setRoleRouting = ({
 
 export const resolveRoleRouting = ({ role, prefs, auto, size }: Params): ResolvedRoleRouting => {
   const normalizedRole = normalizeAgentRole({ role });
-  const compiled = autoRoleRouting({ role: normalizedRole, auto: auto ?? REFERENCE_CONTEXT });
+  const compiled = autoRoleRouting({ role: normalizedRole, auto: auto ?? REFERENCE_CONTEXT, size });
   const preference = prefs?.[normalizedRole];
   if (preference == null) {
     return compiled;

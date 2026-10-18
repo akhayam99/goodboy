@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AUTO_OWN_PROVIDERS } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
@@ -9,6 +9,8 @@ import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKi
 import type { PickedRoute } from '../../../../shared/components/RoutingPicker/PickedRoute';
 import { openAgentRevealEvent } from '../../../../shared/utils/openAgentReveal';
 import { toAttachmentInputs } from '../../../attachments/pendingAttachment';
+import { classifyTypedRequest } from '../../../auto/classifyTypedRequest';
+import { useClassifyRequests } from '../../../../shared/hooks/useClassifyRequests';
 import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AutoComposerView, type AutoRoutingChoice } from '../AutoComposerView';
@@ -45,7 +47,10 @@ export const AutoStart = ({ workspaceId }: Props) => {
     effort: spawnDefault.effort,
   };
   const promptFiles = usePromptFiles({ note: 'Files go to Auto' });
-  const { start, isStarting, error } = useDraftStart({ workspaceId });
+  const { start, isStarting: isStartingDraft, error } = useDraftStart({ workspaceId });
+  useClassifyRequests();
+  const [isClassifying, setIsClassifying] = useState(false);
+  const isStarting = isStartingDraft || isClassifying;
   const { discard } = useDraftDiscard({ workspaceId });
   const limit = useAutoTreeLimit({ workspaceId });
   const goal = draft.autoGoal;
@@ -75,12 +80,19 @@ export const AutoStart = ({ workspaceId }: Props) => {
     await limit.persist();
     const staged = promptFiles.attachments;
     const attachmentInputs = staged.length === 0 ? [] : await toAttachmentInputs(staged);
+    setIsClassifying(true);
+    const classified = await classifyTypedRequest({
+      state: useAppStore.getState(),
+      workspaceId,
+      goal,
+      isRoutingPinned: draft.autoRouting !== null,
+    }).finally(() => setIsClassifying(false));
     const isStarted = await start({
       kind: 'scout',
-      agentKind: 'auto',
+      agentKind: classified?.agentKind ?? 'auto',
       focus: goal,
       prompt: goal.trim(),
-      routing: choice.effective,
+      routing: classified?.routing ?? choice.effective,
       ...(attachmentInputs.length > 0 && { attachmentInputs }),
     });
     if (!isStarted) {

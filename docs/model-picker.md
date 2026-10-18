@@ -32,7 +32,8 @@ The row above the provider chips is one component with two meanings.
 
 - **Configuring surfaces** (Models, the workflow builder, the Studio) call it
   **Auto**. Saving Auto means "follow the ladder", not a model. The closed
-  trigger reads `Auto` and the open row says what Auto picks right now
+  trigger reads `Auto` (the New chats row and the background task rows set
+  `autoTrigger="resolved"` and name the model Auto runs instead) and the open row says what Auto picks right now
   (`Now: Claude · Sonnet 5.5 · Medium`). A pinned trigger shows the model then
   "· pinned" in gray, in the same chip style as any other trigger (no tint, no
   bare x); going back to Auto is the reset row inside the popover, labelled by

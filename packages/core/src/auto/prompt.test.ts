@@ -14,6 +14,17 @@ import {
 } from './prompt';
 import { AUTO_DELEGATION_ROLES, AUTO_ROLE_WHEN, isAutoWriterRole } from './roles';
 
+describe('the delegate rules and the model', () => {
+  it('asks for a difficulty per child and never for a model or an effort', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
+
+    expect(prompt).toContain('a difficulty and a done-when line');
+    expect(prompt).toContain('light, standard or heavy');
+    expect(prompt).toContain('never name a model or an effort');
+    expect(prompt).not.toContain('a mount, a model, an effort');
+  });
+});
+
 describe('autoRoleCatalog', () => {
   it('lists every delegable role once, in order, from the registry text', () => {
     const lines = autoRoleCatalog().split('\n').slice(1);

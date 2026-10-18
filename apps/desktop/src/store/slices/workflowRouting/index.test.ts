@@ -473,7 +473,7 @@ describe('fan-out child routing precedence', () => {
       return;
     }
     expect(resolution.decision.selected.model).not.toBe('gpt-5.6-sol');
-    expect(resolution.decision.source).toBe('heuristic');
+    expect(resolution.decision.source).toBe('kind_default');
   });
 
   it('explicit child lock beats the heuristic pick', () => {
@@ -613,7 +613,7 @@ describe('fan-out child routing precedence', () => {
     if (resolution.kind !== 'ready') {
       return;
     }
-    expect(resolution.decision.source).toBe('heuristic');
+    expect(resolution.decision.source).toBe('kind_default');
     expect(resolution.decision.reason).toContain('heuristic estimate');
     expect(taskProfile?.difficulty).toBe('heavy');
     expect(taskProfile?.basis).toBe('heuristic');

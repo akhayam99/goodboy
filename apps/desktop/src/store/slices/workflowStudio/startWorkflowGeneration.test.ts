@@ -409,7 +409,7 @@ describe('startWorkflowGeneration model metadata', () => {
     const menuLines = prompt
       .split('\n')
       .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
-    expect(menuLines).toHaveLength(17);
+    expect(menuLines).toHaveLength(16);
     expect(menuLines.some((line) => line.startsWith('anthropic/sonnet-4.5 '))).toBe(false);
     for (const line of menuLines) {
       expect(line).toContain('unassessed');

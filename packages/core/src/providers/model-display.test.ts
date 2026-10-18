@@ -22,7 +22,7 @@ describe('provider model display', () => {
       family: 'gpt',
       variantLabel: '6.1 Sol',
       contextWindow: 500_000,
-      costTier: 'expensive',
+      costTier: 'mid',
     });
   });
 

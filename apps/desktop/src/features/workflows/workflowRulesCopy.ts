@@ -27,4 +27,5 @@ export const canonicalWorkflowRules = ({ rules }: { readonly rules: WorkflowRule
     spreadByHeadroom: rules.spreadByHeadroom,
     standingGuidance: rules.standingGuidance,
     guidanceRoles: rules.guidanceRoles,
+    ...(rules.canOrchestratorPickModel === true && { canOrchestratorPickModel: true }),
   });

@@ -12,7 +12,7 @@ describe('model visibility', () => {
   it('hides the legacy versions until the user chooses', () => {
     const hidden = legacyHiddenModels();
     expect(hidden.anthropic).toEqual(['opus-4.7', 'opus-4.6', 'sonnet-4.5']);
-    expect(hidden.codex).toEqual(['gpt-5.5']);
+    expect(hidden.codex).toEqual(['gpt-5.6-terra', 'gpt-5.5']);
     expect(hidden.gemini).toEqual(['gemini-3.7-flash', 'gemini-3.6-flash']);
     expect(parseHiddenModels(null)).toEqual(hidden);
   });

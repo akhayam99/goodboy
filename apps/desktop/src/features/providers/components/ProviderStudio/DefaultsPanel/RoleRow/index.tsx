@@ -50,9 +50,11 @@ export const RoleRow = ({
   const [isOpen, setIsOpen] = useState(false);
   const resolution = useResolution({ role, workspaceId });
   const auto = useResolution({ role, workspaceId, isAutoOnly: true });
+  const small = useResolution({ role, workspaceId, isAutoOnly: true, size: 'small' });
+  const large = useResolution({ role, workspaceId, isAutoOnly: true, size: 'large' });
   const facts = useMemo(
-    () => roleRunFacts({ role, auto, isParallelOn }),
-    [role, auto, isParallelOn],
+    () => roleRunFacts({ role, auto, sized: { small, large }, isParallelOn }),
+    [role, auto, small, large, isParallelOn],
   );
   const skippedLine = resolutionNote({ resolution });
   const entries = useMemo(() => roleSetEntries({ preference }), [preference]);
