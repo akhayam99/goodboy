@@ -607,6 +607,15 @@ describe('ArtifactCreationPane', () => {
     await waitFor(() => {
       screen.getByRole('button', { name: 'Remove inbox.png' });
     });
+    await waitFor(() => {
+      expect(state.setArtifactDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          draft: expect.objectContaining({
+            attachments: [expect.objectContaining({ fileName: 'inbox.png' })],
+          }),
+        }),
+      );
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     fireEvent.click(
       within(screen.getByRole('dialog', { name: 'Discard this brief?' })).getByRole('button', {
