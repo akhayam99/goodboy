@@ -5,6 +5,7 @@ export type AppPlatform = {
   readonly osVersion: string | null;
   readonly arch: string;
   readonly buildSha: string | null;
+  readonly windowsBuild: number | null;
 };
 
 const OS_LABELS: Readonly<Record<string, string>> = {

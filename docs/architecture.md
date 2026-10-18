@@ -66,6 +66,11 @@ PowerShell 7, Windows PowerShell, `%ComSpec%`, Git Bash (from the
 `GitForWindows` registry key, then `git` on `PATH`) and each WSL distribution
 from the user's `Lxss` registry key, without starting `wsl.exe`. Each shell is
 a `ShellKind` with its own arguments, so PowerShell never receives `-l -i`.
+A new console starts in the OEM code page, so every Windows shell switches to
+UTF-8 as it starts: PowerShell sets the console encodings, cmd runs
+`chcp 65001`, and Git Bash runs `chcp.com 65001` from a one-shot
+`PROMPT_COMMAND` (a profile that sets its own `PROMPT_COMMAND` replaces it).
+Without it an agent's `❯` arrives as three wrong characters.
 When a shell fails to start the terminal tries the next default one and its
 first line names the shell that opened and why the first did not.
 
@@ -210,7 +215,10 @@ A pty never loses what it printed. Each terminal and each script run owns an
 `OutputRing` (`pty_ring.rs`): the last 262144 bytes it wrote and `total`, the
 running count of every byte since the start. The reader thread pushes each
 read into the ring first, then emits `terminal-output` or `script-output`
-with `offset`, the running offset of the chunk's first byte. A ring survives
+with `offset`, the running offset of the chunk's first byte. A terminal hands
+its reads to a forwarder thread that joins the reads of the next 3 ms (up to
+64 KiB) into one event with the first chunk's offset, because ConPTY writes
+many small pieces; the forwarder drains before `terminal-exit` fires. A ring survives
 its process: on exit the pair (ring, exit code) stays in the `exited` store
 for 10 minutes, and the entry leaves the registry before `terminal-exit` or
 `script-exit` fires, so a snapshot read after the event always carries the

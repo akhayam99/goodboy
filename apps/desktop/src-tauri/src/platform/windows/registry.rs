@@ -102,6 +102,17 @@ pub fn subkeys(root: Root, subkey: &str) -> Vec<String> {
     names
 }
 
+pub fn build_number() -> Option<u32> {
+    read_string(
+        Root::LocalMachine,
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+        "CurrentBuildNumber",
+    )?
+    .trim()
+    .parse()
+    .ok()
+}
+
 pub fn persisted_path() -> Vec<String> {
     [
         read_string(
@@ -125,5 +136,10 @@ mod tests {
         let persisted = persisted_path();
         assert!(!persisted.is_empty());
         assert!(persisted.iter().all(|list| !list.contains('%')));
+    }
+
+    #[test]
+    fn the_build_number_is_read_from_the_registry() {
+        assert!(build_number().is_some_and(|build| build > 0));
     }
 }

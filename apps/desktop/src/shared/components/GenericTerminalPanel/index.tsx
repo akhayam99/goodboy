@@ -15,6 +15,7 @@ import { IconButton } from '@goodboy/ui';
 import { terminalFindKey } from './terminalFindKey';
 import { terminalFindOptions } from './terminalFindDecorations';
 import { TerminalFindBar, type TerminalFindController } from './TerminalFindBar';
+import { loadWindowsPty } from './windowsPty';
 
 export type TerminalChunk = {
   readonly bytes: Uint8Array;
@@ -83,7 +84,6 @@ export const GenericTerminalPanel = ({
     }
 
     const term = new Terminal({
-      convertEol: true,
       scrollback: 5000,
       fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
       fontSize: 12,
@@ -141,6 +141,13 @@ export const GenericTerminalPanel = ({
 
     termRef.current = term;
     fitAndSyncRef.current = fitAndSync;
+
+    void loadWindowsPty().then((windowsPty) => {
+      if (windowsPty === null || termRef.current !== term) {
+        return;
+      }
+      term.options.windowsPty = windowsPty;
+    });
 
     const dataDisposable = readOnly
       ? null

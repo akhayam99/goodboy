@@ -174,6 +174,9 @@ fn shell_command(
     if profile.exports_shell_variable() {
         cmd.env("SHELL", &profile.program);
     }
+    for (key, value) in profile.startup_env() {
+        cmd.env(key, value);
+    }
     let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Terminal);
     (cmd, tag)
 }
@@ -190,6 +193,48 @@ fn fallback_notice(failures: &[String], started: &ShellProfile) -> Option<Vec<u8
         )
         .into_bytes(),
     )
+}
+
+const OUTPUT_BATCH_WINDOW: std::time::Duration = std::time::Duration::from_millis(3);
+const OUTPUT_BATCH_LIMIT: usize = 64 * 1024;
+
+struct OutputChunk {
+    offset: u64,
+    bytes: Vec<u8>,
+}
+
+fn next_batch(
+    rx: &std::sync::mpsc::Receiver<OutputChunk>,
+    window: std::time::Duration,
+    limit: usize,
+) -> Option<OutputChunk> {
+    let mut batch = rx.recv().ok()?;
+    let deadline = std::time::Instant::now() + window;
+    while batch.bytes.len() < limit {
+        let left = deadline.saturating_duration_since(std::time::Instant::now());
+        let Ok(more) = rx.recv_timeout(left) else {
+            break;
+        };
+        batch.bytes.extend_from_slice(&more.bytes);
+    }
+    Some(batch)
+}
+
+fn forward_output<R: Runtime>(
+    app: AppHandle<R>,
+    session_id: String,
+    rx: std::sync::mpsc::Receiver<OutputChunk>,
+) {
+    while let Some(batch) = next_batch(&rx, OUTPUT_BATCH_WINDOW, OUTPUT_BATCH_LIMIT) {
+        let _ = app.emit(
+            "terminal-output",
+            TerminalOutputPayload {
+                session_id: session_id.clone(),
+                data: STANDARD.encode(&batch.bytes),
+                offset: batch.offset,
+            },
+        );
+    }
 }
 
 fn emit_output<R: Runtime>(app: &AppHandle<R>, ring: &SharedRing, session_id: &str, bytes: &[u8]) {
@@ -441,12 +486,24 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     thread::spawn(move || {
         let mut reader = reader;
         let mut buf = vec![0u8; 65536];
+        let (tx, rx) = std::sync::mpsc::channel::<OutputChunk>();
+        let forward_app = app_r.clone();
+        let forward_sid = sid.clone();
+        let forwarder = thread::spawn(move || forward_output(forward_app, forward_sid, rx));
         loop {
             match reader.read(&mut buf) {
                 Ok(0) | Err(_) => break,
-                Ok(n) => emit_output(&app_r, &ring, &sid, &buf[..n]),
+                Ok(n) => {
+                    let offset = push_shared(&ring, &buf[..n]);
+                    let _ = tx.send(OutputChunk {
+                        offset,
+                        bytes: buf[..n].to_vec(),
+                    });
+                }
             }
         }
+        drop(tx);
+        let _ = forwarder.join();
 
         let (exit_code, is_closed) = {
             let slot = {
@@ -912,6 +969,43 @@ mod tests {
     }
 
     #[test]
+    fn output_read_close_together_leaves_as_one_batch_with_the_first_offset() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        for (offset, text) in [(10u64, "ab"), (12, "cd"), (14, "ef")] {
+            tx.send(OutputChunk {
+                offset,
+                bytes: text.as_bytes().to_vec(),
+            })
+            .unwrap();
+        }
+        drop(tx);
+
+        let batch = next_batch(&rx, std::time::Duration::from_millis(50), 1024).unwrap();
+
+        assert_eq!(batch.offset, 10);
+        assert_eq!(batch.bytes, b"abcdef");
+        assert!(next_batch(&rx, std::time::Duration::from_millis(50), 1024).is_none());
+    }
+
+    #[test]
+    fn a_batch_stops_growing_at_the_size_limit() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        for offset in [0u64, 4, 8] {
+            tx.send(OutputChunk {
+                offset,
+                bytes: vec![b'x'; 4],
+            })
+            .unwrap();
+        }
+
+        let first = next_batch(&rx, std::time::Duration::from_millis(50), 6).unwrap();
+        let second = next_batch(&rx, std::time::Duration::from_millis(50), 6).unwrap();
+
+        assert_eq!((first.offset, first.bytes.len()), (0, 8));
+        assert_eq!((second.offset, second.bytes.len()), (8, 4));
+    }
+
+    #[test]
     fn the_first_shell_to_try_exists() {
         let order = shell::launch_order(&shell::discover(), None);
         let first = order.first().expect("at least one shell to try");
@@ -935,5 +1029,75 @@ mod tests {
         assert!(notice.contains("PowerShell 7 could not start: access denied"));
         assert!(notice.contains("Opened Windows PowerShell instead."));
         assert!(fallback_notice(&[], &started).is_none());
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_conpty {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    const MARK: &str = "\u{276F}\u{2713}";
+
+    fn open(registry: &TerminalRegistry, session_id: &str, shell_id: &str) {
+        let app = tauri::test::mock_app();
+        spawn_terminal(TerminalSpawnRequest {
+            scrollback_dir: None,
+            app: app.handle().clone(),
+            registry: Arc::clone(&registry.0),
+            exited: Arc::clone(&registry.1),
+            session_id: session_id.to_string(),
+            cwd: Some(std::env::temp_dir().to_string_lossy().into_owned()),
+            shell_id: Some(shell_id.to_string()),
+            cols: 100,
+            rows: 30,
+        })
+        .expect("open the terminal");
+    }
+
+    fn type_line(registry: &TerminalRegistry, session_id: &str, line: &str) {
+        let slot = {
+            let map = registry.0.lock().unwrap();
+            Arc::clone(&map.get(session_id).expect("live terminal").slot)
+        };
+        let mut guard = slot.lock().unwrap();
+        let session = guard.as_mut().expect("live session");
+        session.writer.write_all(line.as_bytes()).unwrap();
+        session.writer.write_all(b"\r").unwrap();
+    }
+
+    fn output_of(registry: &TerminalRegistry, session_id: &str) -> String {
+        let snapshot = snapshot_session(registry, session_id).unwrap();
+        String::from_utf8_lossy(&STANDARD.decode(snapshot.data).unwrap()).into_owned()
+    }
+
+    fn wait_for(registry: &TerminalRegistry, session_id: &str, needle: &str) -> String {
+        let deadline = Instant::now() + Duration::from_secs(20);
+        loop {
+            let output = output_of(registry, session_id);
+            if output.matches(needle).count() >= 2 || Instant::now() > deadline {
+                return output;
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
+    }
+
+    #[test]
+    fn every_default_shell_prints_utf8_back() {
+        let registry = TerminalRegistry::new();
+        for profile in shell::launch_order(&shell::discover(), None) {
+            let session_id = format!("conpty::{}", profile.id);
+            open(&registry, &session_id, &profile.id);
+            type_line(&registry, &session_id, &format!("echo {MARK}"));
+
+            let output = wait_for(&registry, &session_id, MARK);
+
+            assert!(
+                output.matches(MARK).count() >= 2,
+                "{} did not print {MARK} back: {output:?}",
+                profile.label
+            );
+            close_session(&registry.0, &registry.1, &session_id).unwrap();
+        }
     }
 }

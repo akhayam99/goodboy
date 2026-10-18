@@ -30,13 +30,29 @@ impl ShellProfile {
     pub fn interactive_args(&self) -> Vec<String> {
         match self.kind {
             ShellKind::Posix | ShellKind::GitBash => vec!["-l".into(), "-i".into()],
-            ShellKind::PowerShell | ShellKind::WindowsPowerShell => vec!["-NoLogo".into()],
-            ShellKind::Cmd => Vec::new(),
+            ShellKind::PowerShell | ShellKind::WindowsPowerShell => vec![
+                "-NoLogo".into(),
+                "-NoExit".into(),
+                "-Command".into(),
+                POWERSHELL_UTF8.into(),
+            ],
+            ShellKind::Cmd => vec!["/K".into(), CMD_UTF8.into()],
             ShellKind::Wsl => self
                 .distro
                 .iter()
                 .flat_map(|distro| ["-d".to_string(), distro.clone()])
                 .collect(),
+        }
+    }
+
+    pub fn startup_env(&self) -> Vec<(&'static str, &'static str)> {
+        match self.kind {
+            ShellKind::GitBash => vec![("PROMPT_COMMAND", GIT_BASH_UTF8)],
+            ShellKind::Posix
+            | ShellKind::PowerShell
+            | ShellKind::WindowsPowerShell
+            | ShellKind::Cmd
+            | ShellKind::Wsl => Vec::new(),
         }
     }
 
@@ -46,6 +62,11 @@ impl ShellProfile {
 }
 
 pub const POSIX_FALLBACK: &str = "/bin/sh";
+
+const POWERSHELL_UTF8: &str =
+    "[Console]::InputEncoding=[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)";
+const CMD_UTF8: &str = "chcp 65001>nul";
+const GIT_BASH_UTF8: &str = "chcp.com 65001 >/dev/null; unset PROMPT_COMMAND";
 
 #[cfg(target_os = "macos")]
 pub fn posix_candidates() -> &'static [&'static str] {
@@ -448,10 +469,33 @@ mod tests {
         assert_eq!(profile(ShellKind::Posix).interactive_args(), ["-l", "-i"]);
         assert_eq!(profile(ShellKind::GitBash).interactive_args(), ["-l", "-i"]);
         assert_eq!(
-            profile(ShellKind::PowerShell).interactive_args(),
-            ["-NoLogo"]
+            profile(ShellKind::PowerShell).interactive_args()[..3],
+            ["-NoLogo", "-NoExit", "-Command"]
         );
-        assert!(profile(ShellKind::Cmd).interactive_args().is_empty());
+        assert_eq!(
+            profile(ShellKind::Cmd).interactive_args(),
+            ["/K", "chcp 65001>nul"]
+        );
+    }
+
+    #[test]
+    fn every_windows_shell_starts_in_utf8() {
+        let profile = |kind| ShellProfile {
+            id: "x".into(),
+            kind,
+            label: "x".into(),
+            program: PathBuf::from("x"),
+            distro: None,
+            is_default: false,
+        };
+        let powershell = profile(ShellKind::WindowsPowerShell).interactive_args();
+        assert!(powershell[3].contains("[Text.UTF8Encoding]::new($false)"));
+        assert!(!powershell[3].contains(' '));
+        let git_bash = profile(ShellKind::GitBash).startup_env();
+        assert_eq!(git_bash[0].0, "PROMPT_COMMAND");
+        assert!(git_bash[0].1.starts_with("chcp.com 65001"));
+        assert!(git_bash[0].1.ends_with("unset PROMPT_COMMAND"));
+        assert!(profile(ShellKind::Posix).startup_env().is_empty());
     }
 
     #[test]

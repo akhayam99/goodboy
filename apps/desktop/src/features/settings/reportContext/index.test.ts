@@ -55,6 +55,7 @@ const PLATFORM: AppPlatform = {
   osVersion: '15.1',
   arch: 'aarch64',
   buildSha: 'fc2f08994a1b',
+  windowsBuild: null,
 };
 
 const BASE_SOURCES: ReportContextSources = {

@@ -8,6 +8,7 @@ pub struct AppPlatform {
     pub os_version: Option<String>,
     pub arch: &'static str,
     pub build_sha: Option<String>,
+    pub windows_build: Option<u32>,
 }
 
 #[tauri::command(async)]
@@ -17,6 +18,7 @@ pub fn app_platform() -> AppPlatform {
         os_version: os_version(),
         arch: std::env::consts::ARCH,
         build_sha: short_sha(BUILD_SHA),
+        windows_build: windows_build(),
     }
 }
 
@@ -67,8 +69,23 @@ fn os_version() -> Option<String> {
     clean_version(&numeric)
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+#[cfg(windows)]
 fn os_version() -> Option<String> {
+    windows_build().map(|build| format!("10.0.{build}"))
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux", windows)))]
+fn os_version() -> Option<String> {
+    None
+}
+
+#[cfg(windows)]
+fn windows_build() -> Option<u32> {
+    crate::platform::windows::registry::build_number()
+}
+
+#[cfg(not(windows))]
+fn windows_build() -> Option<u32> {
     None
 }
 
@@ -103,5 +120,6 @@ mod tests {
         let platform = app_platform();
         assert_eq!(platform.os, std::env::consts::OS);
         assert_eq!(platform.arch, std::env::consts::ARCH);
+        assert_eq!(platform.windows_build.is_some(), cfg!(windows));
     }
 }

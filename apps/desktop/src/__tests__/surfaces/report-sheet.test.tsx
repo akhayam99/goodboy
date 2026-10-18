@@ -36,7 +36,13 @@ vi.mock('@tauri-apps/api/core', () => ({
         return claimed;
       }
       if (command === 'app_platform') {
-        return { os: 'macos', osVersion: '26.0', arch: 'aarch64', buildSha: '7f3a2c1' };
+        return {
+          os: 'macos',
+          osVersion: '26.0',
+          arch: 'aarch64',
+          buildSha: '7f3a2c1',
+          windowsBuild: null,
+        };
       }
       if (command === 'gh_run' && args[0] === 'search') {
         return { stdout: bridge.similar, stderr: '', exitCode: 0 };
