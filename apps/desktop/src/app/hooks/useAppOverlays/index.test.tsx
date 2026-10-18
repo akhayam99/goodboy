@@ -90,22 +90,10 @@ vi.mock('../../../features/settings/components/GuideStudio', () => ({
   GuideStudio: () => <div data-testid="studio" data-kind="guide" />,
 }));
 vi.mock('../../../features/workspace/components/WorkspaceLinkStudio', () => ({
-  WorkspaceLinkStudio: ({
-    onClose,
-    onOfferRepo,
-  }: {
-    readonly onClose: () => void;
-    readonly onOfferRepo: () => void;
-  }) => (
+  WorkspaceLinkStudio: ({ onClose }: { readonly onClose: () => void }) => (
     <div data-testid="studio" data-kind="addWorkspace">
-      <button
-        type="button"
-        onClick={() => {
-          onOfferRepo();
-          onClose();
-        }}
-      >
-        Add a plain folder
+      <button type="button" onClick={onClose}>
+        Close
       </button>
     </div>
   ),
@@ -277,15 +265,14 @@ describe('app overlay hook, navigation', () => {
 });
 
 describe('app overlay hook', () => {
-  it('offers a repository on the Projects page once the add workspace studio has closed', async () => {
+  it('leaves the add workspace studio closed after it closes, with no settings page behind it', async () => {
     renderHarness();
     fire({ name: 'goodboy:add-workspace' });
     expect(await openStudios()).toEqual(['addWorkspace']);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add a plain folder' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
-    expect(await openStudios()).toEqual(['settings']);
-    expect(screen.getByTestId('studio').getAttribute('data-section')).toBe('dev-project');
+    expect(await openStudios()).toEqual([]);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 

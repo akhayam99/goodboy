@@ -13,7 +13,9 @@ export type WorkspacePage =
   | typeof PERMISSIONS_SECTION_ID
   | 'skills';
 
-export const DEV_PROJECT_SECTION_ID = 'dev-project';
+const TRACK_WITH_GIT_SECTION_ID = 'track-with-git';
+
+const LEGACY_DEV_PROJECT_SECTION_ID = 'dev-project';
 
 type WorkspacePageEntry = {
   readonly id: WorkspacePage;
@@ -63,10 +65,18 @@ export const WORKSPACE_PAGES: ReadonlyArray<WorkspacePageEntry> = ALL_WORKSPACE_
   (page) => page.id !== 'skills' || WORKSPACE_FEATURES.skills,
 );
 
+type SectionParams = {
+  readonly section?: string;
+};
+
+export const isTrackWithGitSection = ({ section }: SectionParams): boolean =>
+  section === TRACK_WITH_GIT_SECTION_ID || section === LEGACY_DEV_PROJECT_SECTION_ID;
+
 const DEFAULT_WORKSPACE_PAGE: WorkspacePage = 'projects';
 
 const SECTION_ALIASES: ReadonlyMap<string, WorkspacePage> = new Map<string, WorkspacePage>([
-  [DEV_PROJECT_SECTION_ID, 'projects'],
+  [TRACK_WITH_GIT_SECTION_ID, 'projects'],
+  [LEGACY_DEV_PROJECT_SECTION_ID, 'projects'],
   ['after-merge', 'branches'],
 ]);
 

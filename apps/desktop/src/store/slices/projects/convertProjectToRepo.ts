@@ -1,37 +1,63 @@
-import type { IsoDateTime, Project, ProjectId } from '@goodboy/types';
+import type { FirstCommit, IsoDateTime, Project, ProjectId } from '@goodboy/types';
 import { updateProjectKind } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { initRepoWithRemote, validateGitRepo } from '../../../shared/lib/repo';
+import { makeFirstCommit } from '../../../shared/lib/folderGit';
+import { validateGitRepo } from '../../../shared/lib/repo';
+import { acquireWriteSet, releaseWriteSet } from '../../../features/worktree/worktree';
 import type { GetFn, SetFn } from './types';
 import { projectById } from './projectIndex';
+import { writingSessionTitle } from './writingSessionTitle';
 
 type Input = {
   readonly projectId: ProjectId;
-  readonly remoteUrl: string;
+  readonly include: ReadonlyArray<string>;
 };
 
+export type ConvertedProject = {
+  readonly project: Project;
+  readonly commit: FirstCommit;
+};
+
+type HolderParams = {
+  readonly projectId: ProjectId;
+};
+
+const trackHolder = ({ projectId }: HolderParams): string => `track-with-git:${projectId}`;
+
 export const convertProjectToRepo = (set: SetFn, get: GetFn) => {
-  return async ({ projectId, remoteUrl }: Input): Promise<Project> => {
+  return async ({ projectId, include }: Input): Promise<ConvertedProject> => {
     const project = projectById(get().projects, projectId);
     if (project === undefined) {
       throw new Error(`project not found: ${projectId}`);
     }
     if (project.kind !== 'folder') {
-      throw new Error('only a folder project can become a repository');
+      throw new Error(`${project.name} is already tracked with git`);
     }
-    const trimmedRemote = remoteUrl.trim();
-    if (trimmedRemote === '') {
-      throw new Error('pick a repository or paste its remote url');
+    const holder = trackHolder({ projectId });
+    const lease = await acquireWriteSet({ paths: [project.rootPath], holder });
+    if (!lease.isGranted) {
+      const writer = writingSessionTitle({ state: get(), holder: lease.blockedBy });
+      throw new Error(
+        `${writer ?? 'A session'} is writing in ${project.name}. Track it with git once that turn ends.`,
+      );
     }
-    const initialized = await initRepoWithRemote({
-      path: project.rootPath,
-      remoteUrl: trimmedRemote,
-    });
-    const check = await validateGitRepo(initialized.rootPath);
+    let commit: FirstCommit;
+    try {
+      commit = await makeFirstCommit({ path: project.rootPath, include });
+    } finally {
+      await releaseWriteSet({ entries: lease.entries, holder }).catch((error: unknown) =>
+        get().reportError({
+          title: `Couldn't hand ${project.name} back to sessions after the first commit`,
+          error,
+          severity: 'warning',
+        }),
+      );
+    }
+    const check = await validateGitRepo(commit.rootPath);
     if (check.isRepo === false) {
       throw new Error(check.error ?? 'the folder is still not a git repository');
     }
-    const rootPath = check.rootPath ?? initialized.rootPath;
+    const rootPath = check.rootPath ?? commit.rootPath;
     await updateProjectKind({ db: tauriDatabase, id: projectId, kind: 'repo', rootPath });
     const converted: Project = {
       ...project,
@@ -44,6 +70,6 @@ export const convertProjectToRepo = (set: SetFn, get: GetFn) => {
         candidate.id === projectId ? converted : candidate,
       ),
     }));
-    return converted;
+    return { project: converted, commit };
   };
 };

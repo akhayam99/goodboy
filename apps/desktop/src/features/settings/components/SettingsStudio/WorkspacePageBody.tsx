@@ -11,9 +11,9 @@ import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
 import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 import { WorkspaceNameBand } from './WorkspaceNameBand';
 import { WorkspaceDisconnectBand } from './WorkspaceDisconnectBand';
-import { WorkspaceDevProjectBand } from './WorkspaceDevProjectBand';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
-import { DEV_PROJECT_SECTION_ID, type WorkspacePage } from './workspacePages';
+import { FolderGitBand } from '../../../workspace/folderGitBand';
+import { isTrackWithGitSection, type WorkspacePage } from './workspacePages';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -34,9 +34,9 @@ export const WorkspacePageBody = ({
         <>
           <WorkspaceNameBand workspaceId={workspaceId} />
           <WorkspaceProjectsSection workspaceId={workspaceId} />
-          <WorkspaceDevProjectBand
+          <FolderGitBand
             workspaceId={workspaceId}
-            isInitiallyOpen={section === DEV_PROJECT_SECTION_ID}
+            isInitiallyOpen={isTrackWithGitSection({ section })}
           />
           <WorkspaceStorageNotice workspaceId={workspaceId} />
           <WorkspaceDisconnectBand workspaceId={workspaceId} requestClose={requestClose} />

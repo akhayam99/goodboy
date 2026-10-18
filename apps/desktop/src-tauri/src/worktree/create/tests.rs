@@ -497,3 +497,23 @@ fn a_pull_request_from_a_branch_of_the_repository_keeps_the_branch_name() {
     assert_eq!(created.branch_name, "ak/fix-credit");
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn a_folder_tracked_on_this_mac_cuts_session_branches_from_local_main_without_origin() {
+    let root = std::fs::canonicalize(temp_root("tracked-no-origin")).unwrap();
+    std::fs::write(root.join("index.ts"), "export {};\n").unwrap();
+    crate::folder_git::make_first_commit_blocking(&crate::folder_git::FirstCommitArgs {
+        path: root.to_string_lossy().into_owned(),
+        include: Vec::new(),
+    })
+    .unwrap();
+
+    let created = create_session_mount(&root, "first-session");
+
+    let main_tip = git_ok(&root, &["rev-parse", "main"]);
+    let session_tip = git_ok(Path::new(&created.worktree_path), &["rev-parse", "HEAD"]);
+    assert_eq!(session_tip, main_tip);
+    assert!(git_ok(&root, &["remote"]).is_empty());
+    assert!(git_ok(&root, &["status", "--porcelain"]).is_empty());
+    std::fs::remove_dir_all(root).unwrap();
+}
