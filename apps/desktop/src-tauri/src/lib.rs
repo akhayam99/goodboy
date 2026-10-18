@@ -88,9 +88,9 @@ mod worktree_writer;
 mod command_threading;
 
 #[cfg(target_os = "macos")]
-mod fullscreen_escape;
+mod app_menu;
 #[cfg(target_os = "macos")]
-mod help_menu;
+mod fullscreen_escape;
 
 #[cfg(target_os = "macos")]
 fn suppress_webkit_media_remote() {
@@ -231,7 +231,7 @@ pub fn run() {
                 let _ = sweep_handle.emit("orphans-swept", serde_json::json!({ "count": count }));
             });
             #[cfg(target_os = "macos")]
-            help_menu::install(app.handle())?;
+            app_menu::install(app.handle())?;
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;

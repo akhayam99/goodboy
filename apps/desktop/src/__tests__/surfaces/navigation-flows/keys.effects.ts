@@ -5,3 +5,5 @@ export const reloads: Array<number> = [];
 export const zoomFactors: Array<number> = [];
 
 export const worldDatabase = { answersEmpty: false };
+
+export const menuHandlers: Array<(event: { readonly payload: unknown }) => void> = [];

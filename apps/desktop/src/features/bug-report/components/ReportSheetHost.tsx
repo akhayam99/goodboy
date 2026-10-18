@@ -8,14 +8,9 @@ import { useAppStore } from '../../../store';
 import type { AppState } from '../../../store/types';
 import { tauriGhRunner } from '../../integrations/github/github';
 import { collectReportContext } from '../../settings/reportContext';
-import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { lastCrashPart } from '../crashReport';
 import { LAST_CRASH_TITLE } from '../lastCrash';
-import {
-  OPEN_REPORT_SHEET_EVENT,
-  REPORT_OPEN_MENU_EVENT,
-  type OpenReportSheetDetail,
-} from '../openReportSheet';
+import { OPEN_REPORT_SHEET_EVENT, type OpenReportSheetDetail } from '../openReportSheet';
 import { contextParts, noticePart, type ReportPart } from '../reportBody';
 import type { ReportFiled } from '../reportDestination';
 import { reportNames } from '../reportNames';
@@ -76,14 +71,6 @@ const NO_DETAIL: OpenReportSheetDetail = {};
 const detailOf = (event: Event): OpenReportSheetDetail =>
   event instanceof CustomEvent && event.detail != null ? event.detail : NO_DETAIL;
 
-const listenToMenu = async (onOpen: () => void): Promise<() => void> => {
-  try {
-    return await getCurrentWebviewWindow().listen(REPORT_OPEN_MENU_EVENT, onOpen);
-  } catch {
-    return () => undefined;
-  }
-};
-
 export const ReportSheetHost = () => {
   const draft = useAppStore((s) => s.bugReportDraft);
   const setBugReportDraft = useAppStore((s) => s.setBugReportDraft);
@@ -138,19 +125,8 @@ export const ReportSheetHost = () => {
   useEffect(() => {
     const onOpen = (event: Event) => open(detailOf(event));
     window.addEventListener(OPEN_REPORT_SHEET_EVENT, onOpen);
-    let unlisten: (() => void) | null = null;
-    let isActive = true;
-    void listenToMenu(() => open(NO_DETAIL)).then((stop) => {
-      if (isActive) {
-        unlisten = stop;
-        return;
-      }
-      stop();
-    });
     return () => {
-      isActive = false;
       window.removeEventListener(OPEN_REPORT_SHEET_EVENT, onOpen);
-      unlisten?.();
     };
   }, [open]);
 

@@ -7,7 +7,7 @@ import { vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ChatId, SessionId, StarredIssue, Workspace, WorkspaceId } from '@goodboy/types';
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
-import { agentPlace } from '../../../store';
+import { agentPlace, sessionPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
@@ -16,7 +16,7 @@ import { sceneClock } from '../../../app/components/MockScene/sceneClock';
 import { brandedId } from '../../../features/history/testing/brandedId';
 import { pressShortcut } from '../../helpers/pressKey';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
-import { reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
+import { menuHandlers, reloads, spawnedWindows, worldDatabase, zoomFactors } from './keys.effects';
 import {
   type BridgeArgs,
   type Ctx,
@@ -43,6 +43,10 @@ const LATEST_ACTIVITY = sceneClock({ anchor: '2099-01-01T00:00:00.000Z' }).iso({
 });
 
 const ANCHOR = /^Search \(/;
+
+const undoRuns: Array<number> = [];
+
+const undoPrevented: Array<boolean> = [];
 
 const focusAnchor = async (): Promise<HTMLElement> => {
   const anchor = await screen.findByRole('button', { name: ANCHOR });
@@ -75,6 +79,18 @@ const press = (id: ShortcutId) => async (): Promise<void> => {
   hydrateBranches();
   await focusAnchor();
   await pressed(id);
+};
+
+type MenuItemParams = {
+  readonly id: string;
+};
+
+const pickMenuItem = async ({ id }: MenuItemParams): Promise<void> => {
+  await waitFor(() => expect(menuHandlers).toHaveLength(1), WAIT);
+  for (const handler of [...menuHandlers]) {
+    handler({ payload: { id } });
+  }
+  await settle();
 };
 
 const keyRow = (row: {
@@ -560,6 +576,54 @@ const pressConnected =
   };
 
 export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
+  keyRow({
+    id: 'app.close',
+    note: 'File > Close in the macOS menu bar closes one level, once',
+    open: async (ctx) => {
+      useAppStore.getState().navigate({ to: sessionPlace({ sessionId: ctx.sessionId }) });
+      await settle();
+      useAppStore.getState().openStudio({
+        studio: { kind: 'chat', chatId: brandedId<ChatId>({ value: 'keys-menu-close-chat' }) },
+      });
+      await settle();
+      await pickMenuItem({ id: 'app.close' });
+    },
+    lands: async (ctx) => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+      expect(useAppStore.getState().currentSessionId).toBe(ctx.sessionId);
+    },
+  }),
+  keyRow({
+    id: 'report.open',
+    note: 'Help > Report a Bug in the macOS menu bar opens one sheet',
+    open: async () => {
+      await pickMenuItem({ id: 'report.open' });
+    },
+    lands: async () => {
+      expect(await screen.findAllByRole('dialog', { name: 'Report a bug' }, WAIT)).toHaveLength(1);
+    },
+  }),
+  keyRow({
+    id: 'app.undo',
+    note: 'the web view takes the undo key once, so the native Undo item never runs too',
+    open: async () => {
+      undoRuns.length = 0;
+      useAppStore.getState().undoable({
+        message: 'Opened agents',
+        undo: async () => {
+          undoRuns.push(1);
+        },
+      });
+      await focusAnchor();
+      const event = pressShortcut({ id: 'app.undo' });
+      undoPrevented.push(event.defaultPrevented);
+      await settle();
+    },
+    lands: async () => {
+      await waitFor(() => expect(undoRuns).toEqual([1]), WAIT);
+      expect(undoPrevented.at(-1)).toBe(true);
+    },
+  }),
   keyRow({
     id: 'session.new',
     note: 'off a session overview the new chord starts a session',

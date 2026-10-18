@@ -25,6 +25,23 @@ vi.mock('@tauri-apps/api/webview', async () => {
     }),
   };
 });
+vi.mock('@tauri-apps/api/webviewWindow', async (importOriginal) => {
+  const { menuHandlers } = await import('./keys.effects');
+  return {
+    ...(await importOriginal<typeof import('@tauri-apps/api/webviewWindow')>()),
+    getCurrentWebviewWindow: () => ({
+      listen: async (event: string, handler: (event: { readonly payload: unknown }) => void) => {
+        if (event !== 'goodboy://menu') {
+          return () => undefined;
+        }
+        menuHandlers.push(handler);
+        return () => {
+          menuHandlers.splice(menuHandlers.indexOf(handler), 1);
+        };
+      },
+    }),
+  };
+});
 vi.mock('../../../features/workspace/window', async (importOriginal) => {
   const { spawnedWindows } = await import('./keys.effects');
   return {
