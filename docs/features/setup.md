@@ -26,7 +26,7 @@ Goodboy runs the coding agents already on this Mac, and one ready agent is enoug
 
 ### Your first workspace
 
-A workspace is what you work on: one repository, or a folder that holds several. Drop a folder or press **Choose folder** (⌘O), and the workspace takes the folder's name, so acme-web becomes Acme web, which you can edit in place. A folder of repositories lists them checked, a plain folder offers git init, and a folder another workspace holds asks whether to move it here. **Start from scratch** makes a new repository instead. Nothing is saved until **Create**.
+A workspace is what you work on: one repository, or a folder that holds several. Drop a folder or press **Choose folder** (⌘O), and the workspace takes the folder's name, so acme-web becomes Acme web, which you can edit in place. A folder of repositories lists them checked, a plain folder asks whether it is a **Code project** or **Documents** (preselected from what it holds, with git offered at **Create** for code), and a folder another workspace holds asks whether to move it here. **Start from scratch** makes a new repository instead. Nothing is saved until **Create**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/setup-workspace-dark.webp">
