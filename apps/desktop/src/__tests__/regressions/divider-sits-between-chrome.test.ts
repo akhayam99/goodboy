@@ -60,10 +60,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/features/onboarding/OnboardingWizard/steps/ProviderCard.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/providers/components/ProviderConnect/ConnectDetails.tsx': {
     count: 1,
     reason: 'debt',

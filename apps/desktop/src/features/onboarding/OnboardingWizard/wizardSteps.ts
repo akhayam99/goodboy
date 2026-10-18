@@ -97,5 +97,6 @@ export type WizardNav = {
   readonly goBack: (() => void) | null;
   readonly goTo: (params: GoToParams) => void;
   readonly finish: (params?: FinishParams) => void;
+  readonly later: (params?: FinishParams) => void;
   readonly setBusy: (isBusy: boolean) => void;
 };

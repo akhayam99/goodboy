@@ -186,6 +186,7 @@ import {
   NewWorkspaceScene,
   type NewWorkspaceSceneState,
 } from '../scenes/onboarding/NewWorkspaceScene';
+import { WizardStepScene, type WizardSceneState } from '../scenes/onboarding/WizardStepScene';
 
 const OnboardingBrandTileDarkScene = () => createElement(BrandTileScene, { theme: 'dark' });
 const OnboardingBrandTileLightScene = () => createElement(BrandTileScene, { theme: 'light' });
@@ -203,6 +204,28 @@ const NEW_WORKSPACE_STATES: ReadonlyArray<NewWorkspaceSceneState> = [
 ];
 
 const SCENE_THEMES: ReadonlyArray<'dark' | 'light'> = ['dark', 'light'];
+
+const WIZARD_STEP_STATES: ReadonlyArray<WizardSceneState> = [
+  'welcome',
+  'agents-ready',
+  'agents-signin',
+  'agents-none',
+  'agents-error',
+  'tools-github',
+  'tools-linear',
+  'tools-nogit',
+  'first-ask',
+  'first-task',
+];
+
+const WIZARD_STEP_SCENES = Object.fromEntries(
+  WIZARD_STEP_STATES.flatMap((state) =>
+    SCENE_THEMES.map((theme) => [
+      `onboarding-step-${state}-${theme}`,
+      () => createElement(WizardStepScene, { state, theme }),
+    ]),
+  ),
+);
 
 const NEW_WORKSPACE_SCENES = Object.fromEntries(
   NEW_WORKSPACE_STATES.flatMap((state) =>
@@ -406,4 +429,5 @@ export const BASE_SCENES = {
   'onboarding-setup-menu-dark': OnboardingSetupMenuDarkScene,
   'onboarding-setup-menu-light': OnboardingSetupMenuLightScene,
   ...NEW_WORKSPACE_SCENES,
+  ...WIZARD_STEP_SCENES,
 };

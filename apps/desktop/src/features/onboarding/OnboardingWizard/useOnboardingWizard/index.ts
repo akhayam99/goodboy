@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Project, Workspace, WorkspaceId } from '@goodboy/types';
 import { useAppStore, useWorkspaces } from '../../../../store';
@@ -95,7 +95,7 @@ export const useOnboardingWizard = ({ isMainWindow }: Params): OnboardingWizardS
     };
   }, [isMainWindow, show, close]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isDecided.current || !hydrated || !isMainWindow) {
       return;
     }

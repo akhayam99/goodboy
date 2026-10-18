@@ -1,62 +1,47 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_GATE_HINT, wizardActions } from './wizardCta';
-import { WIZARD_STEPS } from './wizardSteps';
+import { AGENT_GATE_REASON, wizardCta } from './wizardCta';
+import type { WizardStepId } from './wizardSteps';
 
-const BASE = {
-  providersConnected: 1,
-  codeHostConnected: false,
-  taskSourceConnected: false,
-  isLastStep: false,
-  busy: false,
-} as const;
+type Params = Partial<Parameters<typeof wizardCta>[0]> & {
+  readonly step: WizardStepId;
+};
 
-describe('wizardActions', () => {
-  it('maps every step to its primary action', () => {
-    expect(WIZARD_STEPS.map((step) => wizardActions({ ...BASE, step }).primary?.action)).toEqual([
-      'next',
-      'next',
-      undefined,
-      'next',
-      undefined,
-    ]);
-    expect(wizardActions({ ...BASE, step: 'welcome' }).primary?.label).toBe('Get started');
+const ctaOf = ({ step, ...rest }: Params) =>
+  wizardCta({ step, mode: 'full', readyCount: 1, isIssuePick: false, hasFailed: false, ...rest });
+
+describe('wizardCta', () => {
+  it('pins one label per step, and Skip on First session only', () => {
+    expect(ctaOf({ step: 'welcome' })).toEqual({
+      primary: 'Get started',
+      skip: null,
+      reason: null,
+    });
+    expect(ctaOf({ step: 'agents' })).toEqual({ primary: 'Continue', skip: null, reason: null });
+    expect(ctaOf({ step: 'workspace' })).toEqual({ primary: null, skip: null, reason: null });
+    expect(ctaOf({ step: 'tools' })).toEqual({ primary: 'Continue', skip: null, reason: null });
+    expect(ctaOf({ step: 'first-session' })).toEqual({
+      primary: 'Start',
+      skip: 'Skip',
+      reason: null,
+    });
   });
 
-  it('gates the providers step with a hint while nothing is connected', () => {
-    const gated = wizardActions({ ...BASE, step: 'agents', providersConnected: 0 });
-    expect(gated.primary?.disabled).toBe(true);
-    expect(gated.hint).toBe(PROVIDER_GATE_HINT);
-    expect(wizardActions({ ...BASE, step: 'agents' }).hint).toBeNull();
+  it('says why Continue is off with no ready agent', () => {
+    expect(ctaOf({ step: 'agents', readyCount: 0 }).reason).toBe(AGENT_GATE_REASON);
   });
 
-  it('leaves the workspace step to the form, which owns its own action row', () => {
-    const workspace = wizardActions({ ...BASE, step: 'workspace' });
-    expect(workspace.primary).toBeNull();
-    expect(workspace.skip).toBeNull();
+  it('relabels the primary Retry after a failure', () => {
+    expect(ctaOf({ step: 'agents', hasFailed: true }).primary).toBe('Retry');
+    expect(ctaOf({ step: 'first-session', hasFailed: true }).primary).toBe('Retry');
   });
 
-  it('offers Skip for now on tools until a code host or a task source is connected', () => {
-    const tools = wizardActions({ ...BASE, step: 'tools' });
-    expect(tools.skip?.label).toBe('Skip for now');
-    expect(tools.primary?.disabled).toBe(true);
-    const host = wizardActions({ ...BASE, step: 'tools', codeHostConnected: true });
-    expect(host.skip).toBeNull();
-    expect(host.primary?.disabled).toBe(false);
-    const tasks = wizardActions({ ...BASE, step: 'tools', taskSourceConnected: true });
-    expect(tasks.skip).toBeNull();
+  it('drafts a brief when an issue is picked, and closes a single step with Done', () => {
+    expect(ctaOf({ step: 'first-session', isIssuePick: true }).primary).toBe('Draft the brief');
+    expect(ctaOf({ step: 'tools', mode: 'single' }).primary).toBe('Done');
   });
 
-  it('closes with Done when a reopened step is the last one', () => {
-    const single = wizardActions({ ...BASE, step: 'tools', isLastStep: true });
-    expect(single.primary?.label).toBe('Done');
-    expect(single.primary?.action).toBe('finish');
-    expect(single.skip?.action).toBe('finish');
-  });
-
-  it('leaves the first session primary to the step, with Skip, open the board in the action row', () => {
-    const first = wizardActions({ ...BASE, step: 'first-session' });
-    expect(first.primary).toBeNull();
-    expect(first.skip?.label).toBe('Skip, open the board');
+  it('never offers a skip word on Tools: Continue with nothing connected is the skip', () => {
+    expect(ctaOf({ step: 'tools', readyCount: 0 }).skip).toBeNull();
   });
 });

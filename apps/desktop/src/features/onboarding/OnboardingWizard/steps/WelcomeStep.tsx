@@ -1,36 +1,81 @@
-import { ConceptTile } from '../../../../shared/components/ConceptTile';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { useEffect, useRef, type CSSProperties } from 'react';
+import { Button, KeyHint } from '@goodboy/ui';
+import { BrandTile } from '../../../../shared/components/BrandTile';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { useAgentRows } from '../useAgentRows';
+import { useSplashAnchor } from '../useSplashAnchor';
+import { DetectionLine } from './DetectionLine';
 
-const WELCOME_LINES = [
-  { label: 'Connect the AI you already use', time: '1 min' },
-  { label: 'Pick a project folder', time: '30 s' },
-  { label: 'Link your code host and your tasks', time: 'optional' },
-  { label: 'Start your first agent', time: '2 min' },
-] as const;
+const WELCOME_TILE_PX = 84;
 
-export const WelcomeStep = () => (
-  <div className="flex flex-col gap-6">
-    <ConceptTile icon={CONCEPT_ICONS.agents} tone={CONCEPT_TONE.agents} />
-    <div className="flex flex-col gap-2">
-      <h2 tabIndex={-1} data-step-title className="text-display text-foreground outline-none">
-        Welcome to Goodboy
-      </h2>
-      <p className="text-prose text-muted-foreground">
-        Five short steps, then an agent reads your project.
-      </p>
-    </div>
-    <ul className="flex flex-col gap-1">
-      {WELCOME_LINES.map((line) => (
-        <li
-          key={line.label}
-          className="flex items-center justify-between gap-3 rounded-md bg-subtle px-4 py-2"
+type Props = {
+  readonly isLocked: boolean;
+  readonly onStart: () => void;
+};
+
+type DelayStyle = CSSProperties & Readonly<Record<'--welcome-delay', string>>;
+
+const delay = (ms: number): DelayStyle => ({ '--welcome-delay': `${ms}ms` });
+
+export const WelcomeStep = ({ isLocked, onStart }: Props) => {
+  const { rows } = useAgentRows();
+  const blockRef = useRef<HTMLDivElement>(null);
+  const markRef = useRef<HTMLDivElement>(null);
+  const startRef = useRef<HTMLButtonElement>(null);
+  useSplashAnchor({ markRef, blockRef });
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => startRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  return (
+    <div
+      ref={blockRef}
+      data-testid="welcome-cover"
+      className="welcome-entrance flex flex-col items-center gap-6 text-center"
+    >
+      <div ref={markRef} className="welcome-tile relative">
+        <BrandTile size={WELCOME_TILE_PX} />
+        <div
+          aria-hidden
+          className="welcome-splash-word pointer-events-none absolute top-[90px] left-1/2 flex -translate-x-1/2 flex-col items-center gap-0.5 whitespace-nowrap"
         >
-          <span className="text-body text-foreground">{line.label}</span>
-          <span className="shrink-0 text-label tabular-nums text-faint-foreground">
-            {line.time}
+          <span className="text-title text-foreground">Goodboy</span>
+          <span className="text-label text-faint-foreground">
+            workspace orchestrator for coding agents
           </span>
-        </li>
-      ))}
-    </ul>
-  </div>
-);
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <h2
+          tabIndex={-1}
+          data-step-title
+          className="welcome-rise text-display text-foreground outline-none"
+          style={delay(280)}
+        >
+          Welcome to Goodboy
+        </h2>
+        <p
+          className="welcome-rise max-w-[470px] text-read text-muted-foreground"
+          style={delay(340)}
+        >
+          Run coding agents side by side on your own repositories. Each task gets its own branch,
+          and nothing is pushed until you say so.
+        </p>
+      </div>
+      <div className="welcome-rise" style={delay(400)}>
+        <DetectionLine rows={rows} />
+      </div>
+      <div className="welcome-rise flex flex-col items-center gap-3" style={delay(460)}>
+        <Button ref={startRef} size="md" variant="primary" disabled={isLocked} onClick={onStart}>
+          Get started
+          <KeyHint keys={shortcutGlyphs('composer.send')} isOnTone />
+        </Button>
+        <p className="text-meta text-faint-foreground">
+          About a minute. Nothing is saved until you create a workspace.
+        </p>
+      </div>
+    </div>
+  );
+};

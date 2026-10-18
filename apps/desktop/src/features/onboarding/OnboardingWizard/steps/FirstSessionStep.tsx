@@ -1,225 +1,239 @@
-import { useId, useState, type KeyboardEvent } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { Button, cn, KeyHint } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import {
-  RUN_WORKFLOW_CHOICE,
-  START_AGENT_CHOICE,
-  WORKFLOW_CHOICE_LINE,
-} from '../../../../shared/lib/startCopy';
-import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { StepHeading } from './StepHeading';
-import { NoIssueSource } from './NoIssueSource';
-import { HandOff } from './HandOff';
+import { useState } from 'react';
+import { Button, FormActions, KeyHint, SegmentedTabs, cn, formatError } from '@goodboy/ui';
+import type { Project, ProviderId, WorkspaceId } from '@goodboy/types';
 import { PromptField } from '../../../../shared/components/PromptField';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
+import { PROVIDER_LABEL } from '../../../providers/providerLabel';
+import { useFirstIssues } from '../useFirstIssues';
+import { wizardCta } from '../wizardCta';
+import type { WizardMode } from '../wizardSteps';
+import { AgentGlyph } from './AgentGlyph';
+import { HandOff } from './HandOff';
+import { NoIssueSource } from './NoIssueSource';
+import { StepHeading } from './StepHeading';
 
-export type FirstSessionChoice = 'task' | 'workflow' | 'agent';
+export type FirstSessionTab = 'ask' | 'task';
 
-const CHOICES: ReadonlyArray<FirstSessionChoice> = ['task', 'workflow', 'agent'];
+type StartParams = {
+  readonly prompt: string;
+};
 
-const CHOICE_META: Readonly<
-  Record<
-    FirstSessionChoice,
-    { readonly title: string; readonly line: string; readonly icon: LucideIcon }
-  >
-> = {
-  task: {
-    title: 'Pick up a task',
-    line: 'An issue from your tracker.',
-    icon: CONCEPT_ICONS.issues,
-  },
-  workflow: {
-    title: RUN_WORKFLOW_CHOICE,
-    line: WORKFLOW_CHOICE_LINE,
-    icon: CONCEPT_ICONS.workflows,
-  },
-  agent: {
-    title: START_AGENT_CHOICE,
-    line: 'Scout or any other role.',
-    icon: CONCEPT_ICONS.explore,
-  },
+type DraftParams = {
+  readonly issue: IssueCandidate;
+};
+
+type Props = {
+  readonly workspaceId: WorkspaceId;
+  readonly folder: Project | null;
+  readonly agent: ProviderId;
+  readonly mode: WizardMode;
+  readonly isLocked: boolean;
+  readonly initialTab?: FirstSessionTab;
+  readonly onBack: (() => void) | null;
+  readonly onSkip: () => void;
+  readonly onStart: (params: StartParams) => Promise<void>;
+  readonly onDraft: (params: DraftParams) => void;
+  readonly onOpenTools: (() => void) | null;
 };
 
 type Starter = {
-  readonly label: string;
-  readonly prompt: (project: string) => string;
+  readonly label: (folder: string) => string;
+  readonly prompt: (folder: string) => string;
 };
 
-const FIRST_SESSION_STARTERS: ReadonlyArray<Starter> = [
+const STARTERS: ReadonlyArray<Starter> = [
   {
-    label: 'Explain how this project is organized',
-    prompt: (project) =>
-      `Explain how ${project} is organized: the main folders, how the pieces talk to each other, and where the tests live.`,
+    label: (folder) => `Explain how ${folder} is organized`,
+    prompt: (folder) =>
+      `Explain how ${folder} is organized: the main folders, how the pieces talk to each other, and where the tests live.`,
   },
   {
-    label: 'Find one small bug',
-    prompt: (project) =>
-      `Find one small bug in ${project} and propose a fix. Don't change any files yet.`,
+    label: () => 'Find one small bug',
+    prompt: (folder) =>
+      `Find one small, real bug in ${folder}. Say where it is and why it is a bug. Do not change any file.`,
   },
   {
-    label: "What's missing in the README",
-    prompt: (project) => `Read the README of ${project} and list what's missing or out of date.`,
+    label: () => "What's missing in the README",
+    prompt: (folder) =>
+      `Read the README of ${folder} and list what a new teammate would miss on day one.`,
   },
 ];
 
-type Props = {
-  readonly projectName: string;
-  readonly hasIssueSource: boolean;
-  readonly busy: boolean;
-  readonly onStartScout: (prompt: string) => void;
-  readonly onHandOff: (choice: Exclude<FirstSessionChoice, 'agent'>) => void;
-  readonly onBackToCodeHost: (() => void) | null;
-  readonly onConnectTaskManager: (() => void) | null;
-};
+const TABS = [
+  { value: 'ask', label: 'Ask about the code' },
+  { value: 'task', label: 'Pick up an issue' },
+] as const satisfies ReadonlyArray<{ readonly value: FirstSessionTab; readonly label: string }>;
 
-const NEXT_KEYS: ReadonlySet<string> = new Set(['ArrowRight', 'ArrowDown']);
-const PREVIOUS_KEYS: ReadonlySet<string> = new Set(['ArrowLeft', 'ArrowUp']);
+const PILL_CLASS =
+  'inline-flex h-6 shrink-0 items-center gap-2 whitespace-nowrap rounded-md bg-fill px-2 text-label text-foreground';
 
 export const FirstSessionStep = ({
-  projectName,
-  hasIssueSource,
-  busy,
-  onStartScout,
-  onHandOff,
-  onBackToCodeHost,
-  onConnectTaskManager,
+  workspaceId,
+  folder,
+  agent,
+  mode,
+  isLocked,
+  initialTab = 'ask',
+  onBack,
+  onSkip,
+  onStart,
+  onDraft,
+  onOpenTools,
 }: Props) => {
-  const [choice, setChoice] = useState<FirstSessionChoice>('agent');
+  const [boundId] = useState(workspaceId);
+  const issues = useFirstIssues({ workspaceId: boundId });
+  const folderName = folder?.name ?? 'this workspace';
+  const [tab, setTab] = useState<FirstSessionTab>(initialTab);
   const [starter, setStarter] = useState(0);
-  const [prompt, setPrompt] = useState(() => FIRST_SESSION_STARTERS[0]?.prompt(projectName) ?? '');
-  const panelId = useId();
-  const canStart = prompt.trim().length > 0 && !busy;
+  const [prompt, setPrompt] = useState(() => STARTERS[0]?.prompt(folderName) ?? '');
+  const [picked, setPicked] = useState<IssueCandidate | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isTask = issues.hasSources && tab === 'task';
+  const pickedIssue = picked ?? issues.rows[0] ?? null;
+  const cta = wizardCta({
+    step: 'first-session',
+    mode,
+    readyCount: 0,
+    isIssuePick: isTask,
+    hasFailed: error !== null,
+  });
+  const isBlocked = isLocked || isStarting;
+  const canStart = !isBlocked && (isTask ? pickedIssue !== null : prompt.trim().length > 0);
+  const branch = folder?.baseBranch ?? null;
 
   const pickStarter = (index: number) => {
     setStarter(index);
-    setPrompt(FIRST_SESSION_STARTERS[index]?.prompt(projectName) ?? '');
-  };
-
-  const onTabKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    const by = NEXT_KEYS.has(event.key) ? 1 : PREVIOUS_KEYS.has(event.key) ? -1 : 0;
-    if (by === 0) {
-      return;
-    }
-    event.preventDefault();
-    const index = (CHOICES.indexOf(choice) + by + CHOICES.length) % CHOICES.length;
-    setChoice(CHOICES[index] ?? choice);
+    setPrompt(STARTERS[index]?.prompt(folderName) ?? '');
   };
 
   const start = () => {
-    if (canStart) {
-      onStartScout(prompt.trim());
+    if (!canStart) {
+      return;
     }
+    if (isTask) {
+      if (pickedIssue !== null) {
+        onDraft({ issue: pickedIssue });
+      }
+      return;
+    }
+    setIsStarting(true);
+    setError(null);
+    void onStart({ prompt: prompt.trim() })
+      .catch((cause: unknown) => setError(formatError(cause)))
+      .finally(() => setIsStarting(false));
   };
 
   return (
     <div className="flex flex-col gap-6">
       <StepHeading
-        title="Give your first agent something to do"
-        line="Three ways to start any session."
+        title="Give it a first task"
+        line={
+          isTask
+            ? 'Pick an issue. An agent plans it in its own branch, and nothing is pushed.'
+            : `Scout reads ${folderName} and answers in a new session. It changes nothing.`
+        }
       />
-      <div
-        role="tablist"
-        aria-label="How to start"
-        onKeyDown={onTabKey}
-        className="grid grid-cols-3 gap-2"
-      >
-        {CHOICES.map((id) => {
-          const meta = CHOICE_META[id];
-          const Icon = meta.icon;
-          const isSelected = id === choice;
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              aria-controls={panelId}
-              tabIndex={isSelected ? 0 : -1}
-              onClick={() => setChoice(id)}
-              className={cn(
-                'flex min-w-0 flex-col items-start gap-1 rounded-lg border px-3 py-3 text-left motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-                isSelected
-                  ? 'border-border-strong bg-selected'
-                  : 'border-border-soft hover:bg-hover',
-              )}
-            >
-              <Icon
-                size={ICON_SIZE.control}
-                aria-hidden
-                className={isSelected ? 'text-primary' : 'text-muted-foreground'}
-              />
-              <span className="text-row text-foreground">{meta.title}</span>
-              <span className="text-meta text-muted-foreground">{meta.line}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div id={panelId} role="tabpanel" aria-label={CHOICE_META[choice].title}>
-        {choice === 'agent' && (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Starters">
-              {FIRST_SESSION_STARTERS.map((entry, index) => (
-                <button
-                  key={entry.label}
-                  type="button"
-                  aria-pressed={index === starter}
-                  onClick={() => pickStarter(index)}
-                  className={cn(
-                    'rounded-full border px-3 py-1 text-label motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-                    index === starter
-                      ? 'border-border-strong bg-selected text-foreground'
-                      : 'border-border-soft text-muted-foreground hover:bg-hover hover:text-foreground',
-                  )}
-                >
-                  {entry.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-col rounded-lg border border-border-soft bg-subtle focus-within:border-border-strong">
-              <PromptField
-                variant="bare"
-                kind="document"
-                value={prompt}
-                label="What Scout should do"
-                onChange={setPrompt}
-                onSubmit={start}
-                minRows={3}
-                maxRows={8}
-              />
-              <div className="flex items-center justify-between gap-2 px-3 pb-2">
-                <span className="text-label text-muted-foreground">Scout · Auto</span>
-                <Button size="sm" disabled={!canStart} isBusy={busy} onClick={start}>
-                  Start Scout
-                  <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
-                </Button>
-              </div>
-            </div>
-            <p className="text-meta text-faint-foreground">
-              Scout reads your project and changes nothing.
-            </p>
+      {issues.hasSources ? (
+        <SegmentedTabs
+          ariaLabel="How to start"
+          options={TABS}
+          value={tab}
+          onChange={setTab}
+          className="self-start"
+        />
+      ) : null}
+      {isTask ? (
+        <HandOff
+          issues={issues}
+          folderName={folderName}
+          pickedId={pickedIssue?.externalId ?? null}
+          onPick={setPicked}
+        />
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Starters">
+            {STARTERS.map((entry, index) => (
+              <button
+                key={entry.label(folderName)}
+                type="button"
+                aria-pressed={index === starter}
+                onClick={() => pickStarter(index)}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-label motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+                  index === starter
+                    ? 'border-transparent bg-selected text-foreground'
+                    : 'border-border-soft text-muted-foreground hover:bg-hover hover:text-foreground',
+                )}
+              >
+                {entry.label(folderName)}
+              </button>
+            ))}
           </div>
-        )}
-        {choice === 'task' &&
-          (hasIssueSource ? (
-            <HandOff
-              line="Your issues open in a new session. Pick one there."
-              busy={busy}
-              onOpen={() => onHandOff('task')}
-            />
-          ) : (
-            <NoIssueSource
-              onBackToCodeHost={onBackToCodeHost}
-              onConnectTaskManager={onConnectTaskManager}
-            />
-          ))}
-        {choice === 'workflow' && (
-          <HandOff
-            line="Describe the goal in a new session, then pick how to run it."
-            busy={busy}
-            onOpen={() => onHandOff('workflow')}
+          <PromptField
+            kind="document"
+            label="What Scout should do"
+            value={prompt}
+            onChange={setPrompt}
+            onSubmit={start}
+            isSubmitBlocked={!canStart}
+            disabled={isStarting}
+            minRows={3}
+            maxRows={8}
+            footerStart={
+              <span className="flex min-w-0 items-center gap-2">
+                <span className={PILL_CLASS}>
+                  <AgentGlyph providerId={agent} size={ICON_SIZE.row} />
+                  {PROVIDER_LABEL[agent]}
+                </span>
+                <span className={PILL_CLASS}>
+                  Scout
+                  <span className="text-faint-foreground">reads only</span>
+                </span>
+                <span className={PILL_CLASS}>
+                  Model
+                  <span className="text-faint-foreground">Auto</span>
+                </span>
+              </span>
+            }
+            actions={
+              <span className="truncate pr-1 text-meta text-faint-foreground">
+                {branch === null ? folderName : `${folderName} · ${branch}`}
+              </span>
+            }
           />
+          {issues.hasSources ? null : <NoIssueSource onOpenTools={onOpenTools} />}
+        </div>
+      )}
+      <FormActions error={error}>
+        {onBack === null ? null : (
+          <Button
+            size="md"
+            variant="ghost"
+            className="text-muted-foreground"
+            disabled={isBlocked}
+            onClick={onBack}
+          >
+            Back
+          </Button>
         )}
-      </div>
+        <Button size="md" variant="secondary" disabled={isBlocked} onClick={onSkip}>
+          {cta.skip}
+        </Button>
+        <Button
+          size="md"
+          variant="primary"
+          disabled={!canStart}
+          isBusy={isStarting}
+          busyLabel="Starting session"
+          onClick={start}
+        >
+          {cta.primary}
+          <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
+        </Button>
+      </FormActions>
     </div>
   );
 };

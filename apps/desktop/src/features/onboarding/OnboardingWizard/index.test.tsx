@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import type { IsoDateTime, Project, ProjectId, Workspace, WorkspaceId } from '@goodboy/types';
 import type { OnboardingWizardState } from './useOnboardingWizard';
 
-const { hookState, setupStore, storeActions, tools, firstSession } = vi.hoisted(() => ({
+const { hookState, setupStore, storeActions, firstSession } = vi.hoisted(() => ({
   hookState: {} as OnboardingWizardState,
   setupStore: {
     finishWizard: vi.fn(async () => undefined),
@@ -17,17 +17,8 @@ const { hookState, setupStore, storeActions, tools, firstSession } = vi.hoisted(
   },
   storeActions: {
     setCurrentWorkspace: vi.fn(),
-  },
-  tools: {
-    connected: {
-      github: false,
-      gitlab: false,
-      bitbucket: false,
-      linear: false,
-      jira: false,
-      sentry: false,
-      slack: false,
-    },
+    workspaceOverrides: {},
+    providers: [],
   },
   firstSession: {
     startFirstScout: vi.fn(),
@@ -38,13 +29,9 @@ const { hookState, setupStore, storeActions, tools, firstSession } = vi.hoisted(
 vi.mock('../../../store', () => ({
   useAppStore: (selector: (state: typeof storeActions) => unknown) => selector(storeActions),
 }));
-vi.mock('../../integrations/useToolConnections', () => ({
-  useToolConnections: () => ({ connected: tools.connected, githubIdentity: null }),
-}));
 vi.mock('./useOnboardingWizard', () => ({
   useOnboardingWizard: () => hookState,
 }));
-vi.mock('./useProjectRemote', () => ({ useProjectRemote: () => null }));
 vi.mock('./startFirstSession', () => firstSession);
 vi.mock('./useStepTransition', () => ({
   useStepTransition: ({ step }: { step: string }) => ({
@@ -60,8 +47,17 @@ vi.mock('../onboarding-store', () => setupStore);
 vi.mock('./Stepper', () => ({
   Stepper: ({ current }: { current: string }) => <div data-testid="stepper">{current}</div>,
 }));
-vi.mock('./steps/WelcomeStep', () => ({ WelcomeStep: () => <div data-testid="WelcomeStep" /> }));
-vi.mock('./steps/ProvidersStep', async () => {
+vi.mock('./defaultAgent', () => ({ applyDefaultAgent: async () => undefined }));
+vi.mock('./steps/WelcomeStep', () => ({
+  WelcomeStep: ({ onStart }: { onStart: () => void }) => (
+    <div data-testid="WelcomeStep">
+      <button type="button" onClick={onStart}>
+        Get started
+      </button>
+    </div>
+  ),
+}));
+vi.mock('./steps/AgentsStep', async () => {
   const { useState } = await import('react');
   const { useEscapeLayer } = await import('@goodboy/ui');
   const InnerPanel = ({ onClose }: { onClose: () => void }) => {
@@ -69,74 +65,99 @@ vi.mock('./steps/ProvidersStep', async () => {
     return <div data-testid="inner-panel" />;
   };
   return {
-    ProvidersStep: () => {
+    AgentsStep: ({ onDone, onBack }: { onDone: () => void; onBack: (() => void) | null }) => {
       const [isPanelOpen, setIsPanelOpen] = useState(false);
       return (
-        <div data-testid="ProvidersStep">
+        <div data-testid="AgentsStep">
           <button type="button" onClick={() => setIsPanelOpen(true)}>
             open panel
           </button>
           {isPanelOpen ? <InnerPanel onClose={() => setIsPanelOpen(false)} /> : null}
+          {onBack === null ? null : (
+            <button type="button" onClick={onBack}>
+              Back
+            </button>
+          )}
+          <button type="button" onClick={onDone}>
+            Continue
+          </button>
         </div>
       );
     },
   };
 });
-vi.mock('./steps/ProjectStep', () => ({
-  ProjectStep: ({
+vi.mock('./steps/WorkspaceStep', () => ({
+  WorkspaceStep: ({
     onCreated,
     onBack,
   }: {
     onCreated: (params: { workspaceId: WorkspaceId }) => void;
-    onBack?: () => void;
+    onBack: (() => void) | null;
   }) => (
-    <div data-testid="ProjectStep">
+    <div data-testid="WorkspaceStep">
       <button type="button" onClick={() => onCreated({ workspaceId: WORKSPACE.id })}>
         create workspace
       </button>
-      <button type="button" onClick={onBack}>
+      <button type="button" onClick={onBack ?? undefined}>
         form back
       </button>
     </div>
   ),
 }));
-vi.mock('./steps/CodeHostStep', () => ({
-  CodeHostStep: () => <div data-testid="CodeHostStep" />,
-}));
-vi.mock('./steps/TasksStep', () => ({
-  TasksStep: ({ onBackToCodeHost }: { onBackToCodeHost: (() => void) | null }) => (
-    <div data-testid="TasksStep">
-      {onBackToCodeHost !== null && (
-        <button type="button" onClick={onBackToCodeHost}>
-          tasks back to code host
+vi.mock('./steps/ToolsStep', () => ({
+  ToolsStep: ({
+    mode,
+    projects,
+    onBack,
+    onContinue,
+  }: {
+    mode: string;
+    projects: ReadonlyArray<Project>;
+    onBack: (() => void) | null;
+    onContinue: () => void;
+  }) => (
+    <div data-testid="ToolsStep" data-kind={projects[0]?.kind}>
+      {onBack === null ? null : (
+        <button type="button" onClick={onBack}>
+          Back
         </button>
       )}
+      <button type="button" onClick={onContinue}>
+        {mode === 'single' ? 'Done' : 'Continue'}
+      </button>
     </div>
   ),
 }));
 vi.mock('./steps/FirstSessionStep', () => ({
   FirstSessionStep: ({
-    hasIssueSource,
-    onStartScout,
-    onHandOff,
-    onBackToCodeHost,
+    onStart,
+    onDraft,
+    onSkip,
+    onOpenTools,
   }: {
-    hasIssueSource: boolean;
-    onStartScout: (prompt: string) => void;
-    onHandOff: (choice: 'task' | 'workflow') => void;
-    onBackToCodeHost: (() => void) | null;
+    onStart: (params: { prompt: string }) => Promise<void>;
+    onDraft: (params: { issue: { identifier: string } }) => void;
+    onSkip: () => void;
+    onOpenTools: (() => void) | null;
   }) => (
     <div data-testid="FirstSessionStep">
-      <span data-testid="issue-source">{hasIssueSource ? 'yes' : 'no'}</span>
-      <button type="button" onClick={() => onStartScout('Explain how ledger-core is organized')}>
+      <button
+        type="button"
+        onClick={() =>
+          void onStart({ prompt: 'Explain how ledger-core is organized' }).catch(() => undefined)
+        }
+      >
         start scout
       </button>
-      <button type="button" onClick={() => onHandOff('workflow')}>
-        hand off workflow
+      <button type="button" onClick={() => onDraft({ issue: { identifier: 'ACM-112' } })}>
+        draft the brief
       </button>
-      {onBackToCodeHost !== null && (
-        <button type="button" onClick={onBackToCodeHost}>
-          back to code host
+      <button type="button" onClick={onSkip}>
+        Skip
+      </button>
+      {onOpenTools !== null && (
+        <button type="button" onClick={onOpenTools}>
+          open tools
         </button>
       )}
     </div>
@@ -222,13 +243,6 @@ beforeEach(() => {
   firstSession.startFirstScout.mockReset().mockResolvedValue(undefined);
   firstSession.handOffFirstSession.mockReset();
   Object.assign(hookState, baseState);
-  Object.assign(tools.connected, {
-    github: false,
-    gitlab: false,
-    bitbucket: false,
-    linear: false,
-    jira: false,
-  });
   storeActions.setCurrentWorkspace.mockReset().mockResolvedValue(undefined);
 });
 
@@ -352,19 +366,11 @@ describe('OnboardingWizard', () => {
     click(/create workspace/i);
     await waitFor(() => expect(stepOf()).toBe('tools'));
     classes.push(screen.getByTestId('wizard-column').className);
-    click(/skip for now/i);
+    click(/^continue$/i);
     expect(stepOf()).toBe('first-session');
     classes.push(screen.getByTestId('wizard-column').className);
     expect(new Set(classes).size).toBe(1);
     expect(classes[0]).toContain('max-w-[600px]');
-  });
-
-  it('keeps Continue disabled on the agents step until one is connected', () => {
-    render(<OnboardingWizard />);
-    click(/get started/i);
-    const next = screen.getByRole('button', { name: /^continue$/i }) as HTMLButtonElement;
-    expect(next.disabled).toBe(true);
-    expect(screen.getByText(/connect one provider to continue/i)).toBeDefined();
   });
 
   describe('resume', () => {
@@ -389,7 +395,7 @@ describe('OnboardingWizard', () => {
     it('marks Tools done once the user moves past it', () => {
       setHook({ ...readyState({ kind: 'repo' }), mode: 'setup', start: 'tools' });
       render(<OnboardingWizard />);
-      click(/skip for now/i);
+      click(/^continue$/i);
       expect(setupStore.markStepComplete).toHaveBeenCalledWith('tools');
       expect(stepOf()).toBe('first-session');
     });
@@ -401,7 +407,7 @@ describe('OnboardingWizard', () => {
       render(<OnboardingWizard />);
       click(/get started/i);
       click(/^continue$/i);
-      expect(screen.getByTestId('ProjectStep')).toBeDefined();
+      expect(screen.getByTestId('WorkspaceStep')).toBeDefined();
       expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
       expect(screen.queryByRole('button', { name: /^back$/i })).toBeNull();
     });
@@ -436,35 +442,16 @@ describe('OnboardingWizard', () => {
       await waitFor(() => expect(stepOf()).toBe('tools'));
     };
 
-    it('holds the code host and the task sources on one step', async () => {
-      await reachTools({ kind: 'repo' });
-      expect(screen.getByTestId('CodeHostStep')).toBeDefined();
-      expect(screen.getByTestId('TasksStep')).toBeDefined();
-      expect(screen.queryByRole('button', { name: /tasks back to code host/i })).toBeNull();
-    });
-
-    it('keeps the Tools step for a plain folder, with only the task sources', async () => {
+    it('keeps Tools in the stepper for a plain folder', async () => {
       await reachTools({ kind: 'folder' });
-      expect(screen.queryByTestId('CodeHostStep')).toBeNull();
-      expect(screen.getByTestId('TasksStep')).toBeDefined();
+      expect(screen.getByTestId('ToolsStep').getAttribute('data-kind')).toBe('folder');
     });
 
-    it('lets Tools be skipped, then lands on the first session', async () => {
+    it('continues with nothing connected, then lands on the first session', async () => {
       await reachTools({ kind: 'repo' });
-      expect(
-        (screen.getByRole('button', { name: /^continue$/i }) as HTMLButtonElement).disabled,
-      ).toBe(true);
-      click(/skip for now/i);
-      expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
-      expect(screen.getByTestId('issue-source').textContent).toBe('no');
-    });
-
-    it('continues without Skip once a code host is connected', async () => {
-      tools.connected.github = true;
-      await reachTools({ kind: 'repo' });
-      expect(screen.queryByRole('button', { name: /skip for now/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /skip/i })).toBeNull();
       click(/^continue$/i);
-      expect(stepOf()).toBe('first-session');
+      expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
     });
   });
 
@@ -476,11 +463,11 @@ describe('OnboardingWizard', () => {
       click(/^continue$/i);
       click(/create workspace/i);
       await waitFor(() => expect(stepOf()).toBe('tools'));
-      click(/skip for now/i);
+      click(/^continue$/i);
       expect(screen.getByTestId('FirstSessionStep')).toBeDefined();
     };
 
-    it('starts Scout with the prompt in a real session, then finishes setup', async () => {
+    it('finishes setup only after the first session started', async () => {
       await reachFirstSession();
       click(/start scout/i);
       await waitFor(() => expect(setupStore.finishWizard).toHaveBeenCalledOnce(), {
@@ -494,9 +481,21 @@ describe('OnboardingWizard', () => {
       expect(hookState.close).toHaveBeenCalledOnce();
     });
 
-    it('hands a workflow start to the new session after the wizard closes', async () => {
+    it('keeps setup open when the first session fails to start', async () => {
+      firstSession.startFirstScout.mockRejectedValue(
+        new Error('the worktree could not be created'),
+      );
       await reachFirstSession();
-      click(/hand off workflow/i);
+      click(/start scout/i);
+      await waitFor(() => expect(firstSession.startFirstScout).toHaveBeenCalledOnce());
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(setupStore.finishWizard).not.toHaveBeenCalled();
+      expect(stepOf()).toBe('first-session');
+    });
+
+    it('drafts the brief from an issue after the wizard closes', async () => {
+      await reachFirstSession();
+      click(/draft the brief/i);
       await waitFor(() => expect(firstSession.handOffFirstSession).toHaveBeenCalled(), {
         timeout: 1000,
       });
@@ -504,27 +503,19 @@ describe('OnboardingWizard', () => {
       expect(firstSession.handOffFirstSession).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
         projectId: 'project-1',
-        choice: 'workflow',
+        issue: { identifier: 'ACM-112' },
       });
     });
 
-    it('takes the empty task source back to Tools', async () => {
+    it('takes the missing task source back to Tools', async () => {
       await reachFirstSession();
-      click(/^back to code host$/i);
+      click(/^open tools$/i);
       expect(stepOf()).toBe('tools');
     });
 
-    it('keeps Back right-aligned beside the step action', async () => {
+    it('skips with the one skip word and ends setup', async () => {
       await reachFirstSession();
-      const back = screen.getByRole('button', { name: /^back$/i });
-      const skip = screen.getByRole('button', { name: /skip, open the board/i });
-      expect(back.parentElement).toBe(skip.parentElement);
-    });
-
-    it('offers Skip, open the board instead of a primary in the action row', async () => {
-      await reachFirstSession();
-      expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
-      click(/skip, open the board/i);
+      click(/^skip$/i);
       await waitFor(() => expect(setupStore.finishWizard).toHaveBeenCalledOnce(), {
         timeout: 1000,
       });
@@ -532,20 +523,17 @@ describe('OnboardingWizard', () => {
   });
 
   describe('single step', () => {
-    it('ends each step with Back and the primary inline, never in a footer bar', async () => {
-      tools.connected.linear = true;
+    it('draws no footer bar: the step owns its action row', () => {
       setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tools' });
       const { container } = render(<OnboardingWizard />);
-      const done = screen.getByRole('button', { name: /^done$/i });
-      expect(done.closest('[data-slot="form-actions"]')).not.toBeNull();
       expect(container.querySelector('footer')).toBeNull();
+      expect(container.querySelector('[data-slot="form-actions"]')).toBeNull();
     });
 
     it('opens one step with no stepper, closes with Done and writes no setup state', async () => {
-      tools.connected.linear = true;
       setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tools' });
       render(<OnboardingWizard />);
-      expect(screen.getByTestId('TasksStep')).toBeDefined();
+      expect(screen.getByTestId('ToolsStep')).toBeDefined();
       expect(screen.queryByTestId('stepper')).toBeNull();
       expect(setupStore.enterWizardStep).not.toHaveBeenCalled();
       click(/^done$/i);
@@ -562,6 +550,16 @@ describe('OnboardingWizard', () => {
       vi.advanceTimersByTime(250);
       expect(hookState.close).toHaveBeenCalledOnce();
       expect(setupStore.pauseWizard).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cover', () => {
+    it('lays the app backdrop behind Welcome only', () => {
+      setHook({ providersConnected: 1 });
+      render(<OnboardingWizard />);
+      expect(screen.getByTestId('wizard-backdrop').getAttribute('data-state')).toBe('shown');
+      click(/get started/i);
+      expect(screen.getByTestId('wizard-backdrop').getAttribute('data-state')).toBe('hidden');
     });
   });
 });

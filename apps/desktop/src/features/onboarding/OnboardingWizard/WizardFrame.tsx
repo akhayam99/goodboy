@@ -35,6 +35,7 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
   const { mode, start } = wizard;
   const steps = visibleWizardSteps({ mode, start });
   const [step, setStep] = useState<WizardStepId>(() => firstWizardStep({ mode, start }));
+  const [isOpenedOnCover] = useState(() => firstWizardStep({ mode, start }) === 'welcome');
   const [isBusy, setIsBusy] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +97,10 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
   const finish = (params?: FinishParams) =>
     leave({ outcome: mode === 'single' ? 'closed' : 'done', after: params?.after });
 
-  const onLeaveFromHeader = () => leave({ outcome: mode === 'single' ? 'closed' : 'later' });
+  const later = (params?: FinishParams) =>
+    leave({ outcome: mode === 'single' ? 'closed' : 'later', after: params?.after });
+
+  const onLeaveFromHeader = () => later();
 
   useEscapeLayer(() => {
     if (isLocked) {
@@ -119,6 +123,7 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
     goBack,
     goTo,
     finish,
+    later,
     setBusy: setIsBusy,
   };
 
@@ -132,9 +137,20 @@ export const WizardFrame = ({ onClose, ...wizard }: Props) => {
       data-step={step}
       className={cn(
         'fixed inset-0 z-onboarding grid grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-background outline-none',
-        isClosing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
+        isClosing && 'motion-safe:animate-studio-out',
+        !isClosing &&
+          (isOpenedOnCover ? 'welcome-entrance-frame' : 'motion-safe:animate-studio-in'),
       )}
     >
+      <div
+        aria-hidden
+        data-testid="wizard-backdrop"
+        data-state={isCover ? 'shown' : 'hidden'}
+        className={cn(
+          'pointer-events-none absolute inset-0 -z-10 bg-[image:var(--app-backdrop)] motion-safe:transition-opacity motion-safe:duration-200',
+          isCover ? 'opacity-100' : 'opacity-0',
+        )}
+      />
       <WizardHeader
         mode={mode}
         step={step}

@@ -7,9 +7,15 @@ type CreatedParams = {
 
 type Props = {
   readonly onCreated: (params: CreatedParams) => void;
-  readonly onBack?: () => void;
+  readonly onBack: (() => void) | null;
 };
 
-export const ProjectStep = ({ onCreated, onBack }: Props) => (
-  <NewWorkspaceForm mode="first-run" onCreated={onCreated} onCancel={onBack} backLabel="Back" />
+export const WorkspaceStep = ({ onCreated, onBack }: Props) => (
+  <NewWorkspaceForm
+    mode="first-run"
+    titleRole="display"
+    onCreated={onCreated}
+    onCancel={onBack ?? undefined}
+    backLabel="Back"
+  />
 );

@@ -19,6 +19,7 @@ import {
   type StoryStore,
 } from '../../../store/storyHarness';
 import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/AgentStart';
+import type { IssueCandidate } from '../../integrations/fetchIssueCandidates';
 import { handOffFirstSession, startFirstScout } from './startFirstSession';
 
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
@@ -69,15 +70,49 @@ describe('startFirstScout', () => {
   });
 });
 
+const ISSUE: IssueCandidate = {
+  provider: 'linear',
+  externalId: 'mock-linear-acm-112',
+  identifier: 'ACM-112',
+  title: 'Checkout submits twice on a slow network',
+  url: 'https://example.invalid/linear/ACM-112',
+  goal: 'Checkout submits twice on a slow network',
+  body: '',
+  branchSlug: 'checkout-submits-twice',
+};
+
 describe('handOffFirstSession', () => {
-  it('opens the session draft on the picked choice and project', () => {
-    handOffFirstSession({ workspaceId: WORKSPACE_ID, projectId: PROJECT_ID, choice: 'workflow' });
+  it('opens the session draft on the picked issue and folder', () => {
+    handOffFirstSession({ workspaceId: WORKSPACE_ID, projectId: PROJECT_ID, issue: ISSUE });
 
     const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID];
-    expect({ choice: draft?.choice, projectIds: draft?.projectIds }).toEqual({
-      choice: 'workflow',
+    expect({
+      choice: draft?.choice,
+      projectIds: draft?.projectIds,
+      picked: draft?.pickedIssues.map((issue) => issue.identifier),
+    }).toEqual({
+      choice: 'task',
       projectIds: [PROJECT_ID],
+      picked: ['ACM-112'],
     });
     expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
+  });
+});
+
+describe('startFirstScout failure', () => {
+  it('rejects when the session does not start, so setup stays open', async () => {
+    useAppStore.setState({
+      startSessionFromDraft: async () => {
+        throw new Error('the worktree could not be created');
+      },
+    });
+
+    await expect(
+      startFirstScout({
+        workspaceId: WORKSPACE_ID,
+        projectId: PROJECT_ID,
+        prompt: 'Find one small bug',
+      }),
+    ).rejects.toThrow('the worktree could not be created');
   });
 });

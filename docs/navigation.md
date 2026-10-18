@@ -1852,8 +1852,8 @@ with the lockup (a 22 px `BrandTile` and the word, absent on Welcome, where the
 hero is the lockup), a labelled four-step stepper (Agents, Workspace, Tools
 marked Optional, First session) and Set up later at the right; one 600 px
 column whose title starts at the same line on every step; and the form actions
-inline at the end of the step (Back, Skip for now and the primary,
-right-aligned, no divider). Steps crossfade in one grid cell (240 ms, 80 ms of
+inline at the end of the step, owned by the step (Back and the primary,
+right-aligned, no divider; Skip on First session only). Steps crossfade in one grid cell (240 ms, 80 ms of
 opacity with reduced motion); the actions are disabled while they do. Escape
 goes through the escape stack: an open inner layer closes first, else setup
 goes back one step; on Welcome and on the first step of a resume it does
@@ -1864,20 +1864,32 @@ needs a workspace that is gone), in the main window only, on the no-workspace
 and the launcher branch alike; the Goodboy menu offers Resume setup while it is
 paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
 `nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
-`finish` and `setBusy`. Provider needs one usable route (a CLI login, a saved key or
-OpenCode's free models). Project picks one folder, with or without version
-control, names the workspace after its parent folder and finds the
-repositories inside one. Tools holds Code host and Tasks on one step and never leaves the stepper;
-with no repository it shows Tasks only. Tools can be skipped; Sentry, Slack and the rest
-live in Settings › Integrations. There is no permissions question: every
-workspace starts on Full access. The last step offers the same three ways as
-a new session, with Start an agent picked and three starters: Start Scout
-starts the session from a Scout draft (`startSessionFromDraft`) with that
-starter as its focus, and Scout running. Pick up a task and Run a workflow
-close the wizard on the new session draft with that choice picked. Either
-way the draft carries the project picked in the Project step, so the session
-lands in it. With no
-issue source at all, Pick up a task says so and leads back to Code host. The checklist in the
+`finish`, `later` and `setBusy`. Welcome is the cover: the boot splash dog stays on
+its pixel and the black tile fills in under it (`useSplashAnchor` puts the 84 px
+tile's centre where `BootSplash` draws the mark), the app backdrop shows behind it,
+and agent detection starts there. Agents lists one row per sign-in CLI (Claude,
+Codex, Cursor, Gemini) with its real state: Ready with version and account, Not
+signed in with Sign in, Not installed with the exact install command and Run,
+Can't start with the CLI's output and Check again. Rows check again on window
+focus, when a sign-in or install terminal ends and on Check now, one agent at a
+time (`useAgentDetection`, `probeAgent`); an answer for an older check of the same
+agent is dropped. The ready count comes from `readyAgents()`; Continue needs one
+ready agent and saves the default agent (`agents.default`), which the new
+workspace takes as its default provider. API key providers sit behind Use an API
+key instead. Workspace is `NewWorkspaceForm` in first-run mode. Tools holds Code
+and Tasks on one step and never leaves the stepper: the host the first
+repository pushes to leads, the others fold under Other code hosts, and with no
+repository Code says why while Tasks still works. Continue with nothing
+connected is the skip; every form binds to the workspace the step opened for.
+Sentry, Slack and the rest live in Settings › Integrations. There is no
+permissions question: every workspace starts on Full access. First session is
+one input card: three starters that name the folder, the agent, Scout reads
+only and the model as pills, and Start, which starts a Scout session from a
+draft (`startSessionFromDraft`); setup is done only once that resolves, and a
+failure keeps the prompt and reads Retry. With a task source connected, Pick up
+an issue lists assigned issues and Draft the brief opens the session draft with
+that issue picked. The draft carries the first folder, so the session lands in
+it. The checklist in the
 Goodboy menu has the stepper's four rows, counted by `setupProgress()` in
 `features/onboarding/setupProgress.ts`, the one function the chip and the menu
 read ("Setup · 2 of 4"). About you is not counted: it is suggested under Next
