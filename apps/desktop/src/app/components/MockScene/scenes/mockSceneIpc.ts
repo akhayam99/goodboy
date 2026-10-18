@@ -6,6 +6,7 @@ type IpcHandler = Parameters<typeof mockIPC>[0];
 const EMPTY_ANSWERS: Readonly<Record<string, () => unknown>> = {
   detect_editors: () => [],
   detect_browsers: () => [],
+  terminal_shells_list: () => [],
   db_select: () => [],
   db_execute: () => ({ rowsAffected: 0 }),
   budget_rule_list: () => [],

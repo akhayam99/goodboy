@@ -1648,6 +1648,12 @@ artifacts open there. If the browser you picked is removed, links open in the
 system browser and a note in Settings says so. When you are done, you pick the
 task up again in Goodboy.
 
+**Settings → App → General → Terminal** picks the shell new terminals and
+workspace scripts start in (`terminal.shell`, read by Rust when a terminal or a
+script starts). It lists **Automatic**, named after the shell it resolves to,
+and every shell Goodboy found; **Look for shells again** asks again. A saved
+shell that is gone shows a warning and Automatic is used.
+
 ## Under the hood
 
 ### Vocabulary rules

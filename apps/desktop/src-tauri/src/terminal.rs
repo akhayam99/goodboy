@@ -215,6 +215,32 @@ impl TerminalError {
     }
 }
 
+pub(crate) const SETTING_TERMINAL_SHELL: &str = "terminal.shell";
+
+pub(crate) fn chosen_shell<R: Runtime>(app: &AppHandle<R>) -> Option<String> {
+    let database = app.try_state::<crate::db::Db>()?;
+    let conn = database.0.lock().ok()?;
+    conn.query_row(
+        "SELECT value FROM settings WHERE key = ?1",
+        [SETTING_TERMINAL_SHELL],
+        |row| row.get::<_, String>(0),
+    )
+    .ok()
+    .filter(|value| !value.trim().is_empty())
+}
+
+#[tauri::command]
+pub async fn terminal_shells_list(is_rescan: bool) -> Result<Vec<ShellProfile>, TerminalError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        if is_rescan {
+            return shell::rediscover();
+        }
+        shell::discover()
+    })
+    .await
+    .map_err(|e| TerminalError::Io(e.to_string()))
+}
+
 fn default_cwd() -> String {
     crate::platform::paths::home_dir()
         .map(|home| home.to_string_lossy().into_owned())
@@ -401,12 +427,12 @@ pub async fn terminal_open(
 
     let request = TerminalSpawnRequest {
         scrollback_dir: scrollback_dir_of(&app),
+        shell_id: chosen_shell(&app),
         app,
         registry: Arc::clone(&registry.0),
         exited: Arc::clone(&registry.1),
         session_id,
         cwd,
-        shell_id: None,
         cols,
         rows,
     };

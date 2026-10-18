@@ -265,7 +265,8 @@ fn start_lifecycle_pty(params: StartParams) -> Result<(), LifecycleError> {
             })
             .map_err(|e| LifecycleError::Io(e.to_string()))?;
 
-        let shell = crate::platform::shell::script_shell(None);
+        let shell =
+            crate::platform::shell::script_shell(crate::terminal::chosen_shell(&app).as_deref());
         let mut cmd = CommandBuilder::new(&shell.program);
         for arg in shell.script_args(&command) {
             cmd.arg(arg);

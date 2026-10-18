@@ -510,6 +510,7 @@ pub fn run() {
             scripts::workspace_script_snapshot,
             scripts::workspace_script_cancel,
             terminal::terminal_open,
+            terminal::terminal_shells_list,
             terminal::terminal_list_live,
             terminal::terminal_snapshot,
             terminal::terminal_write,

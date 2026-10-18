@@ -7,9 +7,10 @@ vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
 );
 vi.mock('@xterm/xterm/css/xterm.css', () => ({}));
-const { terminals } = vi.hoisted(() => ({
-  terminals: [] as Array<{ options: Record<string, unknown> }>,
-}));
+const { terminals } = vi.hoisted(() => {
+  const created: Array<{ options: Record<string, unknown> }> = [];
+  return { terminals: created };
+});
 vi.mock('@xterm/xterm', () => ({
   Terminal: class {
     cols = 80;

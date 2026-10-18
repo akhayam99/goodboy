@@ -36,6 +36,8 @@ const seed = ({ editors, browsers }: SeedParams) => {
     detectedBrowsers: BROWSERS.slice(0, browsers),
     loadDetectedEditors: async () => undefined,
     loadDetectedBrowsers: async () => undefined,
+    detectedShells: [],
+    loadDetectedShells: async () => undefined,
     loadSetting: async (key: string) => stored.get(key) ?? null,
     saveSetting: async (key: string, value: string) => {
       stored.set(key, value);

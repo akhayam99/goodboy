@@ -1,4 +1,5 @@
 import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { TerminalShell } from '../../../features/terminal/terminal';
 import type { TerminalSelection, TerminalTab, TerminalTabId } from '../../../shared/types/terminal';
 
 export const SETTING_TERMINAL_NAMES = 'terminal.names';
@@ -20,6 +21,7 @@ export type TerminalState = {
   readonly terminalOrdinals: Readonly<Record<string, number>>;
   readonly terminalFolderOverrides: Readonly<Record<WorkspaceId, string | null>>;
   readonly terminalScopes: Readonly<Record<SessionId, string>>;
+  readonly detectedShells: ReadonlyArray<TerminalShell> | null;
 };
 
 export const terminalInitialState: TerminalState = {
@@ -32,4 +34,5 @@ export const terminalInitialState: TerminalState = {
   terminalOrdinals: {},
   terminalFolderOverrides: {},
   terminalScopes: {},
+  detectedShells: null,
 };

@@ -1,6 +1,7 @@
 import { Band } from '@goodboy/ui';
 import { ThemePreferenceField } from './ThemePreferenceField';
 import { OpenWithBand } from './OpenWithBand';
+import { TerminalShellBand } from './TerminalShellBand';
 import { SearchIndexBand } from './SearchIndexBand';
 import { RepoCheckBand } from './RepoCheckBand';
 
@@ -13,6 +14,8 @@ export const AppGeneralSection = () => (
     </Band>
 
     <OpenWithBand />
+
+    <TerminalShellBand />
 
     <RepoCheckBand />
 

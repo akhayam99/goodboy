@@ -33,6 +33,28 @@ export const invokeTerminalSnapshot = (terminalId: string): Promise<TerminalSnap
   return invokeCommand<TerminalSnapshot>('terminal_snapshot', { sessionId: terminalId });
 };
 
+export type TerminalShellKind =
+  'posix' | 'powerShell' | 'windowsPowerShell' | 'cmd' | 'gitBash' | 'wsl';
+
+export type TerminalShell = {
+  readonly id: string;
+  readonly kind: TerminalShellKind;
+  readonly label: string;
+  readonly program: string;
+  readonly distro: string | null;
+  readonly isDefault: boolean;
+};
+
+type ShellsListParams = {
+  readonly isRescan: boolean;
+};
+
+export const invokeTerminalShellsList = ({
+  isRescan,
+}: ShellsListParams): Promise<TerminalShell[]> => {
+  return invokeCommand<TerminalShell[]>('terminal_shells_list', { isRescan });
+};
+
 export const invokeTerminalOpen = (
   terminalId: string,
   cwd: string | null,

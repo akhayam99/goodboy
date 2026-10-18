@@ -173,6 +173,7 @@ const storyInvokeHandlers = {
   qa_deciding_workflow_runs: [],
   workspace_script_list_live: [],
   terminal_list_live: [],
+  terminal_shells_list: [],
   workspace_script_snapshot: { data: '', offset: 0, exitCode: null },
   terminal_snapshot: { data: '', offset: 0, exitCode: null },
   turn_list_live: [],

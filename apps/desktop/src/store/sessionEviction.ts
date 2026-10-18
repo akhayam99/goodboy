@@ -262,6 +262,7 @@ export const NON_SESSION_STATE_KEYS = [
   'unknownPayloadCounts',
   'detectedEditors',
   'detectedBrowsers',
+  'detectedShells',
   'workspaceOverrides',
   'workspaceLearnings',
   'unreadWorkspaceIds',

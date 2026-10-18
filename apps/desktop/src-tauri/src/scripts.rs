@@ -170,8 +170,12 @@ fn exit_code_of(status: &portable_pty::ExitStatus) -> i32 {
     i32::try_from(status.exit_code()).unwrap_or(1)
 }
 
-fn build_script_command(body: &str, cwd: &str, login_env: &[(String, String)]) -> CommandBuilder {
-    let shell = crate::platform::shell::script_shell(None);
+fn build_script_command(
+    shell: &crate::platform::shell::ShellProfile,
+    body: &str,
+    cwd: &str,
+    login_env: &[(String, String)],
+) -> CommandBuilder {
     let mut cmd = CommandBuilder::new(&shell.program);
     for arg in shell.script_args(body) {
         cmd.arg(arg);
@@ -210,8 +214,15 @@ fn spawn_script<R: Runtime>(request: ScriptSpawnRequest<R>) -> Result<(), Script
         })
         .map_err(|error| ScriptError::Io(error.to_string()))?;
 
-    let mut cmd =
-        build_script_command(&request.body, &request.cwd, crate::path_env::resolved_env());
+    let shell = crate::platform::shell::script_shell(
+        crate::terminal::chosen_shell(&request.app).as_deref(),
+    );
+    let mut cmd = build_script_command(
+        &shell,
+        &request.body,
+        &request.cwd,
+        crate::path_env::resolved_env(),
+    );
     let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Script);
     let child = pair
         .slave
@@ -482,6 +493,7 @@ pub async fn workspace_script_cancel(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::platform::shell::script_shell;
 
     fn login_env() -> Vec<(String, String)> {
         vec![
@@ -492,7 +504,12 @@ mod tests {
 
     #[test]
     fn script_runs_through_bash_with_the_body_and_cwd() {
-        let cmd = build_script_command("yarn install", "/tmp/worktree", &login_env());
+        let cmd = build_script_command(
+            &script_shell(None),
+            "yarn install",
+            "/tmp/worktree",
+            &login_env(),
+        );
         let argv: Vec<String> = cmd
             .get_argv()
             .iter()
@@ -507,7 +524,12 @@ mod tests {
 
     #[test]
     fn script_inherits_the_login_shell_environment() {
-        let cmd = build_script_command("yarn install", "/tmp/worktree", &login_env());
+        let cmd = build_script_command(
+            &script_shell(None),
+            "yarn install",
+            "/tmp/worktree",
+            &login_env(),
+        );
         assert_eq!(
             cmd.get_env("GITHUB_PACKAGES_TOKEN")
                 .map(|v| v.to_string_lossy().into_owned()),
@@ -526,7 +548,7 @@ mod tests {
             ("PATH".to_string(), "/stale".to_string()),
             ("TERM".to_string(), "dumb".to_string()),
         ];
-        let cmd = build_script_command("echo hi", "/tmp", &env);
+        let cmd = build_script_command(&script_shell(None), "echo hi", "/tmp", &env);
         assert_eq!(
             cmd.get_env("TERM")
                 .map(|v| v.to_string_lossy().into_owned()),
@@ -580,7 +602,7 @@ mod tests {
                 pixel_height: 0,
             })
             .expect("open pty");
-        let mut cmd = build_script_command(body, "/tmp", login_env);
+        let mut cmd = build_script_command(&script_shell(None), body, "/tmp", login_env);
         let tag = crate::aux_spawn::tag_pty_spawn(&mut cmd, crate::aux_spawn::SpawnKind::Script);
         let child = pair.slave.spawn_command(cmd).expect("spawn script");
         drop(pair.slave);

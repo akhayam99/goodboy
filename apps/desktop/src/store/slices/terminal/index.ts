@@ -3,6 +3,7 @@ import { closeSessionTerminals } from './closeSessionTerminals';
 import { closeTerminalTab } from './closeTerminalTab';
 import { openTerminal } from './openTerminal';
 import { loadTerminalWorkspaceFolder } from './loadTerminalWorkspaceFolder';
+import { loadDetectedShells } from './loadDetectedShells';
 import { reattachTerminalTabs } from './reattachTerminalTabs';
 import { renameTerminalTab } from './renameTerminalTab';
 import { setActiveTerminalTab } from './setActiveTerminalTab';
@@ -19,6 +20,7 @@ export const createTerminalSlice = ({ set, get }: SliceDeps) => {
     reattachTerminalTabs: reattachTerminalTabs(set, get),
     renameTerminalTab: renameTerminalTab(set, get),
     loadTerminalWorkspaceFolder: loadTerminalWorkspaceFolder(set, get),
+    loadDetectedShells: loadDetectedShells(set, get),
     setTerminalWorkspaceFolder: setTerminalWorkspaceFolder(set),
     addTerminalTab: addTerminalTab(set, get),
     closeTerminalTab: closeTerminalTab(set, get),

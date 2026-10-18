@@ -412,6 +412,15 @@ pub fn bash_program() -> PathBuf {
 
 static DISCOVERED: Mutex<Option<Vec<ShellProfile>>> = Mutex::new(None);
 
+pub fn rediscover() -> Vec<ShellProfile> {
+    let found = gather();
+    let mut guard = DISCOVERED
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    *guard = Some(found.clone());
+    found
+}
+
 pub fn discover() -> Vec<ShellProfile> {
     let mut guard = DISCOVERED
         .lock()
