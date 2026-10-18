@@ -12,6 +12,82 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.3
+
+A folder without git is a full workspace: agents edit it in place, every turn is saved, and Auto picks each model from the role, the provider and the step.
+
+### New
+
+#### Plain folders without git
+<!-- gb area=storage -->
+
+A folder with no git history opens as a workspace. Goodboy asks what it is for, Code project or Documents, and preselects the answer from what the folder holds. An empty folder or a tie asks you at Create. Home, Folders and Storage show each folder's face, and Settings, Folders switches it later.
+
+In a Documents folder, Word, PDF, Pages, Keynote, Numbers, Excel and PowerPoint files are read and never rewritten.
+
+#### Agents edit in place, every turn saved
+<!-- gb area=sessions -->
+
+One session writes in a plain folder at a time, in the folder itself. Another session that wants to write waits, and can answer without editing meanwhile. Goodboy saves the files a turn may change before it runs, and each writing turn ends in a card with Review changes and Restore turn.
+
+**Changes** in the session rail lists every turn with the files it added, changed or removed. Saved versions go 30 days after the session ends.
+
+#### First commit, and git that appears later
+<!-- gb area=sessions -->
+
+Track a Code folder with git when it is created or later from Settings, Folders. Goodboy shows what goes in before the first commit and leaves out dependencies, build output and secrets.
+
+When git appears in a folder on its own, a Code folder switches to it between turns, and a Documents folder asks once.
+
+#### Models chosen by role, provider and step
+<!-- gb area=providers -->
+
+Auto picks a model for each role from one ladder per provider, five rungs from Quick to Top, and a small or large step moves the rung. The Models page shows what Auto runs for each size.
+
+A switch for typed requests, off by default, lets a short classifier start a Scout, Planner, Debugger or Reviewer when it is sure.
+
+#### New boot splash
+<!-- gb area=app -->
+
+Goodboy starts on a splash with the tile, the name and a progress bar that fills with each boot phase, then crossfades into the app. The window opens once the first frame is painted, so light theme never flashes dark.
+
+### Improved
+
+#### Select without checkboxes
+<!-- gb area=sessions -->
+
+Sidebar sessions and Board cards select by clicking with Shift, Option, Command or Control, or with Select in the row menu. Branches, Review and Storage keep their checkboxes.
+
+#### Branch rows
+<!-- gb area=sessions -->
+
+A branch row reads the pull request title, else the branch name, with one signal: failing checks, a conflict or commits behind. The host shows as a logo alone, and rail cards sit on one inset.
+
+#### Light theme backdrop
+<!-- gb area=app -->
+
+The backdrop glow is stronger in light theme, so it reads.
+
+#### Agents and Auto agents markers
+<!-- gb area=sessions -->
+
+Agents no longer reads Deprecated. Auto agents keeps its Experimental marker, now in the attention yellow.
+
+#### Composer toolbar in a narrow drawer
+<!-- gb area=sessions -->
+
+The composer toolbar stays inside a narrow drawer.
+
+### Fixed
+
+- A failed Auto start keeps its cause on the row. <!-- gb area=agents -->
+- A history rewrite is no longer handed to Auto. Auto says to use the History flow or an Implementer. <!-- gb area=agents -->
+- Auto gives a task that runs a command only to a role with a shell. <!-- gb area=agents -->
+- Artifact text inside a code fence no longer shows in the chat, and a block that never closed stays text. <!-- gb area=artifacts -->
+- A child's answer in the drawer renders as markdown. <!-- gb area=agents -->
+- The close shortcut closes the terminal tab with the sessions list on screen. <!-- gb area=app -->
+- A run's count row keeps its place when the run opens or folds. <!-- gb area=agents -->
+
 ## Goodboy v0.27.2
 
 Setup is one guided flow, every surface says folder, and the session rail, rebase, Settings and update card get a pass.
