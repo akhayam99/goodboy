@@ -135,8 +135,8 @@
 - **Navigation chrome is neutral at rest.** Selection shows as a muted fill,
   never an inversion. The app has no inverted navigation control. New session
   is the only emphasised column control. Doors, Board included, are neutral at
-  rest, and so is the column's Goodboy row, with one exception: a downloaded
-  update tints the row into a pill until you act on it. A ready update is an
+  rest, and so is the column's Goodboy row, with one exception: a pending
+  update adds a version pill to the row until you act on it. An update is an
   event, not a rest state.
 - **Settings match the scope they edit.** Application settings is a full-page
   studio. Workspace settings is a scoped pane. Changes save instantly: no
@@ -1843,17 +1843,24 @@ carries a dot while an update or setup waits.
 
 The Goodboy row (`app/components/GoodboyChip`, variants `column` and `rail`) holds everything about Goodboy itself, the way the Apple
 menu or Linear's help menu does. Its label says one thing, in this order: an
-update is ready, setup is unfinished (with its progress), or
-the brand lockup with the installed version. The lockup
+update is pending (the bare lockup, then the version pill), setup is unfinished
+(with its progress), or the brand lockup with the installed version. The lockup
 (`GoodboyChip/BrandLockup.tsx`) is one dark chip holding only the dog mark and
 "Goodboy", the same in light and dark; "Beta" and "v<version>" sit after it in
 theme text. The popover header and the rail mark draw the same lockup. The version is
 `APP_VERSION` (`shared/lib/appVersion.ts`), which the build stamps from
 `apps/desktop/package.json` as `__APP_VERSION__`, so it never waits on Tauri
-and shows in mock scenes too. The update pill is soft, enters once and holds
-still. Its popover leads with Report a bug (with ⌘I, and Draft saved
-when a draft waits), then the version and release notes, the update, the setup
-checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
+and shows in mock scenes too. The update pill (`features/updater/components/UpdatePill`)
+is soft, enters once and holds still. It is its own button beside the lockup and
+shows only the new version and a state icon; the state ("is ready", "did not
+install") lives in its tooltip and accessible name. It stays on one line at
+every column width: when the lockup and the pill have under 168px, the lockup
+drops to the dog mark (a container query on the row), and only a version too
+long for the row truncates.
+`validate-scenes.mjs --only update-pill` pins this at 200, 240 and 400px. The
+pill opens the update card; the menu holds no update. The popover leads with
+Report a bug (with ⌘I, and Draft saved when a draft waits), then the version and
+release notes, the setup checklist, then the help rows: Guide first, What's new, keyboard shortcuts, Pair
 your iPhone, Sponsor and Follow on X. Guide opens the guide studio and Pair your
 iPhone opens Settings on its iPhone page (`goodboy:open-pair-device` lands on
 `{ scope: 'app', section: 'iphone' }`), so neither waits behind the palette. Every
@@ -3189,7 +3196,7 @@ card 320, session switcher 420. `regressions/popover-widths.test.ts` counts the
 off-scale widths a floating surface declares per file and never lets one
 grow.
 
-**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy chip with 12px to the window edge and never wider than `min(384px, window - 24px)`: it carries the title `<version> is ready` and the Later, What's new and Restart now actions, no lead and no bullets. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
+**The update card is never clipped.** It is a `Popover` in the popover layer, anchored above the Goodboy row with 12px to the window edge, 300px wide and never wider than `min(384px, window - 24px)`: a title, one line and the verbs of its state ([release.md](release.md#auto-update)), no bullets. It stays away while its row is inert, as when Settings covers the column (`useIsAnchorInert`), and comes back with the row. A `fixed` card inside the sidebar would resolve against the sidebar, which has a transform and `overflow-hidden`.
 
 **An object that belongs to where you are opens in a drawer; the page changes
 only by an explicit command.** A plan read from the planner that wrote it (the

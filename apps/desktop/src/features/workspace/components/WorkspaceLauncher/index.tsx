@@ -195,7 +195,7 @@ export const WorkspaceLauncher = ({ isCreating, onCloseCreate, onOfferRepo }: Pr
         data-tauri-drag-region="false"
         className="absolute right-3 top-3 flex items-center gap-2"
       >
-        <UpdatePill />
+        <UpdatePill hasCard />
         <IconButton
           icon={CONCEPT_ICONS.settings}
           label="Open settings"

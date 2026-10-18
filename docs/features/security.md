@@ -52,7 +52,7 @@ Open an older Goodboy on newer data without damage. It stops before touching any
 
 ### Updates
 
-Get updates in the background, then see what is new. When one is ready, the chip in the Goodboy row offers **Restart now**, **Later** and **What's new**. With agents running, **Restart when they finish** waits for them.
+Get updates in the background, then see what is new. When one is ready, the version pill in the Goodboy row opens a card with **Restart now**, **Later** and **What's new**. With agents running, **Restart when they finish** waits for them. **Settings > App > Updates** shows the installed version and **Check for updates**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/security-updates-dark.webp">

@@ -366,12 +366,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: Check for updates',
-    covers: ['openStudio', 'studio:settings', 'settings:general', 'palette:Check for updates'],
+    covers: ['openStudio', 'studio:settings', 'settings:updates', 'palette:Check for updates'],
     door: 'palette',
     open: () => openPalette(/^Check for updates/),
     lands: both(
       () => settingsColumn(),
-      () => heading('General'),
+      () => heading('Updates'),
     ),
   },
   {

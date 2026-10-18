@@ -43,7 +43,7 @@ const openNotifications = (): void => {
 };
 
 const checkForUpdates = (): void => {
-  fire({ name: 'goodboy:open-settings', detail: { scope: 'app', section: 'general', door: true } });
+  fire({ name: 'goodboy:open-settings', detail: { scope: 'app', section: 'updates', door: true } });
   const state = useAppStore.getState();
   if (!CHECKABLE_STATUSES.has(state.updaterStatus)) {
     return;

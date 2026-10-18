@@ -32,7 +32,7 @@ export const UpdateConfirmScene = () => {
     <ToastProvider>
       <main className="flex h-screen flex-col bg-background text-foreground">
         <div className="flex h-9 items-center justify-end border-b border-border px-3">
-          <UpdatePill />
+          <UpdatePill hasCard />
         </div>
       </main>
     </ToastProvider>

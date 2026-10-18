@@ -5,7 +5,7 @@ const CHECKABLE_STATUSES: ReadonlySet<string> = new Set(['idle', 'uptodate', 'er
 export const checkForUpdatesNow = (): void => {
   window.dispatchEvent(
     new CustomEvent('goodboy:open-settings', {
-      detail: { scope: 'app', section: 'general', door: true },
+      detail: { scope: 'app', section: 'updates', door: true },
     }),
   );
   const state = useAppStore.getState();

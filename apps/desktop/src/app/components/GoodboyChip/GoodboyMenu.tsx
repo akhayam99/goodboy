@@ -7,13 +7,11 @@ import { shortcutGlyphs } from '../../../shared/keyboard/registry';
 import { NAMES } from '../../../shared/names';
 import { BrandLockup } from './BrandLockup';
 import { MenuRow } from './MenuRow';
-import { UpdateNotice } from './UpdateNotice';
 
 type Props = {
   readonly version: string | null;
   readonly progress: OnboardingProgress;
   readonly isMainWindow: boolean;
-  readonly hasUpdate: boolean;
   readonly hasDraft: boolean;
   readonly onLeave: () => void;
   readonly onReport: () => void;
@@ -29,7 +27,6 @@ export const GoodboyMenu = ({
   version,
   progress,
   isMainWindow,
-  hasUpdate,
   hasDraft,
   onLeave,
   onReport,
@@ -65,11 +62,6 @@ export const GoodboyMenu = ({
             onClick={onReport}
           />
         </ul>
-        {hasUpdate ? (
-          <div className="px-2">
-            <UpdateNotice />
-          </div>
-        ) : null}
         <ul className="flex flex-col">
           <MenuRow
             icon={<CONCEPT_ICONS.guide size={ICON_SIZE.row} aria-hidden />}

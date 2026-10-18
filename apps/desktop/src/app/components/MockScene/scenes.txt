@@ -899,6 +899,12 @@ u26s-settings-nows
 u26s-settings-pair
 u26s-settings-storage
 u26s-settings-updates
+u26s-update-available
+u26s-update-failed
+u26s-update-ready
+u26s-update-row
+u26s-update-running
+u26s-update-settings
 u26s-whatsnew-release
 u26s-whatsnew-search
 update-card

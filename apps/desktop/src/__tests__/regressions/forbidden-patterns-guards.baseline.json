@@ -387,7 +387,6 @@
     "apps/desktop/src/features/suggestions/eligibleThreads.ts": 1,
     "apps/desktop/src/features/suggestions/nextStepOutcomes.ts": 2,
     "apps/desktop/src/features/suggestions/useSuggestionActions/index.ts": 1,
-    "apps/desktop/src/features/updater/components/UpdateConfirm/index.tsx": 1,
     "apps/desktop/src/features/wireframes/buildWireframeChangeRequest.ts": 1,
     "apps/desktop/src/features/wireframes/buildWireframeContext.ts": 2,
     "apps/desktop/src/features/wireframes/collectDesignProfile.ts": 4,

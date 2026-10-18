@@ -208,7 +208,7 @@ describe('useMenuCommands', () => {
     expect(settings).toHaveLength(2);
     expect(settings[0]).toEqual({
       scope: 'app',
-      section: 'general',
+      section: 'updates',
       door: true,
     });
   });

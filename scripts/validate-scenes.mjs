@@ -38,6 +38,13 @@ import {
   headerLineProbe,
 } from './validateScenesHeaderLine.mjs';
 import {
+  UPDATE_PILL_READY,
+  UPDATE_PILL_SCENES,
+  UPDATE_PILL_WIDTHS,
+  updatePillFailures,
+  updatePillProbe,
+} from './validateScenesUpdatePill.mjs';
+import {
   CHAT_MEASURE_READY,
   CHAT_MEASURE_SCENE,
   CHAT_MEASURE_WIDTHS,
@@ -625,6 +632,17 @@ const measureHeaderLine = async ({ send, scene }) => {
   return { failures, wraps: 0 };
 };
 
+const measureUpdatePill = async ({ send, scene }) => {
+  const failures = [];
+  for (const width of UPDATE_PILL_WIDTHS) {
+    await open({ send, scene, width, zoom: 1, readySelector: UPDATE_PILL_READY });
+    const measured = await run(send, updatePillProbe, null);
+    failures.push(...updatePillFailures({ scene, width, measured }));
+  }
+  console.log(`${scene}: ${UPDATE_PILL_WIDTHS.length} widths, ${failures.length} pill overflows`);
+  return { failures, wraps: 0 };
+};
+
 const measureInbox = async ({ send, width }) => {
   const failures = [];
   await open({ send, scene: 'inbox', width, zoom: 1, readySelector: '[data-inbox-key]' });
@@ -852,6 +870,9 @@ const main = async () => {
     }
     for (const scene of only === undefined || only === 'header-line' ? HEADER_LINE_SCENES : []) {
       await measure({ scene, task: () => measureHeaderLine({ send, scene }) });
+    }
+    for (const scene of only === undefined || only === 'update-pill' ? UPDATE_PILL_SCENES : []) {
+      await measure({ scene, task: () => measureUpdatePill({ send, scene }) });
     }
     if (only === undefined || only === 'chat') {
       await measure({ scene: CHAT_MEASURE_SCENE, task: () => measureChatRoom({ send }) });

@@ -39,11 +39,11 @@ describe('the updater card scenes', () => {
   });
 
   it.each([
-    ['update-card', '0.24.1 is ready'],
-    ['update-card-narrow', '0.24.1 is ready'],
+    ['update-card', 'Goodboy 0.24.1 is ready'],
+    ['update-card-narrow', 'Goodboy 0.24.1 is ready'],
     [
       'update-card-long-version',
-      '0.24.1-beta.20261010.preview.build.8f3c2a91e7d54b6fa0c1d2e3f4a5b6c7d8e9f0 is ready',
+      'Goodboy 0.24.1-beta.20261010.preview.build.8f3c2a91e7d54b6fa0c1d2e3f4a5b6c7d8e9f0 is ready',
     ],
   ])('%s shows the card beside the chip with its three actions', async (id, name) => {
     const Scene = U24_UPDATER_CARD_SCENES[id];

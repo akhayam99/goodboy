@@ -6107,16 +6107,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/settings/components/GuideStudio/parts/DefinitionList.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
-  "apps/desktop/src/features/settings/components/GuideStudio/parts/GuideContent.tsx": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/settings/components/GuideStudio/parts/ListensExtra.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -6177,14 +6167,9 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/UpdatesSection.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/UpdatesSection.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceAfterMergeSection.test.tsx": {
@@ -6509,16 +6494,6 @@
   "apps/desktop/src/features/suggestions/useTranscriptMountProposals/index.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/features/updater/components/UpdateConfirm/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 4
-    }
-  },
-  "apps/desktop/src/features/updater/components/UpdateConfirm/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
     }
   },
   "apps/desktop/src/features/updater/hooks/useRestartWhenIdle/index.test.ts": {

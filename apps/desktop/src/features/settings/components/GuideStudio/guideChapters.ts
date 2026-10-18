@@ -736,11 +736,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Update ready',
-        desc: "The chip in the Goodboy row opens a card with Restart now, Later and What's new. With agents running, Restart when they finish waits for them.",
+        desc: "The version pill in the Goodboy row opens the update card: Update now downloads, then Restart now installs, with Later and What's new beside them. With agents running, Restart when they finish waits for them. A failed update offers Retry.",
       },
       {
         term: 'Check for Updates',
-        desc: 'In the Goodboy menu of the macOS menu bar, or Check now on Settings, App, Updates, it looks for an update now.',
+        desc: 'In the Goodboy menu of the macOS menu bar, or Check for updates on Settings, App, Updates, it looks for an update now.',
       },
       {
         term: NAMES.whatsNew,

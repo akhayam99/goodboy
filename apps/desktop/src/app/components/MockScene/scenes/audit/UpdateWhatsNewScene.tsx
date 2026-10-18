@@ -101,7 +101,7 @@ export const UpdateWhatsNewScene = () => {
           <ChangelogStudio onClose={() => setIsChangelogOpen(false)} onOpenScreen={noop} />
         ) : (
           <div className="flex h-9 items-center justify-end px-3">
-            <UpdatePill onOpenChangelog={() => setIsChangelogOpen(true)} />
+            <UpdatePill hasCard onOpenChangelog={() => setIsChangelogOpen(true)} />
           </div>
         )}
       </main>

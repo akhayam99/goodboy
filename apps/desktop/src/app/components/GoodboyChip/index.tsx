@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AnchoredPopover, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
-import { useAppStore } from '../../../store';
+import { useUpdateCardState } from '../../../features/updater/hooks/useUpdateCardState';
+import { UpdatePill } from '../../../features/updater/components/UpdatePill';
 import { collapse, hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
 import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import { useOnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
@@ -29,14 +30,17 @@ type Props = {
 const PANEL_WIDTH = 320;
 const PANEL_MAX_HEIGHT = 560;
 
+const REST_LABEL = 'Goodboy beta: version, help and sponsor';
+
 const TRIGGER_LABEL: Record<GoodboyChipState, string> = {
-  update: 'Goodboy: an update is ready',
+  update: REST_LABEL,
   setup: 'Goodboy: setup is not finished',
-  rest: 'Goodboy beta: version, help and sponsor',
+  rest: REST_LABEL,
 };
 
-const TRIGGER_SHAPE: Record<GoodboyChipVariant, string> = {
+const TRIGGER_SHAPE: Record<GoodboyChipVariant | 'column-pill', string> = {
   column: 'h-7 min-w-0 flex-1 gap-2 overflow-hidden px-2',
+  'column-pill': 'h-7 min-w-0 shrink gap-2 overflow-hidden px-2',
   rail: 'size-8 shrink-0 justify-center',
 };
 
@@ -48,7 +52,7 @@ export const GoodboyChip = ({
   isPrimary = true,
 }: Props) => {
   const progress = useOnboardingProgress();
-  const updaterStatus = useAppStore((s) => s.updaterStatus);
+  const update = useUpdateCardState();
   const version = useInstalledVersion();
   const hasDraft = useHasBugReportDraft();
   const dropdown = useDropdown({
@@ -58,12 +62,7 @@ export const GoodboyChip = ({
     ...(isPrimary && { openEvent: OPEN_GOODBOY_MENU_EVENT }),
   });
   const { open: isOpen, close, toggle } = dropdown;
-  const isQueued = useAppStore((s) => s.updateQueuedUntilIdle);
-  const hasUpdate =
-    updaterStatus === 'available' ||
-    updaterStatus === 'downloading' ||
-    updaterStatus === 'ready' ||
-    isQueued;
+  const hasUpdate = update.state !== null;
   const isSetupOpen = !progress.isFinished && progress.hasProjects && !progress.setup.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
   const shouldAutoOpen =
@@ -73,6 +72,7 @@ export const GoodboyChip = ({
     progress.completed.has('first-session') &&
     !progress.isCollapsed;
   const isInMainWindow = useIsMainWindow();
+  const hasRowPill = variant === 'column' && hasUpdate;
 
   useEffect(() => {
     if (!isPrimary || isInMainWindow) {
@@ -100,7 +100,7 @@ export const GoodboyChip = ({
       action();
     };
 
-  const trigger = (
+  const menuTrigger = (
     <Tooltip content={TRIGGER_LABEL[state]} side={variant === 'rail' ? 'right' : 'top'}>
       <button
         type="button"
@@ -112,7 +112,7 @@ export const GoodboyChip = ({
         className={cn(
           'relative flex items-center rounded-md text-meta motion-safe:transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          TRIGGER_SHAPE[variant],
+          TRIGGER_SHAPE[hasRowPill ? 'column-pill' : variant],
           isOpen ? 'bg-muted' : 'hover:bg-hover',
         )}
       >
@@ -133,6 +133,15 @@ export const GoodboyChip = ({
     </Tooltip>
   );
 
+  const trigger = hasRowPill ? (
+    <>
+      {menuTrigger}
+      <UpdatePill tooltipSide="top" />
+    </>
+  ) : (
+    menuTrigger
+  );
+
   return (
     <>
       {isPrimary ? (
@@ -147,14 +156,15 @@ export const GoodboyChip = ({
         ariaLabel="Goodboy"
         hasBackdrop
         className="flex flex-col"
-        anchorClassName={variant === 'column' ? 'flex min-w-0 flex-1' : 'flex'}
+        anchorClassName={
+          variant === 'column' ? '@container flex min-w-0 flex-1 items-center gap-1' : 'flex'
+        }
         trigger={trigger}
       >
         <GoodboyMenu
           version={version}
           progress={progress}
           isMainWindow={isInMainWindow}
-          hasUpdate={hasUpdate}
           hasDraft={hasDraft}
           onLeave={close}
           onReport={leaveFor({ action: () => openReportSheet() })}

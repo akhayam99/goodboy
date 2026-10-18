@@ -1,39 +1,39 @@
-import { ArrowUpCircle, Clock } from 'lucide-react';
-import { Chip } from '@goodboy/ui';
+import { Chip, type Tone } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import type { UpdateCardState } from '../../updateCardState';
+import { UpdateCardMark } from '../UpdateCardMark';
 
 type Props = {
-  readonly isQueued: boolean;
-  readonly isReady: boolean;
+  readonly state: UpdateCardState;
   readonly version: string | null;
-  readonly agentCount: number;
 };
 
-export const UpdatePillVisual = ({ isQueued, isReady, version, agentCount }: Props) => {
-  const label = isQueued
-    ? `Restarts after ${agentCount} agent${agentCount === 1 ? '' : 's'}`
-    : `${version ?? 'update'} ${isReady ? 'ready' : 'available'}`;
-  const tooltip = isReady
-    ? `Goodboy ${version ?? ''} is downloaded. Restart to use it.`
-    : undefined;
+const TONE_BY_STATE = {
+  available: 'primary',
+  ready: 'primary',
+  running: 'primary',
+  failed: 'danger',
+  queued: 'info',
+} as const satisfies Record<UpdateCardState, Tone>;
 
-  return (
-    <span className="inline-flex rounded-full motion-safe:animate-studio-body-in">
-      <Chip
-        tone={isQueued ? 'info' : 'primary'}
-        emphasis="soft"
-        shape="pill"
-        icon={
-          isQueued ? (
-            <Clock size={ICON_SIZE.mark} aria-hidden />
-          ) : (
-            <ArrowUpCircle size={ICON_SIZE.mark} aria-hidden />
-          )
-        }
-        label={label}
-        title={tooltip}
-        testId="update-pill"
-      />
-    </span>
-  );
-};
+export const UpdatePillVisual = ({ state, version }: Props) => (
+  <span className="inline-flex min-w-0 max-w-full rounded-full motion-safe:animate-studio-body-in">
+    <Chip
+      tone={TONE_BY_STATE[state]}
+      emphasis="soft"
+      shape="pill"
+      icon={
+        <span className="flex shrink-0">
+          <UpdateCardMark state={state} size={ICON_SIZE.mark} />
+        </span>
+      }
+      label={
+        <span data-update-pill-version="" className="min-w-0 truncate tabular-nums">
+          {version ?? 'Update'}
+        </span>
+      }
+      className="min-w-0 max-w-full shrink whitespace-nowrap"
+      testId="update-pill"
+    />
+  </span>
+);

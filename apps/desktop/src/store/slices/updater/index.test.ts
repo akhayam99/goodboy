@@ -125,6 +125,41 @@ describe('updater slice', () => {
     expect(getState().updateNotes?.version).toBe('0.2.0');
   });
 
+  it('drops the answer of a check older than the last one', async () => {
+    let answerFirst: (value: unknown) => void = () => undefined;
+    checkMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answerFirst = resolve;
+        }),
+    );
+    checkMock.mockResolvedValueOnce(null);
+    const { slice, getState } = harness();
+    const first = slice.checkForUpdates();
+    await slice.checkForUpdates();
+    answerFirst({ version: '0.2.0', download: vi.fn(), body: '' });
+    await first;
+    expect(getState().updaterStatus).toBe('uptodate');
+    expect(getState().updateVersion).toBeNull();
+  });
+
+  it('keeps a downloaded update ready when a later check finds the same version', async () => {
+    const download = vi.fn(async () => undefined);
+    const install = vi.fn(async () => undefined);
+    checkMock.mockResolvedValueOnce({ version: '0.2.0', download, install, body: '' });
+    const { slice, getState } = harness({ autoDownload: 'false' });
+    await slice.checkForUpdates();
+    await slice.downloadUpdate();
+    const sameAgain = { version: '0.2.0', download: vi.fn(), install: vi.fn(), body: '' };
+    checkMock.mockResolvedValueOnce(sameAgain);
+    await slice.checkForUpdates();
+    expect(getState().updaterStatus).toBe('ready');
+    await slice.applyUpdate();
+    expect(install).toHaveBeenCalledTimes(1);
+    expect(sameAgain.install).not.toHaveBeenCalled();
+    expect(invokeMock.mock.calls.map((call) => call[0])).toContain('restart_prepare');
+  });
+
   it('downloadUpdate falls back to available on failure', async () => {
     const download = vi.fn().mockRejectedValueOnce(new Error('connection reset'));
     checkMock.mockResolvedValue({ version: '0.2.0', download, body: '' });

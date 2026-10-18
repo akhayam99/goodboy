@@ -129,20 +129,35 @@ reports show them as the build. A local build has no value and reports `dev`.
 
 ## Auto-update
 
-On launch, packaged builds check
-`releases/latest/download/latest.json` through `tauri-plugin-updater`. If a
-newer version exists, the column's Goodboy row says "Update ready" and its
-popover offers "Restart to update", and an "Update to X" chip shows up in
-`WorkspaceLauncher`. Clicking that chip opens an inline confirm anchored to it
-(no dialog). It says how many running agents pick up after the restart, links
-"What's new" to that release in the changelog, and starts "Download and restart". While the
-update downloads, the chip reads "Downloading 42%" (or "Downloading" when the
-size is unknown). If the install fails, including a failed relaunch, the
-pending update is kept. The chip turns into "Update failed", with the reason
-in its tooltip, and the same confirm offers Retry. A notification also offers
-Retry, which installs again without a new check. A failed background check
-shows no chip and no notification. It shows up in **Settings > App > General**
-instead, next to the installed version, the last check time and **Check now**.
+On launch, then about once an hour while Goodboy is in use (`useUpdaterPolling`), packaged builds check
+`releases/latest/download/latest.json` through `tauri-plugin-updater`. A check
+older than the last one is dropped (`checkForUpdates`), and a check that finds
+the version already downloading or downloaded keeps it instead of starting
+over. A found version downloads in the background unless **Download updates in
+the background** is off.
+
+One card is the only prompt (`features/updater/components/UpdateArrivalCard.tsx`),
+and one hook gives every surface the same verbs (`useUpdateCard`, state from
+`updateCardStateOf`, copy from `updateCardCopy`):
+
+| State          | Card says                                       | Verbs                                                                    |
+| -------------- | ----------------------------------------------- | ------------------------------------------------------------------------ |
+| Available      | Goodboy 0.27.2 is available                     | Later, What's new, **Update now** (downloads, then the card turns Ready) |
+| Ready          | Goodboy 0.27.2 is ready                         | Later, What's new, **Restart now**                                       |
+| Agents running | 2 agents are running                            | Later, Restart now, **Restart when they finish**                         |
+| Failed         | Goodboy 0.27.2 did not install, with the reason | Later, **Retry** (downloads or installs again, without a new check)      |
+| Queued         | Restarts when 2 agents finish                   | Later, Cancel restart, **Restart now**                                   |
+
+The version pill in the Goodboy row, and in the corner of Home
+(`WorkspaceLauncher`), opens and closes the card (`toggleUpdateCard`). The card
+also opens by itself once an update is ready, runs into agents or fails. Later
+and Esc close it and snooze that version for three days (`updateSnoozeGate`);
+the pill stays. **Settings > App > Updates** is the manual home: the installed
+version, the last check, **Check for updates** (also in the Goodboy menu of the
+macOS menu bar), the same verbs while an update is pending, the background
+download switch and What's new. A failed check shows there only, never as a card
+or a notification. A failed install also posts a notification with Retry. The
+release the update brings, open in What's new, carries the same verbs.
 The changelog opens on the focused or installed release. Releases newer than
 the installed one sit on top, marked "In the update", and "What's new" from
 the update lands on the update's own release instead of the catch-up.

@@ -277,7 +277,7 @@ describe('Home', () => {
     useAppStore.setState({ updaterStatus: 'available', updateVersion: '0.27.9' });
     renderHome();
 
-    expect(screen.getByRole('button', { name: '0.27.9 available' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Goodboy 0.27.9 is available' })).toBeDefined();
   });
 });
 

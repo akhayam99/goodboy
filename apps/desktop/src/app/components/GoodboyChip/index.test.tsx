@@ -156,13 +156,31 @@ describe('GoodboyChip', () => {
     expect(chip.textContent).toBe('Setup2 of 4');
   });
 
-  it('puts a ready update ahead of setup', () => {
+  it('puts the update pill beside the bare lockup, ahead of setup, and keeps it out of the menu', () => {
     useAppStore.setState({ updaterStatus: 'available' });
     renderChip();
 
-    const chip = screen.getByRole('button', { name: 'Goodboy: an update is ready' });
-    expect(chip.textContent).toBe('0.5.2 available');
-    expect(within(openMenu()).getByRole('button', { name: 'Restart to update' })).toBeDefined();
+    const chip = screen.getByTestId('goodboy-chip');
+    expect(chip.getAttribute('aria-label')).toBe(REST_LABEL);
+    expect(chip.textContent).toBe('Goodboy');
+    const pill = screen.getByRole('button', { name: 'Goodboy 0.5.2 is available' });
+    expect(pill.textContent).toBe('0.5.2');
+    expect(chip.contains(pill)).toBe(false);
+    expect(chip.parentElement?.contains(pill) ?? false).toBe(true);
+    const menu = openMenu();
+    expect(within(menu).queryByText('0.5.2 is available.')).toBeNull();
+    expect(within(menu).queryByRole('button', { name: 'Update now' })).toBeNull();
+  });
+
+  it('opens the update card from the pill, not the Goodboy menu', () => {
+    useAppStore.setState({ updaterStatus: 'available' });
+    renderChip();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Goodboy 0.5.2 is available' }));
+
+    const card = screen.getByRole('dialog', { name: 'Goodboy 0.5.2 is available' });
+    expect(within(card).getByRole('button', { name: 'Update now' })).toBeDefined();
+    expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
   });
 
   it('holds the version, setup and every product place in one popover', () => {

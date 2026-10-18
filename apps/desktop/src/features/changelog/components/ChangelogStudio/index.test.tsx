@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   loadChangelogUpcoming: vi.fn(async () => undefined),
   updateNotes: null as ReleaseEntry | null,
   applyUpdate: vi.fn(async () => undefined),
+  downloadUpdate: vi.fn(async () => undefined),
   updater: { status: 'idle', version: null as string | null },
   installedVersion: null as string | null,
 }));
@@ -28,6 +29,8 @@ vi.mock('../../../../store', () => ({
       loadChangelogUpcoming: mocks.loadChangelogUpcoming,
       updateNotes: mocks.updateNotes,
       applyUpdate: mocks.applyUpdate,
+      downloadUpdate: mocks.downloadUpdate,
+      updateQueuedUntilIdle: false,
       updaterStatus: mocks.updater.status,
       updateVersion: mocks.updater.version,
       updateFailure: null,
@@ -141,7 +144,9 @@ describe('ChangelogStudio', () => {
 
     renderStudio();
 
-    expect(screen.getByRole('button', { name: 'Download and restart' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Update now' }));
+
+    expect(mocks.downloadUpdate).toHaveBeenCalledTimes(1);
   });
 
   it('renders the newest release body in full', () => {

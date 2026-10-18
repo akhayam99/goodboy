@@ -1,7 +1,4 @@
 import type { OnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
-import { useAppStore } from '../../../store';
-import { useRunningAgentCount } from '../../../features/updater/hooks/useRunningAgentCount';
-import { UpdatePillVisual } from '../../../features/updater/components/UpdatePill/UpdatePillVisual';
 import { BrandLockup } from './BrandLockup';
 
 export type GoodboyChipState = 'update' | 'setup' | 'rest';
@@ -19,22 +16,19 @@ export const GoodboyChipLabel = ({
   installedVersion,
   isMarkOnly = false,
 }: Props) => {
-  const status = useAppStore((s) => s.updaterStatus);
-  const version = useAppStore((s) => s.updateVersion);
-  const isQueued = useAppStore((s) => s.updateQueuedUntilIdle);
-  const runningCount = useRunningAgentCount();
-
   if (isMarkOnly) {
     return <BrandLockup version={installedVersion} isMarkOnly />;
   }
   if (state === 'update') {
     return (
-      <UpdatePillVisual
-        isQueued={isQueued}
-        isReady={!isQueued && status === 'ready'}
-        version={version}
-        agentCount={runningCount}
-      />
+      <>
+        <span data-lockup-wide="" className="contents @max-[10.5rem]:hidden">
+          <BrandLockup version={installedVersion} hasMeta={false} />
+        </span>
+        <span data-lockup-narrow="" className="hidden @max-[10.5rem]:contents">
+          <BrandLockup version={installedVersion} isMarkOnly />
+        </span>
+      </>
     );
   }
   if (state === 'setup') {
