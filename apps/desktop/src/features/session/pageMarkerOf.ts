@@ -1,5 +1,5 @@
-import { NAMES } from '../../shared/names';
 import type { Page } from './pageRegistry';
+import { SESSION_PAGE_MARKER_WHY } from './sessionPageIntro';
 
 export type PageMarker = {
   readonly label: string;
@@ -8,12 +8,12 @@ export type PageMarker = {
 
 const EXPERIMENTAL: PageMarker = {
   label: 'Experimental',
-  why: 'Auto picks and starts agents on its own, under a limit. Its choices are still being tuned.',
+  why: SESSION_PAGE_MARKER_WHY.auto,
 };
 
 const DEPRECATED: PageMarker = {
   label: 'Deprecated',
-  why: `Use ${NAMES.startAuto}: Auto picks and starts the right agent. Agents you start by hand keep working.`,
+  why: SESSION_PAGE_MARKER_WHY.agents,
 };
 
 type Params = {

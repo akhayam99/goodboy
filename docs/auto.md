@@ -11,7 +11,7 @@ Auto is an agent that answers questions itself and hands the work it cannot do
 alone to agents of the right role, with a model it picks for each. It waits for
 their results, reads them and goes on. It is always on and stays labelled
 **Experimental**: the **Auto agents** entry of the session rail carries the
-marker beside its count, its tooltip says why, and there is no switch to turn
+marker beside its count, the marker's tooltip says why, and there is no switch to turn
 it off. The **Agents** entry reads **Deprecated** beside its count: Auto
 starts agents of the role it picks (`AUTO_ROLE_WHEN`), and agents started by
 hand keep working.

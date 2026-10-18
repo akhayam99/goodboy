@@ -8,7 +8,10 @@ import { LENS_LABEL } from '../../features/session/lens-labels';
 import { ACTIVITY_VIEW_LABEL } from '../../features/session/timeline/activityView';
 import { ARCHIVED_SESSION_REASON } from '../../features/session/archivedSession';
 import { AGENT_STATUS_PRESENTATION } from '../../features/session/agent-status';
-import { SESSION_PAGE_INTRO } from '../../features/session/sessionPageIntro';
+import {
+  SESSION_PAGE_INTRO,
+  SESSION_PAGE_MARKER_WHY,
+} from '../../features/session/sessionPageIntro';
 import { ROW_NODE_LABEL } from '../../features/workTreeModel/rowStateCopy';
 import { RUN_AUTONOMY_OPTIONS } from '../../features/workflows/runAutonomy';
 import { EMPTY_COPY } from '../../features/workspace/components/StageBoard/StageColumn/emptyCopy';
@@ -33,6 +36,7 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
   RUN_AUTONOMY_OPTIONS: RUN_AUTONOMY_OPTIONS.flatMap((option) => [option.label, option.hint]),
   EMPTY_COPY: Object.values(EMPTY_COPY).map((copy) => copy.title),
   SESSION_PAGE_INTRO: Object.values(SESSION_PAGE_INTRO).flat(),
+  SESSION_PAGE_MARKER_WHY: Object.values(SESSION_PAGE_MARKER_WHY),
 };
 
 const startsLowercase = (text: string): boolean =>

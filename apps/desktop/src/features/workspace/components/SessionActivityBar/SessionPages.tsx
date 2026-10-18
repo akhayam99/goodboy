@@ -1,4 +1,4 @@
-import { Chip, SelectableRow, StatusDot } from '@goodboy/ui';
+import { Chip, SelectableRow, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
@@ -34,40 +34,49 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
         const isCurrent = sign === page.id;
         const slot = pageSlotOf({ page: page.count, facts });
         const marker = pageMarkerOf({ pageId: page.id, isAutoShown });
-        const title = [slot.fact, marker?.why ?? null]
-          .filter((part): part is string => part !== null)
-          .join('. ');
+        const count = (
+          <span
+            data-page-value={page.id}
+            data-tone={slot.tone ?? 'count'}
+            className="flex shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground empty:hidden"
+          >
+            {slot.tone === null ? null : <StatusDot tone={slot.tone} size="sm" />}
+            {slot.text === null ? null : <span>{slot.text}</span>}
+          </span>
+        );
         return (
           <li key={page.id}>
             <SelectableRow
               selected={isCurrent}
               selectedIconTone={navEntryToneOf({ icon: Icon })}
               ariaCurrent={isCurrent ? 'page' : undefined}
-              {...(title !== '' && { title })}
               onClick={() => openPage(page)}
               className="h-7 items-center gap-2 px-2 text-ui"
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
               <span className="min-w-0 flex-1 truncate">{page.label}</span>
               {marker === null ? null : (
-                <Chip
-                  tone="neutral"
-                  kind="state"
-                  emphasis="subtle"
-                  bordered={false}
-                  label={marker.label}
-                  testId={`page-marker-${page.id}`}
-                  className="text-faint-foreground"
-                />
+                <Tooltip content={marker.why} side="right">
+                  <span className="flex shrink-0">
+                    <Chip
+                      tone="neutral"
+                      kind="state"
+                      emphasis="subtle"
+                      bordered={false}
+                      label={marker.label}
+                      testId={`page-marker-${page.id}`}
+                      className="text-faint-foreground"
+                    />
+                  </span>
+                </Tooltip>
               )}
-              <span
-                data-page-value={page.id}
-                data-tone={slot.tone ?? 'count'}
-                className="flex shrink-0 items-center justify-end gap-1 text-meta tabular-nums text-faint-foreground empty:hidden"
-              >
-                {slot.tone === null ? null : <StatusDot tone={slot.tone} size="sm" />}
-                {slot.text === null ? null : <span>{slot.text}</span>}
-              </span>
+              {slot.fact === null ? (
+                count
+              ) : (
+                <Tooltip content={slot.fact} side="right">
+                  {count}
+                </Tooltip>
+              )}
             </SelectableRow>
           </li>
         );

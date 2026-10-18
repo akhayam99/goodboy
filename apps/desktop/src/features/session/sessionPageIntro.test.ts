@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { columnPagesOf } from './pageRegistry';
 import { pageMarkerOf } from './pageMarkerOf';
-import { SESSION_PAGE_INTRO } from './sessionPageIntro';
+import { SESSION_PAGE_INTRO, SESSION_PAGE_MARKER_WHY } from './sessionPageIntro';
 
 const MAX_WORDS = 14;
 const MAX_CHARACTERS = 84;
@@ -43,4 +43,16 @@ describe('SESSION_PAGE_INTRO', () => {
     expect(marker?.why).toContain(SESSION_PAGE_INTRO.auto[1].split('. ')[1]);
     expect(SESSION_PAGE_INTRO.auto[1]).toContain('under a limit');
   });
+
+  it.each(Object.entries(SESSION_PAGE_MARKER_WHY))(
+    'keeps the %s marker tooltip one short line of sentence case',
+    (_page, why) => {
+      expect(why.split(/\s+/).length).toBeLessThanOrEqual(MAX_WORDS);
+      expect(why.length).toBeLessThanOrEqual(MAX_CHARACTERS);
+      expect(why).toMatch(/^[A-Z]/);
+      expect(why).toMatch(/\.$/);
+      expect([...why].some((char) => DASH_CODES.has(char.charCodeAt(0)))).toBe(false);
+      expect(why).not.toMatch(/\b(I|we|our|let's)\b/i);
+    },
+  );
 });

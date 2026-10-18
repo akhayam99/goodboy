@@ -10,7 +10,10 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import { SESSION_PAGE_INTRO } from '../../../../../features/session/sessionPageIntro';
+import {
+  SESSION_PAGE_INTRO,
+  SESSION_PAGE_MARKER_WHY,
+} from '../../../../../features/session/sessionPageIntro';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -169,4 +172,18 @@ describe('the u26 session page intro scenes', () => {
       }
     },
   );
+
+  it.each([
+    ['u26-rail-marker-agents-light', SESSION_PAGE_MARKER_WHY.agents],
+    ['u26-rail-marker-agents-dark', SESSION_PAGE_MARKER_WHY.agents],
+    ['u26-rail-marker-auto-light', SESSION_PAGE_MARKER_WHY.auto],
+    ['u26-rail-marker-auto-dark', SESSION_PAGE_MARKER_WHY.auto],
+  ] as const)('%s opens the marker tooltip with its words', async (name, why) => {
+    await mount({ name });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+    });
+
+    expect(screen.getByRole('tooltip').textContent).toBe(why);
+  });
 });

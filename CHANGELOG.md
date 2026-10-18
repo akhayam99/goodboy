@@ -31,7 +31,7 @@ The Role picker in Start an agent opens under its chip as a one column list, eac
 #### Experimental and Deprecated markers
 <!-- gb area=agents -->
 
-On the session rail, Auto agents carries a quiet Experimental marker beside its count and Agents a Deprecated one. Hover the row to read why.
+On the session rail, Auto agents carries a quiet Experimental marker beside its count and Agents a Deprecated one. Hover the marker to read why in one short line; the count has its own tooltip.
 
 #### Start an auto from the Auto agents page
 <!-- gb area=agents -->

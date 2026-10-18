@@ -5,12 +5,17 @@ import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import { C09_SESSION_ID, C09_WORKSPACE_ID } from '../u25/c09OrchestratedSeed';
+import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { seedIntros, type IntroPage } from './introsSeed';
 
 type Props = {
   readonly page: IntroPage;
   readonly isEmpty: boolean;
+  readonly hoverMarker?: 'agents' | 'auto';
+  readonly theme?: 'dark' | 'light';
 };
+
+const HOVER_DELAY_MS = 1_500;
 
 const noop = () => undefined;
 
@@ -30,14 +35,29 @@ const ACTIONS: ColumnActions = {
   openShortcuts: noop,
 };
 
-export const IntrosScene = ({ page, isEmpty }: Props) => {
+export const IntrosScene = ({ page, isEmpty, hoverMarker, theme }: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(C09_SESSION_ID);
 
   useEffect(() => {
+    if (theme !== undefined) {
+      applyDocumentTheme({ theme });
+    }
     seedIntros({ page, isEmpty });
     setIsSeeded(true);
-  }, [page, isEmpty]);
+  }, [page, isEmpty, theme]);
+
+  useEffect(() => {
+    if (!isSeeded || hoverMarker === undefined) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      document
+        .querySelector(`[data-testid="page-marker-${hoverMarker}"]`)
+        ?.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    }, HOVER_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [isSeeded, hoverMarker]);
 
   if (!isSeeded || session === null) {
     return null;
