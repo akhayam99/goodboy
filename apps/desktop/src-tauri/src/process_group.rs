@@ -60,10 +60,20 @@ mod job {
     use std::os::windows::io::AsRawHandle;
     use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
     use windows_sys::Win32::System::JobObjects::{
-        AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
-        SetInformationJobObject, TerminateJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+        AssignProcessToJobObject, CreateJobObjectW, JobObjectBasicProcessIdList,
+        JobObjectExtendedLimitInformation, QueryInformationJobObject, SetInformationJobObject,
+        TerminateJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
         JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
     };
+
+    const LISTED_PROCESSES: usize = 256;
+
+    #[repr(C)]
+    struct ProcessIdList {
+        assigned: u32,
+        listed: u32,
+        ids: [usize; LISTED_PROCESSES],
+    }
 
     pub struct Job(HANDLE);
 
@@ -72,6 +82,10 @@ mod job {
 
     impl Job {
         pub fn assign(child: &std::process::Child) -> Option<Job> {
+            Self::assign_handle(child.as_raw_handle() as HANDLE)
+        }
+
+        pub fn assign_handle(process: HANDLE) -> Option<Job> {
             let handle = unsafe { CreateJobObjectW(std::ptr::null(), std::ptr::null()) };
             if handle.is_null() {
                 return None;
@@ -91,8 +105,7 @@ mod job {
             if !is_limited {
                 return None;
             }
-            let is_assigned =
-                unsafe { AssignProcessToJobObject(handle, child.as_raw_handle() as HANDLE) } != 0;
+            let is_assigned = unsafe { AssignProcessToJobObject(handle, process) } != 0;
             if !is_assigned {
                 return None;
             }
@@ -101,6 +114,28 @@ mod job {
 
         pub fn terminate(&self) {
             unsafe { TerminateJobObject(self.0, 1) };
+        }
+
+        pub fn process_ids(&self) -> Option<Vec<u32>> {
+            let mut list = ProcessIdList {
+                assigned: 0,
+                listed: 0,
+                ids: [0; LISTED_PROCESSES],
+            };
+            let is_read = unsafe {
+                QueryInformationJobObject(
+                    self.0,
+                    JobObjectBasicProcessIdList,
+                    &mut list as *mut ProcessIdList as *mut std::ffi::c_void,
+                    std::mem::size_of::<ProcessIdList>() as u32,
+                    std::ptr::null_mut(),
+                )
+            } != 0;
+            if !is_read {
+                return None;
+            }
+            let listed = (list.listed as usize).min(LISTED_PROCESSES);
+            Some(list.ids[..listed].iter().map(|id| *id as u32).collect())
         }
     }
 
@@ -160,5 +195,32 @@ mod tests {
         terminate(child.id());
         let status = child.wait().expect("wait");
         assert!(!status.success());
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn a_job_lists_its_processes_and_terminate_stops_them() {
+        let mut child = std::process::Command::new("cmd")
+            .args(["/d", "/c", "ping -n 30 127.0.0.1 >nul"])
+            .spawn()
+            .expect("start cmd");
+        let job = Job::assign(&child).expect("assign the job");
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let mut ids = job.process_ids().unwrap_or_default();
+        while ids.len() < 2 && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(100));
+            ids = job.process_ids().unwrap_or_default();
+        }
+        assert!(ids.contains(&child.id()), "got {ids:?}");
+
+        job.terminate();
+
+        assert!(child.wait().is_ok());
+        assert_eq!(job.process_ids().map(|ids| ids.len()), Some(0));
     }
 }

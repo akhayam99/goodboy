@@ -22,7 +22,47 @@ struct TerminalSession {
     writer: Box<dyn Write + Send>,
     master: Box<dyn portable_pty::MasterPty + Send>,
     child: Box<dyn portable_pty::Child + Send + Sync>,
+    #[cfg_attr(not(windows), allow(dead_code))]
+    tree: SessionTree,
 }
+
+#[cfg(windows)]
+struct SessionTree {
+    job: Option<crate::process_group::Job>,
+    idle_count: std::sync::atomic::AtomicUsize,
+}
+
+#[cfg(not(windows))]
+struct SessionTree;
+
+#[cfg(windows)]
+fn session_tree(child: &dyn portable_pty::Child) -> SessionTree {
+    let job = child
+        .as_raw_handle()
+        .and_then(|handle| crate::process_group::Job::assign_handle(handle as _));
+    if job.is_none() {
+        log::warn!("[terminal] the shell could not join a job, its children may outlive the tab");
+    }
+    SessionTree {
+        job,
+        idle_count: std::sync::atomic::AtomicUsize::new(usize::MAX),
+    }
+}
+
+#[cfg(not(windows))]
+fn session_tree(_child: &dyn portable_pty::Child) -> SessionTree {
+    SessionTree
+}
+
+#[cfg(windows)]
+fn terminate_tree(session: &TerminalSession) {
+    if let Some(job) = session.tree.job.as_ref() {
+        job.terminate();
+    }
+}
+
+#[cfg(not(windows))]
+fn terminate_tree(_session: &TerminalSession) {}
 
 #[derive(Serialize, Clone)]
 struct TerminalOutputPayload {
@@ -74,18 +114,42 @@ impl TerminalRegistry {
 fn foreground_leader(slot: &SessionSlot) -> Option<u32> {
     let guard = slot.try_lock().ok()?;
     let session = guard.as_ref()?;
-    foreground_of(session.master.as_ref())
+    foreground_of(session)
 }
 
 #[cfg(unix)]
-fn foreground_of(master: &dyn portable_pty::MasterPty) -> Option<u32> {
-    let leader = master.process_group_leader()?;
+fn foreground_of(session: &TerminalSession) -> Option<u32> {
+    let leader = session.master.process_group_leader()?;
     u32::try_from(leader).ok().filter(|pid| *pid > 0)
 }
 
-#[cfg(not(unix))]
-fn foreground_of(_master: &dyn portable_pty::MasterPty) -> Option<u32> {
+#[cfg(windows)]
+fn foreground_of(session: &TerminalSession) -> Option<u32> {
+    let shell = session.child.process_id()?;
+    let ids = session.tree.job.as_ref()?.process_ids()?;
+    let idle = session
+        .tree
+        .idle_count
+        .fetch_min(ids.len(), std::sync::atomic::Ordering::Relaxed)
+        .min(ids.len());
+    Some(busy_process(shell, &ids, idle))
+}
+
+#[cfg(not(any(unix, windows)))]
+fn foreground_of(_session: &TerminalSession) -> Option<u32> {
     None
+}
+
+#[cfg_attr(not(any(windows, test)), allow(dead_code))]
+fn busy_process(shell: u32, ids: &[u32], idle_count: usize) -> u32 {
+    if ids.len() <= idle_count {
+        return shell;
+    }
+    ids.iter()
+        .rev()
+        .copied()
+        .find(|id| *id != shell)
+        .unwrap_or(shell)
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -126,6 +190,7 @@ pub fn shutdown(registry: &TerminalRegistry, scrollback_dir: Option<&Path>) {
         let Some(mut session) = guard.take() else {
             continue;
         };
+        terminate_tree(&session);
         reap_pty_session(session.child.process_id(), &session.spawn_id);
         crate::logging::note_kill_failure("terminal session kill", session.child.kill());
     }
@@ -448,11 +513,13 @@ fn spawn_terminal<R: Runtime>(request: TerminalSpawnRequest<R>) -> Result<(), Te
     }
     let spawn_id = tag.id.clone();
 
+    let tree = session_tree(child.as_ref());
     let slot: SessionSlot = Arc::new(Mutex::new(Some(TerminalSession {
         spawn_id: tag.id,
         writer,
         master: pair.master,
         child,
+        tree,
     })));
 
     let ring = new_shared_ring();
@@ -655,6 +722,7 @@ fn close_session(
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
             if let Some(mut session) = guard.take() {
+                terminate_tree(&session);
                 reap_pty_session(session.child.process_id(), &session.spawn_id);
                 crate::logging::note_kill_failure("terminal session kill", session.child.kill());
             }
@@ -803,6 +871,7 @@ mod tests {
                     writer,
                     master: pair.master,
                     child,
+                    tree: SessionTree,
                 }))),
                 cwd: "/".to_string(),
                 pid: None,
@@ -1006,6 +1075,14 @@ mod tests {
     }
 
     #[test]
+    fn a_terminal_is_busy_only_while_it_holds_more_processes_than_at_the_prompt() {
+        assert_eq!(busy_process(40, &[40], 1), 40);
+        assert_eq!(busy_process(40, &[38, 40], 2), 40);
+        assert_eq!(busy_process(40, &[38, 40, 51, 52], 2), 52);
+        assert_eq!(busy_process(40, &[40, 51], 1), 51);
+    }
+
+    #[test]
     fn the_first_shell_to_try_exists() {
         let order = shell::launch_order(&shell::discover(), None);
         let first = order.first().expect("at least one shell to try");
@@ -1071,6 +1148,40 @@ mod windows_conpty {
         String::from_utf8_lossy(&STANDARD.decode(snapshot.data).unwrap()).into_owned()
     }
 
+    fn has_exited(pid: u32) -> bool {
+        use windows_sys::Win32::Foundation::{CloseHandle, WAIT_OBJECT_0};
+        use windows_sys::Win32::System::Threading::{
+            OpenProcess, WaitForSingleObject, PROCESS_QUERY_LIMITED_INFORMATION,
+            PROCESS_SYNCHRONIZE,
+        };
+        let handle = unsafe {
+            OpenProcess(
+                PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SYNCHRONIZE,
+                0,
+                pid,
+            )
+        };
+        if handle.is_null() {
+            return true;
+        }
+        let is_signaled = unsafe { WaitForSingleObject(handle, 5000) } == WAIT_OBJECT_0;
+        unsafe { CloseHandle(handle) };
+        is_signaled
+    }
+
+    fn busy_child(registry: &TerminalRegistry, session_id: &str) -> Option<u32> {
+        let deadline = Instant::now() + Duration::from_secs(20);
+        while Instant::now() < deadline {
+            let live = registry.list_live().unwrap();
+            let terminal = live.iter().find(|terminal| terminal.id == session_id)?;
+            if terminal.foreground_pid.is_some() && terminal.foreground_pid != terminal.pid {
+                return terminal.foreground_pid;
+            }
+            thread::sleep(Duration::from_millis(200));
+        }
+        None
+    }
+
     fn wait_for(registry: &TerminalRegistry, session_id: &str, needle: &str) -> String {
         let deadline = Instant::now() + Duration::from_secs(20);
         loop {
@@ -1097,7 +1208,17 @@ mod windows_conpty {
                 "{} did not print {MARK} back: {output:?}",
                 profile.label
             );
+            type_line(&registry, &session_id, "ping -n 120 127.0.0.1");
+            let child = busy_child(&registry, &session_id)
+                .unwrap_or_else(|| panic!("{} never showed a running command", profile.label));
+
             close_session(&registry.0, &registry.1, &session_id).unwrap();
+
+            assert!(
+                has_exited(child),
+                "{} left its child running",
+                profile.label
+            );
         }
     }
 }

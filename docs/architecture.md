@@ -184,7 +184,14 @@ cwd, startedAt }`. A turn, a chat, a planner or a summary joins it in
   kill-on-close (`process_group::Job`), so a cancel ends the whole tree
   (`TerminateJobObject`) and so does the app dying. The assignment happens
   right after the spawn, so a grandchild started in that first instant can
-  escape it.
+  escape it. A terminal shell joins its own job the same way
+  (`Job::assign_handle`, from the handle `portable-pty` exposes): closing the
+  tab or quitting ends the shell and everything it started, as the session
+  kill does on Unix, and a shell profile that starts a process in the first
+  instant can leave it outside. A terminal counts as busy while its job holds
+  more processes than the fewest it held at the prompt (Git Bash idles with
+  two). The result of `portable-pty`'s own `kill()` is not trusted: on Windows
+  it reports the opposite of what happened.
 - **Spawn sites.** `rust-spawn-sites.test.ts` counts `.spawn()` and `.kill()`
   in `src-tauri/src` outside `proc/` against `rust-spawn-sites.baseline.json`.
   It only falls: a new process is started through `proc/`.
