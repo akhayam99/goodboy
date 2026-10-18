@@ -47,6 +47,22 @@ describe('retired names match whatever the casing', () => {
     expect(retiredIdsIn({ text })).toEqual([]);
   });
 
+  it.each([
+    ['Pair device', 'pair-device'],
+    ['Pair another device', 'pair-device'],
+    ['Rewrite history', 'rewrite-history'],
+    ['Sign out', 'sign-out-label'],
+  ])('flags the secondary round word %s', (text, id) => {
+    expect(retiredIdsIn({ text })).toContain(id);
+  });
+
+  it.each(['Sign out of Claude', 'Pair an iPhone', 'Edit commits', 'Disconnect'])(
+    'leaves %s alone',
+    (text) => {
+      expect(retiredIdsIn({ text })).toEqual([]);
+    },
+  );
+
   it('leaves a data attribute alone', () => {
     expect(retiredIdsIn({ text: '[data-inbox-key="a"]' })).toEqual([]);
   });

@@ -1632,9 +1632,10 @@ task up again in Goodboy.
   with After merge. **Pair an iPhone** is the one verb that opens the iPhone
   page, **Providers and models** is its group in the rail (it was Providers &
   models), and **Edit commits** is the one name for changing the commits of a
-  branch (it was Rewrite history). The old words are palette aliases and
+  branch (it was Rewrite history). **Disconnect** is the one verb for a
+  provider or tool (it was Sign out). The old words are palette aliases and
   `RETIRED_NAMES` keeps them out of copy. A dot on a settings row means only
-  that something needs you; a connected provider or tool shows none.
+  that something needs you; a connected, healthy provider or tool shows none.
 - **The Guide is one page per chapter**, in the app's voice: at most 60 words
   a point, 7 points a chapter and 4,000 words in all, pinned by
   `guideChapters.test.ts`. **Impact** and **Monitoring** are doors of their own

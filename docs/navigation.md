@@ -2577,9 +2577,9 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   worse of its two dots, `appAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
   `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). A dot means only "needs you": a connected tool and a ready
-  provider show none (no green dot for connected), and an Integrations row says
-  nothing. No rail row is red: the destructive actions sit at the
+  workspace). A dot means only "needs you": a tool whose health is bad shows a
+  warning or danger dot named by its reason (`toolAttention`), and a connected,
+  healthy provider or tool shows none (no green dot for connected). No rail row is red: the destructive actions sit at the
   bottom of their page, Reset (Delete all data) at the end of Backup and
   Disconnect at the end of Folders, and turn red only in their inline
   confirm. Panel sections sit on bands (`Band`, eyebrow outside) with gap between

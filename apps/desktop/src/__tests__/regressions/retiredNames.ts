@@ -78,6 +78,7 @@ export const RETIRED_NAMES: ReadonlyArray<RetiredName> = [
   { id: 'try-again', pattern: /^Try again(?: on [\w .-]+| with the hint)?$/, use: NAMES.retry },
   { id: 'your-roles', pattern: /\bYour roles\b/i, use: NAMES.yourJob },
   { id: 'pair-device', pattern: /\bPair (?:a |another )?device\b/, use: NAMES.pairIphone },
+  { id: 'sign-out-label', pattern: /^Sign out$/, use: NAMES.disconnect },
   { id: 'rewrite-history', pattern: /\bRewrite history\b/i, use: NAMES.editCommits },
   { id: 'open-review', pattern: /\bOpen Review\b(?! replies)/, use: NAMES.comments },
   { id: 'open-diff', pattern: /\bOpen diff\b/i, use: NAMES.files },
