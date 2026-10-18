@@ -423,6 +423,7 @@ export const useSessionSuggestions = ({
           workflowRunId: agent.workflowRunId ?? null,
           ...(agent.sourceKind !== undefined && { sourceKind: agent.sourceKind }),
           ordinal: agent.ordinal,
+          ...(agent.mountId !== undefined && { mountId: agent.mountId }),
           pendingSignal: pendingAgentSignal({
             events: blockedTranscripts[agent.id] ?? EMPTY_ARRAY,
           }),
@@ -460,7 +461,6 @@ export const useSessionSuggestions = ({
         sizeBytes: proposal.sizeBytes,
         isArchived: proposal.reason === 'archive',
       })),
-      hasRunningAgent: effectiveAgents.some((agent) => agent.status === 'running'),
       hasGoal: session.goal.trim() !== '',
       hasEverAttachedWorkflow: attachedRuns.some(({ run }) => run.discardedAt == null),
       recommendedWorkflow,

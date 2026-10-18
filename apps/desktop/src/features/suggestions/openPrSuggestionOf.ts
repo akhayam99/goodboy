@@ -1,10 +1,12 @@
-import type { SessionId } from '@goodboy/types';
+import type { ProjectId, SessionId } from '@goodboy/types';
 import { commitsAheadLabel } from './commitsAheadLabel';
+import { mountLabelOf } from './mountLabelOf';
 import type { OpenPrTarget, ScribeRequestState, SessionSuggestion } from './types';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly targets: ReadonlyArray<OpenPrTarget>;
+  readonly siblings: ReadonlyArray<{ readonly projectId: ProjectId }>;
   readonly dismissedFingerprints?: ReadonlySet<string>;
 };
 
@@ -41,6 +43,7 @@ const byRank = (first: OpenPrTarget, second: OpenPrTarget): number =>
 export const openPrSuggestionOf = ({
   sessionId,
   targets,
+  siblings,
   dismissedFingerprints,
 }: Params): OpenPrSuggestion | null => {
   const ranked = targets
@@ -50,13 +53,15 @@ export const openPrSuggestionOf = ({
   if (lead === undefined) {
     return null;
   }
+  const label = mountLabelOf({ mount: lead, siblings });
+  const reason = reasonOf({ target: lead });
   return {
     id: `open-pr:${lead.mountId}`,
     kind: 'open-pr',
     priority: 42,
     band: 2,
-    title: `Open a pull request for ${lead.projectName}`,
-    detail: `${lead.branch}${SEPARATOR}${reasonOf({ target: lead })}`,
+    title: `Open a pull request for ${label}`,
+    detail: label === lead.branch ? reason : `${lead.branch}${SEPARATOR}${reason}`,
     sessionId,
     targetKey: `pr:${lead.mountId}`,
     fingerprint: fingerprintOf({ target: lead }),

@@ -80,16 +80,16 @@ const agent = (overrides: Partial<SuggestionAgent> = {}): SuggestionAgent => ({
 
 type DeriveParams = {
   readonly chains?: ReadonlyArray<SuggestionCheckChain>;
-  readonly hasRunningAgent?: boolean;
+  readonly agents?: ReadonlyArray<SuggestionAgent>;
   readonly mounts?: ReadonlyArray<SuggestionMount>;
 };
 
 const cardOf = ({
   chains = [],
-  hasRunningAgent = false,
+  agents = [],
   mounts = [mount()],
 }: DeriveParams): SessionSuggestion | undefined =>
-  deriveNextSteps({ ...BASE_PARAMS, mounts, checkChains: chains, hasRunningAgent }).find(
+  deriveNextSteps({ ...BASE_PARAMS, mounts, checkChains: chains, agents }).find(
     (suggestion) => suggestion.kind === 'fix-checks',
   );
 
@@ -100,8 +100,13 @@ describe('the failing-checks card by chain state', () => {
       'Fix failing checks on #318',
     );
   });
-  it('waits while another agent runs', () => {
-    expect(cardOf({ hasRunningAgent: true })).toBeUndefined();
+  it('waits while an agent runs on the same branch', () => {
+    expect(cardOf({ agents: [agent({ status: 'running', mountId })] })).toBeUndefined();
+  });
+  it('stays while an agent runs on another branch or on none', () => {
+    const other: MountId = JSON.parse(JSON.stringify('mount-other'));
+    expect(cardOf({ agents: [agent({ status: 'running', mountId: other })] })).toBeDefined();
+    expect(cardOf({ agents: [agent({ status: 'running' })] })).toBeDefined();
   });
   it.each([
     { name: 'analyzing', progress: { chain: 'analyzing' as const } },
@@ -119,7 +124,9 @@ describe('the failing-checks card by chain state', () => {
     },
   ])('leaves the $name follow-up to the Activity row of the run', ({ progress }) => {
     expect(cardOf({ chains: [chain(progress)] })).toBeUndefined();
-    expect(cardOf({ chains: [chain(progress)], hasRunningAgent: true })).toBeUndefined();
+    expect(
+      cardOf({ chains: [chain(progress)], agents: [agent({ status: 'running', mountId })] }),
+    ).toBeUndefined();
   });
   it('shows no card once the checks no longer fail and nothing was pushed', () => {
     expect(

@@ -493,6 +493,12 @@ suggestion, and every surface that shows one calls the same
 `useSuggestionActions` resolver, so clicking "Continue" does the same thing
 whether you clicked it on the board or in the session overview.
 
+- The pull request cards (fix checks, open PR, push, mark ready, merge) wait
+  per branch: `isMountBusyOf` hides a card only while an agent with that
+  `Agent.mountId` runs. An agent without a mount gates no card, because
+  nothing in the session proves it can write to every mount. A card title
+  names the folder, or the branch when two or more mounts of the session
+  share a folder (`mountLabelOf`).
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
   in the session overview, above Activity, outside its views and its
   grouping: a suggestion is not activity, it is a pointer to what activity

@@ -80,6 +80,8 @@ const failedScout: SuggestionAgent = {
   isStoppedByRestart: false,
 };
 
+const RUNNING_ON_MOUNT: SuggestionAgent = { ...failedScout, status: 'running', mountId };
+
 type StageParams = {
   readonly progress: FixChecksProgress | null;
   readonly hasRunningAgent?: boolean;
@@ -105,8 +107,7 @@ const nextOf = ({
     mountEvents: [],
     mounts: [mount],
     checkChains,
-    agents,
-    hasRunningAgent,
+    agents: hasRunningAgent ? [...agents, RUNNING_ON_MOUNT] : agents,
   });
 };
 

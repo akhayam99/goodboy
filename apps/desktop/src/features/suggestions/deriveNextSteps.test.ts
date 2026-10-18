@@ -965,13 +965,13 @@ describe('deriveNextSteps eleven new kinds', () => {
     expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
   });
 
-  it('skips every mount-derived push/PR/merge suggestion while an agent is running', () => {
+  it('skips every mount-derived push/PR/merge suggestion of the mount an agent runs on', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,
-      hasRunningAgent: true,
+      agents: [agent({ status: 'running', mountId: webMountId })],
       mounts: [
         mount({ push: { kind: 'ahead', ahead: 4 }, pr: null, aheadOfBase: 7 }),
-        mount({ mountId: 'mount-other' as MountId, pr: pr({ checks: 'failure' }) }),
+        mount({ pr: pr({ checks: 'failure' }) }),
       ],
     });
     expect(
@@ -979,6 +979,91 @@ describe('deriveNextSteps eleven new kinds', () => {
         ['push-branch', 'open-pr', 'mark-ready', 'merge-pr', 'fix-checks'].includes(candidate.kind),
       ),
     ).toBe(false);
+  });
+
+  describe('per branch gate', () => {
+    const otherMountId: MountId = JSON.parse(JSON.stringify('mount-payments-b'));
+    const kindsFor = ({ agents }: { readonly agents: ReadonlyArray<SuggestionAgent> }) =>
+      deriveNextSteps({
+        ...BASE_PARAMS,
+        agents,
+        mounts: [
+          mount({ pr: pr({ isDraft: true, checks: 'success' }) }),
+          mount({
+            mountId: otherMountId,
+            branch: 'feature/ledger',
+            pr: pr({ number: 619, checks: 'failure' }),
+          }),
+        ],
+      }).map((candidate) => candidate.id);
+
+    it('keeps fix checks and mark ready of branch B while an agent runs on branch A', () => {
+      const ids = kindsFor({ agents: [agent({ status: 'running', mountId: webMountId })] });
+      expect(ids).toContain(`fix-checks:${otherMountId}`);
+      expect(ids).not.toContain(`mark-ready:${webMountId}`);
+    });
+
+    it('gates nothing for a running agent without a mount', () => {
+      const ids = kindsFor({ agents: [agent({ status: 'running' })] });
+      expect(ids).toContain(`fix-checks:${otherMountId}`);
+      expect(ids).toContain(`mark-ready:${webMountId}`);
+    });
+
+    it('gates nothing for an agent that is not running', () => {
+      const ids = kindsFor({ agents: [agent({ status: 'completed', mountId: webMountId })] });
+      expect(ids).toContain(`mark-ready:${webMountId}`);
+    });
+  });
+
+  describe('open pull request title', () => {
+    const titleFor = ({ mounts }: { readonly mounts: ReadonlyArray<SuggestionMount> }) =>
+      deriveNextSteps({ ...BASE_PARAMS, mounts })
+        .filter((candidate) => candidate.kind === 'open-pr')
+        .map((candidate) => candidate.title)
+        .sort();
+    const ahead = { aheadOfBase: 2 };
+
+    it('names the folder with one mount', () => {
+      expect(titleFor({ mounts: [mount({ ...ahead, projectName: 'payments-api' })] })).toEqual([
+        'Open a pull request for payments-api',
+      ]);
+    });
+
+    it('names the branch when two mounts share a folder', () => {
+      expect(
+        titleFor({
+          mounts: [
+            mount({ ...ahead, projectName: 'payments-api', branch: 'feature/credits' }),
+            mount({
+              ...ahead,
+              mountId: JSON.parse(JSON.stringify('mount-payments-b')),
+              projectName: 'payments-api',
+              branch: 'feature/refunds',
+            }),
+          ],
+        }),
+      ).toEqual([
+        'Open a pull request for feature/credits',
+        'Open a pull request for feature/refunds',
+      ]);
+    });
+
+    it('names the folder when two mounts sit in two folders', () => {
+      expect(
+        titleFor({
+          mounts: [
+            mount({ ...ahead, projectName: 'payments-api' }),
+            mount({
+              ...ahead,
+              mountId: JSON.parse(JSON.stringify('mount-ledger')),
+              projectId: JSON.parse(JSON.stringify('project-ledger')),
+              projectName: 'ledger-core',
+              branch: 'feature/ledger',
+            }),
+          ],
+        }),
+      ).toEqual(['Open a pull request for ledger-core', 'Open a pull request for payments-api']);
+    });
   });
 
   it('ignores mount data older than five minutes', () => {
