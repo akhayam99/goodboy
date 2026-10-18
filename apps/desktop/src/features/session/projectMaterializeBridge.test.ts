@@ -1,6 +1,6 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProjectId, SessionId } from '@goodboy/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { brandId, type ProjectId, type ProviderRunId, type SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -33,7 +33,7 @@ const { state } = vi.hoisted(() => ({
     loadSessionEvents: vi.fn(async () => undefined),
     ensureProjectMounted: vi.fn<
       (input: { readonly projectId: string }) => Promise<{
-        readonly status: 'created' | 'already-mounted';
+        readonly status: 'created' | 'already-mounted' | 'in-place';
         readonly createdMountId?: string;
         readonly mountIds: ReadonlyArray<string>;
       }>
@@ -71,6 +71,10 @@ vi.mock('../../store/store', () => ({
 
 import { executeMaterializeRequest } from './projectMaterializeBridge';
 import { clearMaterializationBatch } from '../../store/slices/project-mounts/materializationGate';
+import {
+  trackFolderCapture,
+  untrackFolderCapture,
+} from '../../store/slices/file-versions/activeFolderCaptures';
 
 type RequestParams = {
   readonly projectId: string;
@@ -211,6 +215,70 @@ describe('executeMaterializeRequest', () => {
     );
 
     expect([first.ok, second.ok, third.ok]).toEqual([true, true, true]);
+  });
+});
+
+describe('executeMaterializeRequest for a plain folder', () => {
+  const NOTES_PATH = '/Users/me/Documents/acme-notes';
+  const RUN = brandId<ProviderRunId>({ value: 'run-notes' });
+  const OTHER = brandId<SessionId>({ value: 'session-2' });
+  const SAME = brandId<SessionId>({ value: 'session-1' });
+  const notesProject = {
+    id: 'p-notes',
+    name: 'acme-notes',
+    workspaceId: 'ws-1',
+    kind: 'folder',
+    rootPath: NOTES_PATH,
+  };
+
+  const original = state.projects;
+
+  beforeEach(() => {
+    state.projects = [...original, notesProject];
+    state.ensureProjectMounted.mockResolvedValueOnce({ status: 'in-place', mountIds: [] });
+  });
+
+  afterEach(() => {
+    untrackFolderCapture({ runId: RUN });
+    state.projects = original;
+  });
+
+  it('refuses it when the turn started elsewhere and holds no saved copy of it', async () => {
+    const result = await executeMaterializeRequest(
+      request({ projectId: 'p-notes', projectName: 'acme-notes' }),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/acme-notes is a plain folder/);
+    expect(result.mountPath).toBeUndefined();
+  });
+
+  it('hands it over once the turn holds its writer lease and saved copy', async () => {
+    trackFolderCapture({
+      runId: RUN,
+      sessionId: SAME,
+      folderPaths: [NOTES_PATH],
+    });
+
+    const result = await executeMaterializeRequest(
+      request({ projectId: 'p-notes', projectName: 'acme-notes' }),
+    );
+
+    expect(result).toEqual({ ok: true, mountPath: NOTES_PATH, branch: '' });
+  });
+
+  it('does not hand it over on the saved copy of another session', async () => {
+    trackFolderCapture({
+      runId: RUN,
+      sessionId: OTHER,
+      folderPaths: [NOTES_PATH],
+    });
+
+    const result = await executeMaterializeRequest(
+      request({ projectId: 'p-notes', projectName: 'acme-notes' }),
+    );
+
+    expect(result.ok).toBe(false);
   });
 });
 

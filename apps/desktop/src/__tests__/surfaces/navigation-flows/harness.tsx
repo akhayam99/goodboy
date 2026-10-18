@@ -284,6 +284,10 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
       </ErrorBoundary>
     </StrictMode>,
   );
+  await waitFor(() => {
+    expect(document.querySelector('[data-side-column]')).not.toBeNull();
+    expect(screen.queryByTestId('boot-splash-exit')).toBeNull();
+  }, WAIT);
   await settle(6);
   calls = new Set();
   return { sessionId };

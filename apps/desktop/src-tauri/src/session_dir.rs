@@ -11,8 +11,10 @@ pub enum SessionDirError {
     EmptyPath,
     #[error("refusing to remove a path outside the workspace")]
     OutsideWorkspace,
+    #[cfg(test)]
     #[error("session directory already belongs to another session")]
     SessionDirectoryConflict,
+    #[cfg(test)]
     #[error("invalid session directory name")]
     InvalidDirectoryName,
     #[error("io error: {0}")]
@@ -29,7 +31,9 @@ impl SessionDirError {
             SessionDirError::HomeUnavailable => "home_unavailable",
             SessionDirError::EmptyPath => "empty_path",
             SessionDirError::OutsideWorkspace => "outside_workspace",
+            #[cfg(test)]
             SessionDirError::SessionDirectoryConflict => "session_directory_conflict",
+            #[cfg(test)]
             SessionDirError::InvalidDirectoryName => "invalid_directory_name",
             SessionDirError::Io(_) => "io",
             SessionDirError::Json(_) => "json",
@@ -37,6 +41,7 @@ impl SessionDirError {
     }
 }
 
+#[cfg(test)]
 #[derive(Debug, Deserialize)]
 pub struct CreateArgs {
     #[serde(rename = "basePath")]
@@ -57,6 +62,7 @@ pub struct RemoveArgs {
     pub path: String,
 }
 
+#[cfg(test)]
 #[derive(Debug, Serialize)]
 pub struct CreatedSessionDir {
     #[serde(rename = "worktreePath")]
@@ -100,6 +106,7 @@ fn absolute_path(path: PathBuf) -> Result<PathBuf, SessionDirError> {
     Ok(std::env::current_dir()?.join(path))
 }
 
+#[cfg(test)]
 fn create_absolute_dir(path: PathBuf) -> Result<PathBuf, SessionDirError> {
     let absolute = absolute_path(path)?;
     std::fs::create_dir_all(&absolute)?;
@@ -125,6 +132,7 @@ pub fn migrate_legacy_marker(path: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 fn marker_write(
     path: &Path,
     session_id: String,
@@ -151,6 +159,7 @@ pub(crate) fn marker_read(path: &Path) -> Result<SessionMarker, SessionDirError>
     Ok(serde_json::from_slice::<SessionMarker>(&marker)?)
 }
 
+#[cfg(test)]
 fn validate_directory_name(name: &str) -> Result<(), SessionDirError> {
     if name.is_empty() {
         return Err(SessionDirError::InvalidDirectoryName);
@@ -182,6 +191,7 @@ fn validate_directory_name(name: &str) -> Result<(), SessionDirError> {
     Ok(())
 }
 
+#[cfg(test)]
 fn resolve_directory_name(args: &CreateArgs) -> Result<String, SessionDirError> {
     let Some(name) = args.directory_name.as_deref() else {
         return Ok(crate::worktree::sanitize_slug(&args.slug));
@@ -190,13 +200,7 @@ fn resolve_directory_name(args: &CreateArgs) -> Result<String, SessionDirError> 
     Ok(name.to_string())
 }
 
-#[tauri::command]
-pub async fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, SessionDirError> {
-    tauri::async_runtime::spawn_blocking(move || session_dir_create_blocking(args))
-        .await
-        .map_err(|e| SessionDirError::Io(std::io::Error::other(e.to_string())))?
-}
-
+#[cfg(test)]
 pub(crate) fn session_dir_create_blocking(
     args: CreateArgs,
 ) -> Result<CreatedSessionDir, SessionDirError> {
