@@ -228,12 +228,14 @@ drawer instead of the Terminal page.
      confirm.
   4. **Recent**, agents of this session first; then **Go to** (Board inside a
      session, Tasks, Chat, Workflows, Impact, Notifications, What's new), **App**
-     (New session, Settings, Switch theme, Connect a provider, Pair your iPhone,
-     Report a bug) and **Help**.
+     (New session, New workspace, Resume setup while setup is unfinished in the
+     main window, Settings, Switch theme, Connect a provider, Pair your iPhone,
+     Report a bug) and **Help**. New workspace answers to its former names,
+     Open a folder and Start a new project (`formerNamesOf` in `shared/names.ts`).
      On the Board the first section is **Needs you**: the sessions the
      Sessions door dot counts (`useNowSessions`), each opening its `attentionPlace`. The session pages (Open Overview,
-     Questions, Artifacts and the rest), Run defaults, Impact: Spend, Start a new
-     project and Open a folder stay out of the empty list and answer to typing.
+     Questions, Artifacts and the rest), Run defaults and Impact: Spend stay out
+     of the empty list and answer to typing.
      The order of the list is the one place the palette differs from a `⋯` menu:
      both list the same verbs (`menuParity.test.tsx`), `⋯` keeps its stable order.
 - **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
@@ -389,7 +391,7 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   on, the main window restores its own layout and reopens every other saved
   window with `#restore=<old label>`, one per workspace; each one reads its
   old layout and forgets it (`restoreLaunchLayout`). On a plain launch with
-  Reopen last off, the launcher opens and the saved windows are forgotten.
+  Reopen last off, Home opens and the saved windows are forgotten.
   The history stack itself stays in memory: a restored window starts with one
   entry.
 
@@ -1633,7 +1635,7 @@ Overview`. `Local only` and `Diverged from origin` read the branch's own
   view has no peek, because its lines are not the working tree's.
 - **A fix run has no segment of its own.** Its transcript is a drawer on the
   Comments tab, so the trail reads Session, Branch, Comments.
-- **Settings draws no band in the column.** In the launcher, where it covers the
+- **Settings draws no band in the column.** On Home, where it covers the
   window, it claims its studio band with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
   Tools; the section segment lists the App sections. Neither carries an
@@ -1772,8 +1774,12 @@ only drop under zoom.
 
 - Workspace identity opens an anchored popover that switches and creates
   workspaces. ⌘O opens that same popover, never a second one, and the palette
-  lists workspaces as rows of its own. `Find a workspace or project` filters by
-  workspace name and by project name. The current workspace sits in its own
+  lists workspaces as rows of its own. `Find a workspace or folder` filters by
+  workspace name and by folder path. The current workspace row carries its
+  folder count (`folderCountLabel`, "3 folders"), **Add folder** (the folder
+  picker, a repository or a plain folder, then an undo toast) and **Manage
+  folders**; the foot holds one **New workspace**, which closes the popover and
+  opens the one form. The current workspace sits in its own
   `This window` row (a check mark and `Current`, plus the only gear icon into
   Workspace settings); every other workspace shows one verb, `Open`, that
   replaces the workspace in this window (`⌘Enter` always opens a new window
@@ -1893,8 +1899,8 @@ goes back one step; on Welcome and on the first step of a resume it does
 nothing, and it never ends setup. Set up later writes `onboarding.wizard =
 later`; entering a step writes `onboarding.step`. A relaunch with setup still
 open reopens at that step (`resumeStep` falls back to Workspace when the step
-needs a workspace that is gone), in the main window only, on the no-workspace
-and the launcher branch alike; the Goodboy menu offers Resume setup while it is
+needs a workspace that is gone), in the main window only, on Home (see Home
+below); the Goodboy menu offers Resume setup while it is
 paused. Step bodies render through `WizardStepBody({ step, nav, wizard })`, and
 `nav` (`WizardNav` in `wizardSteps.ts`) carries `goNext`, `goBack`, `goTo`,
 `finish`, `later` and `setBusy`. Welcome is the cover: the boot splash dog stays on
@@ -2071,11 +2077,10 @@ Esc and Back land alike. A session key (⌃Tab, ⌥⌘↓, ⌘⇧[) is a forward
 closes Settings on its way. On close, `StudioFrame` gives focus back to what
 opened the studio, or to the studio's door when that is gone (the palette),
 unless focus already sits outside the studio (`restoreStudioOpener`). The
-exception is the workspace launcher, which has no column to give. In the
-launcher, Add
-workspace takes the whole window, and so do the app studios: Settings (its
-corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette opens there
-too.
+exception is Home, which has no column to give. On Home, New workspace swaps
+the list for the form in place, and the app studios take the whole window:
+Settings (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide. The palette
+opens there too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
@@ -2295,7 +2300,7 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
   amends the history entry to the concrete page. The rail is the only index,
   portaled into the column (`SettingsColumnNav`, `Back to app` first, then
   `Search settings`, then the groups) in both sidebar states, or drawn beside
-  the page in the launcher: its four groups (App, Workspace, Providers &
+  the page on Home: its four groups (App, Workspace, Providers &
   models, Integrations) come from `settingsDirectory`. Every row is one 28px
   line of one grammar (`SettingsNavRow`): a group row carries its icon, a page
   row is nested by `PANE_RHYTHM.navRail.nest`, and a row has no second line,
@@ -2883,12 +2888,42 @@ on you] }`. Any other agent keeps its page, one conversation with no tabs
   draws no state chip: the state leads the gray meta line. A report shows its
   title only in the document, the header keeps a hidden `h1`.
 
+## Home
+
+Home is the one page of a window with no workspace open: workspaces exist and
+none is open here, or there is no workspace at all. `App.tsx` renders it
+whenever `currentWorkspace` is null, in every window. It has no app chrome, so
+it carries the lockup itself: the 40px `BrandTile`, the word and the version
+([brand.md](brand.md)). Under it:
+
+- **Workspaces.** One row per workspace, most recent first (`WorkspaceRow`):
+  the identity tile, the name, the folder count (`folderCountLabel`, "3
+  folders") and the folders' common parent (`workspaceFolderPath`, the home
+  folder as `~`), Open in a new window, Disconnect behind an inline confirm, and
+  when it was last opened. A click opens it here, or in a new window while
+  agents run here. The search field shows from five workspaces on.
+- **New workspace** (⌘N on Home, `home.newWorkspace`) fires
+  `goodboy:add-workspace` through `openNewWorkspace`, like the switcher, the
+  palette, the Goodboy menu and the menu bar. On Home the `addWorkspace` place
+  swaps the list for `NewWorkspaceForm` in place, the lockup stays put, Cancel
+  or Escape goes back, and Create opens the new workspace. A workspace of plain
+  folders only is offered a repository after it opens, as from the studio.
+- **No workspace yet.** A card that says how a workspace starts, with New
+  workspace and, while setup is unfinished in the main window, "Setup paused at
+  Workspace · 1 of 4 done" and **Resume setup** (`useSetupResume`, counted by
+  `setupProgress`).
+- **Reopen the last workspace on launch**, a switch.
+
+Setup mounts over Home and opens in the main window only. The app layers keep
+one key across Home and the shell, so the setup wizard is not remounted when
+the first workspace opens under it.
+
 ## Starting a project from nothing
 
 Every door that creates or adds folders opens one inline form,
 `NewWorkspaceForm` (`shared/components/NewWorkspaceForm/`), never a dialog. It
 runs in three modes: `first-run` (the setup Workspace step, title "Your first
-workspace"), `new` (the New workspace studio, Home and the empty screen) and
+workspace"), `new` (the New workspace studio and Home) and
 `add` (the empty board and Settings, Workspace, folders, which add folders to
 the workspace they name by id). The form owns its action row.
 

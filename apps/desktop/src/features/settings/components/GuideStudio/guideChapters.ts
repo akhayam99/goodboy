@@ -1,5 +1,6 @@
 import type { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { GuideLink } from './guideTarget';
+import { NAMES } from '../../../../shared/names';
 
 export type GuideGroup = 'start' | 'task' | 'reference';
 
@@ -101,7 +102,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A project from nothing',
-        desc: 'Start a new project from an empty folder. The first session works in that folder, Publish puts main on GitHub, and Move my work then carries what you have not committed into a bootstrap session.',
+        desc: 'Start from scratch, in New workspace, makes an empty folder with its own repository. The first session works in that folder, Publish puts main on GitHub, and Move my work then carries what you have not committed into a bootstrap session.',
       },
       {
         term: 'A branch only when needed',
@@ -140,7 +141,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
           studio: { kind: 'settings', focus: { scope: 'workspace', section: 'projects' } },
         },
       },
-      { label: 'Open a folder', target: { kind: 'studio', studio: { kind: 'addWorkspace' } } },
+      { label: NAMES.newWorkspace, target: { kind: 'studio', studio: { kind: 'addWorkspace' } } },
     ],
   },
   {

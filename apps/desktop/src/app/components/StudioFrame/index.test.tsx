@@ -308,11 +308,11 @@ describe('StudioFrame', () => {
     const onClose = vi.fn();
     render(
       <StudioFrame kind="addWorkspace" onClose={onClose}>
-        <p>add workspace body</p>
+        <p>new workspace body</p>
       </StudioFrame>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close add workspace' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close new workspace' }));
     act(() => {
       vi.advanceTimersByTime(300);
     });
@@ -381,13 +381,13 @@ describe('StudioFrame grid', () => {
 
     const column = screen.getByRole('banner').querySelector('[data-page-column]') as HTMLElement;
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
-    expect(column.contains(screen.getByRole('button', { name: 'Close add workspace' }))).toBe(true);
+    expect(column.contains(screen.getByRole('button', { name: 'Close new workspace' }))).toBe(true);
   });
 
   it('sits the studio title right under the band, with no extra top inset', () => {
     const { container } = render(
       <StudioFrame kind="addWorkspace" onClose={() => undefined}>
-        <PaneShell title="Add workspace">
+        <PaneShell title="New workspace">
           <p>body</p>
         </PaneShell>
       </StudioFrame>,

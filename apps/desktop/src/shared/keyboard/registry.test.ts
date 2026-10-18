@@ -83,10 +83,12 @@ describe('shortcut registry', () => {
       overview: 'overview.newHere',
       chatPage: 'chat.newHere',
       terminalPage: 'terminal.newHere',
+      home: 'home.newWorkspace',
     });
     expect(SHORTCUTS['ask.reset'].label).toBe('Reset chat');
     expect(SHORTCUTS['chat.newHere'].label).toBe('New chat');
     expect(SHORTCUTS['terminal.newHere'].label).toBe('New terminal');
+    expect(SHORTCUTS['home.newWorkspace'].label).toBe('New workspace');
   });
 
   it('lets only scoped undo and scoped new override their global chord', () => {

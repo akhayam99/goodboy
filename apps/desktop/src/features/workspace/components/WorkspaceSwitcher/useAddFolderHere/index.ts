@@ -10,11 +10,11 @@ type Params = {
   readonly workspace: Workspace | null;
 };
 
-const openProjects = (): void => {
+const openFolders = (): void => {
   openSettings({ scope: 'workspace', section: 'projects' });
 };
 
-export const useLinkRepoHere = ({ workspace }: Params): (() => Promise<void>) => {
+export const useAddFolderHere = ({ workspace }: Params): (() => Promise<void>) => {
   const pickFolder = usePickFolder();
   const addProject = useAppStore((state) => state.addProject);
   const removeProject = useAppStore((state) => state.removeProject);
@@ -32,26 +32,26 @@ export const useLinkRepoHere = ({ workspace }: Params): (() => Promise<void>) =>
       return;
     }
     try {
-      const result = await addProject({ workspaceId, rootPath: picked, requireRepo: true });
+      const result = await addProject({ workspaceId, rootPath: picked });
       if (result.kind === 'conflict') {
         showToast({
           kind: 'warning',
           title: `${result.conflict.project.name} belongs to ${result.conflict.sourceWorkspace.name}`,
-          message: `Move it to ${workspaceName} from the workspace projects.`,
-          action: { label: 'Open projects', onClick: openProjects },
+          message: `Move it to ${workspaceName} from the workspace folders.`,
+          action: { label: 'Open folders', onClick: openFolders },
         });
         return;
       }
       const project = result.project;
       undoable({
-        message: `Linked ${project.name} to ${workspaceName}`,
+        message: `Added ${project.name} to ${workspaceName}`,
         undo: async () => {
           await removeProject({ projectId: project.id });
         },
       });
     } catch (error) {
       void reportError({
-        title: `Couldn't link the folder to ${workspaceName}`,
+        title: `Couldn't add the folder to ${workspaceName}`,
         error,
         workspaceId,
       });

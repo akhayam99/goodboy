@@ -93,16 +93,28 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
   },
   {
-    name: 'palette: Open a folder',
-    covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:Open a folder'],
+    name: 'palette: New workspace',
+    covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:New workspace'],
     door: 'palette',
-    open: () => openPalette(/^Open a folder/, 'Open a folder'),
+    open: () => openPalette(/^New workspace/, 'New workspace'),
     lands: () => studio('New workspace'),
   },
   {
-    name: 'palette: Start a new project',
-    covers: ['palette:Start a new project'],
-    open: () => openPalette(/^Start a new project/, 'Start a new project'),
+    name: 'palette: Resume setup opens the setup where it paused',
+    covers: ['palette:Resume setup'],
+    open: () => openPalette(/^Resume setup/, 'Resume setup'),
+    lands: () => visible('dialog', 'Goodboy setup'),
+  },
+  {
+    name: 'palette: searching Open a folder finds New workspace',
+    covers: ['palette:New workspace'],
+    open: () => openPalette(/^New workspace/, 'Open a folder'),
+    lands: () => studio('New workspace'),
+  },
+  {
+    name: 'palette: searching Start a new project finds New workspace',
+    covers: ['palette:New workspace'],
+    open: () => openPalette(/^New workspace/, 'Start a new project'),
     lands: () => studio('New workspace'),
   },
   {
@@ -313,12 +325,12 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('textbox', 'Workspace name'),
   },
   {
-    name: 'workspace switcher: open a folder',
+    name: 'workspace switcher: New workspace',
     covers: ['studio:addWorkspace'],
     door: 'visible',
     open: async () => {
       await clickButton(/^Switch workspace/);
-      await clickButton(/^Open a folder/);
+      await clickButton(/^New workspace/);
     },
     lands: () => studio('New workspace'),
   },

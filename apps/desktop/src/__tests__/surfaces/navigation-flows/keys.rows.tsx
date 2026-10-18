@@ -238,7 +238,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   }),
   pressRow({
     id: 'workspace.switcher',
-    lands: () => visible('textbox', 'Find a workspace or project'),
+    lands: () => visible('textbox', 'Find a workspace or folder'),
   }),
   keyRow({
     id: 'workspace.1',
@@ -250,7 +250,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       await press('workspace.switcher')();
     },
     lands: async () => {
-      await visible('textbox', 'Find a workspace or project');
+      await visible('textbox', 'Find a workspace or folder');
       const wanted = ['Harborline Labs', 'Acme', 'Cascadia', 'Northwind'];
       for (const [index, name] of wanted.entries()) {
         const id = DIGIT_IDS[index] as ShortcutId;
@@ -666,6 +666,20 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     lands: async () => waitFor(() => expect(terminalRows().length).toBeGreaterThan(0), WAIT),
   }),
   keyRow({
+    id: 'home.newWorkspace',
+    note: 'on Home, with no workspace open, the new chord opens New workspace in place',
+    open: async () => {
+      useAppStore.setState({ currentWorkspaceId: null, currentSessionId: null });
+      await screen.findByRole('list', { name: 'Workspaces' }, WAIT);
+      await pressed('home.newWorkspace', document.body);
+    },
+    lands: async () => {
+      await screen.findByRole('form', { name: 'New workspace' }, WAIT);
+      expect(useAppStore.getState().appStudio?.kind).toBe('addWorkspace');
+      expect(screen.getByRole('heading', { level: 1, name: 'Goodboy' })).toBeDefined();
+    },
+  }),
+  keyRow({
     id: 'terminal.closeTab',
     note: 'on the Terminal page the close chord closes the selected tab, not the page',
     open: async () => {
@@ -776,7 +790,7 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       seedWorkspaces();
       spawnedWindows.length = 0;
       await press('workspace.switcher')();
-      const field = await screen.findByRole('textbox', { name: 'Find a workspace or project' });
+      const field = await screen.findByRole('textbox', { name: 'Find a workspace or folder' });
       field.focus();
       await pressed('composer.submit', field);
     },

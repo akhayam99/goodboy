@@ -125,9 +125,7 @@ const createFrom = async ({ path }: PathParams) => {
 
 describe('WorkspaceLinkStudio', () => {
   it('mounts the one form on a page surface titled New workspace, never a dialog', () => {
-    const { container } = render(
-      <WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />,
-    );
+    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
     expect(screen.getByRole('banner', { name: 'New workspace' })).toBeDefined();
     expect(screen.getByRole('heading', { name: 'New workspace' })).toBeDefined();
@@ -135,25 +133,15 @@ describe('WorkspaceLinkStudio', () => {
     expect(container.querySelector('dialog')).toBeNull();
   });
 
-  it('takes the whole viewport in the launcher, where there are no bars', () => {
-    const { container } = render(
-      <WorkspaceLinkStudio variant="viewport" onClose={vi.fn()} onOfferRepo={vi.fn()} />,
-    );
-
-    expect(container.firstElementChild?.className).toContain('inset-0');
-  });
-
   it('sits between the bars like every studio inside the shell', () => {
-    const { container } = render(
-      <WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={vi.fn()} />,
-    );
+    const { container } = render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={vi.fn()} />);
 
     expect(container.firstElementChild?.className).not.toContain('inset-0');
   });
 
   it('closes the page on escape', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
 
     fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
 
@@ -162,7 +150,7 @@ describe('WorkspaceLinkStudio', () => {
 
   it('creates the picked folder as a workspace, opens it and closes', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
 
     await createFrom({ path: ACME_WEB });
 
@@ -175,7 +163,7 @@ describe('WorkspaceLinkStudio', () => {
 
   it('never opens setup, even when setup was never finished', async () => {
     const onClose = vi.fn();
-    render(<WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={vi.fn()} />);
+    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={vi.fn()} />);
 
     await createFrom({ path: ACME_WEB });
 
@@ -185,9 +173,7 @@ describe('WorkspaceLinkStudio', () => {
 
   it('offers a repository right after a plain folder without git lands', async () => {
     const onOfferRepo = vi.fn();
-    render(
-      <WorkspaceLinkStudio variant="fullscreen" onClose={vi.fn()} onOfferRepo={onOfferRepo} />,
-    );
+    render(<WorkspaceLinkStudio onClose={vi.fn()} onOfferRepo={onOfferRepo} />);
 
     await createFrom({ path: NOTES });
 
@@ -197,27 +183,11 @@ describe('WorkspaceLinkStudio', () => {
   it('leaves a git folder alone instead of offering it a repository', async () => {
     const onOfferRepo = vi.fn();
     const onClose = vi.fn();
-    render(
-      <WorkspaceLinkStudio variant="fullscreen" onClose={onClose} onOfferRepo={onOfferRepo} />,
-    );
+    render(<WorkspaceLinkStudio onClose={onClose} onOfferRepo={onOfferRepo} />);
 
     await createFrom({ path: ACME_WEB });
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(onOfferRepo).not.toHaveBeenCalled();
-  });
-
-  it('opens on Start from scratch when asked for a new project', () => {
-    render(
-      <WorkspaceLinkStudio
-        variant="fullscreen"
-        onClose={vi.fn()}
-        onOfferRepo={vi.fn()}
-        isNewProject
-      />,
-    );
-
-    expect(screen.getByRole('textbox', { name: 'Folder name' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Choose a folder' })).toBeDefined();
   });
 });

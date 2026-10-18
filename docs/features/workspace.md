@@ -4,7 +4,7 @@ A workspace keeps your repos together, and one session can work across several o
 
 ### Start a project from nothing
 
-Begin with an empty folder and no repository. **Start a new project** makes the folder, starts a git repository with a first commit and opens a first session in it. **Publish** later creates a GitHub repository for it, or links one you already have.
+Begin with an empty folder and no repository. **Start from scratch**, inside **New workspace**, makes the folder, starts a git repository with a first commit and opens a first session in it. **Publish** later creates a GitHub repository for it, or links one you already have.
 
 ### Workspace with several projects
 
@@ -52,7 +52,7 @@ Work on several branches of one repo in the same session, each in its own worktr
 
 ### Workspace switcher and Reconnect
 
-Jump between workspaces and projects from one search. The current workspace sits on top with its projects, **Link a repository** (the folder picker, then an undo toast; a folder of another workspace points to its projects), **Manage projects** and its settings. The other workspaces follow in one list: a click switches, the window icon opens one in a new window, and a disconnected workspace keeps its place with **Reconnect**. **Start a new project** and **Open a folder** close the list. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect** too.
+Jump between workspaces and folders from one search. The current workspace sits on top with its folder count, **Add folder** (the folder picker, a repository or a plain folder, then an undo toast; a folder of another workspace points to its folders), **Manage folders** and its settings. The other workspaces follow in one list: a click switches, the window icon opens one in a new window, and a disconnected workspace keeps its place with **Reconnect**. **New workspace** closes the list and opens the one form. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect** too.
 
 ### Repo status across projects
 

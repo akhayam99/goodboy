@@ -60,7 +60,6 @@ vi.mock('../app/components/BootSplash', () => ({
 }));
 vi.mock('../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
 vi.mock('../app/components/AppTopBar', () => ({ AppTopBar: () => null }));
-vi.mock('../app/components/AppEmptyState', () => ({ NoWorkspaceScreen: () => null }));
 vi.mock('../features/workspace/components/StageBoard', () => ({ StageBoard: () => null }));
 vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: ({ session, isOpen }: { session: { id: string }; isOpen?: boolean }) => {

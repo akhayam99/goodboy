@@ -62,7 +62,19 @@ vi.mock('../../../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,
 }));
 vi.mock('../../../features/workspace/components/WorkspaceLauncher', () => ({
-  WorkspaceLauncher: () => <div data-testid="launcher" />,
+  WorkspaceLauncher: ({
+    isCreating,
+    onCloseCreate,
+  }: {
+    readonly isCreating: boolean;
+    readonly onCloseCreate: () => void;
+  }) => (
+    <div data-testid="launcher" data-creating={String(isCreating)}>
+      <button type="button" onClick={onCloseCreate}>
+        Cancel
+      </button>
+    </div>
+  ),
 }));
 vi.mock('../../../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: ({ focus }: { focus: { scope: string; section?: string } }) => (
@@ -404,6 +416,31 @@ describe('app overlay hook, workspace launcher', () => {
       expect(await openStudios()).toEqual([kind]);
     },
   );
+
+  it('opens New workspace in place on Home, with no studio over it, and Cancel goes back', async () => {
+    renderLauncher();
+
+    fire({ name: 'goodboy:add-workspace' });
+
+    expect(await openStudios()).toEqual([]);
+    expect(screen.getByTestId('launcher').getAttribute('data-creating')).toBe('true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await act(async () => undefined);
+    expect(screen.getByTestId('launcher').getAttribute('data-creating')).toBe('false');
+    expect(useAppStore.getState().appStudio).toBeNull();
+  });
+
+  it('answers no start-new-project event: Start from scratch lives inside New workspace', async () => {
+    renderLauncher();
+
+    fire({ name: 'goodboy:start-new-project' });
+
+    await act(async () => undefined);
+    expect(screen.getByTestId('launcher').getAttribute('data-creating')).toBe('false');
+    expect(useAppStore.getState().appStudio).toBeNull();
+  });
 
   it('keeps workspace studios closed while no workspace is open', async () => {
     renderLauncher();

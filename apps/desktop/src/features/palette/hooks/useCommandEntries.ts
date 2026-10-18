@@ -32,7 +32,10 @@ import { openWorkspaceTerminal } from '../../terminal/openWorkspaceTerminal';
 import { openImpactStudio } from '../../impact/openImpactStudio';
 import { openWorkflowRules } from '../../workflows/openWorkflowRules';
 import { openChangelogStudio } from '../../changelog/changelogStudioEvent';
-import { linkedProjectsLabel } from '../../workspace/linkedProjectsLabel';
+import { folderCountLabel } from '../../workspace/folderCountLabel';
+import { openNewWorkspace } from '../../workspace/openNewWorkspace';
+import { useIsMainWindow } from '../../workspace/useIsMainWindow';
+import { getWizardState, resumeSetup } from '../../onboarding/onboarding-store';
 import { useSettingsDirectory } from '../../settings/hooks/useSettingsDirectory';
 import { settingsPaletteEntries } from '../../settings/settingsPaletteEntries';
 import type { SettingsFocus } from '../../settings/settingsFocus';
@@ -138,6 +141,8 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const { showToast } = useToast();
   const theme = getAppliedTheme();
   const innerColumn = useCurrentInnerColumn();
+  const isInMainWindow = useIsMainWindow();
+  const canResumeSetup = isInMainWindow && getWizardState() !== 'done';
 
   return useMemo<ReadonlyArray<PaletteEntry>>(() => {
     const now = Date.now();
@@ -245,7 +250,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         kind: 'workspace',
         group: 'workspace',
         icon: CONCEPT_ICONS.workspace,
-        detail: linkedProjectsLabel({ projects, workspaceId: workspace.id }),
+        detail: folderCountLabel({ projects, workspaceId: workspace.id }),
         tag: 'Workspace',
         run: () =>
           void openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' }),
@@ -379,24 +384,25 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         },
       );
     }
-    out.push(
-      {
-        key: 'goto:start-new-project',
-        label: 'Start a new project',
-        kind: 'page',
-        group: null,
-        icon: Plus,
-        run: () => fire({ name: 'goodboy:start-new-project' }),
-      },
-      {
-        key: 'goto:add-workspace',
-        label: 'Open a folder',
-        kind: 'page',
-        group: null,
-        icon: Plus,
-        run: () => fire({ name: 'goodboy:add-workspace' }),
-      },
-    );
+    out.push({
+      key: 'action:new-workspace',
+      label: NAMES.newWorkspace,
+      secondary: formerNamesOf(NAMES.newWorkspace),
+      kind: 'action',
+      group: 'action',
+      icon: Plus,
+      run: openNewWorkspace,
+    });
+    if (canResumeSetup) {
+      out.push({
+        key: 'action:resume-setup',
+        label: NAMES.resumeSetup,
+        kind: 'action',
+        group: 'action',
+        icon: RotateCcw,
+        run: () => resumeSetup({ hasWorkspace: workspaces.length > 0 }),
+      });
+    }
 
     const runPinned = (target: PinnedScriptTarget) => {
       const missing = `Open a session with ${target.projectName} to run ${target.name}.`;
@@ -613,5 +619,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     theme,
     settingsGroups,
     innerColumn,
+    canResumeSetup,
   ]);
 };

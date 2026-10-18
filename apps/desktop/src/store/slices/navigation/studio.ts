@@ -15,7 +15,7 @@ export type StudioPlace =
   | { readonly kind: 'settings'; readonly focus: SettingsFocus }
   | { readonly kind: 'guide' }
   | { readonly kind: 'companion' }
-  | { readonly kind: 'addWorkspace'; readonly start?: 'new-project' }
+  | { readonly kind: 'addWorkspace' }
   | { readonly kind: 'workflow' }
   | { readonly kind: 'inbox'; readonly focus: InboxStudioFocus | null }
   | { readonly kind: 'impact'; readonly scope: ImpactScope | null }

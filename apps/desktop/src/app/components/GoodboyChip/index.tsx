@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { AnchoredPopover, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import { collapse, hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
-import { useIsMainWindow } from '../../hooks/useIsMainWindow';
+import { useIsMainWindow } from '../../../features/workspace/useIsMainWindow';
 import { useOnboardingProgress } from '../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../features/changelog/hooks/useInstalledVersion';
 import { openReportSheet } from '../../../features/bug-report/openReportSheet';

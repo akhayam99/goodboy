@@ -28,9 +28,7 @@ export const DetachedStudio = ({
       className={cn(
         isSlot
           ? 'relative h-full w-full flex flex-col bg-chrome'
-          : variant === 'viewport'
-            ? 'fixed inset-0 z-studio flex flex-col bg-chrome'
-            : 'relative flex h-full w-full min-h-0 flex-col bg-chrome',
+          : 'relative flex h-full w-full min-h-0 flex-col bg-chrome',
         !isSlot && (closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in'),
       )}
     >

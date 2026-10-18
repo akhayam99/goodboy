@@ -22,7 +22,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
-import { useLinkRepoHere } from './index';
+import { useAddFolderHere } from './index';
 
 let useAppStore: StoryStore;
 
@@ -52,39 +52,38 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
-const link = async (): Promise<void> => {
-  const { result } = renderHook(() => useLinkRepoHere({ workspace: HARBORLINE }));
+const add = async (): Promise<void> => {
+  const { result } = renderHook(() => useAddFolderHere({ workspace: HARBORLINE }));
   await act(async () => {
     await result.current();
   });
 };
 
-describe('useLinkRepoHere', () => {
+describe('useAddFolderHere', () => {
   it('does nothing when the folder picker is closed', async () => {
     const addProject = vi.fn();
     useAppStore.setState({ addProject });
 
-    await link();
+    await add();
 
     expect(addProject).not.toHaveBeenCalled();
   });
 
-  it('links the picked repository to the named workspace and offers an undo that unlinks it', async () => {
+  it('adds the picked folder to the named workspace and offers an undo that removes it', async () => {
     dialog.open.mockResolvedValueOnce('/work/ledger-core');
     const addProject = vi.fn(async () => ({ kind: 'linked' as const, project: LEDGER }));
     const removeProject = vi.fn(async () => undefined);
     useAppStore.setState({ addProject, removeProject });
 
-    await link();
+    await add();
 
     expect(addProject).toHaveBeenCalledWith({
       workspaceId: HARBORLINE.id,
       rootPath: '/work/ledger-core',
-      requireRepo: true,
     });
     expect(useAppStore.getState().undoStack).toHaveLength(1);
     expect(useAppStore.getState().undoNotices.at(-1)?.toast.message).toBe(
-      'Linked ledger-core to Harborline',
+      'Added ledger-core to Harborline',
     );
     await act(async () => {
       await useAppStore.getState().undoLastOperation({});
@@ -92,21 +91,43 @@ describe('useLinkRepoHere', () => {
     expect(removeProject).toHaveBeenCalledWith({ projectId: LEDGER.id });
   });
 
-  it('reports a folder that is not a repository and links nothing', async () => {
+  it('adds a plain folder too, since the door says Add folder', async () => {
+    const notes = aProject({
+      workspaceId: HARBORLINE.id,
+      name: 'design-notes',
+      kind: 'folder',
+      rootPath: '/work/design-notes',
+    });
+    dialog.open.mockResolvedValueOnce('/work/design-notes');
+    const addProject = vi.fn(async () => ({ kind: 'linked' as const, project: notes }));
+    useAppStore.setState({ addProject, removeProject: vi.fn(async () => undefined) });
+
+    await add();
+
+    expect(addProject).toHaveBeenCalledWith({
+      workspaceId: HARBORLINE.id,
+      rootPath: '/work/design-notes',
+    });
+    expect(useAppStore.getState().undoNotices.at(-1)?.toast.message).toBe(
+      'Added design-notes to Harborline',
+    );
+  });
+
+  it('reports a folder it cannot read and adds nothing', async () => {
     dialog.open.mockResolvedValueOnce('/notes');
     const reportError = vi.fn(async () => undefined);
     useAppStore.setState({
       addProject: vi.fn(async () => {
-        throw new Error('No git repository at /notes.');
+        throw new Error('folder not found');
       }),
       reportError,
     });
 
-    await link();
+    await add();
 
     expect(reportError).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: "Couldn't link the folder to Harborline",
+        title: "Couldn't add the folder to Harborline",
         workspaceId: HARBORLINE.id,
       }),
     );
@@ -129,7 +150,7 @@ describe('useLinkRepoHere', () => {
       removeProject,
     });
 
-    await link();
+    await add();
 
     expect(useAppStore.getState().undoStack).toHaveLength(0);
     expect(removeProject).not.toHaveBeenCalled();

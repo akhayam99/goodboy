@@ -488,11 +488,6 @@
       "count": 3
     }
   },
-  "apps/desktop/src/app/components/AppEmptyState.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/app/components/AppOverlayRouter/index.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -7656,22 +7651,9 @@
       "count": 4
     }
   },
-  "apps/desktop/src/features/workspace/components/WorkspaceLauncher/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workspace/components/WorkspaceLauncher/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
-  "apps/desktop/src/features/workspace/components/WorkspaceListRow.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/workspace/components/WorkspaceSwitcher/OtherWorkspaceRow.tsx": {
@@ -8094,7 +8076,7 @@
   },
   "apps/desktop/src/shared/components/StudioShell/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 4
     }
   },
   "apps/desktop/src/shared/components/Toast/index.test.tsx": {

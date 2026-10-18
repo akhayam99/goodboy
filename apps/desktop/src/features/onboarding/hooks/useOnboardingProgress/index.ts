@@ -3,6 +3,7 @@ import { useAppStore, useWorkspaces } from '../../../../store';
 import { ghStatus } from '../../../integrations/github/github';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
+import { folderCountLabel } from '../../../workspace/folderCountLabel';
 import {
   ONBOARDING_PROGRESS_EVENT,
   getCompleted,
@@ -27,13 +28,6 @@ export type OnboardingProgress = {
   readonly hasProjects: boolean;
   readonly suggestsProfile: boolean;
 };
-
-type FolderCountParams = {
-  readonly count: number;
-};
-
-const folderCount = ({ count }: FolderCountParams): string =>
-  count === 1 ? '1 folder' : `${count} folders`;
 
 export const useOnboardingProgress = (): OnboardingProgress => {
   const [tick, setTick] = useState(0);
@@ -63,6 +57,7 @@ export const useOnboardingProgress = (): OnboardingProgress => {
       : s.projects.filter((project) => project.workspaceId === workspaceId).length,
   );
   const hasProjects = projectCount > 0;
+  const foldersLabel = useAppStore((s) => folderCountLabel({ projects: s.projects, workspaceId }));
 
   const needsFirstSessionDetect = !persistedCompleted.has('first-session');
   const anyAgentFinished = useAppStore((s) => {
@@ -161,13 +156,13 @@ export const useOnboardingProgress = (): OnboardingProgress => {
       workspace:
         workspaceName === null || !hasProjects
           ? 'Pick a folder to work in'
-          : `${workspaceName}, ${folderCount({ count: projectCount })}`,
+          : `${workspaceName}, ${foldersLabel}`,
       tools: completed.has('tools') ? 'Code host or tasks connected' : 'Optional',
       'first-session': completed.has('first-session')
         ? 'Your first agent finished'
         : 'Ask Scout about the code',
     }),
-    [readyProviderId, workspaceName, hasProjects, projectCount, completed],
+    [readyProviderId, workspaceName, hasProjects, foldersLabel, completed],
   );
 
   return {

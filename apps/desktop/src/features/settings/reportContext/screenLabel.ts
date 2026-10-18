@@ -48,7 +48,7 @@ const APP_STUDIO_LABELS: Readonly<Record<string, string>> = {
   inbox: NAMES.tasks,
   impact: 'Impact',
   workflows: 'Workflows',
-  'add-workspace': 'Add workspace',
+  'add-workspace': NAMES.newWorkspace,
   guide: 'Guide',
   companion: 'Companion',
   changelog: "What's new",

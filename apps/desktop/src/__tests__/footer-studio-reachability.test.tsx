@@ -122,7 +122,6 @@ vi.mock('../app/components/AppTopBar', () => ({
     </button>
   ),
 }));
-vi.mock('../app/components/AppEmptyState', () => ({ NoWorkspaceScreen: () => null }));
 vi.mock('../features/workspace/components/StageBoard', () => ({ StageBoard: () => null }));
 vi.mock('../features/session/components/DeleteSessionConfirm', () => ({
   DeleteSessionConfirm: () => null,

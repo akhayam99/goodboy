@@ -181,7 +181,7 @@ export const NewWorkspaceForm = ({
           />
           {isAdding ? null : (
             <p className="text-label text-faint-foreground">
-              New project?{' '}
+              Want a new folder?{' '}
               <button
                 type="button"
                 disabled={isBusy}

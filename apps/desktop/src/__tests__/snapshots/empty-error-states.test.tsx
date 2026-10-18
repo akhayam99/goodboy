@@ -29,7 +29,7 @@ import {
   type StoryStore,
 } from '../../store/storyHarness';
 
-import { NoWorkspaceScreen } from '../../app/components/AppEmptyState';
+import { WorkspaceLauncher } from '../../features/workspace/components/WorkspaceLauncher';
 import { ChatEmptyState } from '../../features/chat/components/ChatView/ChatEmptyState';
 import { NotificationCenter } from '../../features/notifications/components/NotificationCenter';
 import { BootSplash } from '../../app/components/BootSplash';
@@ -92,13 +92,14 @@ describe('empty states', () => {
     expect(await screen.findByText('No notifications yet')).toBeDefined();
   });
 
-  it('NoWorkspaceScreen: no workspace, start and open CTAs', () => {
-    const onAddWorkspace = vi.fn();
-    render(<NoWorkspaceScreen onAddWorkspace={onAddWorkspace} />);
-    screen.getByRole('heading', { name: 'Welcome to Goodboy' });
-    screen.getByRole('button', { name: 'Start a new project' });
-    fireEvent.click(screen.getByRole('button', { name: 'Open a folder' }));
-    expect(onAddWorkspace).toHaveBeenCalledOnce();
+  it('Home: no workspace yet, one New workspace door', () => {
+    const onNew = vi.fn();
+    window.addEventListener('goodboy:add-workspace', onNew);
+    render(<WorkspaceLauncher isCreating={false} onCloseCreate={vi.fn()} onOfferRepo={vi.fn()} />);
+    screen.getByRole('heading', { name: 'No workspace yet' });
+    fireEvent.click(screen.getByRole('button', { name: 'New workspace' }));
+    window.removeEventListener('goodboy:add-workspace', onNew);
+    expect(onNew).toHaveBeenCalledOnce();
   });
 
   it('ChatEmptyState: fresh session, set-up-a-workflow CTA', () => {

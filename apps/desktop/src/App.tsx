@@ -1,5 +1,5 @@
 import { UndoToastBridge } from './app/components/UndoToastBridge';
-import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { Fragment, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { BootSplash } from './app/components/BootSplash';
@@ -7,7 +7,6 @@ import { KeepAliveWorkSurface } from './app/components/KeepAliveWorkSurface';
 import { AppTopBar } from './app/components/AppTopBar';
 import { useAppShortcuts } from './app/hooks/useAppShortcuts';
 import { useAppOverlays } from './app/hooks/useAppOverlays';
-import { NoWorkspaceScreen } from './app/components/AppEmptyState';
 import { StageBoard } from './features/workspace/components/StageBoard';
 import { ToastProvider } from './shared/components/Toast';
 import { ObjectMenuProvider } from './features/actions/components/ObjectMenuProvider';
@@ -24,7 +23,6 @@ import type { ColumnActions } from './app/components/SideColumn/columnDoors';
 import { useGoToBoard } from './app/hooks/useGoToBoard';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
 import { useWindowLayout } from './features/workspace/hooks/useWindowLayout';
-import { isMainWindow } from './features/workspace/window';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
 import { openRunningScript } from './features/scripts/openRunningScript';
@@ -44,13 +42,7 @@ import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import { useArtifactMirror } from './features/artifacts/hooks/useArtifactMirror';
 import { useMonitoringSignalRefresh } from './features/monitoring/hooks/useMonitoringSignalRefresh';
-import {
-  useAppStore,
-  useCurrentSession,
-  useCurrentWorkspace,
-  useSessions,
-  useWorkspaces,
-} from './store';
+import { useAppStore, useCurrentSession, useCurrentWorkspace, useSessions } from './store';
 import { useGithubPolling } from './features/integrations/github/hooks/useGithubPolling';
 import { useRunWatchdog } from './features/workflows/hooks/useRunWatchdog';
 import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
@@ -88,8 +80,6 @@ export const App = () => {
   const restoreNewerDatabaseBackup = useAppStore((s) => s.restoreNewerDatabaseBackup);
   const quitApp = useAppStore((s) => s.quitApp);
   const [splashFinished, setSplashFinished] = useState(false);
-  const workspaces = useWorkspaces();
-  const hasWorkspaces = workspaces.length > 0;
   const currentWorkspace = useCurrentWorkspace();
   const currentWorkspaceId = currentWorkspace?.id ?? null;
   const workspaceProjectRoot = useAppStore((s) =>
@@ -104,7 +94,7 @@ export const App = () => {
   const sessionSidebar = useSessionSidebarVisibility({ hasSidebar: true });
   const [settingsColumnSlot, setSettingsColumnSlot] = useState<HTMLDivElement | null>(null);
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
-  const isWorkspaceLauncherBranch = hasWorkspaces && currentWorkspace === null && isMainWindow();
+  const isWorkspaceLauncherBranch = currentWorkspace === null;
   const arrangement = shellArrangement({
     hasWorkspace: currentWorkspace != null,
     isSidebarCollapsed: sessionSidebar.isCollapsed,
@@ -113,7 +103,6 @@ export const App = () => {
   const goToBoard = useGoToBoard();
   const {
     armDeleteConfirm,
-    openAddWorkspace,
     openChangelog,
     openChat,
     openGuide,
@@ -271,7 +260,7 @@ export const App = () => {
           <NotificationToastBridge />
           <ReportSheetHost />
           <LastCrashBridge />
-          {layers}
+          <Fragment key="layers">{layers}</Fragment>
         </ObjectMenuProvider>
       </ToastProvider>
     );
@@ -351,18 +340,16 @@ export const App = () => {
                     />
                   ))}
                 </SessionFrame>
-              ) : currentWorkspace && isDraftShown ? (
+              ) : isDraftShown ? (
                 <SessionDraftPane workspaceId={currentWorkspace.id} />
-              ) : currentWorkspace ? (
-                <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
               ) : (
-                <NoWorkspaceScreen onAddWorkspace={openAddWorkspace} />
+                <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
               )}
             </div>
           }
           studio={studio}
         />
-        {layers}
+        <Fragment key="layers">{layers}</Fragment>
       </ObjectMenuProvider>
     </ToastProvider>
   );

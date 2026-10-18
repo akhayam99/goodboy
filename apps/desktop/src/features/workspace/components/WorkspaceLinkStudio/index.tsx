@@ -4,12 +4,12 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { NewWorkspaceForm } from '../../../../shared/components/NewWorkspaceForm';
 import { useAppStore } from '../../../../store';
+import { NAMES } from '../../../../shared/names';
+import { hasOnlyPlainFolders } from '../../hasOnlyPlainFolders';
 
 type Props = {
-  readonly variant: 'fullscreen' | 'viewport';
   readonly onClose: () => void;
   readonly onOfferRepo: () => void;
-  readonly isNewProject?: boolean;
 };
 
 type CreatedParams = {
@@ -17,18 +17,10 @@ type CreatedParams = {
   readonly requestClose: () => void;
 };
 
-export const WorkspaceLinkStudio = ({
-  variant,
-  onClose,
-  onOfferRepo,
-  isNewProject = false,
-}: Props) => {
+export const WorkspaceLinkStudio = ({ onClose, onOfferRepo }: Props) => {
   const onCreated = ({ workspaceId, requestClose }: CreatedParams) => {
     requestClose();
-    const folders = useAppStore
-      .getState()
-      .projects.filter((project) => project.workspaceId === workspaceId);
-    if (folders.length > 0 && folders.every((project) => project.kind === 'folder')) {
+    if (hasOnlyPlainFolders({ projects: useAppStore.getState().projects, workspaceId })) {
       onOfferRepo();
     }
   };
@@ -37,8 +29,7 @@ export const WorkspaceLinkStudio = ({
     <StudioShell
       icon={CONCEPT_ICONS.workspace}
       tone={CONCEPT_TONE.workspace}
-      title="New workspace"
-      variant={variant}
+      title={NAMES.newWorkspace}
       onClose={onClose}
     >
       {(requestClose) => (
@@ -46,7 +37,6 @@ export const WorkspaceLinkStudio = ({
           <PageColumn className="flex flex-col gap-6 py-5">
             <NewWorkspaceForm
               mode="new"
-              start={isNewProject ? 'scratch' : 'folder'}
               titleRole="title"
               onCreated={({ workspaceId }) => onCreated({ workspaceId, requestClose })}
             />

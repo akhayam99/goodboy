@@ -213,8 +213,8 @@ The top bar's 6px left padding puts the workspace tile on the collapsed rail's
 22px axis. The identity row adds `--titlebar-inset`, which defaults to 0px in
 `styles.css`; on macOS `useTitlebarInset` raises it to 72px so the traffic
 lights, drawn inside the bar by the overlay title bar, never sit on a control,
-and drops it back to 0px in full screen. A window without a top bar (the
-workspace launcher) keeps a 36px drag strip at its top edge instead.
+and drops it back to 0px in full screen. A window without a top bar (Home)
+keeps a 36px drag strip at its top edge instead.
 
 The overlay slots are children of the grid, not siblings above it. An overlay
 that must float without taking up layout space spans its row and is
@@ -353,7 +353,7 @@ never moves the column, with or without a drawer. The pure geometry is
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
 Overview to Review to a chat. `shared/layout/columnContract.test.ts` fails under `features/` on any
-`max-w-[Nch]`, any `max-w-[Npx]` (the palette and the onboarding wizard are the
+`max-w-[Nch]`, any `max-w-[Npx]` (the palette, the onboarding wizard and Home, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
 and the test asserts it centres `column` and `measure` and not `full`), `PANE_RHYTHM.measure`,

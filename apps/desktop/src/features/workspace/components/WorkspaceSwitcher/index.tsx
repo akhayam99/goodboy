@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FolderOpen, FolderPlus, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Button, Divider, EmptyState, Kbd, ScrollFade } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
 import {
@@ -15,9 +15,11 @@ import { WORKSPACE_DIGIT_IDS, shortcutGlyphs } from '../../../../shared/keyboard
 import { CurrentWorkspaceRow } from './CurrentWorkspaceRow';
 import { OtherWorkspaceRow } from './OtherWorkspaceRow';
 import { DisconnectedWorkspaceRow } from './DisconnectedWorkspaceRow';
-import { useLinkRepoHere } from './useLinkRepoHere';
+import { useAddFolderHere } from './useAddFolderHere';
 import { WorkspaceOpenConfirm } from './WorkspaceOpenConfirm';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
+import { NAMES } from '../../../../shared/names';
+import { openNewWorkspace } from '../../openNewWorkspace';
 
 type Props = {
   readonly onClose: () => void;
@@ -33,14 +35,6 @@ type LeaveParams = {
   readonly action: () => void;
 };
 
-type FireParams = {
-  readonly name: 'goodboy:add-workspace' | 'goodboy:start-new-project';
-};
-
-const fire = ({ name }: FireParams): void => {
-  window.dispatchEvent(new CustomEvent(name));
-};
-
 export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const workspaces = useWorkspaces();
   const disconnectedWorkspaces = useDisconnectedWorkspaces();
@@ -54,7 +48,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
-  const linkRepoHere = useLinkRepoHere({ workspace: currentWorkspace });
+  const addFolderHere = useAddFolderHere({ workspace: currentWorkspace });
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -166,8 +160,8 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Find a workspace or project"
-          aria-label="Find a workspace or project"
+          placeholder="Find a workspace or folder"
+          aria-label="Find a workspace or folder"
           className="flex-1 bg-transparent text-label focus-visible:outline-none"
         />
         <Kbd look="inline">{shortcutGlyphs('workspace.switcher')}</Kbd>
@@ -181,8 +175,8 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
         {currentWorkspace !== null ? (
           <CurrentWorkspaceRow
             workspace={currentWorkspace}
-            onLinkRepo={leaveFor({ action: () => void linkRepoHere() })}
-            onManageProjects={leaveFor({
+            onAddFolder={leaveFor({ action: () => void addFolderHere() })}
+            onManageFolders={leaveFor({
               action: () => openSettings({ scope: 'workspace', section: 'projects' }),
             })}
             onOpenSettings={leaveFor({ action: () => openSettings({ scope: 'workspace' }) })}
@@ -230,21 +224,9 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
       </ScrollFade>
       <Divider />
       <div className="flex items-center gap-1 p-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={leaveFor({ action: () => fire({ name: 'goodboy:start-new-project' }) })}
-        >
-          <FolderPlus size={ICON_SIZE.row} aria-hidden />
-          Start a new project
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={leaveFor({ action: () => fire({ name: 'goodboy:add-workspace' }) })}
-        >
-          <FolderOpen size={ICON_SIZE.row} aria-hidden />
-          Open a folder
+        <Button size="sm" variant="ghost" onClick={leaveFor({ action: openNewWorkspace })}>
+          <Plus size={ICON_SIZE.row} aria-hidden />
+          {NAMES.newWorkspace}
         </Button>
       </div>
     </>

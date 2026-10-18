@@ -12,6 +12,6 @@ export type StudioShellProps = {
   readonly headerAccessory?: ReactNode;
   readonly onClose: () => void;
   readonly isEscapeEnabled?: boolean;
-  readonly variant?: 'fullscreen' | 'slot' | 'viewport';
+  readonly variant?: 'fullscreen' | 'slot';
   readonly children: (requestClose: () => void) => ReactNode;
 };

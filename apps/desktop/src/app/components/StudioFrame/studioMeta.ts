@@ -61,8 +61,8 @@ export const STUDIO_META = {
   addWorkspace: {
     icon: CONCEPT_ICONS.workspace,
     tone: CONCEPT_TONE.workspace,
-    title: 'Add workspace',
-    closeLabel: 'Close add workspace',
+    title: NAMES.newWorkspace,
+    closeLabel: 'Close new workspace',
     close: 'band',
     tier: 'column',
     page: null,

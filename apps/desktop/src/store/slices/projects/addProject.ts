@@ -94,7 +94,7 @@ export const addProject = (set: SetFn, get: GetFn) => {
     const isRepo = check.isRepo && check.rootPath != null && check.rootPath !== '';
     if (requireRepo && !isRepo) {
       throw new Error(
-        `No git repository at ${rootPath}. Pick a folder with a .git directory, or use Start a new project to begin one.`,
+        `No git repository at ${rootPath}. Pick a folder with a .git directory, or use Start from scratch in New workspace to begin one.`,
       );
     }
     const resolvedRoot = isRepo ? check.rootPath : check.resolvedPath;

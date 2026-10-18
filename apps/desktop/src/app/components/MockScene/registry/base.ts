@@ -187,6 +187,7 @@ import {
   type NewWorkspaceSceneState,
 } from '../scenes/onboarding/NewWorkspaceScene';
 import { WizardStepScene, type WizardSceneState } from '../scenes/onboarding/WizardStepScene';
+import { HomeScene, type HomeSceneState } from '../scenes/onboarding/HomeScene';
 
 const OnboardingBrandTileDarkScene = () => createElement(BrandTileScene, { theme: 'dark' });
 const OnboardingBrandTileLightScene = () => createElement(BrandTileScene, { theme: 'light' });
@@ -232,6 +233,17 @@ const NEW_WORKSPACE_SCENES = Object.fromEntries(
     SCENE_THEMES.map((theme) => [
       `onboarding-new-workspace-${state}-${theme}`,
       () => createElement(NewWorkspaceScene, { state, theme }),
+    ]),
+  ),
+);
+
+const HOME_STATES: ReadonlyArray<HomeSceneState> = ['list', 'new', 'empty'];
+
+const HOME_SCENES = Object.fromEntries(
+  HOME_STATES.flatMap((state) =>
+    SCENE_THEMES.map((theme) => [
+      `onboarding-home-${state}-${theme}`,
+      () => createElement(HomeScene, { state, theme }),
     ]),
   ),
 );
@@ -430,4 +442,5 @@ export const BASE_SCENES = {
   'onboarding-setup-menu-light': OnboardingSetupMenuLightScene,
   ...NEW_WORKSPACE_SCENES,
   ...WIZARD_STEP_SCENES,
+  ...HOME_SCENES,
 };

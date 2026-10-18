@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { isMainWindow } from '../../../features/workspace/window';
+import { isMainWindow } from '../window';
 
 const hasWindowMetadata = (): boolean => {
   const internals: unknown = Reflect.get(window, '__TAURI_INTERNALS__');

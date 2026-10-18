@@ -15,7 +15,6 @@ const WIDTH_ALLOWLIST = new Set(['shared/components/ImageLightbox/index.tsx']);
 const NARROW_ALLOWLIST = new Set([
   'features/chat/components/HandoffChip/HandoffCardShell.tsx',
   'features/workspace/components/StageBoard/index.tsx',
-  'features/workspace/components/WorkspaceLauncher/index.tsx',
 ]);
 
 type Forbidden = {
@@ -28,6 +27,7 @@ const NO_EXCEPTION: ReadonlySet<string> = new Set();
 const FIXED_PX_ALLOWLIST: ReadonlySet<string> = new Set([
   'features/palette/paletteModes.ts',
   'features/onboarding/OnboardingWizard/WizardFrame.tsx',
+  'features/workspace/components/WorkspaceLauncher/index.tsx',
 ]);
 
 const CENTRED_ALLOWLIST: ReadonlySet<string> = new Set([

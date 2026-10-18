@@ -84,6 +84,8 @@ export const NAMES = {
   removeWorktrees: 'Remove worktrees',
   switchBranch: 'Switch branch',
   rebaseOn: 'Rebase on',
+  newWorkspace: 'New workspace',
+  resumeSetup: 'Resume setup',
   role: {
     scout: 'Scout',
     planner: 'Planner',
@@ -159,6 +161,7 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.start]: ['Launch session'],
   [NAMES.pickAnIssue]: ['Pick up issue'],
   [NAMES.startWorkFromChat]: ['Start work', 'Start work from here', 'Turn into work'],
+  [NAMES.newWorkspace]: ['Open a folder', 'Start a new project', 'Add workspace'],
 };
 
 export const formerNamesOf = (name: string): ReadonlyArray<string> => FORMER_NAMES[name] ?? [];

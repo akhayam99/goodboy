@@ -11,7 +11,7 @@ vi.mock('../../../../store', () => ({
   useRunningHere: () => state.active,
 }));
 
-vi.mock('../../linkedProjectsLabel', () => ({ linkedProjectsLabel: () => 'storefront-web' }));
+vi.mock('../../folderCountLabel', () => ({ folderCountLabel: () => 'storefront-web' }));
 
 import { CurrentWorkspaceRow } from './CurrentWorkspaceRow';
 
@@ -26,8 +26,8 @@ const labelFor = ({ active }: LabelParams): string => {
   render(
     <CurrentWorkspaceRow
       workspace={aWorkspace()}
-      onLinkRepo={vi.fn()}
-      onManageProjects={vi.fn()}
+      onAddFolder={vi.fn()}
+      onManageFolders={vi.fn()}
       onOpenSettings={vi.fn()}
     />,
   );

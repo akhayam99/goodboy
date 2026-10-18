@@ -1,15 +1,15 @@
-import { FolderGit2 } from 'lucide-react';
+import { FolderPlus } from 'lucide-react';
 import { Button, IconButton } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useRunningHere } from '../../../../store';
-import { linkedProjectsLabel } from '../../linkedProjectsLabel';
+import { folderCountLabel } from '../../folderCountLabel';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { WorkspaceTile } from './WorkspaceTile';
 
 type Props = {
   readonly workspace: Workspace;
-  readonly onLinkRepo: () => void;
-  readonly onManageProjects: () => void;
+  readonly onAddFolder: () => void;
+  readonly onManageFolders: () => void;
   readonly onOpenSettings: () => void;
 };
 
@@ -26,12 +26,12 @@ const activeLabel = ({ active }: ActiveParams): string => {
 
 export const CurrentWorkspaceRow = ({
   workspace,
-  onLinkRepo,
-  onManageProjects,
+  onAddFolder,
+  onManageFolders,
   onOpenSettings,
 }: Props) => {
-  const projectsLabel = useAppStore((state) =>
-    linkedProjectsLabel({ projects: state.projects, workspaceId: workspace.id }),
+  const foldersLabel = useAppStore((state) =>
+    folderCountLabel({ projects: state.projects, workspaceId: workspace.id }),
   );
   const running = useRunningHere();
 
@@ -46,7 +46,7 @@ export const CurrentWorkspaceRow = ({
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-row text-foreground">{workspace.name}</span>
           <span className="truncate text-meta text-muted-foreground">
-            {projectsLabel} · {activeLabel({ active: running })}
+            {foldersLabel} · {activeLabel({ active: running })}
           </span>
         </span>
         <IconButton
@@ -59,12 +59,12 @@ export const CurrentWorkspaceRow = ({
         />
       </div>
       <div className="flex min-w-0 items-center gap-1">
-        <Button size="xs" variant="secondary" onClick={onLinkRepo}>
-          <FolderGit2 size={ICON_SIZE.row} aria-hidden />
-          Link a repository
+        <Button size="xs" variant="secondary" onClick={onAddFolder}>
+          <FolderPlus size={ICON_SIZE.row} aria-hidden />
+          Add folder
         </Button>
-        <Button size="xs" variant="ghost" onClick={onManageProjects}>
-          Manage projects
+        <Button size="xs" variant="ghost" onClick={onManageFolders}>
+          Manage folders
         </Button>
       </div>
     </section>

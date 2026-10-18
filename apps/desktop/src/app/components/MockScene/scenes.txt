@@ -525,6 +525,12 @@ notifications-rail-folded
 onboarding
 onboarding-brand-tile-dark
 onboarding-brand-tile-light
+onboarding-home-empty-dark
+onboarding-home-empty-light
+onboarding-home-list-dark
+onboarding-home-list-light
+onboarding-home-new-dark
+onboarding-home-new-light
 onboarding-new-workspace-conflict-dark
 onboarding-new-workspace-conflict-light
 onboarding-new-workspace-denied-dark
