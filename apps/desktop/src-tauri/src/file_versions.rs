@@ -79,12 +79,6 @@ impl FileVersionsError {
     }
 }
 
-#[derive(Debug, Deserialize)]
-struct SessionMarker {
-    #[serde(rename = "sessionId")]
-    session_id: String,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapshotManifestEntry {
@@ -535,13 +529,18 @@ fn ensure_session_root(session_dir: &str, session_id: &str) -> Result<PathBuf, F
     if !canonical.is_dir() {
         return Err(FileVersionsError::SessionDirNotFound);
     }
-    let marker_path = canonical.join(".goodboy");
-    if !marker_path.is_file() {
-        return Err(FileVersionsError::SessionMarkerMissing);
-    }
-    let marker_raw = fs::read(marker_path)?;
-    let marker = serde_json::from_slice::<SessionMarker>(&marker_raw)
-        .map_err(|_| FileVersionsError::SessionMarkerInvalid)?;
+    let marker = crate::session_dir::marker_read(&canonical).map_err(|error| match error {
+        crate::session_dir::SessionDirError::Io(io_error)
+            if matches!(
+                io_error.kind(),
+                std::io::ErrorKind::NotFound | std::io::ErrorKind::IsADirectory
+            ) =>
+        {
+            FileVersionsError::SessionMarkerMissing
+        }
+        crate::session_dir::SessionDirError::Io(io_error) => FileVersionsError::Io(io_error),
+        _ => FileVersionsError::SessionMarkerInvalid,
+    })?;
     if marker.session_id != session_id {
         return Err(FileVersionsError::SessionMarkerMismatch);
     }
@@ -784,21 +783,24 @@ mod tests {
         ))
     }
 
-    fn write_marker(path: &Path, session_id: &str) {
-        fs::create_dir_all(path).unwrap();
-        let marker = serde_json::json!({
-            "sessionId": session_id,
-            "workspaceId": "workspace-1",
-            "createdAt": "2026-08-02T00:00:00Z"
-        });
-        fs::write(path.join(".goodboy"), serde_json::to_vec(&marker).unwrap()).unwrap();
+    fn create_session_dir(base: &Path, session_id: &str) -> PathBuf {
+        let created =
+            crate::session_dir::session_dir_create_blocking(crate::session_dir::CreateArgs {
+                base_path: base.to_string_lossy().into_owned(),
+                slug: "study-plan".to_string(),
+                directory_name: None,
+                session_id: session_id.to_string(),
+                workspace_id: "workspace-1".to_string(),
+            })
+            .unwrap();
+        PathBuf::from(created.worktree_path)
     }
 
     #[test]
     fn restore_rejects_invalid_relative_paths_and_marker_mismatch() {
         let store_root = temp_dir("restore-invalid-store");
-        let session_root = temp_dir("restore-invalid-session");
-        write_marker(&session_root, SESSION_ID);
+        let session_base = temp_dir("restore-invalid-session");
+        let session_root = create_session_dir(&session_base, SESSION_ID);
         let session_store = session_store_dir(&store_root, SESSION_ID);
         fs::create_dir_all(&session_store).unwrap();
         fs::write(session_store.join("copy.bin"), b"snapshot").unwrap();
@@ -846,16 +848,16 @@ mod tests {
         ));
 
         let _ = fs::remove_dir_all(store_root);
-        let _ = fs::remove_dir_all(session_root);
+        let _ = fs::remove_dir_all(session_base);
     }
 
     #[cfg(unix)]
     #[test]
     fn restore_rejects_symlink_escape() {
         let store_root = temp_dir("symlink-store");
-        let session_root = temp_dir("symlink-session");
+        let session_base = temp_dir("symlink-session");
+        let session_root = create_session_dir(&session_base, SESSION_ID);
         let outside = temp_dir("symlink-outside");
-        write_marker(&session_root, SESSION_ID);
         fs::create_dir_all(&outside).unwrap();
         std::os::unix::fs::symlink(&outside, session_root.join("link")).unwrap();
         let session_store = session_store_dir(&store_root, SESSION_ID);
@@ -874,15 +876,15 @@ mod tests {
         assert!(matches!(result, Err(FileVersionsError::PathEscapesSession)));
 
         let _ = fs::remove_dir_all(store_root);
-        let _ = fs::remove_dir_all(session_root);
+        let _ = fs::remove_dir_all(session_base);
         let _ = fs::remove_dir_all(outside);
     }
 
     #[test]
     fn begin_and_finalize_keeps_only_modified_and_deleted_files() {
         let store_root = temp_dir("begin-finalize-store");
-        let session_root = temp_dir("begin-finalize-session");
-        write_marker(&session_root, SESSION_ID);
+        let session_base = temp_dir("begin-finalize-session");
+        let session_root = create_session_dir(&session_base, SESSION_ID);
         fs::write(session_root.join("unchanged.txt"), b"same").unwrap();
         fs::write(session_root.join("modified.txt"), b"before").unwrap();
         fs::write(session_root.join("deleted.txt"), b"remove").unwrap();
@@ -950,14 +952,14 @@ mod tests {
         assert!(!run_dir.exists());
 
         let _ = fs::remove_dir_all(store_root);
-        let _ = fs::remove_dir_all(session_root);
+        let _ = fs::remove_dir_all(session_base);
     }
 
     #[test]
     fn list_staged_snapshots_reads_manifest_back_for_recovery() {
         let store_root = temp_dir("list-staged-store");
-        let session_root = temp_dir("list-staged-session");
-        write_marker(&session_root, SESSION_ID);
+        let session_base = temp_dir("list-staged-session");
+        let session_root = create_session_dir(&session_base, SESSION_ID);
         fs::write(session_root.join("tracked.txt"), b"before").unwrap();
 
         let begin = begin_snapshot_with_root(
@@ -1002,7 +1004,7 @@ mod tests {
         assert_eq!(after_finalize.runs.len(), 0);
 
         let _ = fs::remove_dir_all(store_root);
-        let _ = fs::remove_dir_all(session_root);
+        let _ = fs::remove_dir_all(session_base);
     }
 
     const RUN_ID_2: &str = "44444444-4444-4444-8444-444444444444";
@@ -1018,8 +1020,7 @@ mod tests {
         fn new(name: &str) -> Self {
             let base = temp_dir(name);
             let store = base.join("store");
-            let session = base.join("session");
-            write_marker(&session, SESSION_ID);
+            let session = create_session_dir(&base.join("folder"), SESSION_ID);
             Self {
                 base,
                 store,
@@ -1327,7 +1328,7 @@ mod tests {
             );
         }
         assert!(fx.base.join("sibling.txt").is_file());
-        assert!(fx.session.join(".goodboy").is_file());
+        assert!(fx.session.join(".goodboy").join("session.json").is_file());
         assert!(fx.store.is_dir());
     }
 
@@ -1458,5 +1459,82 @@ mod tests {
                 ),
             ]
         );
+    }
+
+    fn begin_in(fx_store: &Path, session: &Path) -> Result<BeginSnapshotResult, FileVersionsError> {
+        begin_snapshot_with_root(
+            fx_store,
+            BeginSnapshotArgs {
+                session_dir: session.to_string_lossy().to_string(),
+                session_id: SESSION_ID.to_string(),
+                run_id: RUN_ID.to_string(),
+                size_cap_bytes: Some(1024),
+            },
+        )
+    }
+
+    #[test]
+    fn captures_in_a_fresh_session_folder() {
+        let base = temp_dir("fresh-session-folder");
+        let session = create_session_dir(&base.join("folder"), SESSION_ID);
+        assert!(session.join(".goodboy").is_dir());
+        fs::write(session.join("notes.txt"), b"before").unwrap();
+
+        let begin = begin_in(&base.join("store"), &session).unwrap();
+
+        assert_eq!(begin.manifest.len(), 1);
+        assert_eq!(begin.manifest[0].relative_path, "notes.txt");
+        assert!(begin
+            .skipped
+            .iter()
+            .any(|entry| entry.relative_path == ".goodboy" && entry.reason == "dotfile"));
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn captures_in_a_session_folder_with_the_legacy_marker_file() {
+        let base = temp_dir("legacy-marker-folder");
+        let session = base.join("folder");
+        fs::create_dir_all(&session).unwrap();
+        let marker = serde_json::json!({
+            "sessionId": SESSION_ID,
+            "workspaceId": "workspace-1",
+            "createdAt": "2026-08-02T00:00:00Z"
+        });
+        fs::write(
+            session.join(".goodboy"),
+            serde_json::to_vec(&marker).unwrap(),
+        )
+        .unwrap();
+        fs::write(session.join("notes.txt"), b"before").unwrap();
+
+        let begin = begin_in(&base.join("store"), &session).unwrap();
+
+        assert_eq!(begin.manifest.len(), 1);
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn refuses_a_session_folder_with_a_missing_or_broken_marker() {
+        let base = temp_dir("broken-marker-folder");
+        let session = base.join("folder");
+        fs::create_dir_all(&session).unwrap();
+        assert!(matches!(
+            begin_in(&base.join("store"), &session),
+            Err(FileVersionsError::SessionMarkerMissing)
+        ));
+
+        fs::create_dir_all(session.join(".goodboy")).unwrap();
+        assert!(matches!(
+            begin_in(&base.join("store"), &session),
+            Err(FileVersionsError::SessionMarkerMissing)
+        ));
+
+        fs::write(session.join(".goodboy").join("session.json"), b"{not json").unwrap();
+        assert!(matches!(
+            begin_in(&base.join("store"), &session),
+            Err(FileVersionsError::SessionMarkerInvalid)
+        ));
+        let _ = fs::remove_dir_all(base);
     }
 }

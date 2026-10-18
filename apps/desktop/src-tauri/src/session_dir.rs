@@ -68,9 +68,9 @@ pub struct CreatedSessionDir {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct SessionMarker {
+pub(crate) struct SessionMarker {
     #[serde(rename = "sessionId")]
-    session_id: String,
+    pub(crate) session_id: String,
     #[serde(rename = "workspaceId")]
     workspace_id: String,
     #[serde(rename = "createdAt")]
@@ -141,7 +141,7 @@ fn marker_write(
     Ok(())
 }
 
-fn marker_read(path: &Path) -> Result<SessionMarker, SessionDirError> {
+pub(crate) fn marker_read(path: &Path) -> Result<SessionMarker, SessionDirError> {
     let modern = marker_path(path);
     let marker = if modern.is_file() {
         std::fs::read(modern)?
@@ -197,7 +197,9 @@ pub async fn session_dir_create(args: CreateArgs) -> Result<CreatedSessionDir, S
         .map_err(|e| SessionDirError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn session_dir_create_blocking(args: CreateArgs) -> Result<CreatedSessionDir, SessionDirError> {
+pub(crate) fn session_dir_create_blocking(
+    args: CreateArgs,
+) -> Result<CreatedSessionDir, SessionDirError> {
     let base = expand_home(&args.base_path)?;
     let slug = resolve_directory_name(&args)?;
     let target = absolute_path(base)?.join("sessions").join(&slug);

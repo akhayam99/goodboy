@@ -492,6 +492,12 @@ fails silently at runtime.
 - A child of an Auto tree is found by its delegation row (`isAutoChildAgent`),
   never by a flag on the turn input: a reattached turn after a reload has no
   input, and the question and split gates must still hold for it.
+- A plain-folder session's marker is `.goodboy/session.json` inside a `.goodboy`
+  folder; older sessions may still hold `.goodboy` as one file. Only
+  `marker_read` in `session_dir.rs` knows both shapes, and `file_versions.rs`
+  must read the marker through it. A second reader that tests `.goodboy.is_file()`
+  broke file versions in every plain-folder turn from #1533 until it was fixed. Build
+  test session folders with `session_dir_create_blocking`, never by hand.
 
 ## Traps in the toolchain
 
