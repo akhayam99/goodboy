@@ -1,10 +1,10 @@
 import type { AutoBudgetFacts } from '@goodboy/core';
 import type { AutoTreeId, SessionId } from '@goodboy/types';
 import { formatUsd } from '@goodboy/ui';
-import { useAppStore } from '../../../store';
-import { AutoTreeLimitControl } from '../chat/AutoTreeLimitControl';
-import { capLabelOf } from '../chat/capLabelOf';
-import { joinFacts } from '../../../shared/utils/joinFacts';
+import { useAppStore } from '../../store';
+import { AutoTreeLimitControl } from './chat/AutoTreeLimitControl';
+import { capLabelOf } from './chat/capLabelOf';
+import { joinFacts } from '../../shared/utils/joinFacts';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -35,7 +35,7 @@ export const AutoLimitFoot = ({ sessionId, treeId, facts }: Props) => {
     <section
       aria-label="Limit"
       data-auto-limit-foot=""
-      className="flex h-8 min-w-0 shrink-0 items-center px-2"
+      className="flex h-8 min-w-0 shrink-0 items-center"
     >
       <AutoTreeLimitControl
         sessionId={sessionId}

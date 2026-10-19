@@ -322,6 +322,12 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'session',
   },
+  'session.spawned': {
+    combo: 'cmd+alt+KeyL',
+    label: 'Agents',
+    plane: 'lens',
+    group: 'session',
+  },
   'session.archive': {
     combo: 'cmd+shift+KeyA',
     label: 'Archive session',

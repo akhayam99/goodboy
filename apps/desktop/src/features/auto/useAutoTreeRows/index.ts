@@ -1,36 +1,29 @@
 import { useMemo } from 'react';
-import type { AgentId, Session } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { autoTreeOfAgent, type AutoTreeOfAgent } from '../../autoTreeOfAgent';
-import { useAutoTreeViews } from '../../useAutoTreeViews';
-import { railRowsOf, restingRootRowOf, type RailRow } from '../../chat/railRowsOf';
+import type { AgentId, SessionId } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore } from '../../../store';
+import { autoTreeOfAgent, type AutoTreeOfAgent } from '../autoTreeOfAgent';
+import { useAutoTreeViews } from '../useAutoTreeViews';
+import { railRowsOf, restingRootRowOf, type RailRow } from '../chat/railRowsOf';
 
 type Params = {
-  readonly session: Session;
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId | null;
 };
 
-export type AutoLevelModel = Readonly<{
+export type AutoTreeRowsModel = Readonly<{
   tree: AutoTreeOfAgent | null;
   rows: ReadonlyArray<RailRow>;
   rootAgentId: AgentId | null;
-  shownAgentId: AgentId | null;
 }>;
 
-export const useAutoLevel = ({ session }: Params): AutoLevelModel => {
-  const sessionId = session.id;
+export const useAutoTreeRows = ({ sessionId, agentId }: Params): AutoTreeRowsModel => {
   const views = useAutoTreeViews({ sessionId });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const selectedAgentId = useAppStore((state) => state.selectedAgentId[sessionId] ?? null);
-  const paneAgentId = useAppStore((state) =>
-    state.drawer?.kind === 'auto-child' && state.drawer.sessionId === sessionId
-      ? state.drawer.payload.agentId
-      : null,
-  );
   const tree = useMemo(
-    () => (selectedAgentId === null ? null : autoTreeOfAgent({ views, agentId: selectedAgentId })),
-    [views, selectedAgentId],
+    () => (agentId === null ? null : autoTreeOfAgent({ views, agentId })),
+    [views, agentId],
   );
-  const rootAgentId = tree?.view.tree.rootAgentId ?? selectedAgentId;
+  const rootAgentId = tree?.view.tree.rootAgentId ?? agentId;
   const provider = useAppStore((state) =>
     rootAgentId === null ? null : (state.agentProviderOverride[rootAgentId] ?? null),
   );
@@ -57,5 +50,5 @@ export const useAutoLevel = ({ session }: Params): AutoLevelModel => {
     }
     return [restingRootRowOf({ agentId: rootAgentId, provider, model, effort })];
   }, [tree, agents, rootAgentId, provider, model, effort, rootTurn]);
-  return { tree, rows, rootAgentId, shownAgentId: paneAgentId ?? selectedAgentId };
+  return { tree, rows, rootAgentId };
 };

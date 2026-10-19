@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
-import { agentPlace, useAppStore } from '../../store';
+import { useAppStore } from '../../store';
+import { openSpawned } from '../session/openSpawned';
 import { lensPlace } from '../../store/slices/navigation/canonicalLocation';
 import { autoRootsOf } from './autoRootsOf';
 
@@ -18,6 +19,5 @@ export const openAutoAgents = ({ sessionId }: Params): void => {
     state.navigate({ to: lensPlace({ state, sessionId, lens: 'auto' }) });
     return;
   }
-  state.navigate({ to: agentPlace({ sessionId, agentId: only.id }) });
-  state.pickRailLevel({ level: 'auto' });
+  openSpawned({ sessionId, target: { kind: 'auto-root', agentId: only.id } });
 };

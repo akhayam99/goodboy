@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
 import { formatUsd } from '@goodboy/ui';
 import type { SessionId, WorkflowRun } from '@goodboy/types';
-import { useAppStore, useRunSpendUsd } from '../../../../store';
-import { RunSpendLimitPopover } from '../../../../features/workflows/components/RunSpendLimitPopover';
+import { useAppStore, useRunSpendUsd } from '../../../store';
+import { RunSpendLimitPopover } from '../../../features/workflows/components/RunSpendLimitPopover';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly run: WorkflowRun;
 };
 
-export const RunLevelFoot = ({ sessionId, run }: Props) => {
+export const RunSpendFoot = ({ sessionId, run }: Props) => {
   const spentUsd = useRunSpendUsd(sessionId, run.id);
   const loadSessionTelemetry = useAppStore((state) => state.loadSessionTelemetry);
   const isArchived = run.discardedAt != null;
@@ -21,8 +21,8 @@ export const RunLevelFoot = ({ sessionId, run }: Props) => {
 
   return (
     <div
-      data-run-level-foot=""
-      className="flex h-8 shrink-0 items-center gap-2 px-4 text-ui text-muted-foreground"
+      data-run-spend-foot=""
+      className="flex h-8 shrink-0 items-center gap-2 text-ui text-muted-foreground"
     >
       {isArchived ? null : <RunSpendLimitPopover sessionId={sessionId} run={run} variant="foot" />}
       {isArchived || !hasSpent ? null : (

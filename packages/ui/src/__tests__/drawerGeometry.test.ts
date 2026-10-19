@@ -5,6 +5,7 @@ import {
   COLUMN_GUTTERS,
   COLUMN_MIN_PUSH,
   DRAWER_INSET,
+  DRAWER_PUSH_RESERVE,
   MEASURE_FRAME,
   DRAWER_TIERS,
   READER_DRAWER_DEFAULT,
@@ -436,6 +437,12 @@ describe('page box: the centred column against the drawer', () => {
 describe('the one drawer rule: fixed thresholds', () => {
   const SIDE_THRESHOLD = 1024;
   const READER_THRESHOLD = 1344;
+
+  it('names the one breakpoint: the reserve plus the drawer width', () => {
+    expect(DRAWER_PUSH_RESERVE).toBe(624);
+    expect(DRAWER_PUSH_RESERVE + RIGHT_DRAWER_DEFAULT).toBe(SIDE_THRESHOLD);
+    expect(DRAWER_PUSH_RESERVE + READER_DRAWER_DEFAULT).toBe(READER_THRESHOLD);
+  });
 
   it('pushes a default side drawer from a 1024 column and lays it over below', () => {
     const at = (main: number) =>

@@ -66,7 +66,7 @@ describe('the guide shell scenes', () => {
       rail.getByRole('button', { name: 'Sidebar and session rail' }).getAttribute('aria-current'),
     ).toBe('true');
     const chapter = within(screen.getByRole('region', { name: 'Sidebar and session rail' }));
-    ['Sidebar', 'Session rail', 'Levels', 'Session tools'].forEach((term) =>
+    ['Sidebar', 'Session rail', 'Agents panel', 'Session tools'].forEach((term) =>
       expect(chapter.getByText(term)).toBeDefined(),
     );
   });

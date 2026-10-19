@@ -119,36 +119,46 @@ const openFinishedRun = async (ctx: Ctx): Promise<void> => {
 
 const FOLD_LABEL = /^3 scouts · done/u;
 
-const foldButton = async (): Promise<HTMLElement> =>
-  within(await screen.findByTestId('run-tree-fold-row', {}, WAIT)).getByRole('button');
+const runTree = async (): Promise<HTMLElement> =>
+  screen.findByRole('tree', { name: 'Run agents' }, WAIT);
+
+const foldItem = async (): Promise<HTMLElement> => {
+  const fold = (await runTree()).querySelector<HTMLElement>('[data-spawned-fold]');
+  if (fold === null) {
+    throw new Error('the run tree has no fold row');
+  }
+  return fold;
+};
 
 const scoutRows = (): ReadonlyArray<string> =>
-  screen
-    .queryAllByTestId(/^run-tree-row-journey-run-tree-scout-/u)
-    .map((row) => SCOUT_NAMES.find((name) => row.textContent?.includes(name)) ?? '');
+  within(screen.getByRole('tree', { name: 'Run agents' }))
+    .queryAllByRole('treeitem')
+    .flatMap((row) => SCOUT_NAMES.filter((name) => row.textContent?.includes(name)));
 
 const foldAndOpenFromTheKeyboard = async (): Promise<void> => {
   const user = userEvent.setup();
-  const fold = await foldButton();
+  await user.click(screen.getByTestId('pane-toggle-spawned'));
+  const fold = await foldItem();
 
   expect(fold.getAttribute('aria-label')).toMatch(FOLD_LABEL);
-  expect(screen.getAllByTestId('run-tree-fold-row')).toHaveLength(1);
+  expect((await runTree()).querySelectorAll('[data-spawned-fold]')).toHaveLength(1);
   expect(scoutRows()).toEqual([]);
 
-  fold.focus();
+  act(() => fold.focus());
   await user.keyboard('{Enter}');
   await waitFor(() => expect(scoutRows()).toEqual([...SCOUT_NAMES]), WAIT);
-  expect((await foldButton()).getAttribute('aria-expanded')).toBe('true');
+  expect((await foldItem()).getAttribute('aria-expanded')).toBe('true');
 
+  act(() => document.querySelector<HTMLElement>('[data-spawned-fold]')?.focus());
   await user.keyboard('{Enter}');
   await waitFor(() => expect(scoutRows()).toEqual([]), WAIT);
-  expect((await foldButton()).getAttribute('aria-expanded')).toBe('false');
+  expect((await foldItem()).getAttribute('aria-expanded')).toBe('false');
 };
 
 export const RUN_TREE_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'Run page of a run whose scouts finished: one fold row, Enter opens the scouts in order, Enter folds them again',
-    covers: ['navigate'],
+    name: 'Agents panel of a run whose scouts finished: one fold row, Enter opens the scouts in order, Enter folds them again',
+    covers: ['navigate', 'openDrawer'],
     open: openFinishedRun,
     lands: foldAndOpenFromTheKeyboard,
   },

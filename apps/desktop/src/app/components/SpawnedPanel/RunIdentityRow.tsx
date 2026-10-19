@@ -1,9 +1,9 @@
 import { Input, StateDot, Tooltip } from '@goodboy/ui';
 import type { Session, Workflow, WorkflowRun } from '@goodboy/types';
-import { useSessionOpenQuestions } from '../../../../store';
-import { useRunView } from '../../../../features/session/components/AgentTree/useRunView';
-import { useWorkflowRunTitleRename } from '../../../../features/workflows/hooks/useWorkflowRunTitleRename';
-import { runRowFactsOf } from '../../../../features/workflows/runRowFactsOf';
+import { useSessionOpenQuestions } from '../../../store';
+import { useRunView } from '../../../features/session/components/AgentTree/useRunView';
+import { useWorkflowRunTitleRename } from '../../../features/workflows/hooks/useWorkflowRunTitleRename';
+import { runRowFactsOf } from '../../../features/workflows/runRowFactsOf';
 
 type Props = {
   readonly session: Session;

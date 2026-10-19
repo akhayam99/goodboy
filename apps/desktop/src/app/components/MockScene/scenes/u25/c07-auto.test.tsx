@@ -73,6 +73,15 @@ const shownLayer = (): HTMLElement => {
   return layer;
 };
 
+const panel = async (): Promise<HTMLElement> =>
+  screen.findByRole('region', { name: 'Agents' }, WAIT);
+
+const autoTree = async (): Promise<HTMLElement> =>
+  within(await panel()).getByRole('tree', { name: 'Auto agents' });
+
+const treeRow = async (name: RegExp): Promise<HTMLElement> =>
+  within(await autoTree()).getByRole('treeitem', { name });
+
 describe('c07 Auto scenes', () => {
   it('registers every scene for the capture', () => {
     for (const [id, Scene] of Object.entries(U25_C07_AUTO_SCENES)) {
@@ -80,35 +89,53 @@ describe('c07 Auto scenes', () => {
     }
   });
 
-  it('c07-auto-working drills the sidebar into Auto: back row, work rail, limit foot', async () => {
+  it('c07-auto-working keeps the rail on the session and opens the Agents panel with the tree and the limit foot', async () => {
     mount({ id: 'c07-auto-working' });
 
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
-    const level = shownLayer();
-    expect(within(level).getByRole('button', { name: /^Back to / })).toBeDefined();
-    const rail = within(level).getByRole('list', { name: 'Work' });
-    expect(within(rail).getAllByRole('listitem')).toHaveLength(4);
-    const foot = within(level).getByRole('region', { name: 'Limit' });
+    const tree = await autoTree();
+    expect(levelStack().dataset.levelStack).toBe('session');
+    expect(within(tree).getAllByRole('treeitem')).toHaveLength(4);
+    expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
+    const foot = within(await panel()).getByRole('region', { name: 'Limit' });
     expect(within(foot).getByRole('button', { name: 'Limit $10.00 · $5.23 left' })).toBeDefined();
+    expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('c07-auto-working puts the task on line 2 of a rail row and the model in its tooltip', async () => {
+  it('c07-auto-working nests the children under Auto and names each row by role, title and state', async () => {
     mount({ id: 'c07-auto-working' });
 
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
-    const rail = within(shownLayer()).getByRole('list', { name: 'Work' });
-    const implementer = within(rail).getByRole('button', { name: 'Show Implementer' });
-    expect(
-      within(implementer).getByText('Post one credit per retry in postCredit and applyCredit.'),
-    ).toBeDefined();
+    const auto = await treeRow(/^Auto, /);
+    expect(auto.getAttribute('aria-level')).toBe('1');
+    expect(auto.getAttribute('aria-expanded')).toBe('true');
+    const implementer = await treeRow(/^Implementer, Running$/);
+    expect(implementer.getAttribute('aria-level')).toBe('2');
     expect(within(implementer).queryByText('Sonnet 5.5')).toBeNull();
-    const auto = within(rail).getByRole('button', { name: 'Show Auto' });
-    expect(within(auto).getByText('Opus 5.5')).toBeDefined();
+    expect(await treeRow(/^Tester, Queued$/)).toBeDefined();
 
     fireEvent.mouseEnter(implementer);
     expect((await screen.findByRole('tooltip', undefined, WAIT)).textContent).toContain(
-      'Implementer · Running',
+      'Implementer, Running',
     );
+  });
+
+  it('c07-auto-working walks the tree with the arrow keys and opens a child with Enter', async () => {
+    mount({ id: 'c07-auto-working' });
+
+    const auto = await treeRow(/^Auto, /);
+    expect(auto.tabIndex).toBe(0);
+    act(() => auto.focus());
+    fireEvent.keyDown(auto, { key: 'ArrowRight' });
+    const first = document.activeElement;
+    expect(first?.getAttribute('aria-level')).toBe('2');
+    fireEvent.keyDown(first ?? auto, { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(auto);
+    fireEvent.keyDown(auto, { key: 'End' });
+    const last = document.activeElement;
+    expect(last?.getAttribute('aria-label')).toMatch(/^Tester, /);
+    fireEvent.keyDown(last ?? auto, { key: 'Enter' });
+    expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to agents' }));
+    expect(await autoTree()).toBeDefined();
   });
 
   it('c07-auto-working keeps the center lean: no role chip, bare delegation lines, one tail', async () => {
@@ -157,13 +184,11 @@ describe('c07 Auto scenes', () => {
     expect(
       screen.getAllByText('Post one credit per retry in postCredit and applyCredit.').length,
     ).toBeGreaterThan(1);
-    const current = within(shownLayer())
-      .getAllByRole('listitem')
-      .filter((item) => item.getAttribute('aria-current') === 'true');
-    expect(current[0]?.textContent).toContain('Implementer');
+    expect(screen.getByRole('button', { name: 'Back to agents' })).toBeDefined();
+    expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('a rail row and a delegation line open the child pane; the Auto row closes it', async () => {
+  it('a tree row and a delegation line open the child pane; the Auto row closes it', async () => {
     mount({ id: 'c07-auto-working' });
 
     const lists = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
@@ -176,22 +201,25 @@ describe('c07 Auto scenes', () => {
     fireEvent.click(within(tester).getByRole('button', { name: /^Open / }));
     expect(await screen.findByPlaceholderText('Message Tester', undefined, WAIT)).toBeDefined();
 
-    fireEvent.click(within(shownLayer()).getByRole('button', { name: 'Show Implementer' }));
+    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
+    fireEvent.click(await treeRow(/^Implementer, /));
     expect(
       await screen.findByPlaceholderText('Message Implementer', undefined, WAIT),
     ).toBeDefined();
 
-    fireEvent.click(within(shownLayer()).getByRole('button', { name: 'Show Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to agents' }));
+    fireEvent.click(await treeRow(/^Auto, /));
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull());
+    expect(await autoTree()).toBeDefined();
   });
 
-  it('Open full puts the child in the center and keeps the Auto level with its row selected', async () => {
+  it('Open full puts the child in the center and keeps the rail on the session', async () => {
     mount({ id: 'c07-auto-child' });
 
     fireEvent.click(await screen.findByRole('button', { name: 'Open full' }, WAIT));
 
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull());
-    expect(levelStack().dataset.levelStack).toBe('auto');
+    expect(levelStack().dataset.levelStack).toBe('session');
     expect(await screen.findByRole('button', { name: 'Open Auto' }, WAIT)).toBeDefined();
   });
 
@@ -301,43 +329,31 @@ describe('c07 Auto scenes', () => {
     expect(await screen.findByRole('menuitem', { name: 'View transcript' }, WAIT)).toBeDefined();
   });
 
-  it('goes back to the session level with Auto agents selected, and drills in again', async () => {
+  it('closes the Agents panel and opens it again from the tools column, Auto agents stays selected', async () => {
     mount({ id: 'c07-auto-working' });
 
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
-    fireEvent.click(within(shownLayer()).getByRole('button', { name: /^Back to / }));
-
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('session'), WAIT);
+    await autoTree();
     const entry = within(shownLayer()).getByRole('button', { name: /Auto agents/ });
     expect(entry.getAttribute('aria-current')).toBe('page');
     expect(within(entry).getByText('Experimental')).toBeDefined();
 
-    fireEvent.click(entry);
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
+    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull(), WAIT);
+    fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
+    expect(await autoTree()).toBeDefined();
   });
 
-  it('c07-auto-folded shows the Auto level as rings with the back icon first', async () => {
+  it('c07-auto-folded folds the rail on the session and keeps the tree in the Agents panel', async () => {
     mount({ id: 'c07-auto-folded' });
 
-    const rail = await waitFor(() => {
+    await waitFor(() => {
       const found = document.querySelector<HTMLElement>('[data-session-rail]');
-      expect(found?.dataset.sessionRail).toBe('auto');
+      expect(found?.dataset.sessionRail).toBe('session');
       expect(found?.hasAttribute('data-rail-folded')).toBe(true);
-      return found;
     }, WAIT);
-    if (rail === null || rail === undefined) {
-      throw new Error('no folded rail');
-    }
-    expect(within(rail).getByRole('button', { name: /^Back to / })).toBeDefined();
-    const implementer = within(rail).getByRole('button', { name: 'Implementer, Running' });
-    expect(implementer.getAttribute('data-rail-auto-role')).toBe('implementer');
+    const implementer = await treeRow(/^Implementer, Running$/);
     expect(within(implementer).getByRole('img', { name: 'Running' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Tester, Queued' })).toBeDefined();
-    for (const button of within(rail).getAllByRole('button', {
-      name: /, (Running|Queued|Done)$/,
-    })) {
-      expect(within(button).getAllByRole('img')).toHaveLength(1);
-    }
+    expect(await treeRow(/^Tester, Queued$/)).toBeDefined();
   });
 
   it('c07-auto-session-level keeps the Auto chat in the center with the session level shown', async () => {
@@ -350,26 +366,22 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-idle reads Idle on the Auto row of the rail', async () => {
     mount({ id: 'c07-auto-idle' });
 
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
-    const rail = within(shownLayer()).getByRole('list', { name: 'Work' });
-    expect(within(rail).getByText('Idle')).toBeDefined();
-    expect(within(rail).getAllByRole('listitem')).toHaveLength(5);
+    expect(await treeRow(/^Auto, Idle$/)).toBeDefined();
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(5);
   });
 
-  it('c07-auto-answering shows Auto alone on the rail with the empty state', async () => {
+  it('c07-auto-answering shows Auto alone in the tree with the empty state', async () => {
     mount({ id: 'c07-auto-answering' });
 
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
-    const level = shownLayer();
-    expect(within(level).getAllByRole('listitem')).toHaveLength(1);
-    expect(within(level).getByText('No agents started yet')).toBeDefined();
-    expect(within(level).getByText('Idle')).toBeDefined();
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
+    expect(within(await panel()).getByText('No agents started yet')).toBeDefined();
+    expect(await treeRow(/^Auto, Idle$/)).toBeDefined();
   });
 
   it('c07-auto-answering rests after Auto answered: no Deciding tail and no Stop', async () => {
     mount({ id: 'c07-auto-answering' });
 
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
+    await autoTree();
     expect(document.querySelector('[data-auto-tail]')).toBeNull();
     expect(screen.queryByText('Deciding what to do next')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Stop Auto and its agents' })).toBeNull();
@@ -435,7 +447,8 @@ describe('c07 Auto scenes', () => {
     expect(levelStack().dataset.levelStack).toBe('session');
 
     fireEvent.click(rows[0] ?? list);
-    await waitFor(() => expect(levelStack().dataset.levelStack).toBe('auto'), WAIT);
+    expect(await autoTree()).toBeDefined();
+    expect(levelStack().dataset.levelStack).toBe('session');
   });
 
   it('c07-auto-start-open shows the Auto form of the New drawer with its files, model and limit', async () => {

@@ -90,7 +90,10 @@ describe('the navigation scenes', () => {
     expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Unlink NW-142' })).toBeNull();
     expect(screen.getByRole('button', { name: 'More actions for NW-142' })).toBeDefined();
-    expect(within(mainPane()).queryByRole('button', { name: /^Link/ })).toBeNull();
+    const pageLinks = within(mainPane())
+      .queryAllByRole('button', { name: /^Link/ })
+      .filter((button) => button.closest('[data-session-rail]') === null);
+    expect(pageLinks).toEqual([]);
   });
 
   it('railorder moves only the frame when another pin is opened', async () => {

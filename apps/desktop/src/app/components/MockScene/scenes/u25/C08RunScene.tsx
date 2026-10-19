@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSessionById } from '../../../../../store';
+import { DrawerColumn } from '@goodboy/ui';
+import { useAppStore, useSessionById } from '../../../../../store';
+import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
+import { DrawerHost } from '../../../DrawerHost';
 import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
@@ -44,16 +47,23 @@ const CLICK_DELAY_MS = 200;
 
 const SELECTOR: Readonly<Record<Exclude<C08Click, 'none'>, string>> = {
   menu: 'button[aria-label$="run actions"]',
-  addStep: '[data-run-level] [data-run-add-step] button',
+  addStep: '[data-spawned-panel] [data-run-add-step] button',
 };
 
 export const C08RunScene = ({ state, selection, click = 'none', isFolded = false }: Props) => {
   const [isSeeded, setIsSeeded] = useState(false);
   const session = useSessionById(C08_SESSION_ID);
+  const sizing = useAppStore(selectDrawerSizing);
+  const isDrawerOpen = useAppStore((current) => current.drawer !== null);
   useSceneRailFold({ isFolded });
 
   useEffect(() => {
     seedC08({ state, selection });
+    if (selection !== 'list') {
+      useAppStore
+        .getState()
+        .openDrawer({ kind: 'spawned', sessionId: C08_SESSION_ID, payload: null });
+    }
     setIsSeeded(true);
   }, [state, selection]);
 
@@ -83,9 +93,17 @@ export const C08RunScene = ({ state, selection, click = 'none', isFolded = false
         />
       </div>
       <main className="relative flex min-w-0 flex-1 flex-col">
-        <SessionFrame session={session}>
-          <SessionWorkspace session={session} isActive />
-        </SessionFrame>
+        <DrawerColumn
+          main={
+            <SessionFrame session={session}>
+              <SessionWorkspace session={session} isActive />
+            </SessionFrame>
+          }
+          drawer={isDrawerOpen ? <DrawerHost /> : null}
+          sizing={sizing}
+          ariaLabel="Side panel"
+          resizeLabel="Resize side panel"
+        />
       </main>
     </div>
   );

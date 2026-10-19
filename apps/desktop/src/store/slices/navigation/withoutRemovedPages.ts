@@ -19,6 +19,8 @@ type StudioParams = {
 
 const REMOVED_LENSES: ReadonlySet<string> = new Set(['terminal', 'explore', 'scripts']);
 
+const REMOVED_RAIL_LEVEL_KEY = 'sidebar-level';
+
 const REMOVED_STUDIOS: ReadonlyMap<string, StudioPlace> = new Map<string, StudioPlace>([
   ['companion', IPHONE_SETTINGS_PLACE],
 ]);
@@ -72,5 +74,29 @@ const withoutRemovedLens = ({ location }: Params): Location => {
   };
 };
 
+const withoutRailLevel = ({ location }: Params): Location => {
+  const { place } = location;
+  if (place.at !== 'session') {
+    return location;
+  }
+  const { [REMOVED_RAIL_LEVEL_KEY]: picked, ...selection } = location.focus.selection;
+  const isRunShown = place.view.target?.kind === 'run';
+  const isAutoShown =
+    place.view.lens === 'auto' && place.view.agentId !== null && picked !== 'session';
+  if (picked === undefined && !isRunShown && !isAutoShown) {
+    return location;
+  }
+  const spawned: OpenDrawer | null =
+    isRunShown || isAutoShown
+      ? { kind: 'spawned', sessionId: place.sessionId, payload: null }
+      : null;
+  return {
+    ...location,
+    focus: { ...location.focus, selection, drawer: location.focus.drawer ?? spawned },
+  };
+};
+
 export const withoutRemovedPages = ({ location }: Params): Location =>
-  withoutRemovedLens({ location: withoutRemovedStudio({ location }) });
+  withoutRailLevel({
+    location: withoutRemovedLens({ location: withoutRemovedStudio({ location }) }),
+  });

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { COLLAPSED_RAIL_WIDTH, DrawerColumn } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
-import { AutoLevel } from '../../../SessionRail/AutoLevel';
-import { RailAutoLevel } from '../../../SessionRail/RailAutoLevel';
+import { SceneAutoTreeNav } from '../u26/SceneAutoTreeNav';
 import { shellFoldsOf } from '../../../../shellArrangement/shellFoldsOf';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { AgentDetailPane } from '../../../../../features/session/components/AgentDetailPane';
@@ -88,16 +87,9 @@ export const AutoChatScene = ({ state, isPlanOpen = false, selected = 'root' }: 
             aria-label="Sidebar"
             className="flex h-full shrink-0 flex-col border-r border-border-soft pt-1"
             style={{ width: COLLAPSED_RAIL_WIDTH }}
-          >
-            <RailAutoLevel session={AUTO_SESSION} />
-          </nav>
+          />
         ) : (
-          <nav
-            aria-label="Sidebar"
-            className="flex h-full w-60 shrink-0 flex-col border-r border-border-soft pt-1"
-          >
-            <AutoLevel session={AUTO_SESSION} />
-          </nav>
+          <SceneAutoTreeNav session={AUTO_SESSION} rootAgentId={AUTO_ROOT_ID} />
         )}
         <DrawerColumn
           main={

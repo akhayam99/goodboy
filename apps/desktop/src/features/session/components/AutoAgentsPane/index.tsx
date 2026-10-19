@@ -3,7 +3,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { Plus } from 'lucide-react';
 import { Button, EmptyState, PaneShell } from '@goodboy/ui';
 import type { Agent, AgentId, Session } from '@goodboy/types';
-import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { openSpawned } from '../../openSpawned';
 import { autoRootsOf } from '../../../auto/autoRootsOf';
 import { railRowsOf, restingRootRowOf, type RailRow } from '../../../auto/chat/railRowsOf';
 import { useAutoTrees } from '../../../auto/useAutoTrees';
@@ -29,8 +30,6 @@ export const AutoAgentsPane = ({ session }: Props) => {
   const providers = useAppStore((state) => state.agentProviderOverride);
   const models = useAppStore((state) => state.agentModelOverride);
   const efforts = useAppStore((state) => state.agentEffortOverride);
-  const navigate = useAppStore((state) => state.navigate);
-  const pickRailLevel = useAppStore((state) => state.pickRailLevel);
   const isAutoOn = useIsAutoOn();
   const roots = useMemo(() => autoRootsOf({ agents, kindOverride }), [agents, kindOverride]);
   const turnStates = useAppStore(
@@ -59,10 +58,8 @@ export const AutoAgentsPane = ({ session }: Props) => {
     [roots, views, agents, providers, models, efforts, turnStates],
   );
 
-  const open = (agentId: AgentId) => {
-    navigate({ to: agentPlace({ sessionId, agentId }) });
-    pickRailLevel({ level: 'auto' });
-  };
+  const open = (agentId: AgentId) =>
+    openSpawned({ sessionId, target: { kind: 'auto-root', agentId } });
 
   const hasRows = rows.length > 0;
   const start = () => openAutoForm({ sessionId });
