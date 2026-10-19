@@ -3798,7 +3798,9 @@ keep their own; marks saved before that are read until the mount saves its own.
 Click a file and the
 diff scrolls to it; scroll the diff and the tree highlights the file in view but
 never opens a folder: when that file sits in a closed folder, the outermost
-closed folder shows a small primary dot (`contains the file in view`). Folds are
+closed folder shows a small primary dot (`contains the file in view`). The tree scrolls
+only when the file in view changes, and only far enough to show its row; a refresh of the
+diff data never moves it again. Folds are
 remembered per session and project in `localStorage`
 (`goodboy:diff-folds:v1:<session>:<mount>`, only your changes from the default,
 at most 500 entries, in `useFoldState`), so closing and reopening the page, a

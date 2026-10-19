@@ -128,7 +128,6 @@ export const ChangeTree = ({
   const railWidth = stage.width ?? 0;
   const hasDelta = railWidth >= DELTA_MIN_RAIL_PX;
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const revealed = useRef(false);
   const [cursorId, setCursorId] = useState<string | null>(null);
   const [isTreeFocused, setIsTreeFocused] = useState(false);
   useEscapeLayer(onLeave, isTreeFocused);
@@ -213,17 +212,14 @@ export const ChangeTree = ({
     [isWindowed, layout, rows],
   );
 
-  useEffect(() => {
-    revealed.current = false;
-  }, [activePath]);
+  const revealRef = useRef(reveal);
+  revealRef.current = reveal;
 
   useEffect(() => {
-    if (revealed.current || trackedId === null) {
-      return;
+    if (trackedId !== null) {
+      revealRef.current(trackedId);
     }
-    revealed.current = true;
-    reveal(trackedId);
-  }, [reveal, trackedId]);
+  }, [activePath, trackedId]);
 
   const moveCursor = useCallback(
     (id: string) => {
