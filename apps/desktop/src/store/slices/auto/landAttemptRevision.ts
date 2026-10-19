@@ -4,7 +4,7 @@ import {
   type AutoAttempt,
   type AutoDelegation,
 } from '@goodboy/db';
-import { brandId, type ArtifactId } from '@goodboy/types';
+import { brandId, type ArtifactId, type SessionId } from '@goodboy/types';
 import type { FailReviseParams } from './failRevise';
 import type { LandRevisionOutcome } from './landRevision';
 import type { AgentVerbContext } from './verbContext';
@@ -19,6 +19,7 @@ export type RevisionLanding = Readonly<{
 
 export type LandAttemptRevisionParams = Readonly<{
   ctx: AgentVerbContext;
+  sessionId: SessionId;
   delegation: AutoDelegation;
   attempt: AutoAttempt;
   generation: number;
@@ -86,6 +87,7 @@ const failureOf = ({ outcome }: FailureParams): FailReviseParams['reason'] | nul
 
 export const landAttemptRevision = async ({
   ctx,
+  sessionId,
   delegation,
   attempt,
   generation,
@@ -117,6 +119,7 @@ export const landAttemptRevision = async ({
     result: envelope,
   });
   if (outcome.kind === 'landed' || outcome.kind === 'already_landed') {
+    await ctx.ports.refreshSessionArtifacts({ sessionId });
     return { kind: outcome.kind, revision: outcome.revision };
   }
   const reason = failureOf({ outcome });

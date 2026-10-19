@@ -6,6 +6,7 @@ import { worktreeSnapshot } from '../../../features/worktree/worktree';
 import { useAppStore, type AppStore } from '../../store';
 import { createAutoRuntime, type AutoRuntime } from './createAutoRuntime';
 import { createRealAutoPorts } from './createRealAutoPorts';
+import { makeRefreshSessionArtifacts } from './makeRefreshSessionArtifacts';
 import { createAutoScheduler } from './scheduler';
 import type { SleepParams } from './startDeliveredTurn';
 
@@ -40,6 +41,10 @@ export const makeAutoRuntime = ({
         sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: agents },
       }));
     },
+    refreshSessionArtifacts: makeRefreshSessionArtifacts({
+      get: getState,
+      set: useAppStore.setState,
+    }),
     lookupDeliveryRun,
     worktreeSnapshot,
     listLiveRunIds,

@@ -286,7 +286,13 @@ const recoverLandings = async ({ ctx, tree }: ClaimedParams): Promise<void> => {
     if (latest === undefined || latest.state !== 'ended' || latest.outcome !== 'completed') {
       continue;
     }
-    await landAttemptRevision({ ctx, delegation, attempt: latest, generation: tree.generation });
+    await landAttemptRevision({
+      ctx,
+      sessionId: tree.sessionId,
+      delegation,
+      attempt: latest,
+      generation: tree.generation,
+    });
   }
 };
 

@@ -9,6 +9,7 @@ import type {
   DeliveryRun,
   EnsureChildAgentParams,
   PublishScribeParams,
+  RefreshSessionArtifactsParams,
   RoutingOutcome,
   RunOutcome,
   ScribePublication,
@@ -65,6 +66,7 @@ export type FakePorts = AutoPorts &
     autoTurns: Array<StartAutoTurnParams>;
     childTurns: Array<StartChildTurnParams>;
     ensuredChildren: Array<EnsureChildAgentParams>;
+    refreshes: Array<RefreshSessionArtifactsParams>;
     cancels: Array<CancelRunParams>;
     liveRuns: Set<string>;
     runOutcomes: Map<string, RunOutcome>;
@@ -117,6 +119,7 @@ export const makeFakePorts = ({
   const autoTurns: Array<StartAutoTurnParams> = [];
   const childTurns: Array<StartChildTurnParams> = [];
   const ensuredChildren: Array<EnsureChildAgentParams> = [];
+  const refreshes: Array<RefreshSessionArtifactsParams> = [];
   const cancels: Array<CancelRunParams> = [];
   const publications: Array<PublishScribeParams> = [];
   const publicationQueue: Array<ScribePublication> = [];
@@ -124,6 +127,7 @@ export const makeFakePorts = ({
     autoTurns,
     childTurns,
     ensuredChildren,
+    refreshes,
     cancels,
     liveRuns,
     runOutcomes,
@@ -165,6 +169,9 @@ export const makeFakePorts = ({
     newId: () => {
       counter += 1;
       return `${idPrefix}-${counter}`;
+    },
+    refreshSessionArtifacts: async (params) => {
+      refreshes.push(params);
     },
     loadMounts: async () => mounts,
     resolveRouting: async () => routing,

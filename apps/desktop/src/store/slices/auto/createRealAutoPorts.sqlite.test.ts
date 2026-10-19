@@ -51,6 +51,7 @@ const worldWithPorts = async (patch: Partial<RealAutoPortsDeps> = {}) => {
     cancelTurnConfirmed: vi.fn(async () => ({ outcome: 'exited' as const, exitedAt: null })),
     loadSessionMounts: vi.fn(async () => [VIEW]),
     refreshAgents,
+    refreshSessionArtifacts: vi.fn(async () => undefined),
     lookupDeliveryRun: vi.fn(async () => null),
     worktreeSnapshot: vi.fn(async () => ({ head: 'abc123', entries: [], isPartial: false })),
     listLiveRunIds: vi.fn(async () => new Set(['run-live'])),

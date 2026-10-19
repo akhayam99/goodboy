@@ -191,8 +191,13 @@ export type ScribePublication =
   | Readonly<{ kind: 'opened'; number: number; url: string }>
   | Readonly<{ kind: 'failed'; message: string }>;
 
+export type RefreshSessionArtifactsParams = Readonly<{
+  sessionId: SessionId;
+}>;
+
 export type AutoPorts = Readonly<{
   newId: () => string;
+  refreshSessionArtifacts: (params: RefreshSessionArtifactsParams) => Promise<void>;
   loadMounts: (params: LoadMountsParams) => Promise<ReadonlyArray<PickableMount>>;
   resolveRouting: (params: RoutingRequest) => Promise<RoutingOutcome>;
   isPlanApprovalRequired: () => boolean;

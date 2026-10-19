@@ -41,6 +41,7 @@ export type RealAutoPortsDeps = Readonly<{
     readonly sessionId: SessionId;
   }) => Promise<ReadonlyArray<SessionMountView>>;
   refreshAgents: (params: RefreshAgentsParams) => Promise<void>;
+  refreshSessionArtifacts: AutoPorts['refreshSessionArtifacts'];
   lookupDeliveryRun: (params: LookupDeliveryRunParams) => Promise<DeliveryRun | null>;
   worktreeSnapshot: (params: ReadMountSnapshotParams) => Promise<WorktreeSnapshot>;
   listLiveRunIds: () => Promise<ReadonlySet<string>>;
@@ -122,6 +123,7 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
   };
   return {
     newId: deps.newId,
+    refreshSessionArtifacts: deps.refreshSessionArtifacts,
     loadMounts: async ({ sessionId }) =>
       (await deps.loadSessionMounts({ sessionId })).map((view) => pickableOf({ view })),
     resolveRouting: async (request) =>

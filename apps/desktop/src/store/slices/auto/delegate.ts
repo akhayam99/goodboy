@@ -61,6 +61,7 @@ const receiptOutcome = async ({
   requestId,
   isReplay,
 }: ReceiptOutcomeParams): Promise<BridgeOutcome> => {
+  await ctx.ports.refreshSessionArtifacts({ sessionId: command.grant.sessionId });
   const receipt = await delegationReceipt({
     db: ctx.db,
     treeId: command.grant.treeId,
