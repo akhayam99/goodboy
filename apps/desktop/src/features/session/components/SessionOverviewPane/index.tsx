@@ -2,6 +2,9 @@ import { PaneShell } from '@goodboy/ui';
 import { useCallback, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
+import { WorkTimeProvider } from '../../../workTreeModel/WorkTimeProvider';
+import { useOverviewLayout } from '../../overviewLayout/useOverviewLayout';
+import { CentralColumn } from './CentralColumn';
 import { FolderCard } from './FolderCard';
 import { HeaderBand } from './HeaderBand';
 import { OverviewTitle } from './OverviewTitle';
@@ -24,6 +27,7 @@ const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
 
 export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionId: SessionId = session.id;
+  const layout = useOverviewLayout();
   const [shownQuestionIds, setShownQuestionIds] = useState<ReadonlySet<string>>(NO_SHOWN_QUESTIONS);
   const [hasNextLead, setHasNextLead] = useState(false);
   const onLeadChange = useCallback(({ hasLead }: LeadChange) => setHasNextLead(hasLead), []);
@@ -41,20 +45,26 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       {isArchived ? null : <OverviewNotices session={session} />}
       {isArchived ? null : <UnassignedNotes sessionId={sessionId} />}
       {isArchived ? null : <FolderCard sessionId={sessionId} />}
-      <TimelinePane
-        session={session}
-        onShownQuestionsChange={setShownQuestionIds}
-        lead={
-          isArchived ? null : (
-            <NextStepSlot
-              session={session}
-              onSelectLens={onSelectLens}
-              shownQuestionIds={shownQuestionIds}
-              onLeadChange={onLeadChange}
-            />
-          )
-        }
-      />
+      {layout === 'new' ? (
+        <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
+          <CentralColumn session={session} onLeadChange={onLeadChange} />
+        </WorkTimeProvider>
+      ) : (
+        <TimelinePane
+          session={session}
+          onShownQuestionsChange={setShownQuestionIds}
+          lead={
+            isArchived ? null : (
+              <NextStepSlot
+                session={session}
+                onSelectLens={onSelectLens}
+                shownQuestionIds={shownQuestionIds}
+                onLeadChange={onLeadChange}
+              />
+            )
+          }
+        />
+      )}
     </PaneShell>
   );
 };

@@ -38,6 +38,7 @@ import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
 import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import { TASK_KIND } from './kinds/task';
 import { SUGGESTION_KIND } from './kinds/suggestion';
+import { ACTION_CARD_KIND } from './kinds/actionCard';
 import type {
   ActionDefinition,
   ActionEnv,
@@ -191,6 +192,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: TASK_KIND, state, target });
     case 'suggestion':
       return bind({ definition: SUGGESTION_KIND, state, target });
+    case 'actionCard':
+      return bind({ definition: ACTION_CARD_KIND, state, target });
     default: {
       const exhaustive: never = target;
       return exhaustive;

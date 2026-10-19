@@ -16,7 +16,9 @@ import type {
   TimelineRowItem,
   TimelineStreamEntry,
 } from '../../../../timeline/buildTimelineStream';
+import type { HistoryBatchDetail as HistoryBatchDetailModel } from '../../../../timeline/historyBatchDetail';
 import { DecisionChangesDetail } from './DecisionChangesDetail';
+import { HistoryBatchDetail } from './HistoryBatchDetail';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
@@ -56,6 +58,7 @@ export type TimelineEntryRowProps = {
   readonly isExpanded: boolean;
   readonly isBranchExpanded: boolean;
   readonly decisionDetail: DecisionChangeDetail | null;
+  readonly batchDetail: HistoryBatchDetailModel | null;
   readonly roleModels: RoleModelPreferences | null;
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
@@ -79,6 +82,7 @@ export const TimelineEntryRow = ({
   isExpanded,
   isBranchExpanded,
   decisionDetail,
+  batchDetail,
   roleModels,
   sessionProvider,
   sessionEffort,
@@ -138,6 +142,38 @@ export const TimelineEntryRow = ({
         sessionProvider={sessionProvider}
         sessionEffort={sessionEffort}
         costUsd={costUsd}
+        lanes={lanes}
+        onBranchKey={branchKey}
+      />
+    );
+  }
+  if (batchDetail !== null) {
+    const batchId = `${item.id}-history-batch`;
+    return (
+      <TimelineStreamRow
+        item={item}
+        rail={rail}
+        railWidth={railWidth}
+        sessionId={sessionId}
+        openTarget={{
+          label: isExpanded ? 'Hide branches' : 'Show branches',
+          open: () => handlers.toggleExpanded(item.id),
+        }}
+        expansion={{ isExpanded, controlsId: batchId }}
+        detailHeight={isExpanded ? batchDetail.height : 0}
+        detail={
+          isExpanded ? (
+            <HistoryBatchDetail
+              id={batchId}
+              rowId={item.id}
+              detail={batchDetail}
+              onMeasured={handlers.setDetailHeight}
+            />
+          ) : null
+        }
+        action={action}
+        diffStat={diffStat}
+        runLane={runLane}
         lanes={lanes}
         onBranchKey={branchKey}
       />

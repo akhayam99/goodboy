@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
-import { SuggestionOverflowMenu } from '../../../actions/SuggestionOverflowMenu';
-import { TALK_ACTION_ID } from '../../../actions/kinds/suggestion';
+import { SuggestionOverflowMenu } from '../actions/SuggestionOverflowMenu';
+import { NOT_NOW_ACTION_ID, TALK_ACTION_ID } from '../actions/kinds/suggestion';
 import type {
   ActionHeldParams,
   ActionPreviewParams,
   ActionTrack,
   SuggestionActionTarget,
-} from '../../../actions/types';
-import type { AgentKind } from '../../../session/agent-kind';
+} from '../actions/types';
+import type { AgentKind } from '../session/agent-kind';
 import { NEXT_STEP_CELLS } from './nextStepGrid';
 
 type Props = {
@@ -17,6 +17,7 @@ type Props = {
   readonly isDisabled: boolean;
   readonly onPreview: (kind: AgentKind | null) => void;
   readonly trackChoice: ActionTrack;
+  readonly isBare?: boolean;
 };
 
 export const NextStepMenu = ({
@@ -26,6 +27,7 @@ export const NextStepMenu = ({
   isDisabled,
   onPreview,
   trackChoice,
+  isBare = false,
 }: Props) => {
   const onActionPreview = useCallback(
     ({ preview }: ActionPreviewParams) => onPreview(preview === null ? null : preview.agentKind),
@@ -34,26 +36,37 @@ export const NextStepMenu = ({
 
   const track = useCallback<ActionTrack>(
     ({ actionId, task }) =>
-      actionId === TALK_ACTION_ID ? task() : trackChoice({ actionId, task }),
+      actionId === TALK_ACTION_ID || actionId === NOT_NOW_ACTION_ID
+        ? task()
+        : trackChoice({ actionId, task }),
     [trackChoice],
   );
 
   const isActionHeld = useCallback(
     ({ actionId }: ActionHeldParams) =>
-      actionId === TALK_ACTION_ID ? isDisabled : isHeld && !pendingChoiceIds.has(actionId),
+      actionId === TALK_ACTION_ID || actionId === NOT_NOW_ACTION_ID
+        ? isDisabled
+        : isHeld && !pendingChoiceIds.has(actionId),
     [isDisabled, isHeld, pendingChoiceIds],
   );
 
+  const menu = (
+    <SuggestionOverflowMenu
+      target={target}
+      label={`More options for ${target.suggestion.title}`}
+      isDisabled={isDisabled}
+      minEntries={isBare ? 1 : undefined}
+      onPreview={onActionPreview}
+      track={track}
+      isHeld={isActionHeld}
+    />
+  );
+  if (isBare) {
+    return menu;
+  }
   return (
     <span data-column="menu" className={NEXT_STEP_CELLS.menu}>
-      <SuggestionOverflowMenu
-        target={target}
-        label={`More options for ${target.suggestion.title}`}
-        isDisabled={isDisabled}
-        onPreview={onActionPreview}
-        track={track}
-        isHeld={isActionHeld}
-      />
+      {menu}
     </span>
   );
 };

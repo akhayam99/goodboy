@@ -85,12 +85,20 @@ type TimelineProjectRun = {
   readonly detached: ReadonlyArray<string>;
 };
 
+export type TimelineHistoryBatch = {
+  readonly key: string;
+  readonly title: string;
+  readonly sub: string;
+  readonly events: ReadonlyArray<SessionEvent>;
+};
+
 export type TimelineEventEntry = {
   readonly kind: 'event';
   readonly id: string;
   readonly at: string;
   readonly event: SessionEvent;
   readonly projectRun?: TimelineProjectRun;
+  readonly historyBatch?: TimelineHistoryBatch;
   readonly repeatCount?: number;
   readonly lane?: TimelineArtifactLane;
 };

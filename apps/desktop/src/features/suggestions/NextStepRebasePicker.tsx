@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Button, Checkbox } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import type { RebaseSuggestionTarget } from '../../types';
-import { rebasePickLabelOf } from '../../rebasePickLabelOf';
+import { useAppStore } from '../../store';
+import type { RebaseSuggestionTarget } from './types';
+import { rebasePickLabelOf } from './rebasePickLabelOf';
 
 type Props = {
   readonly sessionId: SessionId;

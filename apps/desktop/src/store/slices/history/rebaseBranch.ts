@@ -41,6 +41,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
     sessionId,
     mountId,
     ontoBranch,
+    batchId,
   }: RebaseBranchInput): Promise<RebaseBranchOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
     const identity = identityOf({ target });
@@ -98,6 +99,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
         savedStash: undefined,
         rebaseConflict: undefined,
         carriedCount: 0,
+        batchId: batchId ?? null,
       },
     });
     let requestRun = get().historyRuns[mountId];
@@ -138,6 +140,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
         worktreePath: target.worktreePath,
         branch: target.baseBranch ?? rebase.ontoRef,
         behind: rebase.behind,
+        ...(batchId !== undefined && { batchId }),
       },
     });
     const plan = rebasePlanArgs({ worktreePath: target.worktreePath, rebase });

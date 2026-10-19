@@ -30,9 +30,13 @@ export const openPaneOf = ({ state, sessionId }: Params): ClusterPane | null => 
       return drawer.payload.from === 'scripts' ? 'scripts' : null;
     case 'question':
       return drawer.payload.from === 'ask' ? 'ask' : null;
+    case 'spawned':
+      return 'spawned';
+    case 'auto-child':
+    case 'run-step':
+      return drawer.payload.from === 'spawned' ? 'spawned' : null;
     case 'artifact':
     case 'artifact-document':
-    case 'auto-child':
     case 'check-analysis':
     case 'conversation':
     case 'file-diff':
@@ -40,7 +44,7 @@ export const openPaneOf = ({ state, sessionId }: Params): ClusterPane | null => 
     case 'history-versions':
     case 'new':
     case 'plan-part':
-    case 'run-step':
+    case 'session-log':
     case 'transcript':
       return null;
     default: {

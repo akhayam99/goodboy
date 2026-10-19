@@ -99,11 +99,23 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'auto-child';
-      readonly payload: { readonly agentId: AgentId };
+      readonly payload: { readonly agentId: AgentId; readonly from?: 'spawned' };
+    }
+  | {
+      readonly kind: 'spawned';
+      readonly payload: null;
+    }
+  | {
+      readonly kind: 'session-log';
+      readonly payload: { readonly focusEntryId: string | null };
     }
   | {
       readonly kind: 'run-step';
-      readonly payload: { readonly runId: WorkflowRunId; readonly agentId: AgentId };
+      readonly payload: {
+        readonly runId: WorkflowRunId;
+        readonly agentId: AgentId;
+        readonly from?: 'spawned';
+      };
     }
   | {
       readonly kind: 'fix-comments';

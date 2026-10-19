@@ -81,6 +81,8 @@ const activityViewOf = ({ entry, events, liveAgentIds }: Params): ActivityView |
   }
 };
 
+export type EntriesView = ActivityView | 'all';
+
 export const entriesOfView = ({
   entries,
   events,
@@ -89,7 +91,10 @@ export const entriesOfView = ({
 }: {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly events: ReadonlyArray<SessionEvent>;
-  readonly view: ActivityView;
+  readonly view: EntriesView;
   readonly liveAgentIds?: ReadonlySet<string>;
 }): ReadonlyArray<TimelineTopLevelEntry> =>
-  entries.filter((entry) => activityViewOf({ entry, events, liveAgentIds }) === view);
+  entries.filter((entry) => {
+    const entryView = activityViewOf({ entry, events, liveAgentIds });
+    return view === 'all' ? entryView !== null : entryView === view;
+  });

@@ -174,6 +174,7 @@ describe('session_events queries', () => {
           prNumber: 12,
           backupRef: 'refs/goodboy/backup/1',
           onOrigin: false,
+          batchId: 'batch-1',
         },
       },
     });

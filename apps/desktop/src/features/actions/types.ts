@@ -459,12 +459,26 @@ export type TaskActionTarget = {
   readonly branch: string | null;
 };
 
+export type FoldedVerb = {
+  readonly id: string;
+  readonly label: string;
+  readonly run: () => void;
+};
+
 export type SuggestionActionTarget = {
   readonly kind: 'suggestion';
   readonly sessionId: SessionId;
   readonly suggestion: SessionSuggestion;
   readonly startsRole: AgentKind | null;
   readonly isAutoOn: boolean;
+  readonly onNotNow?: () => void;
+  readonly foldedVerbs?: ReadonlyArray<FoldedVerb>;
+};
+
+export type ActionCardActionTarget = {
+  readonly kind: 'actionCard';
+  readonly sessionId: SessionId;
+  readonly verbs: ReadonlyArray<FoldedVerb>;
 };
 
 export type ObjectTarget =
@@ -505,4 +519,5 @@ export type ObjectTarget =
   | ReviewCommentActionTarget
   | WriteReviewActionTarget
   | TaskActionTarget
-  | SuggestionActionTarget;
+  | SuggestionActionTarget
+  | ActionCardActionTarget;

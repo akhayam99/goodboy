@@ -124,7 +124,7 @@ export const rebaseAll = (set: SetFn, get: GetFn) => {
         patch: (run) => withBranch({ run, mountId, patch: { state: 'rebasing' } }),
       });
       const outcome = await get()
-        .rebaseBranch({ sessionId, mountId })
+        .rebaseBranch({ sessionId, mountId, batchId: runId })
         .catch((error: unknown) => formatError(error));
       const patch = branchPatchOf({
         outcome,

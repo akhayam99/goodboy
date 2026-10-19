@@ -444,6 +444,7 @@ export const useTimelineRowProps = ({
       isBranchExpanded:
         item.branches?.some((branch) => isGroupExpanded({ id: branch.expandId })) === true,
       decisionDetail: rows.decisionDetails.get(item.id) ?? null,
+      batchDetail: rows.batchDetails.get(item.id) ?? null,
       roleModels,
       sessionProvider,
       sessionEffort,

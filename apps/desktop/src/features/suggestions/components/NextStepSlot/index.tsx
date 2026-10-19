@@ -14,7 +14,7 @@ import type { SessionSuggestion } from '../../types';
 import type { AgentKindRouting } from '../../../session/agent-kind';
 import type { ActionTrack } from '../../../actions/types';
 import { NextStepRow } from './NextStepRow';
-import { NEXT_STEP_LIST } from './nextStepGrid';
+import { NEXT_STEP_LIST } from '../../nextStepGrid';
 
 const CHOICE_FAILURE_TITLE = "Couldn't start that";
 

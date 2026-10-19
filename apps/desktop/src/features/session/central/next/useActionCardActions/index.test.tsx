@@ -1,0 +1,239 @@
+// @vitest-environment happy-dom
+
+import type { ReactNode } from 'react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, renderHook } from '@testing-library/react';
+import { brandId, type IsoDateTime } from '@goodboy/types';
+import { aSession, anAgent } from '@goodboy/types/testing';
+import { ToastProvider } from '../../../../../shared/components/Toast';
+import {
+  importStore,
+  resetStoryStore,
+  STORE_IMPORT_TIMEOUT_MS,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
+import {
+  FIXTURE_ROOT,
+  FIXTURE_SESSION,
+  aDelegation,
+  aView,
+} from '../../../../auto/testing/autoViewFixtures';
+import type { SessionSuggestion } from '../../../../suggestions/types';
+import { actionCardsOf, type AutoActionTarget } from '../actionCardsOf';
+
+const { runs } = vi.hoisted(() => ({
+  runs: new Map<string, () => Promise<void>>(),
+}));
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbModuleMock({
+    listNudgeEvents: vi.fn(async () => []),
+  }),
+);
+vi.mock('../../../../suggestions/useNextStepOutcomes', () => ({
+  recordNextStepOutcome: vi.fn(async () => 'event'),
+  revertNextStepOutcome: vi.fn(async () => undefined),
+}));
+vi.mock('../../../../suggestions/useSuggestionActions', () => ({
+  useSuggestionActions:
+    () =>
+    ({ suggestion }: { readonly suggestion: SessionSuggestion }) => ({
+      primary: {
+        label: 'Rebase',
+        isDisabled: false,
+        failureTitle: "Couldn't rebase",
+        run: () => runs.get(suggestion.id)?.() ?? Promise.resolve(),
+      },
+      onDismiss: null,
+    }),
+}));
+
+import { useActionCardActions } from './index';
+
+const SESSION = aSession({ id: FIXTURE_SESSION });
+
+const CHILD = aDelegation({ key: 'fixer', role: 'fixer', state: 'accepted' });
+const ROOT_AGENT = anAgent({ id: FIXTURE_ROOT, kind: 'auto', status: 'running' });
+const QUEUED_CHILD = anAgent({
+  id: CHILD.childAgentId,
+  kind: 'ci-fixer',
+  status: 'pending',
+  parentAgentId: FIXTURE_ROOT,
+});
+
+const TARGET: AutoActionTarget = {
+  agentId: CHILD.childAgentId,
+  rootAgentId: FIXTURE_ROOT,
+  role: 'Fixer',
+  kind: 'neverStarted',
+  reason: 'Auto created it at 10:21, no first message reached it.',
+  canRetry: true,
+};
+
+const REBASE: SessionSuggestion = {
+  id: 'rebase-project:ledger-core',
+  kind: 'rebase-project',
+  priority: 40,
+  band: 2,
+  title: 'Rebase ledger-core on main',
+  sessionId: FIXTURE_SESSION,
+  fingerprint: 'rebase-project:ledger-core',
+  targetKey: null,
+  payload: { targets: [] },
+};
+
+const wrapper = ({ children }: { readonly children: ReactNode }) => (
+  <ToastProvider>{children}</ToastProvider>
+);
+
+const autoCard = () => {
+  const [card] = actionCardsOf({ owners: [], suggestions: [], autoTargets: [TARGET] });
+  if (card === undefined) {
+    throw new Error('Expected the Auto card');
+  }
+  return card;
+};
+
+const suggestionCard = () => {
+  const [card] = actionCardsOf({ owners: [], suggestions: [REBASE], autoTargets: [] });
+  if (card === undefined) {
+    throw new Error('Expected the suggestion card');
+  }
+  return card;
+};
+
+let useAppStore: StoryStore;
+const continueStoppedAgent = vi.fn(async () => undefined);
+const loadAutoTrees = vi.fn(async () => undefined);
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  runs.clear();
+  continueStoppedAgent.mockReset();
+  continueStoppedAgent.mockResolvedValue(undefined);
+  loadAutoTrees.mockReset();
+  loadAutoTrees.mockResolvedValue(undefined);
+  useAppStore.setState({
+    sessions: [SESSION],
+    sessionPhaseRuns: { [FIXTURE_SESSION]: [ROOT_AGENT, QUEUED_CHILD] },
+    autoTreeViews: { [FIXTURE_SESSION]: [aView({ phase: 'answering', delegations: [CHILD] })] },
+    continueStoppedAgent,
+    loadAutoTrees,
+  });
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe('Auto retry on a never started child', () => {
+  it('reloads the Auto trees, then retries once with the child id', async () => {
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = autoCard();
+    const main = result.current.actionsFor({ card }).main;
+
+    await act(async () => {
+      main?.run();
+      main?.run();
+    });
+
+    expect(main?.label).toBe('Retry Fixer');
+    expect(loadAutoTrees).toHaveBeenCalledWith({ sessionId: FIXTURE_SESSION });
+    expect(continueStoppedAgent).toHaveBeenCalledTimes(1);
+    expect(continueStoppedAgent).toHaveBeenCalledWith({
+      sessionId: FIXTURE_SESSION,
+      agentId: CHILD.childAgentId,
+    });
+  });
+
+  it('sends nothing and drops the card when a fresh load says the child started', async () => {
+    loadAutoTrees.mockImplementation(async () => {
+      useAppStore.setState({
+        sessionPhaseRuns: {
+          [FIXTURE_SESSION]: [
+            ROOT_AGENT,
+            {
+              ...QUEUED_CHILD,
+              startedAt: brandId<IsoDateTime>({ value: '2026-10-18T10:22:00.000Z' }),
+            },
+          ],
+        },
+      });
+    });
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = autoCard();
+
+    await act(async () => {
+      result.current.actionsFor({ card }).main?.run();
+    });
+
+    expect(continueStoppedAgent).not.toHaveBeenCalled();
+    expect(result.current.isHidden({ card })).toBe(true);
+  });
+
+  it('keeps the card on a failure, shows the cause and relabels the verb Retry', async () => {
+    continueStoppedAgent.mockRejectedValueOnce(new Error('Auto is not running'));
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = autoCard();
+
+    await act(async () => {
+      result.current.actionsFor({ card }).main?.run();
+    });
+
+    const after = result.current.actionsFor({ card });
+    expect(after.failure).toBe('Auto is not running');
+    expect(after.main?.label).toBe('Retry');
+    expect(after.main?.ariaLabel).toBe('Retry Fixer');
+    expect(result.current.isHidden({ card })).toBe(false);
+  });
+
+  it('offers Open Auto as the second verb and folds it when the column is narrow', () => {
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = autoCard();
+
+    const wide = result.current.actionsFor({ card });
+    const narrow = result.current.actionsFor({ card, isNarrow: true });
+
+    expect(wide.second?.label).toBe('Open Auto');
+    expect(narrow.second).toBeNull();
+    expect(narrow.foldedTarget?.verbs.map((verb) => verb.label)).toEqual(['Open Auto']);
+  });
+});
+
+describe('a late result for a card that is already gone', () => {
+  it('does not bring a dismissed card back when its primary resolves afterwards', async () => {
+    let finish: () => void = () => undefined;
+    runs.set(
+      REBASE.id,
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = suggestionCard();
+
+    await act(async () => {
+      result.current.actionsFor({ card }).main?.run();
+    });
+    await act(async () => {
+      result.current.actionsFor({ card }).menu?.target.onNotNow?.();
+    });
+    expect(result.current.isHidden({ card })).toBe(true);
+    await act(async () => {
+      finish();
+    });
+
+    expect(result.current.isHidden({ card })).toBe(true);
+  });
+});

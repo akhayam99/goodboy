@@ -165,6 +165,18 @@ const ENTRIES: ReadonlyArray<Entry> = [
     drawer: { kind: 'auto-child', sessionId: SESSION, payload: { agentId: AGENT } },
   },
   {
+    kind: 'spawned',
+    region: 'Agents',
+    seed: seedSession,
+    drawer: { kind: 'spawned', sessionId: SESSION, payload: null },
+  },
+  {
+    kind: 'session-log',
+    region: 'Log',
+    seed: seedSession,
+    drawer: { kind: 'session-log', sessionId: SESSION, payload: { focusEntryId: null } },
+  },
+  {
     kind: 'run-step',
     region: 'Step 3 · Tester',
     seed: () => {
