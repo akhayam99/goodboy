@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { cn, PageColumn, tintClasses } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import type { AgentId, Session } from '@goodboy/types';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
@@ -34,17 +34,19 @@ import { useAutoTreeViews } from '../../../auto/useAutoTreeViews';
 
 type Props = {
   readonly session: Session;
+  readonly agentId?: AgentId | null;
   readonly providerDisconnected?: boolean;
   readonly placeholderOverride?: string;
 };
 
 export const ChatInput = ({
   session,
+  agentId,
   providerDisconnected = false,
   placeholderOverride,
 }: Props) => {
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
-    useAgentSelection({ session });
+    useAgentSelection({ session, agentId });
   const autoViews = useAutoTreeViews({ sessionId: session.id });
   const isAutoChild =
     selectedAgentId !== null &&
@@ -67,7 +69,6 @@ export const ChatInput = ({
     removeAttachment,
     cleanupSentAttachments,
   } = useAttachments({
-    sessionId: session.id,
     selectedAgentId,
     sessionWorktree,
     providerDisconnected,
@@ -84,7 +85,7 @@ export const ChatInput = ({
     dismissPopover,
   } = useChatPrefix({ session, value, setValue, showToast, wrapperRef });
 
-  const routing = useTurnRouting({ session });
+  const routing = useTurnRouting({ session, agentId: selectedAgentId });
   const dispatch = useTurnDispatch({ sessionId: session.id, cleanupSentAttachments });
 
   const { queue, enqueue, sendNow, removeQueued, sendQueued, editQueued } = useComposerQueue({

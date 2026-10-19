@@ -1,14 +1,16 @@
-import type { Session } from '@goodboy/types';
+import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
 import { classifyAgent, type AgentKind } from '../../../../../session/agent-kind';
 import { RUNNING_KINDS } from '../../lib';
 
 type Params = {
   readonly session: Session;
+  readonly agentId?: AgentId | null;
 };
 
-export const useAgentSelection = ({ session }: Params) => {
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
+export const useAgentSelection = ({ session, agentId }: Params) => {
+  const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
+  const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
   const agentKindOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentKindOverride[selectedAgentId] ?? null) : null,
   );

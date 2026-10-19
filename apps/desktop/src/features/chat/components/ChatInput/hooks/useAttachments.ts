@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { DraftAttachment } from '../../../../../store/slices/agents/setAgentAttachments';
 import { deleteAttachment, readAttachment, writeAttachment } from '../../../turn';
@@ -14,8 +14,12 @@ import {
   type PersistArgs,
 } from '../../../../../shared/hooks/usePendingAttachments';
 
+export type CleanupSentParams = {
+  readonly atts: ReadonlyArray<PendingAttachment>;
+  readonly agentId: AgentId;
+};
+
 type Params = {
-  readonly sessionId: SessionId;
   readonly selectedAgentId: AgentId | null;
   readonly sessionWorktree: string | null;
   readonly providerDisconnected: boolean;
@@ -23,7 +27,6 @@ type Params = {
 };
 
 export const useAttachments = ({
-  sessionId,
   selectedAgentId,
   sessionWorktree,
   providerDisconnected,
@@ -127,23 +130,17 @@ export const useAttachments = ({
     void restoreAttachments(stored, selectedAgentId);
   }, [selectedAgentId, sessionWorktree, restoreAttachments]);
 
-  const cleanupSentAttachments = useCallback(
-    (atts: ReadonlyArray<PendingAttachment>) => {
-      const sentAgentId = useAppStore.getState().selectedAgentId[sessionId] ?? null;
-      const worktree = sessionWorktreeRef.current;
-      if (worktree) {
-        for (const att of atts) {
-          if (att.relPath !== null) {
-            void deleteAttachment(worktree, att.relPath).catch(() => {});
-          }
+  const cleanupSentAttachments = useCallback(({ atts, agentId }: CleanupSentParams) => {
+    const worktree = sessionWorktreeRef.current;
+    if (worktree) {
+      for (const att of atts) {
+        if (att.relPath !== null) {
+          void deleteAttachment(worktree, att.relPath).catch(() => {});
         }
       }
-      if (sentAgentId !== null) {
-        useAppStore.getState().clearAgentAttachments(sentAgentId);
-      }
-    },
-    [sessionId],
-  );
+    }
+    useAppStore.getState().clearAgentAttachments(agentId);
+  }, []);
 
   return {
     attachments,

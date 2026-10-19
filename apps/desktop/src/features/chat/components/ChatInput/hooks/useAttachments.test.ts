@@ -67,7 +67,6 @@ const mount = ({ worktree, providerDisconnected = false }: MountParams) =>
   renderHook(
     ({ selectedAgentId }: { readonly selectedAgentId: AgentId | null }) =>
       useAttachments({
-        sessionId: SESSION_ID,
         selectedAgentId,
         sessionWorktree: worktree,
         providerDisconnected,
@@ -172,10 +171,13 @@ describe('useAttachments', () => {
     } as never);
     const { result } = mount({ worktree: '/tmp/wt' });
     act(() => {
-      result.current.cleanupSentAttachments([
-        { ...draft, blob: new Blob(['ABC']) },
-        { ...draft, id: 'att-2', relPath: null, blob: new Blob(['ABC']) },
-      ]);
+      result.current.cleanupSentAttachments({
+        agentId: AGENT_A,
+        atts: [
+          { ...draft, blob: new Blob(['ABC']) },
+          { ...draft, id: 'att-2', relPath: null, blob: new Blob(['ABC']) },
+        ],
+      });
     });
     expect(deleteAttachmentSpy).toHaveBeenCalledTimes(1);
     expect(deleteAttachmentSpy).toHaveBeenCalledWith('/tmp/wt', 'attachments/a.png');

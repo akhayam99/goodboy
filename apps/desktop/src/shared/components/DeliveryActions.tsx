@@ -55,7 +55,11 @@ export const DeliveryActions = ({
           onClick={onReadNow}
         >
           {readNowLabel}
-          {readNowKeys === undefined ? null : <KeyHint keys={readNowKeys} />}
+          {readNowKeys === undefined ? null : (
+            <span className="inline-flex @max-md:hidden">
+              <KeyHint keys={readNowKeys} />
+            </span>
+          )}
         </Button>
       ),
     })}
@@ -71,7 +75,11 @@ export const DeliveryActions = ({
           onClick={isQueueSubmit ? undefined : onQueue}
         >
           Queue
-          {queueKeys === undefined ? null : <KeyHint keys={queueKeys} isOnTone />}
+          {queueKeys === undefined ? null : (
+            <span className="inline-flex @max-md:hidden">
+              <KeyHint keys={queueKeys} isOnTone />
+            </span>
+          )}
         </Button>
       ),
     })}

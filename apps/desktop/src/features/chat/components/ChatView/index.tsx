@@ -49,7 +49,10 @@ import { ChatEmptyState } from './ChatEmptyState';
 import { TranscriptRows } from './TranscriptRows';
 import { ChatImageLoaderProvider } from './ChatImageLoaderProvider';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
+import { revealPacer } from '../../reveal/revealPacer';
 import { USER_SCROLL_EVENTS, useScrollPin } from './useScrollPin';
+import { useScrollAnchor } from '../../../../shared/hooks/useScrollAnchor';
+import { rowHeightCache } from './rowHeightCache';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
 import { QuestionWaitingPill } from './parts/QuestionWaitingPill';
@@ -82,6 +85,8 @@ type Props = {
 };
 
 type ChatViewMode = 'conversation' | 'record' | 'steps';
+
+const TRANSCRIPT_ROW_SELECTOR = '[data-find-root] > li';
 
 type RetrySource = {
   readonly content: string;
@@ -231,9 +236,14 @@ export const ChatView = ({
   const agentQuestionCount = openQuestions.filter(
     (question) => question.createdByAgentId === selectedAgentId,
   ).length;
-  const { scrollerRef, pinned, onScroll, onUserScroll } = useScrollPin({
+  const { scrollerRef, pinned, onScroll, onUserScroll, jumpToLatest, isHolding } = useScrollPin({
     deps: [deferredItems, agentQuestionCount],
     resetKey: selectedAgentId,
+    onRevealOverflow: ({ keys }) => {
+      for (const key of keys) {
+        revealPacer.flush({ key });
+      }
+    },
   });
   const fadeHostRef = useRef<HTMLDivElement>(null);
 
@@ -313,7 +323,15 @@ export const ChatView = ({
     };
   }, [scrollerRef, onScroll, onUserScroll]);
 
+  const { suspend: suspendAnchor } = useScrollAnchor({
+    viewportRef: scrollerRef,
+    rowSelector: TRANSCRIPT_ROW_SELECTOR,
+    shouldHold: isHolding,
+    onRowMeasured: rowHeightCache.write,
+  });
+
   const onSelectRun = (runId: ProviderRunId) => {
+    suspendAnchor();
     document
       .querySelector(`[data-run-column="${runId}"]`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -512,6 +530,7 @@ export const ChatView = ({
     }
     const node = document.querySelector(`[data-oq-anchor="${target.questionId}"]`);
     if (node) {
+      suspendAnchor();
       node.scrollIntoView({ behavior: 'smooth', block: 'center' });
       clearOpenQuestionScroll();
       return;
@@ -528,6 +547,7 @@ export const ChatView = ({
     }
     const el = scrollerRef.current;
     if (el) {
+      suspendAnchor();
       el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }
     clearOpenQuestionScroll();
@@ -539,6 +559,7 @@ export const ChatView = ({
     oqByTurnOrdinal,
     clearOpenQuestionScroll,
     scrollerRef,
+    suspendAnchor,
   ]);
 
   return (
@@ -547,10 +568,7 @@ export const ChatView = ({
         <ScrollFade
           className="flex-1"
           fadeSize="h-12"
-          viewportClassName={cn(
-            'pb-4 [overflow-anchor:auto]',
-            topInset === 'tight' ? 'pt-2' : 'pt-6',
-          )}
+          viewportClassName={cn('pb-4', topInset === 'tight' ? 'pt-2' : 'pt-6')}
         >
           <PageColumn className="h-full">
             {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
@@ -583,6 +601,7 @@ export const ChatView = ({
             ) : (
               <ul
                 data-find-root
+                data-scroll-content=""
                 className="flex flex-col gap-3"
                 aria-live="polite"
                 aria-relevant="additions"
@@ -632,8 +651,8 @@ export const ChatView = ({
               aria-label="Jump to latest"
               className="pointer-events-auto absolute bottom-3 left-1/2 z-10 -translate-x-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-border-soft bg-background ring-1 ring-border-soft transition-colors hover:bg-hover"
               onClick={() => {
-                const el = scrollerRef.current;
-                el?.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+                suspendAnchor();
+                jumpToLatest();
               }}
             >
               <ArrowDown size={ICON_SIZE.control} aria-hidden />
@@ -682,8 +701,9 @@ export const ChatView = ({
         )
       ) : selectedAgentId ? (
         <ChatInput
-          key={session.id}
+          key={agentId === undefined ? session.id : `${session.id}:${agentId}`}
           session={session}
+          agentId={agentId}
           providerDisconnected={isProviderDisconnected}
           placeholderOverride={composerPlaceholder}
         />

@@ -6,11 +6,12 @@ import { isTranscriptOwnedTurnError } from '../../../turn-errors';
 import { toAttachmentInputs } from '../../../../attachments/pendingAttachment';
 import type { FailedTurn } from '../lib';
 import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
+import type { CleanupSentParams } from './useAttachments';
 import type { SendTurnResult } from '../../../../../store/slices/turn/types';
 
 type UseTurnDispatchArgs = {
   readonly sessionId: SessionId;
-  readonly cleanupSentAttachments: (atts: ReadonlyArray<PendingAttachment>) => void;
+  readonly cleanupSentAttachments: (params: CleanupSentParams) => void;
 };
 
 export type DispatchTurnParams = {
@@ -50,7 +51,7 @@ export const useTurnDispatch = ({ sessionId, cleanupSentAttachments }: UseTurnDi
           return result;
         }
         setLastFailedTurn(null);
-        cleanupSentAttachments(atts);
+        cleanupSentAttachments({ atts, agentId });
         return result;
       } catch (err) {
         if (isTranscriptOwnedTurnError({ error: err })) {
