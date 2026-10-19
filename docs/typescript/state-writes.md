@@ -57,11 +57,19 @@ A response applies only while it is the answer to the newest request.
   One instance per loader; `run({ key, request, apply })` takes a token per
   key and drops a late result as `'stale'`. A stale failure is dropped too;
   the latest failure is thrown. `cancel({ key })` invalidates a pending request.
+- `claim({ key })` takes a token without running anything and returns
+  `isCurrent()`, for a loader that applies several fields in one `set`.
 - In use: `refreshMonitorSnapshot` in `store/slices/monitoring/`; the run of a
   registry button in `features/actions/useActionControls` (a finish after the
-  `scopeKey` changed is dropped, outcome and failure alike).
+  `scopeKey` changed is dropped, outcome and failure alike); `sessionReads` in
+  `store/slices/state-writes/sessionReads.ts`, one sequence for the plans and
+  one for the artifacts of each session, shared by every loader that writes
+  `sessionPlans` or `sessionArtifacts`. A new loader of either claims right
+  before its read and applies only while `isCurrent()`.
 - Test: `latestOnly.test.ts` (a newer request wins, tokens are per key, a stale
-  error is dropped).
+  error is dropped, a claim loses to a newer one);
+  `store.sqlite-auto-plan-consumed.test.ts` (a late session load and a late
+  Auto refresh are both dropped).
 
 ## 4. Two writers compare and swap
 

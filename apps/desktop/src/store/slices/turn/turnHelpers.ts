@@ -94,6 +94,7 @@ import { sessionById } from '../sessions/sessionIndex';
 import { autoRoutableProviders } from '../../../features/providers/autoRoutableProviders';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { liveEnabledProviders } from '../models/liveEnabledProviders';
+import { sessionReads } from '../state-writes/sessionReads';
 
 type AttachmentsBlockParams = {
   readonly scope: string;
@@ -836,6 +837,8 @@ export const captureArtifactsFromTurn = async ({
         ...(parsed.metadata.clusters && { clusters: parsed.metadata.clusters }),
         sourceTurnId,
       });
+      const plansRead = sessionReads.plans({ sessionId });
+      const artifactsRead = sessionReads.artifacts({ sessionId });
       const refreshed = await invokeListPlansForSession(sessionId);
       const refreshedArtifacts = await invokeListArtifactsForSession(sessionId).catch(
         (err: unknown) => {
@@ -848,8 +851,10 @@ export const captureArtifactsFromTurn = async ({
         },
       );
       set((state) => ({
-        sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
-        ...(refreshedArtifacts === null
+        ...(plansRead.isCurrent() && {
+          sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
+        }),
+        ...(refreshedArtifacts === null || !artifactsRead.isCurrent()
           ? {}
           : { sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshedArtifacts } }),
       }));
@@ -891,12 +896,16 @@ export const captureArtifactsFromTurn = async ({
         sourceTurnId,
       }));
     await completeArtifactRun({ agentId }).catch(() => undefined);
+    const artifactsRead = sessionReads.artifacts({ sessionId });
+    const plansRead = parsed.kind === 'plan' ? sessionReads.plans({ sessionId }) : null;
     const refreshed = await invokeListArtifactsForSession(sessionId);
     const refreshedPlans =
       parsed.kind === 'plan' ? await invokeListPlansForSession(sessionId) : null;
     set((state) => ({
-      sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshed },
-      ...(refreshedPlans === null
+      ...(artifactsRead.isCurrent() && {
+        sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: refreshed },
+      }),
+      ...(refreshedPlans === null || plansRead === null || !plansRead.isCurrent()
         ? {}
         : { sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans } }),
     }));

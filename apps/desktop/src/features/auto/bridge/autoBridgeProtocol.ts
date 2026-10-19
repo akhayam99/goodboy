@@ -6,7 +6,12 @@ import type { TreeStopPort } from '../treeStopPort';
 export const AUTO_BRIDGE_EVENT = {
   request: 'goodboy:auto-request',
   response: 'goodboy:auto-response',
+  artifactsChanged: 'goodboy:auto-artifacts-changed',
 } as const;
+
+export type AutoArtifactsChanged = Readonly<{
+  sessionId: string;
+}>;
 
 export type AutoBridgeCall =
   | Readonly<{ kind: 'stop'; treeId: string }>

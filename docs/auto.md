@@ -347,6 +347,24 @@ unless the stored value is exactly `false`. There is no screen for that setting
 yet. **Ask for changes** opens the chat of Auto: a change written there makes Auto
 rework the same plan into the next version.
 
+A writer admitted with a plan marks that plan used in the admission
+transaction; a reader role (Reviewer, Scout) leaves it ready. The SQL write
+does not reach the store by itself, so `delegate` calls the
+`refreshSessionArtifacts` port after an accepted or replayed admission, and
+`landAttemptRevision` calls it after a revise lands (the revise turn skips the
+usual capture). The port (`store/slices/auto/makeRefreshSessionArtifacts.ts`)
+reloads the plans and artifacts of the session the grant names and reports a
+failed read without undoing the admission. It also emits
+`goodboy:auto-artifacts-changed` with that session id on the Auto bridge bus;
+a detached window listens through `followArtifactAnnouncements` and reloads the
+session when it shows it. Every loader of `sessionPlans` and `sessionArtifacts`
+claims a read from `sessionReads` (see
+[typescript/state-writes.md](typescript/state-writes.md) → Latest only), so a
+session load that answers after the admission refresh cannot bring the plan
+back, and an Auto refresh that answers after a saved edit cannot undo it.
+Without this the Next box keeps offering **Start implementer** on a used plan
+until the session is reopened.
+
 ## Confirming
 
 A revise Auto is not sure about waits for an OK under its delegation line: "Change plan

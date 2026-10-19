@@ -34,6 +34,7 @@ import { WorkflowGateError, findWorkflowActivationBlock } from './workflowActiva
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 import { admitWorkflowRun, heldAdmissionBlock } from './workflowPlanApproval';
+import { sessionReads } from '../state-writes/sessionReads';
 
 export type ActivateWorkflowAgentParams = {
   readonly sessionId: SessionId;
@@ -171,10 +172,13 @@ export const activateWorkflowAgent = (set: SetFn, get: GetFn) => {
     throwWhenPaused({ get, sessionId, agent });
     if (consumesPlan && planToConsume) {
       await invokeAddPlanConsumption(planToConsume.id, agentId);
+      const plansRead = sessionReads.plans({ sessionId });
       const refreshedPlans = await invokeListPlansForSession(sessionId);
       const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
       set((state) => ({
-        sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans },
+        ...(plansRead.isCurrent() && {
+          sessionPlans: { ...state.sessionPlans, [sessionId]: refreshedPlans },
+        }),
         planConsumptions: { ...state.planConsumptions, [planToConsume.id]: consumptions },
       }));
     }

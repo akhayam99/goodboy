@@ -48,6 +48,7 @@ import { sessionById } from '../sessions/sessionIndex';
 import { scopedKindRouting } from './scopedKindRouting';
 import { sendAutoKickoff } from './sendAutoKickoff';
 import { currentAutoUserTurnPort } from '../../../features/auto/autoUserTurnPort';
+import { sessionReads } from '../state-writes/sessionReads';
 
 const spawnQueue = createKeyedQueue();
 
@@ -277,10 +278,13 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     const consumeTarget = planToConsume ?? fanOutPlan;
     if (consumeTarget) {
       await invokeAddPlanConsumption(consumeTarget.id, inserted.id);
+      const plansRead = sessionReads.plans({ sessionId });
       const refreshedPlans = await invokeListPlansForSession(sessionId);
       const consumptions = await invokeListConsumptionsForPlan(consumeTarget.id);
       set((s) => ({
-        sessionPlans: { ...s.sessionPlans, [sessionId]: refreshedPlans },
+        ...(plansRead.isCurrent() && {
+          sessionPlans: { ...s.sessionPlans, [sessionId]: refreshedPlans },
+        }),
         planConsumptions: { ...s.planConsumptions, [consumeTarget.id]: consumptions },
       }));
     }
@@ -368,10 +372,13 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
 
   if (planToConsume) {
     await invokeAddPlanConsumption(planToConsume.id, inserted.id);
+    const plansRead = sessionReads.plans({ sessionId });
     const refreshedPlans = await invokeListPlansForSession(sessionId);
     const consumptions = await invokeListConsumptionsForPlan(planToConsume.id);
     set((s) => ({
-      sessionPlans: { ...s.sessionPlans, [sessionId]: refreshedPlans },
+      ...(plansRead.isCurrent() && {
+        sessionPlans: { ...s.sessionPlans, [sessionId]: refreshedPlans },
+      }),
       planConsumptions: { ...s.planConsumptions, [planToConsume.id]: consumptions },
     }));
   }

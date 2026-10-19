@@ -3,14 +3,18 @@ import {
   listPlansForSession as invokeListPlansForSession,
   setPlanStatus as invokeSetPlanStatus,
 } from '../../../features/plans/plans';
+import { sessionReads } from '../state-writes/sessionReads';
 import type { SetFn } from './types';
 
 export const setPlanStatus = (set: SetFn) => {
   return async (sessionId: SessionId, planId: PlanId, status: PlanStatus) => {
     await invokeSetPlanStatus(planId, status);
+    const plansRead = sessionReads.plans({ sessionId });
     const refreshed = await invokeListPlansForSession(sessionId);
-    set((state) => ({
-      sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed },
-    }));
+    set((state) =>
+      plansRead.isCurrent()
+        ? { sessionPlans: { ...state.sessionPlans, [sessionId]: refreshed } }
+        : {},
+    );
   };
 };

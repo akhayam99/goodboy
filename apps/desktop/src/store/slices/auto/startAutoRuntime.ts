@@ -14,9 +14,11 @@ import {
 } from '../../../features/auto/delegationDecisionPort';
 import { currentTreeRetryPort, registerTreeRetryPort } from '../../../features/auto/treeRetryPort';
 import { currentTreeStopPort, registerTreeStopPort } from '../../../features/auto/treeStopPort';
-import type {
-  AutoBridgeBus,
-  AutoBridgePorts,
+import {
+  AUTO_BRIDGE_EVENT,
+  type AutoArtifactsChanged,
+  type AutoBridgeBus,
+  type AutoBridgePorts,
 } from '../../../features/auto/bridge/autoBridgeProtocol';
 import { createAutoBridgeClient } from '../../../features/auto/bridge/createAutoBridgeClient';
 import { serveAutoBridge } from '../../../features/auto/bridge/serveAutoBridge';
@@ -25,6 +27,7 @@ import { isMainWindow } from '../../../features/workspace/window';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { useAppStore } from '../../store';
 import type { AutoRuntime } from './createAutoRuntime';
+import { followArtifactAnnouncements } from './followArtifactAnnouncements';
 import { makeAutoRuntime } from './makeAutoRuntime';
 import type { SleepParams } from './startDeliveredTurn';
 import {
@@ -66,7 +69,13 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
   registerTreeRetryPort({ port: client.ports.retry });
   registerDelegationDecisionPort({ port: client.ports.decision });
   registerAutoUserTurnPort({ port: client.ports.userTurn });
+  const unfollow = await followArtifactAnnouncements({
+    bus,
+    get: useAppStore.getState,
+    set: useAppStore.setState,
+  });
   return () => {
+    unfollow();
     client.close();
     registerTreeStopPort({ port: null });
     registerTreeRetryPort({ port: null });
@@ -101,7 +110,15 @@ export const startAutoRuntime = async ({
   const getState = useAppStore.getState;
   const holder: { runtime: AutoRuntime | null } = { runtime: null };
   const runtimeOf = (): AutoRuntime => {
-    holder.runtime ??= makeAutoRuntime({ db, getState, sleep });
+    holder.runtime ??= makeAutoRuntime({
+      db,
+      getState,
+      sleep,
+      announceArtifacts: ({ sessionId }) => {
+        const payload: AutoArtifactsChanged = { sessionId };
+        return bus.emit({ event: AUTO_BRIDGE_EVENT.artifactsChanged, payload });
+      },
+    });
     return holder.runtime;
   };
   registerDelegationDecisionPort({

@@ -8,6 +8,7 @@ import {
   listAutoDelegations,
   writeArtifactRevision,
 } from '@goodboy/db';
+import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { brandId, type ArtifactId } from '@goodboy/types';
 import { finishAttempt } from './finishAttempt';
 import { prepareRetry } from './prepareRetry';
@@ -96,6 +97,7 @@ describe('revising an artifact the tree already has', () => {
 
   it('lands the new version as revision 2 of the same artifact and tells Auto', async () => {
     const world = await revisingWorld();
+    const refreshed = world.state.ports.refreshes.length;
 
     await childTurnEnds({
       world,
@@ -121,6 +123,9 @@ describe('revising an artifact the tree already has', () => {
       await listAutoDelegations({ db: world.state.world.db, treeId: world.treeId })
     ).find((row) => row.reviseOf === 'plan-1');
     expect(delegation).toMatchObject({ state: 'settled', outcome: 'completed' });
+    expect(world.state.ports.refreshes.slice(refreshed)).toEqual([
+      { sessionId: AUTO_SEED_SESSION },
+    ]);
     expect(world.errors).toEqual([]);
   });
 
@@ -162,8 +167,11 @@ describe('revising an artifact the tree already has', () => {
       nowMs: WORLD_NOW,
     });
     expect(edit.kind).toBe('saved');
+    const refreshed = world.state.ports.refreshes.length;
 
     await childTurnEnds({ world, index: 0, text: newPlan('# Plan v2 from the old base\n') });
+
+    expect(world.state.ports.refreshes).toHaveLength(refreshed);
 
     expect(await planOf(world)).toMatchObject({
       revision: 2,
@@ -252,6 +260,7 @@ describe('revising an artifact the tree already has', () => {
       });
       expect(restarted.state.ports.autoTurns).toHaveLength(1);
       expect(restarted.state.ports.autoTurns[0]?.text).toContain('version 2 from version 1');
+      expect(restarted.state.ports.refreshes).toContainEqual({ sessionId: AUTO_SEED_SESSION });
     });
 
     it('drops the stored version when the user edited the artifact meanwhile', async () => {

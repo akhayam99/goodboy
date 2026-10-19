@@ -302,6 +302,7 @@ const finishedRevise = async (params: ReviseParams): Promise<FinishAttemptOutcom
       ? null
       : await landAttemptRevision({
           ctx,
+          sessionId: tree.sessionId,
           delegation,
           attempt: fresh,
           generation: ended.generation,
