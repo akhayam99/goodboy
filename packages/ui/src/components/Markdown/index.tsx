@@ -1,4 +1,4 @@
-import { Fragment, memo, useMemo, type ReactNode } from 'react';
+import { Fragment, memo, useMemo, useRef, type ReactNode } from 'react';
 import { Square, SquareCheck, SquareMinus, type LucideIcon } from 'lucide-react';
 import { cn } from '../../cn';
 import { EYEBROW_CLASS, Eyebrow } from '../Eyebrow';
@@ -6,14 +6,10 @@ import { RemoteImage } from '../RemoteImage';
 import { LocalImage } from '../LocalImage';
 import { ctxStyleForTag, ctxTagLabel } from './ctxTagStyle';
 import { parseInline, type InlineNode } from './parseInline';
-import {
-  parseMarkdown,
-  type Block,
-  type CellAlign,
-  type KitEntry,
-  type TaskState,
-} from './parseMarkdown';
+import { type Block, type CellAlign, type KitEntry, type TaskState } from './parseMarkdown';
+import { parseStableMarkdown, type BlockCache } from './parseStableMarkdown';
 import { CodeBlockContent } from './CodeBlockContent';
+import { freshenNode, type FreshTail } from './freshenNode';
 import { ICON_SIZE } from '../../iconSize';
 
 type MarkdownVariant = 'document' | 'preview';
@@ -22,6 +18,7 @@ type MarkdownProps = {
   readonly text: string;
   readonly className?: string;
   readonly variant?: MarkdownVariant;
+  readonly fresh?: FreshTail | undefined;
 };
 
 const CHIP_CLASS = `mx-0.5 inline-flex items-center gap-1 rounded-sm px-2 py-0.5 align-baseline ${EYEBROW_CLASS}`;
@@ -281,7 +278,7 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
           className="overflow-x-auto rounded-md bg-muted px-3 py-2 text-code text-foreground"
         >
           <code>
-            <CodeBlockContent content={block.content} lang={block.lang} />
+            <CodeBlockContent content={block.content} lang={block.lang} isOpen={!block.isClosed} />
           </code>
         </pre>
       );
@@ -646,29 +643,87 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
   }
 };
 
-const MarkdownImpl = ({ text, className, variant = 'document' }: MarkdownProps) => {
-  const document = useMemo(() => parseMarkdown({ text }), [text]);
+type RenderedBlock = {
+  readonly block: Block;
+  readonly node: ReactNode;
+};
+
+type RenderedCache = ReadonlyMap<string, RenderedBlock>;
+
+type CachedBlockParams = {
+  readonly block: Block;
+  readonly id: string;
+  readonly variant: MarkdownVariant;
+  readonly previous: RenderedCache;
+  readonly next: Map<string, RenderedBlock>;
+  readonly fresh?: FreshTail | undefined;
+};
+
+const renderCachedBlock = ({
+  block,
+  id,
+  variant,
+  previous,
+  next,
+  fresh,
+}: CachedBlockParams): ReactNode => {
+  const hit = previous.get(id);
+  const node =
+    hit !== undefined && hit.block === block
+      ? hit.node
+      : renderBlock({ block, id, variant, depth: 0 });
+  next.set(id, { block, node });
+  return fresh === undefined ? node : freshenNode({ node, tail: fresh });
+};
+
+const MarkdownImpl = ({ text, className, variant = 'document', fresh }: MarkdownProps) => {
+  const blockCacheRef = useRef<BlockCache>(new Map());
+  const renderedRef = useRef<{ readonly variant: MarkdownVariant; readonly cache: RenderedCache }>({
+    variant,
+    cache: new Map(),
+  });
+  const content = useMemo(() => {
+    const { document, cache } = parseStableMarkdown({ text, previous: blockCacheRef.current });
+    blockCacheRef.current = cache;
+    const previous =
+      renderedRef.current.variant === variant ? renderedRef.current.cache : new Map();
+    const next = new Map<string, RenderedBlock>();
+    const rendered =
+      variant === 'preview'
+        ? document.blocks.map((block, idx) =>
+            renderCachedBlock({ block, id: `b-${idx}`, variant, previous, next }),
+          )
+        : document.sections.map((section, si) => (
+            <div key={`s-${si}`} className="flex flex-col gap-3">
+              {section.map((block, bi) =>
+                renderCachedBlock({
+                  block,
+                  id: `b-${si}-${bi}`,
+                  variant,
+                  previous,
+                  next,
+                  fresh:
+                    si === document.sections.length - 1 && bi === section.length - 1
+                      ? fresh
+                      : undefined,
+                }),
+              )}
+            </div>
+          ));
+    renderedRef.current = { variant, cache: next };
+    return rendered;
+  }, [text, variant, fresh]);
 
   if (variant === 'preview') {
     return (
       <div className={cn('flex flex-col gap-1 text-body text-foreground', className)}>
-        {document.blocks.map((block, idx) =>
-          renderBlock({ block, id: `b-${idx}`, variant, depth: 0 }),
-        )}
+        {content}
       </div>
     );
   }
 
   return (
-    <div className={cn('flex flex-col gap-4 text-body text-foreground', className)}>
-      {document.sections.map((section, si) => (
-        <div key={`s-${si}`} className="flex flex-col gap-3">
-          {section.map((block, bi) =>
-            renderBlock({ block, id: `b-${si}-${bi}`, variant, depth: 0 }),
-          )}
-        </div>
-      ))}
-    </div>
+    <div className={cn('flex flex-col gap-4 text-body text-foreground', className)}>{content}</div>
   );
 };
 

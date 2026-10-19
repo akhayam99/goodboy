@@ -94,7 +94,16 @@ const TranscriptCardImpl = ({
         />
       );
     case 'assistant_text':
-      return <AssistantText text={item.text} sessionId={sessionId} agentId={agentId} />;
+      return (
+        <AssistantText
+          text={item.text}
+          sessionId={sessionId}
+          agentId={agentId}
+          runId={item.runId ?? null}
+          itemKey={item.key}
+          isComplete={item.runId == null || item.runId !== activeRunId}
+        />
+      );
     case 'artifact_block':
       return (
         <ArtifactBlockCard

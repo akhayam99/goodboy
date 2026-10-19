@@ -11,6 +11,8 @@ import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
 import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
+import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { feedAuthRefusal } from '../providers/feedAuthRefusal';
 import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
@@ -155,6 +157,12 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
       resolvedEvent.kind === 'provider_session_init'
         ? { ...resolvedEvent, provider }
         : resolvedEvent;
+    if (event.kind === 'error') {
+      revealPacer.flushRun({ runId });
+    }
+    if (event.kind === 'assistant_text') {
+      liveTextRegistry.mark({ runId });
+    }
     get().appendTurnEvent(activeAgentId, sessionId, event);
     if (event.kind === 'provider_session_init') {
       progress.providerThreadId = event.providerSessionId;

@@ -24,6 +24,8 @@ const scroller = (box: Box): HTMLDivElement =>
     get clientHeight() {
       return box.clientHeight;
     },
+    querySelectorAll: () => [],
+    querySelector: () => null,
   }) as unknown as HTMLDivElement;
 
 const open = (box: Box) => {

@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
-import { Markdown } from '@goodboy/ui';
+import { describe, it, expect, vi } from 'vitest';
+import { render, waitFor } from '@testing-library/react';
+import { CodeHighlighterContext, Markdown, type CodeHighlighter } from '@goodboy/ui';
+
+const aHighlighter = (): CodeHighlighter => ({
+  highlight: vi.fn(async () => [[{ text: 'const x = 1;', kind: 'keyword' as const }]]),
+  peek: () => undefined,
+});
 
 describe('Markdown', () => {
   it('renders headings', () => {
@@ -74,6 +79,37 @@ describe('Markdown', () => {
   it('allows a very long unbroken paragraph token to wrap via its class', () => {
     const { container } = render(<Markdown text={'a'.repeat(200)} />);
     expect(container.querySelector('p')?.className).toContain('wrap-anywhere');
+  });
+
+  it('highlights a closed fence', async () => {
+    const highlighter = aHighlighter();
+    const { container } = render(
+      <CodeHighlighterContext.Provider value={highlighter}>
+        <Markdown text={'```ts\nconst x = 1;\n```'} />
+      </CodeHighlighterContext.Provider>,
+    );
+    await waitFor(() => expect(container.querySelector('pre span')).not.toBeNull());
+    expect(highlighter.highlight).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps an open fence plain and highlights it once it closes', async () => {
+    const highlighter = aHighlighter();
+    const open = '```ts\nconst x = 1;';
+    const { container, rerender } = render(
+      <CodeHighlighterContext.Provider value={highlighter}>
+        <Markdown text={open} />
+      </CodeHighlighterContext.Provider>,
+    );
+    expect(container.querySelector('pre')?.textContent).toBe('const x = 1;');
+    expect(highlighter.highlight).not.toHaveBeenCalled();
+
+    rerender(
+      <CodeHighlighterContext.Provider value={highlighter}>
+        <Markdown text={`${open}\n\`\`\``} />
+      </CodeHighlighterContext.Provider>,
+    );
+    await waitFor(() => expect(container.querySelector('pre span')).not.toBeNull());
+    expect(highlighter.highlight).toHaveBeenCalledTimes(1);
   });
 
   it('renders a pipe table as a real table with header and aligned cells', () => {

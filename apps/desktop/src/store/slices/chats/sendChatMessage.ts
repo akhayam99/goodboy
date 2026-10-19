@@ -10,6 +10,8 @@ import type {
   ProviderId,
   ProviderRunId,
 } from '@goodboy/types';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
+import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { activeChatBackend } from '../../../features/workspace-chat/activeChatBackend';
 import type { ChatTurnOutcome } from '../../../features/workspace-chat/runChatTurn';
 import { chatTitleFromQuestion, NEW_CHAT_TITLE } from './chatTitleFromQuestion';
@@ -94,6 +96,9 @@ const finishReply = async ({ set, get, chatId, messageId, outcome }: FinishParam
     error: status === 'failed' && outcome.status === 'failed' ? outcome.error : null,
     updatedAt: at,
   };
+  if (status !== 'done') {
+    revealPacer.flushRun({ runId: messageId });
+  }
   const known = findChat({ state: get(), chatId });
   set((state) => {
     const { [chatId]: _finishedStream, ...streams } = state.chatStreams;
@@ -214,7 +219,8 @@ export const sendChatMessage =
           ? { status: 'failed', error: plan.error }
           : await activeChatBackend.runTurn({
               request: plan.request,
-              onText: (delta) =>
+              onText: (delta) => {
+                liveTextRegistry.mark({ runId: reply.id });
                 set((state) =>
                   patchChatMessage({
                     state,
@@ -222,7 +228,8 @@ export const sendChatMessage =
                     messageId: reply.id,
                     update: (message) => ({ ...message, content: `${message.content}${delta}` }),
                   }),
-                ),
+                );
+              },
               onRead: (path) =>
                 set((state) =>
                   patchChatMessage({

@@ -236,13 +236,13 @@ describe('reduceTranscript incremental resume', () => {
     ];
 
     expect(reduceTranscript(events.slice(0, 1))).toEqual([
-      { kind: 'assistant_text', key: 'text-0', text: 'foo' },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text: 'foo' },
     ]);
     expect(reduceTranscript(events.slice(0, 2))).toEqual([
-      { kind: 'assistant_text', key: 'text-0', text: 'foobar' },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text: 'foobar' },
     ]);
     expect(reduceTranscript(events)).toEqual([
-      { kind: 'assistant_text', key: 'text-0', text: 'foobarbaz' },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text: 'foobarbaz' },
     ]);
   });
 
@@ -257,9 +257,9 @@ describe('reduceTranscript incremental resume', () => {
     reduceTranscript(events.slice(0, 2));
     const items = reduceTranscript(events);
     expect(items).toEqual([
-      { kind: 'assistant_text', key: 'text-0', text: 'partial' },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text: 'partial' },
       { kind: 'done', key: 'done-2', runId: RUN },
-      { kind: 'assistant_text', key: 'text-3', text: 'after' },
+      { kind: 'assistant_text', key: 'text-3', runId: RUN, text: 'after' },
     ]);
     expect(items).toEqual(freshPass({ events }));
   });
@@ -425,7 +425,7 @@ describe('reduceTranscript artifact envelopes', () => {
 
     const items = reduceTranscript(events);
     expect(items).toEqual([
-      { kind: 'assistant_text', key: 'text-0', text: 'here is the readout.\n' },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text: 'here is the readout.\n' },
       {
         kind: 'artifact_block',
         key: 'text-0-artifact-0',
@@ -434,7 +434,12 @@ describe('reduceTranscript artifact envelopes', () => {
         complete: true,
         runId: RUN,
       },
-      { kind: 'assistant_text', key: 'text-0-prose-1', text: '\ntell me what to change.' },
+      {
+        kind: 'assistant_text',
+        key: 'text-0-prose-1',
+        runId: RUN,
+        text: '\ntell me what to change.',
+      },
       { kind: 'done', key: 'done-1', runId: RUN },
     ]);
     expect(
@@ -450,7 +455,7 @@ describe('reduceTranscript artifact envelopes', () => {
     ].join('\n');
 
     expect(reduceTranscript([assistantText({ delta: text })])).toEqual([
-      { kind: 'assistant_text', key: 'text-0', text: 'writing it now.' },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text: 'writing it now.' },
       {
         kind: 'artifact_block',
         key: 'text-0-artifact-0',
@@ -480,7 +485,7 @@ describe('reduceTranscript artifact envelopes', () => {
         complete: true,
         runId: RUN,
       },
-      { kind: 'assistant_text', key: 'text-0', text: 'and the plan:' },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text: 'and the plan:' },
       {
         kind: 'artifact_block',
         key: 'text-0-artifact-1',
@@ -516,7 +521,7 @@ describe('reduceTranscript artifact envelopes', () => {
     }
 
     expect(reduceTranscript(events)).toEqual([
-      { kind: 'assistant_text', key: 'text-0', text: 'here it comes.' },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text: 'here it comes.' },
       {
         kind: 'artifact_block',
         key: 'text-0-artifact-0',
@@ -525,7 +530,7 @@ describe('reduceTranscript artifact envelopes', () => {
         complete: true,
         runId: RUN,
       },
-      { kind: 'assistant_text', key: 'text-0-prose-1', text: 'done.' },
+      { kind: 'assistant_text', key: 'text-0-prose-1', runId: RUN, text: 'done.' },
     ]);
   });
 
@@ -550,7 +555,7 @@ describe('reduceTranscript artifact envelopes', () => {
     const text = ['look at this:', '```', '<<artifact v=1 kind=report>>', '```'].join('\n');
 
     expect(reduceTranscript([assistantText({ delta: text })])).toEqual([
-      { kind: 'assistant_text', key: 'text-0', text },
+      { kind: 'assistant_text', key: 'text-0', runId: RUN, text },
     ]);
   });
 });

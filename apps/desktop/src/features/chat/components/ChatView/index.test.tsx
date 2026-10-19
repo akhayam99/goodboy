@@ -234,6 +234,18 @@ describe('ChatView', () => {
     expect(viewportOf(roomy.container)?.className).toContain('pt-6');
   });
 
+  it('marks the growing list, not the full height column, as the content the scroll follows', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [
+      { kind: 'user_text', key: 'u0', text: 'hi', at: '2026-06-13T00:00:00.000Z' },
+    ];
+    const { container } = render(<ChatView session={session} />);
+    const content = container.querySelector('[data-scroll-content]');
+
+    expect(content?.tagName).toBe('UL');
+    expect(content?.hasAttribute('data-find-root')).toBe(true);
+  });
+
   it('renders without throwing on an empty session', () => {
     const { container } = render(<ChatView session={session} />);
     expect(container.firstChild).not.toBeNull();
