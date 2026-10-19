@@ -119,24 +119,15 @@ describe('r4 session rail scenes', () => {
     }
   });
 
-  it('r4-rail-session draws the cards with each worktree pages inline, the tools outside the rail', async () => {
+  it('r4-rail-session draws the cards with one line per branch and no pages until one is current, the tools outside the rail', async () => {
     await mount('r4-rail-session');
 
     const projects = card('Projects');
-    expect(entryLabels(projects)).toEqual(['Pull request', 'Comments', 'Files', 'Checks']);
-    expect(
-      within(projects)
-        .getAllByRole('button', { name: /^Checks/ })[0]
-        ?.getAttribute('aria-label'),
-    ).toBe('Checks, 1 failing');
-    expect(
-      within(projects)
-        .getAllByRole('button', { name: /^Comments/ })[0]
-        ?.getAttribute('aria-label'),
-    ).toBe('Comments, 2 need you');
+    expect(entryLabels(projects)).toEqual([]);
+    expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(card('Linked')).toBeDefined();
     expect(within(rail()).queryByRole('toolbar', { name: 'Session tools' })).toBeNull();
-    expect(within(tools()).getAllByRole('button')).toHaveLength(5);
+    expect(within(tools()).getAllByRole('button')).toHaveLength(6);
     const top = within(rail().querySelector<HTMLElement>('[data-rail-top]') ?? rail());
     expect(top.queryByRole('button', { name: 'More session actions' })).toBeNull();
     expect(top.getByRole('button', { name: 'Refresh session' })).toBeDefined();
@@ -157,16 +148,16 @@ describe('r4 session rail scenes', () => {
     const navSlot = elementIn(rail(), '[data-page-value="runs"]');
     const projects = card('Projects');
     const headerLabel = elementIn(projects, 'h2 button span');
-    const projectIcon = elementIn(
+    const folderName = elementIn(
       projects,
-      '[data-card-project] [data-project-row] > button > svg',
+      '[data-card-project] [data-project-row] > button > span',
     );
 
     const navLeft = insetOf({ element: navIcon, side: 'left', isOwnPaddingCounted: false });
     expect(insetOf({ element: headerLabel, side: 'left', isOwnPaddingCounted: false })).toBe(
       navLeft + CARD_EXTRA_SIDE_PX,
     );
-    expect(insetOf({ element: projectIcon, side: 'left', isOwnPaddingCounted: false })).toBe(
+    expect(insetOf({ element: folderName, side: 'left', isOwnPaddingCounted: false })).toBe(
       navLeft + CARD_EXTRA_SIDE_PX,
     );
     expect(insetOf({ element: projects, side: 'left', isOwnPaddingCounted: false })).toBe(
@@ -178,18 +169,11 @@ describe('r4 session rail scenes', () => {
     const navRight = insetOf({ element: navSlot, side: 'right', isOwnPaddingCounted: false });
     expect(
       insetOf({
-        element: elementIn(projects, '[data-entry-slot]'),
+        element: elementIn(projects, '[data-worktree-actions]'),
         side: 'right',
         isOwnPaddingCounted: false,
       }),
-    ).toBe(navRight + CARD_EXTRA_SIDE_PX);
-    expect(
-      insetOf({
-        element: elementIn(projects, '[data-worktree-dot]'),
-        side: 'right',
-        isOwnPaddingCounted: false,
-      }),
-    ).toBe(navRight + CARD_EXTRA_SIDE_PX);
+    ).toBe(navRight);
   });
 
   it('r4-rail-cards-folded folds both cards and keeps the failing check as one header dot', async () => {
@@ -206,14 +190,33 @@ describe('r4 session rail scenes', () => {
     ).toBe('false');
   });
 
-  it('r4-rail-worktree drills into the worktree level with Files selected', async () => {
+  it('r4-rail-worktree opens the current branch in place with its pages and Files selected', async () => {
     await mount('r4-rail-worktree');
 
-    expect(rail().getAttribute('data-session-rail')).toBe('worktree');
-    const worktree = within(screen.getByRole('navigation', { name: 'Worktree' }));
-    expect(worktree.getByRole('button', { name: /^Files/ }).getAttribute('aria-current')).toBe(
-      'page',
-    );
+    expect(rail().getAttribute('data-session-rail')).toBe('session');
+    const projects = card('Projects');
+    expect(entryLabels(projects)).toEqual([
+      'Pull request',
+      'Comments',
+      'Files',
+      'Commits',
+      'Checks',
+    ]);
+    expect(
+      within(projects)
+        .getByRole('button', { name: /^Files/ })
+        .getAttribute('aria-current'),
+    ).toBe('page');
+    expect(
+      within(projects)
+        .getByRole('button', { name: /^Checks/ })
+        .getAttribute('aria-label'),
+    ).toBe('Checks, 1 failing');
+    expect(
+      within(projects)
+        .getByRole('button', { name: /^Comments/ })
+        .getAttribute('aria-label'),
+    ).toBe('Comments, 2 need you');
   });
 
   it('r4-rail-tools-open presses Context while its drawer is open', async () => {
@@ -232,58 +235,35 @@ describe('r4 session rail scenes', () => {
 
     expect(rail().hasAttribute('data-rail-folded')).toBe(true);
     expect(rail().querySelector('[data-session-foot]')).toBeNull();
-    expect(within(tools()).getAllByRole('button')).toHaveLength(5);
+    expect(within(tools()).getAllByRole('button')).toHaveLength(6);
   });
 
-  it('r4-rail-tree draws many branches with their pull request icons, two open at once', async () => {
+  it('r4-rail-tree draws many branches one line each in rank order, with the finished ones folded', async () => {
     await mount('r4-rail-tree');
 
     const projects = card('Projects');
-    const states = [...projects.querySelectorAll('[data-pr-state]')].map((icon) =>
-      icon.getAttribute('data-pr-state'),
+    const live = [...projects.querySelectorAll('ul[aria-label$=" worktrees"] [data-pr-state]')].map(
+      (icon) => icon.getAttribute('data-pr-state'),
     );
-    expect(states).toEqual([
-      'open',
-      'draft',
-      'queued',
-      'merged',
-      'closed',
-      'open',
-      'approved',
-      'none',
-    ]);
-    const open = [...projects.querySelectorAll('[data-worktree-toggle]')].filter(
-      (toggle) => toggle.getAttribute('aria-expanded') === 'true',
-    );
-    expect(open).toHaveLength(2);
+    expect(live).toEqual(['queued', 'open', 'draft', 'approved', 'open', 'none']);
     expect(
       within(projects)
-        .getAllByRole('button', { name: /, \d+ branch/ })
-        .map((row) => row.querySelector('[data-project-count]')?.textContent),
-    ).toEqual(['5', '3']);
-    expect(rail().textContent).not.toMatch(/finished/i);
+        .getAllByRole('button', { name: /\d+ finished/ })
+        .map((fold) => fold.textContent),
+    ).toEqual(['2 finished']);
+    expect(projects.querySelectorAll('[data-worktree-entries]')).toHaveLength(0);
   });
 
-  it('r4-rail-tree cuts long branches at the end only and keeps the full name in the tooltip', async () => {
+  it('r4-rail-tree cuts long titles at the end only and keeps the branch in the tooltip and the name', async () => {
     await mount('r4-rail-tree');
 
     const projects = card('Projects');
-    const names = [...projects.querySelectorAll('[data-worktree-branch]')].map(
-      (cell) => cell.textContent ?? '',
-    );
-    const drafts = names.filter((name) => name.startsWith('ak/eng-1200-retry-header'));
-    expect(drafts).toEqual([
-      'ak/eng-1200-retry-header-for-notify-relay-with-backoff-draft',
-      'ak/eng-1200-retry-header-for-notify-relay-with-backoff-queued',
-    ]);
     for (const cell of projects.querySelectorAll('[data-worktree-branch]')) {
-      const label = cell.querySelector('.truncate');
-      expect(label?.textContent).toBe(cell.textContent);
       expect(cell.querySelector('.shrink-0')).toBeNull();
       expect(cell.querySelector('[title]')).toBeNull();
     }
     const rows = within(projects).getAllByRole('button', {
-      name: /ak\/eng-1200-retry-header-for-notify-relay-with-backoff-draft/,
+      name: /branch ak\/eng-1200-retry-header-for-notify-relay-with-backoff-draft/,
     });
     expect(rows.length).toBeGreaterThan(0);
   });

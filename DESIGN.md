@@ -109,9 +109,9 @@ Six rules, written so you can check a diff against them directly.
   toggle with a count, or a collapsed disclosure row. On a session page the
   finished group is the exception: it sits last and is always open, with no
   chevron (Questions "Answered" like Artifacts "Consumed").
-- **The row is the button.** A list row opens its object; it carries no
-  visible `⋯`, icon wall or bordered button. Its verbs live in the right click
-  menu (the action registry) and in the opened object's header or pane. At most
+- **The row is the button.** A list row opens its object; it carries no faint
+  `⋯` at rest, icon wall or bordered button. Its verbs live in the right click
+  menu and Shift+F10 (the action registry), in the opened object's header or pane, and on a `⋯` in a `row-actions` cell that is empty at rest and shown on hover, focus, an open menu and the current row (the Folders tree branch rows). At most
   one trailing control stays on the row, only when it is the row's own toggle
   and differs from opening it (Run or Stop on a script, Viewed on a diff file,
   the selection box), in a fixed cell at the same x on every row. Nothing

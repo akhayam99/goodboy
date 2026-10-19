@@ -1616,7 +1616,7 @@ page's does under its trail.
 session a flat row and never changes level; the open one is set in medium
 weight and takes `bg-selected` while its page is on screen. Its pages, projects
 and linked work live on the session level of the session rail
-(`SessionRail/SessionLevel`; Folders and Linked as `LevelCard`s, a level 2
+(`SessionRail/SessionLevel`; Projects and Linked as `LevelCard`s, a level 2
 `bg-subtle` panel with its header row inside), at the left of the page on the page background
 with the column's row recipe, and its deeper levels slide in there over 180ms,
 so no card nests inside the list. A page
@@ -1914,7 +1914,7 @@ under their own key, and hold the row's other controls while one runs.
 
 ## Section rhythm
 
-`PANE_RHYTHM.stack` separates peer sections. `Divider` separates app chrome from content, never content from content: [docs/styling.md](../../docs/styling.md) owns the rule. Section children do not add margins. `SectionHeader` is the standard section heading, with an optional description. The eyebrow size is the default for every surface. `size="page"` is only for a document whose body is prose the reader came for, such as the guide or a creation flow's form sections. Description copy comes only through `hint`, so its size and muted tone stay matched to the heading grade.
+`PANE_RHYTHM.stack` separates peer sections. `Divider` separates app chrome from content, never content from content: [docs/styling.md](../../docs/styling.md) owns the rule. The one content-level exception is the folder groups in the Projects card (owner approved 18/10): `Divider` sits between one folder group and the next, never above the first and never inside a group. Section children do not add margins. `SectionHeader` is the standard section heading, with an optional description. The eyebrow size is the default for every surface. `size="page"` is only for a document whose body is prose the reader came for, such as the guide or a creation flow's form sections. Description copy comes only through `hint`, so its size and muted tone stay matched to the heading grade.
 
 **One page, one section header.** The sections of a page (the Overview's Projects, Next and Unassigned notes) all open with `SectionHeader` at `headingLevel={2}`: the eyebrow, an optional count in `meta`, the section's one control in `action` and its one line of explanation in `hint`. A section never builds its own heading from a `h2` and type classes.
 
@@ -1994,7 +1994,7 @@ trash column, no second text button. Secondary actions (Edit, Copy, Pin, Run)
 sit after them, visible at rest, inside one element marked
 `data-row-secondary` so a test can tell the primary from the rest. Destructive
 and rare actions (Delete, Rename) live in the row's overflow menu, drawn as a
-horizontal `Ellipsis` and visible at rest. A running Stop is the
+horizontal `Ellipsis` in a `row-actions` cell (docs/styling.md): empty at rest on a row that is not current, shown on hover, on focus inside the row and while its menu is open, always drawn on the current row, and every verb also opens from a right click and Shift+F10. A running Stop is the
 exception: it stays visible. Every control of a list, row actions and group
 header refresh alike, sits in a 28px slot on the same right edge.
 
@@ -2306,7 +2306,7 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 The Overview of the Branch page is a document on the 960px column with
 a properties column, the page example of the split frame: a rail of sections on the left
-(`BranchRail` in `StudioRailLayout`, 288, `aria-current="page"` on the section on screen) and,
+(the pages under the current branch row of the Projects tree, `aria-current="page"` on the section on screen) and,
 on its right, the crumb band, the header with its state chip and one 640 + 296 grid with a 24px gap
 that ends at the column's right edge: Linear's pull request page in our register. The main column
 is the description (`SectionHeader` with `Edit` beside it, a markdown editor with

@@ -441,6 +441,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   pressRow({ id: 'lens.files', lands: branchTab('files') }),
   pressRow({ id: 'lens.plans', lands: both(lens('plans'), () => heading('Artifacts')) }),
   pressRow({ id: 'lens.scripts', lands: pane('Scripts') }),
+  pressRow({ id: 'session.spawned', lands: pane('Agents') }),
   pressRow({
     id: 'session.terminal',
     lands: async () => {
@@ -957,7 +958,12 @@ const threadRow = (threadId: string): HTMLElement => {
 
 const openReview = async (): Promise<void> => {
   await press('lens.review')();
-  expect((await findSection(/^Comments/)).getAttribute('aria-current')).toBe('page');
+  await waitFor(() => {
+    const sessionId = useAppStore.getState().currentSessionId;
+    expect(sessionId === null ? null : useAppStore.getState().branchTab[sessionId]).toBe(
+      'comments',
+    );
+  }, WAIT);
 };
 
 const neighbourOf = (threadId: string, step: 1 | -1): string | null => {

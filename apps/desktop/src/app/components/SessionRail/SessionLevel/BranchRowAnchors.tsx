@@ -1,5 +1,6 @@
 import { AnchoredPopover, useDropdown } from '@goodboy/ui';
-import type { SessionId, SessionProjectMount } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
+import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import {
   MOUNT_SWITCH_BRANCH_EVENT,
   mountEventName,
@@ -9,19 +10,19 @@ import { PutOnBranchPopover } from '../../../../features/session/components/Task
 
 type Props = {
   readonly sessionId: SessionId;
-  readonly mount: SessionProjectMount;
+  readonly row: MountRowView;
 };
 
 const ANCHOR = <span aria-hidden className="block h-0 w-px" />;
 
-export const WorktreeMenuAnchors = ({ sessionId, mount }: Props) => {
+export const BranchRowAnchors = ({ sessionId, row }: Props) => {
   const switcher = useDropdown({
     width: 'w-96',
     expectedHeight: 400,
-    openEvent: mountEventName({ name: MOUNT_SWITCH_BRANCH_EVENT, mountId: mount.mountId }),
+    openEvent: mountEventName({ name: MOUNT_SWITCH_BRANCH_EVENT, mountId: row.mountId }),
   });
   return (
-    <div data-worktree-anchors="" className="flex h-0 min-w-0 items-start px-2">
+    <div data-worktree-anchors="" className="flex h-0 min-w-0 items-start pl-5">
       <AnchoredPopover
         dropdown={switcher}
         role="dialog"
@@ -29,14 +30,14 @@ export const WorktreeMenuAnchors = ({ sessionId, mount }: Props) => {
         anchorClassName="flex shrink-0"
         trigger={ANCHOR}
       >
-        <BranchSwitchPanel sessionId={sessionId} mountId={mount.mountId} onDone={switcher.close} />
+        <BranchSwitchPanel sessionId={sessionId} mountId={row.mountId} onDone={switcher.close} />
       </AnchoredPopover>
-      {mount.branch === '' || !mount.isAttached ? null : (
+      {row.branch === '' || !row.isAttached ? null : (
         <PutOnBranchPopover
           sessionId={sessionId}
-          mountId={mount.mountId}
-          projectId={mount.projectId}
-          branch={mount.branch}
+          mountId={row.mountId}
+          projectId={row.projectId}
+          branch={row.branch}
           anchor={ANCHOR}
         />
       )}

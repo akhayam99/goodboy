@@ -1,6 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react';
 
-export const railOf = (): HTMLElement => screen.getByRole('navigation', { name: 'Worktree' });
+export const railOf = (): HTMLElement => {
+  const list = document.querySelector<HTMLElement>('[data-worktree-entries]');
+  if (list === null) {
+    return screen.getByRole('list', { name: /pages$/ });
+  }
+  return list;
+};
 
 export const sectionRow = (name: RegExp): HTMLElement =>
   within(railOf()).getByRole('button', { name });

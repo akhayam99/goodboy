@@ -190,42 +190,17 @@ describe('the session rail fold', () => {
 });
 
 describe('the session rail drill', () => {
-  it('slides the worktree level in from the right and the session level out to the left', () => {
+  it('keeps the open rail on the session level when a branch is opened, with no second level', () => {
     render(<Shell />);
 
     goTo('branch');
-
-    expect(rail().getAttribute('data-session-rail')).toBe('worktree');
-    const worktree = elementOf('[data-level-layer="worktree"]');
-    expect(worktree.getAttribute('data-level-entry')).toBe('forward');
-    expect(ghost()?.getAttribute('data-level-ghost')).toBe('forward');
-    expect(ghost()?.hasAttribute('inert')).toBe(true);
-    expect(ghost()?.getAttribute('aria-hidden')).toBe('true');
-    expect(ghost()?.textContent).toContain('Overview');
-    expect(ghost()?.querySelector('[data-level-layer]')).toBeNull();
-
-    advance(LEVEL_MS);
-
-    expect(ghost()).toBeNull();
-  });
-
-  it('keeps the leaving worktree level on screen while it slides out on the way back', () => {
-    render(<Shell />);
-    goTo('branch');
-    advance(LEVEL_MS);
-
-    goTo(null);
 
     expect(rail().getAttribute('data-session-rail')).toBe('session');
-    expect(elementOf('[data-level-layer="session"]').getAttribute('data-level-entry')).toBe('back');
-    expect(ghost()?.getAttribute('data-level-ghost')).toBe('back');
-    expect(ghost()?.textContent).toContain('Stop retried webhooks');
-
-    advance(LEVEL_MS);
+    expect(document.querySelector('[data-level-layer="worktree"]')).toBeNull();
     expect(ghost()).toBeNull();
   });
 
-  it('drills the folded icons with the same slide', () => {
+  it('drills the folded icons with a slide and comes back with the opposite one', () => {
     localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
     render(<Shell />);
 
@@ -236,10 +211,18 @@ describe('the session rail drill', () => {
     );
     expect(elementOf('[data-rail-level="worktree"]')).toBeDefined();
     expect(ghost()?.getAttribute('data-level-ghost')).toBe('forward');
+    advance(LEVEL_MS);
+    expect(ghost()).toBeNull();
+
+    goTo(null);
+
+    expect(elementOf('[data-level-layer="session"]').getAttribute('data-level-entry')).toBe('back');
+    expect(ghost()?.getAttribute('data-level-ghost')).toBe('back');
   });
 
-  it('changes level in place under reduced motion', () => {
+  it('changes the folded level in place under reduced motion', () => {
     setMotion({ isReduced: true });
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
     render(<Shell />);
 
     goTo('branch');
@@ -269,10 +252,11 @@ describe('the session tools column at the right of the content', () => {
       within(elementOf('[data-testid="session-tools"]'))
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')?.split(',')[0]),
-    ).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Scripts']);
+    ).toEqual(['Ask', 'Terminal', 'Explore', 'Context', 'Agents', 'Scripts']);
   });
 
-  it('stays put while the rail drills into a level', () => {
+  it('stays put while the folded rail drills into a level', () => {
+    localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
     render(<Shell />);
     const before = tools();
 

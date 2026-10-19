@@ -9,9 +9,10 @@ type Props = {
   readonly action: ResolvedAction | undefined;
   readonly label: string;
   readonly variant: 'primary' | 'secondary' | 'ghost';
+  readonly className?: string;
 };
 
-export const RebasePromptVerb = ({ controls, action, label, variant }: Props) => {
+export const RebasePromptVerb = ({ controls, action, label, variant, className }: Props) => {
   if (action === undefined) {
     return null;
   }
@@ -25,6 +26,7 @@ export const RebasePromptVerb = ({ controls, action, label, variant }: Props) =>
     <Button
       size="sm"
       variant={variant}
+      className={className}
       data-rebase-verb={action.id}
       disabled={action.blockedReason !== null || controls.pendingId !== null}
       isBusy={state.isPending}

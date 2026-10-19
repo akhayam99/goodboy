@@ -23,7 +23,7 @@ const SECOND_PATH = '/work/cascade-second-branch';
 const trailBands = (): number => document.querySelectorAll('main [data-slot="trail-bar"]').length;
 
 const currentWorktree = (): string =>
-  document.querySelector('[data-level-layer="worktree"]:not([inert]) [data-worktree-identity]')
+  document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]')
     ?.textContent ?? '';
 
 const headerColumn = (): string | null =>
@@ -117,25 +117,14 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'branch switcher: the chip moves the page to a second branch on its landing tab, and the sidebar and header follow',
-    covers: ['navigate', 'branch:switcher'],
+    name: 'branch tree: a click on the row of a second branch moves the page to it on its landing tab, and the tree and header follow',
+    covers: ['navigate', 'rail:session-level'],
     open: async (ctx) => {
       addSecondBranch(ctx);
       await openBranchPage();
       await branchTab('pr')(ctx);
       await visitTab(/^Files/);
-      const chip = await screen.findByRole(
-        'button',
-        { name: /^Branch (?!actions|\d+ branches)/ },
-        WAIT,
-      );
-      expect(chip.querySelector('[data-slot="switcher-chevron"]')).not.toBeNull();
-      await click(chip);
-      const rows = await screen.findAllByRole('menuitemradio', undefined, WAIT);
-      const second = rows.find((row) => (row.textContent ?? '').includes(SECOND_BRANCH));
-      expect(second).toBeDefined();
-      expect(rows.filter((row) => row.getAttribute('aria-checked') === 'true')).toHaveLength(1);
-      await click(second as HTMLElement);
+      await click(await screen.findByRole('button', { name: SECOND_BRANCH }, WAIT));
       await settle(8);
     },
     lands: async (ctx) => {
@@ -154,7 +143,6 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
         () => expect(paneHeading()).toMatch(/^(Files|Commits|New pull request)$/),
         WAIT,
       );
-      await screen.findByRole('button', { name: `Branch ${SECOND_BRANCH}` }, WAIT);
       await waitFor(() => expect(currentWorktree()).toContain(SECOND_BRANCH), WAIT);
       expect(trailBands()).toBe(0);
     },

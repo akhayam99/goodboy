@@ -14,7 +14,7 @@ type CountParams = {
   readonly count: number;
 };
 
-export const conflictCountLabelOf = ({ count }: CountParams): string =>
+const conflictCountLabelOf = ({ count }: CountParams): string =>
   `${count} ${count === 1 ? 'file' : 'files'}`;
 
 type LineParams = {

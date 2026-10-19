@@ -52,25 +52,23 @@ const expectNoErrorNotice = (): void => {
 };
 
 describe('the u21 branch scenes', () => {
-  it('opens the switcher on three branches of two repos, with their pull requests', async () => {
-    renderScene('branch-switcher');
+  it('lists three branches of two repos in the tree, the current one open', async () => {
+    renderScene('branch-description-open');
 
-    const rows = await screen.findAllByRole('menuitemradio', undefined, { timeout: 3_000 });
-
+    await screen.findByRole('region', { name: 'Description' }, { timeout: 3_000 });
     await waitForSettledReads();
     expectNoErrorNotice();
-    expect(rows).toHaveLength(3);
-    expect(rows.map((row) => row.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false']);
-    expect(rows[0]?.textContent).toContain('#318 Open');
-    expect(rows[1]?.textContent).toContain('#331 Draft');
-    expect(rows[2]?.textContent).not.toContain('#');
-    const menu = screen.getByRole('menu', { name: 'Branches' });
-    expect(
-      within(menu)
-        .getAllByRole('group')
-        .map((group) => group.getAttribute('aria-label')),
-    ).toEqual(['payments-api', 'ledger-core']);
-    expect(within(menu).getByRole('menuitem', { name: 'New branch' })).toBeDefined();
+
+    const level = within(screen.getByRole('complementary', { name: 'Worktree level' }));
+    expect(level.getByRole('list', { name: 'payments-api worktrees' })).toBeDefined();
+    expect(level.getByRole('list', { name: 'ledger-core worktrees' })).toBeDefined();
+    const payments = within(level.getByRole('list', { name: 'payments-api worktrees' }));
+    expect(payments.getAllByRole('button', { name: /branch hl[/]/ })).toHaveLength(2);
+    expect(level.getByRole('button', { name: /#318/ }).getAttribute('aria-current')).toBe('page');
+    expect(level.getByRole('button', { name: /#331/ }).textContent).toContain(
+      'Retry credit notes through the same guard',
+    );
+    expect(level.getByRole('button', { name: 'hl/ledger-posting-dedupe' })).toBeDefined();
   });
 
   it('shows the description on the pull request tab with its text and one visible Edit', async () => {
@@ -84,6 +82,8 @@ describe('the u21 branch scenes', () => {
       within(description).getByText(/^Retried webhook deliveries no longer post a second credit/),
     ).toBeDefined();
     expect(within(description).getAllByRole('button', { name: 'Edit' })).toHaveLength(1);
-    expect(screen.getByRole('button', { name: /^Stop retried webhooks/ })).toBeDefined();
+    expect(
+      screen.getAllByRole('button', { name: /^Stop retried webhooks/ }).length,
+    ).toBeGreaterThan(0);
   });
 });

@@ -380,8 +380,9 @@ describe('the session level projects and linked work', () => {
     const projects = within(within(sessionLayer()).getByRole('group', { name: 'Projects' }));
     expect(within(sessionLayer()).queryByRole('group', { name: 'Folders' })).toBeNull();
     const paymentsRows = within(projects.getByRole('list', { name: 'payments-api worktrees' }));
-    const worktree = paymentsRows.getByRole('button', { name: /^payments-api, / });
-    expect(worktree.textContent).toBe(`goodboy/${openId}#418`);
+    const worktree = paymentsRows.getByRole('button', { name: /#418/ });
+    expect(worktree.textContent).not.toContain('#418');
+    expect(worktree.getAttribute('aria-label')).toContain(`branch goodboy/${openId}`);
     expect(projects.getByRole('list', { name: 'ledger-core worktrees' })).toBeDefined();
 
     await act(async () => {

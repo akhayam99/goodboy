@@ -160,8 +160,7 @@ const addProjects = (): void => {
   });
 };
 
-const MENU_SELECTOR =
-  '[data-level-layer="worktree"] [data-worktree-identity] button[aria-haspopup="menu"][aria-label$="actions"]';
+const MENU_SELECTOR = '[data-worktree-open] [data-worktree-actions] button[aria-haspopup="menu"]';
 
 const MENU_POLL_MS = 100;
 

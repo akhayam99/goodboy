@@ -115,7 +115,7 @@ describe('the c02 sidebar and session rail scenes', () => {
       sessionLayer().querySelector('[data-page-value="runs"]')?.getAttribute('data-tone'),
     ).toBe('info');
     const projects = within(level.getByRole('group', { name: 'Projects' }));
-    expect(projects.getByText('#331')).toBeDefined();
+    expect(projects.getByRole('button', { name: /#331/ })).toBeDefined();
     expect(within(level.getByRole('group', { name: 'Linked' })).getByText('NW-142')).toBeDefined();
     const adds = [
       projects.getByRole('button', { name: 'Add folder' }),

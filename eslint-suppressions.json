@@ -287,7 +287,7 @@
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/branch-column.rows.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/__tests__/surfaces/navigation-flows/branch-page.rows.tsx": {
@@ -1986,7 +1986,7 @@
   },
   "apps/desktop/src/features/branch/components/BranchHeader/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 12
+      "count": 9
     }
   },
   "apps/desktop/src/features/branch/components/BranchPage/index.test.tsx": {
@@ -2664,9 +2664,6 @@
   "apps/desktop/src/features/chat/components/TurnFooter/TurnFooterDetail.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/chat/components/TurnFooter/useTurnFooter/index.test.tsx": {

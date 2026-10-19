@@ -45,10 +45,10 @@ describe('the branch tools scenes', () => {
     const branchesOf = () =>
       Array.from(
         document.querySelectorAll('[data-level-layer="session"] [data-worktree-branch]'),
-      ).map((row) => row.textContent ?? '');
+      ).map((row) => row.closest('button')?.getAttribute('aria-label') ?? '');
     await waitFor(() => expect(branchesOf().length).toBeGreaterThanOrEqual(1));
     screen
-      .queryAllByRole('button', { name: / finished in / })
+      .queryAllByRole('button', { name: /\d+ finished/ })
       .forEach((fold) => fireEvent.click(fold));
 
     const text = branchesOf();

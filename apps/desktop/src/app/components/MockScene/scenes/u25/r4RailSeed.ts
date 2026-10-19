@@ -256,10 +256,7 @@ export const seedR4Rail = ({ isCardFolded, hasManyBranches = false }: SeedParams
       STORAGE_KEYS.sessionRailFoldedCards,
       isCardFolded ? '["projects","linked"]' : '[]',
     );
-    localStorage.setItem(
-      STORAGE_KEYS.sessionRailTreeOpen,
-      JSON.stringify(hasManyBranches ? { [SESSION_ID]: { [`branch:${RELAY_MOUNT}`]: true } } : {}),
-    );
+    localStorage.setItem(STORAGE_KEYS.sessionRailTreeOpen, JSON.stringify({}));
   } catch {
     return;
   }

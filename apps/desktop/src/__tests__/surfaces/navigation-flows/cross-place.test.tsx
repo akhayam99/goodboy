@@ -352,18 +352,14 @@ const pageRow = (label: string): HTMLElement => {
   return found as HTMLElement;
 };
 
-const WORKTREE_LEVEL = '[data-level-layer="worktree"]:not([inert])';
+const CURRENT_BRANCH = '[data-level-layer="session"]:not([inert]) [data-worktree-current]';
 
 const openPage = async (label: string): Promise<void> => {
-  const back = document.querySelector<HTMLElement>(`${WORKTREE_LEVEL} [data-level-back] button`);
-  if (back !== null) {
-    await click(back);
-  }
   await click(pageRow(label));
 };
 
 const currentPage = (): string | null => {
-  if (document.querySelector(`${WORKTREE_LEVEL} [data-worktree-identity]`) !== null) {
+  if (document.querySelector(CURRENT_BRANCH) !== null) {
     return 'Branch';
   }
   const pages = document.querySelector(`${SESSION_LEVEL} [data-testid="session-pages"]`);
@@ -951,11 +947,8 @@ describe('moving across every place keeps one frame', () => {
       await settle(16);
       const peek = screen.getByRole('region', { name: 'Sessions' });
       expect(peek.querySelector('[data-column-door="board"]')).not.toBeNull();
-      const sessionRail = document.querySelector<HTMLElement>('[data-session-rail="worktree"]');
-      if (sessionRail === null) {
-        throw new Error('the session rail is not on the worktree level');
-      }
-      await click(within(sessionRail).getByRole('button', { name: /^Back to session / }));
+      expect(document.querySelector(CURRENT_BRANCH)).not.toBeNull();
+      await click(pageRow('Overview'));
       await click(peek.querySelector<HTMLElement>(`[data-select-id="${other}"]`) as HTMLElement);
       expectPlace({ session: other, lens: null, studio: null, doors: [] });
       await click(historyButton('Back'));
@@ -992,9 +985,9 @@ describe('moving across every place keeps one frame', () => {
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1), WAIT);
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
       expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-        'run',
+        'session',
       );
-      await click(screen.getByRole('button', { name: 'Back to Runs' }));
+      await escape();
       expect(currentPage()).toBe('Runs');
       const page = document.querySelector<HTMLElement>('main [data-drawer-main]') as HTMLElement;
       expect(

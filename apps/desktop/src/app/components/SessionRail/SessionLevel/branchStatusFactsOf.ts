@@ -8,7 +8,7 @@ type Params = {
   readonly baseBranch: string | null;
 };
 
-export const worktreeStatusFactsOf = ({
+export const branchStatusFactsOf = ({
   behind,
   conflicts,
   isRebasing,

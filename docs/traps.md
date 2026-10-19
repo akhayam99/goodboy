@@ -11,6 +11,13 @@ file holds those explanations. Everything below has been "fixed" at least once a
 
 ## Deliberate dead ends
 
+- `navigate` closes the open drawer (only Ask survives, `keepAskDrawer`),
+  because the drawer belongs to the history entry. A row of the Agents panel
+  that opens a page in the center must pass the panel as `drawer`
+  (`openSpawned`), or the panel closes under the click. Do not make the panel
+  survive every navigation: then it would also stay over pages that have
+  nothing to do with the run or Auto it showed.
+
 - The macOS menu bar and the web view share every ⌘ key, and the web view sees
   the key first: a `preventDefault` in a shortcut handler stops the native menu
   item, and a key nothing handles falls through to it. So a key runs once
@@ -297,6 +304,17 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   delete remote-tracking branches behind the user's back. Its scenes stay
   quiet because `quietSceneRepoCheck` replaces `checkRepoDivergence` in the
   scene host, where there is no Tauri to answer.
+- `Markdown` (`packages/ui/src/components/Markdown/index.tsx`) keeps the React
+  element of every block between renders and reuses it when the block is
+  unchanged, so a long answer that grows by a word renders only its last block.
+  `parseStableMarkdown` gives an unchanged block the same object (key: its
+  index and its JSON), and the element cache matches on that object plus the
+  block id. Do not wrap blocks in a `memo` component to "simplify" it: the
+  renderer lives in `index.tsx` because the lint and style ratchets are keyed to
+  that path. An open code fence (`isClosed: false`) stays plain text and is
+  highlighted only once its closing fence arrives, so a streamed block never
+  swaps colors on every line. `markdown.perf.test.tsx` counts `parseInline`
+  calls to prove it.
 
 ## Hand-maintained lists the compiler does not check
 
@@ -461,6 +479,11 @@ fails silently at runtime.
   an id minted at admission. The attempt row does not exist until
   `startAttempt`, so find that reservation by owner id, never by joining
   `auto_attempts`.
+- Never add a fixed count of agents, runs or turns as a hard stop of an Auto tree.
+  The spend cap, the no progress streak and the time limit already guard it, and a
+  count ends a useful tree with no way forward. `delegations_used`, `attempts_used`
+  and `turns_used` are information only, and `grants` is a dead column kept for old
+  rows.
 - The admission rule is written twice on purpose: as one guarded SQL statement
   (`autoAdmissionTreeStatement`), which decides, and as `diagnoseAdmission`,
   which only names the refusal. A new limit goes into both, and
@@ -687,6 +710,12 @@ filesystem write lock. Cleanup failure retains the stash instead of repeating re
 
 The New drawer keeps the Start button in a sticky host at the end of its body (`actionsHost` in `NewDrawerBody`), not in the `DrawerFrame` `dock` slot: a dock is a footer bar and `forbidden-patterns` fails the build on it. The Run, Agent and Write panels portal their actions into that host through `Docked`, so each panel must render nothing until the host node exists. `WritePanel` lives in `features/artifacts` and reaches the drawer as the `writePanel` prop from `DrawerHost`, because `features/session` must not import artifacts components.
 
+## The Projects tree has one current branch and one rebase source
+
+The session rail has no level for a worktree: the open rail stays on the session level, and the row of the mount the Branch page shows (`isOpened` in `SessionLevel/WorktreeRow`, from `useBranchIdentity`, which needs an active mount or a `diffMountPath`) is the only one that draws its status line and its pages. A session with the Branch lens but no resolvable mount draws no pages in the rail at all; a test world must set `sessionActiveMount`. What you fold is remembered per branch in `goodboy:session-rail-tree-open:v1`, so clear it between tests, and a click on a row that is not current writes an open choice (`useRailTreeOpen.open`) or the saved collapse would hide the page it just opened. The pages of the current row navigate with `mode: 'replace'`, as a tab switch always did; a push there makes Back walk through tabs.
+
+Rebase all has one source for per-branch state: the batch in the store (`rebaseAllRuns`, read through `rebaseAllBranchOf`). The row chip (`branchRowChipOf`) and the card header (`rebaseAllSummaryOf`) both read it, so do not keep a second per-branch list. A late answer lands by run id: `patchRun` drops it when the run was cleared or replaced, and Abort lets the branch in flight finish, then marks the queued ones skipped. After a branch is `rebased` the row draws no behind chip even when its git status is stale, which is why the chip reads the batch before the status.
+
 ## A tool's health has one author
 
 The rail dot, the folded Integrations dot, the page chip and the key-missing notice of an integration all read `toolHealthOf` (`features/integrations/toolHealthOf.ts`); a dot and a chip written separately drift. The keychain answer reaches it through `useToolSecrets` for the rail (keyed by binding id, so a late answer for a replaced binding is dropped) and `useCredentialSecret` for the page; **Check again** asks both to read again through `requestCredentialRecheck`. The Disconnect of a settings page is the header menu verb, so `IntegrationConnectedRow` takes `hasHeaderDisconnect` there and keeps its own Disconnect icon only where no page menu exists (the onboarding step, GitHub's account rows). A provider page does the same with `providerAccountChip`: it reads `providerRailStatus` with the usage window ignored, so the chip stays `Working` while the dot warns that a window is nearly used up.
@@ -700,6 +729,18 @@ The hint a person types before a fix is plain text carried as a field, never re-
 - A draft is cleared by `settleStartHint` only when its captured revision is still current, and only from a callback that fires when the agent's first turn started (`onKickoffAccepted` in `spawnAgent`, `onAccepted` in `spawnPushFixer` and `startHistoryRewriter`). A resolver launch counts as accepted when its batch and attempt are recorded: its kickoff drains afterwards, and a refused drain shows **Failed** with the batch hint, which **Retry** reuses.
 - `analyzeFailingChecks` rejects a second call that carries a hint while the same check is being analyzed, instead of returning the running agent and dropping the hint.
 
+## Experimental session overview
+
+- The layout is the settings row `overview.layout`, exactly `new` or anything else is classic (`overviewLayoutOf`). Read it only through `useOverviewLayout`, which reloads on window focus, and write it only through `useSwitchOverviewLayout` (compare and swap in `writeOverviewLayout`, a repaint from the stored value in `applyOverviewLayout`). A write that fails leaves the stored value and the screen alone and reports the error.
+- The switch is the `ViewToggle` (a `SegmentedTabs` with Classic and New, size `xs` so it is as tall as New) in the session header, always shown next to New or Restore whatever the setting; there is no Settings row. `useSwitchOverviewLayout` re-reads the stored value first and writes, and toasts, only when the layout really changes, so picking the current one and the palette entries do nothing. Only Classic from New shows the Undo toast.
+- Classic is the default and stays untouched. Three shared pieces change only when the new column asks: `buildTimelineStream` folds a batch of rebase events only with `shouldFoldHistoryBatches` (the Log drawer, view `all`), `deriveNextSteps` drops what Activity already offers only with `isActivityShown` (the classic default), and `useSessionSuggestionsFrom` takes the runs the column already holds. Do not flip those defaults to fix one surface.
+- `batchId` is a payload key and must also sit in the whitelist of `packages/db/src/queries/session-event.ts`, or it is dropped when events are read back. It is written only for `origin` rebase while the history run is a rebase of the same session. Events recorded before it existed fold by origin and a 2 minute gap (`HISTORY_BATCH_WINDOW_MS`).
+- The branch story has one reader of the facts: `branchStoryOf`. Never compute a step word, a tone or a rank in `BranchRow`. A row is named by the branch (`mount.branch`), never by the folder. The per branch card gate (`isMountBusyOf`) and the branch in card titles (`mountLabelOf`) are one rule for every overview; never add a second gate keyed on `isActivityShown`.
+- A null `checks` or `reviewDecision` does not mean "not needed": it also means not read or unreadable. `branchStoryOf` skips a step only from `isChecksAbsent` and `isReviewOptional` on a fresh read, projected per host in `mountRequestOf`. Do not skip on `checks === null` alone, and a new host must set the flags only when its data proves it (see docs/mounts.md).
+- `useBranchDetails` calls `refreshSessionPrDetail` for stuck GitHub branches on every change of `mountGithub`; the 30 s TTL and the `detailLoading` guard in the store are what keep it from looping. Do not add a second TTL in the hook.
+- A row title is one sentence cut by `firstSentenceOf` (first sentence, first step before an arrow, first done line of an orchestrator recap parsed by `parseRunSummaryText`). Any other structured text yields null and the kind fallback, never raw JSON. The full text of an agent summary goes in `detail.fullText`. The finished sentence of Now is `finishedSentenceOf`, built from the one branch's request and its `checksWord`: it reads the words of `branchFactsOf`, so a change to those words must move it. The live agent line takes its model and effort from `agentRanModels`, never from `modelOverride` or `effort` directly.
+- When the experiment ends, the new column becomes the only overview in one release: delete the classic Activity, `NextStepSlot` and the Activity view of `TimelinePane` in the same change, then drop `overview.layout`, `ViewToggle` and the two palette entries.
+
 ## Auto gate and screens
 
 Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegationEnabled` (compile time, read through `AutoReleaseContext` by `useIsAutoOn`) decides whether Auto exists and whether a start is Auto; there is no per person setting. An old `agents.autoExperiment` row can still sit in a database: never read it, a stored `false` must not hide Auto. `visibleAgentKinds()` stays static, so do not add `auto` to a role list to make a menu complete. A test of the role start renders under `AutoReleaseContext` false (or `SessionDraftPane isAuto={false}`).
@@ -708,5 +749,26 @@ Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegat
 - The approval of a plan tells Auto once. `approveAutoPlan` reads the artifact before the swap and does not send "Approved plan vN." when that version was already approved, which is what a second window sees. The swap itself is idempotent, so the read is the guard.
 - `useAutoTreeActions.stop` stops the live children and the root agent turn by turn. The tree phase is written by the scheduler, not by this button; once the tree stop of the runtime exists, replace the body and keep the name.
 - A mock scene that shows an Auto chat must give every agent a `lastViewedAt` after its `lastFinishedAt`; otherwise the chat marks it viewed on every render of the real store.
+- A composer in a drawer never reads the session's `selectedAgentId`. In an Auto session that id is the Auto root, so a `ChatInput` that reads it shows the root's draft, queue and "running" state in a child's drawer and sends the child's message to Auto. `ChatView` passes `agentId` down and `ChatInput` threads it through `useAgentSelection`, `useTurnRouting` and `cleanupSentAttachments`; any new hook in the composer takes the agent id from there, never from the store. The pin is `ChatInput/drawerComposer.test.tsx`, and the toolbar width at the drawer minimum is the `drawer-composer` probe of `validate:scenes`.
 - History: Claude refuses a Bash command holding a variable, even if the allow list names it ("A variable in this command can't be checked before it runs"). That is why the old Auto bridge confinement used an absolute path and not `$GOODBOY_BIN`. Auto no longer holds any Bash rule, but the lesson stands for any future allow rule: a read-only command such as `ls` proves nothing about confinement, because Claude allows it without a rule, so probe with a command that writes.
 - An Auto child that fails to start must say why. `launchChildren` settles it with `code: message` (`kickoff_failed: <the error>`), never the bare code; the row and Auto's next message read that text. Do not drop `outcome.message` when you add a refusal. A `rewriter` agent needs a `historyRewriters` copy binding, so a delegated one always throws in `leaseTurnWriter`: admission refuses it instead of creating a child that can never start.
+
+## Diff file body height
+
+Each `DiffFile` body is `content-visibility: auto`, and its `contain-intrinsic-size` is `auto <estimate>px` from `features/diff/lib/bodyEstimatePx` (rows x 20 px, hunk and gap rows 28 px). A fixed estimate such as 480 px made the main diff content jump: a body above the viewport that rendered for the first time (scrolling up, or after a tree jump) took its real height and shifted everything under the reader, and the macOS webview has no scroll anchoring. Adjust the constants in `bodyEstimatePx`, never a per-file class. The estimate is not the whole fix: wrapped long lines and threads still miss it, so `DiffView` also runs `useScrollAnchor` on its file cards (see "Scroll anchoring in the webview"), held while `anchorTo` snaps a picked file to the top. jsdom has no layout, so the test pins the estimate; the real check is a long multi-file diff scene, scrolled up.
+
+## Scroll anchoring in the webview
+
+`overflow-anchor: auto` does nothing in the macOS webview (WKWebView) or WebKitGTK: WebKit keeps CSS scroll anchoring behind a flag. Any long scroller whose rows change height above the reader (`content-visibility` rows, images that load late, rows inserted above) needs `useScrollAnchor` (`shared/hooks/useScrollAnchor`), today the chat transcript and the diff. Never add the CSS property back as the fix: the hook sets `overflow-anchor: none` itself, because WebView2 on Windows is Chromium and would compensate a second time. A new smooth `scrollTo` or `scrollIntoView` on such a scroller calls the hook's `suspend()` first, or the first compensation cancels the smooth scroll halfway. A settle loop that snaps the view (the diff's `anchorTo`, the chat's bottom pin, the reveal hold at an answer top) passes `shouldHold`, or the two fight for `scrollTop`. In the chat that is `isHolding` from `useScrollPin`, true while the view is pinned to the bottom or held at a revealing answer, so one of the two owns `scrollTop` at any moment and a frame never gets two writes. An answer that grows below the reader is not a change above it: the anchor row's top does not move, so the hook shifts nothing. A row estimate still matters with the hook: the content stays still, but every estimate error changes `scrollHeight`, and the overlay thumb resizes and slides.
+
+## Live mark for the text reveal
+
+The text reveal animates only text that came through `readTurnStream` in this window. `liveTextRegistry.mark` is called there and nowhere else: `appendTurnEvent` and `bufferTurnEvent` also run for a Cmd+R re-attach replay and know nothing about their source, so marking in them would write in a replayed answer word by word. The mark is keyed by run id, not item key, because the stored event has no item key; a host decides at mount time, and a text that was not live at mount grows live only when the registry is live again. The 1.5 s live window is the lag cap in `revealNumbers.ts`: a host that mounts later shows the text whole.
+
+## The reveal hold in the chat scroll
+
+A revealing answer is found by `[data-reveal-answer]` in `useScrollPin`, and the hold at its top is tracked in refs (`isAnchoredRef`, `isLockedRef`, `ownTopRef`), not in state. Three things break it. A scroll write that does not go through `applyFollow` is read as the reader's: `ownTopRef` is how `onScroll` tells the two apart, so never assign `scrollTop` elsewhere in the pin. A reader who reaches the bottom while an answer is revealing sets the lock, and the lock only clears once no revealing answer is in the DOM; without it the follow would pull the view back up to the answer top. And a row that carries `data-reveal-answer` must clear it when its reveal ends, or the hold never lets go: derive it from `isRevealing`, never set it by hand.
+
+`freshenNode` clones the last block's element tree with its children spread (`cloneElement(node, undefined, ...children)`); passing the array as one child makes React ask for keys on the static children and the console guard fails the test. A fresh span key is leaf index plus the piece start, so a span keeps its fade across frames only while it stays in the same parent.
+
+A fresh span exists only while the block is the last one and its piece is alive. A table row fades with a delay, so its piece must outlive the delay: `pieceLifetimeMs` adds the stagger to the fade, and the pacer holds the next words for that time. Change the stagger or the row cap in `revealNumbers.ts` only; a delay longer than the piece lifetime would show the row at full opacity before its fade starts.

@@ -20,7 +20,7 @@ const BORDER_FALSE_POSITIVE_FILES = new Set([
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectList.tsx',
 ]);
 
-type Reason = 'chrome' | 'markdown' | 'debt';
+type Reason = 'chrome' | 'markdown' | 'debt' | 'folders';
 
 type Allowance = {
   readonly count: number;
@@ -31,6 +31,10 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/app/components/GoodboyChip/GoodboyMenu.tsx': {
     count: 1,
     reason: 'chrome',
+  },
+  'apps/desktop/src/app/components/SessionRail/SessionLevel/ProjectTree.tsx': {
+    count: 1,
+    reason: 'folders',
   },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx': {

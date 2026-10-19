@@ -330,7 +330,7 @@ export const openComments = async (ctx: Ctx): Promise<void> => {
 
 const sidebarNamesTheBranches = (): void => {
   const identity = document.querySelector<HTMLElement>(
-    '[data-level-layer="worktree"]:not([inert]) [data-worktree-identity]',
+    '[data-level-layer="session"]:not([inert]) [data-worktree-current]',
   );
   expect(identity).not.toBeNull();
   expect(identity?.textContent ?? '').not.toBe('');

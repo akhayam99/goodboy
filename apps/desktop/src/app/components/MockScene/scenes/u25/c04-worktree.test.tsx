@@ -73,9 +73,9 @@ const mount = async (name: SceneName): Promise<void> => {
 };
 
 const worktreeLayer = (): HTMLElement => {
-  const layer = document.querySelector<HTMLElement>('[data-level-layer="worktree"]:not([inert])');
+  const layer = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
   if (layer === null) {
-    throw new Error('the scene is not on the worktree level');
+    throw new Error('the scene shows no session level');
   }
   return layer;
 };
@@ -87,30 +87,22 @@ describe('the c04 worktree level scenes', () => {
     }
   });
 
-  it('c04-session-worktrees lists three projects, a danger dot, and a merged branch inline', async () => {
+  it('c04-session-worktrees lists three folders, a failing chip, and the merged branch in the fold', async () => {
     await mount('c04-session-worktrees');
 
     expect(screen.getByRole('list', { name: 'payments-api worktrees' })).toBeDefined();
     const ledger = within(screen.getByRole('list', { name: 'ledger-core worktrees' }));
-    expect(
-      ledger.getByRole('button', { name: /^ledger-core, / }).getAttribute('aria-label'),
-    ).toContain('A check failed');
-    const notify = within(screen.getByRole('list', { name: 'notify-relay worktrees' }));
-    expect(notify.queryByRole('button', { name: /finished/ })).toBeNull();
-    expect(
-      notify
-        .getByRole('button', { name: /^notify-relay, / })
-        .querySelector('[data-pr-state]')
-        ?.getAttribute('data-pr-state'),
-    ).toBe('merged');
+    expect(ledger.getByRole('button', { name: /#77/ }).textContent).toContain('Failing');
+    const notify = document.querySelector<HTMLElement>('[data-card-project="notify-relay"]');
+    expect(notify?.querySelector('[data-finished-fold]')?.textContent).toBe('1 finished');
     expect(screen.getByRole('button', { name: 'Add folder' })).toBeDefined();
   });
 
-  it('c04-worktree-pr-behind shows identity, the status line with Rebase and the property block', async () => {
+  it('c04-worktree-pr-behind shows the current branch, its status line with Rebase and the property block', async () => {
     await mount('c04-worktree-pr-behind');
 
     const level = within(worktreeLayer());
-    expect(level.getByText('payments-api')).toBeDefined();
+    expect(level.getByRole('button', { name: /^payments-api, / })).toBeDefined();
     expect(level.getByRole('status').textContent).toContain('6 behind main');
     expect(level.getByRole('button', { name: /^Rebase on main/ })).toBeDefined();
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
