@@ -1,6 +1,7 @@
 import { AnchoredPopover, useDropdown } from '@goodboy/ui';
-import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core';
-import { contextWindowFor } from '../../contextWindowFor';
+import { contextTokensForUsage } from '@goodboy/core';
+import { usageFigures } from '../../../chat/utils/usageFigures';
+import { USAGE_CARD_MAX_WIDTH } from '../../../chat/utils/usageCardMaxWidth';
 import { TurnFooterDetail } from '../../../chat/components/TurnFooter/TurnFooterDetail';
 import { UsageStatsRow } from '../../../chat/components/TurnFooter/UsageStatsRow';
 import type { TurnFooterData } from '../../../chat/components/TurnFooter/useTurnFooter';
@@ -14,7 +15,13 @@ type Props = {
 };
 
 export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
-  const dropdown = useDropdown({ align: 'end', expectedHeight: 220, expectedWidth: 280 });
+  const dropdown = useDropdown({
+    align: 'end',
+    width: 'w-max',
+    maxWidth: USAGE_CARD_MAX_WIDTH,
+    expectedHeight: 220,
+    expectedWidth: 280,
+  });
   const dominant = contextUsage[0] ?? null;
   const data: TurnFooterData = {
     provider: dominant?.provider ?? null,
@@ -28,19 +35,12 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
     estimatedCostUsd:
       aggregate != null && aggregate.estimatedCostUsd > 0 ? aggregate.estimatedCostUsd : null,
   };
-  const totalInput = inputTokensForUsage({
-    provider: data.provider ?? 'anthropic',
-    inputTokens: data.inputTokens,
-    cachedInputTokens: data.cachedInputTokens,
-    cacheCreationInputTokens: data.cacheCreationInputTokens,
-  });
+  const { contextWindow, hasUsage } = usageFigures({ data });
 
-  if (totalInput === 0 && data.outputTokens === 0) {
+  if (!hasUsage) {
     return null;
   }
 
-  const cachedPct = totalInput > 0 ? Math.round((data.cachedInputTokens / totalInput) * 100) : null;
-  const contextWindow = data.model != null ? contextWindowFor(data.model) : null;
   const contextTokens = contextTokensForUsage({ contextTokens: data.contextTokens ?? undefined });
   const contextPct =
     contextTokens != null && contextWindow != null && contextWindow > 0
@@ -62,16 +62,7 @@ export const AgentUsageFooter = ({ aggregate, contextUsage, turns }: Props) => {
         </button>
       }
     >
-      <TurnFooterDetail
-        data={data}
-        totalInput={totalInput}
-        cachedPct={cachedPct}
-        contextWindow={contextWindow}
-        duration={null}
-        startedAt={null}
-        endedAt={null}
-        turns={turns}
-      />
+      <TurnFooterDetail data={data} duration={null} startedAt={null} endedAt={null} turns={turns} />
     </AnchoredPopover>
   );
 };

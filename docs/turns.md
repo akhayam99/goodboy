@@ -449,6 +449,67 @@ provider turns each line into `TurnEvent`s. A payload no parser models becomes
 - A turn that ends with no assistant text and no error appends a
   non-retryable "exited without a response" error.
 
+## Text reveal
+
+Live agent text is written in at a steady pace instead of landing as one block.
+The engine lives in `features/chat/reveal/`; the hosts are listed below.
+
+- `revealNumbers.ts` holds every number: a floor of 80 characters a second, the
+  model's own rate of the last 600 ms (capped at 600 a second, times 1.1), the
+  backlog over a 1.2 s drain, a 1.5 s lag cap, a 220 ms fade. Change a number
+  there, nowhere else.
+- `revealPacer.ts` is one `requestAnimationFrame` loop for every live text in
+  the window. Each frame it moves a cut (a character index) per text and
+  notifies at most once per text. It stops when nothing is revealing. A piece
+  that arrived 1.5 s ago is shown in the next frame, so a whole message is on
+  screen about 1.5 s after it arrived. A text that stops growing mid word is
+  settled after 3 s. If the loop throws, every live text is shown whole.
+- `healMarkdownPrefix.ts` snaps a cut to what can render without half parsed
+  syntax: word ends, whole lines inside a fence, and never inside `**`, a
+  backtick span or a link. A table stays out of the view until its end is in the
+  text (a line that is not a row follows it, or the text is complete), then
+  every row lands at once, so the columns are sized once and never move. Pipe
+  lines without a divider line are prose.
+- A table piece lives for the fade plus a stagger of 40 ms per body row, capped
+  at 8 rows (`pieceLifetimeMs.ts`, numbers in `revealNumbers.ts`), and the
+  pacer holds the words after the table for that time, so the rows fade in
+  before the next block takes the fresh tail. The lag cap is not held: a whole
+  message is still on screen about 1.5 s after it arrived. `freshenNode` gives
+  each body `tr` a `--reveal-delay` from its index; only opacity animates.
+- `liveTextRegistry.ts` marks a run when an `assistant_text` event reaches the
+  store through `readTurnStream`. Load, a Cmd+R re-attach replay and another
+  window never mark. A text whose host mounts more than 1.5 s after the last
+  mark shows whole.
+- `useRevealedText` gives a host the
+  prefix to render and the pieces that are still fading. Reduced motion, a text
+  that was not live and an error in the engine all return the full text.
+  `finish` shows it all at once.
+- A stream `error` and a stop flush the reveal of that run first
+  (`revealPacer.flushRun`), so the error row never lands above half written text.
+- `useRevealedMarkdown` is what a host calls. It wraps `useRevealedText` and
+  turns the fading pieces into a `fresh` tail for `Markdown`: the last block
+  renders the revealed prefix with its newest characters in `<span data-fresh>`
+  (`freshenNode`), one span per piece, each fading from 0 to 1 opacity for 220 ms
+  (`[data-fresh]` in `styles.css`, only under no-preference reduced motion). No
+  span per word and no component per word; a block that is not the last one is
+  the cached element of PR 1, untouched. It also finishes the reveal on a
+  pointer down in the row, on a non empty selection in it and when find in view
+  starts, so selection and copy always get the full text.
+- Hosts: `AssistantText` (the agent chat, run step page and drawer, agent
+  overlay, Auto and its children, and the transcript drawer in `record` mode)
+  and `ChatAssistantMessage` (the workspace chat). The `assistant_text` item
+  carries its `runId`, which with the item key is the pacer key. In the
+  conversation the final answer row is added when `activeRunId` goes null,
+  inside the 1.5 s live window of the run's last delta, so it reveals as the
+  turn ends; a turn that ends more than 1.5 s after its last text shows it
+  whole. The chips and the copy button under an answer wait until the reveal
+  ends. The workspace chat marks its reply by message id in `sendChatMessage`
+  and flushes it when the reply fails or is stopped.
+- Screen readers: the revealing row carries `aria-busy="true"` inside the
+  polite list and the final text is read once when the flag clears. The flag
+  derives from the reveal state, so it clears on finish, flush, error, stop
+  and unmount, and a text shown whole never has it.
+
 ## Surviving a reload or a restart
 
 Rust owns every CLI process, so the webview can go away while a turn runs.
@@ -710,28 +771,76 @@ the provider's, not a lifecycle glyph, since done is the expected case;
 clicking it (or `ⓘ`) opens `TurnFooterDetail`, an `AnchoredPopover` with
 the itemized breakdown.
 
+The detail card is a two-column grid: labels left, values right aligned in
+tabular numbers, no wrapping. Its `useDropdown` sets `width: 'w-max'` and
+`maxWidth: USAGE_CARD_MAX_WIDTH` (`chat/utils/usageCardMaxWidth.ts`); without a `width`
+the dropdown matches the trigger width, which is the narrow footer button, and
+the `Popover` surface (`overflow-x-hidden`) clipped the value column. A long
+model title wraps inside the card. `usageFigures` (`chat/utils/`; input total, cache share,
+context window, whether any usage exists) and `usageDetailRows` (every row and
+its text) are the only places those numbers are computed, shared by
+`TurnFooter` and `AgentUsageFooter`. A row with nothing to show renders a dash
+and a screen-reader reason (`no usage reported yet`, `context size not
+reported yet`, `no cost estimate yet`) instead of a blank value.
+
 ## Chat scroll
 
-The chat scrolls inside the `ScrollFade` viewport of `ChatView`, which carries
-`overflow-anchor: auto`, so the line under the pointer stays put while rows
-above it change height. `useScrollPin` follows the latest line only while the
-reader is within 32 px of the bottom; the first wheel, touch, pointer or key
-event stops its settle loop, and a reader who scrolled up is never pulled back
-down by new rows (the "Jump to latest" button pins again).
+The chat scrolls inside the `ScrollFade` viewport of `ChatView`. The line under
+the reader stays put through `useScrollAnchor` (`shared/hooks/useScrollAnchor`),
+never through CSS: the macOS webview (WKWebView) and WebKitGTK ship no CSS
+scroll anchoring, so the hook sets `overflow-anchor: none` (WebView2 on Windows
+would otherwise compensate twice). On every scroll it picks the anchor, the
+first row whose bottom is below the top edge (`pickAnchor`, a binary search),
+and keeps its offset. A ResizeObserver on every row and on the content runs
+after layout and before paint; when the anchor moved, `anchorShift` adds the
+difference to `scrollTop` in that same frame, so a row above that grows or
+shrinks never moves what the reader sees. It stands down while `useScrollPin`
+holds the view (`isHolding`: pinned to the bottom, or held at the top of a
+revealing answer, which re-reads the answer top itself), during a drag or a click on the overlay thumb track, and
+after `suspend()`, which every programmatic smooth scroll calls first (Jump to
+latest, an open question, a run); it anchors again 150 ms after the last
+scroll of such a move, or at the next wheel, touch, key or pointer press.
+
+`useScrollPin` follows the latest line only while the reader is within 32 px of
+the bottom; the first wheel, touch, pointer or key event stops its settle loop,
+and a reader who scrolled up is never pulled back down by new rows (the "Jump
+to latest" button pins again).
+
+Growth is followed without a store write too: a `ResizeObserver` on the
+content calls the same follow step every time the content changes size, so a
+text that grows frame by frame (the text reveal) keeps the view at the bottom.
+While a row is revealing (`data-reveal-answer` on it) the follow stops at the
+answer's top: the view follows the bottom until the top of the answer is 56 px
+under the top of the view (clear of the 48 px fade of `ScrollFade`), then holds
+there, so you read from its first line,
+and "Jump to latest" shows. When the written text reaches the bottom of the
+view, `onRevealOverflow` finishes the reveal (`revealPacer.flush`), so what is
+below the fold is simply there, not animated. When the reveal ends the view
+stays where it is. The hold ends at once for a reader who scrolls, and "Jump to
+latest" or a manual scroll to the bottom during the reveal goes back to
+following the bottom until the reveal ends. The old rule, always stick to the
+bottom while pinned, still holds for everything that is not a revealing answer.
 
 Every row is `content-visibility: auto`. Its `contain-intrinsic-size` is
-`auto <estimate>px` from `rowEstimatePx` (`ChatView/rowEstimatePx.ts`): a user
-message and an answer by their line count (capped at 40 lines), an operations
-cluster by its steps (capped at 12), a workflow rail group by its rows, any
-other kind 72 px. `auto` makes the browser keep the real height once a row has
-rendered. A row estimate that is too small is what made the view snap while
-scrolling up; adjust a constant there, never a per-row class. The day divider
-key is the day plus the key of the row that opens it, never the index.
+`auto <px>`: the height last measured for that agent, mode and row key
+(`ChatView/rowHeightCache.ts`, written by the anchor hook from each row's
+`data-anchor-key`), else `rowEstimatePx` (`ChatView/rowEstimatePx.ts`): a user
+message and an answer by their whole line count (no cap), an operations
+cluster as its 32 px header while collapsed and by every step when open (steps
+mode), a workflow rail group by its rows, any other kind 72 px. The cache is
+what keeps a revisit (another agent and back, another page and back) from
+falling back to estimates. The estimates keep the scrollbar thumb steady: each
+error is a change of `scrollHeight` when the row first renders, which resizes
+and slides the thumb even when the anchor holds the content still. The day
+divider key is the day plus the key of the row that opens it, never the index.
 
-jsdom has no layout, so the tests prove the wiring (the estimate on each row,
-the pin staying off for an unpinned reader). The real check is the
-`transcript-long` scene (about 150 rows): scroll up and watch that the line
-under the pointer does not move.
+jsdom has no layout, so the tests prove the decisions (`pickAnchor`,
+`anchorShift`, the hook against a fake layout) and the wiring (every row keyed
+and estimated, the viewport off CSS anchoring). The real check is the
+`transcript-long` scene (about 150 rows): open it, scroll to the middle,
+scroll up slowly and with a fast flick, and watch that the line under the
+pointer never moves and the thumb does not jump; then drag the thumb to the
+top and back and see it follow the pointer.
 
 ## Failure and fallback
 
@@ -949,7 +1058,10 @@ avoided on `SendControl`'s own buttons.
   access label go and the provider glyph and the mode icon stay. The hidden
   words stay in the tooltip and in the accessible name (`Permission mode: Full
 access`, `Model routing: ..., pinned`). The main composer keeps every label at
-  its usual width.
+  its usual width. Under 448px the key hints of Send now and Queue go too
+  (`DeliveryActions`), so a running child fits one row at the 384px drawer.
+  `ChatInput` takes an optional `agentId`; without it the composer follows the
+  session's selected agent, with it (a drawer) every hook uses that agent.
 - The right side is `RoutingPicker` (with a `budget` prop, `ProviderUsagePill`
   passed in rather than living beside it) then `SendControl` (`parts/`): the
   same `ArrowUp` glyph as `ConversationComposer` while idle, and Send now/Queue
