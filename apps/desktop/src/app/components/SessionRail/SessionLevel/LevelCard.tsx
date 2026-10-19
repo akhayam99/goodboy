@@ -48,10 +48,7 @@ export const LevelCard = ({ id, label, isOpen, onToggle, meta, action, children 
             />
           </button>
         </h2>
-        <div
-          data-card-actions=""
-          className="flex shrink-0 items-center gap-2 [&_[data-level-add]]:size-5"
-        >
+        <div data-card-actions="" className="flex shrink-0 items-center gap-2">
           {isOpen || meta === undefined ? null : meta}
           {action}
         </div>

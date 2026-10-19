@@ -114,7 +114,7 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(
       sessionLayer().querySelector('[data-page-value="runs"]')?.getAttribute('data-tone'),
     ).toBe('info');
-    const projects = within(level.getByRole('group', { name: 'Folders' }));
+    const projects = within(level.getByRole('group', { name: 'Projects' }));
     expect(projects.getByText('#331')).toBeDefined();
     expect(within(level.getByRole('group', { name: 'Linked' })).getByText('NW-142')).toBeDefined();
     const adds = [
@@ -162,7 +162,7 @@ describe('the c02 sidebar and session rail scenes', () => {
 
     const level = within(sessionLayer());
     expect(level.getByRole('button', { name: /^Changes/ })).toBeDefined();
-    expect(level.queryByRole('group', { name: 'Folders' })).toBeNull();
+    expect(level.queryByRole('group', { name: 'Projects' })).toBeNull();
   });
 
   it('c02-level-main-folded folds the main sidebar to its icons and keeps the rail open', async () => {

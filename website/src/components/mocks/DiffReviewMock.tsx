@@ -88,7 +88,7 @@ const BLOCKS: readonly ('add' | 'del')[] = ['add', 'add', 'add', 'del', 'del'];
 
 export const DiffReviewMock = ({ className }: Props) => (
   <MockStage
-    label="The Files page of the payments-api branch hl/fix-duplicate-credit, with the Folders card of the rail open on its pull request 318, Comments, Files and Checks. The Files section shows a tree of the changed files with a reading progress, and a line changed to dedupe on the event id, with an open note under it."
+    label="The Files page of the payments-api branch hl/fix-duplicate-credit, with the Projects card of the rail open on its pull request 318, Comments, Files and Checks. The Files section shows a tree of the changed files with a reading progress, and a line changed to dedupe on the event id, with an open note under it."
     className={className}
   >
     <MockWindow className="dfrWin">

@@ -105,13 +105,13 @@ describe('the u26 branches scenes, units 1 and 2', () => {
   );
 
   it.each(['u26-cards-inset-dark', 'u26-cards-inset-light'] as const)(
-    '%s draws the Folders and Linked cards through one component',
+    '%s draws the Projects and Linked cards through one component',
     async (name) => {
       await mount({ name });
 
-      const folders = screen.getByRole('group', { name: 'Folders' });
+      const projects = screen.getByRole('group', { name: 'Projects' });
       const linked = screen.getByRole('group', { name: 'Linked' });
-      expect(folders.getAttribute('data-level-card')).toBe('Folders');
+      expect(projects.getAttribute('data-level-card')).toBe('Projects');
       expect(linked.getAttribute('data-level-card')).toBe('Linked');
     },
   );

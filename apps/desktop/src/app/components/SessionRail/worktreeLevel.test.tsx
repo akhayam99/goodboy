@@ -368,7 +368,7 @@ describe('the worktree rows of the session level', () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await mountRail();
 
-    const card = within(screen.getByRole('group', { name: 'Folders' }));
+    const card = within(screen.getByRole('group', { name: 'Projects' }));
     fireEvent.click(card.getByRole('button', { name: 'Add folder' }));
     const picker = within(await screen.findByRole('dialog', { name: 'Add folder' }));
 
@@ -442,7 +442,7 @@ describe('the worktree rows of the session level', () => {
     seedTwoProjects({ status: worktreeStatusOf({ behind: 3 }) });
     await mountRail();
 
-    const card = screen.getByRole('group', { name: 'Folders' });
+    const card = screen.getByRole('group', { name: 'Projects' });
     await waitFor(() => expect(card.querySelector('[data-rebase-all]')).not.toBeNull());
     const rebaseAll = card.querySelector<HTMLElement>('[data-rebase-all]');
     if (rebaseAll === null) {
@@ -462,7 +462,7 @@ describe('the worktree rows of the session level', () => {
     await mountRail();
 
     expect(
-      screen.getByRole('group', { name: 'Folders' }).querySelector('[data-rebase-all]'),
+      screen.getByRole('group', { name: 'Projects' }).querySelector('[data-rebase-all]'),
     ).toBeNull();
   });
 
@@ -747,7 +747,7 @@ describe('the worktree pages inside the Projects card', () => {
   it('folds the card from its header, remembers it, and keeps a state dot on the folded header', async () => {
     seedTwoProjects({ status: worktreeStatusOf({ behind: 3 }) });
     await mountRail();
-    const toggle = screen.getByRole('button', { name: 'Folders' });
+    const toggle = screen.getByRole('button', { name: 'Projects' });
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
 
     fireEvent.click(toggle);

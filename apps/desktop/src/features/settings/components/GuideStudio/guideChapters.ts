@@ -319,11 +319,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rail',
-        desc: 'Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions, with counts; Auto agents reads Experimental. Then the Folders card, a tree of folders and branches, and the Linked card.',
+        desc: 'Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions, with counts; Auto agents reads Experimental. Then the Projects card, a tree of folders and branches, and the Linked card.',
       },
       {
         term: 'Rail foot and +',
-        desc: 'The + on the Folders card adds or connects a folder, and the + on a folder row starts a new branch in it. The foot reads the spend, such as $2 / $10, with Archive and Delete.',
+        desc: 'The + on the Projects card adds or connects a folder, and the + on a folder row starts a new branch in it. The foot reads the spend, such as $2 / $10, with Archive and Delete.',
       },
       {
         term: 'Levels',
@@ -558,7 +558,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rebase all',
-        desc: "With two or more branches behind, Rebase all on the Folders card rebases the clean ones with git and hands conflicts to one Auto run. Next's rebase picker adds Also tidy commits with Auto.",
+        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and hands conflicts to one Auto run. Next's rebase picker adds Also tidy commits with Auto.",
       },
       {
         term: 'Force push',

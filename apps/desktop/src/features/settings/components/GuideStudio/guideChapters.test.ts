@@ -177,8 +177,12 @@ describe('what the Guide may name', () => {
     hidden.forEach((label) => expect(allText()).not.toContain(label));
   });
 
-  it('says folder for a Goodboy folder, never project', () => {
-    expect(allText().match(/\bprojects?\b/gi)).toBeNull();
+  it('says folder for a Goodboy folder, never project, past the Projects card it names', () => {
+    expect(
+      allText()
+        .replaceAll(`${NAMES.projects} card`, '')
+        .match(/\bprojects?\b/gi),
+    ).toBeNull();
   });
 
   it('names nothing the shell moved out of the top bar or renamed', () => {
@@ -222,12 +226,12 @@ describe('the shell chapter', () => {
     columnPagesOf({ isBranchless: false, hasAutoAgents: true }).forEach((page) =>
       expect(rail).toContain(page.label),
     );
-    [NAMES.folders, 'Linked', 'Experimental'].forEach((word) => expect(rail).toContain(word));
+    [NAMES.projects, 'Linked', 'Experimental'].forEach((word) => expect(rail).toContain(word));
   });
 
   it('puts both adds on the rows they act on and the spend on one line with Archive and Delete', () => {
     const foot = pointOf('shell', 'Rail foot and +');
-    expect(foot).toContain('+ on the Folders card');
+    expect(foot).toContain('+ on the Projects card');
     expect(foot).toContain('+ on a folder row starts a new branch');
     expect(foot).toContain('$2 / $10');
     expect(foot).toContain('Archive and Delete');

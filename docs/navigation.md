@@ -729,7 +729,7 @@ hide animation or overlay can move it.
 **The pane** is the work. It is the only surface that scrolls its own body,
 mounts editors and takes a title.
 
-**The Folders card of the session level shows which folders a session has
+**The Projects card of the session level shows which projects a session has
 materialized.** It lives in the session rail, not on the Overview, and always has
 the Add action, even before the first mount. Each mounted project is a label
 row that folds its worktrees, each worktree folds its main pages one more
@@ -758,7 +758,7 @@ deeper level shows, and the hidden ones are `inert`. The rail is 240px by
 default and resizes from 200 to 400 (`goodboy:session-rail-width:v1`); its
 rows are the column's rows (28px, `SelectableRow`, the same type roles).
 
-- **Level 1 reads top to bottom:** the pages, then the Folders card and the
+- **Level 1 reads top to bottom:** the pages, then the Projects card and the
   Linked card, then the foot. The session level has no identity row: the
   selected main sidebar row is the session's identity (its title and state
   node). The Overview h1 is the session title, the linked key in gray mono
@@ -855,24 +855,26 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
   its flyout read the same function; the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
-- **Folders and Linked are cards** (`SessionLevel/LevelCard`): a rounded
+- **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
   `bg-subtle` surface (`rounded-lg`) whose edges sit on the page row
   highlight edges: pages and cards share one column inset
   (`SessionLevel/railInset`, `RAIL_INSET`). The card pads its sides 8px and
   its top and bottom 4px (`CARD_INSET`, one constant read by `LevelCard`, so
-  Folders, Linked and any later level card cannot drift) and a card row adds
+  Projects, Linked and any later level card cannot drift) and a card row adds
   4px (`CARD_ROW_INSET`), so text, chevrons, dots and counts sit 12px in and
   a hover fill keeps 8px of card around it. Every right
-  slot (counts, diff stat, the worst state dot, the `+` glyph at `size-5`)
-  ends on the card's inner line. It has a header row inside it: the
+  slot (counts, diff stat, the worst state dot, the `+` glyph) ends on the
+  card's inner line. Every `+` of a level card, header or project row, is
+  `LevelAddTrigger` in its own 24px `xs` box, with no size override from the
+  card, so all of them share one right edge. It has a header row inside it: the
   title and a fold chevron as one button, then the quiet meta and a `+` icon
   button (`LevelAddTrigger`) at the right. A card folds from its header and
   remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);
-  folded, Folders keeps the worst state of its worktrees as one dot in the
+  folded, Projects keeps the worst state of its worktrees as one dot in the
   header (`useProjectsSignal`) and Linked its item count from 2, so a state
   that needs you never hides in a fold. Cards sit 8px apart, 16px under the
   pages.
-- **Folders is a tree** you fold at two depths, many nodes open at once. A
+- **Projects is a tree** you fold at two depths, many nodes open at once. A
   project row (`SessionLevel/ProjectTree`) is one toggle (`aria-expanded`):
   folder icon, name, then its branch count from 1 in quiet tabular gray beside
   a chevron in the right slot. Its worktrees sit one 16px indent in
@@ -979,7 +981,7 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   key in the tooltip) so every title starts on one edge, title. A GitHub pull
   request a worktree row of the session already owns is not listed again
   (`githubRefOf`, same owner/repo and number). The row opens the item; its right-click menu holds
-  Unlink and Move. It is a card like Folders, and its header carries the same
+  Unlink and Move. It is a card like Projects, and its header carries the same
   `+` (`LevelAddTrigger`, named Link work), opening Link work (L). Every card
   header of the session level uses this one control, never a bordered chip.
 - **Back.** On level 2 the back row goes up to level 1, and so does ⌘[ while
@@ -2793,7 +2795,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   `warning` `Notice` with `Use this branch here`, `Keep both branches` and
   `Not now`) and the first lap Publish. Needs you follows, then Next (up to
   three rows, the first one's verb the only filled button on the page), then
-  Activity. Folders, Linked work, Artifacts and Add folder live on the
+  Activity. Projects, Linked work, Artifacts and Add folder live on the
   session rail's session level. Next and Unassigned notes open with `SectionHeader`
   at level 2, and Needs you opens with the same eyebrow on the quiet notice
   surface (no tone bar). Needs you is the one home of a waiting ask on the page:

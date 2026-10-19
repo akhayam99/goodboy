@@ -30,7 +30,7 @@ const ENTRIES: readonly Entry[] = [
 
 export const DiffReviewRail = () => (
   <nav aria-hidden className="dfrRail">
-    <p className="dfrRailCard">Folders</p>
+    <p className="dfrRailCard">Projects</p>
     <p className="dfrRailRow">
       <FolderTree size={12} />
       <span className="dfrRailLabel">payments-api</span>

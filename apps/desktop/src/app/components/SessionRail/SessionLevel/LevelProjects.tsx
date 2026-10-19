@@ -55,7 +55,7 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   return (
     <LevelCard
       id={LABEL_ID}
-      label={NAMES.folders}
+      label={NAMES.projects}
       isOpen={fold.isOpen}
       onToggle={fold.toggle}
       {...(signal.tone !== null && {

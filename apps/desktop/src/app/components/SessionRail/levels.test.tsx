@@ -351,7 +351,7 @@ describe('the session level pages', () => {
     const folder = within(sessionLayer()).getByRole('group', { name: 'Folder' });
     expect(within(folder).getByText('acme-notes')).toBeDefined();
     expect(within(folder).getByText('Documents · edits in place')).toBeDefined();
-    expect(within(sessionLayer()).queryByRole('group', { name: 'Folders' })).toBeNull();
+    expect(within(sessionLayer()).queryByRole('group', { name: 'Projects' })).toBeNull();
     await vi.waitFor(() => {
       const changes = pages().getByRole('button', { name: /^Changes/ });
       expect(changes.querySelector('[data-page-value="files"]')?.textContent).toBe('2');
@@ -377,7 +377,8 @@ describe('the session level projects and linked work', () => {
     });
     mountColumn();
 
-    const projects = within(within(sessionLayer()).getByRole('group', { name: 'Folders' }));
+    const projects = within(within(sessionLayer()).getByRole('group', { name: 'Projects' }));
+    expect(within(sessionLayer()).queryByRole('group', { name: 'Folders' })).toBeNull();
     const paymentsRows = within(projects.getByRole('list', { name: 'payments-api worktrees' }));
     const worktree = paymentsRows.getByRole('button', { name: /^payments-api, / });
     expect(worktree.textContent).toBe(`goodboy/${openId}#418`);
@@ -440,7 +441,7 @@ describe('the session level projects and linked work', () => {
     expect(key?.textContent).toBe('PAYMENTS-API-3F2');
   });
 
-  it('gives the Folders card and the Linked card the same side padding, from one constant', () => {
+  it('gives the Projects card and the Linked card the same side padding, from one constant', () => {
     seed();
     const payments = mountOf({ session: open, project: paymentsApi });
     useAppStore.setState({
@@ -468,11 +469,11 @@ describe('the session level projects and linked work', () => {
 
     const cards = Array.from(sessionLayer().querySelectorAll<HTMLElement>('[data-level-card]'));
     expect(cards.map((card) => card.getAttribute('data-level-card'))).toEqual(
-      expect.arrayContaining(['Folders', 'Linked']),
+      expect.arrayContaining(['Projects', 'Linked']),
     );
-    const folders = within(sessionLayer()).getByRole('group', { name: 'Folders' });
+    const projects = within(sessionLayer()).getByRole('group', { name: 'Projects' });
     const linked = within(sessionLayer()).getByRole('group', { name: 'Linked' });
-    expect(folders.getAttribute('data-level-card')).toBe('Folders');
+    expect(projects.getAttribute('data-level-card')).toBe('Projects');
     expect(linked.getAttribute('data-level-card')).toBe('Linked');
     expect(CARD_INSET).toBe('px-2 py-1');
   });

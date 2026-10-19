@@ -85,7 +85,7 @@ Review your own diff before anyone else does. Leave notes on lines or whole file
 
 ### Pull request on the Branch page
 
-Click a worktree under **Folders** in a session and the session rail steps into it: the project and the branch on top, a status line with **Rebase** while the branch is behind, then **Pull request**, **Comments**, **Files** (with the lines added and removed beside the file count), **Commits** and **Checks** with their counts. **‹** goes back to the session. The session level already lists **Pull request**, **Comments**, **Files** and **Checks** under each branch, so one click opens the diff or the checks of any branch.
+Click a worktree under **Projects** in a session and the session rail steps into it: the project and the branch on top, a status line with **Rebase** while the branch is behind, then **Pull request**, **Comments**, **Files** (with the lines added and removed beside the file count), **Commits** and **Checks** with their counts. **‹** goes back to the session. The session level already lists **Pull request**, **Comments**, **Files** and **Checks** under each branch, so one click opens the diff or the checks of any branch.
 
 The **Pull request** entry is the pull request. Its properties come first, grouped as state, people and links: the state and number, the base, the checks, and in plain words whether it can merge, such as **Ready to merge** or **Blocked: 2 checks failing**. Rename it, edit the description and ask for reviewers there. **Merge** offers only the ways the host allows, and on GitLab the page uses GitLab's words, such as **Merge request** and **MR !42**.
 

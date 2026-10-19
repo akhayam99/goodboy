@@ -39,6 +39,7 @@ export const NAMES = {
   addPlainFolder: 'Add a plain folder',
   addFolder: 'Add folder',
   folders: 'Folders',
+  projects: 'Projects',
   providersAndModels: 'Providers and models',
   keyboardShortcuts: 'Keyboard shortcuts',
   backupAndReset: 'Backup and reset',

@@ -350,7 +350,7 @@ const sessionLevel = async (): Promise<HTMLElement> => {
 export const openCrumb = async (label: RegExp): Promise<void> => {
   const level = within(await sessionLevel());
   if (label.test('Branch')) {
-    const projects = within(level.getByRole('group', { name: 'Folders' }));
+    const projects = within(level.getByRole('group', { name: 'Projects' }));
     const [first] = projects.getAllByRole('button').filter((row) => row.closest('li') !== null);
     if (first === undefined) {
       throw new Error('the session level lists no worktree');
