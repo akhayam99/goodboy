@@ -13,6 +13,7 @@ import type { DiffCommentAnchor, DiffCommentSide, FileDiff } from '@goodboy/type
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { useFileSides, type FileSidesLoader } from '../../hooks/useFileSides';
 import { useDiffTokens } from '../../hooks/useDiffTokens';
+import { bodyEstimatePx } from '../../lib/bodyEstimatePx';
 import { isGeneratedPath } from '../../lib/fileStatus';
 import { CommentComposer } from './CommentComposer';
 import { CommentThread } from './CommentThread';
@@ -310,6 +311,11 @@ const DiffFileView = ({
   const hasContext = context.gaps.some((gap) => gap.before.length > 0 || gap.after.length > 0);
   const totalLines = file.hunks.reduce((sum, hunk) => sum + hunk.lines.length, 0);
   const remaining = Math.max(0, totalLines - visibleLines);
+  const isSplit = layout === 'split';
+  const bodyPx = useMemo(
+    () => bodyEstimatePx({ file, isSplit, visibleLines }),
+    [file, isSplit, visibleLines],
+  );
   const { expandAll: expandContextAll } = context;
   const expandAll = useCallback(async (): Promise<void> => {
     const hasExpanded = await expandContextAll();
@@ -396,7 +402,8 @@ const DiffFileView = ({
       ) : (
         <div
           data-slot="diff-file-body"
-          className="flex min-w-0 flex-col gap-2 pb-2 [contain-intrinsic-size:auto_480px] [content-visibility:auto]"
+          className="flex min-w-0 flex-col gap-2 pb-2 [content-visibility:auto]"
+          style={{ containIntrinsicSize: `auto ${bodyPx}px` }}
         >
           {fileThreads.length > 0 || composer?.kind === 'file' ? (
             <div className="flex flex-col gap-2 py-1">
