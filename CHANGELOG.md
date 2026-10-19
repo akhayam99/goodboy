@@ -12,6 +12,18 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.4
+
+Next names the branch it opens a pull request for, a plan Auto already handed off stops asking for an implementer, and the rail says Projects again.
+
+### Fixed
+
+- The session rail called a git project's card Folders. It reads Projects again, and every plus button in the rail lines up on one edge. <!-- gb area=sessions pr=2021 -->
+- Open a pull request in Next now names its branch, its menu lists the other branches without one, and Not now moves the card to the next branch. <!-- gb area=sessions pr=2019 -->
+- Pull request cards disappeared for every branch while any agent ran. Now only the branch an agent is working on waits. <!-- gb area=sessions pr=2019 -->
+- After Auto handed a plan to an implementer, Next still offered Start implementer until you switched sessions. The plan now shows as used right away, in every window. <!-- gb area=agents pr=2020 -->
+- A plan Auto revised showed its old text until you switched sessions. The new text appears as soon as the revision lands. <!-- gb area=agents pr=2020 -->
+
 ## Goodboy v0.27.3
 
 A folder without git is a full workspace: agents edit it in place, every turn is saved, and Auto picks each model from the role, the provider and the step.
