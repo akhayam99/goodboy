@@ -865,8 +865,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   a hover fill keeps 8px of card around it. Every right
   slot (counts, diff stat, the worst state dot, the `+` glyph) ends on the
   card's inner line. Every `+` of a level card, header or project row, is
-  `LevelAddTrigger` in one 20px box (`LEVEL_ADD_SIZE`, `size-5`, owned by the
-  trigger), so all of them share one right edge. It has a header row inside it: the
+  `LevelAddTrigger` in its own 24px `xs` box, with no size override from the
+  card, so all of them share one right edge. It has a header row inside it: the
   title and a fold chevron as one button, then the quiet meta and a `+` icon
   button (`LevelAddTrigger`) at the right. A card folds from its header and
   remembers it (`useLevelCardFold`, `goodboy:session-rail-folded-cards:v1`);

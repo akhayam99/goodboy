@@ -1,7 +1,6 @@
 import type { ComponentProps } from 'react';
 import { Plus } from 'lucide-react';
-import { IconButton, cn } from '@goodboy/ui';
-import { LEVEL_ADD_SIZE } from './levelAddSize';
+import { IconButton } from '@goodboy/ui';
 
 type Props = Omit<
   ComponentProps<typeof IconButton>,
@@ -11,10 +10,9 @@ type Props = Omit<
   readonly isExpanded: boolean;
 };
 
-export const LevelAddTrigger = ({ ariaLabel, isExpanded, tooltip, className, ...rest }: Props) => (
+export const LevelAddTrigger = ({ ariaLabel, isExpanded, tooltip, ...rest }: Props) => (
   <IconButton
     {...rest}
-    className={cn(LEVEL_ADD_SIZE, className)}
     icon={Plus}
     label={ariaLabel}
     tooltip={tooltip ?? ariaLabel}
