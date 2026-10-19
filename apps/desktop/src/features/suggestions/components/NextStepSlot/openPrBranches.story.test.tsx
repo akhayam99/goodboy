@@ -183,8 +183,11 @@ describe('the open pull request card with several branches of one project', () =
     seed({ branches: BRANCHES });
     renderSlot();
 
-    expect(await screen.findByText('Open a pull request for hl/refund-retry')).toBeTruthy();
-    expect(screen.getByText('5 commits ahead')).toBeTruthy();
+    const row = await screen.findByTestId(
+      `next-step-open-pr:${mountIdOf({ branch: 'hl/refund-retry' })}`,
+    );
+    expect(row.textContent).toContain('Open a pull request for hl/refund-retry');
+    expect(row.textContent).toContain('5 commits ahead');
     expect(openPrRows()).toHaveLength(1);
   });
 
@@ -247,8 +250,11 @@ describe('the open pull request card with one branch', () => {
     const { navigate } = seed({ branches: [{ branch: 'hl/ledger-export', ahead: 3 }] });
     renderSlot();
 
-    expect(await screen.findByText('Open a pull request for payments-api')).toBeTruthy();
-    expect(screen.getByText('hl/ledger-export · 3 commits ahead')).toBeTruthy();
+    const row = await screen.findByTestId(
+      `next-step-open-pr:${mountIdOf({ branch: 'hl/ledger-export' })}`,
+    );
+    expect(row.textContent).toContain('Open a pull request for payments-api');
+    expect(row.textContent).toContain('hl/ledger-export · 3 commits ahead');
     expect(openPrRows()).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^More options for / })).toBeNull();
 
