@@ -8,6 +8,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
+import { brandId, type IsoDateTime } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -15,6 +16,7 @@ import {
   storySpies,
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../../store/storyHarness';
+import { useAppStore } from '../../../../../store';
 import { resetWorktreeStatusCache } from '../../../../../store/slices/worktreeStatuses/cache';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
@@ -84,6 +86,48 @@ describe('the central column scenes', () => {
 
     for (const name of ['Now', 'Next steps', 'What was done']) {
       screen.getByRole('region', { name });
+    }
+  });
+
+  it('settles when the stale branch detail read fails on the branches scene', async () => {
+    const startedAt = Date.now();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(startedAt);
+    try {
+      await show({ name: 'u26-central-branches-light' });
+      const detailReads = () =>
+        storySpies.tauriInvoke.mock.calls.filter(
+          ([command, args]) => command === 'gh_run' && JSON.stringify(args).includes('/comments'),
+        ).length;
+      const before = detailReads();
+      vi.setSystemTime(startedAt + 31_000);
+      for (let poll = 0; poll < 5; poll += 1) {
+        act(() => {
+          useAppStore.setState((state) => ({
+            mountGithub: Object.fromEntries(
+              Object.entries(state.mountGithub).map(([mountId, github]) => [
+                mountId,
+                {
+                  ...github,
+                  fetchedAt: brandId<IsoDateTime>({
+                    value: new Date(Date.now() + poll).toISOString(),
+                  }),
+                },
+              ]),
+            ),
+          }));
+        });
+        await act(async () => {
+          for (let tick = 0; tick < 20; tick += 1) {
+            await Promise.resolve();
+          }
+        });
+      }
+
+      expect(detailReads() - before).toBe(1);
+      screen.getByRole('region', { name: 'Now' });
+    } finally {
+      vi.useRealTimers();
     }
   });
 
