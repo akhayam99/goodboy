@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import type { SessionId } from '@goodboy/types';
+import { brandId, type MountId, type SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { BranchFacts } from '../branchFactsOf';
 import { branchDetailOf, needsBranchDetail } from '../branchDetailOf';
@@ -9,6 +9,10 @@ type Params = {
   readonly sessionId: SessionId;
   readonly facts: ReadonlyArray<BranchFacts>;
 };
+
+const KEY_SEPARATOR = '\n';
+
+const FIELD_SEPARATOR = ' ';
 
 export const useBranchDetails = ({
   sessionId,
@@ -23,11 +27,26 @@ export const useBranchDetails = ({
       ),
     [facts, mountGithub],
   );
+  const stuckKey = stuck
+    .map((fact) => {
+      const github = mountGithub?.[fact.mountId];
+      return [fact.mountId, github?.pr?.number ?? '', github?.fetchedAt ?? ''].join(
+        FIELD_SEPARATOR,
+      );
+    })
+    .join(KEY_SEPARATOR);
   useEffect(() => {
-    for (const fact of stuck) {
-      void refreshSessionPrDetail(sessionId, { mountId: fact.mountId, silent: true });
+    if (stuckKey === '') {
+      return;
     }
-  }, [refreshSessionPrDetail, sessionId, stuck]);
+    for (const entry of stuckKey.split(KEY_SEPARATOR)) {
+      const [mountId = ''] = entry.split(FIELD_SEPARATOR);
+      void refreshSessionPrDetail(sessionId, {
+        mountId: brandId<MountId>({ value: mountId }),
+        silent: true,
+      });
+    }
+  }, [refreshSessionPrDetail, sessionId, stuckKey]);
   return useMemo(() => {
     const words = new Map<string, BranchDetailWords>();
     for (const fact of stuck) {

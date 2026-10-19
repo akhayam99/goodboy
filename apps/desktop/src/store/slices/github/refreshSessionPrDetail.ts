@@ -7,6 +7,7 @@ import { applyMountGithub } from './mountGithub';
 import { githubRequestIdentity } from './mountPrLink';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import { syncSourceThreads } from '../review-source/syncSourceThreads';
+import type { MountDetailFailure } from './state';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -17,6 +18,22 @@ type Params = {
 };
 
 const DETAIL_TTL_MS = 30_000;
+
+const DETAIL_RETRY_MS = 60_000;
+
+type FailuresParams = {
+  readonly failures: Readonly<Record<MountId, MountDetailFailure>> | undefined;
+  readonly mountId: MountId;
+};
+
+const withoutFailure = ({
+  failures,
+  mountId,
+}: FailuresParams): Readonly<Record<MountId, MountDetailFailure>> => {
+  const next = { ...failures };
+  delete next[mountId];
+  return next;
+};
 
 export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, opts?: Params): Promise<void> => {
@@ -60,6 +77,15 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
     if (opts?.force !== true && existing.detail !== null && fresh < DETAIL_TTL_MS) {
       return;
     }
+    const failure = get().mountDetailFailures?.[mountId];
+    if (
+      opts?.force !== true &&
+      failure !== undefined &&
+      failure.revision === revision &&
+      Date.now() - failure.failedAt < DETAIL_RETRY_MS
+    ) {
+      return;
+    }
     const isCurrent = (): boolean =>
       mountRevision({ state: get(), sessionId, mountId }) === revision;
     const ghOptions = {
@@ -100,18 +126,21 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
             if (current === undefined) {
               return state;
             }
-            return applyMountGithub({
-              state,
-              sessionId,
-              mountId,
-              github: {
-                ...current,
-                detail: null,
-                detailFetchedAt: new Date().toISOString() as IsoDateTime,
-                detailLoading: false,
-                detailError: null,
-              },
-            });
+            return {
+              ...applyMountGithub({
+                state,
+                sessionId,
+                mountId,
+                github: {
+                  ...current,
+                  detail: null,
+                  detailFetchedAt: new Date().toISOString() as IsoDateTime,
+                  detailLoading: false,
+                  detailError: null,
+                },
+              }),
+              mountDetailFailures: withoutFailure({ failures: state.mountDetailFailures, mountId }),
+            };
           });
           return;
         }
@@ -132,18 +161,21 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           if (current === undefined) {
             return state;
           }
-          return applyMountGithub({
-            state,
-            sessionId,
-            mountId,
-            github: {
-              ...current,
-              detail,
-              detailFetchedAt: new Date().toISOString() as IsoDateTime,
-              detailLoading: false,
-              detailError: null,
-            },
-          });
+          return {
+            ...applyMountGithub({
+              state,
+              sessionId,
+              mountId,
+              github: {
+                ...current,
+                detail,
+                detailFetchedAt: new Date().toISOString() as IsoDateTime,
+                detailLoading: false,
+                detailError: null,
+              },
+            }),
+            mountDetailFailures: withoutFailure({ failures: state.mountDetailFailures, mountId }),
+          };
         });
         return;
       } catch (error) {
@@ -158,17 +190,23 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
       if (current === undefined) {
         return state;
       }
-      return applyMountGithub({
-        state,
-        sessionId,
-        mountId,
-        github: {
-          ...current,
-          detailLoading: false,
-          detailError:
-            opts?.silent === true && current.detail !== null ? null : formatError(lastError),
+      return {
+        ...applyMountGithub({
+          state,
+          sessionId,
+          mountId,
+          github: {
+            ...current,
+            detailLoading: false,
+            detailError:
+              opts?.silent === true && current.detail !== null ? null : formatError(lastError),
+          },
+        }),
+        mountDetailFailures: {
+          ...state.mountDetailFailures,
+          [mountId]: { revision, failedAt: Date.now() },
         },
-      });
+      };
     });
   };
 };

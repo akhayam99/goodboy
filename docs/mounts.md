@@ -611,7 +611,13 @@ The Now block closes with the branch facts, read by `useBranchFacts`
 - Check names and open conversations come from `PrDetail`. `useBranchDetails`
   reads it with `refreshSessionPrDetail({ mountId })` only for a GitHub branch
   that is open, fresh and has failing checks or a change request, on the
-  existing 30 s detail TTL; `branchDetailOf` drops a detail of another pull
+  existing 30 s detail TTL. It asks again only when the mount, its pull
+  request number or the PR snapshot time (`fetchedAt`) changes, never because
+  its own detail read changed `mountGithub`. A failed read records
+  `mountDetailFailures[mountId]` (time and mount revision) and the same
+  revision is not read again for 60 s unless forced; a new revision reads at
+  once, and a failure that lands after the revision moved is dropped.
+  `branchDetailOf` drops a detail of another pull
   request number. GitLab and Bitbucket, and a read that failed, keep "Checks
   failed on the last push" and "A reviewer asked for changes".
 - `useBranchLabels({ sessionId })` gives the project and branch of a mount when
