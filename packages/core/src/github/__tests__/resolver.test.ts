@@ -286,6 +286,24 @@ describe('resolvePrForBranch', () => {
     expect(result?.mergeable).toBeNull();
   });
 
+  it('hasReviewRequests follows the requested reviewers, and is absent when not read', async () => {
+    const base = { ...BASE_RAW, number: 1, state: 'OPEN' as const };
+    const none = await resolvePrForBranch(
+      makeJsonRunner([{ ...base, reviewRequests: [] }]),
+      'org/repo',
+      'feature',
+    );
+    const asked = await resolvePrForBranch(
+      makeJsonRunner([{ ...base, reviewRequests: [{ login: 'priya-n' }] }]),
+      'org/repo',
+      'feature',
+    );
+    const unread = await resolvePrForBranch(makeJsonRunner([base]), 'org/repo', 'feature');
+    expect(none?.hasReviewRequests).toBe(false);
+    expect(asked?.hasReviewRequests).toBe(true);
+    expect(unread?.hasReviewRequests).toBeUndefined();
+  });
+
   it('checks: any FAILURE → failure', async () => {
     const pr = {
       ...BASE_RAW,

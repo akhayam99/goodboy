@@ -39,6 +39,9 @@ export type MountRequestView = Readonly<{
   isDraft: boolean;
   checks: PullRequestChecks;
   reviewDecision: PullRequestState['reviewDecision'];
+  isMergeable?: boolean | null;
+  isChecksAbsent?: boolean;
+  isReviewOptional?: boolean;
   url: string;
   title: string;
   label: string;
@@ -146,6 +149,9 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       isDraft: githubPr.isDraft,
       checks: githubPr.checks ?? null,
       reviewDecision: githubPr.reviewDecision ?? null,
+      isMergeable: githubPr.mergeable ?? null,
+      isChecksAbsent: githubPr.checks == null && githubPr.checksUnknown !== true,
+      isReviewOptional: githubPr.reviewDecision == null && githubPr.hasReviewRequests === false,
       url: githubPr.url,
       title: githubPr.title,
       label: `PR #${githubPr.number}`,
@@ -175,6 +181,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       isDraft: mapped.isDraft,
       checks: mapped.checks,
       reviewDecision: mapped.reviewDecision,
+      isChecksAbsent: (gitlab?.mr?.headPipeline ?? null) === null,
+      isReviewOptional: mapped.reviewDecision === null && gitlab?.approvals != null,
       url: mapped.url,
       title: mapped.title,
       label: `MR !${mapped.number}`,
@@ -204,6 +212,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
     isDraft: false,
     checks: bitbucket?.checks ?? null,
     reviewDecision: bitbucket?.reviewDecision ?? null,
+    isReviewOptional: bitbucketState === 'open' && (bitbucket?.reviewDecision ?? null) === null,
     url: bitbucketPr.webUrl ?? '',
     title: bitbucketPr.title,
     label: `PR #${bitbucketPr.id}`,

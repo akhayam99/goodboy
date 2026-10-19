@@ -26,6 +26,7 @@ export const PR_FIELDS = [
   'headRefOid',
   'mergedAt',
   'author',
+  'reviewRequests',
 ] as const;
 
 const PR_FIELDS_WITHOUT_ROLLUP = PR_FIELDS.filter((field) => field !== 'statusCheckRollup');
@@ -53,6 +54,7 @@ export type RawPullRequest = {
   headRefOid?: string | null;
   mergedAt?: string | null;
   author?: { readonly login?: string | null } | null;
+  reviewRequests?: ReadonlyArray<unknown> | null;
 };
 
 type ClosingIssueRef = {
@@ -197,6 +199,7 @@ export const toPullRequestState = ({
   headSha: raw.headRefOid ?? null,
   mergedAt: raw.mergedAt ?? null,
   author: raw.author?.login ?? null,
+  ...(raw.reviewRequests != null && { hasReviewRequests: raw.reviewRequests.length > 0 }),
 });
 
 type PrJsonRead<T> = {
