@@ -12,6 +12,59 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.6
+
+Answers write themselves in at a steady pace, every branch sits on one line of the Projects card, and a new overview tells each branch's story.
+
+### New
+
+#### Answers that write themselves in
+<!-- gb area=agents -->
+
+An agent's answer now writes itself in at a steady pace, with the newest words fading in softly. Only live text moves: a reload, an answer you open later, search and copy show the whole text, and with reduced motion on it appears at once.
+
+On a long answer the view holds at its top while the rest writes in below, and Jump to latest follows it. A click, a selection, find, Stop or an error shows the rest at once.
+
+#### New session overview to try
+<!-- gb area=sessions -->
+
+A Classic and New toggle sits left of New in a session header. Classic stays the default, the choice holds for every window, and going back to Classic from New offers Undo.
+
+The new overview opens with Now: one row per branch with a track of seven steps, the step it stands at and what blocks it, with a dash for a step that does not apply. Next is one stack of cards, What was done lists finished work by day, and Full log opens the log in a drawer, where each Rebase all folds into one row.
+
+#### Agents panel for runs and Auto
+<!-- gb area=agents -->
+
+Opening a preset run or Auto no longer swaps the session rail for its agents. Agents in the session tools (⌘⌥L) shows them as a tree: the run or Auto you have open, or every launch when nothing is open. An agent opens its transcript in the drawer, and Back to agents returns.
+
+Like every drawer, it sits beside the page in a wide window and lies over it in a narrow one.
+
+### Improved
+
+#### Auto goes on until your spend limit
+<!-- gb area=agents -->
+
+An Auto tree no longer stops at a count of agents, turns or attempts. Only the spend limit you set stops it: it pauses at the limit and says what it spent, and Raise to or Change limit sets a new one in place, so the tree goes on.
+
+#### One tree for every branch in the Projects card
+<!-- gb area=sessions -->
+
+Each branch is one line: its pull request state as a colored glyph, its title or branch name, and one chip only when something needs you. Live branches come first and finished ones fold into one line. Click a branch and its pages open under its row, with no level to step back from.
+
+A divider separates one folder from the next, and chips, plus buttons and Abort end on one right edge.
+
+#### Who does what on each branch row in Rebase all
+<!-- gb area=sessions -->
+
+While Rebase all runs, each branch row shows its own state: Rebasing, Queued, Conflict while it waits for Auto, Auto resolving with the file in its tooltip, Rebased by Auto until every branch Auto took is clean, or Failed with the cause in its tooltip. The card header counts Rebasing 2 of 9 with Abort beside it, then says Auto has the rest.
+
+### Fixed
+
+- A message typed in an agent's drawer went to Auto and shared Auto's draft. It now goes to the agent the drawer shows, with its own draft. <!-- gb area=agents -->
+- The usage card clipped its values. It now fits its content, and a missing value shows a dash. <!-- gb area=agents -->
+- The chat kept moving while you scrolled up and a row above showed or grew. The line you read now stays still, and the scrollbar jumps far less. <!-- gb area=agents -->
+- The diff kept moving while you scrolled up and a file above showed for the first time. The file you read now stays still, and the scrollbar jumps far less. <!-- gb area=review -->
+
 ## Goodboy v0.27.5
 
 The files list beside the diff stays where you left it while you scroll the changes.
