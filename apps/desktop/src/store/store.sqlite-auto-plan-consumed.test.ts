@@ -10,6 +10,7 @@ import {
   listAutoDelegations,
   listPlansForSession,
   registerAutoArtifact,
+  updatePlanBodyIfRevision,
   type Database,
 } from '@goodboy/db';
 import { nextWorkspaceId, TEST_NOW } from '@goodboy/types/testing';
@@ -24,9 +25,10 @@ import {
   type ProjectId,
   type SessionId,
 } from '@goodboy/types';
+import { AUTO_BRIDGE_EVENT, type AutoBridgeBus } from '../features/auto/bridge/autoBridgeProtocol';
 import { deriveNextSteps } from '../features/suggestions/deriveNextSteps';
 import type { AutoRuntime } from './slices/auto/createAutoRuntime';
-import type { BridgeOutcome } from './slices/auto/ports';
+import type { BridgeOutcome, RefreshSessionArtifactsParams } from './slices/auto/ports';
 import {
   buildStoryProject,
   buildStoryWorkspace,
@@ -83,12 +85,14 @@ let useAppStore: StoryStore;
 let makeAutoRuntime: typeof import('./slices/auto/makeAutoRuntime').makeAutoRuntime;
 let startAutoTree: typeof import('./slices/auto/startAutoTrees').startAutoTree;
 let runAutoCommand: typeof import('./slices/auto/runAutoCommand').runAutoCommand;
+let startAutoRuntime: typeof import('./slices/auto/startAutoRuntime').startAutoRuntime;
 
 beforeAll(async () => {
   useAppStore = await importStore();
   ({ makeAutoRuntime } = await import('./slices/auto/makeAutoRuntime'));
   ({ startAutoTree } = await import('./slices/auto/startAutoTrees'));
   ({ runAutoCommand } = await import('./slices/auto/runAutoCommand'));
+  ({ startAutoRuntime } = await import('./slices/auto/startAutoRuntime'));
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -123,6 +127,7 @@ type World = Readonly<{
   rootAgentId: AgentId;
   runtime: AutoRuntime;
   treeId: AutoTreeId;
+  announced: ReadonlyArray<RefreshSessionArtifactsParams>;
 }>;
 
 const attachLedgerCore = async ({ db, sessionId }: Pick<World, 'db' | 'sessionId'>) => {
@@ -158,7 +163,12 @@ const attachLedgerCore = async ({ db, sessionId }: Pick<World, 'db' | 'sessionId
   useAppStore.setState({ projects: [project] });
 };
 
-const seedPlan = async ({ db, sessionId, rootAgentId, treeId }: Omit<World, 'runtime'>) => {
+const seedPlan = async ({
+  db,
+  sessionId,
+  rootAgentId,
+  treeId,
+}: Omit<World, 'runtime' | 'announced'>) => {
   await insertArtifact({
     db,
     input: {
@@ -205,7 +215,14 @@ const boot = async (): Promise<World> => {
   );
   await db.execute("UPDATE agents SET kind = 'auto' WHERE id = ?", [agent.id]);
   await attachLedgerCore({ db, sessionId: session.id });
-  const runtime = makeAutoRuntime({ db, getState: useAppStore.getState });
+  const announced: Array<RefreshSessionArtifactsParams> = [];
+  const runtime = makeAutoRuntime({
+    db,
+    getState: useAppStore.getState,
+    announceArtifacts: async (params) => {
+      announced.push(params);
+    },
+  });
   const started = await startAutoTree({
     ctx: runtime.ctx,
     agent: { agentId: agent.id, sessionId: session.id, workspaceId: String(workspace.id) },
@@ -224,7 +241,7 @@ const boot = async (): Promise<World> => {
     patch: { activeRunId: RUN_ID, isNewTurn: true },
   });
   expect(moved.kind).toBe('applied');
-  return { db, sessionId: session.id, rootAgentId: agent.id, runtime, treeId };
+  return { db, sessionId: session.id, rootAgentId: agent.id, runtime, treeId, announced };
 };
 
 type DelegateParams = {
@@ -303,6 +320,7 @@ describe('an Auto plan handed to a child, on the real store', () => {
     expect(storePlanStatus({ sessionId: world.sessionId })).toBe('consumed');
     expect(storeArtifactStatus({ sessionId: world.sessionId })).toBe('consumed');
     expect(isPlanReadyOffered({ sessionId: world.sessionId })).toBe(false);
+    expect(world.announced).toEqual([{ sessionId: world.sessionId }]);
   });
 
   it('keeps the plan ready when a reviewer reads it', async () => {
@@ -365,5 +383,125 @@ describe('an Auto plan handed to a child, on the real store', () => {
       sql: "SELECT title FROM notifications WHERE kind = 'error'",
     });
     expect(errors.map((row) => row.title)).toEqual(["Couldn't refresh the plans"]);
+  });
+});
+
+type Held = {
+  readonly release: (plans: ReadonlyArray<PlanWithCount>) => void;
+};
+
+const holdNextPlanRead = (): Held => {
+  const held: { release: (plans: ReadonlyArray<PlanWithCount>) => void } = {
+    release: () => undefined,
+  };
+  storySpies.listPlansForSession.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        held.release = resolve;
+      }),
+  );
+  return held;
+};
+
+describe('every reader of the session plans keeps only the newest answer', () => {
+  it('keeps the used plan when an older session load answers after the admission', async () => {
+    const world = await boot();
+    await approveAutoArtifact({ db: world.db, artifactId: PLAN_ID, expectedRevision: 1 });
+    const stale = useAppStore.getState().sessionPlans[world.sessionId] ?? [];
+    const held = holdNextPlanRead();
+    const older = useAppStore.getState().loadSessionPlans(world.sessionId);
+
+    await delegateWithPlan({ world, role: 'implementer' });
+    held.release(stale);
+    await older;
+
+    expect(storePlanStatus({ sessionId: world.sessionId })).toBe('consumed');
+    expect(isPlanReadyOffered({ sessionId: world.sessionId })).toBe(false);
+  });
+
+  it('keeps a saved plan edit when an older Auto refresh answers after it', async () => {
+    const world = await boot();
+    const stale = useAppStore.getState().sessionPlans[world.sessionId] ?? [];
+    const held = holdNextPlanRead();
+    const older = world.runtime.ctx.ports.refreshSessionArtifacts({ sessionId: world.sessionId });
+    storySpies.setPlanBodyIfRevision.mockImplementationOnce((id, title, bodyMd, revision) =>
+      updatePlanBodyIfRevision(storySqlite(), id, title, bodyMd, revision),
+    );
+    const edited = '# Plan\n\n- add the export column only\n';
+
+    const saved = await useAppStore
+      .getState()
+      .updatePlanBody(world.sessionId, PLAN_ID, 'Plan for the ledger export', edited, 1);
+    held.release(stale);
+    await older;
+
+    expect(saved.kind).toBe('saved');
+    const plan = useAppStore
+      .getState()
+      .sessionPlans[world.sessionId]?.find((candidate) => candidate.id === PLAN_ID);
+    expect(plan?.bodyMd).toBe(edited);
+    const artifact = useAppStore
+      .getState()
+      .sessionArtifacts[world.sessionId]?.find((candidate) => candidate.id === PLAN_ID);
+    expect(artifact?.revision).toBe(2);
+  });
+});
+
+type Handler = (payload: unknown) => void;
+
+const memoryBus = (): AutoBridgeBus => {
+  const handlers = new Map<string, Set<Handler>>();
+  return {
+    emit: async ({ event, payload }) => {
+      for (const handler of handlers.get(event) ?? []) {
+        handler(JSON.parse(JSON.stringify(payload)));
+      }
+    },
+    listen: async ({ event, onPayload }) => {
+      const listeners = handlers.get(event) ?? new Set<Handler>();
+      listeners.add(onPayload);
+      handlers.set(event, listeners);
+      return () => {
+        listeners.delete(onPayload);
+      };
+    },
+  };
+};
+
+describe('a detached window showing the session', () => {
+  it('reloads the plans when the main window says an admission changed them', async () => {
+    const world = await boot();
+    const bus = memoryBus();
+    const stop = await startAutoRuntime({ db: world.db, isMain: false, bus });
+    await world.db.execute("UPDATE session_artifacts SET status = 'consumed' WHERE id = ?", [
+      PLAN_ID,
+    ]);
+    expect(isPlanReadyOffered({ sessionId: world.sessionId })).toBe(true);
+
+    await bus.emit({
+      event: AUTO_BRIDGE_EVENT.artifactsChanged,
+      payload: { sessionId: world.sessionId },
+    });
+
+    await vi.waitFor(() =>
+      expect(storePlanStatus({ sessionId: world.sessionId })).toBe('consumed'),
+    );
+    expect(isPlanReadyOffered({ sessionId: world.sessionId })).toBe(false);
+    stop();
+  });
+
+  it('reads nothing for a session the window does not show', async () => {
+    const world = await boot();
+    const bus = memoryBus();
+    const stop = await startAutoRuntime({ db: world.db, isMain: false, bus });
+    const reads = storySpies.listPlansForSession.mock.calls.length;
+
+    await bus.emit({
+      event: AUTO_BRIDGE_EVENT.artifactsChanged,
+      payload: { sessionId: 'session-northwind' },
+    });
+
+    expect(storySpies.listPlansForSession.mock.calls.length).toBe(reads);
+    stop();
   });
 });

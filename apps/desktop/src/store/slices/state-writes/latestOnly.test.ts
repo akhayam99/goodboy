@@ -120,4 +120,19 @@ describe('latestOnly keeps the answer to the newest request for a key', () => {
     expect(await run).toBe('stale');
     expect(applied).toEqual([]);
   });
+
+  it('lets a claim taken by hand lose to a newer claim or run on the same key only', async () => {
+    const latest = createLatestOnly();
+    const older = latest.claim({ key: 'plans' });
+    const other = latest.claim({ key: 'artifacts' });
+
+    expect(older.isCurrent()).toBe(true);
+    const newer = latest.claim({ key: 'plans' });
+
+    expect(older.isCurrent()).toBe(false);
+    expect(newer.isCurrent()).toBe(true);
+    expect(other.isCurrent()).toBe(true);
+    await latest.run({ key: 'plans', request: async () => 'fresh', apply: () => undefined });
+    expect(newer.isCurrent()).toBe(false);
+  });
 });

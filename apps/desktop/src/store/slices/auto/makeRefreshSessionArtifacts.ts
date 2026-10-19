@@ -1,31 +1,27 @@
-import { listArtifactsForSession } from '../../../features/artifacts/artifacts';
-import { listPlansForSession } from '../../../features/plans/plans';
 import type { GetFn, SetFn } from '../../slice-types';
-import { createLatestOnly } from '../state-writes/latestOnly';
 import type { RefreshSessionArtifactsParams } from './ports';
+import { reloadSessionArtifacts } from './reloadSessionArtifacts';
 
 type Params = {
   readonly get: GetFn;
   readonly set: SetFn;
+  readonly announce: (params: RefreshSessionArtifactsParams) => Promise<void>;
 };
 
-export const makeRefreshSessionArtifacts = ({ get, set }: Params) => {
-  const latest = createLatestOnly();
+export const makeRefreshSessionArtifacts = ({ get, set, announce }: Params) => {
   return async ({ sessionId }: RefreshSessionArtifactsParams): Promise<void> => {
-    try {
-      await latest.run({
-        key: sessionId,
-        request: () =>
-          Promise.all([listPlansForSession(sessionId), listArtifactsForSession(sessionId)]),
-        apply: ([plans, artifacts]) => {
-          set((state) => ({
-            sessionPlans: { ...state.sessionPlans, [sessionId]: plans },
-            sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: artifacts },
-          }));
-        },
+    const announced = announce({ sessionId }).then(
+      () => null,
+      (error: unknown) => error,
+    );
+    await reloadSessionArtifacts({ get, set, sessionId });
+    const failure = await announced;
+    if (failure !== null) {
+      await get().reportError({
+        title: "Couldn't tell the other windows about the plans",
+        error: failure,
+        sessionId,
       });
-    } catch (error) {
-      await get().reportError({ title: "Couldn't refresh the plans", error, sessionId });
     }
   };
 };

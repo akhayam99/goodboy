@@ -11,6 +11,7 @@ import {
   type WireframeDraft,
   type WireframeDraftRequest,
 } from '../../../features/wireframes/wireframeDraft';
+import { sessionReads } from '../state-writes/sessionReads';
 import type { GetFn, SetFn } from './types';
 
 export type RequestWireframeChangeParams = WireframeDraftRequest & {
@@ -90,8 +91,9 @@ export const requestWireframeChange = (set: SetFn, get: GetFn) => {
       });
       return;
     }
+    const artifactsRead = sessionReads.artifacts({ sessionId });
     const artifacts = await listArtifactsForSession(sessionId).catch(() => null);
-    if (artifacts !== null) {
+    if (artifacts !== null && artifactsRead.isCurrent()) {
       set((state) => ({ sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: artifacts } }));
     }
     const landed = artifacts?.find((entry) => entry.id === artifact.id) ?? null;

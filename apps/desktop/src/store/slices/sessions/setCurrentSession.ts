@@ -18,6 +18,7 @@ import type { SessionLoadingFlags } from './state';
 import { seedRunRoutingFromSpans } from '../turn/seedRunRoutingFromSpans';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from './sessionIndex';
+import { sessionReads } from '../state-writes/sessionReads';
 
 export const setCurrentSession = (set: SetFn, get: GetFn) => {
   return async (id: SessionId | null) => {
@@ -144,11 +145,12 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
 
     if (!cached?.plans) {
       const endPlans = perf('plans');
+      const plansRead = sessionReads.plans({ sessionId: id });
       void invokeListPlansForSession(id)
         .then((plans) => {
-          set((state) => ({
-            sessionPlans: { ...state.sessionPlans, [id]: plans },
-          }));
+          set((state) =>
+            plansRead.isCurrent() ? { sessionPlans: { ...state.sessionPlans, [id]: plans } } : {},
+          );
         })
         .catch((error: unknown) => {
           console.error(`[plans] load failed for session ${id}`, formatError(error));

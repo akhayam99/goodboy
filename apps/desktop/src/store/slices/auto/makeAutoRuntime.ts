@@ -7,6 +7,7 @@ import { useAppStore, type AppStore } from '../../store';
 import { createAutoRuntime, type AutoRuntime } from './createAutoRuntime';
 import { createRealAutoPorts } from './createRealAutoPorts';
 import { makeRefreshSessionArtifacts } from './makeRefreshSessionArtifacts';
+import type { RefreshSessionArtifactsParams } from './ports';
 import { createAutoScheduler } from './scheduler';
 import type { SleepParams } from './startDeliveredTurn';
 
@@ -20,13 +21,17 @@ export type MakeAutoRuntimeParams = Readonly<{
   getState: () => AppStore;
   sleep?: (params: SleepParams) => Promise<void>;
   watchPolls?: number;
+  announceArtifacts?: (params: RefreshSessionArtifactsParams) => Promise<void>;
 }>;
+
+const announceNowhere = async (): Promise<void> => undefined;
 
 export const makeAutoRuntime = ({
   db,
   getState,
   sleep = realSleep,
   watchPolls,
+  announceArtifacts = announceNowhere,
 }: MakeAutoRuntimeParams): AutoRuntime => {
   const holder: { runtime: AutoRuntime | null } = { runtime: null };
   const ports = createRealAutoPorts({
@@ -44,6 +49,7 @@ export const makeAutoRuntime = ({
     refreshSessionArtifacts: makeRefreshSessionArtifacts({
       get: getState,
       set: useAppStore.setState,
+      announce: announceArtifacts,
     }),
     lookupDeliveryRun,
     worktreeSnapshot,

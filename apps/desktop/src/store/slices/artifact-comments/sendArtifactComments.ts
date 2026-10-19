@@ -12,6 +12,7 @@ import { planCommentGuard } from '../../../features/plans/planComments/planComme
 import { NOT_REVISING, planRevisingOf } from '../../../features/plans/planRevising';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { sessionById } from '../sessions/sessionIndex';
+import { sessionReads } from '../state-writes/sessionReads';
 import { refreshArtifactComments } from './refresh';
 import { settleAgainstVersions } from './settleSentComments';
 import type { GetFn, SendArtifactCommentsParams, SendArtifactCommentsResult, SetFn } from './types';
@@ -120,15 +121,19 @@ export const sendArtifactComments = (set: SetFn, get: GetFn) => {
     }
     const sentTurnId = sentTurnIdOf({ events: get().transcripts[plan.agentId] ?? [], content });
     await setArtifactCommentsStatus({ db: tauriDatabase, ids, status: 'sent', sentTurnId });
+    const artifactsRead = sessionReads.artifacts({ sessionId });
+    const plansRead = sessionReads.plans({ sessionId });
     const [artifacts, plans] = await Promise.all([
       listArtifactsForSession(sessionId).catch(() => null),
       listPlansForSession(sessionId).catch(() => null),
     ]);
     set((state) => ({
-      ...(artifacts === null
+      ...(artifacts === null || !artifactsRead.isCurrent()
         ? {}
         : { sessionArtifacts: { ...state.sessionArtifacts, [sessionId]: artifacts } }),
-      ...(plans === null ? {} : { sessionPlans: { ...state.sessionPlans, [sessionId]: plans } }),
+      ...(plans === null || !plansRead.isCurrent()
+        ? {}
+        : { sessionPlans: { ...state.sessionPlans, [sessionId]: plans } }),
     }));
     const landed = artifacts?.find((artifact) => artifact.id === plan.id) ?? null;
     const updated: PlanWithCount | null =
