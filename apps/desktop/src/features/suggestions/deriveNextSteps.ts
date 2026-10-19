@@ -555,7 +555,6 @@ export const deriveNextSteps = ({
   const openPr = openPrSuggestionOf({
     sessionId,
     targets: openPrTargets,
-    siblings: mounts,
     dismissedFingerprints,
   });
   if (openPr !== null) {

@@ -5,12 +5,25 @@ vi.mock('@tauri-apps/api/core', async () =>
 );
 vi.mock('@goodboy/db', async () =>
   (await import('../../../../store/storyHarness')).dbModuleMock({
-    listNudgeEvents: vi.fn(async () => []),
+    listNudgeEvents: vi.fn(async () => [...nudges.events]),
+    insertNudgeEvent: vi.fn(async (_db: unknown, event: NudgeEvent) => {
+      nudges.events = [...nudges.events, event];
+    }),
+    deleteNudgeEvent: vi.fn(async ({ id }: { readonly id: string }) => {
+      nudges.events = nudges.events.filter((event) => event.id !== id);
+    }),
   }),
 );
 
+type NudgeStore = {
+  events: ReadonlyArray<NudgeEvent>;
+};
+
+const nudges = vi.hoisted((): NudgeStore => ({ events: [] }));
+
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { NudgeEvent } from '@goodboy/db';
 import {
   brandId,
   type MountId,
@@ -30,6 +43,7 @@ import { resetWorktreeStatusCache } from '../../../../store/slices/worktreeStatu
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { MountGithubState } from '../../../../store/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { UndoToastBridge } from '../../../../app/components/UndoToastBridge';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import { NextStepSlot } from './index';
 
@@ -46,32 +60,38 @@ beforeEach(async () => {
 
 afterEach(() => {
   cleanup();
+  nudges.events = [];
 });
 
 const SESSION_ID = brandId<SessionId>({ value: 'session-harborline' });
 const SESSION = aSession({ id: SESSION_ID });
 const PROJECT = aProject({ name: 'payments-api', baseBranch: 'main' });
+const NOTIFY_PROJECT = aProject({ name: 'notify-relay', baseBranch: 'main' });
+
+type Project = typeof PROJECT;
 
 type BranchSpec = {
   readonly branch: string;
   readonly ahead: number;
   readonly prNumber?: number;
+  readonly isPushed?: boolean;
+  readonly project?: Project;
 };
 
 const mountIdOf = ({ branch }: { readonly branch: string }): MountId =>
   brandId<MountId>({ value: `mount-${branch.replace('/', '-')}` });
 
 const worktreePathOf = ({ branch }: { readonly branch: string }): string =>
-  `/w/payments-api/${branch.replace('/', '-')}`;
+  `/w/${branch.replace('/', '-')}`;
 
-const mountOf = ({ branch }: BranchSpec): SessionProjectMount => ({
+const mountOf = ({ branch, project = PROJECT }: BranchSpec): SessionProjectMount => ({
   mountId: mountIdOf({ branch }),
   sessionId: SESSION_ID,
-  projectId: PROJECT.id,
-  mountName: 'payments-api',
+  projectId: project.id,
+  mountName: project.name,
   worktreePath: worktreePathOf({ branch }),
   lastWorktreePath: null,
-  repoRoot: '/repos/payments-api',
+  repoRoot: `/repos/${project.name}`,
   branch,
   baseBranch: 'main',
   parallelIndex: 0,
@@ -96,9 +116,9 @@ const prOf = ({ branch, number }: { readonly branch: string; readonly number: nu
     updatedAt: '2026-10-18T00:00:00.000Z',
   }) satisfies PullRequestState;
 
-const githubOf = ({ branch, prNumber }: BranchSpec): MountGithubState => ({
+const githubOf = ({ branch, prNumber, project = PROJECT }: BranchSpec): MountGithubState => ({
   mountId: mountIdOf({ branch }),
-  projectId: PROJECT.id,
+  projectId: project.id,
   revision: 1,
   repository: null,
   host: null,
@@ -125,13 +145,16 @@ const statusFor =
         ? String(args.worktreePath)
         : '';
     const spec = branches.find((candidate) => worktreePathOf(candidate) === path);
+    const isPushed = spec?.isPushed ?? true;
     return {
       branch: spec?.branch ?? 'main',
       head: 'head',
       headSubject: 'Acme export',
-      upstream: `origin/${spec?.branch ?? 'main'}`,
+      upstream: isPushed ? `origin/${spec?.branch ?? 'main'}` : null,
       mainDistance: { kind: 'known', ahead: spec?.ahead ?? 0, behind: 0 },
-      upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+      upstreamDistance: isPushed
+        ? { kind: 'known', ahead: 0, behind: 0 }
+        : { kind: 'unknown', reason: 'no-upstream' },
       workingTree: {
         kind: 'known',
         staged: 0,
@@ -147,7 +170,7 @@ const statusFor =
 const seed = ({ branches }: { readonly branches: ReadonlyArray<BranchSpec> }) => {
   const navigate = vi.fn();
   useAppStore.setState({
-    projects: [PROJECT],
+    projects: [PROJECT, NOTIFY_PROJECT],
     sessions: [SESSION],
     navigate,
     sessionProjectMounts: { [SESSION_ID]: branches.map(mountOf) },
@@ -162,6 +185,7 @@ const seed = ({ branches }: { readonly branches: ReadonlyArray<BranchSpec> }) =>
 const renderSlot = () =>
   render(
     <ToastProvider>
+      <UndoToastBridge />
       <AutoReleaseContext.Provider value={false}>
         <NextStepSlot session={SESSION} onSelectLens={vi.fn()} />
       </AutoReleaseContext.Provider>
@@ -169,6 +193,9 @@ const renderSlot = () =>
   );
 
 const openPrRows = () => screen.queryAllByText(/^Open a pull request for /);
+
+const openPrRowOf = ({ branch }: { readonly branch: string }) =>
+  screen.findByTestId(`next-step-open-pr:${mountIdOf({ branch })}`);
 
 describe('the open pull request card with several branches of one project', () => {
   const BRANCHES: ReadonlyArray<BranchSpec> = [
@@ -187,8 +214,51 @@ describe('the open pull request card with several branches of one project', () =
       `next-step-open-pr:${mountIdOf({ branch: 'hl/refund-retry' })}`,
     );
     expect(row.textContent).toContain('Open a pull request for hl/refund-retry');
-    expect(row.textContent).toContain('5 commits ahead');
+    expect(row.textContent).toContain('payments-api · 5 commits ahead');
     expect(openPrRows()).toHaveLength(1);
+  });
+
+  it('moves the card to the next branch on Not now, and Undo brings the first one back', async () => {
+    seed({ branches: BRANCHES });
+    renderSlot();
+    const lead = await openPrRowOf({ branch: 'hl/refund-retry' });
+
+    await act(async () => {
+      fireEvent.click(within(lead).getByRole('button', { name: 'Not now' }));
+    });
+
+    const next = await openPrRowOf({ branch: 'hl/ledger-export' });
+    expect(next.textContent).toContain('Open a pull request for hl/ledger-export');
+    expect(openPrRows()).toHaveLength(1);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Undo/ }));
+    });
+
+    await openPrRowOf({ branch: 'hl/refund-retry' });
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId(`next-step-open-pr:${mountIdOf({ branch: 'hl/ledger-export' })}`),
+      ).toBeNull();
+    });
+    expect(nudges.events).toEqual([]);
+  });
+
+  it('keeps the branch in the title of a compact row past the first three', async () => {
+    seed({
+      branches: [
+        ...BRANCHES.map((spec) => ({ ...spec, isPushed: false })),
+        { branch: 'nr/retry-queue', ahead: 9, isPushed: false, project: NOTIFY_PROJECT },
+      ],
+    });
+    renderSlot();
+
+    const more = await screen.findByRole('button', { name: /^\d+ more$/ });
+    fireEvent.click(more);
+
+    const row = await openPrRowOf({ branch: 'nr/retry-queue' });
+    expect(row.textContent).toContain('Open a pull request for nr/retry-queue');
+    expect(row.textContent).not.toContain('9 commits ahead');
   });
 
   it('opens the pull request form of exactly the branch the card names', async () => {
@@ -246,15 +316,15 @@ describe('the open pull request card with several branches of one project', () =
 });
 
 describe('the open pull request card with one branch', () => {
-  it('keeps its title, names the branch and opens it, with no menu', async () => {
+  it('names the branch in the title and the project under it, and opens it, with no menu', async () => {
     const { navigate } = seed({ branches: [{ branch: 'hl/ledger-export', ahead: 3 }] });
     renderSlot();
 
     const row = await screen.findByTestId(
       `next-step-open-pr:${mountIdOf({ branch: 'hl/ledger-export' })}`,
     );
-    expect(row.textContent).toContain('Open a pull request for payments-api');
-    expect(row.textContent).toContain('hl/ledger-export · 3 commits ahead');
+    expect(row.textContent).toContain('Open a pull request for hl/ledger-export');
+    expect(row.textContent).toContain('payments-api · 3 commits ahead');
     expect(openPrRows()).toHaveLength(1);
     expect(screen.queryByRole('button', { name: /^More options for / })).toBeNull();
 

@@ -497,9 +497,10 @@ whether you clicked it on the board or in the session overview.
   per branch: `isMountBusyOf` hides a card only while an agent with that
   `Agent.mountId` runs. An agent without a mount gates the cards only when
   the session has exactly one mount, the only place it can write; with two or
-  more mounts it gates none, because nothing proves where it writes. A card title
-  names the folder, or the branch when two or more mounts of the session
-  share a folder (`mountLabelOf`).
+  more mounts it gates none, because nothing proves where it writes. The
+  rebase title names the folder, or the branch when two or more mounts of
+  the session share a folder (`mountLabelOf`); the open-pr title always
+  names the branch.
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
   in the session overview, above Activity, outside its views and its
   grouping: a suggestion is not activity, it is a pointer to what activity
@@ -556,7 +557,11 @@ whether you clicked it on the board or in the session overview.
   fingerprint rides along in the same `next:<kind>` row's `contextJson`
   (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), read back with
   no time bound, so a reload or a remount does not resurrect what you just
-  dismissed or acted on. It returns only if the trigger changes and the
+  dismissed or acted on. The read is live too: `recordNextStepOutcome` and
+  `revertNextStepOutcome` bump the session's revision in `OUTCOME_REVISIONS`
+  once the write landed, and `useNextStepOutcomes` reads the rows again, so
+  a grouped card such as open-pr moves to its next branch on **Not now** and
+  back on **Undo**. It returns only if the trigger changes and the
   fingerprint with it (new commits, new red CI, a new plan). Three "Not
   now" on the same kind inside a session in 14 days, with no acceptance
   between them, moves that kind behind everything else instead of leading
@@ -596,9 +601,9 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   with `Review history` instead of a push when origin moved on its own),
   open a pull request once a
   mount is ahead with none yet (one row per session, `openPrSuggestionOf`:
-  it names the branch, in the title when two or more mounts share the
-  folder (`mountLabelOf`) and in its why otherwise, as in
-  `hl/refund-retry · 5 commits ahead`, leads with the branch whose Scribe text is under way, then the most commits
+  its title names the branch, as in **Open a pull request for
+  hl/refund-retry**, because a compact row past the first three hides the
+  why (`payments-api · 5 commits ahead`); it leads with the branch whose Scribe text is under way, then the most commits
   ahead, then project and branch name, skips a branch put away with **Not
   now**, and lists every branch without a pull request in **⋯** once there
   are two; **Open PR** opens the worktree the payload names, never one looked

@@ -791,8 +791,8 @@ describe('deriveNextSteps eleven new kinds', () => {
       mounts: [mount({ pr: null, aheadOfBase: 7 })],
     });
     const suggestion = suggestions.find((candidate) => candidate.kind === 'open-pr');
-    expect(suggestion?.title).toBe('Open a pull request for web');
-    expect(suggestion?.detail).toBe('feature/web · 7 commits ahead');
+    expect(suggestion?.title).toBe('Open a pull request for feature/web');
+    expect(suggestion?.detail).toBe('web · 7 commits ahead');
     expect(suggestion?.payload).toMatchObject({
       mountId: webMountId,
       branch: 'feature/web',
@@ -834,7 +834,7 @@ describe('deriveNextSteps eleven new kinds', () => {
 
       expect(rows).toHaveLength(1);
       expect(rows[0]?.title).toBe('Open a pull request for hl/refund-retry');
-      expect(rows[0]?.detail).toBe('5 commits ahead');
+      expect(rows[0]?.detail).toBe('payments-api · 5 commits ahead');
       expect(rows[0]?.payload).toMatchObject({
         mountId: 'mount-hl/refund-retry',
         branch: 'hl/refund-retry',
@@ -879,7 +879,7 @@ describe('deriveNextSteps eleven new kinds', () => {
       );
 
       expect(row?.title).toBe('Open a pull request for hl/fx-rounding');
-      expect(row?.detail).toBe('Scribe wrote the text, review it');
+      expect(row?.detail).toBe('payments-api · Scribe wrote the text, review it');
     });
 
     it('moves to the next branch once the lead one is put away with Not now', () => {
@@ -915,7 +915,7 @@ describe('deriveNextSteps eleven new kinds', () => {
         mounts: [mount({ pr: null, aheadOfBase: 7, scribe })],
       });
       const suggestion = suggestions.find((candidate) => candidate.kind === 'open-pr');
-      expect(suggestion?.detail).toBe(`feature/web · ${detail}`);
+      expect(suggestion?.detail).toBe(`web · ${detail}`);
       expect(suggestion?.payload).toMatchObject({ scribe });
     },
   );
@@ -1042,9 +1042,9 @@ describe('deriveNextSteps eleven new kinds', () => {
         .sort();
     const ahead = { aheadOfBase: 2 };
 
-    it('names the folder with one mount', () => {
+    it('names the branch with one mount, so a compact row still says which', () => {
       expect(titleFor({ mounts: [mount({ ...ahead, projectName: 'payments-api' })] })).toEqual([
-        'Open a pull request for payments-api',
+        'Open a pull request for feature/web',
       ]);
     });
 
@@ -1064,7 +1064,7 @@ describe('deriveNextSteps eleven new kinds', () => {
       ).toEqual(['Open a pull request for feature/credits']);
     });
 
-    it('names the folder when two mounts sit in two folders', () => {
+    it('names the branch when two mounts sit in two folders', () => {
       expect(
         titleFor({
           mounts: [
@@ -1078,7 +1078,7 @@ describe('deriveNextSteps eleven new kinds', () => {
             }),
           ],
         }),
-      ).toEqual(['Open a pull request for ledger-core']);
+      ).toEqual(['Open a pull request for feature/ledger']);
     });
   });
 
