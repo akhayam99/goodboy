@@ -168,9 +168,7 @@ const renderSlot = () =>
     </ToastProvider>,
   );
 
-const OPEN_PR_TITLE = 'Open a pull request for payments-api';
-
-const openPrRows = () => screen.queryAllByText(OPEN_PR_TITLE);
+const openPrRows = () => screen.queryAllByText(/^Open a pull request for /);
 
 describe('the open pull request card with several branches of one project', () => {
   const BRANCHES: ReadonlyArray<BranchSpec> = [
@@ -185,14 +183,15 @@ describe('the open pull request card with several branches of one project', () =
     seed({ branches: BRANCHES });
     renderSlot();
 
-    expect(await screen.findByText('hl/refund-retry · 5 commits ahead')).toBeTruthy();
+    expect(await screen.findByText('Open a pull request for hl/refund-retry')).toBeTruthy();
+    expect(screen.getByText('5 commits ahead')).toBeTruthy();
     expect(openPrRows()).toHaveLength(1);
   });
 
   it('opens the pull request form of exactly the branch the card names', async () => {
     const { navigate } = seed({ branches: BRANCHES });
     renderSlot();
-    await screen.findByText('hl/refund-retry · 5 commits ahead');
+    await screen.findByText('Open a pull request for hl/refund-retry');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Open PR' }));
@@ -211,9 +210,13 @@ describe('the open pull request card with several branches of one project', () =
   it('lists every branch without a pull request in the menu and opens the one you pick', async () => {
     const { navigate } = seed({ branches: BRANCHES });
     renderSlot();
-    await screen.findByText('hl/refund-retry · 5 commits ahead');
+    await screen.findByText('Open a pull request for hl/refund-retry');
 
-    fireEvent.click(screen.getByRole('button', { name: `More options for ${OPEN_PR_TITLE}` }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'More options for Open a pull request for hl/refund-retry',
+      }),
+    );
     const menu = screen.getByRole('menu');
 
     expect(
@@ -244,9 +247,10 @@ describe('the open pull request card with one branch', () => {
     const { navigate } = seed({ branches: [{ branch: 'hl/ledger-export', ahead: 3 }] });
     renderSlot();
 
-    expect(await screen.findByText('hl/ledger-export · 3 commits ahead')).toBeTruthy();
+    expect(await screen.findByText('Open a pull request for payments-api')).toBeTruthy();
+    expect(screen.getByText('hl/ledger-export · 3 commits ahead')).toBeTruthy();
     expect(openPrRows()).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: `More options for ${OPEN_PR_TITLE}` })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^More options for / })).toBeNull();
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Open PR' }));

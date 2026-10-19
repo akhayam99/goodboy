@@ -833,8 +833,8 @@ describe('deriveNextSteps eleven new kinds', () => {
       const rows = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
 
       expect(rows).toHaveLength(1);
-      expect(rows[0]?.title).toBe('Open a pull request for payments-api');
-      expect(rows[0]?.detail).toBe('hl/refund-retry · 5 commits ahead');
+      expect(rows[0]?.title).toBe('Open a pull request for hl/refund-retry');
+      expect(rows[0]?.detail).toBe('5 commits ahead');
       expect(rows[0]?.payload).toMatchObject({
         mountId: 'mount-hl/refund-retry',
         branch: 'hl/refund-retry',
@@ -878,7 +878,8 @@ describe('deriveNextSteps eleven new kinds', () => {
         }),
       );
 
-      expect(row?.detail).toBe('hl/fx-rounding · Scribe wrote the text, review it');
+      expect(row?.title).toBe('Open a pull request for hl/fx-rounding');
+      expect(row?.detail).toBe('Scribe wrote the text, review it');
     });
 
     it('moves to the next branch once the lead one is put away with Not now', () => {
@@ -893,7 +894,7 @@ describe('deriveNextSteps eleven new kinds', () => {
         throw new Error('Missing open-pr row');
       }
 
-      expect(row.detail).toBe('hl/ledger-export · 2 commits ahead');
+      expect(row.title).toBe('Open a pull request for hl/ledger-export');
       expect(row.fingerprint).toBe('open-pr:mount-hl/ledger-export:2');
       expect(row.payload.targets.map((target) => target.branch)).toEqual([
         'hl/ledger-export',
@@ -1060,10 +1061,7 @@ describe('deriveNextSteps eleven new kinds', () => {
             }),
           ],
         }),
-      ).toEqual([
-        'Open a pull request for feature/credits',
-        'Open a pull request for feature/refunds',
-      ]);
+      ).toEqual(['Open a pull request for feature/credits']);
     });
 
     it('names the folder when two mounts sit in two folders', () => {
@@ -1080,7 +1078,7 @@ describe('deriveNextSteps eleven new kinds', () => {
             }),
           ],
         }),
-      ).toEqual(['Open a pull request for ledger-core', 'Open a pull request for payments-api']);
+      ).toEqual(['Open a pull request for ledger-core']);
     });
   });
 

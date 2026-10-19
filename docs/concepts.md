@@ -596,8 +596,9 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   with `Review history` instead of a push when origin moved on its own),
   open a pull request once a
   mount is ahead with none yet (one row per session, `openPrSuggestionOf`:
-  it names the branch in its why, as in `hl/refund-retry · 5 commits ahead`,
-  leads with the branch whose Scribe text is under way, then the most commits
+  it names the branch, in the title when two or more mounts share the
+  folder (`mountLabelOf`) and in its why otherwise, as in
+  `hl/refund-retry · 5 commits ahead`, leads with the branch whose Scribe text is under way, then the most commits
   ahead, then project and branch name, skips a branch put away with **Not
   now**, and lists every branch without a pull request in **⋯** once there
   are two; **Open PR** opens the worktree the payload names, never one looked
@@ -612,11 +613,8 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   confirm on the row before they act; the other new kinds run on one click,
   like the original six. Push, open-pr, mark-ready and merge-pr act on the
   mount their suggestion names (`markPrReady` and `mergePr` take a
-  `mountId`), never the session's active mount. Two simplifications from the design: the "never
-  while an agent works on the same mount" rule (E7-6) is session-wide, not
-  per-mount, for the new push/open-pr/mark-ready/merge-pr/fix-checks kinds
-  only - rebase-project keeps its own narrower per-request check; and the
-  demotion window (above) reads the session, not the workspace. A failed
+  `mountId`), never the session's active mount. One simplification from the
+  design: the demotion window (above) reads the session, not the workspace. A failed
   workflow step has no suggestion: its own row in Activity carries the one
   **Restart the step**, which opens the step where Ask it to continue and
   Skip live. approve-tool opens the agent's
