@@ -493,7 +493,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch under Folders and the rail steps into it, with Rebase on its status line while it is behind. The palette, a notification or the board open the same page.',
+        desc: 'Click a branch on the Projects card and the rail steps into it, with Rebase on its status line while it is behind. The palette, a notification or the board open the same page.',
       },
       {
         term: 'Pull request',

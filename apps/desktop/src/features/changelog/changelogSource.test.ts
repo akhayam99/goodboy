@@ -4,8 +4,8 @@ import { CHANGELOG_RELEASES } from './changelogSource';
 
 describe('changelogSource', () => {
   it('loads the packaged CHANGELOG.md at build time', () => {
-    expect(CHANGELOG_RELEASES.length).toBe(136);
-    expect(CHANGELOG_RELEASES[0]?.version).toBe('0.27.3');
+    expect(CHANGELOG_RELEASES.length).toBe(137);
+    expect(CHANGELOG_RELEASES[0]?.version).toBe('0.27.4');
     expect(CHANGELOG_RELEASES[0]?.shape).toBe('v2');
   });
 });
