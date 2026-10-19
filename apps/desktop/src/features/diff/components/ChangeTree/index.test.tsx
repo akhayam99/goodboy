@@ -357,6 +357,106 @@ describe('ChangeTree', () => {
     expect(scroll).toHaveBeenCalled();
   });
 
+  it('reveals the folded folder on each active file change and never on a data refresh', () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    const collapsed = new Set(['dir:src/ledger/export', 'dir:src/ledger']);
+    const stableTree = buildChangeTree({ files: FILES });
+    const view = (activePath: string, tree = stableTree) => (
+      <ChangeTree
+        tree={tree}
+        allFiles={FILES}
+        filter={NO_FILTER}
+        filterRef={createRef()}
+        activePath={activePath}
+        collapsed={collapsed}
+        onToggleFolder={vi.fn()}
+        onPick={vi.fn()}
+        stateOf={() => 'none'}
+        commentCountOf={() => 0}
+        kindsOf={() => NO_KINDS}
+        isReadOnly={false}
+        onToggleViewed={vi.fn()}
+        onNextUnviewed={vi.fn()}
+        onLeave={vi.fn()}
+        onFold={vi.fn()}
+      />
+    );
+    const { rerender } = render(view('src/ledger/export/page.tsx'));
+    rerender(view('src/ledger/export/csv.ts'));
+    const afterChange = scroll.mock.calls.length;
+    expect(afterChange).toBe(2);
+
+    rerender(view('src/ledger/export/csv.ts', buildChangeTree({ files: FILES })));
+
+    expect(scroll.mock.calls.length).toBe(afterChange);
+  });
+
+  it('stays still when a refresh changes the folders around the same active file', () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    const collapsed = new Set(['dir:src/ledger/export', 'dir:src/ledger']);
+    const remaining = FILES.filter((file) => file.path !== 'src/ledger/legacyExport.ts');
+    const view = (tree: ReturnType<typeof buildChangeTree>) => (
+      <ChangeTree
+        tree={tree}
+        allFiles={FILES}
+        filter={NO_FILTER}
+        filterRef={createRef()}
+        activePath="src/ledger/export/csv.ts"
+        collapsed={collapsed}
+        onToggleFolder={vi.fn()}
+        onPick={vi.fn()}
+        stateOf={() => 'none'}
+        commentCountOf={() => 0}
+        kindsOf={() => NO_KINDS}
+        isReadOnly={false}
+        onToggleViewed={vi.fn()}
+        onNextUnviewed={vi.fn()}
+        onLeave={vi.fn()}
+        onFold={vi.fn()}
+      />
+    );
+    const { rerender } = render(view(buildChangeTree({ files: FILES })));
+    const afterMount = scroll.mock.calls.length;
+
+    rerender(view(buildChangeTree({ files: remaining })));
+
+    expect(scroll.mock.calls.length).toBe(afterMount);
+  });
+
+  it('stays still when the user opens an ancestor of the active file', () => {
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    const tree = buildChangeTree({ files: FILES });
+    const view = (collapsed: ReadonlySet<string>) => (
+      <ChangeTree
+        tree={tree}
+        allFiles={FILES}
+        filter={NO_FILTER}
+        filterRef={createRef()}
+        activePath="src/ledger/export/csv.ts"
+        collapsed={collapsed}
+        onToggleFolder={vi.fn()}
+        onPick={vi.fn()}
+        stateOf={() => 'none'}
+        commentCountOf={() => 0}
+        kindsOf={() => NO_KINDS}
+        isReadOnly={false}
+        onToggleViewed={vi.fn()}
+        onNextUnviewed={vi.fn()}
+        onLeave={vi.fn()}
+        onFold={vi.fn()}
+      />
+    );
+    const { rerender } = render(view(new Set(['dir:src/ledger/export', 'dir:src/ledger'])));
+    const afterMount = scroll.mock.calls.length;
+
+    rerender(view(new Set(['dir:src/ledger/export'])));
+
+    expect(scroll.mock.calls.length).toBe(afterMount);
+  });
+
   it('draws a ring per folder that fills as its files are viewed', () => {
     renderTree({
       stateOf: (file) => (file.path === 'src/ledger/export/page.tsx' ? 'viewed' : 'none'),
