@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import {
   deleteNudgeEvent,
@@ -14,6 +14,7 @@ import {
   toNextStepOutcomes,
 } from '../nextStepOutcomes';
 import type { SuggestionKind } from '../types';
+import { OUTCOME_REVISIONS } from './outcomeRevisions';
 
 const EPOCH: IsoDateTime = new Date(0).toISOString() as IsoDateTime;
 
@@ -35,6 +36,11 @@ const EMPTY_GATE_STATE: NextStepGateState = {
 
 export const useNextStepOutcomes = ({ sessionId }: Params): NextStepGateState => {
   const [state, setState] = useState<NextStepGateState>(EMPTY_GATE_STATE);
+  const watch = useCallback(
+    (listener: () => void) => OUTCOME_REVISIONS.subscribe({ sessionId, listener }),
+    [sessionId],
+  );
+  const revision = useSyncExternalStore(watch, () => OUTCOME_REVISIONS.read({ sessionId }));
 
   useEffect(() => {
     let isStale = false;
@@ -52,7 +58,7 @@ export const useNextStepOutcomes = ({ sessionId }: Params): NextStepGateState =>
     return () => {
       isStale = true;
     };
-  }, [sessionId]);
+  }, [sessionId, revision]);
 
   return state;
 };
@@ -82,6 +88,7 @@ export const recordNextStepOutcome = async ({
       outcome,
       outcomeTs: now,
     });
+    OUTCOME_REVISIONS.bump({ sessionId });
     return id;
   } catch {
     return null;
@@ -93,5 +100,7 @@ type RevertParams = {
   readonly id: string;
 };
 
-export const revertNextStepOutcome = ({ sessionId, id }: RevertParams): Promise<void> =>
-  deleteNudgeEvent({ db: tauriDatabase, sessionId, id });
+export const revertNextStepOutcome = async ({ sessionId, id }: RevertParams): Promise<void> => {
+  await deleteNudgeEvent({ db: tauriDatabase, sessionId, id });
+  OUTCOME_REVISIONS.bump({ sessionId });
+};

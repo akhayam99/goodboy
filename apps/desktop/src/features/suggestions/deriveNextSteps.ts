@@ -23,9 +23,13 @@ import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
 import { fixChecksSuggestionOf } from './fixChecksSuggestionOf';
 import { cleanupSuggestionOf } from './cleanupSuggestionOf';
+import { openPrSuggestionOf } from './openPrSuggestionOf';
 import { isOfferedByActivity } from './isOfferedByActivity';
+import { isMountBusyOf } from './isMountBusyOf';
+import { mountLabelOf } from './mountLabelOf';
 import type {
   FixChecksProgress,
+  OpenPrTarget,
   RebaseSuggestionTarget,
   ScribeRequestState,
   SessionSuggestion,
@@ -50,6 +54,7 @@ export type SuggestionAgent = {
   readonly ordinal: number;
   readonly pendingSignal: PendingAgentSignal | null;
   readonly isStoppedByRestart: boolean;
+  readonly mountId?: MountId;
 };
 
 export type SuggestionMount = {
@@ -135,25 +140,6 @@ const isRebaseConsumed = ({ project }: ProjectParams): boolean => {
   return request.behind === project.mainDistance;
 };
 
-const SCRIBE_DETAIL = {
-  writing: 'Scribe is writing the text',
-  creating: 'Opening the pull request',
-  ready: 'Scribe wrote the text, review it',
-} as const satisfies Readonly<Record<ScribeRequestState, string>>;
-
-const openPrDetailOf = ({
-  mount,
-  ahead,
-}: {
-  readonly mount: SuggestionMount;
-  readonly ahead: number;
-}): string => {
-  if (mount.scribe !== undefined && mount.scribe !== null) {
-    return SCRIBE_DETAIL[mount.scribe];
-  }
-  return `${ahead} ${ahead === 1 ? 'commit' : 'commits'} ahead`;
-};
-
 type PushSuggestionParams = {
   readonly mount: SuggestionMount;
   readonly sessionId: SessionId;
@@ -231,7 +217,6 @@ type Params = {
   readonly mounts?: ReadonlyArray<SuggestionMount>;
   readonly cleanupProposals?: ReadonlyArray<SuggestionCleanupProposal>;
   readonly checkChains?: ReadonlyArray<SuggestionCheckChain>;
-  readonly hasRunningAgent?: boolean;
   readonly hasGoal?: boolean;
   readonly hasEverAttachedWorkflow?: boolean;
   readonly recommendedWorkflow?: SuggestionRecommendedWorkflow | null;
@@ -255,7 +240,6 @@ export const deriveNextSteps = ({
   mounts = [],
   cleanupProposals = [],
   checkChains = [],
-  hasRunningAgent = false,
   hasGoal = false,
   hasEverAttachedWorkflow = workflowRuns.length > 0,
   recommendedWorkflow = null,
@@ -483,7 +467,7 @@ export const deriveNextSteps = ({
     if (pr.checks !== 'failure' && progress?.chain !== 'fixed-pushed') {
       continue;
     }
-    if (hasRunningAgent) {
+    if (isMountBusyOf({ agents, mountId: mount.mountId, mountCount: mounts.length })) {
       continue;
     }
     suggestions.push(
@@ -496,84 +480,85 @@ export const deriveNextSteps = ({
       }),
     );
   }
-  if (!hasRunningAgent) {
-    for (const mount of mounts) {
-      if (!isFresh({ fetchedAt: mount.fetchedAt, now })) {
-        continue;
-      }
-      const pr = mount.pr;
-      if (pr != null && pr.state !== 'merged' && pr.state !== 'closed') {
-        if (pr.isDraft && pr.checks === 'success') {
-          suggestions.push({
-            id: `mark-ready:${mount.mountId}`,
-            kind: 'mark-ready',
-            priority: 43,
-            band: 2,
-            title: `Mark #${pr.number} ready for review`,
-            detail: 'All checks passed',
-            sessionId,
-            targetKey: `pr:${mount.mountId}`,
-            fingerprint: `mark-ready:${mount.mountId}:${pr.number}`,
-            payload: {
-              mountId: mount.mountId,
-              projectName: mount.projectName,
-              prNumber: pr.number,
-            },
-          });
-        }
-        if (
-          !pr.isDraft &&
-          pr.reviewDecision === 'approved' &&
-          pr.checks === 'success' &&
-          pr.mergeable === true
-        ) {
-          suggestions.push({
-            id: `merge-pr:${mount.mountId}`,
-            kind: 'merge-pr',
-            priority: 44,
-            band: 2,
-            title: `Merge #${pr.number}`,
-            detail: 'Approved, checks passed',
-            sessionId,
-            targetKey: `pr:${mount.mountId}`,
-            fingerprint: `merge-pr:${mount.mountId}:${pr.number}`,
-            payload: {
-              mountId: mount.mountId,
-              projectName: mount.projectName,
-              prNumber: pr.number,
-              defaultMethod: 'squash',
-            },
-          });
-        }
-      }
-      if (pr == null && mount.aheadOfBase != null && mount.aheadOfBase > 0) {
+  const openPrTargets: OpenPrTarget[] = [];
+  for (const mount of mounts) {
+    if (
+      !isFresh({ fetchedAt: mount.fetchedAt, now }) ||
+      isMountBusyOf({ agents, mountId: mount.mountId, mountCount: mounts.length })
+    ) {
+      continue;
+    }
+    const pr = mount.pr;
+    if (pr != null && pr.state !== 'merged' && pr.state !== 'closed') {
+      if (pr.isDraft && pr.checks === 'success') {
         suggestions.push({
-          id: `open-pr:${mount.mountId}`,
-          kind: 'open-pr',
-          priority: 42,
+          id: `mark-ready:${mount.mountId}`,
+          kind: 'mark-ready',
+          priority: 43,
           band: 2,
-          title: `Open a pull request for ${mount.projectName}`,
-          detail: openPrDetailOf({ mount, ahead: mount.aheadOfBase }),
+          title: `Mark #${pr.number} ready for review`,
+          detail: 'All checks passed',
           sessionId,
           targetKey: `pr:${mount.mountId}`,
-          fingerprint: `open-pr:${mount.mountId}:${mount.aheadOfBase}`,
+          fingerprint: `mark-ready:${mount.mountId}:${pr.number}`,
           payload: {
             mountId: mount.mountId,
-            projectId: mount.projectId,
             projectName: mount.projectName,
-            ahead: mount.aheadOfBase,
-            scribe: mount.scribe ?? null,
+            prNumber: pr.number,
           },
         });
       }
-      const push =
-        progressOf({ mountId: mount.mountId })?.chain === 'fixed-local'
-          ? null
-          : pushSuggestionOf({ mount, sessionId });
-      if (push !== null) {
-        suggestions.push(push);
+      if (
+        !pr.isDraft &&
+        pr.reviewDecision === 'approved' &&
+        pr.checks === 'success' &&
+        pr.mergeable === true
+      ) {
+        suggestions.push({
+          id: `merge-pr:${mount.mountId}`,
+          kind: 'merge-pr',
+          priority: 44,
+          band: 2,
+          title: `Merge #${pr.number}`,
+          detail: 'Approved, checks passed',
+          sessionId,
+          targetKey: `pr:${mount.mountId}`,
+          fingerprint: `merge-pr:${mount.mountId}:${pr.number}`,
+          payload: {
+            mountId: mount.mountId,
+            projectName: mount.projectName,
+            prNumber: pr.number,
+            defaultMethod: 'squash',
+          },
+        });
       }
     }
+    if (pr == null && mount.aheadOfBase != null && mount.aheadOfBase > 0) {
+      openPrTargets.push({
+        mountId: mount.mountId,
+        projectId: mount.projectId,
+        projectName: mount.projectName,
+        branch: mount.branch,
+        worktreePath: mount.worktreePath,
+        ahead: mount.aheadOfBase,
+        scribe: mount.scribe ?? null,
+      });
+    }
+    const push =
+      progressOf({ mountId: mount.mountId })?.chain === 'fixed-local'
+        ? null
+        : pushSuggestionOf({ mount, sessionId });
+    if (push !== null) {
+      suggestions.push(push);
+    }
+  }
+  const openPr = openPrSuggestionOf({
+    sessionId,
+    targets: openPrTargets,
+    dismissedFingerprints,
+  });
+  if (openPr !== null) {
+    suggestions.push(openPr);
   }
   const cleanup = cleanupSuggestionOf({ sessionId, proposals: cleanupProposals });
   if (cleanup !== null) {
@@ -624,7 +609,7 @@ export const deriveNextSteps = ({
       priority: 40,
       band: 2,
       title: isSingleTarget
-        ? `Rebase ${firstRebaseTarget.projectName} on ${firstRebaseTarget.baseBranch}`
+        ? `Rebase ${mountLabelOf({ mount: firstRebaseTarget, siblings: projects })} on ${firstRebaseTarget.baseBranch}`
         : isSingleProject
           ? `Rebase ${firstRebaseTarget.projectName}`
           : `Rebase ${shownRebaseTargets.length} branches`,

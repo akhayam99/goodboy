@@ -86,6 +86,16 @@ export type RebaseSuggestionTarget = {
   readonly dirtyCount: number;
 };
 
+export type OpenPrTarget = {
+  readonly mountId: MountId;
+  readonly projectId: ProjectId;
+  readonly projectName: string;
+  readonly branch: string;
+  readonly worktreePath: string;
+  readonly ahead: number;
+  readonly scribe: ScribeRequestState | null;
+};
+
 export type SessionSuggestion =
   | (SuggestionBase & {
       readonly kind: 'workflow-next-step';
@@ -171,12 +181,8 @@ export type SessionSuggestion =
     })
   | (SuggestionBase & {
       readonly kind: 'open-pr';
-      readonly payload: {
-        readonly mountId: MountId;
-        readonly projectId: ProjectId;
-        readonly projectName: string;
-        readonly ahead: number;
-        readonly scribe?: ScribeRequestState | null;
+      readonly payload: OpenPrTarget & {
+        readonly targets: ReadonlyArray<OpenPrTarget>;
       };
     })
   | (SuggestionBase & {

@@ -810,8 +810,11 @@ describe('useSuggestionActions', () => {
         mountId: WEB_MOUNT_ID,
         projectId: WEB_ID,
         projectName: 'web',
+        branch: 'feature/web',
+        worktreePath: '/tmp/web',
         ahead: 7,
-        ...(scribe === undefined ? {} : { scribe }),
+        scribe: scribe ?? null,
+        targets: [],
       },
     });
 
@@ -1058,7 +1061,16 @@ const EVERY_KIND = {
     ...suggestionBase,
     id: 'open-pr:mount-web',
     kind: 'open-pr',
-    payload: { mountId: WEB_MOUNT_ID, projectId: WEB_ID, projectName: 'web', ahead: 1 },
+    payload: {
+      mountId: WEB_MOUNT_ID,
+      projectId: WEB_ID,
+      projectName: 'web',
+      branch: 'feature/web',
+      worktreePath: '/tmp/web',
+      ahead: 1,
+      scribe: null,
+      targets: [],
+    },
   },
   'mark-ready': {
     ...suggestionBase,

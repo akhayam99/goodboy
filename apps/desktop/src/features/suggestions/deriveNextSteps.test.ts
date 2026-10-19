@@ -1,16 +1,17 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type {
-  AgentId,
-  MountId,
-  PlanId,
-  ProjectId,
-  PullRequestState,
-  SessionEventId,
-  SessionId,
-  StepId,
-  WorkflowId,
-  WorkflowRunId,
+import {
+  brandId,
+  type AgentId,
+  type MountId,
+  type PlanId,
+  type ProjectId,
+  type PullRequestState,
+  type SessionEventId,
+  type SessionId,
+  type StepId,
+  type WorkflowId,
+  type WorkflowRunId,
 } from '@goodboy/types';
 import {
   deriveNextSteps,
@@ -22,6 +23,7 @@ import type {
   SuggestionMountEvent,
   SuggestionMountEventKind,
 } from '../../store/slices/project-mounts/materializationProposals';
+import type { SessionSuggestion } from './types';
 
 const sessionId = 'session-1' as SessionId;
 const planId = 'plan-1' as PlanId;
@@ -789,8 +791,116 @@ describe('deriveNextSteps eleven new kinds', () => {
       mounts: [mount({ pr: null, aheadOfBase: 7 })],
     });
     const suggestion = suggestions.find((candidate) => candidate.kind === 'open-pr');
-    expect(suggestion?.title).toBe('Open a pull request for web');
-    expect(suggestion?.detail).toBe('7 commits ahead');
+    expect(suggestion?.title).toBe('Open a pull request for feature/web');
+    expect(suggestion?.detail).toBe('web · 7 commits ahead');
+    expect(suggestion?.payload).toMatchObject({
+      mountId: webMountId,
+      branch: 'feature/web',
+      worktreePath: '/tmp/web',
+    });
+  });
+
+  describe('with several branches of one project and no pull request', () => {
+    const paymentsMount = ({
+      branch,
+      aheadOfBase,
+      prNumber = null,
+    }: {
+      readonly branch: string;
+      readonly aheadOfBase: number;
+      readonly prNumber?: number | null;
+    }): SuggestionMount =>
+      mount({
+        mountId: brandId<MountId>({ value: `mount-${branch}` }),
+        projectName: 'payments-api',
+        branch,
+        worktreePath: `/w/payments-api/${branch}`,
+        aheadOfBase,
+        pr: prNumber === null ? null : pr({ number: prNumber }),
+      });
+
+    const SEVERAL_MOUNTS = [
+      paymentsMount({ branch: 'hl/ledger-export', aheadOfBase: 2 }),
+      paymentsMount({ branch: 'hl/refund-retry', aheadOfBase: 5 }),
+      paymentsMount({ branch: 'hl/payout-banner', aheadOfBase: 3, prNumber: 9993 }),
+      paymentsMount({ branch: 'hl/webhook-dedupe', aheadOfBase: 2 }),
+    ];
+
+    const openPrRows = (suggestions: ReadonlyArray<SessionSuggestion>) =>
+      suggestions.filter((candidate) => candidate.kind === 'open-pr');
+
+    it('shows one row that names the branch furthest ahead and opens that same worktree', () => {
+      const rows = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.title).toBe('Open a pull request for hl/refund-retry');
+      expect(rows[0]?.detail).toBe('payments-api · 5 commits ahead');
+      expect(rows[0]?.payload).toMatchObject({
+        mountId: 'mount-hl/refund-retry',
+        branch: 'hl/refund-retry',
+        worktreePath: '/w/payments-api/hl/refund-retry',
+      });
+    });
+
+    it('lists every branch without a pull request, ranked, and never one that has a PR', () => {
+      const [row] = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+      if (row?.kind !== 'open-pr') {
+        throw new Error('Missing open-pr row');
+      }
+
+      expect(row.payload.targets.map((target) => target.branch)).toEqual([
+        'hl/refund-retry',
+        'hl/ledger-export',
+        'hl/webhook-dedupe',
+      ]);
+    });
+
+    it('picks the same branch whatever order the mounts arrive in', () => {
+      const forward = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+      const reversed = openPrRows(
+        deriveNextSteps({ ...BASE_PARAMS, mounts: [...SEVERAL_MOUNTS].reverse() }),
+      );
+
+      expect(reversed).toEqual(forward);
+    });
+
+    it('leads with the branch whose Scribe text is under way', () => {
+      const [row] = openPrRows(
+        deriveNextSteps({
+          ...BASE_PARAMS,
+          mounts: [
+            ...SEVERAL_MOUNTS,
+            mount({
+              ...paymentsMount({ branch: 'hl/fx-rounding', aheadOfBase: 1 }),
+              scribe: 'ready',
+            }),
+          ],
+        }),
+      );
+
+      expect(row?.title).toBe('Open a pull request for hl/fx-rounding');
+      expect(row?.detail).toBe('payments-api · Scribe wrote the text, review it');
+    });
+
+    it('moves to the next branch once the lead one is put away with Not now', () => {
+      const [row] = openPrRows(
+        deriveNextSteps({
+          ...BASE_PARAMS,
+          mounts: SEVERAL_MOUNTS,
+          dismissedFingerprints: new Set(['open-pr:mount-hl/refund-retry:5']),
+        }),
+      );
+      if (row?.kind !== 'open-pr') {
+        throw new Error('Missing open-pr row');
+      }
+
+      expect(row.title).toBe('Open a pull request for hl/ledger-export');
+      expect(row.fingerprint).toBe('open-pr:mount-hl/ledger-export:2');
+      expect(row.payload.targets.map((target) => target.branch)).toEqual([
+        'hl/ledger-export',
+        'hl/webhook-dedupe',
+      ]);
+    });
   });
 
   it.each([
@@ -805,7 +915,7 @@ describe('deriveNextSteps eleven new kinds', () => {
         mounts: [mount({ pr: null, aheadOfBase: 7, scribe })],
       });
       const suggestion = suggestions.find((candidate) => candidate.kind === 'open-pr');
-      expect(suggestion?.detail).toBe(detail);
+      expect(suggestion?.detail).toBe(`web · ${detail}`);
       expect(suggestion?.payload).toMatchObject({ scribe });
     },
   );
@@ -856,13 +966,13 @@ describe('deriveNextSteps eleven new kinds', () => {
     expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
   });
 
-  it('skips every mount-derived push/PR/merge suggestion while an agent is running', () => {
+  it('skips every mount-derived push/PR/merge suggestion of the mount an agent runs on', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,
-      hasRunningAgent: true,
+      agents: [agent({ status: 'running', mountId: webMountId })],
       mounts: [
         mount({ push: { kind: 'ahead', ahead: 4 }, pr: null, aheadOfBase: 7 }),
-        mount({ mountId: 'mount-other' as MountId, pr: pr({ checks: 'failure' }) }),
+        mount({ pr: pr({ checks: 'failure' }) }),
       ],
     });
     expect(
@@ -870,6 +980,106 @@ describe('deriveNextSteps eleven new kinds', () => {
         ['push-branch', 'open-pr', 'mark-ready', 'merge-pr', 'fix-checks'].includes(candidate.kind),
       ),
     ).toBe(false);
+  });
+
+  describe('per branch gate', () => {
+    const otherMountId: MountId = JSON.parse(JSON.stringify('mount-payments-b'));
+    const kindsFor = ({ agents }: { readonly agents: ReadonlyArray<SuggestionAgent> }) =>
+      deriveNextSteps({
+        ...BASE_PARAMS,
+        agents,
+        mounts: [
+          mount({ pr: pr({ isDraft: true, checks: 'success' }) }),
+          mount({
+            mountId: otherMountId,
+            branch: 'feature/ledger',
+            pr: pr({ number: 619, checks: 'failure' }),
+          }),
+        ],
+      }).map((candidate) => candidate.id);
+
+    it('keeps fix checks and mark ready of branch B while an agent runs on branch A', () => {
+      const ids = kindsFor({ agents: [agent({ status: 'running', mountId: webMountId })] });
+      expect(ids).toContain(`fix-checks:${otherMountId}`);
+      expect(ids).not.toContain(`mark-ready:${webMountId}`);
+    });
+
+    it('gates nothing for a running agent without a mount when the session has two mounts', () => {
+      const ids = kindsFor({ agents: [agent({ status: 'running' })] });
+      expect(ids).toContain(`fix-checks:${otherMountId}`);
+      expect(ids).toContain(`mark-ready:${webMountId}`);
+    });
+
+    it('gates the only mount for a running agent without a mount', () => {
+      const ids = deriveNextSteps({
+        ...BASE_PARAMS,
+        agents: [agent({ status: 'running' })],
+        mounts: [mount({ pr: pr({ isDraft: true, checks: 'success' }) })],
+      }).map((candidate) => candidate.id);
+      expect(ids).not.toContain(`mark-ready:${webMountId}`);
+    });
+
+    it('hides fix checks of the only mount for a running agent without a mount', () => {
+      const ids = deriveNextSteps({
+        ...BASE_PARAMS,
+        agents: [agent({ status: 'running' })],
+        mounts: [mount({ pr: pr({ checks: 'failure' }) })],
+      }).map((candidate) => candidate.id);
+      expect(ids).not.toContain(`fix-checks:${webMountId}`);
+    });
+
+    it('gates nothing for an agent that is not running', () => {
+      const ids = kindsFor({ agents: [agent({ status: 'completed', mountId: webMountId })] });
+      expect(ids).toContain(`mark-ready:${webMountId}`);
+    });
+  });
+
+  describe('open pull request title', () => {
+    const titleFor = ({ mounts }: { readonly mounts: ReadonlyArray<SuggestionMount> }) =>
+      deriveNextSteps({ ...BASE_PARAMS, mounts })
+        .filter((candidate) => candidate.kind === 'open-pr')
+        .map((candidate) => candidate.title)
+        .sort();
+    const ahead = { aheadOfBase: 2 };
+
+    it('names the branch with one mount, so a compact row still says which', () => {
+      expect(titleFor({ mounts: [mount({ ...ahead, projectName: 'payments-api' })] })).toEqual([
+        'Open a pull request for feature/web',
+      ]);
+    });
+
+    it('names the branch when two mounts share a folder', () => {
+      expect(
+        titleFor({
+          mounts: [
+            mount({ ...ahead, projectName: 'payments-api', branch: 'feature/credits' }),
+            mount({
+              ...ahead,
+              mountId: JSON.parse(JSON.stringify('mount-payments-b')),
+              projectName: 'payments-api',
+              branch: 'feature/refunds',
+            }),
+          ],
+        }),
+      ).toEqual(['Open a pull request for feature/credits']);
+    });
+
+    it('names the branch when two mounts sit in two folders', () => {
+      expect(
+        titleFor({
+          mounts: [
+            mount({ ...ahead, projectName: 'payments-api' }),
+            mount({
+              ...ahead,
+              mountId: JSON.parse(JSON.stringify('mount-ledger')),
+              projectId: JSON.parse(JSON.stringify('project-ledger')),
+              projectName: 'ledger-core',
+              branch: 'feature/ledger',
+            }),
+          ],
+        }),
+      ).toEqual(['Open a pull request for feature/ledger']);
+    });
   });
 
   it('ignores mount data older than five minutes', () => {

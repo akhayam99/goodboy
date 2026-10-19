@@ -493,6 +493,14 @@ suggestion, and every surface that shows one calls the same
 `useSuggestionActions` resolver, so clicking "Continue" does the same thing
 whether you clicked it on the board or in the session overview.
 
+- The pull request cards (fix checks, open PR, push, mark ready, merge) wait
+  per branch: `isMountBusyOf` hides a card only while an agent with that
+  `Agent.mountId` runs. An agent without a mount gates the cards only when
+  the session has exactly one mount, the only place it can write; with two or
+  more mounts it gates none, because nothing proves where it writes. The
+  rebase title names the folder, or the branch when two or more mounts of
+  the session share a folder (`mountLabelOf`); the open-pr title always
+  names the branch.
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
   in the session overview, above Activity, outside its views and its
   grouping: a suggestion is not activity, it is a pointer to what activity
@@ -549,7 +557,11 @@ whether you clicked it on the board or in the session overview.
   fingerprint rides along in the same `next:<kind>` row's `contextJson`
   (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), read back with
   no time bound, so a reload or a remount does not resurrect what you just
-  dismissed or acted on. It returns only if the trigger changes and the
+  dismissed or acted on. The read is live too: `recordNextStepOutcome` and
+  `revertNextStepOutcome` bump the session's revision in `OUTCOME_REVISIONS`
+  once the write landed, and `useNextStepOutcomes` reads the rows again, so
+  a grouped card such as open-pr moves to its next branch on **Not now** and
+  back on **Undo**. It returns only if the trigger changes and the
   fingerprint with it (new commits, new red CI, a new plan). Three "Not
   now" on the same kind inside a session in 14 days, with no acceptance
   between them, moves that kind behind everything else instead of leading
@@ -588,7 +600,14 @@ whether you clicked it on the board or in the session overview.
 pushed yet` when origin has no copy, and `Branch diverged from origin`
   with `Review history` instead of a push when origin moved on its own),
   open a pull request once a
-  mount is ahead with none yet, mark a green draft ready, merge an approved
+  mount is ahead with none yet (one row per session, `openPrSuggestionOf`:
+  its title names the branch, as in **Open a pull request for
+  hl/refund-retry**, because a compact row past the first three hides the
+  why (`payments-api · 5 commits ahead`); it leads with the branch whose Scribe text is under way, then the most commits
+  ahead, then project and branch name, skips a branch put away with **Not
+  now**, and lists every branch without a pull request in **⋯** once there
+  are two; **Open PR** opens the worktree the payload names, never one looked
+  up at click time), mark a green draft ready, merge an approved
   and green pull request, review the changes once a standalone implementer
   finishes clean, close a merged worktree's cleanup proposal, and continue
   with a workflow once a standalone scout or generic agent finishes clean
@@ -599,11 +618,8 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   confirm on the row before they act; the other new kinds run on one click,
   like the original six. Push, open-pr, mark-ready and merge-pr act on the
   mount their suggestion names (`markPrReady` and `mergePr` take a
-  `mountId`), never the session's active mount. Two simplifications from the design: the "never
-  while an agent works on the same mount" rule (E7-6) is session-wide, not
-  per-mount, for the new push/open-pr/mark-ready/merge-pr/fix-checks kinds
-  only - rebase-project keeps its own narrower per-request check; and the
-  demotion window (above) reads the session, not the workspace. A failed
+  `mountId`), never the session's active mount. One simplification from the
+  design: the demotion window (above) reads the session, not the workspace. A failed
   workflow step has no suggestion: its own row in Activity carries the one
   **Restart the step**, which opens the step where Ask it to continue and
   Skip live. approve-tool opens the agent's

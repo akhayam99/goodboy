@@ -6174,11 +6174,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceDevProjectBand.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/settings/components/SettingsStudio/WorkspaceProfileSection.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
@@ -6387,7 +6382,7 @@
   },
   "apps/desktop/src/features/suggestions/deriveNextSteps.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 41
+      "count": 40
     },
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -7331,16 +7326,6 @@
   "apps/desktop/src/features/workspace-chat/workDrafter.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 3
-    }
-  },
-  "apps/desktop/src/features/workspace/components/ConvertWorkspaceFlow/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
-    }
-  },
-  "apps/desktop/src/features/workspace/components/ConvertWorkspaceFlow/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/workspace/components/GoodboyIgnoreCard/index.test.tsx": {
