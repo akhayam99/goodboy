@@ -188,12 +188,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette next step: Open a pull request',
-    covers: ['navigate', 'palette:Open a pull request for ledger-core'],
+    covers: ['navigate', 'palette:Open a pull request for hl/reconcile-settlement-export'],
     seed: 'pr',
     open: async () => {
       opened = vi.fn(async () => undefined);
       useAppStore.setState({ createPrForSession: opened } as never);
-      await openPalette(/^Open a pull request for ledger-core/);
+      await openPalette(/^Open a pull request for hl\/reconcile-settlement-export/);
     },
     lands: async () => {
       await waitFor(
