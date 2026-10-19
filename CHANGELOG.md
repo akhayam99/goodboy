@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.5
+
+The files list beside the diff stays where you left it while you scroll the changes.
+
+### Fixed
+
+- The files list beside the diff sometimes jumped up or down while you scrolled the diff. It now moves only to keep the file you are reading in view. <!-- gb area=review pr=2023 -->
+
 ## Goodboy v0.27.4
 
 Next names the branch it opens a pull request for, a plan Auto already handed off stops asking for an implementer, and the rail says Projects again.
