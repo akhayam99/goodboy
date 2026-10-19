@@ -122,7 +122,7 @@ describe('r4 session rail scenes', () => {
   it('r4-rail-session draws the cards with each worktree pages inline, the tools outside the rail', async () => {
     await mount('r4-rail-session');
 
-    const projects = card('Folders');
+    const projects = card('Projects');
     expect(entryLabels(projects)).toEqual(['Pull request', 'Comments', 'Files', 'Checks']);
     expect(
       within(projects)
@@ -155,7 +155,7 @@ describe('r4 session rail scenes', () => {
     const navRow = elementIn(rail(), '[data-testid="session-pages"] button');
     const navIcon = elementIn(navRow, 'svg');
     const navSlot = elementIn(rail(), '[data-page-value="runs"]');
-    const projects = card('Folders');
+    const projects = card('Projects');
     const headerLabel = elementIn(projects, 'h2 button span');
     const projectIcon = elementIn(
       projects,
@@ -196,11 +196,11 @@ describe('r4 session rail scenes', () => {
     await mount('r4-rail-cards-folded');
 
     expect(
-      within(card('Folders'))
-        .getByRole('button', { name: 'Folders' })
+      within(card('Projects'))
+        .getByRole('button', { name: 'Projects' })
         .getAttribute('aria-expanded'),
     ).toBe('false');
-    expect(card('Folders').querySelector('[data-card-signal]')).not.toBeNull();
+    expect(card('Projects').querySelector('[data-card-signal]')).not.toBeNull();
     expect(
       within(card('Linked')).getByRole('button', { name: 'Linked' }).getAttribute('aria-expanded'),
     ).toBe('false');
@@ -238,7 +238,7 @@ describe('r4 session rail scenes', () => {
   it('r4-rail-tree draws many branches with their pull request icons, two open at once', async () => {
     await mount('r4-rail-tree');
 
-    const projects = card('Folders');
+    const projects = card('Projects');
     const states = [...projects.querySelectorAll('[data-pr-state]')].map((icon) =>
       icon.getAttribute('data-pr-state'),
     );
@@ -267,7 +267,7 @@ describe('r4 session rail scenes', () => {
   it('r4-rail-tree cuts long branches at the end only and keeps the full name in the tooltip', async () => {
     await mount('r4-rail-tree');
 
-    const projects = card('Folders');
+    const projects = card('Projects');
     const names = [...projects.querySelectorAll('[data-worktree-branch]')].map(
       (cell) => cell.textContent ?? '',
     );

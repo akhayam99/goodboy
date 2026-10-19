@@ -14,11 +14,11 @@ A plain folder is edited in place by one session at a time, and the next one wai
 
 ### Workspace with several folders
 
-Keep your repos together as one workspace, and let one session work across several of them. The **Folders** card of a session lists each repo it touches, with its branch and the size of its changes. A folder gets a branch only when an agent needs to edit it. The **+** on the card adds another workspace folder, or connects a new repo or folder to the workspace from the same list.
+Keep your repos together as one workspace, and let one session work across several of them. The **Projects** card of a session lists each repo it touches, with its branch and the size of its changes. A folder gets a branch only when an agent needs to edit it. The **+** on the card adds another workspace folder, or connects a new repo or folder to the workspace from the same list.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="The Harborline workspace with one session open: its Folders card lists ledger-core with four branches and notify-relay with two, each branch with its pull request icon, above the Linked issues, next to the Next row with Start and the Activity tabs">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-several-projects-light.webp" alt="The Harborline workspace with one session open: its Projects card lists ledger-core with four branches and notify-relay with two, each branch with its pull request icon, above the Linked issues, next to the Next row with Start and the Activity tabs">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -40,7 +40,7 @@ Let agents edit in parallel without touching your checkout. Each branch gets its
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-light.webp" alt="A session with its Folders card: ledger-core with three branches (fix/le...postings with pull request #418, fix/ledger-...backfill with no pull request and fix/ledge...drift with #412) and notify-relay with fix/noti...backoff #96, and above the card the notice that fix/ledger-reconciliation-statement-backfill in ledger-core is closed and its files are still on disk, with a Reopen button">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-worktrees-light.webp" alt="A session with its Projects card: ledger-core with three branches (fix/le...postings with pull request #418, fix/ledger-...backfill with no pull request and fix/ledge...drift with #412) and notify-relay with fix/noti...backoff #96, and above the card the notice that fix/ledger-reconciliation-statement-backfill in ledger-core is closed and its files are still on disk, with a Reopen button">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>
@@ -51,7 +51,7 @@ Work on several branches of one repo in the same session, each in its own worktr
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-light.webp" alt="The Folders card of one session where two branches are not the ones recorded: ledger-core is on another branch and offers Check again and Not now, and notify-relay offers Use this branch here, Keep both branches and Not now">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workspace-branches-light.webp" alt="The Projects card of one session where two branches are not the ones recorded: ledger-core is on another branch and offers Check again and Not now, and notify-relay offers Use this branch here, Keep both branches and Not now">
 </picture>
 
 <sub>Screenshot from Goodboy 0.27.1</sub>

@@ -305,7 +305,7 @@ feature-area guide ones in the public
 and light `.webp` pairs. The README hero is also the website's hero picture,
 the one capture on the site; every other product view there is a React mock.
 `pnpm readme:hero` shoots the `readme-hero` scene (the Harborline session on
-its Overview with the Folders card unfolded, the shared Context drawer open
+its Overview with the Projects card unfolded, the shared Context drawer open
 and three runs interleaving in Activity) from the desktop mock dev server
 (`http://localhost:5230`, or the URL passed as its first argument) at
 1920x1200 and scale 4, in both themes. It writes

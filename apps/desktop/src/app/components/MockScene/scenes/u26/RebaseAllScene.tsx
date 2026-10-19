@@ -76,7 +76,7 @@ export const RebaseAllScene = ({ theme, isRunning }: Props) => {
   return (
     <div data-shot className="flex h-screen min-h-0 bg-background p-4">
       <div className="flex w-72 shrink-0 flex-col gap-2 bg-background p-2">
-        <LevelCard id={LABEL_ID} label="Folders" isOpen onToggle={() => undefined}>
+        <LevelCard id={LABEL_ID} label="Projects" isOpen onToggle={() => undefined}>
           <RebaseAllCard sessionId={SESSION_ID} />
         </LevelCard>
       </div>
