@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
-import { Divider, Reveal, SelectableRow } from '@goodboy/ui';
+import { Reveal, SelectableRow } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import type {
   MountProjectGroup,
@@ -23,7 +23,6 @@ type Props = {
   readonly diffStats: ReadonlyMap<string, EntryDiffStat>;
   readonly shownPath: string | null;
   readonly openedPath: string | null;
-  readonly hasDividerAbove: boolean;
   readonly isBatchSettled: boolean;
 };
 
@@ -39,7 +38,6 @@ export const ProjectTree = ({
   diffStats,
   shownPath,
   openedPath,
-  hasDividerAbove,
   isBatchSettled,
 }: Props) => {
   const branchesId = useId();
@@ -74,48 +72,45 @@ export const ProjectTree = ({
   );
 
   return (
-    <div className="flex flex-col gap-2">
-      {hasDividerAbove ? <Divider /> : null}
-      <div data-card-project={group.projectName} className="flex flex-col">
-        <div data-project-row="" className="group/project-row flex min-w-0 items-center">
-          <SelectableRow
-            selected={false}
-            isExpanded={isOpen}
-            ariaLabel={`${group.projectName}, ${total} ${branchWord}${hostSuffix}`}
-            onClick={() => tree.toggle(node)}
-            className="h-7 min-w-0 flex-1 items-center gap-1 pl-1 pr-0 text-ui"
-          >
-            <span className="min-w-0 truncate text-left">{group.projectName}</span>
-            {isOpen ? null : (
-              <ChevronRight
-                size={ICON_SIZE.row}
-                aria-hidden
-                className="shrink-0 text-faint-foreground"
-              />
-            )}
-          </SelectableRow>
-          <ProjectRowAdd
-            sessionId={sessionId}
-            projectId={group.projectId}
-            projectName={group.projectName}
-          />
-        </div>
-        <Reveal open={isOpen} id={branchesId}>
-          <ul aria-label={`${group.projectName} worktrees`} className="flex flex-col">
-            {live.map((row) => renderRow({ row }))}
-          </ul>
-          {finished.length === 0 ? null : (
-            <FinishedFold
-              node={finishedNode}
-              tree={tree}
-              count={finished.length}
-              isForcedOpen={hasCurrentFinished}
-            >
-              {finished.map((row) => renderRow({ row }))}
-            </FinishedFold>
+    <div data-card-project={group.projectName} className="flex flex-col">
+      <div data-project-row="" className="group/project-row flex min-w-0 items-center">
+        <SelectableRow
+          selected={false}
+          isExpanded={isOpen}
+          ariaLabel={`${group.projectName}, ${total} ${branchWord}${hostSuffix}`}
+          onClick={() => tree.toggle(node)}
+          className="h-7 min-w-0 flex-1 items-center gap-1 pl-1 pr-0 text-ui"
+        >
+          <span className="min-w-0 truncate text-left">{group.projectName}</span>
+          {isOpen ? null : (
+            <ChevronRight
+              size={ICON_SIZE.row}
+              aria-hidden
+              className="shrink-0 text-faint-foreground"
+            />
           )}
-        </Reveal>
+        </SelectableRow>
+        <ProjectRowAdd
+          sessionId={sessionId}
+          projectId={group.projectId}
+          projectName={group.projectName}
+        />
       </div>
+      <Reveal open={isOpen} id={branchesId}>
+        <ul aria-label={`${group.projectName} worktrees`} className="flex flex-col">
+          {live.map((row) => renderRow({ row }))}
+        </ul>
+        {finished.length === 0 ? null : (
+          <FinishedFold
+            node={finishedNode}
+            tree={tree}
+            count={finished.length}
+            isForcedOpen={hasCurrentFinished}
+          >
+            {finished.map((row) => renderRow({ row }))}
+          </FinishedFold>
+        )}
+      </Reveal>
     </div>
   );
 };

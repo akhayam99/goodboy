@@ -97,20 +97,23 @@ export const LevelProjects = ({ session, isActive }: Props) => {
           <span className="truncate">{lapName}</span>
         </div>
       )}
-      {groups.map((group, index) => (
-        <ProjectTree
-          key={group.projectId}
-          sessionId={sessionId}
-          group={group}
-          tree={tree}
-          statuses={snapshot.statuses}
-          diffStats={diffStats}
-          shownPath={shownPath}
-          openedPath={openedPath}
-          hasDividerAbove={index > 0}
-          isBatchSettled={isBatchSettled}
-        />
-      ))}
+      {groups.length === 0 ? null : (
+        <div data-card-projects="" className="flex min-w-0 flex-col gap-3">
+          {groups.map((group) => (
+            <ProjectTree
+              key={group.projectId}
+              sessionId={sessionId}
+              group={group}
+              tree={tree}
+              statuses={snapshot.statuses}
+              diffStats={diffStats}
+              shownPath={shownPath}
+              openedPath={openedPath}
+              isBatchSettled={isBatchSettled}
+            />
+          ))}
+        </div>
+      )}
     </LevelCard>
   );
 };

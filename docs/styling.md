@@ -492,7 +492,7 @@ a control's own shape are fine.
 `apps/desktop/src/__tests__/regressions/divider-sits-between-chrome.test.ts`
 guards this with a frozen debt list: a violation already in the codebase may
 be listed there, but the list only shrinks. Each allowed file carries a
-reason: `chrome` for one of the boundaries above, `folders` for the divider between folder groups, `markdown` for a table rule
+reason: `chrome` for one of the boundaries above, `markdown` for a table rule
 or a `---` break that the Markdown renderer draws because the source text asked
 for it, and `debt` for a line inside content that has not been migrated yet. A
 short list of files is exempt from the border check because their `border-t/b`
