@@ -1,9 +1,4 @@
-import {
-  AUTO_DELEGATION_DEADLINE_MINUTES,
-  diagnoseResume,
-  effectiveTreeLimits,
-  isAutoWriterRole,
-} from '@goodboy/core';
+import { AUTO_DELEGATION_DEADLINE_MINUTES, diagnoseResume, isAutoWriterRole } from '@goodboy/core';
 import {
   AUTO_RESUME_TREE_ABORT,
   autoResumeTreeStatement,
@@ -205,7 +200,6 @@ export const answerQuestion = async ({
       nowMs,
       generation: grant.generation,
       runId: grant.runId,
-      maxAttempts: effectiveTreeLimits({ grants: tree.grants }).attempts,
       requestedUsd: verdict.ceilingUsd,
     }),
     casAutoDelegationStateStatement({

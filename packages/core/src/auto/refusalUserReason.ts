@@ -11,8 +11,6 @@ export const AUTO_REFUSAL_USER_REASON = {
   tree_stopped: 'the conversation was stopped',
   generation_changed: 'the work was restarted',
   not_owner: 'another window runs this conversation',
-  limit_delegations: 'the conversation reached its limit of agents',
-  limit_attempts: 'the conversation reached its limit of agent runs',
   limit_calls: 'too many hand overs in one turn',
   limit_refusals: 'too many refused hand overs in this conversation',
   limit_wall_clock: 'the conversation reached its time limit',

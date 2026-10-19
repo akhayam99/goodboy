@@ -773,7 +773,6 @@ export {
   diagnoseAutoTreeLoss,
   getAutoTree,
   getAutoTreeByRootAgent,
-  grantAutoTreeIfUnchanged,
   insertAutoTree,
   listAutoTreesOfSession,
   listAutoAgentsWithoutTree,

@@ -720,7 +720,7 @@ kept.
   lost race comes back as a typed answer.
 - `admit.ts` takes a whole batch or nothing. The guarded statement in
   `packages/db/src/queries/auto-admission.ts` is the rule: phase, run, lease,
-  lifetime counters, four open children, remaining budget, plan approval and
+  the guards of `AUTO_TREE_LIMITS`, four open children, remaining budget, plan approval and
   revision. `core/auto/admission.ts` only names the refusal for the caller.
 - Money has one source, `treeSpend`: settled, reserved and remaining. It feeds
   admission, the prompt line and the screen through `autoBudgetOf`;
@@ -769,9 +769,8 @@ kept.
   something changes: a gate block on an already blocked tree is not written again, only a
   budget block resumes by itself once the limit covers a turn, and every other block waits
   for `retryBlockedTree.ts` (Retry, a message from the user, or the recovery after a
-  restart for a block that is not a gate). Retry resets the no progress streak, takes one
-  grant at the turn limit (`AUTO_MAX_GRANTS_PER_TREE`) and refuses past the time limit or
-  the budget. `settleAutoTurn.ts` picks the next
+  restart for a block that is not a gate). Retry resets the no progress streak and refuses
+  past the time limit or the budget. `settleAutoTurn.ts` picks the next
   phase when the turn ends (delegating, waiting, merging, done or answering), puts the
   batch back when the turn failed, and counts a turn with no answer and no work, or whose
   block was refused. The text it delivers (`buildDeliveryMessage.ts`) starts with a digest of the

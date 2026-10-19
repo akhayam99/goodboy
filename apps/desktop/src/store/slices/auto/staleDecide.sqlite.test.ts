@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  AUTO_BLOCK_TEXT,
-  AUTO_MAX_GRANTS_PER_TREE,
-  AUTO_STALE_DECIDE_MS,
-  AUTO_STALE_DECIDE_TEXT,
-  effectiveTreeLimits,
-} from '@goodboy/core';
+import { AUTO_BLOCK_TEXT, AUTO_STALE_DECIDE_MS, AUTO_STALE_DECIDE_TEXT } from '@goodboy/core';
 import { getAutoTree, listAutoOutbox, listAutoReservations } from '@goodboy/db';
 import { makeRuntimeWorld, userSays, type RuntimeWorld } from './testing/runtimeWorld';
 
@@ -166,26 +160,30 @@ describe('a blocked tree', () => {
     expect(world.state.ports.autoTurns).toHaveLength(1);
   });
 
-  it('grants a few more turns on Retry at the turn limit, until the grants run out', async () => {
+  it('keeps delivering to a tree whose old turn count sits at its old cap', async () => {
     const world = await makeRuntimeWorld({ capUsd: 10 });
-    await world.state.world.db.execute(`UPDATE auto_trees SET phase = 'merging', turns_used = 30`);
+    await world.state.world.db.execute(
+      `UPDATE auto_trees SET phase = 'merging', turns_used = 60, grants = 3`,
+    );
     await userSays({ world, id: 'outbox-user-1', text: 'Keep going' });
-    expect((await treeOf(world))?.blockedReason).toBe(AUTO_BLOCK_TEXT.limit_turns);
+    await world.runtime.settled();
 
+    expect(await treeOf(world)).toMatchObject({ phase: 'deciding', blockedReason: null });
+    expect(world.state.ports.autoTurns).toHaveLength(1);
+  });
+
+  it('resumes an old tree blocked at the retired turn limit on Retry', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    await world.state.world.db.execute(
+      `UPDATE auto_trees SET phase = 'blocked', turns_used = 30, blocked_reason = ?`,
+      ['Auto used all the turns it may take in this conversation. Retry to allow a few more.'],
+    );
+    await userSays({ world, id: 'outbox-user-1', text: 'Keep going' });
     expect((await world.runtime.retry(world.treeId)).kind).toBe('retried');
     await world.runtime.settled();
-    expect(await treeOf(world)).toMatchObject({ phase: 'deciding', grants: 1 });
 
-    await world.state.world.db.execute(
-      `UPDATE auto_trees SET phase = 'blocked', grants = ?, turns_used = ?`,
-      [
-        AUTO_MAX_GRANTS_PER_TREE,
-        effectiveTreeLimits({ grants: AUTO_MAX_GRANTS_PER_TREE }).autoTurns,
-      ],
-    );
-    const refused = await world.runtime.retry(world.treeId);
-    expect(refused.kind).toBe('refused');
-    expect((await treeOf(world))?.phase).toBe('blocked');
+    expect(await treeOf(world)).toMatchObject({ phase: 'deciding', blockedReason: null });
+    expect(world.state.ports.autoTurns).toHaveLength(1);
   });
 
   it('refuses Retry past the time limit and writes nothing', async () => {

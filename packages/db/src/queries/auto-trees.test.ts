@@ -13,7 +13,6 @@ import {
   claimAutoTree,
   getAutoTree,
   getAutoTreeByRootAgent,
-  grantAutoTreeIfUnchanged,
   insertAutoTree,
   listAutoTreesOfSession,
   listAutoTreesToRecover,
@@ -236,7 +235,7 @@ describe('auto trees', () => {
     });
   });
 
-  it('changes the cap and the grants only from the value the caller saw', async () => {
+  it('changes the cap only from the value the caller saw', async () => {
     const { db } = await world();
     expect(
       await setAutoTreeCapIfUnchanged({
@@ -257,24 +256,6 @@ describe('auto trees', () => {
       }),
     ).toEqual({ kind: 'stale', capUsd: 8 });
     expect((await getAutoTree({ db, treeId }))?.capUsd).toBe(8);
-    expect(
-      await grantAutoTreeIfUnchanged({
-        db,
-        treeId,
-        expectedGrants: 0,
-        maxGrants: 1,
-        nowMs: AUTO_SEED_NOW,
-      }),
-    ).toBe(true);
-    expect(
-      await grantAutoTreeIfUnchanged({
-        db,
-        treeId,
-        expectedGrants: 1,
-        maxGrants: 1,
-        nowMs: AUTO_SEED_NOW,
-      }),
-    ).toBe(false);
   });
 
   it('lists the trees a restart has to look at', async () => {

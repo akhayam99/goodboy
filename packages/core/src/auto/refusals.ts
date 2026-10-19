@@ -9,8 +9,6 @@ export const AUTO_REFUSAL_CODES = [
   'tree_stopped',
   'generation_changed',
   'not_owner',
-  'limit_delegations',
-  'limit_attempts',
   'limit_calls',
   'limit_refusals',
   'limit_wall_clock',
@@ -40,8 +38,6 @@ export const AUTO_REFUSAL_CODES = [
 export type AutoRefusalCode = (typeof AUTO_REFUSAL_CODES)[number];
 
 export const AUTO_LIMIT_REFUSAL_CODES = [
-  'limit_delegations',
-  'limit_attempts',
   'limit_calls',
   'limit_refusals',
   'limit_wall_clock',

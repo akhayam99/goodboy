@@ -1,10 +1,4 @@
-import {
-  AUTO_BLOCK_TEXT,
-  AUTO_MAX_GRANTS_PER_TREE,
-  autoRemainingForGates,
-  effectiveTreeLimits,
-  turnGate,
-} from '@goodboy/core';
+import { AUTO_BLOCK_TEXT, autoRemainingForGates, turnGate } from '@goodboy/core';
 import {
   autoTreePhaseStatement,
   getAutoTree,
@@ -28,11 +22,7 @@ export type RetryBlockedTreeOutcome =
   | Readonly<{ kind: 'refused'; message: string }>
   | Readonly<{ kind: 'idle'; reason: 'not_owner' | 'no_tree' | 'not_blocked' | 'lost_race' }>;
 
-const NO_MORE_GRANTS =
-  'Auto used every extra turn it may take in this conversation. Start a new Auto to go on.';
-
 const ABORT_PHASE = 'retry_phase';
-const ABORT_GRANT = 'retry_grant';
 
 type PhaseParams = {
   readonly ctx: AgentVerbContext;
@@ -72,15 +62,9 @@ export const retryBlockedTree = async ({
   if (tree.phase !== 'blocked' || tree.stopState !== 'none') {
     return { kind: 'idle', reason: 'not_blocked' };
   }
-  const isGrantNeeded = tree.turnsUsed >= effectiveTreeLimits({ grants: tree.grants }).autoTurns;
-  if (isGrantNeeded && tree.grants >= AUTO_MAX_GRANTS_PER_TREE) {
-    return { kind: 'refused', message: NO_MORE_GRANTS };
-  }
   const nowMs = ctx.now();
   const spend = await readAutoTreeSpend({ db: ctx.db, treeId });
   const gate = turnGate({
-    turnsUsed: tree.turnsUsed,
-    grants: isGrantNeeded ? tree.grants + 1 : tree.grants,
     noProgressStreak: 0,
     hardDeadlineAt: tree.hardDeadlineAt,
     nowMs,
@@ -101,14 +85,6 @@ export const retryBlockedTree = async ({
       abortCode: ABORT_PHASE,
     }),
   ];
-  if (isGrantNeeded) {
-    statements.push({
-      sql: 'UPDATE auto_trees SET grants = grants + 1 WHERE id = ? AND grants = ? AND grants < ?',
-      params: [treeId, tree.grants, AUTO_MAX_GRANTS_PER_TREE],
-      abortWhen: 'noChanges',
-      abortCode: ABORT_GRANT,
-    });
-  }
   const result = await ctx.db.transaction({ statements });
   if (result.status !== 'committed') {
     return { kind: 'idle', reason: 'lost_race' };

@@ -192,12 +192,10 @@ describe('diagnoseAdmission', () => {
     ).toBe('not_owner');
   });
 
-  it('names the lifetime counter that tripped, and a grant raises the delegation and attempt caps', () => {
+  it('names the guard that tripped and never stops on a count of agents or runs', () => {
     const cases: ReadonlyArray<readonly [Partial<AutoTree>, string]> = [
       [{ turnDelegateCalls: 6 }, 'limit_calls'],
       [{ refusalsUsed: 10 }, 'limit_refusals'],
-      [{ delegationsUsed: 12 }, 'limit_delegations'],
-      [{ attemptsUsed: 20 }, 'limit_attempts'],
       [{ hardDeadlineAt: NOW }, 'limit_wall_clock'],
     ];
     for (const [patch, code] of cases) {
@@ -207,10 +205,19 @@ describe('diagnoseAdmission', () => {
         ),
       ).toBe(code);
     }
-    const granted = tree({ delegationsUsed: 12, attemptsUsed: 20, grants: 1 });
-    expect(
-      codeOf(diagnoseAdmission({ snapshot: snapshot({ tree: granted }), children: [scout()] })),
-    ).toBe('ok');
+    for (const used of [12, 13, 40, 500]) {
+      const old = tree({ delegationsUsed: used, attemptsUsed: used + 8, grants: 3 });
+      expect(
+        codeOf(diagnoseAdmission({ snapshot: snapshot({ tree: old }), children: [scout()] })),
+      ).toBe('ok');
+    }
+  });
+
+  it('refuses at the spend cap, then admits once the limit is raised', () => {
+    const empty = snapshot({ remainingUsd: 0 });
+    expect(codeOf(diagnoseAdmission({ snapshot: empty, children: [scout()] }))).toBe('budget');
+    const raised = snapshot({ remainingUsd: 5 });
+    expect(codeOf(diagnoseAdmission({ snapshot: raised, children: [scout()] }))).toBe('ok');
   });
 
   it('caps the batch at four and the open children at four', () => {

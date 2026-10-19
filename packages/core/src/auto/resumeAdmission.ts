@@ -1,6 +1,6 @@
 import { AUTO_USD_EPSILON } from '@goodboy/db';
 import type { AdmissionSnapshot } from './admission';
-import { attemptCeilingUsd, effectiveTreeLimits } from './limits';
+import { attemptCeilingUsd } from './limits';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
 
@@ -18,7 +18,6 @@ export const diagnoseResume = ({ snapshot, role }: DiagnoseResumeParams): Resume
   if (tree === null) {
     return { kind: 'refused', code: 'not_owner' };
   }
-  const limits = effectiveTreeLimits({ grants: tree.grants });
   const isOwner =
     tree.schedulerOwner === snapshot.ownerId &&
     tree.ownerLeaseExpiresAt !== null &&
@@ -41,9 +40,6 @@ export const diagnoseResume = ({ snapshot, role }: DiagnoseResumeParams): Resume
   }
   if (snapshot.nowMs >= tree.hardDeadlineAt) {
     return { kind: 'refused', code: 'limit_wall_clock' };
-  }
-  if (tree.attemptsUsed + 1 > limits.attempts) {
-    return { kind: 'refused', code: 'limit_attempts' };
   }
   const ceilingUsd = attemptCeilingUsd({ role, remainingUsd: snapshot.remainingUsd });
   if (ceilingUsd <= AUTO_USD_EPSILON) {

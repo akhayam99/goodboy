@@ -251,16 +251,12 @@ describe('delivering stored rows to Auto', () => {
     expect(state.ports.autoTurns).toHaveLength(1);
   });
 
-  it('blocks the tree when the lifetime turn limit or the budget leaves no room', async () => {
+  it('keeps delivering past the old turn count and blocks only when the budget leaves no room', async () => {
     const turns = await makeDeliveryWorld();
     await addUserRow({ world: turns.world, id: 'outbox-user-1', text: 'hello' });
-    await turns.world.db.execute(`UPDATE auto_trees SET turns_used = 30`);
-    expect(await deliver(turns)).toMatchObject({ kind: 'blocked' });
-    expect(await getAutoTree({ db: turns.world.db, treeId: WORLD_TREE })).toMatchObject({
-      phase: 'blocked',
-      blockedReason: expect.stringContaining('turns'),
-    });
-    expect(turns.ports.autoTurns).toHaveLength(0);
+    await turns.world.db.execute(`UPDATE auto_trees SET turns_used = 300, grants = 3`);
+    expect((await deliver(turns)).kind).toBe('delivered');
+    expect(turns.ports.autoTurns).toHaveLength(1);
 
     const budget = await makeDeliveryWorld({ capUsd: 0.2 });
     await addUserRow({ world: budget.world, id: 'outbox-user-1', text: 'hello' });

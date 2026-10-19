@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { autoBudgetOf } from '@goodboy/core';
+import { AUTO_BLOCK_TEXT, autoBudgetOf } from '@goodboy/core';
 import { getAutoTree, readAutoTreeSpend } from '@goodboy/db';
 import { setAutoTreeCap } from './setAutoTreeCap';
 import { makeRuntimeWorld, userSays, type RuntimeWorld } from './testing/runtimeWorld';
@@ -42,6 +42,34 @@ describe('changing the Auto limit of a running conversation', () => {
     expect(await getAutoTree({ db: world.state.world.db, treeId: world.treeId })).toMatchObject({
       phase: 'deciding',
       capUsd: 10,
+    });
+    expect(world.errors).toEqual([]);
+  });
+
+  it('pauses a tree past the old agent counts at the spend cap and resumes it after a retried raise', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 0.2 });
+    await world.state.world.db.execute(
+      `UPDATE auto_trees SET delegations_used = 14, attempts_used = 25, turns_used = 40, grants = 3`,
+    );
+    await userSays({ world, id: 'outbox-user-1', text: 'Fix the dev server' });
+    expect(await getAutoTree({ db: world.state.world.db, treeId: world.treeId })).toMatchObject({
+      phase: 'blocked',
+      blockedReason: AUTO_BLOCK_TEXT.budget,
+    });
+    expect(world.state.ports.autoTurns).toHaveLength(0);
+
+    expect(await raise({ world, expectedCapUsd: 5, capUsd: 20 })).toEqual({
+      kind: 'stale',
+      capUsd: 0.2,
+    });
+    expect(world.state.ports.autoTurns).toHaveLength(0);
+
+    expect(await raise({ world, expectedCapUsd: 0.2, capUsd: 20 })).toEqual({ kind: 'applied' });
+    expect(world.state.ports.autoTurns).toHaveLength(1);
+    expect(await getAutoTree({ db: world.state.world.db, treeId: world.treeId })).toMatchObject({
+      phase: 'deciding',
+      delegationsUsed: 14,
+      attemptsUsed: 25,
     });
     expect(world.errors).toEqual([]);
   });

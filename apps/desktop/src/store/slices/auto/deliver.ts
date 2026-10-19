@@ -245,8 +245,6 @@ export const deliverNext = async ({
   }
   const spend = await readAutoTreeSpend({ db: ctx.db, treeId });
   const gate = turnGate({
-    turnsUsed: tree.turnsUsed,
-    grants: tree.grants,
     noProgressStreak: tree.noProgressStreak,
     hardDeadlineAt: tree.hardDeadlineAt,
     nowMs: ctx.now(),
