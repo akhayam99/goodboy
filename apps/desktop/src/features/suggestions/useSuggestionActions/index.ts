@@ -461,7 +461,7 @@ export const useSuggestionActions = ({
       if (scribe === 'writing' || scribe === 'creating') {
         return NO_ACTIONS;
       }
-      const mount = mounts.find((candidate) => candidate.mountId === suggestion.payload.mountId);
+      const mountPath = suggestion.payload.worktreePath;
       return {
         primary: {
           label: scribe === 'ready' ? 'Review text' : 'Open PR',
@@ -470,11 +470,7 @@ export const useSuggestionActions = ({
           failureTitle: "Couldn't open the pull request form",
           run: async () => {
             navigate({
-              to: branchPlace({
-                sessionId,
-                mountPath: mount?.worktreePath ?? null,
-                tab: 'pr',
-              }),
+              to: branchPlace({ sessionId, mountPath, tab: 'pr' }),
             });
           },
         },

@@ -1,16 +1,17 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import type {
-  AgentId,
-  MountId,
-  PlanId,
-  ProjectId,
-  PullRequestState,
-  SessionEventId,
-  SessionId,
-  StepId,
-  WorkflowId,
-  WorkflowRunId,
+import {
+  brandId,
+  type AgentId,
+  type MountId,
+  type PlanId,
+  type ProjectId,
+  type PullRequestState,
+  type SessionEventId,
+  type SessionId,
+  type StepId,
+  type WorkflowId,
+  type WorkflowRunId,
 } from '@goodboy/types';
 import {
   deriveNextSteps,
@@ -22,6 +23,7 @@ import type {
   SuggestionMountEvent,
   SuggestionMountEventKind,
 } from '../../store/slices/project-mounts/materializationProposals';
+import type { SessionSuggestion } from './types';
 
 const sessionId = 'session-1' as SessionId;
 const planId = 'plan-1' as PlanId;
@@ -790,7 +792,114 @@ describe('deriveNextSteps eleven new kinds', () => {
     });
     const suggestion = suggestions.find((candidate) => candidate.kind === 'open-pr');
     expect(suggestion?.title).toBe('Open a pull request for web');
-    expect(suggestion?.detail).toBe('7 commits ahead');
+    expect(suggestion?.detail).toBe('feature/web · 7 commits ahead');
+    expect(suggestion?.payload).toMatchObject({
+      mountId: webMountId,
+      branch: 'feature/web',
+      worktreePath: '/tmp/web',
+    });
+  });
+
+  describe('with several branches of one project and no pull request', () => {
+    const paymentsMount = ({
+      branch,
+      aheadOfBase,
+      prNumber = null,
+    }: {
+      readonly branch: string;
+      readonly aheadOfBase: number;
+      readonly prNumber?: number | null;
+    }): SuggestionMount =>
+      mount({
+        mountId: brandId<MountId>({ value: `mount-${branch}` }),
+        projectName: 'payments-api',
+        branch,
+        worktreePath: `/w/payments-api/${branch}`,
+        aheadOfBase,
+        pr: prNumber === null ? null : pr({ number: prNumber }),
+      });
+
+    const SEVERAL_MOUNTS = [
+      paymentsMount({ branch: 'hl/ledger-export', aheadOfBase: 2 }),
+      paymentsMount({ branch: 'hl/refund-retry', aheadOfBase: 5 }),
+      paymentsMount({ branch: 'hl/payout-banner', aheadOfBase: 3, prNumber: 9993 }),
+      paymentsMount({ branch: 'hl/webhook-dedupe', aheadOfBase: 2 }),
+    ];
+
+    const openPrRows = (suggestions: ReadonlyArray<SessionSuggestion>) =>
+      suggestions.filter((candidate) => candidate.kind === 'open-pr');
+
+    it('shows one row that names the branch furthest ahead and opens that same worktree', () => {
+      const rows = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.title).toBe('Open a pull request for payments-api');
+      expect(rows[0]?.detail).toBe('hl/refund-retry · 5 commits ahead');
+      expect(rows[0]?.payload).toMatchObject({
+        mountId: 'mount-hl/refund-retry',
+        branch: 'hl/refund-retry',
+        worktreePath: '/w/payments-api/hl/refund-retry',
+      });
+    });
+
+    it('lists every branch without a pull request, ranked, and never one that has a PR', () => {
+      const [row] = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+      if (row?.kind !== 'open-pr') {
+        throw new Error('Missing open-pr row');
+      }
+
+      expect(row.payload.targets.map((target) => target.branch)).toEqual([
+        'hl/refund-retry',
+        'hl/ledger-export',
+        'hl/webhook-dedupe',
+      ]);
+    });
+
+    it('picks the same branch whatever order the mounts arrive in', () => {
+      const forward = openPrRows(deriveNextSteps({ ...BASE_PARAMS, mounts: SEVERAL_MOUNTS }));
+      const reversed = openPrRows(
+        deriveNextSteps({ ...BASE_PARAMS, mounts: [...SEVERAL_MOUNTS].reverse() }),
+      );
+
+      expect(reversed).toEqual(forward);
+    });
+
+    it('leads with the branch whose Scribe text is under way', () => {
+      const [row] = openPrRows(
+        deriveNextSteps({
+          ...BASE_PARAMS,
+          mounts: [
+            ...SEVERAL_MOUNTS,
+            mount({
+              ...paymentsMount({ branch: 'hl/fx-rounding', aheadOfBase: 1 }),
+              scribe: 'ready',
+            }),
+          ],
+        }),
+      );
+
+      expect(row?.detail).toBe('hl/fx-rounding · Scribe wrote the text, review it');
+    });
+
+    it('moves to the next branch once the lead one is put away with Not now', () => {
+      const [row] = openPrRows(
+        deriveNextSteps({
+          ...BASE_PARAMS,
+          mounts: SEVERAL_MOUNTS,
+          dismissedFingerprints: new Set(['open-pr:mount-hl/refund-retry:5']),
+        }),
+      );
+      if (row?.kind !== 'open-pr') {
+        throw new Error('Missing open-pr row');
+      }
+
+      expect(row.detail).toBe('hl/ledger-export · 2 commits ahead');
+      expect(row.fingerprint).toBe('open-pr:mount-hl/ledger-export:2');
+      expect(row.payload.targets.map((target) => target.branch)).toEqual([
+        'hl/ledger-export',
+        'hl/webhook-dedupe',
+      ]);
+    });
   });
 
   it.each([
@@ -805,7 +914,7 @@ describe('deriveNextSteps eleven new kinds', () => {
         mounts: [mount({ pr: null, aheadOfBase: 7, scribe })],
       });
       const suggestion = suggestions.find((candidate) => candidate.kind === 'open-pr');
-      expect(suggestion?.detail).toBe(detail);
+      expect(suggestion?.detail).toBe(`feature/web · ${detail}`);
       expect(suggestion?.payload).toMatchObject({ scribe });
     },
   );

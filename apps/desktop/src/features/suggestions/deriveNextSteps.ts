@@ -23,9 +23,11 @@ import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
 import { fixChecksSuggestionOf } from './fixChecksSuggestionOf';
 import { cleanupSuggestionOf } from './cleanupSuggestionOf';
+import { openPrSuggestionOf } from './openPrSuggestionOf';
 import { isOfferedByActivity } from './isOfferedByActivity';
 import type {
   FixChecksProgress,
+  OpenPrTarget,
   RebaseSuggestionTarget,
   ScribeRequestState,
   SessionSuggestion,
@@ -133,25 +135,6 @@ const isRebaseConsumed = ({ project }: ProjectParams): boolean => {
     return false;
   }
   return request.behind === project.mainDistance;
-};
-
-const SCRIBE_DETAIL = {
-  writing: 'Scribe is writing the text',
-  creating: 'Opening the pull request',
-  ready: 'Scribe wrote the text, review it',
-} as const satisfies Readonly<Record<ScribeRequestState, string>>;
-
-const openPrDetailOf = ({
-  mount,
-  ahead,
-}: {
-  readonly mount: SuggestionMount;
-  readonly ahead: number;
-}): string => {
-  if (mount.scribe !== undefined && mount.scribe !== null) {
-    return SCRIBE_DETAIL[mount.scribe];
-  }
-  return `${ahead} ${ahead === 1 ? 'commit' : 'commits'} ahead`;
 };
 
 type PushSuggestionParams = {
@@ -496,6 +479,7 @@ export const deriveNextSteps = ({
       }),
     );
   }
+  const openPrTargets: OpenPrTarget[] = [];
   if (!hasRunningAgent) {
     for (const mount of mounts) {
       if (!isFresh({ fetchedAt: mount.fetchedAt, now })) {
@@ -547,23 +531,14 @@ export const deriveNextSteps = ({
         }
       }
       if (pr == null && mount.aheadOfBase != null && mount.aheadOfBase > 0) {
-        suggestions.push({
-          id: `open-pr:${mount.mountId}`,
-          kind: 'open-pr',
-          priority: 42,
-          band: 2,
-          title: `Open a pull request for ${mount.projectName}`,
-          detail: openPrDetailOf({ mount, ahead: mount.aheadOfBase }),
-          sessionId,
-          targetKey: `pr:${mount.mountId}`,
-          fingerprint: `open-pr:${mount.mountId}:${mount.aheadOfBase}`,
-          payload: {
-            mountId: mount.mountId,
-            projectId: mount.projectId,
-            projectName: mount.projectName,
-            ahead: mount.aheadOfBase,
-            scribe: mount.scribe ?? null,
-          },
+        openPrTargets.push({
+          mountId: mount.mountId,
+          projectId: mount.projectId,
+          projectName: mount.projectName,
+          branch: mount.branch,
+          worktreePath: mount.worktreePath,
+          ahead: mount.aheadOfBase,
+          scribe: mount.scribe ?? null,
         });
       }
       const push =
@@ -574,6 +549,14 @@ export const deriveNextSteps = ({
         suggestions.push(push);
       }
     }
+  }
+  const openPr = openPrSuggestionOf({
+    sessionId,
+    targets: openPrTargets,
+    dismissedFingerprints,
+  });
+  if (openPr !== null) {
+    suggestions.push(openPr);
   }
   const cleanup = cleanupSuggestionOf({ sessionId, proposals: cleanupProposals });
   if (cleanup !== null) {

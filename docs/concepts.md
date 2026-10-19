@@ -588,7 +588,13 @@ whether you clicked it on the board or in the session overview.
 pushed yet` when origin has no copy, and `Branch diverged from origin`
   with `Review history` instead of a push when origin moved on its own),
   open a pull request once a
-  mount is ahead with none yet, mark a green draft ready, merge an approved
+  mount is ahead with none yet (one row per session, `openPrSuggestionOf`:
+  it names the branch in its why, as in `hl/refund-retry · 5 commits ahead`,
+  leads with the branch whose Scribe text is under way, then the most commits
+  ahead, then project and branch name, skips a branch put away with **Not
+  now**, and lists every branch without a pull request in **⋯** once there
+  are two; **Open PR** opens the worktree the payload names, never one looked
+  up at click time), mark a green draft ready, merge an approved
   and green pull request, review the changes once a standalone implementer
   finishes clean, close a merged worktree's cleanup proposal, and continue
   with a workflow once a standalone scout or generic agent finishes clean
