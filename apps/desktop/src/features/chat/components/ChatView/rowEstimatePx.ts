@@ -2,6 +2,7 @@ import type { ConversationRow } from '../../utils/conversationRows';
 
 type Params = {
   readonly row: ConversationRow;
+  readonly isClusterOpen: boolean;
 };
 
 type TextParams = {
@@ -11,36 +12,37 @@ type TextParams = {
 
 const DEFAULT_ROW_PX = 72;
 const OPERATION_ROW_PX = 32;
-const OPERATION_ROW_CAP = 12;
 const OPERATION_PADDING_PX = 16;
+const COLLAPSED_CLUSTER_PX = 32;
 const SUMMARY_ROW_PX = 32;
 const PLAN_ITEM_PX = 24;
+const PLAN_ITEM_CAP = 12;
 const USER_LINE_PX = 22;
 const USER_PADDING_PX = 40;
 const ASSISTANT_LINE_PX = 24;
 const ASSISTANT_PADDING_PX = 24;
 const USER_CHARS_PER_LINE = 72;
 const ASSISTANT_CHARS_PER_LINE = 88;
-const MAX_TEXT_LINES = 40;
 
-const lineCountOf = ({ text, charsPerLine }: TextParams): number => {
-  const lines = text
+const lineCountOf = ({ text, charsPerLine }: TextParams): number =>
+  text
     .split('\n')
     .reduce((sum, line) => sum + Math.max(1, Math.ceil(line.length / charsPerLine)), 0);
-  return Math.min(lines, MAX_TEXT_LINES);
-};
 
-export const rowEstimatePx = ({ row }: Params): number => {
+export const rowEstimatePx = ({ row, isClusterOpen }: Params): number => {
   if (row.kind === 'summary') {
     return SUMMARY_ROW_PX;
   }
   if (row.kind === 'plan') {
     return (
-      OPERATION_PADDING_PX + PLAN_ITEM_PX * Math.min(row.checklist.items.length, OPERATION_ROW_CAP)
+      OPERATION_PADDING_PX + PLAN_ITEM_PX * Math.min(row.checklist.items.length, PLAN_ITEM_CAP)
     );
   }
   if (row.kind === 'operations') {
-    return OPERATION_PADDING_PX + OPERATION_ROW_PX * Math.min(row.items.length, OPERATION_ROW_CAP);
+    if (!isClusterOpen) {
+      return COLLAPSED_CLUSTER_PX;
+    }
+    return COLLAPSED_CLUSTER_PX + OPERATION_PADDING_PX + OPERATION_ROW_PX * row.items.length;
   }
   const { item } = row;
   if (item.kind === 'user_text' || item.kind === 'handoff') {

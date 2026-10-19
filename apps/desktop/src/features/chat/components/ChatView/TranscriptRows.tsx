@@ -25,6 +25,7 @@ import { SlackDraftCard } from './SlackDraftCard';
 import { dayKey, formatDayLabel } from './lib';
 import { planBlockVersions } from './planBlockVersions';
 import { rowEstimatePx } from './rowEstimatePx';
+import { rowHeightCache } from './rowHeightCache';
 import { isWorkflowRailRow } from './workflowRailGroup';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 
@@ -77,6 +78,15 @@ const visibilityStyle = ({ px }: VisibilityParams): CSSProperties => ({
   contentVisibility: 'auto',
   containIntrinsicSize: `auto ${px}px`,
 });
+
+type CacheKeyParams = {
+  readonly agentId: AgentId | null;
+  readonly isStepsOnly: boolean;
+  readonly key: string;
+};
+
+const heightKeyOf = ({ agentId, isStepsOnly, key }: CacheKeyParams): string =>
+  `${agentId ?? 'none'}:${isStepsOnly ? 'steps' : 'record'}:${key}`;
 
 type FlushParams = {
   readonly beforeMs: number | null;
@@ -183,11 +193,19 @@ export const TranscriptRows = ({
     if (railGroup.length === 0 || railGroupKey === null) {
       return;
     }
+    const railKey = heightKeyOf({
+      agentId: selectedAgentId,
+      isStepsOnly,
+      key: `workflow-rail-${railGroupKey}-${railGroup.length}`,
+    });
     out.push(
       <li
         key={`workflow-rail-${railGroupKey}`}
+        data-anchor-key={railKey}
         className="flex flex-col"
-        style={visibilityStyle({ px: RAIL_ROW_PX * railGroup.length })}
+        style={visibilityStyle({
+          px: rowHeightCache.read({ key: railKey }) ?? RAIL_ROW_PX * railGroup.length,
+        })}
       >
         {railGroup}
       </li>,
@@ -285,8 +303,17 @@ export const TranscriptRows = ({
       return;
     }
     flushRailGroup();
+    const heightKey = heightKeyOf({ agentId: selectedAgentId, isStepsOnly, key: row.key });
     out.push(
-      <li key={row.key} style={visibilityStyle({ px: rowEstimatePx({ row }) })}>
+      <li
+        key={row.key}
+        data-anchor-key={heightKey}
+        style={visibilityStyle({
+          px:
+            rowHeightCache.read({ key: heightKey }) ??
+            rowEstimatePx({ row, isClusterOpen: isStepsOnly }),
+        })}
+      >
         {row.kind === 'summary' ? (
           <TurnSummaryLine
             steps={row.steps}

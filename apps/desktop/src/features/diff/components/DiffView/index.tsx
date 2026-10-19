@@ -14,6 +14,7 @@ import { Info } from 'lucide-react';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
 import { effectiveDiffLayout } from '../../../../shared/hooks/useDiffLayoutMode/effectiveDiffLayout';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
+import { useScrollAnchor } from '../../../../shared/hooks/useScrollAnchor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
 import type { FileSidesLoader } from '../../hooks/useFileSides';
@@ -28,6 +29,7 @@ const BATCH_SIZE = 20;
 const SETTLE_FRAMES = 30;
 const STABLE_FRAMES = 3;
 const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'pointerdown', 'keydown'] as const;
+const FILE_CARD_SELECTOR = '[data-file-card]';
 
 type Props = {
   readonly files: ReadonlyArray<FileDiff>;
@@ -223,6 +225,9 @@ export const DiffView = ({
   }, [pathsKey]);
 
   useEffect(() => cancelSettle, [cancelSettle]);
+
+  const holdForJump = useCallback(() => lockedPath.current !== null, []);
+  useScrollAnchor({ viewportRef, rowSelector: FILE_CARD_SELECTOR, shouldHold: holdForJump });
 
   useEffect(() => {
     const viewport = viewportRef.current;
