@@ -214,12 +214,16 @@ export const ChangeTree = ({
 
   const revealRef = useRef(reveal);
   revealRef.current = reveal;
+  const trackedRef = useRef(trackedId);
+  trackedRef.current = trackedId;
 
   useEffect(() => {
-    if (trackedId !== null) {
-      revealRef.current(trackedId);
+    const target = trackedRef.current;
+    if (activePath === null || target === null) {
+      return;
     }
-  }, [activePath, trackedId]);
+    revealRef.current(target);
+  }, [activePath]);
 
   const moveCursor = useCallback(
     (id: string) => {
