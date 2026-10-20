@@ -48,7 +48,13 @@ export type TurnEvent =
       attachments?: ReadonlyArray<MessageAttachment>;
       at: IsoDateTime;
     }
-  | { kind: 'assistant_text'; runId: ProviderRunId; delta: string; at: IsoDateTime }
+  | {
+      kind: 'assistant_text';
+      runId: ProviderRunId;
+      delta: string;
+      at: IsoDateTime;
+      isPartial?: boolean;
+    }
   | {
       kind: 'tool_call_start';
       runId: ProviderRunId;

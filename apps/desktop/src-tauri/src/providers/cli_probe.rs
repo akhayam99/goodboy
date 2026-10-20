@@ -3,7 +3,7 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use crate::proc::probe;
-use crate::providers::cli_args::{role_access, Cli, RoleAccess};
+use crate::providers::cli_args::{partial_output_flag, role_access, Cli, RoleAccess};
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(8);
 const AUTO_ROLE: &str = "auto";
@@ -111,6 +111,46 @@ pub(crate) fn ensure_confinement(binary: &str, role: &str) -> Verdict {
         .unwrap_or_else(|poisoned| poisoned.into_inner())
         .insert(key, verdict.clone());
     verdict
+}
+
+fn lists_flag(binary: &str, flag: &'static str) -> bool {
+    let version = match run_text(binary, &["--version"])
+        .ok()
+        .as_deref()
+        .and_then(version_of)
+    {
+        Some(version) => version,
+        None => return false,
+    };
+    let key: CacheKey = (binary.to_string(), version, flag);
+    if let Some(known) = cache()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .get(&key)
+    {
+        return known.is_ok();
+    }
+    let help = match run_text(binary, help_args(Cli::of_binary(binary))) {
+        Ok(help) => help,
+        Err(_) => return false,
+    };
+    let verdict: Verdict = help
+        .contains(flag)
+        .then_some(())
+        .ok_or_else(|| format!("{binary} does not list {flag}"));
+    let listed = verdict.is_ok();
+    cache()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .insert(key, verdict);
+    listed
+}
+
+pub(crate) fn partial_output_args(binary: &str) -> Vec<String> {
+    match partial_output_flag(Cli::of_binary(binary)) {
+        Some(flag) if lists_flag(binary, flag) => vec![flag.to_string()],
+        _ => Vec::new(),
+    }
 }
 
 #[cfg(test)]
@@ -243,5 +283,53 @@ mod tests {
         assert_eq!(ensure_confinement(&current, "scout"), Ok(()));
         assert_eq!(ensure_confinement(&current, "implementer"), Ok(()));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    fn script_with_help(dir: &std::path::Path, name: &str, help: &str) -> String {
+        use std::os::unix::fs::PermissionsExt;
+        let path = dir.join(name);
+        let body = format!(
+            "#!/bin/sh\ncase \"$1\" in\n  --version) echo '2.1.40 (Claude Code)';;\n  --help) printf '%s\\n' '{help}';;\nesac\n"
+        );
+        std::fs::write(&path, body).expect("write the script");
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        path.to_string_lossy().into_owned()
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn partial_output_is_asked_only_when_the_help_lists_the_flag() {
+        let dir =
+            std::env::temp_dir().join(format!("goodboy-partial-probe-{}", std::process::id()));
+        let old_dir = dir.join("old");
+        let new_dir = dir.join("new");
+        std::fs::create_dir_all(&old_dir).expect("temp dir");
+        std::fs::create_dir_all(&new_dir).expect("temp dir");
+        let old = script_with_help(&old_dir, "claude", "--tools --add-dir");
+        let current = script_with_help(
+            &new_dir,
+            "claude",
+            "--tools --add-dir --include-partial-messages",
+        );
+        assert!(partial_output_args(&old).is_empty());
+        assert!(partial_output_args(&old).is_empty());
+        assert_eq!(
+            partial_output_args(&current),
+            vec!["--include-partial-messages".to_string()]
+        );
+        let cursor = script_with_help(&new_dir, "cursor-agent", "--stream-partial-output");
+        assert_eq!(
+            partial_output_args(&cursor),
+            vec!["--stream-partial-output".to_string()]
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn partial_output_is_never_asked_of_a_cli_without_the_flag_or_a_missing_binary() {
+        assert!(partial_output_args("/nonexistent/claude").is_empty());
+        assert!(partial_output_args("/nonexistent/codex").is_empty());
+        assert!(partial_output_args("agy").is_empty());
     }
 }
