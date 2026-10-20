@@ -139,7 +139,13 @@ describe('the gitlab page scenes', () => {
   it('branch-pr-gitlab edits the title and sends only the title', async () => {
     draw({ name: 'branch-pr-gitlab' });
 
-    fireEvent.click(await screen.findByTitle(/^Edit title/));
+    await waitFor(() =>
+      expect(document.querySelector('button[aria-keyshortcuts="E"]')).not.toBeNull(),
+    );
+    const edit = document.querySelector('button[aria-keyshortcuts="E"]');
+    if (edit !== null) {
+      fireEvent.click(edit);
+    }
     const input = await screen.findByRole('textbox', { name: 'Merge request title' });
     fireEvent.change(input, { target: { value: 'Stop a retried webhook posting twice' } });
     fireEvent.keyDown(input, { key: 'Enter' });

@@ -238,7 +238,7 @@ export const TimelineRowLabel = ({
   const title = titleOf({ entry, segments });
   const isAgent = entry.kind === 'agent';
   const titleNode = (
-    <Tooltip content={detail === null ? title : `${title} · ${detail}`}>
+    <Tooltip content={detail === null ? title : `${title}\n${detail}`}>
       <span
         className={cn(
           'flex items-center overflow-hidden',

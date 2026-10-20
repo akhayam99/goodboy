@@ -108,7 +108,7 @@ export const BITBUCKET_PAGE_ROWS: ReadonlyArray<Row> = [
       await openCrumb(/^Branch/);
       await branchTab('pr')(ctx);
       await heading(TITLE);
-      await click(await screen.findByTitle('Edit title (E)', undefined, WAIT));
+      await click(await screen.findByRole('button', { name: TITLE }, WAIT));
       const input = await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT);
       fireEvent.change(input, { target: { value: 'Key the credit guard on the event id' } });
       fireEvent.keyDown(input, { key: 'Enter' });

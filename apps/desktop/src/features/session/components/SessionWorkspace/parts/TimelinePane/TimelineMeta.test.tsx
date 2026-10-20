@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { visibleTextAt } from '../../../../../../test/containerView';
-import { tooltipTextOf } from '../../../../../../__tests__/helpers/tooltip';
+import { factCardOf } from '../../../../../../__tests__/helpers/factCard';
 import { DONE_ROW_STATE } from '../../../../../workTreeModel/rowState';
 import type { WorkTime } from '../../../../../workTreeModel/workTime';
 import { TimelineModelCell } from './TimelineModelCell';
@@ -16,6 +16,8 @@ afterEach(cleanup);
 const timeOf = ({ label }: { readonly label: string }): WorkTime => ({
   label,
   detail: `Active ${label}`,
+  facts: [{ label: 'Active', value: label }],
+  footnote: null,
   progress: null,
   headline: label,
   note: null,
@@ -45,25 +47,28 @@ describe('TimelineRowMeta', () => {
 
     expect(stack?.children).toHaveLength(1);
     expect(stack?.children[0]?.getAttribute('data-meta-column')).toBe('time');
-    expect(stack?.children[0]?.textContent).toBe('6m 40s');
+    expect(stack?.children[0]?.querySelector('[data-testid="work-time"]')?.textContent).toBe(
+      '6m 40s',
+    );
     expect(container.querySelector('[data-meta-column="cost"]')).toBeNull();
   });
 
-  it('keeps the cost in the tooltip of the duration', () => {
+  it('keeps the cost in the card of the duration', () => {
     const { container } = render(
       <TimelineRowMeta time={timeOf({ label: '6m 40s' })} cost="$0.62" />,
     );
 
-    expect(tooltipTextOf({ element: within(container).getByTestId('work-time') })).toBe(
-      'Active 6m 40s. Cost $0.62',
-    );
+    expect(factCardOf({ element: within(container).getByTestId('work-time') }).rows).toEqual([
+      ['Active', '6m 40s'],
+      ['Cost', '$0.62'],
+    ]);
   });
 
   it('draws the duration without a cost, and nothing for a cost without a duration', () => {
     const { container } = render(<TimelineRowMeta time={timeOf({ label: '6m 40s' })} />);
     const bare = render(<TimelineRowMeta cost="$0.62" />);
 
-    expect(container.querySelector('[data-meta-column="time"]')?.textContent).toBe('6m 40s');
+    expect(container.querySelector('[data-testid="work-time"]')?.textContent).toBe('6m 40s');
     expect(bare.container.querySelector('[data-meta-column="time"]')).toBeNull();
     expect(bare.container.textContent).toBe('');
   });
@@ -217,7 +222,13 @@ describe('TimelineRowMeta note', () => {
     expect(time.textContent).toBe('11m');
     expect(time.getAttribute('data-note')).toBe('true');
     expect(screen.getByText('Longer than usual')).toBeDefined();
-    expect(tooltipTextOf({ element: time })).toBe('Longer than usual. Active 11m. Cost $2.31');
+    const card = factCardOf({ element: time });
+
+    expect(card.text).toContain('Longer than usual');
+    expect(card.rows).toEqual([
+      ['Active', '11m'],
+      ['Cost', '$2.31'],
+    ]);
   });
 
   it('leaves the time quiet when the step is within its range', () => {

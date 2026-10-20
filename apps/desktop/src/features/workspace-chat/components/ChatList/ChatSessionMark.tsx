@@ -1,37 +1,18 @@
-import { Tooltip } from '@goodboy/ui';
+import { FactCard } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { pluralize } from '../../../../shared/utils/pluralize';
 import type { ChatSessionMarker } from '../../hooks/useChatSessionMarker';
+import { chatSessionCardOf } from './chatSessionCardOf';
 
 type Props = {
   readonly marker: ChatSessionMarker;
   readonly onOpen: (sessionId: SessionId) => void;
 };
 
-type TooltipParams = {
-  readonly marker: ChatSessionMarker;
-};
-
-const tooltipOf = ({ marker }: TooltipParams) => {
-  const only = marker.entries[0];
-  if (marker.count === 1 && only !== undefined) {
-    return `1 session · ${only.title} · ${only.stageLabel}`;
-  }
-  return (
-    <span className="flex flex-col gap-0.5">
-      <span>{pluralize(marker.count, 'session')}</span>
-      {marker.entries.map((entry) => (
-        <span key={entry.sessionId}>{`${entry.title} · ${entry.stageLabel}`}</span>
-      ))}
-    </span>
-  );
-};
-
 export const ChatSessionMark = ({ marker, onOpen }: Props) => {
   const first = marker.entries[0];
   return (
-    <Tooltip content={tooltipOf({ marker })} anchorClassName="shrink-0">
+    <FactCard card={chatSessionCardOf({ marker })}>
       <button
         type="button"
         aria-label={first === undefined ? 'Open the session' : `Open the session ${first.title}`}
@@ -46,6 +27,6 @@ export const ChatSessionMark = ({ marker, onOpen }: Props) => {
         <CONCEPT_ICONS.sessions size={ICON_SIZE.mark} aria-hidden />
         {marker.count === 1 ? null : <span className="tabular-nums">{marker.count}</span>}
       </button>
-    </Tooltip>
+    </FactCard>
   );
 };

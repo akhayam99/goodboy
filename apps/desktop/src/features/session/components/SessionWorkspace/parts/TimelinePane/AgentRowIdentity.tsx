@@ -39,7 +39,7 @@ export const agentRowIdentity = ({
     summary: hasRole
       ? [last?.name, last?.effort].filter((part) => part != null).join(', ') || null
       : null,
-    card: (
+    wrapCard: ({ children, isOpen }) => (
       <RowIdentityCard
         entry={entry}
         ordinal={ordinal}
@@ -48,7 +48,10 @@ export const agentRowIdentity = ({
         work={work}
         phase={phase}
         costUsd={costUsd}
-      />
+        isOpen={isOpen}
+      >
+        {children}
+      </RowIdentityCard>
     ),
   };
 };

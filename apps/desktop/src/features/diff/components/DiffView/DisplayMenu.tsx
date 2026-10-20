@@ -2,6 +2,7 @@ import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import {
   AnchoredPopover,
   DiffLayoutToggle,
+  OptionalTooltip,
   cn,
   useDropdown,
   type DiffLayoutMode,
@@ -52,34 +53,35 @@ export const DisplayMenu = ({ layout, onLayout, wrap, onWrap }: Props) => {
         <span className="text-label text-muted-foreground">Layout</span>
         <DiffLayoutToggle mode={layout} onChange={onLayout} />
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isWrapped}
-        disabled={isSplit}
-        title={isSplit ? 'Split view always wraps' : undefined}
-        onClick={() => onWrap(!wrap)}
-        className={cn(
-          'flex items-center justify-between gap-3 rounded-sm text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-          isSplit ? 'cursor-not-allowed text-faint-foreground' : 'text-foreground',
-        )}
-      >
-        Wrap long lines
-        <span
-          aria-hidden
+      <OptionalTooltip content={isSplit ? 'Split view always wraps' : undefined}>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isWrapped}
+          disabled={isSplit}
+          onClick={() => onWrap(!wrap)}
           className={cn(
-            'relative h-4 w-7 shrink-0 rounded-full transition-colors',
-            isWrapped ? 'bg-primary' : 'bg-border',
+            'flex items-center justify-between gap-3 rounded-sm text-label focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            isSplit ? 'cursor-not-allowed text-faint-foreground' : 'text-foreground',
           )}
         >
+          Wrap long lines
           <span
+            aria-hidden
             className={cn(
-              'absolute top-0.5 size-3 rounded-full bg-background transition-all',
-              isWrapped ? 'left-3.5' : 'left-0.5',
+              'relative h-4 w-7 shrink-0 rounded-full transition-colors',
+              isWrapped ? 'bg-primary' : 'bg-border',
             )}
-          />
-        </span>
-      </button>
+          >
+            <span
+              className={cn(
+                'absolute top-0.5 size-3 rounded-full bg-background transition-all',
+                isWrapped ? 'left-3.5' : 'left-0.5',
+              )}
+            />
+          </span>
+        </button>
+      </OptionalTooltip>
     </AnchoredPopover>
   );
 };

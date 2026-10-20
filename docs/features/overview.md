@@ -47,7 +47,7 @@ Know the moves that unblock the task, such as answering a question, fixing a fai
 
 ### Time left
 
-See how long a step has left, estimated from your own past runs. Queued steps show a range, and a run slower than usual turns its time warm.
+See how long a step has left, estimated from your own past runs. Queued steps show a range, and a run slower than usual turns its time warm. Resting on the time opens a card with the time running, the usual range, the cost and the basis (`workTimeCardOf`).
 
 ### Changes
 

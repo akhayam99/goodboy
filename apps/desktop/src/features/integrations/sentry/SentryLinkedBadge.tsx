@@ -19,7 +19,7 @@ export const SentryLinkedBadge = ({ project }: Props) => {
   if (names.length === 0) {
     return null;
   }
-  const label = `Sentry: ${names.join(', ')}`;
+  const label = `Sentry: ${new Intl.ListFormat('en', { type: 'conjunction' }).format(names)}`;
   return (
     <Tooltip content={label}>
       <span role="img" aria-label={label} className="inline-flex shrink-0 items-center">

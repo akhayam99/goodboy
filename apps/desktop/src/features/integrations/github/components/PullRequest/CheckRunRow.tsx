@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import type { PrCheckRun } from '@goodboy/types';
-import { FOCUS_RING, ROW_INTERACTIVE, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, FactCard, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import { formatDuration } from '../../../../../shared/utils/time/formatDuration';
 import { CheckConclusionIcon } from './CheckConclusionIcon';
+import { checkCardOf, checkFootnoteOf } from './checkCardOf';
 
 export type CheckRunRowParts = {
-  readonly tooltip: string;
+  readonly footnote?: string;
   readonly status?: ReactNode;
   readonly action?: ReactNode;
   readonly hint?: ReactNode;
@@ -21,9 +22,14 @@ type DurationParams = Pick<Props, 'check'>;
 const durationOf = ({ check }: DurationParams): string =>
   check.durationMs === null ? '' : (formatDuration({ durationMs: check.durationMs }) ?? '');
 
-export const CheckRunRow = ({ check, tooltip, status, action, hint, onOpen }: Props) => (
+export const CheckRunRow = ({ check, footnote, status, action, hint, onOpen }: Props) => (
   <li data-check-row={check.name} className="col-span-full grid grid-cols-subgrid items-center">
-    <Tooltip content={tooltip} anchorClassName="min-w-0">
+    <FactCard
+      card={checkCardOf({
+        check,
+        footnote: footnote ?? checkFootnoteOf({ detailsUrl: check.detailsUrl }),
+      })}
+    >
       <button
         type="button"
         onClick={onOpen}
@@ -39,7 +45,7 @@ export const CheckRunRow = ({ check, tooltip, status, action, hint, onOpen }: Pr
           {durationOf({ check })}
         </span>
       </button>
-    </Tooltip>
+    </FactCard>
     <span data-check-status="" className="flex min-w-0 items-center gap-2">
       {status}
     </span>

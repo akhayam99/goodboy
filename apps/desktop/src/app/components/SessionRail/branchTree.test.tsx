@@ -747,7 +747,7 @@ describe('rebase all on the rows', () => {
     expect(chipOf('payments-api', /branch hl\/two/)?.textContent).toBe('Queued');
   });
 
-  it('names the cause of a failed branch in the row tooltip and keeps the line', async () => {
+  it('names the cause of a failed branch in the row fact card and keeps the line', async () => {
     const ids = await seedBatch();
     seedRun({
       states: ids.map((id, index) => [
@@ -759,10 +759,12 @@ describe('rebase all on the rows', () => {
     await settle();
 
     const row = rowButton('payments-api', /branch hl\/one/);
-    fireEvent.focus(row);
+    fireEvent.pointerEnter(row, { pointerType: 'mouse' });
     await settle();
     expect(row.getAttribute('aria-label')).toContain('branch hl/one');
-    expect((await screen.findByRole('tooltip')).textContent).toContain('origin cannot be reached');
+    expect((await screen.findByTestId('fact-card')).textContent).toContain(
+      'origin cannot be reached',
+    );
   });
 
   it('offers Dismiss in the header once the batch is done and clears every chip', async () => {

@@ -1,5 +1,5 @@
 import type { CostRange, DurationEstimate, EstimateTier } from '@goodboy/core';
-import { formatUsd } from '@goodboy/ui';
+import { formatUsd, type Fact } from '@goodboy/ui';
 import { formatDuration } from '../../shared/utils/time/formatDuration';
 import type { RowPhase } from './rowState';
 
@@ -14,6 +14,8 @@ export type WorkEstimate = {
 export type WorkTime = {
   readonly label: string;
   readonly detail: string;
+  readonly facts: ReadonlyArray<Fact>;
+  readonly footnote: string | null;
   readonly progress: number | null;
   readonly headline: string;
   readonly note: string | null;
@@ -120,12 +122,22 @@ export const estimateRangeLabel = ({ estimate }: LabelParams): string => {
 type PlainParams = {
   readonly label: string;
   readonly detail: string;
+  readonly facts?: ReadonlyArray<Fact>;
+  readonly footnote?: string | null;
   readonly progress?: number | null;
 };
 
-export const plainWorkTime = ({ label, detail, progress = null }: PlainParams): WorkTime => ({
+export const plainWorkTime = ({
   label,
   detail,
+  facts = [],
+  footnote = null,
+  progress = null,
+}: PlainParams): WorkTime => ({
+  label,
+  detail,
+  facts,
+  footnote,
   progress,
   headline: label,
   note: null,
@@ -176,6 +188,17 @@ type LongerParams = {
   readonly estimate: WorkEstimate;
 };
 
+type LongerFactsParams = {
+  readonly estimate: WorkEstimate;
+};
+
+const longerFacts = ({ estimate }: LongerFactsParams): ReadonlyArray<Fact> => [
+  { label: 'Most finish within', value: formatEstimateTime({ ms: estimate.highMs }) },
+];
+
+const longerFootnote = ({ estimate }: LongerFactsParams): string =>
+  `${estimate.basis} ${MACHINE_TIME_NOTE}`;
+
 const longerDetail = ({ lead, estimate }: LongerParams): string =>
   `${lead} Most finish within ${formatEstimateTime({ ms: estimate.highMs })}. ${estimate.basis} ${MACHINE_TIME_NOTE}`;
 
@@ -189,12 +212,19 @@ const runningTime = ({ activeMs, estimate, unknownBasis }: ActiveParams): WorkTi
         unknownBasis === null
           ? `${lead} ${MACHINE_TIME_NOTE}`
           : `${lead} ${unknownBasis} ${MACHINE_TIME_NOTE}`,
+      facts: [{ label: 'Running', value: exactActiveTime({ ms: activeMs }) }],
+      footnote: unknownBasis === null ? MACHINE_TIME_NOTE : `${unknownBasis} ${MACHINE_TIME_NOTE}`,
     });
   }
   if (activeMs > estimate.highMs) {
     return {
       label: elapsed,
       detail: longerDetail({ lead, estimate }),
+      facts: [
+        { label: 'Running', value: exactActiveTime({ ms: activeMs }) },
+        ...longerFacts({ estimate }),
+      ],
+      footnote: longerFootnote({ estimate }),
       progress: 1,
       headline: `${elapsed} · ${LONGER_THAN_USUAL.toLowerCase()}`,
       note: LONGER_THAN_USUAL,
@@ -208,6 +238,11 @@ const runningTime = ({ activeMs, estimate, unknownBasis }: ActiveParams): WorkTi
   return {
     label: left,
     detail: `${lead} Usually ${usualRangeLabel(estimate)}. ${estimate.basis} ${MACHINE_TIME_NOTE}`,
+    facts: [
+      { label: 'Running', value: exactActiveTime({ ms: activeMs }) },
+      { label: 'Usually', value: usualRangeLabel(estimate) },
+    ],
+    footnote: `${estimate.basis} ${MACHINE_TIME_NOTE}`,
     progress: estimate.highMs === 0 ? 1 : activeMs / estimate.highMs,
     headline: `${elapsed} · ${left}`,
     note: null,
@@ -219,6 +254,8 @@ const pausedTime = ({ activeMs, estimate }: Omit<ActiveParams, 'unknownBasis'>):
   plainWorkTime({
     label: formatActiveTime({ ms: activeMs }),
     detail: `Active ${exactActiveTime({ ms: activeMs })}. ${MACHINE_TIME_NOTE}`,
+    facts: [{ label: 'Active', value: exactActiveTime({ ms: activeMs }) }],
+    footnote: MACHINE_TIME_NOTE,
     progress:
       estimate === null || estimate.highMs === 0 ? null : Math.min(1, activeMs / estimate.highMs),
   });
@@ -227,11 +264,18 @@ const doneTime = ({ activeMs, estimate }: Omit<ActiveParams, 'unknownBasis'>): W
   const duration = exactActiveTime({ ms: activeMs });
   const lead = `Active ${duration}.`;
   if (estimate === null || activeMs <= estimate.highMs) {
-    return plainWorkTime({ label: duration, detail: `${lead} ${MACHINE_TIME_NOTE}` });
+    return plainWorkTime({
+      label: duration,
+      detail: `${lead} ${MACHINE_TIME_NOTE}`,
+      facts: [{ label: 'Active', value: duration }],
+      footnote: MACHINE_TIME_NOTE,
+    });
   }
   return {
     label: duration,
     detail: longerDetail({ lead, estimate }),
+    facts: [{ label: 'Active', value: duration }, ...longerFacts({ estimate })],
+    footnote: longerFootnote({ estimate }),
     progress: null,
     headline: `${duration} · ${LONGER_THAN_USUAL.toLowerCase()}`,
     note: LONGER_THAN_USUAL,
@@ -247,6 +291,8 @@ const queuedTime = ({ estimate }: { readonly estimate: WorkEstimate | null }): W
   return plainWorkTime({
     label: range,
     detail: `Usually ${usualRangeLabel(estimate)}. ${estimate.basis}`,
+    facts: [{ label: 'Usually', value: usualRangeLabel(estimate) }],
+    footnote: estimate.basis,
   });
 };
 

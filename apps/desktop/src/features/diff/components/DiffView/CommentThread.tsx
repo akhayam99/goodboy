@@ -1,6 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { Lock, Trash2 } from 'lucide-react';
-import { Chip, ConfirmPopover, Markdown, cn, formatError, tintClasses } from '@goodboy/ui';
+import {
+  Chip,
+  ConfirmPopover,
+  Markdown,
+  OptionalTooltip,
+  cn,
+  formatError,
+  tintClasses,
+} from '@goodboy/ui';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { DiffComments, DiffThread } from './types';
@@ -110,15 +118,11 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
   }
 
   const deleteButton = ({ onClick }: DeleteButtonParams) => (
-    <button
-      type="button"
-      className={ACTION_CLASS}
-      disabled={isLocked}
-      title={lockReason ?? undefined}
-      onClick={onClick}
-    >
-      Delete
-    </button>
+    <OptionalTooltip content={lockReason}>
+      <button type="button" className={ACTION_CLASS} disabled={isLocked} onClick={onClick}>
+        Delete
+      </button>
+    </OptionalTooltip>
   );
   const deleteControl =
     thread.canRestore === true ? (
@@ -190,15 +194,16 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
             </button>
           ) : null}
           {thread.canClose && comments.onClose ? (
-            <button
-              type="button"
-              className={ACTION_CLASS}
-              disabled={isLocked}
-              title={lockReason ?? undefined}
-              onClick={() => comments.onClose?.(thread.id)}
-            >
-              {CLOSE_NOTE_LABEL}
-            </button>
+            <OptionalTooltip content={lockReason}>
+              <button
+                type="button"
+                className={ACTION_CLASS}
+                disabled={isLocked}
+                onClick={() => comments.onClose?.(thread.id)}
+              >
+                {CLOSE_NOTE_LABEL}
+              </button>
+            </OptionalTooltip>
           ) : null}
           {thread.canReopen && comments.onReopen ? (
             <button

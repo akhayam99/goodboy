@@ -1,7 +1,15 @@
 import { useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { PanelRightOpen } from 'lucide-react';
-import { Button, ErrorStrip, EmptyState, PageColumn, Skeleton, formatError } from '@goodboy/ui';
+import {
+  Button,
+  ErrorStrip,
+  EmptyState,
+  PageColumn,
+  Skeleton,
+  Tooltip,
+  formatError,
+} from '@goodboy/ui';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
@@ -215,9 +223,11 @@ export const SessionDiffPane = ({
   const metaNotice =
     diff.metaError === null ? null : (
       <PageColumn className="pb-2">
-        <p role="status" className="text-meta text-muted-foreground" title={diff.metaError}>
-          Couldn't read this branch's commits.
-        </p>
+        <Tooltip content={diff.metaError}>
+          <p role="status" className="text-meta text-muted-foreground">
+            Couldn't read this branch's commits.
+          </p>
+        </Tooltip>
       </PageColumn>
     );
 

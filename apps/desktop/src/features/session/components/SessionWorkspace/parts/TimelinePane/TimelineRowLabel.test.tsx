@@ -344,7 +344,12 @@ describe('TimelineRowLabel', () => {
           entry: agentEntry({ agentKind: 'generic', name: 'Piano: migrazione' }),
           grade: 'step',
         })}
-        identity={{ hasGlyph: false, roleLabel: null, summary: null, card: null }}
+        identity={{
+          hasGlyph: false,
+          roleLabel: null,
+          summary: null,
+          wrapCard: ({ children }) => children,
+        }}
       />,
     );
 
@@ -363,7 +368,7 @@ describe('TimelineRowLabel', () => {
           hasGlyph: true,
           roleLabel: 'Implementer',
           summary: 'Sonnet 5.5, High',
-          card: 'card',
+          wrapCard: ({ children }) => children,
         }}
       />,
     );
@@ -439,7 +444,7 @@ describe('TimelineRowLabel, an explanation row', () => {
     const label = container.firstElementChild;
     expect(label?.tagName).toBe('SPAN');
     expect(label instanceof HTMLElement ? tooltipTextOf({ element: label }) : null).toBe(
-      'Explained · Rust · Why the borrow checker rejects this',
+      'Explained\nRust · Why the borrow checker rejects this',
     );
   });
 });

@@ -1303,19 +1303,21 @@ describe('TimelinePane row meta', () => {
 
   it('opens the identity card of a step on the role glyph after the pointer rests', () => {
     vi.useFakeTimers();
+    vi.setSystemTime(1_910_000_000_000);
     try {
       render(<TimelinePane session={SESSION} />);
       const glyph = within(rowOf('Plan the fix')).getByTestId('role-glyph');
 
-      fireEvent.mouseEnter(glyph);
+      fireEvent.pointerEnter(glyph, { pointerType: 'mouse' });
       act(() => {
-        vi.advanceTimersByTime(800);
+        vi.advanceTimersByTime(500);
       });
-      const card = screen.getByRole('tooltip');
+      const card = screen.getByTestId('fact-card');
 
       expect(card.textContent).toContain('Planner');
       expect(card.textContent).toContain('Step 1 of 2');
-      expect(card.textContent).toContain('Opus 4.5 · High');
+      expect(card.textContent).toContain('Opus 4.5');
+      expect(card.textContent).toContain('High');
       expect(card.textContent).toContain('$0.62');
     } finally {
       vi.useRealTimers();
@@ -1358,6 +1360,7 @@ describe('TimelinePane row meta', () => {
       ],
     };
     vi.useFakeTimers();
+    vi.setSystemTime(1_920_000_000_000);
     try {
       render(<TimelinePane session={SESSION} />);
       const cell = within(rowOf('Plan the fix'))
@@ -1367,16 +1370,13 @@ describe('TimelinePane row meta', () => {
         throw new Error('no model cell');
       }
 
-      fireEvent.mouseEnter(cell);
+      fireEvent.pointerEnter(cell, { pointerType: 'mouse' });
       act(() => {
-        vi.advanceTimersByTime(800);
+        vi.advanceTimersByTime(500);
       });
-      const items = within(screen.getByRole('tooltip')).getAllByRole('listitem');
+      const labels = Array.from(screen.getByTestId('fact-card').querySelectorAll('dt'));
 
-      expect(items.map((item) => item.textContent)).toEqual([
-        expect.stringContaining('Kimi K3 · High'),
-        expect.stringContaining('Opus 4.5 · High'),
-      ]);
+      expect(labels.map((label) => label.textContent)).toEqual(['Kimi K3 High', 'Opus 4.5 High']);
     } finally {
       vi.useRealTimers();
     }

@@ -1,6 +1,7 @@
 import type { TimelineStreamItem } from '../../../features/session/timeline/buildTimelineStream';
 import { groupSummaryText } from '../../../features/session/timeline/groupSummary';
-import { rowStateNode } from '../../../features/workTreeModel/rowStateCopy';
+import { rowStateNode, rowStateTone } from '../../../features/workTreeModel/rowStateCopy';
+import { runAgentCardOf } from './runAgentCardOf';
 import type { SpawnedRow } from './spawnedRow';
 
 export type SpawnedFold = Readonly<{
@@ -84,7 +85,13 @@ export const runSpawnedRowsOf = ({ items, baseLevel }: Params): ReadonlyArray<Sp
         level,
         hasChildren: parents.has(agent.id),
         title: agent.name,
-        detail: null,
+        card: runAgentCardOf({
+          name: agent.name,
+          kind: item.entry.agentKind,
+          tone: rowStateTone({ state: item.rowState }),
+          word: node.label,
+          isRunning: item.rowState.phase === 'running',
+        }),
         role: item.entry.agentKind,
         node: node.state,
         word: node.label,

@@ -1,4 +1,4 @@
-import { cn, Tooltip } from '@goodboy/ui';
+import { cn, TruncatedText } from '@goodboy/ui';
 
 type Props = {
   readonly branch: string;
@@ -6,7 +6,5 @@ type Props = {
 };
 
 export const ExploreBranchName = ({ branch, className }: Props) => (
-  <Tooltip content={branch}>
-    <span className={cn('min-w-0 truncate text-code', className)}>{branch}</span>
-  </Tooltip>
+  <TruncatedText className={cn('min-w-0 text-code', className)}>{branch}</TruncatedText>
 );

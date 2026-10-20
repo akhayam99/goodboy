@@ -10,6 +10,7 @@ import {
   STRIPED_ROW,
   STRIPED_TABLE,
   Tooltip,
+  TruncatedText,
   cn,
   type SegmentedTabOption,
   EmptyState,
@@ -128,14 +129,12 @@ export const TurnsTable = ({
                       <RoutingLabel provider={record.provider} model={record.model} />
                     </td>
                     {showSession ? (
-                      <Tooltip content={sessionGoal}>
-                        <td className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground">
-                          <span className="flex items-center gap-2">
-                            <span className="min-w-0 truncate">{sessionGoal}</span>
-                            {isSessionDeleted ? <DeletedSessionTag /> : null}
-                          </span>
-                        </td>
-                      </Tooltip>
+                      <td className="max-w-[12rem] truncate px-2 py-2 text-muted-foreground">
+                        <span className="flex items-center gap-2">
+                          <TruncatedText className="min-w-0">{sessionGoal}</TruncatedText>
+                          {isSessionDeleted ? <DeletedSessionTag /> : null}
+                        </span>
+                      </td>
                     ) : null}
                     <td className="px-2 py-2 text-right tabular-nums text-muted-foreground">
                       {formatTokens(record.inputTokens)}

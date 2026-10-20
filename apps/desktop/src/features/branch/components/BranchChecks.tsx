@@ -199,7 +199,6 @@ export const BranchChecks = ({ sessionId }: Props) => {
                     />
                   ) : (
                     renderRow({
-                      tooltip: check.detailsUrl ?? check.name,
                       onOpen: () => void openUrl(check.detailsUrl ?? fallbackUrl),
                     })
                   )

@@ -116,7 +116,7 @@ export const WorkflowNextStepCta = ({
             content={
               blockReason != null
                 ? WORKFLOW_BLOCK_COPY[blockReason]
-                : `effort: ${effortText}${stepVerbosity ? ` · verbosity: ${stepVerbosity}` : ''}${consumesActivePlan ? '. Advancing will consume the active plan' : ''}`
+                : `effort: ${effortText}${stepVerbosity ? `, verbosity: ${stepVerbosity}` : ''}${consumesActivePlan ? '. Advancing will consume the active plan' : ''}`
             }
             anchorClassName="min-w-0"
           >

@@ -23,10 +23,19 @@ export const AgentRowMeta = ({ entry, ordinal, work, rowModels, costUsd, isRunni
         <TimelineModelCell
           summary={summary}
           isPlanned={models.isPlanned}
-          card={
-            summary === null ? null : (
-              <RowModelsCard entry={entry} ordinal={ordinal} kindWord={kindWord} models={models} />
-            )
+          wrapCard={
+            summary === null
+              ? null
+              : ({ children }) => (
+                  <RowModelsCard
+                    entry={entry}
+                    ordinal={ordinal}
+                    kindWord={kindWord}
+                    models={models}
+                  >
+                    {children}
+                  </RowModelsCard>
+                )
           }
         />
       }

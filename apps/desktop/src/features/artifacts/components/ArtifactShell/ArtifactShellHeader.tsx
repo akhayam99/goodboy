@@ -1,4 +1,4 @@
-import { Tooltip } from '@goodboy/ui';
+import { TruncatedText } from '@goodboy/ui';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import type { ArtifactKind } from '@goodboy/types';
 import type { ArtifactActionTarget } from '../../../actions/types';
@@ -57,14 +57,13 @@ export const ArtifactShellHeader = ({
               {title}
             </h1>
           ) : (
-            <Tooltip content={title}>
-              <h1
-                data-testid="artifact-title"
-                className="min-w-0 flex-1 truncate text-title text-foreground"
-              >
-                {title}
-              </h1>
-            </Tooltip>
+            <TruncatedText
+              as="h1"
+              data-testid="artifact-title"
+              className="min-w-0 flex-1 text-title text-foreground"
+            >
+              {title}
+            </TruncatedText>
           )}
           {isTitleInDocument ? <span className="flex-1" /> : null}
           {chip}

@@ -1,6 +1,13 @@
-import { Fragment } from 'react';
 import { ArrowRight, Folder } from 'lucide-react';
-import { Chip, GhostActionButton, StatusDot, formatUsd } from '@goodboy/ui';
+import {
+  Chip,
+  FactCardFootnote,
+  FactCardHeader,
+  FactCardState,
+  GhostActionButton,
+  StatusDot,
+  formatUsd,
+} from '@goodboy/ui';
 import type { Session, SessionAttentionReason, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { NAMES } from '../../../../shared/names';
@@ -81,23 +88,29 @@ export const SessionHoverCardBody = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <SessionRowTitle keys={keys} title={title} titleClassName="text-heading text-foreground" />
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
-        <StateNode node={node} />
-        <span className="min-w-0">{stateText}</span>
+      <FactCardHeader
+        title={
+          <SessionRowTitle
+            keys={keys}
+            title={title}
+            titleClassName="text-heading text-foreground"
+          />
+        }
+      />
+      <div className="flex flex-col gap-1">
+        <FactCardState glyph={<StateNode node={node} />} words={stateText} />
         {isWorking ? (
-          <>
-            <StatusDot tone="info" size="sm" pulsing className="justify-self-center" />
-            <span className="min-w-0">An agent is working</span>
-          </>
+          <FactCardState
+            glyph={<StatusDot tone="info" size="sm" pulsing />}
+            words="An agent is working"
+          />
         ) : null}
         {otherLines.map((line) => (
-          <Fragment key={line.reason}>
-            <StatusDot tone={line.tone} size="sm" className="justify-self-center" />
-            <span className="min-w-0" data-attention-line={line.reason}>
-              {line.words}
-            </span>
-          </Fragment>
+          <FactCardState
+            key={line.reason}
+            glyph={<StatusDot tone={line.tone} size="sm" />}
+            words={<span data-attention-line={line.reason}>{line.words}</span>}
+          />
         ))}
       </div>
       {summary.progress === null ? null : (
@@ -131,7 +144,7 @@ export const SessionHoverCardBody = ({
           ))}
         </div>
       ) : null}
-      <span className="text-meta text-faint-foreground">{facts.join(' · ')}</span>
+      <FactCardFootnote text={facts.join(' · ')} />
       {needsYou && !isFactsOnly ? (
         <GhostActionButton
           icon={ArrowRight}

@@ -14,6 +14,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../../store/storyHarness';
+import { asCutText } from '../../../../../__tests__/helpers/tooltip';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U25_PORTS_SCENES } from './ports';
 
@@ -154,7 +155,7 @@ describe('the four layers', () => {
       'Script · payments-api · hl/fix-duplicate-credit',
     );
 
-    fireEvent.mouseEnter(chip);
+    fireEvent.mouseEnter(asCutText({ element: chip }));
     await waitFor(
       () =>
         expect(

@@ -1,6 +1,6 @@
 import { Clock, Trash2, Undo2 } from 'lucide-react';
 import type { DeletedBranch } from '@goodboy/types';
-import { Button, Chip, ConfirmPopover, IconButton, Tooltip } from '@goodboy/ui';
+import { Button, Chip, ConfirmPopover, IconButton, TruncatedText } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BRANCH_TABLE_GRID } from '../../branches/branchTableGrid';
 import { deletedBranchDays } from '../../branches/deletedBranchDays';
@@ -36,9 +36,9 @@ export const DeletedBranchRow = ({
       <div className={`${BRANCH_TABLE_GRID} group/row rounded-md px-2 hover:bg-hover`}>
         <span data-cell="select" />
         <span data-cell="branch" className="flex min-w-0 flex-col py-1">
-          <Tooltip content={entry.branch} anchorClassName="flex min-w-0">
-            <span className="truncate font-mono text-code text-foreground">{entry.branch}</span>
-          </Tooltip>
+          <TruncatedText className="font-mono text-code text-foreground">
+            {entry.branch}
+          </TruncatedText>
           <span className="truncate font-mono text-meta text-faint-foreground">
             {entry.sha.slice(0, 7)}
           </span>

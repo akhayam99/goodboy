@@ -31,7 +31,7 @@ type Props = {
 };
 
 type RowParts = {
-  readonly tooltip: string;
+  readonly footnote?: string;
   readonly status: ReactNode;
   readonly action: ReactNode;
   readonly hint: ReactNode;
@@ -119,7 +119,7 @@ export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, rende
   const canAnalyze = (chain.state === 'none' || chain.state === 'no-fix') && !isDrawerOpen;
   const AgentsIcon = CONCEPT_ICONS.agents;
   return renderRow({
-    tooltip: chain.state === 'none' ? url : 'Open the Debugger',
+    ...(chain.state === 'none' ? {} : { footnote: 'Click to open the Debugger' }),
     onOpen: chain.state === 'none' ? () => void openUrl(url) : openAnalysis,
     status:
       chain.state === 'none' ? null : (
@@ -132,7 +132,7 @@ export const AnalyzedCheckRow = ({ sessionId, mountId, pullRequest, check, rende
       ),
     action: canAnalyze ? (
       <Tooltip
-        content={`Start a Debugger on this failure: ${modelLabel(routing.model, routing.provider)} · ${routing.effort}`}
+        content={`Start a Debugger on this failure with ${modelLabel(routing.model, routing.provider)} at ${routing.effort} effort`}
       >
         <Button variant="ghost" size="sm" disabled={isStarting} onClick={() => void analyze()}>
           <AgentsIcon size={ICON_SIZE.row} aria-hidden />

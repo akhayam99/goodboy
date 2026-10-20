@@ -1,5 +1,5 @@
 import type { EffortLevel, ProviderId } from '@goodboy/types';
-import { joinFacts } from '../../utils/joinFacts';
+import type { Fact, FactCardSpec } from '@goodboy/ui';
 import { getModelProvider, modelCatalogKey } from '@goodboy/core';
 import { PROVIDER_BRAND } from '../../../features/providers/components/provider-brand';
 import { EFFORT_LABEL, modelLabel } from '../../../features/chat/utils/chat-constants';
@@ -27,7 +27,7 @@ type Params = {
 export type RoutingLabelModel = {
   readonly provider: ProviderId | null;
   readonly label: RoutingTriggerLabel | null;
-  readonly tooltip: string;
+  readonly card: FactCardSpec | null;
   readonly divergence: string | null;
   readonly isDiverged: boolean;
 };
@@ -87,6 +87,33 @@ const EFFORT_WORDS: ReadonlySet<string> = new Set(Object.values(EFFORT_LABEL));
 const effortSegment = (label: RoutingTriggerLabel): string | null =>
   label.detail.find((segment) => EFFORT_WORDS.has(segment)) ?? null;
 
+type CardParams = {
+  readonly provider: ProviderId | null;
+  readonly label: RoutingTriggerLabel;
+  readonly divergence: string | null;
+};
+
+const cardOf = ({ provider, label, divergence }: CardParams): FactCardSpec => {
+  const effort = effortSegment(label);
+  const others = label.detail.filter((segment) => segment !== effort);
+  const facts: Array<Fact> = [];
+  if (provider !== null) {
+    facts.push({ label: 'Provider', value: PROVIDER_LABEL[provider] });
+  }
+  facts.push({ label: 'Model', value: routingNameText(label) });
+  if (effort !== null) {
+    facts.push({ label: 'Effort', value: effort });
+  }
+  if (others.length > 0) {
+    facts.push({ label: 'Setting', value: others.join(', ') });
+  }
+  return {
+    title: 'Routing',
+    facts,
+    ...(divergence === null ? {} : { footnote: divergence }),
+  };
+};
+
 type DivergenceParams = {
   readonly label: RoutingTriggerLabel;
   readonly ranProvider: string | null;
@@ -127,7 +154,7 @@ export const routingLabelModel = ({
 }: Params): RoutingLabelModel => {
   const resolved = knownProvider({ provider, model });
   if (model == null) {
-    return { provider: resolved, label: null, tooltip: '', divergence: null, isDiverged: false };
+    return { provider: resolved, label: null, card: null, divergence: null, isDiverged: false };
   }
   const label = labelOf({ provider: resolved, model, effort: effortLevel(effort) });
   const ranProvider = provider ?? resolved;
@@ -158,17 +185,10 @@ export const routingLabelModel = ({
         ? null
         : effortSegment(labelOf({ provider: resolved, model, effort: plannedEffortLevel })),
   });
-  const route = joinFacts({
-    facts: [
-      resolved != null ? PROVIDER_LABEL[resolved] : null,
-      routingNameText(label),
-      ...label.detail,
-    ],
-  });
   return {
     provider: resolved,
     label: divergence == null ? withoutDefaultEffort(label) : label,
-    tooltip: divergence == null ? route : `${route}. ${divergence}`,
+    card: cardOf({ provider: resolved, label, divergence }),
     divergence,
     isDiverged: divergence != null,
   };

@@ -4,7 +4,7 @@ The Commits section of the Branch page lets you clean up a branch before it goes
 
 ### Shape the history
 
-Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it; each edit updates the local branch immediately. Commits not yet on the online copy are marked **Not pushed**.
+Clean up a branch by hand in the **Commits** section. Drag a commit to move it, drop it onto another to fold it in, or rename or remove it; each edit updates the local branch immediately. Commits not yet on the online copy are marked **Not pushed**. A mark on a planned row (combines, folds into, renamed) opens a fact card on rest with the commits it takes in or the new name, and a step that may conflict in two or more files lists them (`historyMarkCardOf`, `conflictCardOf`).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/history-rewrite-dark.webp">

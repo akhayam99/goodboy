@@ -1,17 +1,42 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { limitsChipOf } from '@goodboy/core';
 import type { IsoDateTime, ProviderLimits } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
-const { store } = vi.hoisted(() => ({
-  store: { codexResetCredits: { availableCount: 1 } as { availableCount: number } | null },
-}));
+let useAppStore: StoryStore;
+let LimitsTooltip: typeof import('./LimitsTooltip').LimitsTooltip;
 
-vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-}));
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ LimitsTooltip } = await import('./LimitsTooltip'));
+}, STORE_IMPORT_TIMEOUT_MS);
 
-import { LimitsTooltip } from './LimitsTooltip';
+beforeEach(async () => {
+  await resetStoryStore();
+});
+
+const CREDITS = {
+  availableCount: 1,
+  creditId: null,
+  expiresAt: null,
+  observedAt: '2026-09-25T11:57:00.000Z' as IsoDateTime,
+};
 
 const NOW = Date.parse('2026-09-25T12:00:00.000Z');
 
@@ -31,20 +56,60 @@ const codex = (usedFraction: number): ProviderLimits => ({
   observedAt: '2026-09-25T11:57:00.000Z' as IsoDateTime,
 });
 
+type RenderParams = {
+  readonly usedFraction: number;
+};
+
+const renderOpen = ({ usedFraction }: RenderParams) => {
+  const chip = limitsChipOf({ providerId: 'codex', limits: codex(usedFraction), nowMs: NOW });
+  render(
+    <LimitsTooltip chip={chip} nowMs={NOW} isOpen>
+      <button type="button">codex</button>
+    </LimitsTooltip>,
+  );
+  return within(screen.getByTestId('fact-card'));
+};
+
 afterEach(cleanup);
 
 describe('LimitsTooltip', () => {
-  it('points at the free reset when codex is out', () => {
-    const chip = limitsChipOf({ providerId: 'codex', limits: codex(1), nowMs: NOW });
-    render(<LimitsTooltip chip={chip} nowMs={NOW} />);
+  it('shows the window as a row with its reset and the update age', () => {
+    const card = renderOpen({ usedFraction: 0.4 });
 
-    expect(screen.getByText('1 free reset available')).toBeDefined();
+    expect(card.getByText('Codex')).toBeDefined();
+    expect(card.getByText('Plus')).toBeDefined();
+    expect(card.getByText('Weekly')).toBeDefined();
+    expect(card.getByText('40% used')).toBeDefined();
+    expect(card.getByText(/resets/)).toBeDefined();
+    expect(card.getByText(/Updated 3m ago/)).toBeDefined();
+  });
+
+  it('points at the free reset row when codex is out', () => {
+    act(() => {
+      useAppStore.setState({ codexResetCredits: CREDITS });
+    });
+    const card = renderOpen({ usedFraction: 1 });
+
+    expect(card.getByText('Free resets')).toBeDefined();
+    expect(card.getByText('1 available')).toBeDefined();
   });
 
   it('keeps quiet about resets while codex still has room', () => {
-    const chip = limitsChipOf({ providerId: 'codex', limits: codex(0.4), nowMs: NOW });
-    render(<LimitsTooltip chip={chip} nowMs={NOW} />);
+    act(() => {
+      useAppStore.setState({ codexResetCredits: CREDITS });
+    });
+    const card = renderOpen({ usedFraction: 0.4 });
 
-    expect(screen.queryByText(/free reset/)).toBeNull();
+    expect(card.queryByText('Free resets')).toBeNull();
+  });
+
+  it('is described to a screen reader by one sentence', () => {
+    renderOpen({ usedFraction: 0.4 });
+
+    const described = screen
+      .getByRole('button', { name: 'codex' })
+      .getAttribute('aria-describedby');
+    expect(described).not.toBeNull();
+    expect(document.getElementById(described ?? '')?.textContent).toContain('Weekly, 40% used');
   });
 });

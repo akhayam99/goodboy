@@ -1,5 +1,5 @@
 import type { LimitsChip as LimitsChipModel } from '@goodboy/core';
-import { FOCUS_RING, TOP_BAR_CONTROL, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, TOP_BAR_CONTROL, cn } from '@goodboy/ui';
 import {
   PROVIDER_BRAND,
   brandColor,
@@ -21,9 +21,8 @@ type Props = {
 export const LimitsChip = ({ chip, nowMs, isPressed, className, onOpen }: Props) => {
   const Glyph = PROVIDER_BRAND[chip.providerId].icon;
   const headline = limitsChipHeadline({ chip, nowMs });
-  const details = <LimitsTooltip chip={chip} nowMs={nowMs} />;
   return (
-    <Tooltip content={details} variant="card" side="bottom">
+    <LimitsTooltip chip={chip} nowMs={nowMs}>
       <button
         type="button"
         data-limits-chip={chip.providerId}
@@ -48,6 +47,6 @@ export const LimitsChip = ({ chip, nowMs, isPressed, className, onOpen }: Props)
         />
         <LimitsBars state={chip.state} windows={chip.windows} isStale={chip.isStale} />
       </button>
-    </Tooltip>
+    </LimitsTooltip>
   );
 };

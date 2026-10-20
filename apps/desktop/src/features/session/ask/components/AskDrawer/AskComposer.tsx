@@ -19,7 +19,7 @@ type Props = {
   readonly onStop: () => void;
 };
 
-const SEND_HINT = `${shortcutGlyphs('composer.send')} to send · ${shortcutGlyphs('composer.newLine')} for a new line`;
+const SEND_HINT = `Send with ${shortcutGlyphs('composer.send')}, new line with ${shortcutGlyphs('composer.newLine')}`;
 
 const PRIMARY = tintClasses('primary').solid;
 

@@ -98,14 +98,26 @@ export const TimelineRunStreamRow = ({
         hasGlyph: true,
         roleLabel: null,
         summary: null,
-        card: <RunIdentityCard entry={entry} />,
+        wrapCard: ({ children, isOpen }) => (
+          <RunIdentityCard entry={entry} isOpen={isOpen}>
+            {children}
+          </RunIdentityCard>
+        ),
       }}
       meta={
         <TimelineRowMeta
           model={
             <TimelineModelCell
               summary={summary}
-              card={summary === null ? null : <RunIdentityCard entry={entry} isModelsOnly />}
+              wrapCard={
+                summary === null
+                  ? null
+                  : ({ children }) => (
+                      <RunIdentityCard entry={entry} isModelsOnly>
+                        {children}
+                      </RunIdentityCard>
+                    )
+              }
             />
           }
           time={time ?? null}

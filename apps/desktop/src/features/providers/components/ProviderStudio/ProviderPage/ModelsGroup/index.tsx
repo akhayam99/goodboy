@@ -7,7 +7,7 @@ import {
   type HiddenModels,
 } from '@goodboy/core';
 import type { CatalogModel, ProviderId, WorkspaceId } from '@goodboy/types';
-import { BAND_ROW_CLASS, Band, Button, Switch, Tooltip, cn } from '@goodboy/ui';
+import { BAND_ROW_CLASS, Band, Button, OptionalTooltip, Switch, cn } from '@goodboy/ui';
 import { PickerChip } from '../../../../../../shared/components/RoutingPicker/PickerChip';
 import { useHiddenModels, useSaveHiddenModels } from '../../../../hooks/useHiddenModels';
 import { HIDDEN_MODELS_LINE } from './constants';
@@ -116,14 +116,14 @@ export const ModelsGroup = ({ providerId, workspaceId, isFocused }: Props) => {
           const isOnlyVisibleFamily = isFamilyOn && shown === visibleKeys.length;
           return (
             <div key={family.label} className={cn(BAND_ROW_CLASS, 'gap-3')}>
-              <Tooltip content={isOnlyVisibleFamily ? LAST_VISIBLE_COPY : `Show ${family.label}`}>
+              <OptionalTooltip content={isOnlyVisibleFamily ? LAST_VISIBLE_COPY : undefined}>
                 <Switch
                   label={<span className="w-24 truncate text-left text-body">{family.label}</span>}
                   checked={isFamilyOn}
                   disabled={isOnlyVisibleFamily}
                   onChange={(next) => setVisible(keys, next)}
                 />
-              </Tooltip>
+              </OptionalTooltip>
               <div
                 role="group"
                 aria-label={`${family.label} versions`}

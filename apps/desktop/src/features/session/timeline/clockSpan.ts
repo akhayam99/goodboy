@@ -1,3 +1,4 @@
+import type { Fact, FactCardSpec } from '@goodboy/ui';
 import { formatClock } from '../../../shared/utils/time/formatClock';
 import type { RowPhase } from '../../workTreeModel/rowState';
 import type { TimelineAgentEntry } from './buildTimelineGroups';
@@ -28,14 +29,17 @@ type SpanParams = {
   readonly phase: RowPhase;
 };
 
-export const clockSpanText = ({ startedAt, finishedAt, phase }: SpanParams): string => {
-  const started = `Started ${formatClock({ at: startedAt })}`;
-  if (phase === 'running') {
-    return `${started} · running`;
-  }
+export const clockSpanCardOf = ({ startedAt, finishedAt, phase }: SpanParams): FactCardSpec => {
+  const facts: Array<Fact> = [{ label: 'Started', value: formatClock({ at: startedAt }) }];
   const isFinished = phase === 'done' || phase === 'failed' || phase === 'closed';
   if (isFinished && finishedAt !== null) {
-    return `${started} · finished ${formatClock({ at: finishedAt })}`;
+    facts.push({ label: 'Finished', value: formatClock({ at: finishedAt }) });
   }
-  return started;
+  return {
+    title: 'Clock',
+    ...(phase === 'running'
+      ? { state: { tone: 'info' as const, words: 'Running', isRunning: true } }
+      : {}),
+    facts,
+  };
 };

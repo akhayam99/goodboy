@@ -90,7 +90,6 @@ export const PrChecks = ({
                 {renderCheckRow === undefined ? (
                   <CheckRunRow
                     check={check}
-                    tooltip={check.detailsUrl ?? check.name}
                     onOpen={() => onOpenUrl(check.detailsUrl ?? fallbackUrl)}
                   />
                 ) : (

@@ -1,8 +1,9 @@
 import { ChevronRight } from 'lucide-react';
-import { Button, Checkbox, IconButton, Tooltip, cn, tintClasses } from '@goodboy/ui';
+import { Button, Checkbox, FactCard, IconButton, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
+import { fileCardOf } from '../../lib/fileCardOf';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { ObjectMenuOrVerb } from '../../../actions/ObjectMenuOrVerb';
@@ -44,15 +45,6 @@ export const FileHeader = ({
     facts: { path: file.path, onOpenInEditor, onShowWhole },
   };
   const menu = useObjectMenuTrigger({ target, anchorKey: `diff-file:${file.path}` });
-  const pathTip =
-    file.status === 'renamed' && file.oldPath !== undefined ? (
-      <span className="flex flex-col gap-0.5 text-code">
-        <span>{file.path}</span>
-        <span className="text-faint-foreground">from {file.oldPath}</span>
-      </span>
-    ) : (
-      <span className="text-code">{file.path}</span>
-    );
 
   return (
     <div
@@ -90,14 +82,14 @@ export const FileHeader = ({
         >
           {STATUS_LETTER[file.status]}
         </span>
-        <Tooltip content={pathTip} anchorClassName="min-w-0 flex-1">
+        <FactCard card={fileCardOf({ file })}>
           <span dir="rtl" className="min-w-0 flex-1 truncate text-left text-code">
             <bdi dir="ltr">
               <span className="text-faint-foreground">{dir}</span>
               <span className="text-foreground">{name}</span>
             </bdi>
           </span>
-        </Tooltip>
+        </FactCard>
         <span className="shrink-0 text-meta tabular-nums">
           {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
           {file.additions > 0 && file.deletions > 0 ? ' ' : null}

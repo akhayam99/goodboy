@@ -1,8 +1,9 @@
 import { Fragment } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { cn, Tooltip } from '@goodboy/ui';
+import { cn, FactCard } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
+import { conflictCardOf } from './conflictCardOf';
 import type { HistoryRowLinePart } from './historyRowLine';
 
 type Props = {
@@ -15,6 +16,12 @@ export const HistoryRowPlanLine = ({ parts, conflictFiles }: Props) => {
   if (parts.length === 0 && firstFile === undefined) {
     return null;
   }
+  const conflictMark = (
+    <span className="inline-flex shrink-0 items-center gap-1 text-warning">
+      <TriangleAlert size={ICON_SIZE.row} aria-hidden />
+      may conflict in {firstFile}
+    </span>
+  );
   return (
     <span className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-label text-muted-foreground">
       {parts.map((part, index) => (
@@ -45,12 +52,11 @@ export const HistoryRowPlanLine = ({ parts, conflictFiles }: Props) => {
               ·
             </span>
           ) : null}
-          <Tooltip content={`Replaying this step conflicts in ${conflictFiles.join(', ')}`}>
-            <span className="inline-flex shrink-0 items-center gap-1 text-warning">
-              <TriangleAlert size={ICON_SIZE.row} aria-hidden />
-              may conflict in {firstFile}
-            </span>
-          </Tooltip>
+          {conflictFiles.length === 1 ? (
+            conflictMark
+          ) : (
+            <FactCard card={conflictCardOf({ conflictFiles })}>{conflictMark}</FactCard>
+          )}
         </>
       )}
     </span>

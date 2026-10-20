@@ -157,7 +157,7 @@ const elementsUpToTooltip = ({ source, from }: { source: string; from: number })
       return NO_TOOLTIP;
     }
     const start = source.lastIndexOf('<', cursor);
-    if (/^<Tooltip\b/.test(source.slice(start, cursor + 1))) {
+    if (/^<(Tooltip|FactCard|LimitsTooltip)\b/.test(source.slice(start, cursor + 1))) {
       return hop;
     }
     cursor = start - 1;

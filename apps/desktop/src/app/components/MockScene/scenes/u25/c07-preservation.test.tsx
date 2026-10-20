@@ -74,10 +74,10 @@ describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () 
 
     const level = await autoLevel();
     const implementer = within(level).getByRole('treeitem', { name: /^Implementer, / });
-    fireEvent.mouseEnter(implementer);
-    const tooltip = (await screen.findByRole('tooltip', undefined, WAIT)).textContent;
-    expect(tooltip).toContain('Post one credit per retry');
-    expect(tooltip).toContain('Sonnet 5.5');
+    fireEvent.pointerEnter(implementer, { pointerType: 'mouse' });
+    const card = (await screen.findByTestId('fact-card', undefined, WAIT)).textContent;
+    expect(card).toContain('Post one credit per retry');
+    expect(card).toContain('Sonnet 5.5');
   });
 
   it('Rail foot Spent, Reserved, Left: the foot says the left, the popover the rest', async () => {

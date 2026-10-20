@@ -1,15 +1,14 @@
 import { memo, useMemo } from 'react';
-import { Notice, PANE_RHYTHM, Tooltip, WorkNode } from '@goodboy/ui';
+import { Notice, PANE_RHYTHM, WorkNode } from '@goodboy/ui';
 import type { ChatMessage, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { AskButtonFacts } from '../../askButtons';
 import type { AskHandle } from '../../askHandles';
-import { askReplyFooter } from '../../askReplyFooter';
-import { askReplyDetail } from '../../askReplyDetail';
 import { useAskActions } from '../../hooks/useAskActions';
 import { parseAskAnswer, type ParsedAskAnswer } from '../../parseAskAnswer';
 import { AskActions } from './AskActions';
 import { AskAnswer } from './AskAnswer';
+import { AskReplyFooter } from './AskReplyFooter';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -67,13 +66,7 @@ const AskTurnView = ({ sessionId, question, reply, facts, onOpen }: Props) => {
             <p className="text-meta text-faint-foreground">Stopped</p>
           ) : null}
           {isDone ? <AskActions actions={actions} /> : null}
-          {isStreaming ? null : (
-            <Tooltip content={askReplyDetail({ message: reply, costUsd }) || undefined}>
-              <p data-testid="ask-footer" className="w-fit text-meta text-faint-foreground">
-                {askReplyFooter({ message: reply })}
-              </p>
-            </Tooltip>
-          )}
+          {isStreaming ? null : <AskReplyFooter message={reply} costUsd={costUsd} />}
         </div>
       )}
     </div>

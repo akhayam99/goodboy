@@ -2,6 +2,8 @@ import { type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { sessionPlace, useAppStore, useSessions } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
+import { SessionHoverCard } from '../../../features/workspace/components/SessionHoverCard';
+import { useHoverCardTarget } from '../../../features/workspace/components/SessionHoverCard/useHoverCardTarget';
 import { RailFlyout } from './RailFlyout';
 import { RailFlyoutBody } from './RailFlyoutBody';
 import { RailMoreButton } from './RailMoreButton';
@@ -45,9 +47,13 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
   const hasOpenTail = open !== null && !shown.some((session) => session.id === open.id);
   const sign: RailSessionSign = place === null ? 'current' : 'remembered';
   const { target, close } = flyout;
+  const hover = useHoverCardTarget();
+  const { close: closeHover } = hover;
+  const hoveredSession = shown.find((session) => session.id === hover.target?.sessionId) ?? null;
 
   const select = (sessionId: SessionId) => {
     close();
+    closeHover();
     useAppStore.getState().navigate({ to: sessionPlace({ sessionId }) });
   };
 
@@ -85,25 +91,28 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
     />
   );
 
+  const pinNodeOf = (session: Session) => {
+    const sessionId = session.id as SessionId;
+    return (
+      <RailSessionButton
+        key={session.id}
+        session={session}
+        sign="none"
+        hasFlyout={false}
+        onSelect={() => select(sessionId)}
+        onEnter={(event) => hover.enter({ sessionId, anchor: event.currentTarget })}
+        onLeave={hover.leave}
+      />
+    );
+  };
+
   if (open === null && shown.length === 0 && extra <= 0) {
     return null;
   }
 
   return (
     <div className="flex flex-col items-center gap-1 pt-2" data-rail-sessions="">
-      {shown.map((session) =>
-        session.id === open?.id ? (
-          openNodeOf(session)
-        ) : (
-          <RailSessionButton
-            key={session.id}
-            session={session}
-            sign="none"
-            hasFlyout={false}
-            onSelect={() => select(session.id as SessionId)}
-          />
-        ),
-      )}
+      {shown.map((session) => (session.id === open?.id ? openNodeOf(session) : pinNodeOf(session)))}
       {hasOpenTail ? (
         <div data-slot="rail-open-tail" className="contents">
           {openNodeOf(open)}
@@ -117,6 +126,17 @@ export const RailSessions = ({ workspaceId, currentSessionId, place }: Props) =>
           onKeyDown={keysWith('more')}
         />
       ) : null}
+      <SessionHoverCard
+        session={hoveredSession}
+        isArchived={false}
+        anchor={hover.target?.anchor ?? null}
+        boundary={null}
+        onKeep={hover.keep}
+        onLeave={hover.leave}
+        onClose={hover.close}
+        onOpenAttention={({ sessionId }) => select(sessionId)}
+        isFactsOnly
+      />
       <RailFlyout
         target={target}
         label={target?.key === 'more' ? 'Pinned sessions' : 'Session pages'}

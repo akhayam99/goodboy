@@ -1,18 +1,26 @@
-import { cloneElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  cloneElement,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../cn';
 import { dismissTopEscapeLayer, registerEscapeLayer } from '../escape';
+import { FLOATING_SURFACE } from '../floatingSurface';
+import { isKeyboardFocus } from '../isKeyboardFocus';
+import { placeFloating, type FloatingCoords, type FloatingSide } from '../placeFloating';
 import { glyphsOfShortcut } from '../shortcutGlyphs';
 import { Kbd } from './Kbd';
 
-export type TooltipSide = 'top' | 'bottom' | 'left' | 'right';
-
-export type TooltipVariant = 'label' | 'card';
+export type TooltipSide = FloatingSide;
 
 export type TooltipProps = {
   content: React.ReactNode;
   shortcut?: string;
-  variant?: TooltipVariant;
   side?: TooltipSide;
   anchorClassName?: string;
   restDelayMs?: number;
@@ -21,6 +29,8 @@ export type TooltipProps = {
   children: React.ReactElement<{
     ref?: React.Ref<HTMLElement>;
     disabled?: boolean;
+    'aria-label'?: string;
+    'aria-describedby'?: string;
     onMouseEnter?: React.MouseEventHandler;
     onMouseMove?: React.MouseEventHandler;
     onMouseLeave?: React.MouseEventHandler;
@@ -42,17 +52,6 @@ let lastClosedAt = Number.NEGATIVE_INFINITY;
 
 let lastCloser: object | null = null;
 
-const isKeyboardFocus = (target: EventTarget): boolean => {
-  if (!(target instanceof Element)) {
-    return true;
-  }
-  try {
-    return target.matches(':focus-visible');
-  } catch {
-    return true;
-  }
-};
-
 const isWarm = (): boolean => Date.now() - lastClosedAt < WARM_WINDOW_MS;
 
 const assignRef = <T,>(ref: React.Ref<T> | undefined, value: T | null): void => {
@@ -63,83 +62,9 @@ const assignRef = <T,>(ref: React.Ref<T> | undefined, value: T | null): void => 
   }
 };
 
-const flipSide = (side: TooltipSide): TooltipSide => {
-  switch (side) {
-    case 'top':
-      return 'bottom';
-    case 'bottom':
-      return 'top';
-    case 'left':
-      return 'right';
-    case 'right':
-      return 'left';
-  }
-};
-
-type Coords = { top: number; left: number; side: TooltipSide };
-
-const positionFor = (anchor: DOMRect, tip: DOMRect, side: TooltipSide): Coords => {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  const place = (s: TooltipSide): { top: number; left: number } => {
-    switch (s) {
-      case 'top':
-        return {
-          top: anchor.top - tip.height - GAP,
-          left: anchor.left + anchor.width / 2 - tip.width / 2,
-        };
-      case 'bottom':
-        return {
-          top: anchor.bottom + GAP,
-          left: anchor.left + anchor.width / 2 - tip.width / 2,
-        };
-      case 'left':
-        return {
-          top: anchor.top + anchor.height / 2 - tip.height / 2,
-          left: anchor.left - tip.width - GAP,
-        };
-      case 'right':
-        return {
-          top: anchor.top + anchor.height / 2 - tip.height / 2,
-          left: anchor.right + GAP,
-        };
-    }
-  };
-
-  const fits = (s: TooltipSide, p: { top: number; left: number }): boolean => {
-    if (s === 'top') {
-      return p.top >= 0;
-    }
-    if (s === 'bottom') {
-      return p.top + tip.height <= vh;
-    }
-    if (s === 'left') {
-      return p.left >= 0;
-    }
-    return p.left + tip.width <= vw;
-  };
-
-  let chosen = side;
-  let pos = place(side);
-  if (!fits(side, pos)) {
-    const flipped = flipSide(side);
-    const flippedPos = place(flipped);
-    if (fits(flipped, flippedPos)) {
-      chosen = flipped;
-      pos = flippedPos;
-    }
-  }
-
-  const left = Math.max(GAP, Math.min(pos.left, vw - tip.width - GAP));
-  const top = Math.max(GAP, Math.min(pos.top, vh - tip.height - GAP));
-  return { top, left, side: chosen };
-};
-
 export const Tooltip = ({
   content,
   shortcut,
-  variant = 'label',
   side = 'top',
   anchorClassName,
   restDelayMs,
@@ -152,10 +77,11 @@ export const Tooltip = ({
     content !== undefined && content !== null && content !== false && content !== '';
   const visible = (isHovered || isOpen) && !isSuppressed && hasContent;
   const isRestRequired = restDelayMs !== undefined;
-  const [coords, setCoords] = useState<Coords | null>(null);
+  const [coords, setCoords] = useState<FloatingCoords | null>(null);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const anchorRef = useRef<HTMLElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
+  const tipId = useId();
   const identityRef = useRef({});
   const isPointerDownRef = useRef(false);
   const suppressionEndedAtRef = useRef(Number.NEGATIVE_INFINITY);
@@ -230,7 +156,7 @@ export const Tooltip = ({
     if (Date.now() - suppressionEndedAtRef.current < REFOCUS_WINDOW_MS) {
       return;
     }
-    if (!isKeyboardFocus(target)) {
+    if (!isKeyboardFocus({ target })) {
       show();
       return;
     }
@@ -287,7 +213,15 @@ export const Tooltip = ({
     if (!anchor || !tip) {
       return;
     }
-    setCoords(positionFor(anchor.getBoundingClientRect(), tip.getBoundingClientRect(), side));
+    setCoords(
+      placeFloating({
+        anchor: anchor.getBoundingClientRect(),
+        tip: tip.getBoundingClientRect(),
+        side,
+        gap: GAP,
+        edge: GAP,
+      }),
+    );
   }, [side]);
 
   useLayoutEffect(() => {
@@ -331,6 +265,14 @@ export const Tooltip = ({
   const canTriggerBeDisabled = isTriggerDisabled !== undefined;
   const hasAnchor = canTriggerBeDisabled || anchorClassName !== undefined;
 
+  const triggerName = children.props['aria-label'];
+  const isNameRepeated = typeof content === 'string' && content === triggerName;
+  const ownDescribedBy = children.props['aria-describedby'];
+  const describedBy =
+    visible && !isNameRepeated
+      ? [ownDescribedBy, tipId].filter((id): id is string => id !== undefined).join(' ')
+      : ownDescribedBy;
+
   const enhanced = hasAnchor ? (
     <span
       className={cn(
@@ -345,11 +287,12 @@ export const Tooltip = ({
       onFocus={(e) => focus(e.target)}
       onBlur={blur}
     >
-      {cloneElement(children, { ref: mergedRef })}
+      {cloneElement(children, { ref: mergedRef, 'aria-describedby': describedBy })}
     </span>
   ) : (
     cloneElement(children, {
       ref: mergedRef,
+      'aria-describedby': describedBy,
       onMouseEnter: (e: React.MouseEvent) => {
         show();
         children.props.onMouseEnter?.(e);
@@ -389,6 +332,7 @@ export const Tooltip = ({
         ? createPortal(
             <span
               ref={tipRef}
+              id={tipId}
               role="tooltip"
               style={{
                 position: 'fixed',
@@ -398,10 +342,8 @@ export const Tooltip = ({
               }}
               className={cn(
                 'pointer-events-none z-tooltip',
-                variant === 'label' &&
-                  'w-max max-w-md whitespace-pre-line break-words rounded-sm bg-foreground px-2 py-0.5 text-label font-medium text-background shadow-sm',
-                variant === 'card' &&
-                  'w-65 rounded-md border border-border-soft bg-elevated p-3 text-label text-foreground shadow-md',
+                FLOATING_SURFACE,
+                'w-max max-w-70 whitespace-pre-line break-words rounded-md border-border-soft px-2 py-1 text-label font-medium text-foreground motion-safe:animate-popover-in',
               )}
             >
               {keys === '' ? (
@@ -409,7 +351,7 @@ export const Tooltip = ({
               ) : (
                 <span className="inline-flex items-baseline gap-2">
                   <span>{content}</span>
-                  <Kbd className="text-background/60">{keys}</Kbd>
+                  <Kbd>{keys}</Kbd>
                 </span>
               )}
             </span>,

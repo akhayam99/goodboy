@@ -1,11 +1,11 @@
-import { SelectableRow, Tooltip, cn } from '@goodboy/ui';
+import { FactCard, SelectableRow, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { BranchRowFacts } from '../../../../features/branch/branchRowFactsOf';
 import { pullRequestStateToneOf } from '../../../../features/branch/pullRequestStateToneOf';
 import { TRAIL_PILL_INSET } from '../../../../shared/components/trailingSlot';
 import { BranchRowChip } from './BranchRowChip';
 import type { BranchRowChip as BranchRowChipView } from './branchRowChipOf';
-import { branchRowTipOf } from './branchRowTipOf';
+import { branchRowCardOf } from './branchRowCardOf';
 
 type Props = {
   readonly facts: BranchRowFacts;
@@ -28,18 +28,8 @@ export const BranchRowLine = ({
 }: Props) => {
   const mark = pullRequestStateToneOf({ state: facts.state });
   const StateIcon = mark.icon;
-  const tip = branchRowTipOf({ facts, chip, reason });
   return (
-    <Tooltip
-      side="right"
-      content={
-        <span className="flex min-w-0 flex-col gap-0.5">
-          {tip.summary === null ? null : <span>{tip.summary}</span>}
-          <span className="text-code text-faint-foreground">{tip.branch}</span>
-          {tip.reason === null ? null : <span>{tip.reason}</span>}
-        </span>
-      }
-    >
+    <FactCard side="right" card={branchRowCardOf({ facts, chip, reason })}>
       <div className="flex min-w-0 flex-1">
         <SelectableRow
           selected={isShown}
@@ -70,6 +60,6 @@ export const BranchRowLine = ({
           {chip === null ? null : <BranchRowChip chip={chip} />}
         </SelectableRow>
       </div>
-    </Tooltip>
+    </FactCard>
   );
 };

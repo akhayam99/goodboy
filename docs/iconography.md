@@ -146,7 +146,7 @@ A kind always renders through `AgentKindChip`
   is also the role mark of every agent row in the Activity feed (launch, step,
   subagent and chained child), before the title and at every row width. The
   word, with the step position, the model and the effort, lives in the hover
-  card that opens after the pointer rests 800ms on the glyph (`i` on the
+  card that opens after the pointer rests 500ms on the glyph (`i` on the
   focused row opens it) and in the accessible name of the row ("Implementer,
   Sonnet 5.5, High"). A step with no role, whose name no role fits, draws no
   glyph: a guessed Generalist is worse than none.

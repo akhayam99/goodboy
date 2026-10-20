@@ -14,9 +14,11 @@ export const TimelineRowStateWord = ({ shown }: Props) => {
     return (
       <>
         <span className="sr-only">{shown.word}</span>
-        <span aria-hidden className="truncate">
-          {shown.short}
-        </span>
+        <Tooltip content={shown.word}>
+          <span aria-hidden className="truncate">
+            {shown.short}
+          </span>
+        </Tooltip>
       </>
     );
   }

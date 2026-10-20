@@ -287,7 +287,7 @@ const workTree = ({ rows }: WorkTreeParams) => (
         glyph={null}
         role={row.role}
         title={row.title}
-        detail={row.detail}
+        card={row.card}
         word={row.word}
         time={null}
         isSelected={false}

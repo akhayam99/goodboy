@@ -1,12 +1,12 @@
-import { Chip, InteractiveRow, StatusDot, Tooltip, type Tone } from '@goodboy/ui';
+import { Chip, FactCard, InteractiveRow, StatusDot, Tooltip, type Tone } from '@goodboy/ui';
 import { openUrl } from '../../../../shared/lib/editor';
-import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { lastOutputLine } from '../../lastOutputLine';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { describeLastRun } from './describeLastRun';
 import { RunToggle } from './RunToggle';
 import { SCRIPT_ROW_CELL } from './scriptRowCells';
+import { serviceUsageCardOf } from './serviceUsageCardOf';
 import type { ScriptRowProps } from './scriptRowProps';
 
 type DotToneParams = {
@@ -43,12 +43,8 @@ export const ServiceRow = ({
   const hasSecondLine = lastRun !== null && (isRunning || line !== null);
   const menu = useObjectMenuTrigger({ target, anchorKey: `script:${script.key}` });
   const meta = joinFacts({ facts: [lastRun?.word, lastRun?.detail] });
-  const usage =
-    isRunning && facts !== null
-      ? joinFacts({
-          facts: [`CPU ${Math.round(facts.cpuPercent)}%`, formatBytes({ bytes: facts.rssBytes })],
-        })
-      : '';
+  const usage = serviceUsageCardOf({ name: script.name, facts, isRunning });
+  const metaText = <span className="truncate">{meta}</span>;
 
   return (
     <InteractiveRow
@@ -94,10 +90,10 @@ export const ServiceRow = ({
         {livePort === null && expectedPort !== null && !isPortBusy ? (
           <Chip kind="id" tone="neutral" label={`:${expectedPort}`} />
         ) : null}
-        {meta === '' ? null : (
-          <Tooltip content={usage === '' ? null : usage}>
-            <span className="truncate">{meta}</span>
-          </Tooltip>
+        {meta === '' ? null : usage === null ? (
+          metaText
+        ) : (
+          <FactCard card={usage}>{metaText}</FactCard>
         )}
       </span>
       <RunToggle

@@ -238,15 +238,23 @@ const metaOf = (id: string, column: keyof typeof META_SELECTOR): string | null =
 
 const glyphOf = (id: string): HTMLElement => within(rowOf(id)).getByTestId('role-glyph');
 
-const cardAfterRest = ({ element }: { readonly element: HTMLElement }): string => {
+let clock = 1_930_000_000_000;
+
+const startFakeClock = () => {
+  clock += 60_000;
   vi.useFakeTimers();
-  fireEvent.mouseEnter(element);
+  vi.setSystemTime(clock);
+};
+
+const cardAfterRest = ({ element }: { readonly element: HTMLElement }): string => {
+  startFakeClock();
+  fireEvent.pointerEnter(element, { pointerType: 'mouse' });
   act(() => {
-    vi.advanceTimersByTime(800);
+    vi.advanceTimersByTime(500);
   });
   vi.useRealTimers();
-  const text = screen.getByRole('tooltip').textContent ?? '';
-  fireEvent.mouseLeave(element);
+  const text = screen.getByTestId('fact-card').textContent ?? '';
+  fireEvent.pointerLeave(element, { pointerType: 'mouse' });
   return text;
 };
 
@@ -485,27 +493,30 @@ describe('RunTree step row grammar', () => {
       throw new Error('no model cell');
     }
 
-    expect(cardAfterRest({ element: model })).toContain('Models, in run order');
+    const card = cardAfterRest({ element: model });
+
+    expect(card).toContain('Implementer');
+    expect(card).toContain('GPT 5.1 Codex');
   });
 
   it('opens the identity card when the row takes keyboard focus, and closes it on blur', () => {
     renderTree();
     const button = screen.getByRole('button', { name: 'Step 2, Implement' });
-    vi.useFakeTimers();
+    startFakeClock();
 
     fireEvent.keyDown(button, { key: 'Tab' });
     fireEvent.focus(button);
     act(() => {
-      vi.advanceTimersByTime(799);
+      vi.advanceTimersByTime(499);
     });
-    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(screen.queryByTestId('fact-card')).toBeNull();
     act(() => {
       vi.advanceTimersByTime(1);
     });
-    expect(screen.getByRole('tooltip').textContent).toContain('Implementer');
+    expect(screen.getByTestId('fact-card').textContent).toContain('Implementer');
 
     fireEvent.blur(button);
-    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(screen.queryByTestId('fact-card')).toBeNull();
     vi.useRealTimers();
   });
 
@@ -525,10 +536,10 @@ describe('RunTree step row grammar', () => {
     const button = screen.getByRole('button', { name: 'Step 2, Implement' });
 
     fireEvent.keyDown(button, { key: 'i' });
-    expect(screen.getByRole('tooltip').textContent).toContain('Implementer');
+    expect(screen.getByTestId('fact-card').textContent).toContain('Implementer');
 
     fireEvent.keyDown(button, { key: 'i' });
-    expect(screen.queryByRole('tooltip')).toBeNull();
+    expect(screen.queryByTestId('fact-card')).toBeNull();
   });
 });
 

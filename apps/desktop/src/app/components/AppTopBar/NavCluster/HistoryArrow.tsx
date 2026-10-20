@@ -33,7 +33,7 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
     ? direction === 'back'
       ? 'Nothing to go back to'
       : 'Nothing to go forward to'
-    : `${verb} to ${target.label}${target.context === null ? '' : ` · ${target.context}`}`;
+    : `${verb} to ${target.label}${target.context === null ? '' : `\n${target.context}`}`;
 
   const clearHold = () => {
     if (holdTimer.current === null) {

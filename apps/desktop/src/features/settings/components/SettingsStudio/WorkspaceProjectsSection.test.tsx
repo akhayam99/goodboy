@@ -374,7 +374,7 @@ describe('WorkspaceProjectsSection', () => {
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
 
     expect(
-      screen.getByRole('img', { name: 'Sentry: payments-api, Payments worker' }),
+      screen.getByRole('img', { name: 'Sentry: payments-api and Payments worker' }),
     ).toBeDefined();
     await waitFor(() =>
       expect(state.loadProjectSentryLinks).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID }),

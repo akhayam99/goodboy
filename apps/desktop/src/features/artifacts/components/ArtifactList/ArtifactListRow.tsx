@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Button, InteractiveRow, Tooltip, cn } from '@goodboy/ui';
+import { Button, InteractiveRow, Tooltip, TruncatedText, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import type { ArtifactListRow as Row } from '../../artifactListRows';
 import type { ArtifactState } from '../../artifactStateOf';
@@ -172,16 +172,14 @@ const RowComponent = ({
           size={ICON_SIZE.control}
           className={cn(ARTIFACT_ROW_GRID.glyph, row.isFaint && 'text-faint-foreground')}
         />
-        <Tooltip content={row.title}>
-          <span
-            className={cn(
-              ARTIFACT_ROW_GRID.title,
-              row.isFaint ? 'text-faint-foreground' : 'text-foreground',
-            )}
-          >
-            {row.title}
-          </span>
-        </Tooltip>
+        <TruncatedText
+          className={cn(
+            ARTIFACT_ROW_GRID.title,
+            row.isFaint ? 'text-faint-foreground' : 'text-foreground',
+          )}
+        >
+          {row.title}
+        </TruncatedText>
         <span className={cn(ARTIFACT_ROW_GRID.state, row.isFaint && 'opacity-80')}>
           {state === null ? null : <ArtifactStateBadge state={state} />}
         </span>

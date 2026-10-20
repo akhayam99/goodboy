@@ -5,6 +5,7 @@ import { useRunView } from '../../../features/session/components/AgentTree/useRu
 import { runRowFactsOf } from '../../../features/workflows/runRowFactsOf';
 import { openSpawned } from '../../../features/session/openSpawned';
 import { SpawnedTreeRow } from './SpawnedTreeRow';
+import { runHeadCardOf } from './runHeadCardOf';
 
 type Props = {
   readonly session: Session;
@@ -32,7 +33,7 @@ export const SpawnedRunHead = ({ session, run, workflow, hasChildren }: Props) =
       glyph={<StateDot state={facts.dot} label={facts.word} />}
       role={null}
       title={view.name}
-      detail={null}
+      card={runHeadCardOf({ name: view.name, dot: facts.dot, word: facts.word })}
       word={facts.word}
       time={null}
       isSelected={false}

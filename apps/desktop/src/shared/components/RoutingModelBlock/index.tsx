@@ -1,4 +1,4 @@
-import { ModelBlock, Tooltip, WORK_META_COLUMN, cn } from '@goodboy/ui';
+import { FactCard, ModelBlock, WORK_META_COLUMN, cn } from '@goodboy/ui';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import { routingNameText } from '../RoutingPicker/routingSummary';
 import { routingLabelModel, type PlannedRouting } from '../RoutingLabel/routingLabelModel';
@@ -27,7 +27,7 @@ export const RoutingModelBlock = ({
   layout = 'column',
 }: Props) => {
   const shown = routingLabelModel({ provider, model, effort, planned, isEffortObserved });
-  if (shown.label == null) {
+  if (shown.label == null || shown.card === null) {
     return <span aria-hidden data-meta-column="model" className={WORK_META_COLUMN.model} />;
   }
   const Glyph = shown.provider === null ? null : PROVIDER_BRAND[shown.provider].icon;
@@ -48,7 +48,7 @@ export const RoutingModelBlock = ({
           },
         ];
   return (
-    <Tooltip content={shown.tooltip}>
+    <FactCard card={shown.card}>
       <ModelBlock
         testId={shown.isDiverged ? 'routing-divergence' : undefined}
         className={cn(shown.isDiverged && DIVERGED_CLASS)}
@@ -58,6 +58,6 @@ export const RoutingModelBlock = ({
         name={routingNameText(shown.label)}
         detail={shown.label.detail[0] ?? null}
       />
-    </Tooltip>
+    </FactCard>
   );
 };
