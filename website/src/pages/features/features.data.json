@@ -524,7 +524,7 @@
         },
         {
           "title": "Preset and Custom",
-          "text": "Write the steps yourself, or draft them with a planner. Save what you changed as a preset, or pick a saved one.",
+          "text": "Write the steps yourself, or draft them with a planner. Save what you changed as a preset, or pick a saved one by the role glyph of each step.",
           "group": "Workflows",
           "also": "presets",
           "shown": true
@@ -1253,7 +1253,7 @@
         },
         {
           "title": "Auto agent",
-          "text": "Try an agent that picks the roles, models and next steps for you. It is always on, marked as an experiment, and you can stop it or take an agent back.",
+          "text": "Try an agent that picks the roles, models and next steps for you. It is always on, marked as an experiment, and you can stop it or take an agent back. It runs your chosen checks on what its agents write, and a force push waits for you.",
           "group": "Agents",
           "also": "auto agent"
         },
