@@ -5,6 +5,7 @@ import type { IsoDateTime, SessionDecision } from '@goodboy/types';
 import type { DecisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { nowIso } from '../../../../store/slices/project-mounts/nowIso';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ObjectMenuArea } from '../../../actions/ObjectMenuArea';
 import { ContextBlock } from './ContextBlock';
 
 type ChangeKind = 'added' | 'removed' | 'reworded';
@@ -81,32 +82,48 @@ export const DecisionChangesList = ({ changes, onJump, onRead }: Props) => {
           const verb = verbOf(row);
           return (
             <li key={`${row.kind}-${row.decision.id}`}>
-              <button
-                type="button"
-                data-change={row.kind}
-                aria-label={`${verb}: decision ${row.decision.number}`}
-                onClick={() => onJump(row.decision.number)}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left',
-                  ROW_INTERACTIVE,
-                )}
+              <ObjectMenuArea
+                target={{
+                  kind: 'decision',
+                  facts: {
+                    number: row.decision.number,
+                    text: row.decision.text,
+                    onShow: () => onJump(row.decision.number),
+                  },
+                }}
+                anchorKey={`decision-change:${row.kind}-${row.decision.id}`}
               >
-                <Icon size={ICON_SIZE.row} aria-hidden className={cn('shrink-0', mark.className)} />
-                <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
-                  {row.decision.number}
-                </span>
-                <span
+                <button
+                  type="button"
+                  data-change={row.kind}
+                  aria-label={`${verb}: decision ${row.decision.number}`}
+                  onClick={() => onJump(row.decision.number)}
                   className={cn(
-                    'min-w-0 flex-1 truncate text-label',
-                    row.kind === 'removed'
-                      ? 'text-faint-foreground line-through'
-                      : 'text-foreground',
+                    'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left',
+                    ROW_INTERACTIVE,
                   )}
                 >
-                  {row.decision.text}
-                </span>
-                <span className="shrink-0 text-meta text-faint-foreground">{verb}</span>
-              </button>
+                  <Icon
+                    size={ICON_SIZE.row}
+                    aria-hidden
+                    className={cn('shrink-0', mark.className)}
+                  />
+                  <span className="shrink-0 text-meta tabular-nums text-muted-foreground">
+                    {row.decision.number}
+                  </span>
+                  <span
+                    className={cn(
+                      'min-w-0 flex-1 truncate text-label',
+                      row.kind === 'removed'
+                        ? 'text-faint-foreground line-through'
+                        : 'text-foreground',
+                    )}
+                  >
+                    {row.decision.text}
+                  </span>
+                  <span className="shrink-0 text-meta text-faint-foreground">{verb}</span>
+                </button>
+              </ObjectMenuArea>
             </li>
           );
         })}

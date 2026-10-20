@@ -28,6 +28,7 @@ export const ArtifactDocument = ({ artifact, medium, workspaceName }: Props) => 
     <article
       data-testid="artifact-document"
       data-find-root
+      data-reading-region=""
       data-medium={medium}
       className="print-document"
     >

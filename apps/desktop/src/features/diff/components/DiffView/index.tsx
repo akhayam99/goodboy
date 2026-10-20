@@ -455,7 +455,7 @@ export const DiffView = ({
   }, [focusPath, focusThreadId, onFocusHandled, pathsKey, scrollToFile]);
 
   const body = (
-    <div ref={inner.ref} className="flex flex-col gap-2 pb-6">
+    <div ref={inner.ref} data-reading-region="" className="flex flex-col gap-2 pb-6">
       {files.slice(0, mountedCount).map((file) => (
         <DiffFile
           key={file.path}

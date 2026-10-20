@@ -66,7 +66,12 @@ export const TranscriptShell = ({
   }
 
   return (
-    <div className={shellClassName} data-testid={testId} onContextMenu={onContextMenu}>
+    <div
+      data-reading-region=""
+      className={shellClassName}
+      data-testid={testId}
+      onContextMenu={onContextMenu}
+    >
       {children}
     </div>
   );

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { DoneRowModel } from './doneTypes';
 
 type Props = {
@@ -14,12 +15,25 @@ type Props = {
 
 export const DoneRow = ({ row, isOpen, onToggle, chip, children }: Props) => {
   const Chevron = isOpen ? ChevronDown : ChevronRight;
+  const menu = useObjectMenuTrigger({
+    target: {
+      kind: 'item',
+      facts: {
+        name: row.title,
+        openLabel: isOpen ? 'Hide details' : 'Show details',
+        onOpen: onToggle,
+      },
+    },
+    anchorKey: `done-row:${row.id}`,
+  });
   return (
     <li data-done-row={row.id} className="flex min-w-0 flex-col gap-1">
       <button
         type="button"
         aria-expanded={isOpen}
         onClick={onToggle}
+        onContextMenu={menu.onContextMenu}
+        onKeyDown={menu.onKeyDown}
         className={cn(
           'grid min-h-9 w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-md px-2 py-1 text-left',
           ROW_INTERACTIVE,

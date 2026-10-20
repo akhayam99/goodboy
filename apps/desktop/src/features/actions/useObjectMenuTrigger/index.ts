@@ -56,7 +56,7 @@ export const useObjectMenuTrigger = ({
       if (event.defaultPrevented) {
         return;
       }
-      if (keepsNativeMenu({ target: event.target, selection: window.getSelection() })) {
+      if (keepsNativeMenu({ target: event.target, selection: null })) {
         return;
       }
       if (openAt({ point: { x: event.clientX, y: event.clientY }, opener: event.currentTarget })) {

@@ -8,7 +8,7 @@ import type { MountRowView } from '../../../../store/slices/project-mounts/mount
 import { distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
 import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
-import type { MountActionTarget } from '../../../../features/actions/types';
+import { useMountMenuTarget } from '../../../../features/session/hooks/useMountMenuTarget';
 import { branchRowFactsOf } from '../../../../features/branch/branchRowFactsOf';
 import { resolveBranchTab, type BranchScope } from '../../../../features/branch/branchTabs';
 import { useBranchTab } from '../../../../features/branch/hooks/useBranchTab';
@@ -18,7 +18,6 @@ import { rebaseAllBranchOf } from '../../../../features/history/RebaseAllCard/re
 import { isRebasedBranchSettled } from '../../../../features/history/RebaseAllCard/rebaseAllBatchSettledOf';
 import { rebaseProgressTextOf } from '../../../../features/history/RebaseAllCard/rebaseProgressTextOf';
 import { useTaskDropState } from '../../../../features/session/hooks/useTaskDropState';
-import { useMountRemoteHostKind } from '../../../../features/worktree/useMountRemoteHostKind';
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { BranchRowAnchors } from './BranchRowAnchors';
 import { BranchRowLine } from './BranchRowLine';
@@ -108,11 +107,7 @@ export const WorktreeRow = ({
   });
   const state = useWorktreeRowState({ sessionId, row, status });
   const reason = chip === null ? state.reason : null;
-  const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: row.repoRoot });
-  const target = useMemo<MountActionTarget>(
-    () => ({ kind: 'mount', sessionId, mountId: row.mountId, status, remoteKind }),
-    [remoteKind, row.mountId, sessionId, status],
-  );
+  const target = useMountMenuTarget({ sessionId, mountId: row.mountId });
   const menu = useObjectMenuTrigger({ target, anchorKey: `mount-${row.mountId}` });
   const isDropTarget = row.branch !== '' && row.isAttached && !row.isFinished;
   const dropState = useTaskDropState({ target: { projectId: row.projectId, branch: row.branch } });
@@ -193,6 +188,7 @@ export const WorktreeRow = ({
             number={facts.number}
             currentTab={currentTab}
             entries={entries}
+            target={target}
           />
         </Reveal>
       )}

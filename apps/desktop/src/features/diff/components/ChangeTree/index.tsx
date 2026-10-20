@@ -18,6 +18,7 @@ import {
   type TreeGroup,
 } from '../../lib/changeTree';
 import type { CommentKinds } from '../../lib/commentKinds';
+import type { DiffFileActions } from '../DiffView/types';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { rowHeightOf } from '../../lib/rowHeightOf';
 import {
@@ -60,6 +61,7 @@ type Props = {
   readonly kindsOf: (path: string) => CommentKinds;
   readonly isReadOnly: boolean;
   readonly onToggleViewed: (file: FileDiff) => void;
+  readonly fileActions?: DiffFileActions | null;
   readonly onNextUnviewed: () => void;
   readonly onLeave: () => void;
   readonly onFold: () => void;
@@ -98,6 +100,7 @@ export const ChangeTree = ({
   kindsOf,
   isReadOnly,
   onToggleViewed,
+  fileActions = null,
   onNextUnviewed,
   onLeave,
   onFold,
@@ -376,6 +379,7 @@ export const ChangeTree = ({
                 })}
                 hasDelta={hasDelta}
                 canToggleViewed={!isReadOnly}
+                fileActions={fileActions}
                 onPick={() => {
                   setCursorId(row.id);
                   onPick(row.id);

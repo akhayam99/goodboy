@@ -60,7 +60,22 @@ export const STORY_NOW: IsoDateTime = TEST_NOW;
 
 export const STORE_IMPORT_TIMEOUT_MS = 60_000;
 
-export const importStoreModule = () => import('./store');
+const pristineActions = new WeakMap<object, Readonly<Record<string, unknown>>>();
+
+type ActionsOfParams = {
+  readonly state: object;
+};
+
+const actionsOf = ({ state }: ActionsOfParams): Readonly<Record<string, unknown>> =>
+  Object.fromEntries(Object.entries(state).filter(([, value]) => typeof value === 'function'));
+
+export const importStoreModule = async () => {
+  const module = await import('./store');
+  if (!pristineActions.has(module.useAppStore)) {
+    pristineActions.set(module.useAppStore, actionsOf({ state: module.useAppStore.getState() }));
+  }
+  return module;
+};
 
 export type StoryStoreModule = Awaited<ReturnType<typeof importStoreModule>>;
 
@@ -558,7 +573,7 @@ export const resetStorySpies = () => {
 export const resetStoryStore = async () => {
   const { initialState, useAppStore } = await importStoreModule();
   resetStorySpies();
-  useAppStore.setState(initialState);
+  useAppStore.setState({ ...pristineActions.get(useAppStore), ...initialState });
   if (typeof globalThis.localStorage !== 'undefined') {
     globalThis.localStorage.clear();
   }

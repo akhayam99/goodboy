@@ -35,6 +35,7 @@ import { railColumnX, type RailRow } from '../../../workTreeModel/railGeometry';
 import type { RowAsk } from '../../../workTreeModel/rowState';
 import { TIMELINE_RHYTHM } from '../../../workTreeModel/timelineRhythm';
 import { ROW_ACTION_LABEL } from '../../../workTreeModel/rowActionLabels';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { RunStepSkip, type RunStepSkipAction } from './RunStepSkip';
 import { RunTreeChecklistCells } from './RunTreeChecklistCells';
 import { rowSlotWidth } from './rowSlotWidth';
@@ -113,6 +114,10 @@ export const RunTreeRow = ({
   onAnswer,
 }: Props) => {
   const { agent } = entry;
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'agent', sessionId: agent.sessionId, agentId: agent.id },
+    anchorKey: `run-tree:${agent.id}`,
+  });
   const step =
     !isNested && agent.stepId != null ? (routing.stepById.get(agent.stepId) ?? null) : null;
   const isPage = density === 'page';
@@ -187,6 +192,7 @@ export const RunTreeRow = ({
                 label={label}
                 isSelected={isSelected}
                 onOpen={onSelect}
+                menu={menu}
                 frameClassName={cn('min-w-0 flex-1', isHighlighted && 'bg-hover text-foreground')}
                 className="flex h-full min-w-0 items-center gap-2 px-2"
               >

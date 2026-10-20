@@ -630,6 +630,7 @@ export const ReviewFlow = ({ session, push }: Props) => {
         <ScrollFade className="min-h-0 flex-1" viewportClassName="pb-5" fadeSize="h-6">
           <div ref={listRef}>
             <ReviewList
+              sessionId={sessionId}
               groups={groups}
               focusedThreadId={openThreadId ?? lastThreadId}
               onSelect={select}

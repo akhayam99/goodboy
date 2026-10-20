@@ -25,6 +25,9 @@ import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 import { timelineBranchKey } from './timelineBranchKey';
+import { timelineEntrySegmentsOf } from './timelineEntrySegmentsOf';
+import { segmentsToText } from '../../../../timeline/sessionEventPresentation';
+import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 
 export type TimelineEntryRowHandlers = {
   readonly openTargetFor: (params: {
@@ -103,6 +106,26 @@ export const TimelineEntryRow = ({
           ...(actionVariant !== null && { variant: actionVariant }),
           ...(actionBusy && { isBusy: true }),
         };
+  const toggleNoun = batchDetail !== null ? 'branches' : 'changes';
+  const toggleTarget: TimelineOpenTarget = {
+    label: `${isExpanded ? 'Hide' : 'Show'} ${toggleNoun}`,
+    open: () => handlers.toggleExpanded(item.id),
+  };
+  const rowTarget = batchDetail !== null || decisionDetail !== null ? toggleTarget : target;
+  const menu = useObjectMenuTrigger({
+    target:
+      entry.kind === 'agent' || entry.kind === 'run'
+        ? null
+        : {
+            kind: 'item',
+            facts: {
+              name: segmentsToText({ segments: timelineEntrySegmentsOf({ entry }) }),
+              openLabel: rowTarget?.label ?? '',
+              onOpen: rowTarget?.open ?? null,
+            },
+          },
+    anchorKey: `timeline-row:${item.id}`,
+  });
   if (entry.kind === 'agent') {
     return (
       <TimelineAgentStreamRow
@@ -155,10 +178,8 @@ export const TimelineEntryRow = ({
         rail={rail}
         railWidth={railWidth}
         sessionId={sessionId}
-        openTarget={{
-          label: isExpanded ? 'Hide branches' : 'Show branches',
-          open: () => handlers.toggleExpanded(item.id),
-        }}
+        openTarget={toggleTarget}
+        contextMenu={menu}
         expansion={{ isExpanded, controlsId: batchId }}
         detailHeight={isExpanded ? batchDetail.height : 0}
         detail={
@@ -186,14 +207,8 @@ export const TimelineEntryRow = ({
       rail={rail}
       railWidth={railWidth}
       sessionId={sessionId}
-      openTarget={
-        decisionDetail === null
-          ? target
-          : {
-              label: isExpanded ? 'Hide changes' : 'Show changes',
-              open: () => handlers.toggleExpanded(item.id),
-            }
-      }
+      openTarget={rowTarget}
+      contextMenu={menu}
       expansion={decisionDetail === null ? null : { isExpanded, controlsId: detailId }}
       detailHeight={decisionDetail !== null && isExpanded ? decisionDetail.height : 0}
       detail={

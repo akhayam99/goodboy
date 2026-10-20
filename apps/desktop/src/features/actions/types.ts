@@ -32,6 +32,11 @@ import type { ProviderFacts } from './kinds/provider';
 import type { IntegrationFacts } from './kinds/integration';
 import type { BranchFacts } from './kinds/branch';
 import type { ProjectAskFacts } from './kinds/projectAsk';
+import type { CheckRunFacts } from './kinds/checkRun';
+import type { DecisionFacts } from './kinds/decision';
+import type { WorkspaceFacts } from './kinds/workspace';
+import type { IssueCandidateFacts } from './kinds/issueCandidate';
+import type { ItemFacts } from './kinds/item';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -433,6 +438,31 @@ export type LinkActionTarget = {
   readonly href: string;
 };
 
+export type CheckRunActionTarget = {
+  readonly kind: 'checkRun';
+  readonly facts: CheckRunFacts;
+};
+
+export type DecisionActionTarget = {
+  readonly kind: 'decision';
+  readonly facts: DecisionFacts;
+};
+
+export type WorkspaceActionTarget = {
+  readonly kind: 'workspace';
+  readonly facts: WorkspaceFacts;
+};
+
+export type IssueCandidateActionTarget = {
+  readonly kind: 'issueCandidate';
+  readonly facts: IssueCandidateFacts;
+};
+
+export type ItemActionTarget = {
+  readonly kind: 'item';
+  readonly facts: ItemFacts;
+};
+
 export type ReviewActionTarget = {
   readonly kind: 'review';
   readonly sessionId: SessionId;
@@ -515,6 +545,11 @@ export type ObjectTarget =
   | BranchActionTarget
   | ProjectAskActionTarget
   | LinkActionTarget
+  | CheckRunActionTarget
+  | DecisionActionTarget
+  | WorkspaceActionTarget
+  | IssueCandidateActionTarget
+  | ItemActionTarget
   | ReviewActionTarget
   | ReviewCommentActionTarget
   | WriteReviewActionTarget

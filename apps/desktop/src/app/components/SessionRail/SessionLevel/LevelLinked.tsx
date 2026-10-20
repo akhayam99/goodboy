@@ -5,6 +5,7 @@ import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
 import { externalTaskLinkKey } from '../../../../store/slices/sessions/externalTaskLinkKey';
 import { distinctTasks } from '../../../../shared/utils/distinctTasks';
 import { IntegrationGlyph } from '../../../../features/integrations/components/IntegrationGlyph';
+import { ObjectMenuArea } from '../../../../features/actions/components/ObjectMenuArea';
 import { LinkIssueAction } from '../../../../features/session/components/SessionOverviewPane/LinkIssueAction';
 import { openLens } from '../../../../features/session/openLens';
 import { useMountRows } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/useMountRows';
@@ -107,21 +108,26 @@ export const LevelLinked = ({ session, isActive }: Props) => {
           const isShown = isActive && shownIssue === issue.number;
           return (
             <li key={issue.url}>
-              <SelectableRow
-                selected={isShown}
-                ariaCurrent={isShown ? 'page' : undefined}
-                ariaLabel={`Open issue #${issue.number}`}
-                {...(issue.title !== undefined && issue.title !== null && { title: issue.title })}
-                onClick={() => {
-                  setFocusedGithubIssueNumber(sessionId, issue.number);
-                  openLens({ sessionId, lens: 'github_issue' });
-                }}
-                className={cn('h-7 items-center gap-2 text-ui', CARD_ROW_INSET)}
+              <ObjectMenuArea
+                target={{ kind: 'link', href: issue.url }}
+                anchorKey={`linked-issue:${issue.url}`}
               >
-                <IntegrationGlyph provider="github" size="xs" className="shrink-0" />
-                <LinkedKey identifier={`#${issue.number}`} />
-                <span className="min-w-0 flex-1 truncate">{issue.title ?? ''}</span>
-              </SelectableRow>
+                <SelectableRow
+                  selected={isShown}
+                  ariaCurrent={isShown ? 'page' : undefined}
+                  ariaLabel={`Open issue #${issue.number}`}
+                  {...(issue.title !== undefined && issue.title !== null && { title: issue.title })}
+                  onClick={() => {
+                    setFocusedGithubIssueNumber(sessionId, issue.number);
+                    openLens({ sessionId, lens: 'github_issue' });
+                  }}
+                  className={cn('h-7 items-center gap-2 text-ui', CARD_ROW_INSET)}
+                >
+                  <IntegrationGlyph provider="github" size="xs" className="shrink-0" />
+                  <LinkedKey identifier={`#${issue.number}`} />
+                  <span className="min-w-0 flex-1 truncate">{issue.title ?? ''}</span>
+                </SelectableRow>
+              </ObjectMenuArea>
             </li>
           );
         })}
