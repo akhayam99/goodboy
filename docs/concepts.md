@@ -695,7 +695,8 @@ no instruction. `isAgentFinished` and `isAgentClosable` in
 do alone to agents of the right role, with a model it picks for each, then
 reads their results and goes on. Its children are agents of the roles Scout,
 Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
-time and one level deep. It is always available and labelled **Experimental** on its
+time. A child that waits on a question can ask Auto for a scout or an investigator, one more level and
+two at most. It is always available and labelled **Experimental** on its
 session entry; there is no switch in Settings. **Start an auto** starts it, and
 **Start an agent** keeps the role start. A person sees an Auto tree as one row in the
 Overview, under **Auto agents** in the session, and as one chat with one
@@ -1776,7 +1777,7 @@ task up again in Goodboy.
   artifact) gets a short tooltip, six words at most, written once. The mode
   switch in the workflow builder sets it as the `tooltip` of an option
   ("Goodboy picks each next agent"). The desktop glossary and its wrapper
-  component are gone; `TermHint` stays in `@goodboy/ui` for now.
+  component are gone, and so is `TermHint`.
 - A round that adds a word removes one, and the PR description lists both.
 - Every screen follows the task order: the task, then integrations, then code,
   then chat. A screen that puts chat before the task has the order wrong.

@@ -720,8 +720,10 @@ kept.
   lost race comes back as a typed answer.
 - `admit.ts` takes a whole batch or nothing. The guarded statement in
   `packages/db/src/queries/auto-admission.ts` is the rule: phase, run, lease,
-  the guards of `AUTO_TREE_LIMITS`, four open children, remaining budget, plan approval and
-  revision. `core/auto/admission.ts` only names the refusal for the caller.
+  the guards of `AUTO_TREE_LIMITS`, four open children (a paused delegation is not open, so a
+  paused parent leaves its slot to a substep), remaining budget, plan approval and
+  revision. A substep adds its own guard (`autoSubstepStatements`): the parent is
+  paused on that question in this generation and has fewer than two helpers. `core/auto/admission.ts` only names the refusal for the caller.
 - Money has one source, `treeSpend`: settled, reserved and remaining. It feeds
   admission, the prompt line and the screen through `autoBudgetOf`;
   remaining is `autoRemainingUsdSql` in SQL and `autoTreeSpendOf` in JS, and
@@ -833,8 +835,8 @@ kept.
 - A child that asks a blocking question ends its attempt `paused` and queues a question row
   for Auto at once. `answerQuestion.ts` (the `answer` action) resumes it: in one transaction
   it admits a new attempt on the same agent with the question and the answer stored on it,
-  reserves a new ceiling, counts it against the attempt limit
-  (`core/auto/resumeAdmission.ts`) and moves the delegation from `paused` to `starting`.
+  reserves a new ceiling, counts it against the attempt limit and the four running
+  slots (`core/auto/resumeAdmission.ts`) and moves the delegation from `paused` to `starting`.
   The same question answered twice is one resume; a different text is refused. The question
   of a child never reaches the open questions of the session
   (`routeQuestions.ts`, read by `finalizeTurnStream.ts`), so the user never answers a

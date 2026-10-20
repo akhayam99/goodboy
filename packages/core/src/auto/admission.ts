@@ -8,6 +8,11 @@ import {
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
 import { isAutoWriterRole } from './roles';
+import {
+  substepRefusal,
+  type AdmissionParentFacts,
+  type AdmissionSubstep,
+} from './substepAdmission';
 
 export type AdmissionArtifactRef = Readonly<{
   artifactId: string;
@@ -19,6 +24,7 @@ export type AdmissionChild = Readonly<{
   role: AutoDelegationRole;
   reviseOf: AdmissionArtifactRef | null;
   inputArtifacts: ReadonlyArray<AdmissionArtifactRef>;
+  substep?: AdmissionSubstep | null;
 }>;
 
 export type AdmissionLiveArtifact = Readonly<{
@@ -44,6 +50,7 @@ export type AdmissionSnapshot = Readonly<{
   remainingUsd: number;
   artifacts: ReadonlyArray<AdmissionArtifactFacts & { readonly artifactId: string }>;
   isPlanApprovalRequired: boolean;
+  parents?: ReadonlyArray<AdmissionParentFacts>;
 }>;
 
 export type AdmissionChildRefusal = Readonly<{
@@ -241,7 +248,24 @@ const childRefusals = ({
   const refusals: AdmissionChildRefusal[] = [];
   const seenChildAgentIds: string[] = [];
   const seenRevisedIds: string[] = [];
+  const substepsSeen = new Map<string, number>();
   for (const [slot, child] of children.entries()) {
+    const substep = child.substep ?? null;
+    if (substep !== null) {
+      const seenInBatch = substepsSeen.get(substep.parentDelegationId) ?? 0;
+      substepsSeen.set(substep.parentDelegationId, seenInBatch + 1);
+      const code = substepRefusal({
+        tree,
+        role: child.role,
+        substep,
+        parents: snapshot.parents ?? [],
+        seenInBatch,
+      });
+      if (code !== null) {
+        refusals.push({ slot, code, latestRevision: null });
+        continue;
+      }
+    }
     const found =
       child.reviseOf === null
         ? null

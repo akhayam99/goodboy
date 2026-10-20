@@ -54,6 +54,10 @@ const worldWithPorts = async (patch: Partial<RealAutoPortsDeps> = {}) => {
     refreshSessionArtifacts: vi.fn(async () => undefined),
     lookupDeliveryRun: vi.fn(async () => null),
     worktreeSnapshot: vi.fn(async () => ({ head: 'abc123', entries: [], isPartial: false })),
+    worktreeDiffRange: vi.fn(async () => 'diff --git a/src/export.ts b/src/export.ts\n'),
+    worktreeCommitRange: vi.fn(async () => []),
+    worktreeStatus: vi.fn(async () => ({ branch: 'ak/ledger-export' })),
+    worktreeRemoteHead: vi.fn(async () => 'remote111'),
     listLiveRunIds: vi.fn(async () => new Set(['run-live'])),
     isPlanApprovalRequired: () => true,
     sleep: async () => undefined,
@@ -218,6 +222,14 @@ describe('the ports of Auto on the real store', () => {
     expect(deps.worktreeSnapshot).toHaveBeenCalledWith({
       worktreePath: '/work/harborline/ledger-core',
     });
+  });
+
+  it('lists the files committed between two heads through the diff range command', async () => {
+    const { ports, deps } = await worldWithPorts();
+    const range = { worktreePath: '/work/harborline/ledger-core', base: 'abc123', head: 'def456' };
+
+    expect(await ports.readCommittedFiles(range)).toEqual(['src/export.ts']);
+    expect(deps.worktreeDiffRange).toHaveBeenCalledWith(range);
   });
 
   it('creates the agent of a delegation once, with the kind of its role, and refreshes the list', async () => {

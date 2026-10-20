@@ -21,7 +21,7 @@ While they work, agents can read from your tools:
 - Errors with stack frames, tags and breadcrumbs
 - Slack channels, threads and members
 
-They can also act on them, the same way you can from Goodboy:
+They can also act on them, the same way you can from Goodboy. The bridge refuses agents that Auto started when they ask to approve, request changes, mark ready, merge, decline, push or open a pull request (see **What you control**):
 
 - Comment, reply in a review thread, resolve a thread
 - Update an issue description or move it through a transition
@@ -46,6 +46,7 @@ They can also act on them, the same way you can from Goodboy:
 
 - **Which tools.** An agent is told only about the integrations this workspace has connected through **Connect an integration**. With nothing connected, the agent hears nothing about the bridge.
 - **Which account.** Each connection belongs to the workspace, and a project can override it with its own account. GitHub also works with your `gh` CLI login when the workspace has no GitHub token.
+- **What Auto's agents can publish.** Goodboy refuses an agent that Auto started when it asks the bridge to push, open a pull or merge request, approve, request changes, decline, mark ready or merge, gives it no git host token and makes a plain `git push` fail. It can read, comment, reply and resolve a thread. Goodboy does the publishing itself after its own steps. An agent with a shell still runs as your OS user, so it could reach your git host with your own CLI login; Goodboy shows on its card when the branch changed online.
 - **The connection itself.** Only you can connect, disconnect or check a connection. No agent can.
 - **Draft first.** Pull requests and merge requests an agent opens start as drafts unless it asks for ready. Slack works the same way: in Settings > Integrations > Slack, set replies and reactions to Allowed, Ask first or Never. Ask first queues the message instead of posting it.
 - **Slack channels and scope.** An agent only reads the channels you follow, never the rest of your workspace, and never starts a new conversation or sends a direct message.
@@ -76,6 +77,8 @@ That is why the bridge is not an MCP server or an injected environment variable.
 **No second implementation.** Every verb calls the same function the app already uses for that integration. A fix to a query reaches the UI and the agent at the same time. There is no second GraphQL document to keep in sync.
 
 **Read and write are separate paths.** Reading an issue changes nothing. Posting a comment, merging, approving or moving a ticket is visible to other people. Running the command again does not undo it. Each verb declares its `Access`. Reads and writes go through separate arms of the dispatcher, so no write can come in through the read path.
+
+**The bridge is the boundary for acts.** The bridge never takes the caller's word for who it is. `turn_spawn` records the pid of every turn process it starts, Auto child or hand started, under one lock held across the spawn (`spawn_turn` in `query_bridge/auto_child.rs`). On each connection the listener reads the pid of the process on the other end from the socket itself (`peer_cred`), walks its parent chain and takes the first recorded turn it meets, with the start time checked so a reused pid does not count. `dispatch` then refuses every verb in `ACT_VERBS` before the arm for its access runs: with `auto_child_act` for a descendant of an Auto child, and with `caller_unknown` when the chain reaches no recorded turn (a process that left its turn's tree, or anything outside Goodboy). Only a descendant of a hand started turn acts. `GOODBOY_RUN_ID` and `--run` play no part in this. A new act verb that publishes work joins `ACT_VERBS`; a test checks each entry is a catalogued write.
 
 **The credential stays with the person.** Connect, disconnect and validate are left out of the catalog on purpose.
 
@@ -115,6 +118,8 @@ Every response has the shape `{ok, data, error}`. When the bridge refuses, it ca
 - `unsafe_cleanup`: removing it would lose work or hit a running process
 - `operation_pending`: the request may have run, so read it back
 - `request_conflict`: same request id, different arguments
+- `auto_child_act`: the request came from inside an Auto child's process tree, and push, open a pull or merge request, approve, request changes, decline and mark ready are not available to it
+- `caller_unknown`: one of those acts came from a process that is not inside a turn Goodboy started, so it is refused
 - `fork_unsatisfied`: the fork came back as the source mount, or on another branch, so no new turn starts
 
 New codes can be added over time. The response shape stays the same.

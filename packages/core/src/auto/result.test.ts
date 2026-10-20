@@ -42,6 +42,15 @@ const base = (overrides: Partial<BuildResultParams> = {}): BuildResultParams => 
   ...overrides,
 });
 
+describe('the summary a delegation carries', () => {
+  it('carries a closing excerpt up to the Runs budget without cutting its last line', () => {
+    const text = `${'a'.repeat(6_000)}\nLast line.\n<<step-done id="${ID}">>`;
+    const built = buildDelegationResult(base({ closing: closingOf(text) }));
+    expect(built.declared.summary.length).toBeLessThanOrEqual(4_000);
+    expect(built.declared.summary.endsWith('Last line.')).toBe(true);
+  });
+});
+
 describe('the outcome of a delegation', () => {
   it('is completed when the child closed with the closing line and the process exited cleanly', () => {
     expect(buildDelegationResult(base())).toMatchObject({
@@ -131,6 +140,24 @@ describe('the outcome of a delegation', () => {
     expect(text).toContain('implementer agent-implementer-1 (delegation-1): completed');
     expect(text).toContain('changed files: src/ledger.ts (attempt)');
     expect(text).toContain('cost 0.42 USD (reported)');
+  });
+
+  it('tells Auto when the branch moved online and when that is unknown, and omits it otherwise', () => {
+    const remote = (status: 'moved' | 'unknown' | 'unchanged') => ({
+      status,
+      branch: 'ak/ledger-export',
+      before: 'aaa111',
+      after: status === 'moved' ? 'bbb222' : 'aaa111',
+    });
+    const render = (params: Partial<BuildResultParams>) =>
+      renderDelegationResult({ result: buildDelegationResult(base(params)) });
+    expect(render({ remote: remote('moved') })).toContain(
+      'The branch changed online while this agent worked (ak/ledger-export)',
+    );
+    expect(render({ remote: remote('unknown') })).toContain('could not be read (ak/ledger-export)');
+    expect(render({ remote: remote('unchanged') })).not.toContain('online');
+    expect(render({})).not.toContain('online');
+    expect(buildDelegationResult(base({ remote: null })).verified).not.toHaveProperty('remote');
   });
 
   it('leads with the name of the agent when it has one', () => {

@@ -39,21 +39,31 @@ const reviewed = async (): Promise<RuntimeWorld> => {
   await userSays({ world, id: 'outbox-user-1', text: 'review the retry fix' });
   await autoDelegates({ world, spec: REVIEW_BATCH });
   await autoTurnEnds({ world });
-  const [first, second, third] = world.state.ports.childTurns;
-  if (first === undefined || second === undefined || third === undefined) {
+  const turns = world.state.ports.childTurns;
+  const indexOfTask = (task: string) => turns.findIndex((turn) => turn.text.includes(task));
+  const firstIndex = indexOfTask('Fix the retry in ledger-core.');
+  const secondIndex = indexOfTask('Fix the webhook in notify-relay.');
+  const first = turns[firstIndex];
+  const second = turns[secondIndex];
+  if (first === undefined || second === undefined || turns.length !== 3) {
     throw new Error('three children were expected');
   }
   await childTurnEnds({
     world,
-    index: 0,
+    index: firstIndex,
     text: done(first.childAgentId, 'Built the key once per credit.'),
   });
   await childTurnEnds({
     world,
-    index: 1,
+    index: secondIndex,
     text: done(second.childAgentId, 'The webhook now dedupes by event id.'),
   });
-  await childTurnEnds({ world, index: 2, text: 'crashed', overrides: { exit: 'error' } });
+  await childTurnEnds({
+    world,
+    index: indexOfTask('Find why the webhook fires twice.'),
+    text: 'crashed',
+    overrides: { exit: 'error' },
+  });
   return world;
 };
 
@@ -94,8 +104,8 @@ describe('the results each Auto turn read, as the chat draws them', () => {
       'The webhook now dedupes by event id.',
       'crashed',
     ]);
-    expect(views[0]?.deliveredResults.map((result) => result.childAgentId)).toEqual(
-      world.state.ports.childTurns.map((turn) => turn.childAgentId),
+    expect(views[0]?.deliveredResults.map((result) => result.childAgentId).sort()).toEqual(
+      world.state.ports.childTurns.map((turn) => turn.childAgentId).sort(),
     );
   });
 

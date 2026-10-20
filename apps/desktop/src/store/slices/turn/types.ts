@@ -41,6 +41,7 @@ export type SendTurnInput = Readonly<{
   deliveryId?: string;
   onSettled?: (settled: TurnSettledInfo) => void;
   captureMode?: 'new' | 'revise';
+  briefVersion?: number;
   content: string;
   attachments?: ReadonlyArray<AttachmentInput>;
   storedAttachments?: ReadonlyArray<MessageAttachment>;

@@ -4,6 +4,7 @@ import {
   previewStepOutputSummary,
 } from '../summarizer/step-output';
 import { ROLE_REGISTRY, SELECTABLE_AGENT_ROLES } from '../roles';
+import { roleNeedsSection } from '../roleNeeds';
 import { formatWorkflowModelMenu } from './formatWorkflowModelMenu';
 import type { OrchestratorInput } from './types';
 
@@ -47,12 +48,14 @@ After each completed step, including kickoff when no steps exist, decide the sin
 
 Flow rules, in this order of precedence:
 1. From the goal and the operator process, estimate roughly how many steps this run should take and treat that estimate as your own soft cap. Exceed it only when what the run discovered justifies the extra work, and say so in reason. The run closes when the goal and the operator process are satisfied, never because a count was reached, and once they are satisfied you never keep going unless the operator explicitly asks for more.
-2. Discovery, then a decision, then work. Unless the goal is already a located one-file fix or the operator process says otherwise, the run starts with a scout or investigator step and the step after it is a planner step that turns those findings into the work to do. Do not go from discovery straight to an implementer.
+2. Discovery, then a decision, then work. Unless the goal already names the files to change, is a located one-file fix, or the operator process says otherwise, the run starts with a scout or investigator step and the step after it is a planner step that turns those findings into the work to do. Do not go from discovery straight to an implementer.
 3. Never reopen work a completed step already covers. If the gap left behind is small, return done and name that gap in the reason.
 4. One review or test pass per implementation. Wanting a second review of the same work means the run should end.
 5. Return done when the goal and the operator process are satisfied, when what is left needs the operator to decide, or when the process says to stop. Return blocked only when progress requires a human decision, never because you lack repository access.
 
 Roles are limited to: ${ORCHESTRATOR_ROLE_VOCABULARY}. Use docs only for repository documentation, never for reports. Fixing review findings is implementer work.
+
+${roleNeedsSection({ driver: 'orchestrator' })}
 
 For a next step, promptPrefix is the instruction the step agent starts from and expectedOutput tells the post-step summarizer exactly what to extract.
 

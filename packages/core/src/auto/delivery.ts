@@ -1,3 +1,4 @@
+import { substepNeedsLine } from './digest';
 import {
   isQuestionPayload,
   isRefusalPayload,
@@ -68,11 +69,14 @@ const questionsBlock = ({ payloads }: QuestionsBlockParams): string | null => {
         : [`  options: ${question.suggestedAnswers.join(' | ')}`];
     const recommended =
       question.recommendedAnswer === null ? [] : [`  recommended: ${question.recommendedAnswer}`];
+    const needs =
+      question.needs === undefined ? [] : [`  ${substepNeedsLine({ needs: question.needs })}`];
     return [
       `- ${question.role} ${question.childAgentId} asks (delegation ${question.delegationId}, question ${question.questionId}):`,
       `  ${question.text.replace(/\s+/g, ' ').trim()}`,
       ...suggestions,
       ...recommended,
+      ...needs,
       `  Answer it with an answer block for delegation ${question.delegationId} and question ${question.questionId}, or ask the user in this chat.`,
     ];
   });

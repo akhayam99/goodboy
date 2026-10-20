@@ -1,7 +1,16 @@
-import { autoRemainingForGates, type AdmissionChild, type AdmissionSnapshot } from '@goodboy/core';
+import {
+  autoRemainingForGates,
+  delegationDepthOf,
+  substepLinkOf,
+  type AdmissionChild,
+  type AdmissionParentFacts,
+  type AdmissionSnapshot,
+} from '@goodboy/core';
 import {
   getAutoArtifact,
   getAutoTree,
+  listAutoAttemptsOfDelegation,
+  listAutoDelegations,
   listOpenAutoDelegations,
   readAutoArtifactLiveState,
   readAutoTreeSpend,
@@ -35,6 +44,52 @@ const referencedArtifactIds = ({
   return [...new Set(ids)];
 };
 
+type ParentFactsParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+  readonly children: ReadonlyArray<AdmissionChild>;
+};
+
+const parentFactsOf = async ({
+  db,
+  treeId,
+  children,
+}: ParentFactsParams): Promise<ReadonlyArray<AdmissionParentFacts>> => {
+  const parentIds = [
+    ...new Set(
+      children.flatMap((child) =>
+        child.substep === undefined || child.substep === null
+          ? []
+          : [child.substep.parentDelegationId],
+      ),
+    ),
+  ];
+  if (parentIds.length === 0) {
+    return [];
+  }
+  const all = await listAutoDelegations({ db, treeId });
+  const facts: AdmissionParentFacts[] = [];
+  for (const parentId of parentIds) {
+    const parent = all.find((delegation) => delegation.id === parentId);
+    if (parent === undefined) {
+      continue;
+    }
+    const attempts = await listAutoAttemptsOfDelegation({ db, delegationId: parent.id });
+    const latest = attempts.at(-1);
+    facts.push({
+      delegationId: parent.id,
+      state: parent.state,
+      generation: parent.generation,
+      pausedQuestionId: latest?.state === 'paused' ? latest.questionId : null,
+      depth: delegationDepthOf({ request: parent.request }),
+      substeps: all.filter(
+        (delegation) => substepLinkOf({ request: delegation.request })?.delegationId === parent.id,
+      ).length,
+    });
+  }
+  return facts;
+};
+
 export const readAdmissionSnapshot = async ({
   db,
   treeId,
@@ -57,6 +112,7 @@ export const readAdmissionSnapshot = async ({
       return { artifactId: id, registered, live };
     }),
   );
+  const parents = await parentFactsOf({ db, treeId, children });
   return {
     tree,
     ownerId,
@@ -64,7 +120,8 @@ export const readAdmissionSnapshot = async ({
     callerAgentId,
     expectedGeneration,
     expectedRunId,
-    openCount: open.length,
+    openCount: open.filter((delegation) => delegation.state !== 'paused').length,
+    parents,
     openChildAgentIds: open.map((delegation) => delegation.childAgentId),
     remainingUsd: autoRemainingForGates({ spend }),
     artifacts,

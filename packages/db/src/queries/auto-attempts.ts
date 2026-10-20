@@ -11,6 +11,7 @@ import {
   type AutoJsonObject,
   type AutoOutcome,
 } from './auto-delegations';
+import { AUTO_OWNER_GUARD_SQL, autoOwnerGuardParams } from './auto-trees';
 
 export const AUTO_ATTEMPT_STATES = ['starting', 'running', 'paused', 'ended'] as const;
 
@@ -219,6 +220,113 @@ export const endAutoAttemptStatement = ({
     attemptId,
     generation,
   ],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
+type PatchAttemptPublishStatementParams = {
+  readonly attemptId: AutoAttemptId;
+  readonly generation: number;
+  readonly publish: unknown;
+  readonly abortCode: string;
+};
+
+export const patchAutoAttemptPublishStatement = ({
+  attemptId,
+  generation,
+  publish,
+  abortCode,
+}: PatchAttemptPublishStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_attempts
+    SET result_snapshot_json = json_set(result_snapshot_json, '$.envelope.verified.publish', json(?))
+    WHERE id = ? AND generation = ? AND state = 'ended' AND result_snapshot_json IS NOT NULL`,
+  params: [JSON.stringify(publish), attemptId, generation],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
+const PENDING_PUBLISH_SQL = `json_extract(result_snapshot_json, '$.envelope.verified.publish.state') = 'pushing'
+  AND json_extract(result_snapshot_json, '$.envelope.verified.publish.isConfirmed') = ?`;
+
+type ClaimAttemptPublishStatementParams = {
+  readonly attemptId: AutoAttemptId;
+  readonly treeId: AutoTreeId;
+  readonly generation: number;
+  readonly ownerId: string;
+  readonly nowMs: number;
+  readonly abortCode: string;
+};
+
+export const claimAutoAttemptPublishStatement = ({
+  attemptId,
+  treeId,
+  generation,
+  ownerId,
+  nowMs,
+  abortCode,
+}: ClaimAttemptPublishStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_attempts
+    SET result_snapshot_json = json_set(result_snapshot_json, '$.envelope.verified.publish.isConfirmed', json('true'))
+    WHERE id = ? AND tree_id = ? AND generation = ? AND state = 'ended' AND ${PENDING_PUBLISH_SQL}
+      AND EXISTS (
+        SELECT 1 FROM auto_trees
+        WHERE id = ? AND generation = ? AND stop_state = 'none' AND ${AUTO_OWNER_GUARD_SQL}
+      )`,
+  params: [
+    attemptId,
+    treeId,
+    generation,
+    0,
+    treeId,
+    generation,
+    ...autoOwnerGuardParams({ ownerId, nowMs }),
+  ],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
+type SettleAttemptPublishStatementParams = {
+  readonly attemptId: AutoAttemptId;
+  readonly generation: number;
+  readonly publish: unknown;
+  readonly isClaimed: boolean;
+  readonly abortCode: string;
+};
+
+export const settleAutoAttemptPublishStatement = ({
+  attemptId,
+  generation,
+  publish,
+  isClaimed,
+  abortCode,
+}: SettleAttemptPublishStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_attempts
+    SET result_snapshot_json = json_set(result_snapshot_json, '$.envelope.verified.publish', json(?))
+    WHERE id = ? AND generation = ? AND state = 'ended' AND ${PENDING_PUBLISH_SQL}`,
+  params: [JSON.stringify(publish), attemptId, generation, isClaimed ? 1 : 0],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
+type PatchAttemptChecksStatementParams = {
+  readonly attemptId: AutoAttemptId;
+  readonly generation: number;
+  readonly checks: unknown;
+  readonly checksRun: unknown;
+  readonly abortCode: string;
+};
+
+export const patchAutoAttemptChecksStatement = ({
+  attemptId,
+  generation,
+  checks,
+  checksRun,
+  abortCode,
+}: PatchAttemptChecksStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_attempts
+    SET result_snapshot_json = json_set(result_snapshot_json, '$.envelope.verified.checks', json(?), '$.envelope.verified.checksRun', json(?))
+    WHERE id = ? AND generation = ? AND state = 'ended' AND result_snapshot_json IS NOT NULL`,
+  params: [JSON.stringify(checks), JSON.stringify(checksRun), attemptId, generation],
   abortWhen: 'noChanges',
   abortCode,
 });

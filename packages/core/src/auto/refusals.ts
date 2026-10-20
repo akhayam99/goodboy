@@ -1,6 +1,7 @@
 export const AUTO_REFUSAL_CODES = [
   'request_conflict',
   'depth_cap',
+  'substep_cap',
   'breadth_cap',
   'empty_batch',
   'budget',

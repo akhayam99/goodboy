@@ -1,6 +1,6 @@
 import { AUTO_USD_EPSILON } from '@goodboy/db';
 import type { AdmissionSnapshot } from './admission';
-import { attemptCeilingUsd } from './limits';
+import { AUTO_MAX_OPEN_CHILDREN, attemptCeilingUsd } from './limits';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
 
@@ -40,6 +40,9 @@ export const diagnoseResume = ({ snapshot, role }: DiagnoseResumeParams): Resume
   }
   if (snapshot.nowMs >= tree.hardDeadlineAt) {
     return { kind: 'refused', code: 'limit_wall_clock' };
+  }
+  if (snapshot.openCount + 1 > AUTO_MAX_OPEN_CHILDREN) {
+    return { kind: 'refused', code: 'breadth_cap' };
   }
   const ceilingUsd = attemptCeilingUsd({ role, remainingUsd: snapshot.remainingUsd });
   if (ceilingUsd <= AUTO_USD_EPSILON) {

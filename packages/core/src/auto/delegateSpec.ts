@@ -1,4 +1,6 @@
 import { sha256Hex } from '../slug/sha256';
+import { AUTO_FACTS_MOUNTS_MAX } from './limits';
+import { parseDelegatePublish, type DelegatePublish } from './publish';
 import type { AutoRefusalCode } from './refusals';
 import { parseAutoDelegationRole, type AutoDelegationRole } from './roles';
 
@@ -27,6 +29,10 @@ export type DelegateChildSpec = Readonly<{
   mount: string | null;
   revises: DelegateRevise | null;
   changeFrom: ReadonlyArray<string>;
+  publish: DelegatePublish | null;
+  facts: ReadonlyArray<string>;
+  decisions: ReadonlyArray<string>;
+  forQuestion: string | null;
   retryOf: string | null;
 }>;
 
@@ -123,6 +129,10 @@ const RETRY_EXCLUSIVE_KEYS = [
   'mount',
   'revises',
   'changeFrom',
+  'publish',
+  'facts',
+  'decisions',
+  'forQuestion',
   'taskType',
   'difficulty',
 ] as const;
@@ -170,6 +180,10 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
       mount: null,
       revises: null,
       changeFrom: [],
+      publish: null,
+      facts: [],
+      decisions: [],
+      forQuestion: null,
       retryOf,
     },
   };
@@ -190,6 +204,14 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
   const retryOf = textOf({ value: raw['retryOf'], max: DELEGATE_FIELD_CHARS });
   if (retryOf !== null) {
     return retryChild({ raw, slot, retryOf });
+  }
+  const publish = parseDelegatePublish({ value: raw['publish'] });
+  if (publish === 'invalid') {
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message: `child ${slot + 1}: publish needs a mode of push or force`,
+    });
   }
   const rawRole = raw['role'];
   const role = parseAutoDelegationRole({ role: rawRole });
@@ -233,6 +255,10 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
       mount: textOf({ value: raw['mount'], max: DELEGATE_FIELD_CHARS }),
       revises,
       changeFrom: listOf({ value: raw['changeFrom'] }),
+      publish,
+      facts: listOf({ value: raw['facts'] }).slice(0, AUTO_FACTS_MOUNTS_MAX),
+      decisions: listOf({ value: raw['decisions'] }),
+      forQuestion: textOf({ value: raw['forQuestion'], max: DELEGATE_FIELD_CHARS }),
       retryOf: null,
     },
   };
@@ -282,7 +308,13 @@ export const hashDelegateChildren = ({ children }: HashParams): string =>
         child.mount,
         child.revises === null ? null : [child.revises.artifactId, child.revises.expectedRevision],
         child.changeFrom,
+        child.publish === null
+          ? null
+          : [child.publish.mode, child.publish.reviewerReportId, child.publish.isContentChanging],
         child.retryOf,
+        ...(child.facts.length > 0 ? [child.facts] : []),
+        ...(child.decisions.length > 0 ? [child.decisions] : []),
+        ...(child.forQuestion === null ? [] : [['forQuestion', child.forQuestion]]),
       ]),
     ),
   );

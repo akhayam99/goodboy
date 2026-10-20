@@ -155,7 +155,7 @@ counter with a timestamp and uses `create_dir` to reject reuse.
 - The `mode` file next to the scripts picks the behavior: `ok` replays the recorded stream, `fail` exits 3 with stderr, `flood` writes 300 KiB to stderr first, `hang` sleeps until it is cancelled, `partial`, `binary` and `silent` cover the odd endings, and the version and sign-in modes cover detection.
 - A script writes its argv and a fixed list of env vars to `fake-cli-argv.txt` and `fake-cli-env.txt` in its working dir. A test asserts on those, so it sees what the child really got.
 - The scripts keep the executable bit in git and use only POSIX `sh`, `cat`, `head`, `dd`, `tr` and `sleep`, so they run the same on the Linux runner.
-- A test uses `blocks_push: true`. The other branch of `spawn_one` reads the GitHub token from the credential store.
+- A test uses `blocks_push: true`. The other branch of `spawn_one` reads the GitHub token from the credential store. A test of an Auto child spawns with `is_auto_child: true` (`spawn_as_auto_child`) and holds the `ParentEnv` lock, because the turn registry in `query_bridge/auto_child.rs` is process wide. To prove what the bridge sees, run the fake in `hang` mode and ask `caller_of` about the sleeper pid it writes: that pid is a real descendant of the turn.
 - The fake replays a recorded output. It proves our spawn and our parser, not that the flags still exist in the vendor's CLI. Only the vendor's `--help` shows that.
 - Adding a provider or a stream shape: add a script and a `streams/` file, then a test that asserts the argv and the lines. Prove it can fail: break the code it covers, see the test go red, restore it.
 

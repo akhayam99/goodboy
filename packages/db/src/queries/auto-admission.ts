@@ -43,7 +43,7 @@ export const autoAdmissionTreeStatement = ({
       AND ${AUTO_OWNER_GUARD_SQL}
       AND turn_delegate_calls < ? AND refusals_used < ? AND ? < hard_deadline_at
       AND (SELECT COUNT(*) FROM auto_delegations
-            WHERE tree_id = auto_trees.id AND state <> 'settled') + ? <= ?
+            WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + ? <= ?
       AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
@@ -174,6 +174,53 @@ export const autoInputArtifactStatements = ({
   ];
 };
 
+type SubstepStatementsParams = {
+  readonly treeId: AutoTreeId;
+  readonly slot: number;
+  readonly parentDelegationId: AutoDelegationId;
+  readonly questionId: string;
+  readonly generation: number;
+  readonly maxSubsteps: number;
+  readonly parentDeadlineAt: number;
+};
+
+export const autoAdmissionSubstepAbort = ({ slot }: ArtifactAbortParams): string =>
+  `admission_substep:${slot}`;
+
+export const autoSubstepStatements = ({
+  treeId,
+  slot,
+  parentDelegationId,
+  questionId,
+  generation,
+  maxSubsteps,
+  parentDeadlineAt,
+}: SubstepStatementsParams): ReadonlyArray<GuardedStatement | PlainStatement> => [
+  {
+    sql: `SELECT 1 FROM auto_delegations parent
+      WHERE parent.id = ? AND parent.tree_id = ? AND parent.generation = ?
+        AND parent.state = 'paused'
+        AND EXISTS (
+          SELECT 1 FROM auto_attempts latest
+          WHERE latest.delegation_id = parent.id AND latest.state = 'paused'
+            AND latest.question_id = ?
+            AND latest.ordinal = (
+              SELECT MAX(ordinal) FROM auto_attempts WHERE delegation_id = parent.id
+            )
+        )
+        AND (SELECT COUNT(*) FROM auto_delegations
+              WHERE tree_id = parent.tree_id
+                AND json_extract(request_json, '$.parent.delegationId') = parent.id) < ?`,
+    params: [parentDelegationId, treeId, generation, questionId, maxSubsteps],
+    abortWhen: 'noRows',
+    abortCode: autoAdmissionSubstepAbort({ slot }),
+  },
+  {
+    sql: `UPDATE auto_delegations SET deadline_at = MAX(deadline_at, ?) WHERE id = ?`,
+    params: [parentDeadlineAt, parentDelegationId],
+  },
+];
+
 type ResumeTreeStatementParams = {
   readonly treeId: AutoTreeId;
   readonly rootAgentId: AgentId;
@@ -181,6 +228,7 @@ type ResumeTreeStatementParams = {
   readonly nowMs: number;
   readonly generation: number;
   readonly runId: string;
+  readonly maxOpenChildren: number;
   readonly requestedUsd: number;
 };
 
@@ -193,6 +241,7 @@ export const autoResumeTreeStatement = ({
   nowMs,
   generation,
   runId,
+  maxOpenChildren,
   requestedUsd,
 }: ResumeTreeStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_trees
@@ -202,6 +251,8 @@ export const autoResumeTreeStatement = ({
       AND phase IN ('deciding', 'delegating') AND stop_state = 'none' AND active_run_id = ?
       AND ${AUTO_OWNER_GUARD_SQL}
       AND ? < hard_deadline_at
+      AND (SELECT COUNT(*) FROM auto_delegations
+            WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + 1 <= ?
       AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
@@ -211,6 +262,7 @@ export const autoResumeTreeStatement = ({
     runId,
     ...autoOwnerGuardParams({ ownerId, nowMs }),
     nowMs,
+    maxOpenChildren,
     requestedUsd,
   ],
   abortWhen: 'noChanges',

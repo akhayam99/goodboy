@@ -211,8 +211,10 @@ writing to it reopens it to **Deciding**.
   opening Auto agents or an Auto agent opens it, and it follows an Auto agent
   or one of its children in the center. Auto comes first, then one row per
   child under it, all expanded and with no group row. A row is one line: state
-  node, role glyph, name and the time; its tooltip and accessible name say the
-  name and the state word. While Auto has no child it shows Auto alone ("Idle"
+  node, role glyph, name and the time; its accessible name says the name and
+  the state word, and its fact card (`railRowCardOf`) gives the name, the
+  state, the task Auto gave, the provider, the model and the effort as rows.
+  While Auto has no child it shows Auto alone ("Idle"
   before a tree exists) and "No agents started yet". Every state word is gray beside its toned node and comes from
   one word map (`autoTreeWordOf` for Auto, `delegationCardOf` for a child):
   **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
@@ -424,12 +426,23 @@ capability token and no allow rule. It decides by ending its final reply with at
 
 - `delegate` hands one to four children to agents of a role (`requestId` is optional and
   derived from the run when missing; `children` is the spec `parseDelegateSpec` validates).
-- `answer` answers the question of a child (`delegation`, `question`, `text`).
+- `answer` answers the question of a child (`delegation`, `question`, `text`, and an optional
+  `artifact` id whose text Goodboy puts into the resume, see Substeps).
 - `finish` says the work is done (`summary`). It is refused while an agent is open or a result
   waits. It stores nothing: the tree still rests as Idle until the user marks it finished. The
   prompt asks Auto to suggest **Mark finished** and to send `finish` only when the user asked to
   close.
 - No block is a plain answer to the user.
+
+After the routing table the prompt renders **WHEN TO ADD A ROLE** from `packages/core/src/roleNeeds.ts`
+(`roleNeedsSection`, driver `auto`): per role a reason the root can see and a "do not add it when".
+The default is one implementer with nothing added, a "do not" beats a reason, and a force push
+always brings a reviewer. The rewriter, scribe and CI fixer rows exist for Auto only. The
+delegation rules add "decide once before you fan out": when two or more writers would get the
+same task on different branches, one writer or a planner decides first and each writer gets the
+decision in its task. These are prompt rules, not enforcement: a test proves the prompt holds
+each row, not that the model follows it. The Orchestrated prompt renders the same table filtered
+to its roles ([workflows.md](./workflows.md) → Step sequencing).
 
 The system prompt (`packages/core/src/auto/prompt.ts`) carries the role list and a routing table,
 **WHICH ROLE FOR WHICH WORK**, generated from `AUTO_ROLE_WHEN` (one line per Auto role, so a role
@@ -439,8 +452,9 @@ Scribe, a failing check to a CI fixer, the commit history of the branch to a Rew
 fixer and Rewriter are writers (m232 widens the role CHECK of `auto_delegations`; Rust
 `WRITER_ROLES` holds them). A Rewriter child cannot start: its turn needs the copy the History flow
 prepares (`leaseTurnWriter` throws without a `historyRewriters` binding), so `resolveDelegateChild`
-refuses the role with `spec_invalid` before any agent exists and tells Auto to hand the user to the
-History flow or use an Implementer. A Scribe child writes `<<pr-title>>` and `<<pr-body>>` and never runs
+refuses the role with `spec_invalid` before any agent exists and tells Auto to use an Implementer with
+`publish: {mode: "force"}`: Goodboy checks the tree, keeps a backup and asks the user to confirm the
+force push, and does not check each rewritten commit. A Scribe child writes `<<pr-title>>` and `<<pr-body>>` and never runs
 gh: when it ends completed, `finishAttempt` calls the `publishScribePullRequest` port, which goes
 through `resumeScribePullRequest` and `openScribePullRequest`, the path the Branch page uses
 (draft, the repository's base, never a second request when the branch already has one). The
@@ -464,6 +478,241 @@ ends blocked and says it had no shell tool gets the reason `missing_tool` (not `
 and its result carries the line that tells Auto to hand the same task once to a role that can run
 commands instead of reporting the block as the answer. The reroute is Auto's own next hand over,
 checked by the same refusal, not a second child started by the harness.
+
+**Branch facts for a scout.** A scout cannot run `git log` or `gh pr view`, and giving a read-only
+role a shell would give the Auto root one too (they share an argv). Instead a scout spec may carry
+`"facts":["<mount id>"]`, up to `AUTO_FACTS_MOUNTS_MAX` (4). `resolveDelegateChild` calls
+`gatherBranchFacts` before the kickoff is composed: per named mount the `readBranchFacts` port reads
+the commits since the base branch, the pull or merge request of the branch, its open review threads
+and its checks, on GitHub, GitLab and Bitbucket alike (`makeBranchFactsReaders` goes through
+`pullRequestPortFor` and the review source threads, the same functions the Branch page uses).
+`composeBranchFacts` in core renders them as a `**Facts**` section of the brief, capped by
+`AUTO_FACTS_CHARS` (6,000, split across the mounts) with per-list caps in `limits.ts`. A part the
+host could not read becomes "Facts not available: reason" and the scout still starts; a read slower
+than `AUTO_FACTS_FETCH_MS` (30 s) is cut and marked, and a late answer is dropped. A mount id that
+is not in the conversation refuses with `mount_missing` and starts nothing; `facts` on any role but
+a scout refuses with `spec_invalid`. The ids are stored in `request_json.facts` (no migration), so a
+retry of the scout reads the facts again. The scout argv does not change. The facts are the state
+at that moment, never a live view. The `role_lacks_shell` message and the reroute hint say that
+branch and pull request facts go to a scout, not to a writer.
+
+**A child reads its brief, not the session.** A new delegation carries `briefVersion: 2`
+(`AUTO_BRIEF_VERSION`) in `request_json`; `launchChildren` hands it to the child turn and
+`briefSlotsOf` (`store/slices/turn`) cuts the shared context of that turn to the goal slot: the
+decisions, open questions, files touched and session summary are not sent. Profile, role, rules,
+images and notes for the role are unchanged, and artifact bodies stay inline in the kickoff as
+before. The prompt tells Auto to write each task as a self-contained brief of about 1,500
+characters (goal, inputs, constraints, done when, report shape); the hard cap stays at
+`DELEGATE_TASK_CHARS` (8,000), so nothing new is refused, and a revise is exempt. A spec may carry
+`"decisions":["D27"]`: `resolveDelegateChild` reads the ledger (`listSessionDecisions`) and
+`composeBriefDecisions` writes each active decision in full (cut at `AUTO_BRIEF_DECISION_CHARS`)
+as a `**Decisions**` section before the task. An id that is replaced, withdrawn or unknown is named
+as such in that section and the child still starts; a bare id in the task text is never expanded.
+The ids are stored in `request_json.decisions`, so a retry writes them again from the ledger of that
+moment. A retry or a resume keeps the version of its delegation: a delegation made before the
+upgrade has no `briefVersion`, so its retries and answers keep the full slots. The Context
+drawer says "Auto children read only their brief".
+
+**The way back is an excerpt.** `parseChildClosing` keeps the answer of a child whole up to
+`STEP_OUTPUT_EXCERPT_CHARS` (4,000, the budget the Runs excerpt owns) and above it the same
+head and tail cut Runs use (`excerptStepOutput` in `summarizer/step-output.ts`, no model call),
+with the line "[middle dropped, the full text is in the step transcript]" between; the last line
+survives. The blocked status and the blocking question are read from the whole answer before the
+cut, so a dropped middle never hides them. `DELEGATION_SUMMARY_CHARS` is the same number. A writer
+(implementer, tester, docs, ci-fixer) may attach its long report as a `report` artifact: the kickoff
+expected text says so, `finishedPlain` registers what the child wrote, and a writer that wrote none
+is not failed (`artifactPersistence` is `not_applicable`).
+
+**Answering a child that cannot resume.** The resume text of a paused child (`composeAnswerKickoff`)
+is the question and the answer. A provider outside `AUTO_RESUMING_PROVIDERS` (`isAutoProviderResuming`,
+Claude only; Codex drops the session id in `cli_args.rs`) starts the second attempt with no memory, so
+`kickoffTextOf` in `launchChildren.ts` puts the stored first kickoff (`request_json.kickoff`) and
+"Where you stopped", the excerpt the paused attempt stored as `result_json.tail`, before the question.
+`answerQuestion` copies that tail into the `resume` baseline of the new attempt, so a replay of the
+same answer, a restart and `recover` write the same text. Claude children keep the short text.
+
+**Substeps.** A child that cannot go on without a scout or an investigator adds
+`needs="scout"` or `needs="investigator"` to its blocking question (`parseSubstepNeeds` in
+`core/auto/substep.ts`, read by `parseChildClosing`; any other value is dropped). The attempt pauses
+as for any question, and the question row, the digest line and the resume baseline keep `needs`.
+There is no new verb and no new admission caller: Auto, in its own deciding turn, either answers the
+question or delegates the helper with `"forQuestion":"<question id>"` in the spec of a scout or an
+investigator (`DelegateChildSpec.forQuestion`, part of the request hash; a retry cannot carry it).
+`resolveDelegateChild` finds the delegation paused on that question
+(`getPausedAutoDelegationOfQuestion`), stores `request_json.parent` (`delegationId`, `questionId`,
+`depth`) and gives the helper a kickoff without the ask rule (`isSubstep`). Admission refuses, in
+`core/auto/substepAdmission.ts` and again in `autoSubstepStatements`: `not_paused` (the parent is not
+paused on that question, or is unknown; only its latest attempt counts, since an answered pause
+stays a `paused` attempt row behind the resumed one, so a question already answered never admits a
+helper and the lookup, the snapshot and the guard all read the attempt of the highest ordinal),
+`generation_changed` (the parent's generation is not the tree's), `role_mismatch` (a role other than scout or
+investigator), `depth_cap` (the parent is itself a substep: `AUTO_TREE_DEPTH` is 2, root child 1,
+substep 2), `substep_cap` (a parent has `AUTO_SUBSTEPS_PER_PARENT` = 2 helpers, settled ones counted,
+and the same batch counts). A user message bumps the generation first, so the admit comes back
+`generation_changed`.
+
+A paused delegation no longer counts as open: `autoAdmissionTreeStatement` and
+`autoResumeTreeStatement` count `state NOT IN ('settled', 'paused')`, and the snapshot's `openCount`
+does the same. Four paused parents can each get a helper. The resume of a parent checks a free running
+slot (`breadth_cap` from `diagnoseResume`, the same guard in SQL), so the helper's slot passes back
+to the parent; a refused resume leaves the child paused and the answer is sent again once a slot frees.
+Admitting a helper moves the parent's deadline to the helper's deadline plus
+`AUTO_SUBSTEP_PARENT_SLACK_MS`, in the same transaction, so a waiting parent is not expired. Cost per
+ask: one delegation and two attempts from the tree's counters and budget; the digest and the question
+block say so (`substepNeedsLine`).
+
+When the helper settles, Auto answers the parent. `answer` takes an optional `artifact`: if it is an
+artifact of this tree, `answerQuestion` stores its title, version and text (cut at
+`AUTO_DELIVERY_ARTIFACT_CHARS`) as `report` in the `resume` baseline and `composeAnswerKickoff` writes it
+as "Report handed over"; an unknown artifact is refused `artifact_unknown` and the parent stays paused.
+A failed helper is answered with a plain text. The same answer twice is one resume. `stopTree` cancels
+the helpers (a request with `request_json.parent`) first and waits for them before it cancels the
+rest. A restart keeps the parent paused and the helper running through `recover`. The Agents
+panel tree (`railRowsOf`, `autoSpawnedRowsOf`) draws a helper one level under its parent (`depth` 2,
+one `aria-level` deeper, the parent `aria-expanded`); a helper whose parent is not in the tree reads
+as a plain child. Substeps inside Runs and Orchestrated
+runs are not built: they have no tree, no reservation and no root grant.
+
+**Children never push.** Auto children run under one product rule: only Goodboy pushes, and only
+after its own steps. The boundary is the query bridge. `readTurnStream` marks the spawn of a child
+(`isAutoChildTurn`: origin `delegation` and a confined role other than `auto`, which is the root)
+with `isAutoChild`; `turn_spawn` records the pid of the process it starts (`spawn_turn` in
+`query_bridge/auto_child.rs`) until the process ends, and `dispatch` refuses, before any host call,
+every act in `ACT_VERBS` for a request whose socket peer descends from that pid. The bridge reads
+the peer pid from the socket, never a run id the request carries: GitHub `push`,
+`pr-create`, `pr-ready`, `pr-merge`; GitLab `mr-create`, `mr-approve`, `mr-unapprove`, `mr-merge`;
+Bitbucket `pr-approve`, `pr-unapprove`, `pr-request-changes`, `pr-unrequest-changes`, `pr-merge`,
+`pr-decline`. The child reads the code `auto_child_act` and "Goodboy pushes after its checks. Say in
+your report what should be pushed." Reads, comments, thread replies and thread resolves stay open
+(the task of a job like "resolve review comments"). A turn started by hand is recorded as hand
+started and keeps every verb; an act from a process that descends from no recorded turn is refused
+`caller_unknown`. The env of every child also carries no git host token: `apply_git_host_access`
+in `turn.rs` removes every name in `HOST_TOKEN_ENV` (`GH_TOKEN`, `GITHUB_TOKEN`, the GitHub
+Enterprise pair, `GITLAB_TOKEN`, `GITLAB_ACCESS_TOKEN`) and never adds the workspace token, so the
+publish step runs in Goodboy with Goodboy's credentials. Goodboy keeps Bitbucket credentials in its
+own store and never hands them to a turn. A child reads pull requests, checks and threads through
+the bridge, which still serves every read. Two
+backstops sit behind the boundary and are not the boundary: the env carries a git config that
+makes a push fail (`GIT_CONFIG_*`: pushurl `goodboy-blocked://auto-child` on `origin`, and a
+`pushInsteadOf` rewrite of every `https://`, `http://`, `ssh://`, `git://` and `git@` URL, so any
+remote and any URL fails; a test runs a real `git push`), and a Claude child gets the deny rules
+`Bash(git push:*)`, `Bash(git push *)` and `Bash(*--no-verify*)`. A child with a shell runs as your
+OS user: one that undoes the config on purpose, or calls `gh` or `glab` with your own CLI login, is
+not stopped by the app; the remote watch below shows when the branch moved. The default done-when of an
+Implementer ends with "Nothing is pushed." Scope: Auto children on Claude and Codex.
+
+**Remote watch.** A push that slipped through is seen, not stopped. When a writer attempt launches
+(`launchChildren.ts`, `attemptToLaunch`, a first attempt and a resumed one alike), the
+`readRemoteHead` port reads the online sha of the checked out branch (`worktree_remote_head`, a
+`git ls-remote origin`) and `attemptBaseline.ts` stores it in `baseline_json.remote` as
+`{ kind: 'sha', branch, sha }`, `{ kind: 'absent', branch }` or `{ kind: 'unknown' }`. At the
+settle, `finishAttempt.ts` reads the same branch again (the branch recorded at the start, not
+whatever the child checked out) and `remoteVerdictOf` (`packages/core/src/auto/remoteWatch.ts`)
+writes `result_json.verified.remote`: `{ status: 'unchanged' | 'moved' | 'unknown', branch,
+before, after }`. A failed read on either side is `unknown`, never `unchanged`; a branch that
+appeared or vanished online is `moved`. Read-only roles and attempts without a recorded baseline
+carry no `remote`. The card shows "The branch changed online while this agent worked." or "Could
+not check whether the branch changed online." and nothing for `unchanged`; the digest
+(`renderDelegationResult`) carries the same two lines with the branch name, so Auto reads them.
+The delegation outcome does not change. A repo without an `origin` reads `unknown` on every
+writer. Failed and joined attempts (`failAttempt.ts`, `join.ts`) are not read: they carry no
+attribution either.
+
+**Changed files.** `result_json.verified.changedFiles` lists what a writer attempt changed, and
+committed work counts. `attributeChanges` (`packages/core/src/auto/attribution.ts`) starts from the
+uncommitted status snapshots taken at launch and at the settle, and for a writer adds the files of
+the tree diff between the head recorded at launch and the head at the settle
+(`readCommittedFilesOf`, port `readCommittedFiles`, the existing `worktree_diff_range` command,
+`git diff <start> <end>`; `pathsOfPatch` reads the paths, a rename lists both sides). The diff
+compares trees, not commit ids, so an attempt that rewrote history to the same tree lists nothing.
+A head that did not move skips the read. If the diff cannot be read the list falls back to the
+status files and `isComplete` is false. Read-only roles never read it; a change they make is still
+the `role_read_only_violation`. The list is capped at 50 attempt files.
+
+**Checks.** `result_json.verified.checksRun` holds the verdict of the project scripts the user
+ticked as Auto checks: `green`, `red` or `not_checked` with a `reason` (`none_ticked`, `timed_out`,
+`tree_moved`, `tree_dirty`, `not_available`) and the `commit` the scripts ran on; `verified.checks`
+lists one `harness` row per script. The outcome stays `completed` whatever the verdict, so no
+migration; `checksVerdictOf` and `checksTextOf` (`packages/core/src/auto/checks.ts`) own the verdict
+and the one line the digest and the card print ("Checks green: typecheck, lint", "Checks red:
+typecheck", "Not checked: timed out"). A script is ticked in the project settings, next to its pin
+(`toggleAutoCheck`, settings key `scripts.autoChecks.<projectId>`, a JSON array of the pin ids of
+`scriptPinId`; saved scripts and manifest scripts share the grammar). None ticked reads
+`none_ticked`. `finishAttempt` calls `verifyAttempt` before it settles, only for a writer that ended
+ok and closed with `done`: it pins the run to the end head that attribution read (`expectedHead`;
+no end head reads `not_available`), so a run that waited in the queue while the head moved reads
+`tree_moved` and runs nothing. `runAutoChecks` reads the status snapshot, refuses a tree with
+uncommitted changes (`tree_dirty`), runs the ticked scripts one after the other through the
+`listChecks` and `runCheck` ports (the real ones reuse the Scripts runner, so the runs show in the
+Scripts page; exit 0 is `pass`, a positive code `fail`, a run that could not start `unknown`, and a
+script past `AUTO_CHECK_TIMEOUT_MS` (5 minutes) is cancelled and reads `timed_out` only once its
+process ended, so the queue never moves on while it runs; one still alive 30 seconds after the stop
+marks its worktree, and every check there reads `unknown` without starting until that process
+ends, which the user can force from the Scripts page), then reads the
+snapshot again: a different head or any change reads `tree_moved` and drops the results. Runs on one
+worktree path go through one keyed queue, so two checks of one repo never overlap, the settle's and
+the rerun's alike. `unknown` and `timed_out` never read green. **Run checks again** on the card
+(`rerunChecks`, forwarded over the Auto bridge to the main window with a 30 minute wait instead of
+30 seconds) runs the same scripts against the recorded `commit`: if the head moved, the tree is
+dirty or nothing is ticked any more the rerun is refused with a sentence and the old verdict stays;
+otherwise `patchAutoDelegationChecksStatement` and `patchAutoAttemptChecksStatement` rewrite the
+checks of the settled delegation and its last attempt in one transaction guarded by their
+generation, so a late rerun of an older generation writes nothing. Offered only when
+`canRerunChecks` (a commit is known, something is ticked, the tree was not dirty). A read-only role
+is never checked.
+
+**Publish.** A child never pushes (the bridge refuses it, see the push boundary above); Goodboy does
+it after the work, like the scribe's pull request. A delegate child of role implementer or CI fixer
+may carry `publish`: `"push"`, `"force"`, or `{"mode","reviewer","changesContent"}`
+(`parseDelegatePublish`, `packages/core/src/auto/publish.ts`; a scribe or a read-only role is
+refused `spec_invalid`, a retry cannot set it). It is stored in `request_json.publish`. At the settle
+`finishAttempt` calls `planPublish`, which writes `result_json.verified.publish` (`ResultPublish`),
+no migration, outcome still `completed`:
+
+- The gate (`publishGateOf`) holds when the agent did not close with `done`, ended in error or has a
+  `red` checks verdict; `not_checked` and no verdict pass. A held publish reads "Not pushed: the
+  checks are red" and is retryable only for red checks.
+- The pushed sha is `checksRun.commit`, else the end head. A plain `push` is never sent before the
+  attempt settles: `planPublish` records it as `pushing` ("Pushing <branch> at <sha>") and the settle
+  writes it. Then `pushSettledPublish` claims it in one guarded statement
+  (`claimAutoAttemptPublishStatement`: the attempt still ended at its generation, the tree at that
+  generation, not stopping, and owned by this window's lease) inside the per worktree publish queue
+  (`publishQueue.ts`, shared with `publishAct`), and only a claimed record is pushed through the
+  `pushBranch` port (`pushSessionBranch`, `sha:refs/heads/<branch>`). A claim that fails writes
+  "Auto moved on or stopped before the push, so nothing was pushed", retryable. The result lands on
+  the attempt and, when the batch already joined, on the settled delegation
+  (`followAutoDelegationPublishStatement`). `recoverTree` resumes a `pushing` record that was never
+  claimed under the new owner, and turns one that was claimed when Goodboy closed into a retryable
+  failure; the retry reads the branch online first.
+- `force` first needs the online sha read when the attempt started (`baseline_json.remote`; unknown
+  holds). It keeps a backup ref of that online sha, the commit the force push replaces
+  (`history_backup_create`, kept stamp so the History prune never drops it), and a second one of
+  the start head when it differs; a backup that cannot be kept (the online commit is not in this
+  copy) holds with "Fetch the branch and try again". A branch that was not online at the start gets
+  no backup and no **Put back**. It refuses work whose tree differs from the start
+  (`readCommittedFiles` start to sha) unless `changesContent` is set. It then waits as
+  `awaiting_confirm`: one **Force push** / **Don't push** row per delegate batch
+  (`PublishConfirmRow` in `AutoDelegationLines`), one `publish` bridge call carrying every id.
+- `executePublish` reads the online sha first (already the checked sha: pushed, nothing sent), then
+  pushes the recorded sha itself, never the branch name or HEAD: `pushWithLease` sends
+  `<sha>:refs/heads/<branch>` (`sourceSha`, `lease_push_args` in `github.rs`) with the lease on the
+  recorded online sha, so a commit made after the checks is not pushed. On a failure it cannot
+  classify it reads the online sha back before it writes anything. A lost lease reads the shipped
+  "The online copy changed. Check again before force pushing." Any failure is retryable once
+  (`PUBLISH_MAX_TRIES`). **Try the push again** always plans from the attempt's own commit (the
+  record's sha, never the head of now) and the exit and completion stored in its result. A force
+  retry reads the online copy again, keeps a new backup of it and waits for a new **Force push** with
+  the new lease; a plain retry pushes the recorded sha again.
+- `publishAct` (`confirm`, `decline`, `retry`, `put_back`) runs in the main window through one
+  keyed queue per worktree, writes with `patchAutoDelegationPublishStatement` and the attempt twin
+  guarded by generation, and answers one row per branch, so two of four branches can succeed.
+  **Put back** pushes the backed up online sha (`leaseSha`) with the lease on the pushed sha first;
+  a lost lease, or a failure whose read back does not show the backup online, changes nothing online
+  or here and keeps **Put back** on offer. Only after the online copy is back does it move the local
+  branch with the History restore, and only when the head is still the pushed sha; otherwise the card
+  reads "Put back" with "The local branch was left as it is: " and the reason.
+- Auto reads the line in the digest ("Pushed ...", "Not pushed: ...", "Waiting for you to confirm
+  ..."). It is not sent again when a later click changes it.
 
 `parseAutoBlock` (`packages/core/src/auto/autoBlock.ts`) reads only the settled text of a turn that
 ended ok: it takes the last complete block, strips code fences, escapes raw line breaks in strings
@@ -506,7 +755,8 @@ with role, state and age, questions waiting, the budget, and a `MOUNTS:` line li
 mount as `id (project, branch)` from `buildMountsLine`) and carries the artifact text of each
 result, cut when long, so a provider that does not resume sessions still has its memory. The
 `<<auto>>` block is hidden in the transcript like the other markers; the delegation lines show
-what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use.
+what it did. See [query-bridge.md](query-bridge.md) for the bridge Auto does not use itself and
+refuses to its children for the acts above.
 
 ## Providers
 

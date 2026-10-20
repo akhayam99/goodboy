@@ -12,6 +12,8 @@ import { joinReady } from './join';
 import { launchChildren } from './launchChildren';
 import type { AutoTurnEnded, ChildTurnEnded } from './ports';
 import { recoverTree } from './recover';
+import { publishAct, type PublishActParams } from './publishAct';
+import { rerunChecks, type RerunChecksOutcome } from './rerunChecks';
 import { retryBlockedTree, type RetryBlockedTreeOutcome } from './retryBlockedTree';
 import { settleAutoTurn } from './settleAutoTurn';
 import type { SleepParams } from './startDeliveredTurn';
@@ -46,6 +48,8 @@ export type AutoRuntime = Readonly<{
   stop: (treeId: AutoTree['id']) => Promise<StopTreeOutcome>;
   retry: (treeId: AutoTree['id']) => Promise<RetryBlockedTreeOutcome>;
   confirm: (params: ConfirmRuntimeParams) => Promise<ConfirmDelegationOutcome>;
+  rerunChecks: (delegationId: AutoDelegationId) => Promise<RerunChecksOutcome>;
+  publish: (params: Omit<PublishActParams, 'ctx'>) => ReturnType<typeof publishAct>;
   say: (params: Omit<SubmitUserMessageParams, 'ctx'>) => Promise<SubmitUserMessageOutcome>;
   recover: (treeId: AutoTree['id']) => Promise<boolean>;
   recoverAll: () => Promise<void>;
@@ -142,6 +146,8 @@ export const createAutoRuntime = ({
       const outcome = await confirmDelegation({ ctx, delegationId, decision });
       return outcome;
     },
+    rerunChecks: (delegationId) => rerunChecks({ ctx, delegationId }),
+    publish: (params) => publishAct({ ctx, ...params }),
     say: async (params) => {
       const outcome = await submitUserMessage({ ctx, ...params });
       if (outcome.kind === 'queued') {

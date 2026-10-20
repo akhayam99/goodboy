@@ -9,6 +9,7 @@ import { refreshDiscoveredScripts } from './refreshDiscoveredScripts';
 import { runDiscoveredScript } from './runDiscoveredScript';
 import { runScript } from './runScript';
 import { saveScript } from './saveScript';
+import { toggleAutoCheck } from './toggleAutoCheck';
 import { toggleScriptPin } from './toggleScriptPin';
 import type { SliceDeps } from '../../slice-types';
 
@@ -25,6 +26,7 @@ export const createScriptsSlice = ({ set, get }: SliceDeps) => {
     cancelScript: cancelScript(set, get),
     loadScriptPins: loadScriptPins(set),
     toggleScriptPin: toggleScriptPin(get),
+    toggleAutoCheck: toggleAutoCheck(get),
     loadProjectRootScripts: loadProjectRootScripts(set, get),
   };
 };

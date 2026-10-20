@@ -111,6 +111,49 @@ describe('closing the work of one child', () => {
     expect(world.errors).toEqual([]);
   });
 
+  it('registers a report a writer attached and asks none of a writer that wrote none', async () => {
+    const world = await startWith(IMPLEMENTER);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+    await captureReport(world, turn.runId);
+    await childTurnEnds({ world, index: 0, text: closing(turn.childAgentId) });
+    expect(
+      await getAutoArtifact({
+        db: world.state.world.db,
+        artifactId: brandId<ArtifactId>({ value: 'report-1' }),
+      }),
+    ).toMatchObject({ ownerRole: 'implementer' });
+    expect(world.state.ports.autoTurns[1]?.text).toContain('artifact report-1 (report)');
+    expect((await delegationOf(world)).outcome).toBe('completed');
+
+    const bare = await startWith(IMPLEMENTER);
+    const bareTurn = bare.state.ports.childTurns[0];
+    if (bareTurn === undefined) {
+      throw new Error('a child was expected');
+    }
+    await childTurnEnds({ world: bare, index: 0, text: closing(bareTurn.childAgentId) });
+    expect(bare.state.ports.autoTurns[1]?.text).not.toContain('could not be saved');
+    expect((await delegationOf(bare)).outcome).toBe('completed');
+  });
+
+  it('hands Auto the head and the last line of a long answer, not only its tail', async () => {
+    const world = await startWith(IMPLEMENTER);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+    const body = Array.from({ length: 70 }, (_value, index) => `Part ${index} ${'z'.repeat(90)}`);
+    const text = `${body.join('\n\n')}\nLast line: export verified.\n<<step-done id="${turn.childAgentId}">>`;
+    await childTurnEnds({ world, index: 0, text });
+    const told = world.state.ports.autoTurns[1]?.text ?? '';
+    expect(told).toContain('Part 0 ');
+    expect(told).toContain('middle dropped');
+    expect(told).toContain('Last line: export verified.');
+    expect((await delegationOf(world)).outcome).toBe('completed');
+  });
+
   it('fails a scout that owes a report and wrote none', async () => {
     const world = await startWith(SCOUT);
     const turn = world.state.ports.childTurns[0];
@@ -211,6 +254,80 @@ describe('closing the work of one child', () => {
 
     const text = world.state.ports.autoTurns[1]?.text ?? '';
     expect(text).toContain('changed files: src/export.ts (attempt), src/dirty.ts (preexisting)');
+  });
+
+  const endWithHeads = async ({
+    committed,
+    ending = 'def456',
+  }: {
+    readonly committed: ReadonlyArray<string> | Error;
+    readonly ending?: string;
+  }) => {
+    const world = await makeRuntimeWorld();
+    await userSays({ world, id: 'outbox-user-1', text: 'add the export' });
+    world.state.ports.setSnapshots('/work/harborline/ledger-core', [
+      { head: 'abc123', entries: [], isPartial: false },
+      { head: ending, entries: [], isPartial: false },
+    ]);
+    world.state.ports.setCommittedFiles('/work/harborline/ledger-core', committed);
+    await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
+    await autoTurnEnds({ world });
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+    await childTurnEnds({ world, index: 0, text: closing(turn.childAgentId) });
+    return world;
+  };
+
+  it('lists the files a writer committed even though the status is clean', async () => {
+    const world = await endWithHeads({ committed: ['src/export.ts', 'src/export.test.ts'] });
+
+    expect(world.state.ports.committedReads).toEqual([
+      { worktreePath: '/work/harborline/ledger-core', base: 'abc123', head: 'def456' },
+    ]);
+    const text = world.state.ports.autoTurns[1]?.text ?? '';
+    expect(text).toContain('changed files: src/export.test.ts (attempt), src/export.ts (attempt)');
+  });
+
+  it('lists no file for a rewrite that ended on the same tree', async () => {
+    const world = await endWithHeads({ committed: [] });
+
+    expect(world.state.ports.committedReads).toHaveLength(1);
+    expect(world.state.ports.autoTurns[1]?.text ?? '').not.toContain('changed files');
+    expect((await delegationOf(world)).outcome).toBe('completed');
+  });
+
+  it('does not diff when the head did not move', async () => {
+    const world = await endWithHeads({ committed: ['src/never.ts'], ending: 'abc123' });
+
+    expect(world.state.ports.committedReads).toEqual([]);
+    expect(world.state.ports.autoTurns[1]?.text ?? '').not.toContain('changed files');
+  });
+
+  it('keeps the dirty files and settles when the tree diff cannot be read', async () => {
+    const world = await endWithHeads({ committed: new Error('bad revision') });
+
+    expect(world.state.ports.committedReads).toHaveLength(1);
+    expect(world.state.ports.autoTurns[1]?.text ?? '').not.toContain('src/never.ts');
+    expect((await delegationOf(world)).outcome).toBe('completed');
+    expect(world.errors).toEqual([]);
+  });
+
+  it('never diffs commits for a read-only role', async () => {
+    const world = await startWith(SCOUT);
+    const turn = world.state.ports.childTurns[0];
+    if (turn === undefined) {
+      throw new Error('a child was expected');
+    }
+    await captureReport(world, turn.runId);
+    world.state.ports.setSnapshots('/work/harborline/ledger-core', [
+      { head: 'def456', entries: [], isPartial: false },
+    ]);
+
+    await childTurnEnds({ world, index: 0, text: closing(turn.childAgentId) });
+
+    expect(world.state.ports.committedReads).toEqual([]);
   });
 
   it('reports a change made by a read-only role as a violation and fails the delegation', async () => {

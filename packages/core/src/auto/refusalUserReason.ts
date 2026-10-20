@@ -3,6 +3,7 @@ import { AUTO_REFUSAL_CODES, type AutoRefusalCode } from './refusals';
 export const AUTO_REFUSAL_USER_REASON = {
   request_conflict: 'it reused a request id for different work',
   depth_cap: 'only Auto can hand work over',
+  substep_cap: 'too many helpers for one agent',
   breadth_cap: 'too many agents at once',
   empty_batch: 'it named no agent',
   budget: 'the limit left does not cover it',

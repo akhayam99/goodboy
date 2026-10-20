@@ -12,10 +12,12 @@ const START: C07Seed = { state: 'working', place: 'start' };
 const PROJECT: C07Seed = { state: 'refused', place: 'auto' };
 const CHILD: C07Seed = { state: 'working', place: 'auto', pane: 'implementer' };
 const CHILD_DONE: C07Seed = { state: 'done', place: 'auto', pane: 'tester' };
+const CHILD_PUSH: C07Seed = { state: 'done', place: 'auto', pane: 'implementer' };
 const CAPPED: C07Seed = { state: 'working', place: 'auto', isCapped: true };
 const LIMIT_CLICKS: ReadonlyArray<string> = ['Limit $'];
 const BLOCKED: C07Seed = { state: 'blocked', place: 'auto' };
 const STOP_CLICKS: ReadonlyArray<string> = ['Stop Auto and its agents'];
+const SUBSTEP: C07Seed = { state: 'working', place: 'auto', isSubstep: true };
 const IMAGES: C07Seed = { state: 'working', place: 'auto', pane: 'implementer', hasImages: true };
 
 export const U25_C07_AUTO_SCENES = {
@@ -31,6 +33,8 @@ export const U25_C07_AUTO_SCENES = {
   'c07-auto-project': () => <C07AutoFrame seed={PROJECT} />,
   'c07-auto-child': () => <C07AutoFrame seed={CHILD} />,
   'c07-auto-child-done': () => <C07AutoFrame seed={CHILD_DONE} />,
+  'c07-auto-child-push': () => <C07AutoFrame seed={CHILD_PUSH} />,
+  'c07-auto-substep': () => <C07AutoFrame seed={SUBSTEP} />,
   'c07-auto-images': () => <C07AutoFrame seed={IMAGES} />,
   'c07-auto-capped': () => <C07AutoFrame seed={CAPPED} />,
   'c07-auto-limit-popover': () => <C07AutoFrame seed={WORKING} clicks={LIMIT_CLICKS} />,

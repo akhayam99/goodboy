@@ -1,11 +1,14 @@
 import { listSettingsWithPrefix } from '@goodboy/db';
+import { AUTO_CHECKS_PREFIX } from '../../../features/scripts/autoChecksKey';
 import { SCRIPT_PINS_PREFIX } from '../../../features/scripts/scriptPinsKey';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { SetFn } from './types';
 
 export const loadScriptPins = (set: SetFn) => {
   return async (): Promise<void> => {
-    const rows = await listSettingsWithPrefix(tauriDatabase, SCRIPT_PINS_PREFIX);
+    const pins = await listSettingsWithPrefix(tauriDatabase, SCRIPT_PINS_PREFIX);
+    const checks = await listSettingsWithPrefix(tauriDatabase, AUTO_CHECKS_PREFIX);
+    const rows = [...pins, ...checks];
     if (rows.length === 0) {
       return;
     }

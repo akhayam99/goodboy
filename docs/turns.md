@@ -209,7 +209,14 @@ record a live turn already wrote wins.
   `session_context_items` whose audience names the role follow the slots as
   "notes for your role". Both are resolved once per turn, before the prompt is
   built. Setting `context.roleMap` to `false` goes back to the per-kind map and
-  sends no items.
+  sends no items. An Auto child of brief version 2 (`briefVersion` in the
+  turn input, from `request_json.briefVersion` of its delegation, see
+  `docs/auto.md`) reads only the goal slot: `briefSlotsOf` replaces the role's
+  slots, so the decisions, open questions, files touched and session summary
+  never reach it, while the profile, role instructions, scope rules, images
+  and "notes for your role" stay. A turn without the version (a hand started
+  agent, a delegation made before the upgrade and its retries and resumes)
+  keeps the role's slots as before.
 - A turn estimated at 85% or more of the model's context window raises a
   warning before it spawns.
 - `renderHandoff` (`@goodboy/core`) owns that stacking: from the composed
@@ -509,6 +516,21 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   polite list and the final text is read once when the flag clears. The flag
   derives from the reveal state, so it clears on finish, flush, error, stop
   and unmount, and a text shown whole never has it.
+- Partial output: a turn of Claude or Cursor spawns with
+  `--include-partial-messages` or `--stream-partial-output` when
+  `cli_probe::partial_output_args` finds the flag in the CLI's `--help` (once
+  per binary and version, in `spawn_one`; side jobs and the workspace chat keep
+  their argv). An old CLI, a failed probe and every other provider keep whole
+  text blocks. The envelope parser (`anthropic-envelope-parser.ts`,
+  `streamedText.ts`) turns each `text_delta` of a top level `stream_event`
+  into one `assistant_text` marked `isPartial`, and drops the text block of the whole `assistant`
+  line that follows when it is contained in the text it already streamed.
+  Cursor deltas are the `assistant` lines with a `timestamp_ms`; the whole line
+  without one is dropped the same way. Usage, tools and the result stay on the
+  whole lines. `queueTurnEventInsert` holds the `isPartial` deltas up to 250 ms
+  per agent and run and stores one `assistant_text` row for them, without the
+  flag (the store and the reveal still get every delta), written before the
+  next event of that agent. Text without the flag is inserted at once.
 
 ## Surviving a reload or a restart
 

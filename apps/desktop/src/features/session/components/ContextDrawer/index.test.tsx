@@ -222,7 +222,7 @@ describe('ContextDrawer', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(tooltipTextOf({ element: screen.getByText('Scout') })).toBe('Does not receive this');
     expect(queryTooltipTextOf({ element: screen.getByText('Reviewer') })).toBeNull();
-    expect(screen.getByText('Agents only.').tagName).toBe('P');
+    expect(screen.getByText('Agents only. Auto children read only their brief.').tagName).toBe('P');
   });
 
   it('reads the Visible to line from the same map as the prompt, per section', () => {

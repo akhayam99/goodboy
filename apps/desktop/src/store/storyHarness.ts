@@ -911,6 +911,8 @@ export const worktreeModuleMock = () => ({
   listBranchNames: vi.fn(async () => [] as ReadonlyArray<string>),
   worktreeIsAncestor: vi.fn(async () => true),
   worktreeRemoteHead: vi.fn(async () => ''),
+  worktreeDiffRange: vi.fn(async () => ''),
+  worktreeCommitRange: vi.fn(async () => []),
 });
 
 export const repoModuleMock = () => ({

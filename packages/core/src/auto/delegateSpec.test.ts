@@ -165,4 +165,66 @@ describe('parsing the spec of an agent delegate call', () => {
     const two = parseDelegateSpec({ text: spec([{ retryOf: 'delegation-b', reason: 'r' }]) });
     expect(one.kind === 'ok' && two.kind === 'ok' && one.hash !== two.hash).toBe(true);
   });
+
+  it('reads a publish of push or force, as a word or an object', () => {
+    const base = { role: 'implementer', task: 'fix ledger-core', reason: 'a code change' };
+    const word = parseDelegateSpec({ text: spec([{ ...base, publish: 'force' }]) });
+    const object = parseDelegateSpec({
+      text: spec([
+        {
+          ...base,
+          publish: { mode: 'force', reviewer: 'artifact-report-1', changesContent: true },
+        },
+      ]),
+    });
+    const none = parseDelegateSpec({ text: spec([base]) });
+    expect(word).toMatchObject({
+      kind: 'ok',
+      children: [{ publish: { mode: 'force', reviewerReportId: null, isContentChanging: false } }],
+    });
+    expect(object).toMatchObject({
+      kind: 'ok',
+      children: [
+        {
+          publish: {
+            mode: 'force',
+            reviewerReportId: 'artifact-report-1',
+            isContentChanging: true,
+          },
+        },
+      ],
+    });
+    expect(none).toMatchObject({ kind: 'ok', children: [{ publish: null }] });
+    expect(word.kind === 'ok' && none.kind === 'ok' && word.hash !== none.hash).toBe(true);
+  });
+
+  it('refuses a publish that is not push or force, and a retry that sets one', () => {
+    const base = { role: 'implementer', task: 'fix ledger-core', reason: 'a code change' };
+    for (const publish of ['merge', { mode: 'delete' }, 7]) {
+      const outcome = parseDelegateSpec({ text: spec([{ ...base, publish }]) });
+      expect(outcome).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
+    }
+    const retry = parseDelegateSpec({
+      text: spec([{ retryOf: 'delegation-a', reason: 'again', publish: 'push' }]),
+    });
+    expect(retry).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
+  });
+
+  it('reads the decisions a child needs and leaves the hash of a spec without them alone', () => {
+    const base = { role: 'implementer', task: 'fix ledger-core', reason: 'a code change' };
+    const plain = parseDelegateSpec({ text: spec([base]) });
+    const withIds = parseDelegateSpec({
+      text: spec([{ ...base, decisions: ['D27', ' D27 ', 'D3', '', 7] }]),
+    });
+    expect(withIds).toMatchObject({ kind: 'ok', children: [{ decisions: ['D27', 'D3'] }] });
+    expect(plain).toMatchObject({ kind: 'ok', children: [{ decisions: [] }] });
+    expect(plain.kind === 'ok' && withIds.kind === 'ok' && plain.hash !== withIds.hash).toBe(true);
+  });
+
+  it('refuses a retry that sets decisions', () => {
+    const retry = parseDelegateSpec({
+      text: spec([{ retryOf: 'delegation-a', reason: 'again', decisions: ['D27'] }]),
+    });
+    expect(retry).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
+  });
 });

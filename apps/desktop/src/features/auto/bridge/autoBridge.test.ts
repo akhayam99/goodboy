@@ -2,6 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { brandId, type AgentId, type SessionId } from '@goodboy/types';
 import type { AutoUserTurnPort } from '../autoUserTurnPort';
+import type { ChecksRerunPort } from '../checksRerunPort';
+import type { PublishPort } from '../publishPort';
+import { isAutoBridgeRequest } from './isAutoBridgeRequest';
 import type { DelegationDecisionPort } from '../delegationDecisionPort';
 import type { TreeRetryPort } from '../treeRetryPort';
 import type { TreeStopPort } from '../treeStopPort';
@@ -61,8 +64,17 @@ const mainPorts = () => {
   }));
   const userTurn = vi.fn<AutoUserTurnPort>(async () => 'queued');
   const decision = vi.fn<DelegationDecisionPort>(async () => 'confirmed');
-  const ports: AutoBridgePorts = { stop, retry, userTurn, decision };
-  return { ports, stop, retry, userTurn, decision };
+  const rerunChecks = vi.fn<ChecksRerunPort>(async () => ({ kind: 'rerun', verdict: 'green' }));
+  const publish = vi.fn<PublishPort>(async ({ delegationIds }) => ({
+    kind: 'done',
+    rows: delegationIds.map((delegationId) => ({
+      delegationId,
+      state: 'pushed' as const,
+      message: null,
+    })),
+  }));
+  const ports: AutoBridgePorts = { stop, retry, userTurn, decision, rerunChecks, publish };
+  return { ports, stop, retry, userTurn, decision, rerunChecks, publish };
 };
 
 const cleanups: Array<() => void> = [];
@@ -117,6 +129,101 @@ describe('Auto in a window without the runtime', () => {
       kind: 'refused',
       message: 'This conversation reached its time limit.',
     });
+  });
+
+  it('reruns the checks of one agent in the main window and carries the verdict back', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    expect(await client.ports.rerunChecks({ delegationId: 'delegation-export' })).toEqual({
+      kind: 'rerun',
+      verdict: 'green',
+    });
+    expect(main.rerunChecks).toHaveBeenCalledWith({ delegationId: 'delegation-export' });
+  });
+
+  it('carries a refused rerun back with its reason', async () => {
+    const main = mainPorts();
+    main.rerunChecks.mockResolvedValueOnce({
+      kind: 'refused',
+      message: 'The branch changed after this agent finished.',
+    });
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    expect(await client.ports.rerunChecks({ delegationId: 'delegation-export' })).toEqual({
+      kind: 'refused',
+      message: 'The branch changed after this agent finished.',
+    });
+  });
+
+  it('waits for a rerun longer than for a stop', async () => {
+    vi.useFakeTimers();
+    const main = mainPorts();
+    const answered: { rerun: (() => void) | null } = { rerun: null };
+    main.rerunChecks.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answered.rerun = () => resolve({ kind: 'rerun', verdict: 'red' });
+        }),
+    );
+    const client = await windows({ bus: memoryBus(), ports: main.ports, timeoutMs: 1_000 });
+
+    const rerun = client.ports.rerunChecks({ delegationId: 'delegation-export' });
+    await vi.advanceTimersByTimeAsync(60_000);
+    answered.rerun?.();
+
+    expect(await rerun).toEqual({ kind: 'rerun', verdict: 'red' });
+  });
+
+  it('forwards one confirm for a batch of branches and carries every row back', async () => {
+    const main = mainPorts();
+    main.publish.mockResolvedValueOnce({
+      kind: 'done',
+      rows: [
+        { delegationId: 'delegation-a', state: 'pushed', message: null },
+        { delegationId: 'delegation-b', state: 'failed', message: 'The online copy changed.' },
+      ],
+    });
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    const result = await client.ports.publish({
+      act: 'confirm',
+      delegationIds: ['delegation-a', 'delegation-b'],
+    });
+
+    expect(main.publish).toHaveBeenCalledTimes(1);
+    expect(main.publish).toHaveBeenCalledWith({
+      act: 'confirm',
+      delegationIds: ['delegation-a', 'delegation-b'],
+    });
+    expect(result.rows.map((row) => row.state)).toEqual(['pushed', 'failed']);
+  });
+
+  it('forwards a decline, a retry and a put back with their ids', async () => {
+    const main = mainPorts();
+    const client = await windows({ bus: memoryBus(), ports: main.ports });
+
+    await client.ports.publish({ act: 'decline', delegationIds: ['delegation-a'] });
+    await client.ports.publish({ act: 'retry', delegationIds: ['delegation-a'] });
+    await client.ports.publish({ act: 'put_back', delegationIds: ['delegation-a'] });
+
+    expect(main.publish.mock.calls.map(([call]) => call.act)).toEqual([
+      'decline',
+      'retry',
+      'put_back',
+    ]);
+  });
+
+  it('ignores a publish request with no ids or an unknown act', () => {
+    const call = { kind: 'publish', act: 'confirm', delegationIds: ['delegation-a'] };
+    expect(isAutoBridgeRequest({ id: 'request-1', call })).toBe(true);
+    expect(isAutoBridgeRequest({ id: 'request-1', call: { ...call, delegationIds: [] } })).toBe(
+      false,
+    );
+    expect(isAutoBridgeRequest({ id: 'request-1', call: { ...call, act: 'merge' } })).toBe(false);
+    expect(isAutoBridgeRequest({ id: 'request-1', call: { ...call, delegationIds: [7] } })).toBe(
+      false,
+    );
   });
 
   it('turns a failure in the main window into an error the tail can show', async () => {

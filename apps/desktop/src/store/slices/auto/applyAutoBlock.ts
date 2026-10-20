@@ -55,7 +55,12 @@ const commandOf = ({ block, grant }: CommandParams): AgentCommand => {
     case 'answer':
       return {
         verb: 'answer',
-        args: { delegation: block.delegation, question: block.question, text: block.text },
+        args: {
+          delegation: block.delegation,
+          question: block.question,
+          text: block.text,
+          ...(block.artifact === null ? {} : { artifact: block.artifact }),
+        },
         grant,
       };
     case 'finish':

@@ -1,4 +1,4 @@
-import type { PickableMount } from '@goodboy/core';
+import { pathsOfPatch, type PickableMount } from '@goodboy/core';
 import { readRunCostUsd, readRunLedgerOutcome, type Database } from '@goodboy/db';
 import {
   brandId,
@@ -18,11 +18,23 @@ import type {
   CancelRunParams,
   ChildStartOutcome,
   LookupDeliveryRunParams,
+  ReadCommittedFilesParams,
   ReadMountSnapshotParams,
   StartChildTurnParams,
 } from './ports';
+import { listAutoChecks } from './listAutoChecks';
+import {
+  makeBranchFactsReaders,
+  type MakeBranchFactsReadersParams,
+} from './makeBranchFactsReaders';
+import { readBranchFactsOf } from './readBranchFactsOf';
 import { resolveChildRouting } from './resolveChildRouting';
+import { runAutoCheckScript } from './runAutoCheckScript';
+import { createHistoryBackup } from '../../../features/history/historyEngine';
 import { publishScribePullRequest } from './publishScribePullRequest';
+import { pushAutoBranch } from './pushAutoBranch';
+import { restoreAutoBackup } from './restoreAutoBackup';
+import { readRemoteHead, type BranchOfParams, type RemoteHeadReaders } from './readRemoteHead';
 import { makeStartAutoTurn } from './startAutoTurn';
 import { startDeliveredTurn, type ReadRunCostParams, type SleepParams } from './startDeliveredTurn';
 
@@ -44,6 +56,10 @@ export type RealAutoPortsDeps = Readonly<{
   refreshSessionArtifacts: AutoPorts['refreshSessionArtifacts'];
   lookupDeliveryRun: (params: LookupDeliveryRunParams) => Promise<DeliveryRun | null>;
   worktreeSnapshot: (params: ReadMountSnapshotParams) => Promise<WorktreeSnapshot>;
+  worktreeDiffRange: (params: ReadCommittedFilesParams) => Promise<string>;
+  worktreeCommitRange: MakeBranchFactsReadersParams['commitRange'];
+  worktreeStatus: (params: BranchOfParams) => Promise<Readonly<{ branch: string | null }>>;
+  worktreeRemoteHead: RemoteHeadReaders['remoteHeadOf'];
   listLiveRunIds: () => Promise<ReadonlySet<string>>;
   isPlanApprovalRequired: () => boolean;
   sleep: (params: SleepParams) => Promise<void>;
@@ -91,6 +107,7 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
           worktreePath: params.mountTarget.worktreePath,
         },
         captureMode: params.captureMode,
+        ...(params.briefVersion !== undefined && { briefVersion: params.briefVersion }),
       },
       runId: brandId<ProviderRunId>({ value: params.runId }),
       deliveryId: String(params.attemptId),
@@ -134,6 +151,26 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     ensureChildAgent: makeEnsureChildAgent({ db: deps.db, refreshAgents: deps.refreshAgents }),
     startChildTurn,
     readMountSnapshot: ({ worktreePath }) => deps.worktreeSnapshot({ worktreePath }),
+    readCommittedFiles: async (params) =>
+      pathsOfPatch({ patch: await deps.worktreeDiffRange(params) }),
+    readRemoteHead: (params) =>
+      readRemoteHead({
+        readers: {
+          branchOf: async (found) => (await deps.worktreeStatus(found)).branch,
+          remoteHeadOf: deps.worktreeRemoteHead,
+        },
+        params,
+      }),
+    readBranchFacts: (params) =>
+      readBranchFactsOf({
+        readers: makeBranchFactsReaders({
+          getState: deps.getState,
+          commitRange: deps.worktreeCommitRange,
+        }),
+        params,
+      }),
+    listChecks: (params) => listAutoChecks({ getState: deps.getState, params }),
+    runCheck: (params) => runAutoCheckScript({ getState: deps.getState, params }),
     cancelRun: async ({ sessionId, agentId }) => {
       const cancelled = await deps.cancelTurnConfirmed({ sessionId, agentId, reason: 'user' });
       return { outcome: cancelled.outcome };
@@ -142,5 +179,8 @@ export const createRealAutoPorts = (deps: RealAutoPortsDeps): AutoPorts => {
     readRunOutcome: ({ runId, agentId }) => readRunLedgerOutcome({ db: deps.db, runId, agentId }),
     publishScribePullRequest: (params) =>
       publishScribePullRequest({ getState: deps.getState, params }),
+    pushBranch: (params) => pushAutoBranch({ getState: deps.getState, params }),
+    createBackup: (params) => createHistoryBackup(params),
+    restoreBackup: (params) => restoreAutoBackup(params),
   };
 };

@@ -26,6 +26,8 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { autoChecksKey } from '../../autoChecksKey';
+import { parseScriptPins } from '../../parseScriptPins';
 import { scriptPinsKey } from '../../scriptPinsKey';
 import { ProjectScriptsField } from '../ProjectScriptsField';
 import { ObjectMenuProvider } from '../../../actions/components/ObjectMenuProvider';
@@ -187,6 +189,31 @@ describe('script pins in the project editor card', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pin dev' }));
     await screen.findByText('Scripts · 1 pinned');
     await waitFor(async () => expect(await savedPins()).toHaveLength(1));
+  });
+
+  const savedChecks = async (): Promise<ReadonlyArray<string>> => {
+    const rows = await rowsOf<{ readonly value: string }>({
+      sql: 'SELECT value FROM settings WHERE key = ?',
+      params: [autoChecksKey({ projectId: LEDGER.id })],
+    });
+    return parseScriptPins({ raw: rows[0]?.value });
+  };
+
+  it('ticks a script as an Auto check apart from its pin, and unticks it again', async () => {
+    render(<ProjectScriptsField project={LEDGER} />);
+    await screen.findByText(/On main\. Pinned scripts show on a session's Scripts page/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use test as an Auto check' }));
+    await waitFor(async () => expect(await savedChecks()).toHaveLength(1));
+    expect(await savedPins()).toEqual([]);
+    const unticked = await screen.findByRole('button', {
+      name: 'Stop using test as an Auto check',
+    });
+    expect(unticked.getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.click(unticked);
+    await waitFor(async () => expect(await savedChecks()).toEqual([]));
+    await screen.findByRole('button', { name: 'Use test as an Auto check' });
   });
 
   it('says plainly when a project has no package.json', async () => {

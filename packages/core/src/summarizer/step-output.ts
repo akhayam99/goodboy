@@ -7,6 +7,7 @@ import { cliFailureDetail } from './spawn-failure';
 
 const MAX_SUMMARY_LENGTH = 1200;
 const FALLBACK_TOTAL_BUDGET = 4000;
+export const STEP_OUTPUT_EXCERPT_CHARS = FALLBACK_TOTAL_BUDGET;
 const FALLBACK_HEAD_SHARE = 0.6;
 const FALLBACK_BOUNDARY_KEEP_RATIO = 0.7;
 const FALLBACK_MARKER_PREFIX = '[unsummarized step output';
@@ -262,6 +263,18 @@ const isLegacyFallback = ({ summary }: FallbackDetection): boolean =>
     LEGACY_FALLBACK_HEAD_LENGTH + LEGACY_FALLBACK_JOINER.length,
   ) === LEGACY_FALLBACK_JOINER;
 
+type ExcerptParams = {
+  readonly text: string;
+  readonly allowance: number;
+};
+
+const excerptOf = ({ text, allowance }: ExcerptParams): string => {
+  const headLimit = Math.floor(allowance * FALLBACK_HEAD_SHARE);
+  const head = headCut({ text, limit: headLimit }).trimEnd();
+  const tail = tailCut({ text, limit: allowance - headLimit }).trimStart();
+  return `${head}${FALLBACK_GAP_NOTICE}${tail}`;
+};
+
 export const fallbackStepOutputSummary = ({ output }: Params): string => {
   const text = output.trim();
   if (text.length === 0) {
@@ -273,10 +286,18 @@ export const fallbackStepOutputSummary = ({ output }: Params): string => {
   }
   const allowance =
     FALLBACK_TOTAL_BUDGET - FALLBACK_EXCERPT_MARKER.length - 1 - FALLBACK_GAP_NOTICE.length;
-  const headLimit = Math.floor(allowance * FALLBACK_HEAD_SHARE);
-  const head = headCut({ text, limit: headLimit }).trimEnd();
-  const tail = tailCut({ text, limit: allowance - headLimit }).trimStart();
-  return `${FALLBACK_EXCERPT_MARKER}\n${head}${FALLBACK_GAP_NOTICE}${tail}`;
+  return `${FALLBACK_EXCERPT_MARKER}\n${excerptOf({ text, allowance })}`;
+};
+
+export const excerptStepOutput = ({ output }: Params): string => {
+  const text = output.trim();
+  if (text.length <= STEP_OUTPUT_EXCERPT_CHARS) {
+    return text;
+  }
+  return excerptOf({
+    text,
+    allowance: STEP_OUTPUT_EXCERPT_CHARS - FALLBACK_GAP_NOTICE.length,
+  });
 };
 
 export const fallbackStepOutputMarker = ({ summary }: FallbackDetection): string | null => {

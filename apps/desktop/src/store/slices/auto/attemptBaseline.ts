@@ -1,10 +1,12 @@
-import type { MountSnapshot } from '@goodboy/core';
+import type { MountSnapshot, RemoteRead } from '@goodboy/core';
 import type { AutoJsonObject } from '@goodboy/db';
 
 export type ResumeInfo = Readonly<{
   questionId: string;
   question: string;
   answer: string;
+  tail: string | null;
+  report: string | null;
 }>;
 
 type RecordValue = Readonly<Record<string, unknown>>;
@@ -34,7 +36,15 @@ export const resumeOf = ({ baseline }: BaselineParams): ResumeInfo | null => {
   ) {
     return null;
   }
-  return { questionId, question, answer };
+  const tail = resume['tail'];
+  const report = resume['report'];
+  return {
+    questionId,
+    question,
+    answer,
+    tail: typeof tail === 'string' ? tail : null,
+    report: typeof report === 'string' ? report : null,
+  };
 };
 
 export const snapshotOf = ({ baseline }: BaselineParams): MountSnapshot | null => {
@@ -56,6 +66,35 @@ export const snapshotOf = ({ baseline }: BaselineParams): MountSnapshot | null =
     isPartial: baseline['isPartial'] === true,
   };
 };
+
+export const remoteOf = ({ baseline }: BaselineParams): RemoteRead | null => {
+  if (!isRecord(baseline)) {
+    return null;
+  }
+  const remote = baseline['remote'];
+  if (!isRecord(remote)) {
+    return null;
+  }
+  const branch = remote['branch'];
+  if (remote['kind'] === 'unknown') {
+    return { kind: 'unknown' };
+  }
+  if (typeof branch !== 'string') {
+    return null;
+  }
+  if (remote['kind'] === 'absent') {
+    return { kind: 'absent', branch };
+  }
+  const sha = remote['sha'];
+  return remote['kind'] === 'sha' && typeof sha === 'string' ? { kind: 'sha', branch, sha } : null;
+};
+
+type RemoteJsonParams = {
+  readonly remote: RemoteRead | null;
+};
+
+export const remoteJson = ({ remote }: RemoteJsonParams): AutoJsonObject =>
+  remote === null ? {} : { remote };
 
 type SnapshotJsonParams = {
   readonly snapshot: MountSnapshot | null;

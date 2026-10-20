@@ -74,6 +74,10 @@ const runCall = async ({ ports, turns, call }: CallParams): Promise<unknown> => 
       return ports.stop({ treeId: call.treeId });
     case 'retry':
       return ports.retry({ treeId: call.treeId });
+    case 'rerunChecks':
+      return ports.rerunChecks({ delegationId: call.delegationId });
+    case 'publish':
+      return ports.publish({ act: call.act, delegationIds: call.delegationIds });
     case 'userTurn':
       return runTurnOnce({ ports, turns, messageId: call.messageId, turn: call.turn });
     case 'decision':

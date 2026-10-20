@@ -1,5 +1,7 @@
 import type { AutoBridgeCall, AutoBridgeRequest } from './autoBridgeProtocol';
 
+const PUBLISH_ACTS = ['confirm', 'decline', 'retry', 'put_back'] as const;
+
 type RecordValue = Readonly<Record<string, unknown>>;
 
 const isRecord = (value: unknown): value is RecordValue =>
@@ -22,6 +24,18 @@ const isCall = (value: unknown): value is AutoBridgeCall => {
   const kind = value['kind'];
   if (kind === 'stop' || kind === 'retry') {
     return isText(value['treeId']);
+  }
+  if (kind === 'rerunChecks') {
+    return isText(value['delegationId']);
+  }
+  if (kind === 'publish') {
+    const ids = value['delegationIds'];
+    return (
+      PUBLISH_ACTS.some((act) => act === value['act']) &&
+      Array.isArray(ids) &&
+      ids.length > 0 &&
+      ids.every(isText)
+    );
   }
   if (kind === 'userTurn') {
     return isText(value['messageId']) && isTurn(value['turn']);

@@ -1,4 +1,4 @@
-import { parseAutoDelegationRole, type DelegateChildSpec } from '@goodboy/core';
+import { parseAutoDelegationRole, publishOfRequest, type DelegateChildSpec } from '@goodboy/core';
 import {
   getAutoArtifactVersionOfAttempt,
   getAutoDelegation,
@@ -167,6 +167,10 @@ export const prepareRetry = async ({
     mount: textOf({ source: original.target, key: 'mountId' }),
     revises,
     changeFrom: listOf({ source: original.request, key: 'changeFrom' }),
+    publish: publishOfRequest({ request: original.request }),
+    facts: listOf({ source: original.request, key: 'facts' }),
+    decisions: listOf({ source: original.request, key: 'decisions' }),
+    forQuestion: null,
     retryOf: original.id,
   };
   return { kind: 'resolve', child: synthetic, original };

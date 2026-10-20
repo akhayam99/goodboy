@@ -191,6 +191,56 @@ fn the_lease_push_refuses_when_origin_moved() {
 }
 
 #[test]
+fn the_lease_push_sends_the_checked_sha_even_when_the_branch_moved_after_the_check() {
+    let b = branch("lease-sha");
+    let remote = b.root.join("remote.git");
+    git_ok(&b.root, &["init", "--bare", remote.to_str().unwrap()]);
+    git_ok(
+        &b.root,
+        &["remote", "add", "origin", remote.to_str().unwrap()],
+    );
+    git_ok(&b.root, &["push", "-u", "origin", "feature"]);
+    let args = plan(
+        &b.root,
+        &b.base,
+        &b.c,
+        vec![
+            step(&b.a, HistoryVerb::Pick),
+            step(&b.b, HistoryVerb::Squash),
+            step(&b.c, HistoryVerb::Pick),
+        ],
+    );
+    let checked = trial(&args, &slug("lease-sha"), false)
+        .unwrap()
+        .head
+        .unwrap();
+    move_branch_blocking(&b.root, "feature", &b.c, &checked).unwrap();
+    let later = commit(
+        &b.root,
+        "later.txt",
+        "later\n",
+        "Someone commits after the check",
+    );
+    let cwd = b.root.to_string_lossy().into_owned();
+
+    let pushed =
+        crate::github::push_with_lease_blocking(&cwd, "feature", Some(&b.c), Some(&checked), None)
+            .unwrap();
+
+    assert_eq!(pushed, crate::github::LeasePushOutcome::Pushed);
+    assert_eq!(
+        git_ok(&remote, &["rev-parse", "refs/heads/feature"]),
+        checked
+    );
+    assert_eq!(git_ok(&b.root, &["rev-parse", "refs/heads/feature"]), later);
+    assert!(crate::github::lease_push_args("feature", None, Some("HEAD")).is_err());
+    assert_eq!(
+        crate::github::lease_push_args("feature", None, None).unwrap()[3],
+        "refs/heads/feature:refs/heads/feature"
+    );
+}
+
+#[test]
 fn a_turn_with_the_push_block_cannot_push_to_origin() {
     let b = branch("push-block");
     let remote = with_remote(&b);

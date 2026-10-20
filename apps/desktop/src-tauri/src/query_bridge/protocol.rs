@@ -54,6 +54,8 @@ pub const UNSAFE_CLEANUP: &str = "unsafe_cleanup";
 pub const OPERATION_PENDING: &str = "operation_pending";
 pub const REQUEST_CONFLICT: &str = "request_conflict";
 pub const DB_RESET: &str = "db_reset";
+pub const AUTO_CHILD_ACT: &str = "auto_child_act";
+pub const CALLER_UNKNOWN: &str = "caller_unknown";
 
 pub const ERROR_CODES: &[&str] = &[
     AMBIGUOUS_MOUNT,
@@ -64,6 +66,8 @@ pub const ERROR_CODES: &[&str] = &[
     OPERATION_PENDING,
     REQUEST_CONFLICT,
     DB_RESET,
+    AUTO_CHILD_ACT,
+    CALLER_UNKNOWN,
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]

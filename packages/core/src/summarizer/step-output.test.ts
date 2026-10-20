@@ -2,12 +2,29 @@ import { describe, expect, it } from 'vitest';
 import type { SummarizerDeps } from './client';
 import { SummarizerParseError } from './client';
 import {
+  STEP_OUTPUT_EXCERPT_CHARS,
   annotateFallbackStepOutputSummary,
+  excerptStepOutput,
   fallbackStepOutputSummary,
   isFallbackStepOutputSummary,
   previewStepOutputSummary,
   summarizeStepOutput,
 } from './step-output';
+
+describe('excerptStepOutput', () => {
+  it('returns an output under the budget whole, with no marker line', () => {
+    expect(excerptStepOutput({ output: '  short outcome\n' })).toBe('short outcome');
+  });
+
+  it('cuts a long output to the Runs budget and keeps its first section and last line', () => {
+    const output = `Opening section.\n\n${'filler words here. '.repeat(500)}\n\nLast line.`;
+    const result = excerptStepOutput({ output });
+    expect(result.length).toBeLessThanOrEqual(STEP_OUTPUT_EXCERPT_CHARS);
+    expect(result.startsWith('Opening section.')).toBe(true);
+    expect(result).toContain('[middle dropped');
+    expect(result.endsWith('Last line.')).toBe(true);
+  });
+});
 
 describe('summarizeStepOutput', () => {
   it('uses the summarizer invoke channel and dedicated handoff prompt', async () => {

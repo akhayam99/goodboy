@@ -3,12 +3,17 @@ import {
   isAutoWriterRole,
   parseChildClosing,
   parseRevisionFromTurn,
+  publishOfRequest,
+  remoteVerdictOf,
   sha256Hex,
   AUTO_TREE_LIMITS,
+  type ChecksVerdict,
   type ChildClosing,
   type DelegationResultV1,
   type ResultArtifact,
   type ResultChangedFile,
+  type ResultPublish,
+  type ResultRemote,
 } from '@goodboy/core';
 import {
   getArtifact,
@@ -24,13 +29,17 @@ import {
   type NewAutoOutbox,
 } from '@goodboy/db';
 import { brandId, type ArtifactId, type AutoOutboxId } from '@goodboy/types';
-import { snapshotOf } from './attemptBaseline';
+import { remoteOf, snapshotOf } from './attemptBaseline';
 import { attemptEnvelope, delegationRoleOf, isArtifactRole } from './attemptEnvelope';
 import { landAttemptRevision, type RevisionLanding } from './landAttemptRevision';
+import { planPublish } from './planPublish';
 import type { ChildTurnEnded } from './ports';
+import { pushSettledPublish } from './pushSettledPublish';
+import { readCommittedFilesOf } from './readCommittedFiles';
 import { readSnapshot } from './readSnapshot';
 import type { SettleAttemptOutcome } from './settleAttempt';
 import type { AgentVerbContext } from './verbContext';
+import { verifyAttempt } from './verifyAttempt';
 
 export type FinishAttemptParams = Readonly<{
   ctx: AgentVerbContext;
@@ -82,6 +91,7 @@ const pausedAttempt = async ({
       text: question.text,
       suggestedAnswers: question.suggestedAnswers,
       recommendedAnswer: question.recommendedAnswer,
+      ...(question.needs === undefined ? {} : { needs: question.needs }),
     },
     nowMs: ctx.now(),
   };
@@ -92,7 +102,11 @@ const pausedAttempt = async ({
       kind: 'paused',
       questionId,
       costUsd: ended.costUsd,
-      resultSnapshot: { question: question.text, tail: closing.summary },
+      resultSnapshot: {
+        question: question.text,
+        tail: closing.summary,
+        ...(question.needs === undefined ? {} : { needs: question.needs }),
+      },
     },
     outbox: [outbox],
   });
@@ -154,7 +168,31 @@ type AttributionParams = {
 type Attribution = Readonly<{
   changedFiles: ReadonlyArray<ResultChangedFile>;
   hasReadOnlyViolation: boolean;
+  remote: ResultRemote | null;
+  endHead: string | null;
 }>;
+
+type RemoteWatchParams = {
+  readonly ctx: AgentVerbContext;
+  readonly attempt: AutoAttempt;
+  readonly worktreePath: string;
+};
+
+const remoteOfAttempt = async ({
+  ctx,
+  attempt,
+  worktreePath,
+}: RemoteWatchParams): Promise<ResultRemote | null> => {
+  const before = remoteOf({ baseline: attempt.baseline });
+  if (before === null) {
+    return null;
+  }
+  const after = await ctx.ports.readRemoteHead({
+    worktreePath,
+    branch: before.kind === 'unknown' ? null : before.branch,
+  });
+  return remoteVerdictOf({ before, after });
+};
 
 const attributionOf = async ({
   ctx,
@@ -163,17 +201,21 @@ const attributionOf = async ({
 }: AttributionParams): Promise<Attribution> => {
   const worktreePath = delegation.target['worktreePath'];
   if (typeof worktreePath !== 'string') {
-    return { changedFiles: [], hasReadOnlyViolation: false };
+    return { changedFiles: [], hasReadOnlyViolation: false, remote: null, endHead: null };
   }
   const result = await readSnapshot({ ports: ctx.ports, worktreePath });
-  const attributed = attributeChanges({
-    baseline: snapshotOf({ baseline: attempt.baseline }),
-    result,
-    isWriter: isAutoWriterRole({ role: delegationRoleOf({ delegation }) }),
-  });
+  const remote = await remoteOfAttempt({ ctx, attempt, worktreePath });
+  const baseline = snapshotOf({ baseline: attempt.baseline });
+  const isWriter = isAutoWriterRole({ role: delegationRoleOf({ delegation }) });
+  const committedPaths = isWriter
+    ? await readCommittedFilesOf({ ports: ctx.ports, worktreePath, baseline, result })
+    : null;
+  const attributed = attributeChanges({ baseline, result, isWriter, committedPaths });
   return {
     changedFiles: attributed.changedFiles,
     hasReadOnlyViolation: attributed.hasReadOnlyViolation,
+    remote,
+    endHead: result?.head ?? null,
   };
 };
 
@@ -387,11 +429,71 @@ const publishedOutcomeOf = async ({
   };
 };
 
+type PublishRecordParams = {
+  readonly params: ReviseParams;
+  readonly outcome: string;
+  readonly verification: ChecksVerdict | null;
+};
+
+const publishRecordOf = async ({
+  params,
+  outcome,
+  verification,
+}: PublishRecordParams): Promise<ResultPublish | null> => {
+  const { ctx, ended, delegation, attempt, closing, attribution } = params;
+  const wanted = publishOfRequest({ request: delegation.request });
+  const mountId = delegation.target['mountId'];
+  const worktreePath = delegation.target['worktreePath'];
+  const branch = delegation.target['branch'];
+  const isPublisher =
+    wanted !== null &&
+    isAutoWriterRole({ role: delegationRoleOf({ delegation }) }) &&
+    delegationRoleOf({ delegation }) !== 'scribe';
+  if (!isPublisher || typeof mountId !== 'string' || typeof worktreePath !== 'string') {
+    return null;
+  }
+  return planPublish({
+    ports: ctx.ports,
+    worktreePath,
+    branch: typeof branch === 'string' && branch !== '' ? branch : null,
+    wanted,
+    baseline: attempt.baseline,
+    remote: remoteOf({ baseline: attempt.baseline }),
+    outcome,
+    exit: ended.exit,
+    completion: closing.completion,
+    checksRun: verification?.run ?? null,
+    endHead: attribution.endHead,
+    tries: 0,
+  });
+};
+
+type PersistenceParams = {
+  readonly delegation: AutoDelegation;
+  readonly artifactCount: number;
+};
+
+const artifactPersistenceOf = ({
+  delegation,
+  artifactCount,
+}: PersistenceParams): 'ok' | 'failed' | 'not_applicable' => {
+  if (artifactCount > 0) {
+    return 'ok';
+  }
+  return isArtifactRole({ delegation }) ? 'failed' : 'not_applicable';
+};
+
 const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome> => {
   const { ctx, ended, tree, delegation, attempt, closing, attribution } = params;
-  const artifacts = isArtifactRole({ delegation })
-    ? await capturedArtifacts({ ctx, delegation, tree, ended })
-    : [];
+  const artifacts = await capturedArtifacts({ ctx, delegation, tree, ended });
+  const verification = await verifyAttempt({
+    ctx,
+    tree,
+    delegation,
+    ended,
+    closing,
+    endHead: attribution.endHead,
+  });
   const envelope = attemptEnvelope({
     delegation,
     attempt,
@@ -399,12 +501,10 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
     exit: ended.exit,
     closing,
     changedFiles: attribution.changedFiles,
+    remote: attribution.remote,
+    verification,
     artifacts,
-    artifactPersistence: isArtifactRole({ delegation })
-      ? artifacts.length > 0
-        ? 'ok'
-        : 'failed'
-      : 'not_applicable',
+    artifactPersistence: artifactPersistenceOf({ delegation, artifactCount: artifacts.length }),
     costUsd: ended.costUsd,
     durationMs: ended.durationMs,
   });
@@ -414,6 +514,7 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
     envelope,
     plain,
   });
+  const publish = await publishRecordOf({ params, outcome, verification });
   const settled: SettleAttemptOutcome = await ctx.scheduler.settleAttempt({
     attemptId: attempt.id,
     generation: ended.generation,
@@ -422,12 +523,24 @@ const finishedPlain = async (params: ReviseParams): Promise<FinishAttemptOutcome
       outcome,
       endReason: reason,
       costUsd: ended.costUsd,
-      resultSnapshot: { envelope: { ...envelope, outcome, reason, declared } },
+      resultSnapshot: {
+        envelope: {
+          ...envelope,
+          outcome,
+          reason,
+          declared,
+          verified: { ...envelope.verified, ...(publish !== null && { publish }) },
+        },
+      },
     },
   });
-  return settled.kind === 'settled'
-    ? { kind: 'ended', outcome, landing: 'none' }
-    : { kind: 'dropped', reason: settled.reason };
+  if (settled.kind !== 'settled') {
+    return { kind: 'dropped', reason: settled.reason };
+  }
+  if (publish?.state === 'pushing') {
+    await pushSettledPublish({ ctx, attemptId: attempt.id });
+  }
+  return { kind: 'ended', outcome, landing: 'none' };
 };
 
 export const finishAttempt = async ({

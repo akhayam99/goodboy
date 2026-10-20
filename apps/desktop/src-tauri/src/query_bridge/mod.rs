@@ -1,4 +1,5 @@
 mod args;
+mod auto_child;
 mod cli;
 mod dispatch;
 mod github;
@@ -17,7 +18,11 @@ use protocol::{
     SOCKET_PREFIX, SOCKET_SUFFIX, WORKSPACE_ENV,
 };
 
+pub(crate) use auto_child::{spawn_turn, TurnKind, TurnProcess};
 pub(crate) use cli::dispatch as run_cli;
+
+#[cfg(test)]
+pub(crate) use auto_child::{caller_of, kind_of_pid, Caller};
 
 const APP_DIR: &str = ".goodboy";
 const SOCKET_DIR: &str = "query";
@@ -317,13 +322,14 @@ pub(crate) fn shutdown() {
 async fn serve_connection(stream: tokio::net::UnixStream, app: tauri::AppHandle) {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
+    let caller = auto_child::caller_of(peer_pid(&stream));
     let (reader, mut writer) = stream.into_split();
     let mut lines = BufReader::new(reader).lines();
     while let Ok(Some(line)) = lines.next_line().await {
         if line.trim().is_empty() {
             continue;
         }
-        let response = answer(&app, &line).await;
+        let response = answer(&app, &line, caller).await;
         let mut payload = match serde_json::to_string(&response) {
             Ok(payload) => payload,
             Err(error) => format!("{{\"ok\":false,\"error\":\"{}\"}}", error),
@@ -335,12 +341,18 @@ async fn serve_connection(stream: tokio::net::UnixStream, app: tauri::AppHandle)
     }
 }
 
-async fn answer(app: &tauri::AppHandle, line: &str) -> QueryResponse {
+#[cfg(unix)]
+fn peer_pid(stream: &tokio::net::UnixStream) -> Option<u32> {
+    let pid = stream.peer_cred().ok()?.pid()?;
+    u32::try_from(pid).ok().filter(|pid| *pid > 0)
+}
+
+async fn answer(app: &tauri::AppHandle, line: &str, caller: auto_child::Caller) -> QueryResponse {
     let request = match serde_json::from_str::<QueryRequest>(line) {
         Ok(request) => request,
         Err(error) => return QueryResponse::failed(format!("malformed request: {}", error)),
     };
-    match dispatch::dispatch(app, &request).await {
+    match dispatch::dispatch(app, &request, caller).await {
         Ok(data) => QueryResponse::ok(data),
         Err(error) => QueryResponse::refused(error),
     }
@@ -787,6 +799,21 @@ mod tests {
 
         assert!(exe.is_absolute(), "{}", exe.display());
         assert_eq!(exe, std::env::current_exe().expect("a current executable"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_bridge_reads_the_pid_of_the_process_on_the_other_end_from_the_socket() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("a runtime");
+        let pid = runtime.block_on(async {
+            let (ours, _theirs) = tokio::net::UnixStream::pair().expect("a socket pair");
+            peer_pid(&ours)
+        });
+
+        assert_eq!(pid, Some(std::process::id()));
     }
 
     #[test]

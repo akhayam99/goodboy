@@ -18,6 +18,8 @@ import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
 import { buildGoalAttachmentsBlock } from './turnHelpers';
 import { resolveTurnAudience } from './turnAudience';
+import { briefSlotsOf } from './briefSlotsOf';
+import { confinedRoleOf } from './confinedRoleOf';
 import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { fanOutChildKind } from '../agents/fanOutChildKind';
@@ -90,7 +92,15 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     kind: earlyAgentKind,
     settings: get().settings,
   });
-  const contextPreamble = buildContextPreamble(sharedSlots, audience.slots, audience.items);
+  const contextPreamble = buildContextPreamble(
+    sharedSlots,
+    briefSlotsOf({
+      input: ctx.input,
+      confinedRole: confinedRoleOf({ input: ctx.input, agent: agentRowEarly }),
+      slots: audience.slots,
+    }),
+    audience.items,
+  );
 
   const childRoutingBlock = composeChildRoutingPrompt({
     role: turnRole,

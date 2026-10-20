@@ -94,6 +94,22 @@ impl Run {
         permission_mode: &str,
         writer_lease: Option<&WriterLeaseBinding>,
     ) -> Result<String, TurnError> {
+        self.spawn_shaped(binary, prompt, permission_mode, writer_lease, true, false)
+    }
+
+    fn spawn_as_auto_child(&self, binary: &str) -> Result<String, TurnError> {
+        self.spawn_shaped(binary, PROMPT, "default", None, false, true)
+    }
+
+    fn spawn_shaped(
+        &self,
+        binary: &str,
+        prompt: &str,
+        permission_mode: &str,
+        writer_lease: Option<&WriterLeaseBinding>,
+        blocks_push: bool,
+        is_auto_child: bool,
+    ) -> Result<String, TurnError> {
         let empty: Vec<String> = Vec::new();
         let binary_path = self.fake.binary(binary);
         let work_dir = self.fake.work_dir();
@@ -120,7 +136,8 @@ impl Run {
             writer_lease,
             write_set_lease: None,
             confined_role: None,
-            blocks_push: true,
+            blocks_push,
+            is_auto_child,
             excludes_tmp: false,
         };
         spawn_one(
@@ -247,9 +264,14 @@ fn expected_argv(binary: &str, run: &Run) -> Vec<String> {
         write_set_lease: None,
         confined_role: None,
         blocks_push: true,
+        is_auto_child: false,
         excludes_tmp: false,
     };
-    turn_args(binary, &args)
+    let mut argv = turn_args(binary, &args);
+    argv.extend(crate::providers::cli_probe::partial_output_args(
+        &binary_path,
+    ));
+    argv
 }
 
 fn assert_recorded_stream_reaches_the_sink(binary: &str, stream: &str) -> Run {
@@ -291,6 +313,7 @@ fn claude_recorded_stream_reaches_the_sink_with_stream_json_flags() {
     assert_eq!(argv[format + 1], "stream-json");
     assert!(argv.contains(&"--verbose".to_string()));
     assert!(argv.contains(&PROMPT.to_string()));
+    assert!(argv.contains(&"--include-partial-messages".to_string()));
 }
 
 #[test]
@@ -315,6 +338,7 @@ fn cursor_recorded_stream_reaches_the_sink_with_stream_json_flags() {
     assert_eq!(argv[format + 1], "stream-json");
     let workspace = argv.iter().position(|arg| arg == "--workspace").unwrap();
     assert_eq!(argv[workspace + 1], run.fake.work_dir());
+    assert!(argv.contains(&"--stream-partial-output".to_string()));
 }
 
 #[test]
@@ -462,13 +486,121 @@ fn a_turn_that_blocks_push_carries_the_push_block_and_no_git_tokens() {
     run.spawn("claude", PROMPT).unwrap();
     run.turn_events_until_end();
 
-    assert_eq!(env_of(&run, "GIT_CONFIG_COUNT"), "2");
+    assert_eq!(env_of(&run, "GIT_CONFIG_COUNT"), "7");
     assert_eq!(env_of(&run, "GIT_CONFIG_KEY_0"), "remote.origin.pushurl");
     assert_eq!(env_of(&run, "GIT_CONFIG_VALUE_0"), PUSH_BLOCK_URL);
     assert_eq!(env_of(&run, "GIT_CONFIG_KEY_1"), "remote.pushDefault");
     assert_eq!(env_of(&run, "GIT_CONFIG_VALUE_1"), "goodboy-blocked");
     assert_eq!(env_of(&run, "GH_TOKEN"), "__unset__");
     assert_eq!(env_of(&run, "GITHUB_TOKEN"), "__unset__");
+}
+
+#[test]
+fn an_auto_child_on_claude_and_codex_carries_no_git_host_token() {
+    let _env = ParentEnv::set(HOST_TOKEN_ENV);
+    for binary in ["claude", "codex"] {
+        let run = Run::new("ok");
+        run.spawn_as_auto_child(binary).unwrap();
+        run.turn_events_until_end();
+
+        for name in HOST_TOKEN_ENV {
+            assert_eq!(env_of(&run, name), "__unset__", "{binary} {name}");
+        }
+    }
+}
+
+#[test]
+fn a_hand_started_turn_keeps_the_host_tokens_of_its_parent() {
+    let _env = ParentEnv::set(HOST_TOKEN_ENV);
+    let run = Run::new("ok");
+    run.spawn_shaped("claude", PROMPT, "default", None, false, false)
+        .unwrap();
+    run.turn_events_until_end();
+
+    assert_eq!(env_of(&run, "GITLAB_TOKEN"), "parent-value");
+}
+
+fn caller_of_sleeper(run: &Run) -> (u32, crate::query_bridge::Caller) {
+    let sleeper: u32 = wait_for_sleeper_pid(run).parse().expect("a pid");
+    (sleeper, crate::query_bridge::caller_of(Some(sleeper)))
+}
+
+fn wait_until_unregistered(pid: u32) {
+    let deadline = Instant::now() + WAIT;
+    while crate::query_bridge::kind_of_pid(pid).is_some() {
+        assert!(Instant::now() < deadline, "the turn stayed registered");
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+fn turn_pid(run: &Run) -> u32 {
+    run.registry.0.lock().unwrap()["run-1"].pid
+}
+
+#[test]
+fn a_shell_of_an_auto_child_on_claude_and_codex_is_the_auto_child_to_the_bridge_until_it_ends() {
+    let _env = ParentEnv::set(&[]);
+    for binary in ["claude", "codex"] {
+        let run = Run::new("hang");
+        run.spawn_as_auto_child(binary).unwrap();
+        let pid = turn_pid(&run);
+        let (_, caller) = caller_of_sleeper(&run);
+
+        assert_eq!(
+            caller,
+            crate::query_bridge::Caller::Turn(crate::query_bridge::TurnKind::AutoChild)
+        );
+        assert_eq!(env_of(&run, "GIT_CONFIG_COUNT"), "7");
+        assert_eq!(env_of(&run, "GIT_CONFIG_KEY_0"), "remote.origin.pushurl");
+        assert_eq!(
+            env_of(&run, "GIT_CONFIG_VALUE_0"),
+            AUTO_CHILD_PUSH_BLOCK_URL
+        );
+        assert_eq!(env_of(&run, "GIT_CONFIG_KEY_1"), "remote.pushDefault");
+        assert_eq!(env_of(&run, "GIT_CONFIG_VALUE_1"), "goodboy-blocked");
+        cancel_run(&run.registry.0, "run-1").unwrap();
+        run.turn_events_until_end();
+        wait_until_unregistered(pid);
+    }
+}
+
+#[test]
+fn a_shell_of_a_hand_started_turn_is_hand_started() {
+    let _env = ParentEnv::set(&[]);
+    let run = Run::new("hang");
+    run.spawn_shaped("claude", PROMPT, "default", None, false, false)
+        .unwrap();
+    let (_, caller) = caller_of_sleeper(&run);
+
+    assert_eq!(
+        caller,
+        crate::query_bridge::Caller::Turn(crate::query_bridge::TurnKind::HandStarted)
+    );
+    cancel_run(&run.registry.0, "run-1").unwrap();
+    run.turn_events_until_end();
+}
+
+#[test]
+fn a_hand_started_turn_carries_no_push_block() {
+    let _env = ParentEnv::set(&[]);
+    let run = Run::new("ok");
+    run.spawn_shaped("claude", PROMPT, "default", None, false, false)
+        .unwrap();
+    run.turn_events_until_end();
+
+    assert_eq!(env_of(&run, "GIT_CONFIG_COUNT"), "__unset__");
+    assert_eq!(env_of(&run, "GIT_CONFIG_KEY_0"), "__unset__");
+}
+
+#[test]
+fn a_spawn_that_fails_leaves_no_turn_registered() {
+    let _env = ParentEnv::set(&[]);
+    let run = Run::new("ok");
+
+    let result = run.spawn_as_auto_child("no-such-cli");
+
+    assert!(matches!(result, Err(TurnError::Io(_))));
+    assert!(live_run_ids(&run.registry).is_empty());
 }
 
 #[test]

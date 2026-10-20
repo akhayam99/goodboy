@@ -11,7 +11,10 @@ import { confirmLineOf } from './confirmLineOf';
 import { delegationCardOf } from './delegationCardOf';
 import { DelegationConfirmRow } from './DelegationConfirmRow';
 import { revisionWordOf } from './revisionWordOf';
+import { PublishConfirmRow } from './PublishConfirmRow';
 import { useDelegationDecision } from './useDelegationDecision';
+import { usePublishAct } from './usePublishAct';
+import { waitingPublishesOf } from './waitingPublishesOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -31,7 +34,9 @@ export const AutoDelegationLines = ({
   onOpenArtifact,
 }: Props) => {
   const decision = useDelegationDecision();
+  const publishing = usePublishAct();
   const labels = autoChildLabelsOf({ delegations: view.delegations });
+  const waiting = waitingPublishesOf({ delegations });
   return (
     <ul aria-label="Delegations" className="flex min-w-0 flex-col gap-1">
       {delegations.map((delegation) => {
@@ -88,6 +93,28 @@ export const AutoDelegationLines = ({
           </li>
         );
       })}
+      {waiting.length === 0 ? null : (
+        <li data-publish-confirm="">
+          <PublishConfirmRow
+            branches={waiting.map((one) => one.branch)}
+            isBusy={waiting.some((one) => publishing.busyIds.includes(one.delegationId))}
+            onConfirm={() =>
+              void publishing.act({
+                act: 'confirm',
+                delegationIds: waiting.map((one) => one.delegationId),
+                sessionId,
+              })
+            }
+            onDecline={() =>
+              void publishing.act({
+                act: 'decline',
+                delegationIds: waiting.map((one) => one.delegationId),
+                sessionId,
+              })
+            }
+          />
+        </li>
+      )}
     </ul>
   );
 };

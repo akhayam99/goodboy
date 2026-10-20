@@ -1,12 +1,32 @@
 use super::{
-    backup_facts, backup_namespace, is_backup_of, list_backups, now_nanos, prune_backups,
-    prune_backups_before, BACKUP_PREFIX, KEPT_STAMP,
+    backup_facts, backup_namespace, create_kept_backup, is_backup_of, list_backups, now_nanos,
+    prune_backups, prune_backups_before, BACKUP_PREFIX, KEPT_STAMP,
 };
 use crate::history::apply::{move_branch_blocking, restore_blocking};
 use crate::history::check::lines_of;
 use crate::history::fixtures::{branch, git_ok, ledger, picks, run_ok, step};
 use crate::history::runner::git_run;
 use crate::history::types::{HistoryVerb, MoveOutcome};
+
+#[test]
+fn a_kept_backup_pins_the_commit_and_survives_pruning() {
+    let b = branch("kept-backup");
+    let made = create_kept_backup(&b.root, "feature", &b.a).unwrap();
+    assert!(is_backup_of("feature", &made));
+    assert!(made.contains(KEPT_STAMP));
+    prune_backups(&b.root);
+    let listed = list_backups(&b.root, "feature").unwrap();
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].sha, b.a);
+}
+
+#[test]
+fn a_kept_backup_refuses_what_is_not_a_commit_sha() {
+    let b = branch("kept-backup-refuses");
+    assert!(create_kept_backup(&b.root, "feature", "HEAD").is_err());
+    assert!(create_kept_backup(&b.root, "feature", "0123456789abcdef").is_err());
+    assert!(list_backups(&b.root, "feature").unwrap().is_empty());
+}
 
 #[test]
 fn old_backups_are_pruned() {

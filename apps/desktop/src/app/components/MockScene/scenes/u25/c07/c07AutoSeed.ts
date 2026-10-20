@@ -3,6 +3,7 @@ import {
   brandId,
   type Agent,
   type AgentId,
+  type AutoDelegationId,
   type AutoTreeId,
   type MessageAttachment,
   type ProviderRunId,
@@ -32,6 +33,7 @@ export type C07Seed = Readonly<{
   pane?: 'implementer' | 'tester';
   hasImages?: boolean;
   isCapped?: boolean;
+  isSubstep?: boolean;
 }>;
 
 const SHOTS: ReadonlyArray<MessageAttachment> = [
@@ -196,6 +198,46 @@ const cappedViewOf = ({ view }: CappedParams): AutoTreeView => ({
   }),
 });
 
+const SCOUT_ID = brandId<AgentId>({ value: 'mock-auto-scout' });
+
+type SubstepParams = {
+  readonly scene: ReturnType<typeof autoSceneOf>;
+};
+
+const withSubstepOf = ({ scene }: SubstepParams): ReturnType<typeof autoSceneOf> => {
+  const parent = scene.view.delegations.find((delegation) => delegation.role === 'implementer');
+  const parentAgent = scene.agents.find((agent) => agent.id === IMPLEMENTER_ID);
+  if (parent === undefined || parentAgent === undefined) {
+    return scene;
+  }
+  const helper = {
+    ...parent,
+    id: brandId<AutoDelegationId>({ value: 'mock-auto-delegation-scout' }),
+    childAgentId: SCOUT_ID,
+    role: 'scout',
+    state: 'running' as const,
+    request: {
+      task: 'Find where the retry limit is set in payments-api.',
+      parent: { delegationId: parent.id, questionId: 'mock-question-limit', depth: 2 },
+    },
+  };
+  return {
+    ...scene,
+    view: {
+      ...scene.view,
+      delegations: scene.view.delegations.flatMap((delegation) =>
+        delegation.id === parent.id
+          ? [{ ...delegation, state: 'paused' as const }, helper]
+          : [delegation],
+      ),
+    },
+    agents: [
+      ...scene.agents,
+      { ...parentAgent, id: SCOUT_ID, name: 'Scout', kind: 'scout', parentAgentId: IMPLEMENTER_ID },
+    ],
+  };
+};
+
 const SCENE_TURNS = 4;
 
 const withTurnsOf = ({ view }: CappedParams): AutoTreeView => ({
@@ -209,10 +251,12 @@ export const seedC07 = ({
   pane,
   hasImages = false,
   isCapped = false,
+  isSubstep = false,
 }: C07Seed): void => {
   const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   seedActivityRunScene();
-  const scene = autoSceneOf({ state });
+  const base = autoSceneOf({ state });
+  const scene = isSubstep ? withSubstepOf({ scene: base }) : base;
   useAppStore.setState((current) => ({
     navigate,
     openExternalTaskLens,
