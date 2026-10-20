@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { brandId, type IsoDateTime } from '@goodboy/types';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
@@ -23,7 +23,7 @@ import { runA11yCheck } from '../../../../../__tests__/a11y/utils';
 import { sceneInvoke, clearSceneInvoke } from '../../../../../test/sceneInvoke';
 import { U26_CENTRAL_SCENES } from './central';
 
-const KINDS = ['mid', 'finished', 'stuck', 'orchestrated', 'agent', 'branches'] as const;
+const KINDS = ['mid', 'finished', 'stuck', 'blocked', 'orchestrated', 'agent', 'branches'] as const;
 
 const KEYS = [
   ...KINDS.flatMap((kind) => [`u26-central-${kind}-light`, `u26-central-${kind}-dark`]),
@@ -87,6 +87,28 @@ describe('the central column scenes', () => {
     for (const name of ['Now', 'Next steps', 'What was done']) {
       screen.getByRole('region', { name });
     }
+  });
+
+  it('says Stuck once, names the blocked agent and offers the stuck line on the blocked scene', async () => {
+    await show({ name: 'u26-central-blocked-light' });
+
+    const now = screen.getByRole('region', { name: 'Now' });
+    expect(now.getAttribute('data-now-state')).toBe('stuck');
+    expect(now.querySelector('[data-now-sentence]')?.textContent).toBe(
+      'Auto is stuck: "Fix the two doc mismatches in ledger-core" is blocked.',
+    );
+    expect(now.querySelector('[data-auto-word]')?.textContent).toBe('Stuck');
+    expect(now.textContent).not.toContain('Deciding');
+    expect(now.textContent).not.toContain('declared_blocked');
+    expect(now.querySelectorAll('[data-testid="tone-bar"]')).toHaveLength(0);
+    const inNow = within(now);
+    const retryName = 'Retry "Fix the two doc mismatches in ledger-core"';
+    inNow.getByRole('button', { name: retryName });
+    inNow.getByRole('button', { name: 'Answer Auto in its chat' });
+    inNow.getByRole('button', { name: 'Stop Auto and its agents' });
+    within(screen.getByRole('region', { name: 'Next steps' })).getByRole('button', {
+      name: retryName,
+    });
   });
 
   it('settles when the stale branch detail read fails on the branches scene', async () => {

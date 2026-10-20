@@ -1,3 +1,4 @@
+import { cn } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import type { AutoGroup } from '../autoGroupOf';
 import { AutoChildLine } from './AutoChildLine';
@@ -21,7 +22,15 @@ export const AutoAgentGroup = ({ group, isCompact }: Props) => (
         {isCompact ? compactLineOf({ group }) : (group.title ?? '')}
       </span>
       {isCompact ? null : (
-        <span className="shrink-0 text-label text-muted-foreground">{group.word}</span>
+        <span
+          data-auto-word={group.isStuck ? 'stuck' : group.phase}
+          className={cn(
+            'shrink-0 text-label',
+            group.isStuck ? 'text-danger' : 'text-muted-foreground',
+          )}
+        >
+          {group.word}
+        </span>
       )}
     </header>
     {isCompact || group.children.length === 0 ? null : (

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { brandId, type AgentId } from '@goodboy/types';
+import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import {
   aDelegation,
@@ -176,14 +176,45 @@ describe('liveGroupsOf', () => {
     ).toEqual([]);
   });
 
-  it('orders stuck, then waiting on you, then working', () => {
-    const agents = [
-      aNowAgent({ key: 'working', name: 'Add the limit table', status: 'running' }),
-      aNowAgent({ key: 'blocked', name: 'Check the docs', status: 'blocked' }),
-      aNowAgent({ key: 'failed', name: 'Rebuild the index', status: 'failed' }),
-    ];
-    const groups = liveGroupsOf({ model: nowModelOf({ agents }), agents, now: FIXTURE_NOW });
+  it('orders by start time only, so a state change moves nothing', () => {
+    type MinuteParams = { readonly minute: number };
+    const startedAt = ({ minute }: MinuteParams) =>
+      brandId<IsoDateTime>({ value: `2026-05-01T10:0${minute}:00.000Z` });
+    type StatusParams = { readonly status: 'running' | 'blocked' | 'failed' };
+    const groupsWith = ({ status }: StatusParams) => {
+      const agents = [
+        {
+          ...aNowAgent({ key: 'third', name: 'Rebuild the index', status: 'running' }),
+          startedAt: startedAt({ minute: 3 }),
+        },
+        {
+          ...aNowAgent({ key: 'first', name: 'Add the limit table', status: 'running' }),
+          startedAt: startedAt({ minute: 1 }),
+        },
+        {
+          ...aNowAgent({ key: 'second', name: 'Check the docs', status }),
+          startedAt: startedAt({ minute: 2 }),
+        },
+      ];
+      return liveGroupsOf({ model: nowModelOf({ agents }), agents, now: FIXTURE_NOW }).map(
+        (group) => [group.title, group.state],
+      );
+    };
 
-    expect(groups.map((group) => group.state)).toEqual(['stuck', 'waiting', 'working']);
+    expect(groupsWith({ status: 'running' })).toEqual([
+      ['Add the limit table', 'working'],
+      ['Check the docs', 'working'],
+      ['Rebuild the index', 'working'],
+    ]);
+    expect(groupsWith({ status: 'blocked' })).toEqual([
+      ['Add the limit table', 'working'],
+      ['Check the docs', 'waiting'],
+      ['Rebuild the index', 'working'],
+    ]);
+    expect(groupsWith({ status: 'failed' })).toEqual([
+      ['Add the limit table', 'working'],
+      ['Check the docs', 'stuck'],
+      ['Rebuild the index', 'working'],
+    ]);
   });
 });

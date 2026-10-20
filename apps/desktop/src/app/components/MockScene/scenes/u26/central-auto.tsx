@@ -2,6 +2,8 @@ import type { ComponentType } from 'react';
 import { AutoCentralScene } from './AutoCentralScene';
 
 export const U26_CENTRAL_AUTO_SCENES: Readonly<Record<string, ComponentType>> = {
+  'u26-central-auto-blocked-dark': () => <AutoCentralScene theme="dark" variant="blocked" />,
+  'u26-central-auto-blocked-light': () => <AutoCentralScene theme="light" variant="blocked" />,
   'u26-central-auto-done-dark': () => <AutoCentralScene theme="dark" variant="done" />,
   'u26-central-auto-done-light': () => <AutoCentralScene theme="light" variant="done" />,
   'u26-central-auto-failed-dark': () => <AutoCentralScene theme="dark" variant="failed" />,

@@ -40,8 +40,8 @@ export const anAutoCard = ({ target }: AutoParams): ActionCardModel => ({
   band: 0,
   priority: 0,
   kind: target.kind,
-  title: `${target.role} never started`,
-  detail: target.reason,
+  title: 'Auto is stuck',
+  detail: `"${target.role}" never started.`,
   mountId: null,
   source: { kind: 'auto', target },
 });

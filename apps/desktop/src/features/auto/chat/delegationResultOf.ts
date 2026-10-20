@@ -8,6 +8,7 @@ import {
   publishTextOf,
   type PublishState,
 } from '@goodboy/core';
+import { delegationReasonTextOf } from '../delegationReasonTextOf';
 import { isJsonRecord, listField, numberField, recordField, textField } from './readJson';
 
 type ResultCheckView = Readonly<{
@@ -101,19 +102,6 @@ const mapped = <Item>({ items, read }: MappedParams<Item>): ReadonlyArray<Item> 
     return one === null ? [] : [one];
   });
 
-const REASON_TEXT: ReadonlyMap<string, string> = new Map([
-  ['deadline_passed', 'It ran out of time.'],
-  ['stopped', 'It was stopped.'],
-  ['process_error', 'The agent ended with an error.'],
-  ['no_closing_envelope', 'It ended without saying whether the work was done.'],
-  ['artifact_persistence_failed', 'Its result could not be saved.'],
-  ['declared_blocked', 'It reported that it is blocked.'],
-  ['missing_tool', 'It had no shell to run the commands of the task.'],
-  ['no_new_version', 'It did not write a new version.'],
-  ['lost_structure', 'Its new version lost the structure of the plan.'],
-  ['stale_base', 'The version it worked on is no longer the latest.'],
-]);
-
 type Params = {
   readonly result: unknown;
 };
@@ -163,7 +151,7 @@ export const delegationResultOf = ({ result }: Params): DelegationResultView | n
     costUsd: numberField({ source: cost, key: 'usd' }),
     isCostEstimated: textField({ source: cost, key: 'basis' }) !== 'reported',
     reason: reasonOf,
-    reasonText: reasonOf === null ? null : (REASON_TEXT.get(reasonOf) ?? null),
+    reasonText: delegationReasonTextOf({ reason: reasonOf }),
     remoteText: remoteTextOf({
       value: textField({
         source: recordField({ source: verified, key: 'remote' }),

@@ -45,8 +45,7 @@ export const AutoDelegationLines = ({
           childAgent: agents.find((agent) => agent.id === delegation.childAgentId) ?? null,
         });
         const title = cardTitleOf({ card });
-        const label = labels.get(card.childAgentId);
-        const numbered = label === undefined || label === card.roleLabel ? null : label;
+        const name = labels.get(card.childAgentId) ?? card.task ?? title;
         const revision = revisionWordOf({ card });
         const asks = artifactLinksOf({ view, card }).filter(
           (link) => link.approval !== null && link.approval.state !== 'approved',
@@ -54,9 +53,12 @@ export const AutoDelegationLines = ({
         return (
           <li key={delegation.id} data-delegation={delegation.id} className="flex flex-col gap-2">
             <span className="flex h-7 min-w-0 items-center gap-2 text-label">
-              <AgentKindChip kind={card.role} {...(numbered !== null && { label: numbered })} />
-              <TruncatedText className="min-w-0 truncate text-foreground" tooltip={title}>
-                {card.task ?? title}
+              <AgentKindChip kind={card.role} density="glyph" />
+              <TruncatedText
+                className="min-w-0 truncate text-foreground"
+                tooltip={card.task ?? title}
+              >
+                {name}
               </TruncatedText>
               {revision === null ? null : (
                 <span className="shrink-0 text-muted-foreground">{revision}</span>
@@ -64,7 +66,7 @@ export const AutoDelegationLines = ({
               <Button
                 variant="quiet"
                 size="xs"
-                aria-label={`Open ${card.task ?? title}`}
+                aria-label={`Open ${name}`}
                 onClick={() => onOpenChild(card.childAgentId)}
               >
                 Open

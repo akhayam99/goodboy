@@ -38,7 +38,7 @@ const FIXER_ID = brandId<AgentId>({ value: 'mock-central-auto-fixer' });
 const BATCH = brandId<AutoBatchId>({ value: 'mock-central-auto-batch' });
 const RUN = brandId<ProviderRunId>({ value: 'mock-central-auto-run' });
 
-export type CentralAutoVariant = 'working' | 'stuck' | 'failed' | 'done';
+export type CentralAutoVariant = 'working' | 'stuck' | 'failed' | 'blocked' | 'done';
 
 export type CentralAutoSeed = Readonly<{
   view: AutoTreeView;
@@ -58,6 +58,7 @@ type DelegationParams = {
   readonly outcome: AutoOutcome | null;
   readonly settledAt: string | null;
   readonly reason: string | null;
+  readonly result?: unknown;
 };
 
 const delegationOf = ({
@@ -71,6 +72,7 @@ const delegationOf = ({
   outcome,
   settledAt,
   reason,
+  result = null,
 }: DelegationParams): AutoDelegation => ({
   id: brandId<AutoDelegationId>({ value: `mock-central-auto-delegation-${key}` }),
   treeId: aTree().id,
@@ -95,7 +97,7 @@ const delegationOf = ({
   isStopping: false,
   questionCycles: 0,
   deadlineAt: ms({ time: '10:50:00' }),
-  result: null,
+  result,
   createdAt: ms({ time: createdAt }),
   settledAt: settledAt === null ? null : ms({ time: settledAt }),
 });
@@ -137,10 +139,31 @@ const FIXER_BY_VARIANT: Readonly<Record<CentralAutoVariant, AutoDelegation>> = {
     state: 'settled',
     outcome: 'timed_out',
     settledAt: '10:23:40',
-    reason: 'It ran past its 30 minute deadline before sending a result.',
+    reason: 'deadline_passed',
+  }),
+  blocked: fixerOf({
+    state: 'settled',
+    outcome: 'blocked',
+    settledAt: '10:22:30',
+    reason: 'declared_blocked',
+    result: { declared: { summary: 'The ledger-core docs folder is not in this checkout.' } },
   }),
   done: fixerOf({ state: 'settled', outcome: 'completed', settledAt: '10:23:00' }),
 };
+
+const REVIEWER_DECLARED = delegationOf({
+  key: 'reviewer',
+  childId: REVIEWER_ID,
+  role: 'reviewer',
+  task: 'Review the retry fix in payments-api.',
+  slot: 0,
+  createdAt: '10:12:00',
+  state: 'settled',
+  outcome: 'completed',
+  settledAt: '10:18:00',
+  reason: null,
+  result: { declared: { summary: 'Two doc mismatches in ledger-core, no blocking issue.' } },
+});
 
 const DELIVERED: ReadonlyArray<AutoDeliveredResult> = [
   {
@@ -169,10 +192,21 @@ const DONE_DELIVERED: ReadonlyArray<AutoDeliveredResult> = [
   },
 ];
 
+const DELIVERED_BY_VARIANT: Readonly<
+  Record<CentralAutoVariant, ReadonlyArray<AutoDeliveredResult>>
+> = {
+  working: DELIVERED,
+  stuck: DELIVERED,
+  failed: DELIVERED,
+  blocked: [],
+  done: DONE_DELIVERED,
+};
+
 const PHASE_BY_VARIANT: Readonly<Record<CentralAutoVariant, AutoPhase>> = {
   working: 'waiting',
   stuck: 'waiting',
   failed: 'waiting',
+  blocked: 'waiting',
   done: 'done',
 };
 
@@ -248,6 +282,11 @@ type SeedParams = {
   readonly variant: CentralAutoVariant;
 };
 
+const reviewerAgentOf = ({ variant }: SeedParams): Agent =>
+  variant === 'blocked'
+    ? { ...REVIEWER_AGENT, outputSummary: 'I will now read the ledger-core docs folder' }
+    : REVIEWER_AGENT;
+
 const fixerAgentOf = ({ variant }: SeedParams): Agent => {
   switch (variant) {
     case 'working':
@@ -277,6 +316,15 @@ const fixerAgentOf = ({ variant }: SeedParams): Agent => {
         startedAt: '10:19:05',
         completedAt: '10:23:40',
       });
+    case 'blocked':
+      return agentOf({
+        id: FIXER_ID,
+        name: 'Implementer',
+        kind: 'implementer',
+        status: 'blocked',
+        startedAt: '10:19:05',
+        completedAt: '10:22:30',
+      });
     case 'done':
       return agentOf({
         id: FIXER_ID,
@@ -293,11 +341,19 @@ const fixerAgentOf = ({ variant }: SeedParams): Agent => {
   }
 };
 
+const FIXER_END_BY_VARIANT: Readonly<Record<CentralAutoVariant, string>> = {
+  working: '10:23:00',
+  stuck: '10:23:00',
+  failed: '10:23:40',
+  blocked: '10:22:30',
+  done: '10:23:00',
+};
+
 const sourceOf = ({ variant }: SeedParams): WorkTimeSource => {
   const fixerSpan = spanOf({
     agentId: FIXER_ID,
     startedAt: '10:19:05',
-    endedAt: variant === 'failed' ? '10:23:40' : '10:23:00',
+    endedAt: FIXER_END_BY_VARIANT[variant],
   });
   const spans =
     variant === 'working' || variant === 'stuck' ? [REVIEWER_SPAN] : [REVIEWER_SPAN, fixerSpan];
@@ -318,15 +374,22 @@ export const centralAutoSeedOf = ({ variant }: SeedParams): CentralAutoSeed => (
       rootAgentId: ROOT_ID,
       sessionId: CENTRAL_AUTO_SESSION,
     },
-    delegations: [REVIEWER, FIXER_BY_VARIANT[variant]],
+    delegations: [variant === 'blocked' ? REVIEWER_DECLARED : REVIEWER, FIXER_BY_VARIANT[variant]],
     artifacts: [],
     budget: autoBudgetOf({
-      spend: autoTreeSpendOf({ capUsd: 10, settledUsd: 0.41, reservedUsd: 0, estimatedUsd: 0 }),
+      spend: autoTreeSpendOf({
+        capUsd: 10,
+        settledUsd: 0.41,
+        liveUsd: 0,
+        reservedUsd: 0,
+        estimatedUsd: 0,
+      }),
     }),
     pendingRefusal: null,
-    deliveredResults: variant === 'done' ? DONE_DELIVERED : DELIVERED,
+    deliveredResults: DELIVERED_BY_VARIANT[variant],
+    rootAsk: null,
   },
-  agents: [ROOT_AGENT, REVIEWER_AGENT, fixerAgentOf({ variant })],
+  agents: [ROOT_AGENT, reviewerAgentOf({ variant }), fixerAgentOf({ variant })],
   source: sourceOf({ variant }),
   isCompact: variant === 'done',
 });

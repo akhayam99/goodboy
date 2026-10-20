@@ -55,6 +55,7 @@ const retryDelegation = async (world: RuntimeWorld) => {
 
 const bareRetry = (retryOf: string) => ({
   role: null,
+  title: null,
   task: '',
   reason: 'again',
   provider: null,
@@ -285,5 +286,65 @@ describe('retrying across a restart', () => {
       delegationId: (await retryDelegation(world)).id,
     });
     expect(attempts).toHaveLength(1);
+  });
+});
+
+const LEDGER_PATH = '/work/harborline/ledger-core';
+const START = { head: 'start-1', entries: [], isPartial: false };
+const STOPPED = { head: 'stopped-2', entries: [], isPartial: false };
+const DONE = { head: 'done-3', entries: [], isPartial: false };
+
+const stoppedChild = async (): Promise<RuntimeWorld> => {
+  const world = await makeRuntimeWorld({ capUsd: 10 });
+  world.state.ports.setSnapshots(LEDGER_PATH, [START, STOPPED, STOPPED]);
+  await userSays({ world, id: 'outbox-user-1', text: 'add the ledger export' });
+  await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
+  await autoTurnEnds({ world });
+  await childTurnEnds({
+    world,
+    index: 0,
+    text: 'I wrote half of the export.',
+    overrides: { exit: 'cancelled' },
+  });
+  return world;
+};
+
+describe('continuing a child that was stopped', () => {
+  it('continues the same agent in the same worktree from where it stopped', async () => {
+    const world = await stoppedChild();
+    const original = await firstDelegation(world);
+    expect(original).toMatchObject({ state: 'settled', outcome: 'stopped' });
+
+    await retry(world);
+    await autoTurnEnds({ world });
+
+    const turns = world.state.ports.childTurns;
+    expect(turns[1]?.childAgentId).toBe(original.childAgentId);
+    expect(turns[1]?.mountTarget).toEqual(turns[0]?.mountTarget);
+    expect(turns[1]?.text).toContain('Its work is still in this worktree');
+    expect(turns[1]?.text).toContain('Do not start over.');
+    expect(turns[1]?.text).not.toContain('Do the work again from the start');
+  });
+
+  it('keeps the commits of the stopped attempt in the result of the retry', async () => {
+    const world = await stoppedChild();
+    await retry(world);
+    await autoTurnEnds({ world });
+    const repeated = await retryDelegation(world);
+    const [attempt] = await listAutoAttemptsOfDelegation({
+      db: world.state.world.db,
+      delegationId: repeated.id,
+    });
+    expect(attempt?.baseline).toMatchObject({ head: 'start-1' });
+
+    world.state.ports.setSnapshots(LEDGER_PATH, [DONE]);
+    world.state.ports.setCommittedFiles(LEDGER_PATH, ['src/export.ts']);
+    await childTurnEnds({ world, index: 1, text: 'The export is done.' });
+
+    expect(world.state.ports.committedReads.at(-1)).toMatchObject({
+      base: 'start-1',
+      head: 'done-3',
+    });
+    expect(world.errors).toEqual([]);
   });
 });

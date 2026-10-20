@@ -169,7 +169,7 @@ describe('the Auto chat scenes', () => {
     mount({ id: 'auto-chat-revising' });
 
     expect(await screen.findByText('revising v2', undefined, WAIT)).toBeDefined();
-    expect(within(rail()).getAllByText('Planner')).toHaveLength(1);
+    expect(within(rail()).getAllByRole('img', { name: 'Planner' })).toHaveLength(1);
   });
 
   it('auto-chat-confirm asks before the revise starts', async () => {
@@ -199,6 +199,9 @@ describe('the Auto chat scenes', () => {
     expect(
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
+    const [root] = within(rail()).getAllByRole('treeitem');
+    expect(root?.getAttribute('aria-label')).toMatch(/, 4 agents, Idle$/);
+    fireEvent.keyDown(root ?? rail(), { key: 'ArrowRight' });
     expect(within(rail()).getAllByRole('treeitem')).toHaveLength(5);
     expect(screen.getAllByRole('button', { name: /^Open / })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();

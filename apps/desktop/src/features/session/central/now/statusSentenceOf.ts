@@ -1,3 +1,5 @@
+import { autoStuckKindOf } from '../../../auto/autoStuckKindOf';
+import { autoStuckLineOf } from '../../../auto/autoStuckLineOf';
 import { AGENT_KIND_META } from '../../agent-kind';
 import type { BranchFacts } from '../branches/branchFactsOf';
 import type { ActionCardModel } from '../next/actionCardsOf';
@@ -7,12 +9,6 @@ import { runPositionOf } from './runPositionOf';
 
 const MAX_NAMED_GROUPS = 2;
 const NOTHING_RAN = 'Nothing has run yet.';
-const STUCK_AUTO_CHILD_STATES: ReadonlySet<string> = new Set([
-  'neverStarted',
-  'failed',
-  'timedOut',
-  'blocked',
-]);
 
 type TextParams = {
   readonly text: string;
@@ -72,17 +68,29 @@ const runPhraseOf = ({ group }: RunPhraseParams): string => {
 
 type AutoPhraseParams = {
   readonly group: LiveAutoGroup;
+  readonly isLead: boolean;
 };
 
-const autoPhraseOf = ({ group }: AutoPhraseParams): string => {
+const OPEN_AUTO_CHILD_STATES: ReadonlySet<string> = new Set(['running', 'queued']);
+
+const autoWaitingPhraseOf = ({ group, isLead }: AutoPhraseParams): string | null => {
+  const open = group.children.filter((child) => OPEN_AUTO_CHILD_STATES.has(child.state));
+  const [only] = open;
+  if (only === undefined) {
+    return null;
+  }
+  const lead = isLead ? 'Waiting' : 'Auto is waiting';
+  return open.length === 1 ? `${lead} for "${only.label}"` : `${lead} for ${open.length} agents`;
+};
+
+const autoPhraseOf = ({ group, isLead }: AutoPhraseParams): string => {
   if (group.state === 'stuck') {
-    const child = group.children.find((candidate) => STUCK_AUTO_CHILD_STATES.has(candidate.state));
-    if (child === undefined) {
-      return 'Auto is stuck';
-    }
-    return child.state === 'neverStarted'
-      ? `Auto is stuck: ${child.label} never started`
-      : `Auto is stuck: ${child.label} stopped`;
+    const stuck = group.children.flatMap((child) => {
+      const kind = autoStuckKindOf({ state: child.state });
+      return kind === null ? [] : [{ title: child.label, kind }];
+    });
+    const [first] = stuck;
+    return first === undefined ? 'Auto is stuck' : `Auto is stuck: ${autoStuckLineOf(first)}`;
   }
   if (group.treePhase === 'blocked') {
     return 'Auto is blocked';
@@ -90,7 +98,8 @@ const autoPhraseOf = ({ group }: AutoPhraseParams): string => {
   if (group.state === 'waiting') {
     return 'Auto waits on your OK';
   }
-  return `Auto is ${lowerFirst({ text: group.group.word })}`;
+  const waiting = group.treePhase === 'waiting' ? autoWaitingPhraseOf({ group, isLead }) : null;
+  return waiting ?? `Auto is ${lowerFirst({ text: group.group.word })}`;
 };
 
 type AgentPhraseParams = {
@@ -116,14 +125,18 @@ type GroupParams = {
   readonly group: LiveGroupModel;
 };
 
-const phraseOf = ({ group }: GroupParams): string => {
+type PhraseParams = GroupParams & {
+  readonly isLead: boolean;
+};
+
+const phraseOf = ({ group, isLead }: PhraseParams): string => {
   switch (group.kind) {
     case 'orchestrated':
       return orchestratedPhraseOf({ group });
     case 'run':
       return runPhraseOf({ group });
     case 'auto':
-      return autoPhraseOf({ group });
+      return autoPhraseOf({ group, isLead });
     case 'agent':
       return agentPhraseOf({ group });
     default: {
@@ -138,18 +151,14 @@ type GroupsParams = {
 };
 
 const groupsSentenceOf = ({ groups }: GroupsParams): string | null => {
-  const named = groups.slice(0, MAX_NAMED_GROUPS).map((group) => phraseOf({ group }));
+  const named = groups
+    .slice(0, MAX_NAMED_GROUPS)
+    .map((group, index) => phraseOf({ group, isLead: index === 0 }));
   const [first, second] = named;
   if (first === undefined) {
     return null;
   }
-  const hiddenCount = groups.length - named.length;
-  if (second === undefined) {
-    return `${first}.`;
-  }
-  return hiddenCount > 0
-    ? `${first}, ${second}, and ${hiddenCount} more.`
-    : `${first}, and ${second}.`;
+  return second === undefined ? `${first}.` : `${first}. ${second}.`;
 };
 
 type CardParams = {
@@ -172,8 +181,13 @@ const cardSentenceOf = ({ card }: CardParams): string => {
     }
     case 'suggestion':
       return withPeriod({ text: card.title });
-    case 'auto':
-      return withPeriod({ text: card.title });
+    case 'auto': {
+      const { kind, role } = source.target;
+      if (kind === 'approve' || kind === 'blocked') {
+        return withPeriod({ text: card.title });
+      }
+      return `${card.title}: ${autoStuckLineOf({ title: role, kind })}.`;
+    }
     default: {
       const exhaustive: never = source;
       return exhaustive;
@@ -185,15 +199,9 @@ type NextParams = {
   readonly cards: ReadonlyArray<ActionCardModel>;
 };
 
-const waitingSentenceOf = ({ cards }: NextParams): string | null => {
-  const urgent = cards.filter((card) => card.band === 0);
-  const [first] = urgent;
-  if (first === undefined) {
-    return null;
-  }
-  return urgent.length > 1
-    ? `${urgent.length} things wait on you.`
-    : cardSentenceOf({ card: first });
+const firstWaitingSentenceOf = ({ cards }: NextParams): string | null => {
+  const first = cards.find((card) => card.band === 0);
+  return first === undefined ? null : cardSentenceOf({ card: first });
 };
 
 type Params = {
@@ -203,37 +211,14 @@ type Params = {
   readonly facts: ReadonlyArray<BranchFacts>;
 };
 
-const isWaitingRun = ({ group }: GroupParams): boolean =>
-  (group.kind === 'run' || group.kind === 'orchestrated') &&
-  group.state === 'waiting' &&
-  !isStepRunning({ group });
-
-const isAnswerSaidByRun = ({ groups, cards }: GroupsParams & NextParams): boolean => {
-  const urgent = cards.filter((card) => card.band === 0);
-  const [only] = urgent;
-  return (
-    urgent.length === 1 &&
-    only?.source.kind === 'owner' &&
-    only.source.owner.questionIds.length > 0 &&
-    groups.slice(0, MAX_NAMED_GROUPS).some((group) => isWaitingRun({ group }))
-  );
-};
-
 export const statusSentenceOf = ({ groups, cards, doneOutcome, facts }: Params): string => {
-  const first = groupsSentenceOf({ groups });
-  const second = isAnswerSaidByRun({ groups, cards }) ? null : waitingSentenceOf({ cards });
-  if (first === null && second === null) {
-    const finished = finishedSentenceOf({ facts });
-    if (finished !== null) {
-      return finished;
-    }
-    return doneOutcome === null ? NOTHING_RAN : withPeriod({ text: doneOutcome });
+  const named = groupsSentenceOf({ groups }) ?? firstWaitingSentenceOf({ cards });
+  if (named !== null) {
+    return named;
   }
-  if (first === null) {
-    return second ?? NOTHING_RAN;
+  const finished = finishedSentenceOf({ facts });
+  if (finished !== null) {
+    return finished;
   }
-  if (second === null || first.includes(second.replace(/\.$/, ''))) {
-    return first;
-  }
-  return `${first} ${second}`;
+  return doneOutcome === null ? NOTHING_RAN : withPeriod({ text: doneOutcome });
 };

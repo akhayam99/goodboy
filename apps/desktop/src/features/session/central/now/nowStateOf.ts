@@ -1,6 +1,7 @@
 import { NAMES } from '../../../../shared/names';
 import type { ActionCardModel } from '../next/actionCardsOf';
 import type { LiveGroupModel } from './liveGroupsOf';
+import { needsYouCountOf } from './needsYouCountOf';
 
 export type NowState = 'stuck' | 'waiting' | 'working' | 'done' | 'idle';
 
@@ -23,7 +24,7 @@ export const nowStateOf = ({ groups, cards, hasMergedRequest, hasDoneWork }: Par
   if (groups.some((group) => group.state === 'stuck')) {
     return 'stuck';
   }
-  if (cards.some((card) => card.band === 0)) {
+  if (needsYouCountOf({ cards }) > 0) {
     return 'waiting';
   }
   if (groups.some((group) => group.state === 'working' || group.state === 'deciding')) {

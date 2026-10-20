@@ -253,8 +253,13 @@ type RetryNoteParams = {
   readonly retry: AutoDelegation;
 };
 
-const retryNoteOf = ({ retry }: RetryNoteParams): string =>
-  `The earlier attempt ended ${retry.outcome ?? 'without a result'} (${retry.reason ?? 'no reason recorded'}). Do the work again from the start of the task below.`;
+const retryNoteOf = ({ retry }: RetryNoteParams): string => {
+  const ended = `The earlier attempt ended ${retry.outcome ?? 'without a result'} (${retry.reason ?? 'no reason recorded'}).`;
+  if (retry.outcome === 'completed') {
+    return `${ended} Do the work again from the start of the task below.`;
+  }
+  return `${ended} Its work is still in this worktree: the commits and the changed files stay. Look at what is already done, keep it, and continue from where it stopped until the task below is done. Do not start over.`;
+};
 
 type BriefVersionParams = {
   readonly retry: AutoDelegation | null;
@@ -445,6 +450,7 @@ export const resolveDelegateChild = async ({
       attemptId: brandId<AutoAttemptId>({ value: ctx.ports.newId() }),
       role,
       request: {
+        ...(child.title !== null && { title: child.title }),
         task: child.task,
         reason: child.reason,
         doneWhen: child.doneWhen,

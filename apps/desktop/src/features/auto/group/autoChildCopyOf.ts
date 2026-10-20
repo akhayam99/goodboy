@@ -45,6 +45,9 @@ const subOf = ({ child }: ChildParams): string | null => {
   if (child.state === 'neverStarted' && child.createdAt !== null) {
     return `Auto created it at ${formatClock({ at: child.createdAt })}, no first message reached it.`;
   }
+  if (child.state === 'done') {
+    return null;
+  }
   const isDanger = STATE_COPY[child.state].isDanger;
   return isDanger && child.reason !== null ? child.reason : askedOf({ child });
 };

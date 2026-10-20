@@ -18,6 +18,7 @@ const viewWithScout = ({ isAdopted = false }: ViewParams = {}): AutoTreeView => 
   budget: null,
   pendingRefusal: null,
   deliveredResults: [],
+  rootAsk: null,
 });
 
 describe('which Auto tree an agent belongs to', () => {

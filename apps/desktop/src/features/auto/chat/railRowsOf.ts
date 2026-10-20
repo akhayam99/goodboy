@@ -118,10 +118,18 @@ export const railRowsOf = ({
 }: RowParams): ReadonlyArray<RailRow> => {
   const latestByChild = new Map<string, DelegationCardModel>();
   const parentOfChild = new Map<string, string>();
+  const startedAtByChild = new Map<string, number>();
   for (const delegation of view.delegations) {
     if (delegation.isAdopted) {
       continue;
     }
+    startedAtByChild.set(
+      delegation.childAgentId,
+      Math.min(
+        startedAtByChild.get(delegation.childAgentId) ?? delegation.createdAt,
+        delegation.createdAt,
+      ),
+    );
     const childAgent = agents.find((agent) => agent.id === delegation.childAgentId) ?? null;
     latestByChild.set(delegation.childAgentId, delegationCardOf({ delegation, childAgent }));
     const link = substepLinkOf({ request: delegation.request });
@@ -132,7 +140,11 @@ export const railRowsOf = ({
     }
   }
   const labels = autoChildLabelsOf({ delegations: view.delegations });
-  const cards = [...latestByChild.values()];
+  const cards = [...latestByChild.values()].sort(
+    (first, second) =>
+      (startedAtByChild.get(first.childAgentId) ?? 0) -
+      (startedAtByChild.get(second.childAgentId) ?? 0),
+  );
   const ordered = cards
     .filter((card) => !parentOfChild.has(card.childAgentId))
     .flatMap((card) => [

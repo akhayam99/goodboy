@@ -9,6 +9,7 @@ export type AutoTreeView = Readonly<{
   budget: AutoBudgetFacts | null;
   pendingRefusal: AutoPendingRefusal | null;
   deliveredResults: ReadonlyArray<AutoDeliveredResult>;
+  rootAsk: string | null;
 }>;
 
 export type AutoDeliveredResult = Readonly<{

@@ -118,32 +118,33 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-working nests the children under Auto and names each row by role, title and state', async () => {
     mount({ id: 'c07-auto-working' });
 
-    const auto = await treeRow(/^Auto, /);
+    const auto = await treeRow(/^Auto agent, /);
     expect(auto.getAttribute('aria-level')).toBe('1');
     expect(auto.getAttribute('aria-expanded')).toBe('true');
-    const implementer = await treeRow(/^Implementer, Running$/);
+    const implementer = await treeRow(/^Implementer, .*, Running$/);
     expect(implementer.getAttribute('aria-level')).toBe('2');
     expect(within(implementer).queryByText('Sonnet 5.5')).toBeNull();
-    expect(await treeRow(/^Tester, Queued$/)).toBeDefined();
+    expect(await treeRow(/^Tester, .*, Queued$/)).toBeDefined();
 
     fireEvent.pointerEnter(implementer, { pointerType: 'mouse' });
     const card = (await screen.findByTestId('fact-card', undefined, WAIT)).textContent;
-    expect(card).toContain('Implementer');
+    expect(card).toContain('Post one credit per retry');
     expect(card).toContain('Running');
   });
 
   it('c07-auto-working walks the tree with the arrow keys and opens a child with Enter', async () => {
     mount({ id: 'c07-auto-working' });
 
-    const auto = await treeRow(/^Auto, /);
+    const auto = await treeRow(/^Auto agent, /);
     expect(auto.tabIndex).toBe(0);
     act(() => auto.focus());
     fireEvent.keyDown(auto, { key: 'ArrowRight' });
     const first = document.activeElement;
     expect(first?.getAttribute('aria-level')).toBe('2');
+    expect(first?.getAttribute('aria-label')).toMatch(/^Planner, /);
     fireEvent.keyDown(first ?? auto, { key: 'ArrowLeft' });
     expect(document.activeElement).toBe(auto);
-    fireEvent.keyDown(auto, { key: 'End' });
+    fireEvent.keyDown(auto, { key: 'Home' });
     const last = document.activeElement;
     expect(last?.getAttribute('aria-label')).toMatch(/^Tester, /);
     fireEvent.keyDown(last ?? auto, { key: 'Enter' });
@@ -193,10 +194,10 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByText('Started by Auto. Auto sees what you tell it.')).toBeDefined();
     expect(screen.getByPlaceholderText('Message Implementer')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Open full' })).toBeDefined();
-    expect(screen.getByText(/Reserved up to \$3\.00/)).toBeDefined();
+    expect(screen.queryByText(/Reserved up to/)).toBeNull();
     expect(screen.queryByText('Implementer · Implementer')).toBeNull();
     expect(
-      screen.getAllByText('Post one credit per retry in postCredit and applyCredit.').length,
+      screen.getAllByText(/^Post one credit per retry in postCredit and applyCredit\.?$/).length,
     ).toBeGreaterThan(1);
     expect(screen.getByRole('button', { name: 'Back to agents' })).toBeDefined();
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
@@ -208,7 +209,7 @@ describe('c07 Auto scenes', () => {
     const lists = await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
     const tester = lists
       .flatMap((list) => within(list).getAllByRole('listitem'))
-      .find((line) => within(line).queryByText('Tester') !== null);
+      .find((line) => within(line).queryByRole('img', { name: 'Tester' }) !== null);
     if (tester === undefined) {
       throw new Error('no Tester line');
     }
@@ -222,7 +223,7 @@ describe('c07 Auto scenes', () => {
     ).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to agents' }));
-    fireEvent.click(await treeRow(/^Auto, /));
+    fireEvent.click(await treeRow(/^Auto agent, /));
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull());
     expect(await autoTree()).toBeDefined();
   });
@@ -374,9 +375,9 @@ describe('c07 Auto scenes', () => {
       expect(found?.dataset.sessionRail).toBe('session');
       expect(found?.hasAttribute('data-rail-folded')).toBe(true);
     }, WAIT);
-    const implementer = await treeRow(/^Implementer, Running$/);
+    const implementer = await treeRow(/^Implementer, .*, Running$/);
     expect(within(implementer).getByRole('img', { name: 'Running' })).toBeDefined();
-    expect(await treeRow(/^Tester, Queued$/)).toBeDefined();
+    expect(await treeRow(/^Tester, .*, Queued$/)).toBeDefined();
   });
 
   it('c07-auto-session-level keeps the Auto chat in the center with the session level shown', async () => {
@@ -389,8 +390,13 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-idle reads Idle on the Auto row of the rail', async () => {
     mount({ id: 'c07-auto-idle' });
 
-    expect(await treeRow(/^Auto, Idle$/)).toBeDefined();
+    const auto = await treeRow(/^Auto agent, .+, 4 agents, Idle$/);
+    expect(auto.getAttribute('aria-expanded')).toBe('false');
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
+    fireEvent.click(within(auto).getByTestId('spawned-fold-toggle'));
     expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(5);
+    fireEvent.keyDown(auto, { key: 'ArrowLeft' });
+    expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
   });
 
   it('c07-auto-answering shows Auto alone in the tree with the empty state', async () => {
@@ -398,7 +404,7 @@ describe('c07 Auto scenes', () => {
 
     expect(within(await autoTree()).getAllByRole('treeitem')).toHaveLength(1);
     expect(within(await panel()).getByText('No agents started yet')).toBeDefined();
-    expect(await treeRow(/^Auto, Idle$/)).toBeDefined();
+    expect(await treeRow(/^Auto agent, .*, Idle$/)).toBeDefined();
   });
 
   it('c07-auto-answering rests after Auto answered: no Deciding tail and no Stop', async () => {

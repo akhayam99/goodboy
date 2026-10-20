@@ -162,7 +162,7 @@ const baseActionsOf = ({ card }: CardParams): CardActions => {
       };
     case 'auto':
       return {
-        main: verbOf({ label: `Retry ${source.target.role}` }),
+        main: { ...verbOf({ label: 'Retry' }), ariaLabel: `Retry "${source.target.role}"` },
         second: verbOf({ label: 'Open Auto' }),
         failure: null,
         isBusy: false,

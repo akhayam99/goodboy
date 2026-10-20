@@ -9,7 +9,7 @@ const parentIndexOf = ({ levels, from }: Omit<Params, 'key'>): number | null => 
   if (level === undefined) {
     return null;
   }
-  for (let index = from - 1; index >= 0; index -= 1) {
+  for (let index = from + 1; index < levels.length; index += 1) {
     const candidate = levels[index];
     if (candidate !== undefined && candidate < level) {
       return index;
@@ -20,11 +20,11 @@ const parentIndexOf = ({ levels, from }: Omit<Params, 'key'>): number | null => 
 
 const childIndexOf = ({ levels, from }: Omit<Params, 'key'>): number | null => {
   const level = levels[from];
-  const next = levels[from + 1];
-  if (level === undefined || next === undefined || next <= level) {
+  const above = levels[from - 1];
+  if (level === undefined || above === undefined || above <= level) {
     return null;
   }
-  return from + 1;
+  return from - 1;
 };
 
 export const treeKeyTargetOf = ({ key, levels, from }: Params): number | null => {

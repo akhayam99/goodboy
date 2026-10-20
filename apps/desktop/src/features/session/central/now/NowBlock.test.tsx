@@ -15,6 +15,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
 } from '../../../../store/storyHarness';
 import type { WorkflowAdvanceState } from '../../../workflows/advanceGate';
+import type { CardActions } from '../next/useActionCardActions';
 import { NowBlock } from './NowBlock';
 import { aQuestionCard } from './testing/nowCards';
 import {
@@ -26,6 +27,16 @@ import {
 } from './testing/nowModelOf';
 
 const navigate = vi.fn();
+const showNext = vi.fn();
+const NO_ACTIONS: CardActions = {
+  main: null,
+  second: null,
+  failure: null,
+  isBusy: false,
+  agentKind: null,
+  menu: null,
+  foldedTarget: null,
+};
 let store: Awaited<ReturnType<typeof importStore>>;
 
 beforeAll(async () => {
@@ -34,6 +45,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   navigate.mockReset();
+  showNext.mockReset();
   store.setState({ navigate });
 });
 afterEach(() => {
@@ -74,6 +86,8 @@ const showBuild = () => {
       })}
       cards={[aQuestionCard({ where: 'Build step 4' })]}
       doneOutcome={null}
+      onShowNext={showNext}
+      actionsFor={() => NO_ACTIONS}
     />,
   );
 };
@@ -99,12 +113,22 @@ describe('NowBlock', () => {
       'waiting',
     );
     expect(document.querySelector('[data-now-sentence]')?.textContent).toBe(
-      'Build is on step 3 of 6, Implement. Build step 4 waits on one answer from you.',
+      'Build is on step 3 of 6, Implement.',
     );
   });
 
-  it('draws no Button inside the block', () => {
+  it('draws no Button and no tone bar inside the block', () => {
     const { container } = showBuild();
     expect(container.querySelectorAll('button[data-variant]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-testid="tone-bar"]')).toHaveLength(0);
+  });
+
+  it('says the count once, in the header, and the count leads to Next', () => {
+    showBuild();
+    const count = screen.getByRole('button', { name: '1 thing waits on you, go to Next' });
+    expect(count.textContent).toBe('1 waits on you');
+    expect(document.querySelector('[data-now-sentence]')?.textContent).not.toMatch(/\d+ thing/);
+    fireEvent.click(count);
+    expect(showNext).toHaveBeenCalledTimes(1);
   });
 });

@@ -227,4 +227,29 @@ describe('parsing the spec of an agent delegate call', () => {
     });
     expect(retry).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
   });
+
+  it('reads an optional title of eight words at most and keeps old specs hashing the same', () => {
+    const base = { role: 'scout', task: 'find the payments-api retry cap', reason: 'reading' };
+    const plain = parseDelegateSpec({ text: spec([base]) });
+    const titled = parseDelegateSpec({
+      text: spec([
+        { ...base, title: '  Find the retry cap in payments-api and the ledger-core  ' },
+      ]),
+    });
+    const blank = parseDelegateSpec({ text: spec([{ ...base, title: '  ' }]) });
+    expect(plain).toMatchObject({ kind: 'ok', children: [{ title: null }] });
+    expect(blank).toEqual(plain);
+    expect(titled).toMatchObject({
+      kind: 'ok',
+      children: [{ title: 'Find the retry cap in payments-api and the' }],
+    });
+    expect(plain.kind === 'ok' && titled.kind === 'ok' && plain.hash !== titled.hash).toBe(true);
+  });
+
+  it('refuses a retry that sets a title', () => {
+    const retry = parseDelegateSpec({
+      text: spec([{ retryOf: 'delegation-a', reason: 'again', title: 'Fix it again' }]),
+    });
+    expect(retry).toMatchObject({ kind: 'refused', code: 'spec_invalid' });
+  });
 });

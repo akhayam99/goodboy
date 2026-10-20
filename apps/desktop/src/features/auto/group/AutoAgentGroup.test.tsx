@@ -58,7 +58,7 @@ describe('AutoAgentGroup', () => {
   it('names a child that never started and opens it in the auto-child drawer', () => {
     render(<AutoAgentGroup group={groupOf()} isCompact={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Implementer, never started' }));
+    fireEvent.click(screen.getByRole('button', { name: 'work for fixer, never started' }));
 
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'auto-child',
@@ -72,7 +72,15 @@ describe('AutoAgentGroup', () => {
     screen.getByText('Found 2 doc mismatches');
     screen.getByText('Never started');
     screen.getByText(/no first message reached it/);
-    screen.getByText('Auto asked: work for reviewer');
+    expect(screen.queryByText('Auto asked: work for reviewer')).toBeNull();
+  });
+
+  it('says Stuck in the header when a child is stuck, the same word as the Now card', () => {
+    render(<AutoAgentGroup group={groupOf()} isCompact={false} />);
+
+    const word = document.querySelector('[data-auto-word]');
+    expect(word?.textContent).toBe('Stuck');
+    expect(word?.getAttribute('data-auto-word')).toBe('stuck');
   });
 
   it('holds no Button, only row buttons', () => {

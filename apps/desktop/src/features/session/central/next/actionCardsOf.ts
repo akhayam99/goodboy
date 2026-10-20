@@ -1,8 +1,10 @@
 import type { AgentId } from '@goodboy/types';
+import type { AutoStuckKind } from '../../../auto/autoStuckKindOf';
+import { autoStuckLineOf } from '../../../auto/autoStuckLineOf';
 import type { NextStepBand, SessionSuggestion } from '../../../suggestions/types';
 import type { NeedsYouOwner, NeedsYouOwnerKind } from '../../timeline/needsYou';
 
-type AutoTargetKind = 'neverStarted' | 'failed' | 'approve' | 'blocked';
+type AutoTargetKind = AutoStuckKind | 'approve' | 'blocked';
 
 export type AutoActionTarget = {
   readonly agentId: AgentId;
@@ -83,12 +85,15 @@ const suggestionMountIdOf = ({ suggestion }: SuggestionParams): string | null =>
   return null;
 };
 
+const AUTO_STUCK = 'Auto is stuck';
+
 const autoTitleOf = ({ target }: AutoParams): string => {
   switch (target.kind) {
     case 'neverStarted':
-      return `${target.role} never started`;
     case 'failed':
-      return `${target.role} stopped`;
+    case 'timedOut':
+    case 'childBlocked':
+      return AUTO_STUCK;
     case 'approve':
       return 'Auto waits on your OK';
     case 'blocked':
@@ -98,6 +103,16 @@ const autoTitleOf = ({ target }: AutoParams): string => {
       return exhaustive;
     }
   }
+};
+
+const autoDetailOf = ({ target }: AutoParams): string | null => {
+  const reason = target.reason === null || target.reason === '' ? null : target.reason;
+  const { kind } = target;
+  if (kind === 'approve' || kind === 'blocked') {
+    return reason;
+  }
+  const line = `${autoStuckLineOf({ title: target.role, kind })}.`;
+  return reason === null ? line : `${line} ${reason}`;
 };
 
 const ownerCardOf = ({ owner }: OwnerParams): ActionCardModel => ({
@@ -128,7 +143,7 @@ const autoCardOf = ({ target }: AutoParams): ActionCardModel => ({
   priority: 0,
   kind: target.kind,
   title: autoTitleOf({ target }),
-  detail: target.reason === null || target.reason === '' ? null : target.reason,
+  detail: autoDetailOf({ target }),
   mountId: null,
   source: { kind: 'auto', target },
 });

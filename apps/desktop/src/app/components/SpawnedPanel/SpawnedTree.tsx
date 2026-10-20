@@ -6,8 +6,11 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
+import { SpawnedNowRow } from './SpawnedNowRow';
 import { SpawnedTreeContext } from './spawnedTreeContext';
+import { spawnedTreeItemsOf } from './spawnedTreeItemsOf';
 import { treeKeyTargetOf } from './treeKeyTargetOf';
+import { useSpawnedScrollHold } from './useSpawnedScrollHold';
 
 type Props = {
   readonly label: string;
@@ -16,25 +19,29 @@ type Props = {
 
 const ITEM_SELECTOR = '[role="treeitem"]';
 
-const itemsOf = (root: HTMLElement): ReadonlyArray<HTMLElement> => [
-  ...root.querySelectorAll<HTMLElement>(ITEM_SELECTOR),
-];
+type ElementParams = {
+  readonly element: HTMLElement;
+};
 
-const levelOf = (item: HTMLElement): number => Number(item.getAttribute('aria-level') ?? '1');
+const levelOf = ({ element }: ElementParams): number =>
+  Number(element.getAttribute('aria-level') ?? '1');
 
 export const SpawnedTree = ({ label, children }: Props) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const focus = useMemo(() => ({ activeId, setActiveId }), [activeId]);
+  useSpawnedScrollHold({ rootRef });
 
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (root === null) {
       return;
     }
-    const items = itemsOf(root);
+    const items = spawnedTreeItemsOf({ element: root });
     const tabbable =
-      items.find((item) => item.dataset.treeId === activeId) ?? items[0] ?? undefined;
+      items.find((item) => item.dataset.treeId === activeId) ??
+      items.find((item) => levelOf({ element: item }) === 1) ??
+      items[0];
     for (const item of items) {
       item.tabIndex = item === tabbable ? 0 : -1;
     }
@@ -54,10 +61,10 @@ export const SpawnedTree = ({ label, children }: Props) => {
       current.click();
       return;
     }
-    const items = itemsOf(root);
+    const items = spawnedTreeItemsOf({ element: root });
     const next = treeKeyTargetOf({
       key: event.key,
-      levels: items.map(levelOf),
+      levels: items.map((element) => levelOf({ element })),
       from: items.indexOf(current),
     });
     if (next === null) {
@@ -82,6 +89,7 @@ export const SpawnedTree = ({ label, children }: Props) => {
         onKeyDown={onKeyDown}
         className="flex min-w-0 flex-col"
       >
+        <SpawnedNowRow />
         {children}
       </div>
     </SpawnedTreeContext.Provider>

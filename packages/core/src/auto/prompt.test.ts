@@ -149,7 +149,7 @@ describe('buildAutoSystemPrompt', () => {
 
     expect(prompt).toContain('as the card of the agent that made it');
     expect(prompt).toContain('Never repeat or paste what an agent said.');
-    expect(prompt).toContain('Name the agent as the results name it, for example "Reviewer 1"');
+    expect(prompt).toContain('Name the agent as the results name it, by its title');
     expect(buildAutoSystemPrompt({ isDelegationEnabled: false })).not.toContain(
       'Never repeat or paste what an agent said.',
     );

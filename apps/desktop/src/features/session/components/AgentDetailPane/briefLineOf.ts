@@ -1,4 +1,5 @@
 import type { TurnEvent } from '@goodboy/types';
+import { firstLineOf } from './firstLineOf';
 
 type Params = {
   readonly events: ReadonlyArray<TurnEvent>;
@@ -9,9 +10,5 @@ export const briefLineOf = ({ events }: Params): string | null => {
   if (brief?.kind !== 'user_text') {
     return null;
   }
-  const line = brief.text
-    .split('\n')
-    .map((part) => part.trim())
-    .find((part) => part !== '');
-  return line ?? null;
+  return firstLineOf({ text: brief.text });
 };

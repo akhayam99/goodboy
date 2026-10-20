@@ -32,18 +32,18 @@ describe('railRowsOf substeps', () => {
 
     expect(rows.map((row) => [row.label, row.depth])).toEqual([
       ['Auto', 0],
-      ['Planner', 1],
-      ['Implementer', 1],
-      ['Scout', 2],
-      ['Tester', 1],
+      ['work for planner', 1],
+      ['work for impl', 1],
+      ['find the retry limit', 2],
+      ['work for test', 1],
     ]);
     const tree = autoSpawnedRowsOf({ rows, baseLevel: 1 });
     expect(tree.map((row) => [row.title, row.level, row.hasChildren])).toEqual([
       ['Auto', 1, true],
-      ['Planner', 2, false],
-      ['Implementer', 2, true],
-      ['Scout', 3, false],
-      ['Tester', 2, false],
+      ['work for planner', 2, false],
+      ['work for impl', 2, true],
+      ['find the retry limit', 3, false],
+      ['work for test', 2, false],
     ]);
   });
 
@@ -60,5 +60,33 @@ describe('railRowsOf substeps', () => {
     const rows = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING });
 
     expect(rows.map((row) => row.depth)).toEqual([0, 1]);
+  });
+
+  it('orders the children by when Auto started them, so a number left matches the order', () => {
+    const at = (key: string, createdAt: number) => ({
+      ...aDelegation({ key, role: 'implementer', state: 'running' }),
+      request: {},
+      createdAt,
+    });
+    const view = aView({
+      phase: 'waiting',
+      delegations: [at('fourth', 40), at('third', 30), at('eleventh', 110), at('tenth', 100)],
+    });
+
+    const rows = railRowsOf({ view, agents: [], rootRouting: ROOT_ROUTING });
+
+    expect(rows.map((row) => row.label)).toEqual([
+      'Auto',
+      'Implementer 1',
+      'Implementer 2',
+      'Implementer 3',
+      'Implementer 4',
+    ]);
+    expect(rows.slice(1).map((row) => row.agentId)).toEqual([
+      'agent-third',
+      'agent-fourth',
+      'agent-tenth',
+      'agent-eleventh',
+    ]);
   });
 });

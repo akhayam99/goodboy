@@ -863,6 +863,8 @@ u26-cards-inset-dark
 u26-cards-inset-light
 u26-central-agent-dark
 u26-central-agent-light
+u26-central-auto-blocked-dark
+u26-central-auto-blocked-light
 u26-central-auto-done-dark
 u26-central-auto-done-light
 u26-central-auto-failed-dark
@@ -871,6 +873,8 @@ u26-central-auto-stuck-dark
 u26-central-auto-stuck-light
 u26-central-auto-working-dark
 u26-central-auto-working-light
+u26-central-blocked-dark
+u26-central-blocked-light
 u26-central-branches-dark
 u26-central-branches-light
 u26-central-done-batch-dark
@@ -912,6 +916,8 @@ u26-central-now-story-dark
 u26-central-now-story-light
 u26-central-now-story-many-dark
 u26-central-now-story-many-light
+u26-central-now-story-one-project-dark
+u26-central-now-story-one-project-light
 u26-central-now-story-skipped-dark
 u26-central-now-story-skipped-light
 u26-central-orchestrated-dark
@@ -1048,6 +1054,12 @@ u26s-update-running
 u26s-update-settings
 u26s-whatsnew-release
 u26s-whatsnew-search
+u27-agents-tree-dark
+u27-agents-tree-focus-dark
+u27-agents-tree-focus-light
+u27-agents-tree-light
+u27-central-branch-menu
+u27-launch-row-menu
 u27-reveal-long-dark
 u27-reveal-long-light
 u27-reveal-mid-dark

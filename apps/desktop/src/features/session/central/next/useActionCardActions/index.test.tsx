@@ -147,7 +147,8 @@ describe('Auto retry on a never started child', () => {
       main?.run();
     });
 
-    expect(main?.label).toBe('Retry Fixer');
+    expect(main?.label).toBe('Retry');
+    expect(main?.ariaLabel).toBe('Retry "Fixer"');
     expect(loadAutoTrees).toHaveBeenCalledWith({ sessionId: FIXTURE_SESSION });
     expect(continueStoppedAgent).toHaveBeenCalledTimes(1);
     expect(continueStoppedAgent).toHaveBeenCalledWith({
@@ -193,7 +194,7 @@ describe('Auto retry on a never started child', () => {
     const after = result.current.actionsFor({ card });
     expect(after.failure).toBe('Auto is not running');
     expect(after.main?.label).toBe('Retry');
-    expect(after.main?.ariaLabel).toBe('Retry Fixer');
+    expect(after.main?.ariaLabel).toBe('Retry "Fixer"');
     expect(result.current.isHidden({ card })).toBe(false);
   });
 
