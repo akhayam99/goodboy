@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const FactCardFacts = ({ facts }: Props) => (
-  <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-1 text-meta">
+  <dl className="grid grid-cols-[fit-content(40%)_minmax(0,1fr)] gap-x-3 gap-y-1 text-meta">
     {facts.map((fact) => (
       <div key={fact.label} className="contents">
         <dt className="truncate text-muted-foreground">{fact.label}</dt>

@@ -35,7 +35,10 @@ const RUNNING_CARD: FactCardSpec = {
   title: 'notify-relay',
   sub: 'build',
   state: { tone: 'info', words: 'Running for 40 seconds', isRunning: true },
-  facts: [{ label: 'Started', value: '14:01' }],
+  facts: [
+    { label: 'Started', value: '14:01' },
+    { label: 'Reconcile duplicate credits in the Harborline ledger export', value: 'Running' },
+  ],
 };
 
 export const FactCardStage = () => (

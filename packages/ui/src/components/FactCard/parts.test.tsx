@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { FactCardFacts } from './FactCardFacts';
 import { FactCardFootnote } from './FactCardFootnote';
 import { FactCardHeader } from './FactCardHeader';
 import { FactCardState } from './FactCardState';
@@ -28,6 +29,19 @@ describe('the fact card parts', () => {
 
     expect(screen.getByTestId('glyph').parentElement?.className).toContain('size-4');
     expect(screen.getByTestId('words').textContent).toBe('Running');
+  });
+
+  it('caps the label column so a long label cuts and the value stays visible', () => {
+    render(
+      <FactCardFacts
+        facts={[{ label: 'Reconcile duplicate credits in the Harborline ledger', value: '3m' }]}
+      />,
+    );
+
+    const label = screen.getByText('Reconcile duplicate credits in the Harborline ledger');
+    expect(label.className).toContain('truncate');
+    expect(label.closest('dl')?.className).toContain('grid-cols-[fit-content(40%)_minmax(0,1fr)]');
+    expect(screen.getByText('3m').className).toContain('min-w-0');
   });
 
   it('draws a footnote in the faint tone', () => {

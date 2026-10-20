@@ -24,6 +24,15 @@ describe('fact card scene', () => {
     expect(cards[0]?.textContent).toContain('Updated 14:02');
   });
 
+  it('keeps the value of a fact with a long label in view', () => {
+    const Scene = U27_FACT_CARD_SCENES['fact-card'];
+    render(<Scene />);
+
+    const label = screen.getByText('Reconcile duplicate credits in the Harborline ledger export');
+    expect(label.tagName).toBe('DT');
+    expect(label.nextElementSibling?.textContent).toBe('Running');
+  });
+
   it('describes each trigger with the sentence of its card', () => {
     const Scene = U27_FACT_CARD_SCENES['fact-card'];
     render(<Scene />);
