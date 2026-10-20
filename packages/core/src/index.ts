@@ -327,6 +327,7 @@ export {
   checksRunOfResult,
   checksTextOf,
   checksVerdictOf,
+  missingChecksOf,
   notCheckedOf,
   type CheckReport,
   type ChecksVerdict,

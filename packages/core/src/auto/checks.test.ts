@@ -4,6 +4,7 @@ import {
   checksRunOfResult,
   checksTextOf,
   checksVerdictOf,
+  missingChecksOf,
   notCheckedOf,
 } from './checks';
 
@@ -70,6 +71,23 @@ describe('checksVerdictOf', () => {
     const verdict = checksVerdictOf({ reports: [], commit: 'abc123' });
     expect(verdict.run.reason).toBe('none_ticked');
     expect(verdict.checks).toEqual([]);
+  });
+});
+
+describe('missingChecksOf', () => {
+  it('reads not checked, never green, and names each ticked script the branch lacks', () => {
+    const verdict = missingChecksOf({ missing: ['lint', 'packages/api/test'], commit: 'abc123' });
+    expect(verdict.run).toEqual({
+      verdict: 'not_checked',
+      reason: 'check_missing',
+      commit: 'abc123',
+    });
+    expect(checksTextOf(verdict)).toBe('Not checked: not on this branch: lint, packages/api/test');
+  });
+
+  it('survives the round trip through a stored result', () => {
+    const run = missingChecksOf({ missing: ['lint'], commit: 'abc123' }).run;
+    expect(checksRunOfResult({ result: { verified: { checksRun: run } } })).toEqual(run);
   });
 });
 

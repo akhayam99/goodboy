@@ -184,6 +184,11 @@ export type AutoCheckScript = Readonly<{
   name: string;
 }>;
 
+export type AutoCheckList = Readonly<{
+  scripts: ReadonlyArray<AutoCheckScript>;
+  missing: ReadonlyArray<string>;
+}>;
+
 export type ListChecksParams = Readonly<{
   sessionId: SessionId;
   mountId: string;
@@ -282,7 +287,7 @@ export type AutoPorts = Readonly<{
   readCommittedFiles: (params: ReadCommittedFilesParams) => Promise<ReadonlyArray<string>>;
   readRemoteHead: (params: ReadRemoteHeadParams) => Promise<RemoteRead>;
   readBranchFacts: (params: ReadBranchFactsParams) => Promise<BranchFactsParts>;
-  listChecks: (params: ListChecksParams) => Promise<ReadonlyArray<AutoCheckScript>>;
+  listChecks: (params: ListChecksParams) => Promise<AutoCheckList>;
   runCheck: (params: RunCheckParams) => Promise<CheckReport['status']>;
   cancelRun: (params: CancelRunParams) => Promise<CancelRunOutcome>;
   isRunLive: (params: IsRunLiveParams) => Promise<boolean>;

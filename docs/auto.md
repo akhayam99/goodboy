@@ -630,15 +630,19 @@ status files and `isComplete` is false. Read-only roles never read it; a change 
 the `role_read_only_violation`. The list is capped at 50 attempt files.
 
 **Checks.** `result_json.verified.checksRun` holds the verdict of the project scripts the user
-ticked as Auto checks: `green`, `red` or `not_checked` with a `reason` (`none_ticked`, `timed_out`,
-`tree_moved`, `tree_dirty`, `not_available`) and the `commit` the scripts ran on; `verified.checks`
+ticked as Auto checks: `green`, `red` or `not_checked` with a `reason` (`none_ticked`,
+`check_missing`, `timed_out`, `tree_moved`, `tree_dirty`, `not_available`) and the `commit` the
+scripts ran on; `verified.checks`
 lists one `harness` row per script. The outcome stays `completed` whatever the verdict, so no
 migration; `checksVerdictOf` and `checksTextOf` (`packages/core/src/auto/checks.ts`) own the verdict
 and the one line the digest and the card print ("Checks green: typecheck, lint", "Checks red:
 typecheck", "Not checked: timed out"). A script is ticked in the project settings, next to its pin
 (`toggleAutoCheck`, settings key `scripts.autoChecks.<projectId>`, a JSON array of the pin ids of
 `scriptPinId`; saved scripts and manifest scripts share the grammar). None ticked reads
-`none_ticked`. `finishAttempt` calls `verifyAttempt` before it settles, only for a writer that ended
+`none_ticked`. A ticked script the branch does not have is never dropped: `listAutoChecks` returns
+it under `missing` with its name (`missingCheckName`), `runAutoChecks` runs nothing and
+`missingChecksOf` reads `check_missing` with one `unknown` row per missing script, printed "Not
+checked: not on this branch: lint". `finishAttempt` calls `verifyAttempt` before it settles, only for a writer that ended
 ok and closed with `done`: it pins the run to the end head that attribution read (`expectedHead`;
 no end head reads `not_available`), so a run that waited in the queue while the head moved reads
 `tree_moved` and runs nothing. `runAutoChecks` reads the status snapshot, refuses a tree with

@@ -27,6 +27,16 @@ export const notCheckedOf = ({ reason, commit }: NotCheckedParams): ChecksVerdic
   run: { verdict: 'not_checked', reason, commit },
 });
 
+export type MissingChecksParams = Readonly<{
+  missing: ReadonlyArray<string>;
+  commit: string | null;
+}>;
+
+export const missingChecksOf = ({ missing, commit }: MissingChecksParams): ChecksVerdict => ({
+  checks: missing.map((name): ResultCheck => ({ name, status: 'unknown', source: 'harness' })),
+  run: { verdict: 'not_checked', reason: 'check_missing', commit },
+});
+
 export const checksVerdictOf = ({ reports, commit }: ChecksVerdictParams): ChecksVerdict => {
   if (reports.length === 0) {
     return notCheckedOf({ reason: 'none_ticked', commit });
@@ -50,6 +60,7 @@ export const checksVerdictOf = ({ reports, commit }: ChecksVerdictParams): Check
 
 const NOT_CHECKED_TEXT = {
   none_ticked: 'no scripts are ticked as Auto checks',
+  check_missing: 'a ticked script is not on this branch',
   timed_out: 'timed out',
   tree_moved: 'the tree changed while the checks ran',
   tree_dirty: 'the tree has uncommitted changes',
@@ -80,6 +91,10 @@ export const checksTextOf = ({ run, checks }: ChecksTextParams): string => {
     return `Checks red: ${namesOf({ checks, status: 'fail' })}`;
   }
   const reason = run.reason ?? 'not_available';
+  const missing = namesOf({ checks, status: 'unknown' });
+  if (reason === 'check_missing' && missing !== '') {
+    return `Not checked: not on this branch: ${missing}`;
+  }
   return `Not checked: ${NOT_CHECKED_TEXT[reason]}`;
 };
 
@@ -97,6 +112,7 @@ const isRecord = (value: unknown): value is RecordValue =>
 
 const REASONS: ReadonlyArray<ChecksNotRunReason> = [
   'none_ticked',
+  'check_missing',
   'timed_out',
   'tree_moved',
   'tree_dirty',

@@ -48,7 +48,7 @@ export type ResultCheck = Readonly<{
 }>;
 
 export type ChecksNotRunReason =
-  'none_ticked' | 'timed_out' | 'tree_moved' | 'tree_dirty' | 'not_available';
+  'none_ticked' | 'check_missing' | 'timed_out' | 'tree_moved' | 'tree_dirty' | 'not_available';
 
 export type ResultChecksRun = Readonly<{
   verdict: 'green' | 'red' | 'not_checked';

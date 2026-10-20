@@ -197,7 +197,32 @@ describe('the scripts a user ticked as Auto checks', () => {
       params: { sessionId: SESSION, mountId: MOUNT },
     });
 
-    expect(listed).toEqual([{ id: TYPECHECK_ID, name: 'typecheck' }]);
+    expect(listed).toEqual({ scripts: [{ id: TYPECHECK_ID, name: 'typecheck' }], missing: [] });
+  });
+
+  it('names every ticked script the branch does not have instead of dropping it', async () => {
+    prepare({
+      ticked: [
+        TYPECHECK_ID,
+        scriptPinId({
+          source: 'package-json',
+          relDir: 'packages/api',
+          name: 'test',
+          savedId: null,
+        }),
+        scriptPinId({ source: 'package-json', relDir: '', name: 'build', savedId: null }),
+      ],
+    });
+
+    const listed = await listAutoChecks({
+      getState,
+      params: { sessionId: SESSION, mountId: MOUNT },
+    });
+
+    expect(listed).toEqual({
+      scripts: [{ id: TYPECHECK_ID, name: 'typecheck' }],
+      missing: ['packages/api/test', 'build'],
+    });
   });
 
   it('lists nothing when no script is ticked', async () => {
@@ -208,7 +233,7 @@ describe('the scripts a user ticked as Auto checks', () => {
       params: { sessionId: SESSION, mountId: MOUNT },
     });
 
-    expect(listed).toEqual([]);
+    expect(listed).toEqual({ scripts: [], missing: [] });
   });
 
   it('lists nothing for a mount the session does not have', async () => {
@@ -219,7 +244,7 @@ describe('the scripts a user ticked as Auto checks', () => {
       params: { sessionId: SESSION, mountId: 'mount-gone' },
     });
 
-    expect(listed).toEqual([]);
+    expect(listed).toEqual({ scripts: [], missing: [] });
   });
 
   const runWith = ({ timeoutMs, id = TYPECHECK_ID }: { timeoutMs: number; id?: string }) =>

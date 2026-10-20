@@ -125,6 +125,7 @@ export type FakePorts = AutoPorts &
     checkRuns: Array<RunCheckParams>;
     checkLists: Array<ListChecksParams>;
     setChecks: (checks: ReadonlyArray<AutoCheckScript>) => void;
+    setMissingChecks: (names: ReadonlyArray<string>) => void;
     setCheckResult: (id: string, result: CheckReport['status'] | Error) => void;
     setCheckGate: (gate: Promise<void> | null) => void;
     setCancelOutcome: (outcome: CancelRunOutcome, agentId?: string) => void;
@@ -180,6 +181,7 @@ export const makeFakePorts = ({
   const checkLists: Array<ListChecksParams> = [];
   const checkResults = new Map<string, CheckReport['status'] | Error>();
   let ticked: ReadonlyArray<AutoCheckScript> = [];
+  let missingChecks: ReadonlyArray<string> = [];
   let checkGate: Promise<void> | null = null;
   const autoTurns: Array<StartAutoTurnParams> = [];
   const childTurns: Array<StartChildTurnParams> = [];
@@ -243,6 +245,9 @@ export const makeFakePorts = ({
     checkLists,
     setChecks: (next) => {
       ticked = next;
+    },
+    setMissingChecks: (next) => {
+      missingChecks = next;
     },
     setCheckResult: (id, next) => {
       checkResults.set(id, next);
@@ -354,7 +359,7 @@ export const makeFakePorts = ({
     },
     listChecks: async (params) => {
       checkLists.push(params);
-      return ticked;
+      return { scripts: ticked, missing: missingChecks };
     },
     runCheck: async (params) => {
       checkRuns.push(params);

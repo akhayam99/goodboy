@@ -1,6 +1,7 @@
 import { scriptPinId } from '../../../features/scripts/scriptPinId';
 import type { AppStore } from '../../store';
-import type { AutoCheckScript, ListChecksParams } from './ports';
+import { missingCheckName } from './missingCheckName';
+import type { AutoCheckList, ListChecksParams } from './ports';
 import { resolveCheckScripts } from './resolveCheckScripts';
 
 type Params = {
@@ -8,13 +9,17 @@ type Params = {
   readonly params: ListChecksParams;
 };
 
-export const listAutoChecks = async ({
-  getState,
-  params,
-}: Params): Promise<ReadonlyArray<AutoCheckScript>> => {
+export const listAutoChecks = async ({ getState, params }: Params): Promise<AutoCheckList> => {
   const resolved = await resolveCheckScripts({ getState, ...params });
   if (resolved === null) {
-    return [];
+    return { scripts: [], missing: [] };
   }
-  return resolved.scripts.map((script) => ({ id: scriptPinId(script), name: script.name }));
+  const found = new Set(resolved.scripts.map((script) => scriptPinId(script)));
+  const saved = Object.values(getState().projectScripts).flat();
+  return {
+    scripts: resolved.scripts.map((script) => ({ id: scriptPinId(script), name: script.name })),
+    missing: resolved.ticked
+      .filter((pinId) => !found.has(pinId))
+      .map((pinId) => missingCheckName({ pinId, saved })),
+  };
 };

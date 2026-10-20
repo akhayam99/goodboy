@@ -1,6 +1,7 @@
 import {
   AUTO_CHECK_TIMEOUT_MS,
   checksVerdictOf,
+  missingChecksOf,
   notCheckedOf,
   type CheckReport,
   type ChecksVerdict,
@@ -8,7 +9,7 @@ import {
 } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
-import type { AutoCheckScript, AutoPorts } from './ports';
+import type { AutoCheckList, AutoCheckScript, AutoPorts } from './ports';
 import { readSnapshot } from './readSnapshot';
 
 const queue = createKeyedQueue();
@@ -34,11 +35,7 @@ type ListParams = {
   readonly mountId: string;
 };
 
-const listed = async ({
-  ports,
-  sessionId,
-  mountId,
-}: ListParams): Promise<ReadonlyArray<AutoCheckScript> | null> => {
+const listed = async ({ ports, sessionId, mountId }: ListParams): Promise<AutoCheckList | null> => {
   try {
     return await ports.listChecks({ sessionId, mountId });
   } catch {
@@ -82,14 +79,17 @@ const verdictOf = async (params: RunAutoChecksParams): Promise<ChecksVerdict> =>
   if (expectedHead !== undefined && expectedHead !== before.head) {
     return notCheckedOf({ reason: 'tree_moved', commit });
   }
-  if (checks.length === 0) {
+  if (checks.missing.length > 0) {
+    return missingChecksOf({ missing: checks.missing, commit });
+  }
+  if (checks.scripts.length === 0) {
     return notCheckedOf({ reason: 'none_ticked', commit });
   }
   if (!isClean({ snapshot: before })) {
     return notCheckedOf({ reason: 'tree_dirty', commit });
   }
   const reports: CheckReport[] = [];
-  for (const check of checks) {
+  for (const check of checks.scripts) {
     reports.push(await reportOf({ ...params, check }));
   }
   const after = await readSnapshot({ ports, worktreePath });

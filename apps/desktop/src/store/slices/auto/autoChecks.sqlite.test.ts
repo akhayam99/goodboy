@@ -125,6 +125,17 @@ describe('checking a writer with the scripts the user ticked', () => {
     expect(digestOf(world)).toContain('Not checked: no scripts are ticked as Auto checks');
   });
 
+  it('reads not checked, naming the script, when a ticked script is not on the branch', async () => {
+    const world = await endWriter({
+      checks: [TYPECHECK],
+      configure: (made) => made.state.ports.setMissingChecks(['lint']),
+    });
+
+    expect(world.state.ports.checkRuns).toEqual([]);
+    expect(digestOf(world)).toContain('Not checked: not on this branch: lint');
+    expect(digestOf(world)).not.toContain('Checks green');
+  });
+
   it('reads not checked and runs nothing on a tree with uncommitted changes', async () => {
     const world = await endWriter({ checks: [TYPECHECK], snapshots: [CLEAN, DIRTY] });
 

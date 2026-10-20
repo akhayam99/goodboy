@@ -18,7 +18,7 @@ export type ResolveCheckScriptsParams = Readonly<{
 export type CheckScripts = Readonly<{
   group: SessionScriptGroup;
   scripts: ReadonlyArray<RunnableScript>;
-  tickedCount: number;
+  ticked: ReadonlyArray<string>;
 }>;
 
 type GroupParams = {
@@ -59,7 +59,7 @@ const groupOf = ({ state, sessionId, mountId }: GroupParams): CheckScripts | nul
   return {
     group,
     scripts: group.scripts.filter((script) => ticked.includes(scriptPinId(script))),
-    tickedCount: ticked.length,
+    ticked,
   };
 };
 
@@ -70,7 +70,7 @@ export const resolveCheckScripts = async ({
 }: ResolveCheckScriptsParams): Promise<CheckScripts | null> => {
   await getState().loadScriptPins();
   const first = groupOf({ state: getState(), sessionId, mountId });
-  if (first === null || first.scripts.length >= first.tickedCount) {
+  if (first === null || first.scripts.length >= first.ticked.length) {
     return first;
   }
   await getState().loadDiscoveredScripts({ sessionId, worktreePath: first.group.worktreePath });
