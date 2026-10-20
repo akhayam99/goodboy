@@ -14,6 +14,7 @@ type Props = {
   readonly isActive: boolean;
   readonly isSelected: boolean;
   readonly onActivate: () => void;
+  readonly onExitMarks: () => void;
   readonly onSelect: () => void;
   readonly onDelete: () => void;
 };
@@ -26,6 +27,7 @@ export const PresetPickerOption = ({
   isActive,
   isSelected,
   onActivate,
+  onExitMarks,
   onSelect,
   onDelete,
 }: Props) => {
@@ -42,7 +44,9 @@ export const PresetPickerOption = ({
         isSelected={isSelected}
         onActivate={onActivate}
         onSelect={onSelect}
-        meta={marks.length === 0 ? undefined : <PresetStepMarks marks={marks} />}
+        meta={
+          marks.length === 0 ? undefined : <PresetStepMarks marks={marks} onExit={onExitMarks} />
+        }
       />
       <IconButton
         icon={Trash2}

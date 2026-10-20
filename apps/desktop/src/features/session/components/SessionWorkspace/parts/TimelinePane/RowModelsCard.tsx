@@ -1,9 +1,10 @@
+import { FactCard, type Fact } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { AgentModels, RanModel } from '../../../../timeline/ranModels';
-import { RowCardHeader } from './RowCardHeader';
-import { TimelineProviderGlyph } from './TimelineProviderGlyph';
+import { fitCardRows } from '../../../../../../shared/utils/fitCardRows';
+import type { CardTrigger } from './timelineRowIdentity';
 import { useRowPosition } from './useRowPosition';
 
 type Props = {
@@ -11,6 +12,8 @@ type Props = {
   readonly ordinal: string | null;
   readonly kindWord: string;
   readonly models: AgentModels;
+  readonly isOpen?: boolean;
+  readonly children: CardTrigger;
 };
 
 type ReasonParams = {
@@ -39,31 +42,38 @@ const reasonOf = ({ model, isPlanned }: ReasonParams): string => {
   }
 };
 
-export const RowModelsCard = ({ entry, ordinal, kindWord, models }: Props) => {
+export const RowModelsCard = ({
+  entry,
+  ordinal,
+  kindWord,
+  models,
+  isOpen = false,
+  children,
+}: Props) => {
   const position = useRowPosition({ entry, ordinal });
+  const seen = new Map<string, number>();
+  const facts: Array<Fact> = models.models.map((model) => {
+    const base = model.effort === null ? model.name : `${model.name} ${model.effort}`;
+    const count = (seen.get(base) ?? 0) + 1;
+    seen.set(base, count);
+    return {
+      label: count === 1 ? base : `${base} (${count})`,
+      value: reasonOf({ model, isPlanned: models.isPlanned }),
+    };
+  });
+  const fitted = fitCardRows({ facts });
   return (
-    <span className="flex flex-col gap-2">
-      <RowCardHeader
-        glyph={<AgentKindChip kind={entry.agentKind} density="glyph" isDecorative />}
-        title={kindWord}
-        sub={position}
-      />
-      <span className="text-eyebrow text-faint-foreground">Models, in run order</span>
-      <ol className="flex flex-col gap-2">
-        {models.models.map((model, index) => (
-          <li key={`${model.key}:${index}`} className="flex items-start gap-2">
-            <TimelineProviderGlyph provider={model.provider} />
-            <span className="flex min-w-0 flex-col">
-              <span className="text-body text-foreground">
-                {model.effort === null ? model.name : `${model.name} · ${model.effort}`}
-              </span>
-              <span className="text-meta text-muted-foreground">
-                {reasonOf({ model, isPlanned: models.isPlanned })}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ol>
-    </span>
+    <FactCard
+      isOpen={isOpen}
+      card={{
+        glyph: <AgentKindChip kind={entry.agentKind} density="glyph" isDecorative />,
+        title: kindWord,
+        sub: position,
+        facts: fitted.facts,
+        ...(fitted.footnote === undefined ? {} : { footnote: fitted.footnote }),
+      }}
+    >
+      {children}
+    </FactCard>
   );
 };

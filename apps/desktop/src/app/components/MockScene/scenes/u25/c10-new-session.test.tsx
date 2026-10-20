@@ -120,18 +120,17 @@ describe('the c10 New session scenes', () => {
     expect(screen.getAllByRole('button', { name: 'Run a workflow' })).toHaveLength(1);
   });
 
-  it('c10-start-presets opens the Preset list with one provider mark per step', async () => {
+  it('c10-start-presets opens the Preset list with one role glyph per step', async () => {
     await mount({ id: 'c10-start-presets' });
 
     const list = screen.getByRole('listbox', { name: 'Presets' });
     const options = within(list).getAllByRole('option');
     expect(options.length).toBeGreaterThan(0);
     for (const option of options) {
-      const marks = [...option.querySelectorAll('[data-step-mark]')];
-      expect(marks.length).toBeGreaterThan(0);
-      expect(marks.every((mark) => mark.getAttribute('data-step-mark') === 'anthropic')).toBe(true);
-      expect(option.textContent).toContain('Step 1 ');
-      expect(option.textContent).not.toMatch(/\d steps?\b/);
+      const glyphs = [...option.querySelectorAll('[data-preset-glyph]')];
+      expect(glyphs.length).toBeGreaterThan(0);
+      expect(glyphs[0]?.getAttribute('aria-label')).toMatch(/^Step 1 of \d+ /);
+      expect(option.querySelector('[data-step-mark]')).toBeNull();
     }
   });
 

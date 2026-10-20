@@ -197,6 +197,7 @@ const presetWorkflow = (id: string, name: string): Workflow =>
         ordinal: 0,
         name: 'Scout',
         role: 'scout',
+        promptPrefix: '',
         effort: 'medium',
         verbosity: 'normal',
       },
@@ -206,6 +207,7 @@ const presetWorkflow = (id: string, name: string): Workflow =>
         ordinal: 1,
         name: 'Implement',
         role: 'implementer',
+        promptPrefix: '',
         effort: 'medium',
         verbosity: 'normal',
       },
@@ -705,23 +707,25 @@ describe('WorkflowBuilderView (preset)', () => {
     expect(toastMock).toHaveBeenCalledWith({ kind: 'success', message: 'Started Ship It.' });
   });
 
-  it('shows one provider mark per step in run order on the preset option', () => {
+  it('shows one role glyph per step in run order on the preset option', () => {
     storeState.providers = [{ id: 'anthropic', connection: 'connected' }];
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
 
     openChip(/^preset:/i);
     const option = screen.getByRole('option', { name: /ship it/i });
-    const marks = [...option.querySelectorAll('[data-step-mark]')].map((mark) =>
-      mark.getAttribute('data-step-mark'),
-    );
-    expect(marks).toEqual(['anthropic', 'anthropic']);
-    expect(option.textContent).toMatch(/Step 1 Scout · (?!Auto)/);
-    expect(option.textContent).toMatch(/Step 2 Implementer · (?!Auto)/);
-    expect(option.textContent).not.toContain('2 steps');
+    const glyphs = [...option.querySelectorAll('[data-preset-glyph]')];
+    expect(glyphs.map((glyph) => glyph.getAttribute('data-step-role'))).toEqual([
+      'scout',
+      'implementer',
+    ]);
+    expect(glyphs[0]?.getAttribute('aria-label')).toMatch(/^Step 1 of 2 Scout · (?!Auto)/);
+    expect(glyphs[1]?.getAttribute('aria-label')).toMatch(/^Step 2 of 2 Implementer · (?!Auto)/);
+    expect(within(option).getByRole('group', { name: 'Steps: Scout, Implementer' })).toBeDefined();
+    expect(option.querySelector('[data-step-mark]')).toBeNull();
   });
 
-  it('shows the Auto glyph for a step it cannot resolve, and a pinned provider as pinned', () => {
+  it('names Auto for a step it cannot resolve, and the pinned model for a pinned provider', () => {
     const base = presetWorkflow('wf-preset-1', 'Ship It');
     storeState.phaseTemplates = {
       'ws-1': [
@@ -737,11 +741,11 @@ describe('WorkflowBuilderView (preset)', () => {
 
     openChip(/^preset:/i);
     const option = screen.getByRole('option', { name: /ship it/i });
-    const marks = [...option.querySelectorAll('[data-step-mark]')].map((mark) =>
-      mark.getAttribute('data-step-mark'),
+    const labels = [...option.querySelectorAll('[data-preset-glyph]')].map((glyph) =>
+      glyph.getAttribute('aria-label'),
     );
-    expect(marks).toEqual(['auto', 'codex']);
-    expect(option.textContent).toContain('Step 1 Scout · Auto');
+    expect(labels[0]).toBe('Step 1 of 2 Scout · Auto');
+    expect(labels[1]).toMatch(/^Step 2 of 2 Implementer · (?!Auto)/);
   });
 
   it('draws the real steps with one model chip each and the pause the autonomy asks for', () => {
