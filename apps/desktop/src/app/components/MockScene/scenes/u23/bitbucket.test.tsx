@@ -169,7 +169,11 @@ describe('the Pull request tab on Bitbucket, controls', () => {
   it('edits the title and saves it through the host', async () => {
     await show();
 
-    fireEvent.click(screen.getByTitle('Edit title (E)'));
+    const edit = document.querySelector('button[aria-keyshortcuts="E"]');
+    expect(edit).not.toBeNull();
+    if (edit !== null) {
+      fireEvent.click(edit);
+    }
     fireEvent.change(screen.getByRole('textbox', { name: 'Pull request title' }), {
       target: { value: 'Key the guard on the event id' },
     });

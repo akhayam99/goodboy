@@ -1,6 +1,7 @@
 import type { MessageAttachment } from '@goodboy/types';
 import type { DelegationResultV1 } from './result';
 import type { AutoDelegationRole } from './roles';
+import type { AutoSubstepRole } from './substep';
 
 export type UserFacts = Readonly<{
   focusArtifactId: string | null;
@@ -30,6 +31,7 @@ export type QuestionPayload = Readonly<{
   text: string;
   suggestedAnswers: ReadonlyArray<string>;
   recommendedAnswer: string | null;
+  needs?: AutoSubstepRole;
 }>;
 
 export type UserPayload = Readonly<{

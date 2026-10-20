@@ -38,6 +38,11 @@ vi.mock('../../../../store', async () => {
   };
 });
 
+vi.mock('../../../../features/workspace/components/SessionHoverCard', () => ({
+  SessionHoverCard: ({ session }: { readonly session: Session | null }) =>
+    session === null ? null : <div data-testid="session-hover-card">{session.goal}</div>,
+}));
+
 import { NowChip } from './index';
 
 const session = ({ id, goal }: { readonly id: string; readonly goal: string }) =>
@@ -136,6 +141,51 @@ describe('NowChip', () => {
 
     expect(store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: RUNNING.id }) });
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
+  });
+
+  it('opens the session hover card for a row after the pointer rests and drops it on leave', async () => {
+    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
+    render(<NowChip onOpenScript={vi.fn()} />);
+    const panel = await open();
+    const row = within(panel).getByRole('button', { name: /Retry failed webhook deliveries/ });
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(row);
+    expect(screen.queryByTestId('session-hover-card')).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(screen.getByTestId('session-hover-card').textContent).toBe(
+      'Retry failed webhook deliveries',
+    );
+
+    fireEvent.mouseLeave(row);
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    expect(screen.queryByTestId('session-hover-card')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('closes the hover card with the popover', async () => {
+    hooks.groups = [{ key: 'running', sessions: [RUNNING] }];
+    render(<NowChip onOpenScript={vi.fn()} />);
+    const panel = await open();
+    const row = within(panel).getByRole('button', { name: /Retry failed webhook deliveries/ });
+
+    vi.useFakeTimers();
+    fireEvent.mouseEnter(row);
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(screen.getByTestId('session-hover-card')).toBeDefined();
+    vi.useRealTimers();
+
+    await act(async () => {
+      fireEvent.click(row);
+    });
+
+    expect(screen.queryByTestId('session-hover-card')).toBeNull();
   });
 
   it('hands a script row to the open callback and stops it in place', async () => {

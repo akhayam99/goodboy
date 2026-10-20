@@ -1,4 +1,6 @@
 import { extractMarkers, stripControlMarkers } from '../context/marker-parsing';
+import { excerptStepOutput } from '../summarizer/step-output';
+import { parseSubstepNeeds, type AutoSubstepRole } from './substep';
 
 export type ChildCompletion = 'done' | 'blocked' | 'none';
 
@@ -6,6 +8,7 @@ export type ChildQuestion = Readonly<{
   text: string;
   suggestedAnswers: ReadonlyArray<string>;
   recommendedAnswer: string | null;
+  needs?: AutoSubstepRole;
 }>;
 
 export type ChildClosing = Readonly<{
@@ -91,10 +94,9 @@ const completionOf = ({ text, childAgentId }: CompletionParams): ChildCompletion
   return completion;
 };
 
-const SUMMARY_CHARS = 2_000;
-
 export const parseChildClosing = ({ text, childAgentId }: CompletionParams): ChildClosing => {
   const blocking = extractMarkers(text).questions.find((candidate) => candidate.isBlocking);
+  const needs = parseSubstepNeeds({ role: blocking?.needs });
   return {
     completion: completionOf({ text, childAgentId }),
     question:
@@ -104,7 +106,8 @@ export const parseChildClosing = ({ text, childAgentId }: CompletionParams): Chi
             text: blocking.text,
             suggestedAnswers: blocking.suggestedAnswers,
             recommendedAnswer: blocking.recommendedAnswer,
+            ...(needs === null ? {} : { needs }),
           },
-    summary: stripControlMarkers(text).slice(-SUMMARY_CHARS),
+    summary: excerptStepOutput({ output: stripControlMarkers(text) }),
   };
 };

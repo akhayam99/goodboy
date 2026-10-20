@@ -144,9 +144,18 @@ export {
   AUTO_AUX_RESERVATION_USD,
   AUTO_BATCH_MAX_CHILDREN,
   AUTO_BATCH_MIN_CHILDREN,
+  AUTO_BRIEF_VERSION,
   AUTO_DEFAULT_TREE_CAP_USD,
   AUTO_DELEGATION_DEADLINE_MINUTES,
+  AUTO_DELIVERY_ARTIFACT_CHARS,
   AUTO_STALE_DECIDE_MS,
+  AUTO_FACTS_CHARS,
+  AUTO_FACTS_CHECKS_MAX,
+  AUTO_FACTS_COMMITS_MAX,
+  AUTO_FACTS_FETCH_MS,
+  AUTO_FACTS_MOUNTS_MAX,
+  AUTO_FACTS_THREAD_CHARS,
+  AUTO_FACTS_THREADS_MAX,
   AUTO_GATES,
   AUTO_LEDGER_CHAR_BUDGET,
   AUTO_LEDGER_MAX_ARTIFACTS,
@@ -155,11 +164,23 @@ export {
   AUTO_OUTBOX_CLAIM_MS,
   AUTO_OWNER_LEASE_MS,
   AUTO_REVISE_ASK_CHARS,
+  AUTO_SUBSTEP_PARENT_SLACK_MS,
+  AUTO_SUBSTEPS_PER_PARENT,
   AUTO_TREE_DEPTH,
   AUTO_TREE_LIMITS,
   AUTO_TURN_CEILING_USD,
   attemptCeilingUsd,
 } from './auto/limits';
+export {
+  AUTO_SUBSTEP_ROLES,
+  delegationDepthOf,
+  isAutoSubstepRole,
+  parseSubstepNeeds,
+  substepLinkOf,
+  type AutoSubstepRole,
+  type SubstepLink,
+} from './auto/substep';
+export type { AdmissionParentFacts, AdmissionSubstep } from './auto/substepAdmission';
 export {
   autoBudgetOf,
   autoBudgetLabel,
@@ -216,6 +237,7 @@ export {
   type MountSnapshot,
   type SnapshotEntry,
 } from './auto/attribution';
+export { pathsOfPatch, type PathsOfPatchParams } from './auto/patchPaths';
 export {
   AUTO_BLOCK_REASONS,
   AUTO_BLOCK_TEXT,
@@ -231,6 +253,7 @@ export {
   AUTO_OWN_PROVIDERS,
   AUTO_UNCONFINED_PROVIDERS,
   isAutoChildProvider,
+  isAutoProviderResuming,
   isAutoOwnProvider,
 } from './auto/providers';
 export {
@@ -245,6 +268,20 @@ export {
   type DelegateRevise,
   type DelegateSpecOutcome,
 } from './auto/delegateSpec';
+export {
+  composeBriefDecisions,
+  decisionNumberOf,
+  type BriefDecisionRow,
+} from './auto/briefDecisions';
+export {
+  composeBranchFacts,
+  type BranchFacts,
+  type BranchFactsCheck,
+  type BranchFactsCommit,
+  type BranchFactsPart,
+  type BranchFactsRequest,
+  type BranchFactsThread,
+} from './auto/branchFacts';
 export {
   AUTO_DEFAULT_DONE_WHEN,
   AUTO_DEFAULT_EXPECTED,
@@ -278,9 +315,40 @@ export {
   type ResolvedOutcome,
   type ResultArtifact,
   type ResultChangedFile,
+  type ChecksNotRunReason,
   type ResultCheck,
+  type ResultChecksRun,
   type ResultQuestion,
+  type ResultRemote,
 } from './auto/result';
+export {
+  AUTO_CHECK_TIMEOUT_MS,
+  canRerunChecks,
+  checksRunOfResult,
+  checksTextOf,
+  checksVerdictOf,
+  missingChecksOf,
+  notCheckedOf,
+  type CheckReport,
+  type ChecksVerdict,
+} from './auto/checks';
+export {
+  CHECKS_RED_HOLD,
+  PUBLISH_MAX_TRIES,
+  canPutBackPublish,
+  canRetryPublish,
+  parseDelegatePublish,
+  publishGateOf,
+  publishOfRequest,
+  publishOfResult,
+  publishTextOf,
+  type DelegatePublish,
+  type PublishGate,
+  type PublishMode,
+  type PublishState,
+  type ResultPublish,
+} from './auto/publish';
+export { remoteVerdictOf, type RemoteRead, type RemoteVerdictParams } from './auto/remoteWatch';
 export {
   EMPTY_USER_FACTS,
   isQuestionPayload,

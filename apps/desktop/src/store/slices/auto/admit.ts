@@ -1,5 +1,7 @@
 import {
   AUTO_MAX_OPEN_CHILDREN,
+  AUTO_SUBSTEP_PARENT_SLACK_MS,
+  AUTO_SUBSTEPS_PER_PARENT,
   AUTO_TREE_LIMITS,
   diagnoseAdmission,
   isAutoWriterRole,
@@ -7,15 +9,18 @@ import {
   type AdmissionChild,
   type AdmissionChildRefusal,
   type AdmissionSnapshot,
+  type AdmissionSubstep,
   type AutoDelegationRole,
   type AutoRefusalCode,
 } from '@goodboy/core';
 import {
   AUTO_ADMISSION_TREE_ABORT,
   autoAdmissionArtifactAbort,
+  autoAdmissionSubstepAbort,
   autoAdmissionTreeStatement,
   autoInputArtifactStatements,
   autoReviseArtifactStatements,
+  autoSubstepStatements,
   insertAutoDelegationStatement,
   getAutoReservation,
   insertAutoReservationStatement,
@@ -54,6 +59,7 @@ export type AdmitChildInput = Readonly<{
   isConfirmForced: boolean;
   deadlineAt: number;
   retryOf?: AutoDelegationId | null;
+  substep?: AdmissionSubstep | null;
 }>;
 
 export type AdmitBatchParams = Readonly<{
@@ -110,6 +116,7 @@ const toAdmissionChild = ({ child }: ToAdmissionChildParams): AdmissionChild => 
     artifactId: ref.artifactId,
     revision: ref.revision,
   })),
+  substep: child.substep ?? null,
 });
 
 type ReceiptOfRowsParams = {
@@ -198,6 +205,21 @@ const buildStatements = ({
     }),
   ];
   for (const [slot, child] of params.children.entries()) {
+    if (child.substep !== undefined && child.substep !== null) {
+      statements.push(
+        ...autoSubstepStatements({
+          treeId: params.treeId,
+          slot,
+          parentDelegationId: brandId<AutoDelegationId>({
+            value: child.substep.parentDelegationId,
+          }),
+          questionId: child.substep.questionId,
+          generation: params.generation,
+          maxSubsteps: AUTO_SUBSTEPS_PER_PARENT,
+          parentDeadlineAt: child.deadlineAt + AUTO_SUBSTEP_PARENT_SLACK_MS,
+        }),
+      );
+    }
     if (child.reviseOf !== null) {
       statements.push(
         ...autoReviseArtifactStatements({
@@ -331,9 +353,12 @@ type IsRaceAbortParams = {
 
 const isRaceAbort = ({ abortCode, slots }: IsRaceAbortParams): boolean =>
   abortCode === AUTO_ADMISSION_TREE_ABORT ||
-  Array.from({ length: slots }, (_, slot) => autoAdmissionArtifactAbort({ slot })).includes(
-    abortCode,
-  );
+  Array.from({ length: slots }, (_, slot) => [
+    autoAdmissionArtifactAbort({ slot }),
+    autoAdmissionSubstepAbort({ slot }),
+  ])
+    .flat()
+    .includes(abortCode);
 
 export const admitBatch = async (params: AdmitBatchParams): Promise<AdmitOutcome> => {
   const children = params.children.map((child) => toAdmissionChild({ child }));

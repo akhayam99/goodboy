@@ -3,52 +3,51 @@ import { anAgent } from '@goodboy/types/testing';
 import type { Agent } from '@goodboy/types';
 import type { TimelineAgentEntry } from './buildTimelineGroups';
 import { formatClock } from '../../../shared/utils/time/formatClock';
-import { clockSpanText, latestFinishOf } from './clockSpan';
+import { clockSpanCardOf, latestFinishOf } from './clockSpan';
 
 const clock = (at: string) => formatClock({ at });
 
 const STARTED = '2026-10-04T16:41:00Z';
 const FINISHED = '2026-10-04T16:57:00Z';
 
-describe('clockSpanText', () => {
-  it('reads started and finished for a finished row', () => {
-    expect(clockSpanText({ startedAt: STARTED, finishedAt: FINISHED, phase: 'done' })).toBe(
-      `Started ${clock(STARTED)} · finished ${clock(FINISHED)}`,
-    );
+describe('clockSpanCardOf', () => {
+  it('gives started and finished rows for a finished row', () => {
+    const card = clockSpanCardOf({ startedAt: STARTED, finishedAt: FINISHED, phase: 'done' });
+
+    expect(card.facts).toEqual([
+      { label: 'Started', value: clock(STARTED) },
+      { label: 'Finished', value: clock(FINISHED) },
+    ]);
+    expect(card.state).toBeUndefined();
   });
 
   it('reads a failed or closed row the same way', () => {
     for (const phase of ['failed', 'closed'] as const) {
-      expect(clockSpanText({ startedAt: STARTED, finishedAt: FINISHED, phase })).toContain(
-        `finished ${clock(FINISHED)}`,
-      );
+      const card = clockSpanCardOf({ startedAt: STARTED, finishedAt: FINISHED, phase });
+
+      expect(card.facts.map((fact) => fact.label)).toEqual(['Started', 'Finished']);
     }
   });
 
-  it('says running for a live row and prints no finish', () => {
-    expect(clockSpanText({ startedAt: STARTED, finishedAt: FINISHED, phase: 'running' })).toBe(
-      `Started ${clock(STARTED)} · running`,
-    );
+  it('says running for a live row and gives no finish', () => {
+    const card = clockSpanCardOf({ startedAt: STARTED, finishedAt: FINISHED, phase: 'running' });
+
+    expect(card.state).toEqual({ tone: 'info', words: 'Running', isRunning: true });
+    expect(card.facts.map((fact) => fact.label)).toEqual(['Started']);
   });
 
   it('stops at the start for a row that waits, and for one with no finish on record', () => {
-    expect(clockSpanText({ startedAt: STARTED, finishedAt: FINISHED, phase: 'waiting' })).toBe(
-      `Started ${clock(STARTED)}`,
-    );
-    expect(clockSpanText({ startedAt: STARTED, finishedAt: null, phase: 'done' })).toBe(
-      `Started ${clock(STARTED)}`,
-    );
+    const waiting = clockSpanCardOf({ startedAt: STARTED, finishedAt: FINISHED, phase: 'waiting' });
+    const unfinished = clockSpanCardOf({ startedAt: STARTED, finishedAt: null, phase: 'done' });
+
+    expect(waiting.facts).toHaveLength(1);
+    expect(unfinished.facts).toHaveLength(1);
   });
 
-  it('never repeats one sentence across rows', () => {
-    const first = clockSpanText({ startedAt: STARTED, finishedAt: FINISHED, phase: 'done' });
-    const second = clockSpanText({
-      startedAt: '2026-10-04T18:45:00Z',
-      finishedAt: '2026-10-04T19:02:00Z',
-      phase: 'done',
-    });
+  it('carries no joined middot text', () => {
+    const card = clockSpanCardOf({ startedAt: STARTED, finishedAt: FINISHED, phase: 'done' });
 
-    expect(first).not.toBe(second);
+    expect(JSON.stringify(card)).not.toContain(' · ');
   });
 });
 

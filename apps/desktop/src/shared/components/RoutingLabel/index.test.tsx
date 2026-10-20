@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
+import { factCardOf } from '../../../__tests__/helpers/factCard';
 import { RoutingLabel } from './index';
 
 afterEach(cleanup);
@@ -39,7 +39,6 @@ describe('RoutingLabel', () => {
 
     expect(partOf(container, 'name')).toBe('Sonnet 5');
     expect(partOf(container, 'detail')).toBeNull();
-    expect(container.textContent).not.toContain('Medium');
   });
 
   it('names the codex variant as part of the model, like the picker trigger', () => {
@@ -82,9 +81,14 @@ describe('RoutingLabel', () => {
   it('keeps the whole route in the tooltip for an unknown model', () => {
     render(<RoutingLabel provider="anthropic" model="claude-opus-4-5" effort="high" />);
 
-    expect(tooltipTextOf({ element: screen.getByText('Opus 4.5').parentElement! })).toBe(
-      'Claude · Opus 4.5 · High',
-    );
+    const card = factCardOf({ element: screen.getByText('Opus 4.5').parentElement! });
+
+    expect(card.title).toBe('Routing');
+    expect(card.rows).toEqual([
+      ['Provider', 'Claude'],
+      ['Model', 'Opus 4.5'],
+      ['Effort', 'High'],
+    ]);
   });
 
   it('stays silent when the executed routing matches the plan', () => {
@@ -112,9 +116,10 @@ describe('RoutingLabel', () => {
     const cell = screen.getByTestId('routing-divergence');
     expect(cell.className).toContain('decoration-dotted');
     expect(cell.innerHTML).not.toContain('line-through');
-    expect(tooltipTextOf({ element: cell })).toBe(
-      'Claude · Sonnet 5 · Medium. Planned Opus 5 High, routing picked Sonnet 5 Medium',
-    );
+    const card = factCardOf({ element: cell });
+
+    expect(card.rows).toContainEqual(['Model', 'Sonnet 5']);
+    expect(card.text).toContain('Planned Opus 5 High, routing picked Sonnet 5 Medium');
   });
 
   it('flags a provider move even when only the provider diverged', () => {
@@ -126,7 +131,7 @@ describe('RoutingLabel', () => {
       />,
     );
 
-    expect(tooltipTextOf({ element: screen.getByTestId('routing-divergence') })).toContain(
+    expect(factCardOf({ element: screen.getByTestId('routing-divergence') }).text).toContain(
       'Planned on Claude, routing picked Cursor',
     );
   });
@@ -166,9 +171,10 @@ describe('RoutingLabel', () => {
       />,
     );
 
-    expect(tooltipTextOf({ element: screen.getByTestId('routing-divergence') })).toBe(
-      'Claude · Sonnet 5 · Medium. Planned High, ran Medium',
-    );
+    const card = factCardOf({ element: screen.getByTestId('routing-divergence') });
+
+    expect(card.rows).toContainEqual(['Effort', 'Medium']);
+    expect(card.text).toContain('Planned High, ran Medium');
   });
 
   it('never names a divergence for an effort nobody observed', () => {

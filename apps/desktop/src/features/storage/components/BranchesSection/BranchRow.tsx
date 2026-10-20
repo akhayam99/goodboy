@@ -1,4 +1,4 @@
-import { Chip, SelectionCheckbox, Tooltip, cn } from '@goodboy/ui';
+import { Chip, SelectionCheckbox, Tooltip, TruncatedText, cn } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -40,7 +40,7 @@ export const BranchRow = ({
     branch.lastCommitAt === null
       ? ''
       : formatSpan({ from: new Date(branch.lastCommitAt * 1000).toISOString(), to: now });
-  const status = verdict.detail === null ? verdict.label : `${verdict.label} · ${verdict.detail}`;
+  const status = verdict.detail === null ? verdict.label : `${verdict.label}\n${verdict.detail}`;
   const owner = entry.owner;
   const target: BranchActionTarget = {
     kind: 'branch',
@@ -72,9 +72,7 @@ export const BranchRow = ({
         />
       </span>
       <span data-cell="branch" className="flex min-w-0 flex-col py-1">
-        <Tooltip content={branch.name} anchorClassName="flex min-w-0">
-          <span className="truncate font-mono text-code text-foreground">{branch.name}</span>
-        </Tooltip>
+        <TruncatedText className="font-mono text-code text-foreground">{branch.name}</TruncatedText>
         <BranchSessionLine entry={entry} />
       </span>
       <span data-cell="folder" className="truncate text-label text-muted-foreground">
@@ -82,7 +80,7 @@ export const BranchRow = ({
       </span>
       <span data-cell="state" className="flex min-w-0">
         <Tooltip
-          content={`${status} · ${LOCATION_LABEL[branch.location]}`}
+          content={`${status}\n${LOCATION_LABEL[branch.location]}`}
           anchorClassName="flex min-w-0"
         >
           <Chip

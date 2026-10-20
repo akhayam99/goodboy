@@ -5,6 +5,8 @@ import { TailLine } from '../../live-state/TailLine';
 import { autoChildLive } from '../../live-state/adapters/autoChildLive';
 import type { TailActionId, TailFacts } from '../../live-state/tailFacts';
 import { DelegationResult } from '../chat/DelegationResult';
+import { useChecksRerun } from '../chat/useChecksRerun';
+import { usePublishAct } from '../chat/usePublishAct';
 import type { DelegationCardModel } from '../chat/delegationCardOf';
 
 type Props = {
@@ -25,6 +27,8 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
   const turn = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const cancelCurrentTurn = useAppStore((state) => state.cancelCurrentTurn);
+  const { runningId, rerun } = useChecksRerun();
+  const publishing = usePublishAct();
   if (turn?.kind === 'running' || turn?.kind === 'starting') {
     return null;
   }
@@ -37,7 +41,20 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
 
   return (
     <div data-auto-child-end="" className="flex min-w-0 flex-col gap-3">
-      {card.result === null ? null : <DelegationResult result={card.result} />}
+      {card.result === null ? null : (
+        <DelegationResult
+          result={card.result}
+          isRerunningChecks={runningId === delegation.id}
+          onRerunChecks={() => void rerun({ delegationId: delegation.id, sessionId })}
+          isActingPublish={publishing.busyIds.includes(delegation.id)}
+          onRetryPublish={() =>
+            void publishing.act({ act: 'retry', delegationIds: [delegation.id], sessionId })
+          }
+          onPutBackPublish={() =>
+            void publishing.act({ act: 'put_back', delegationIds: [delegation.id], sessionId })
+          }
+        />
+      )}
       {facts === null ? null : (
         <div role="status" aria-live="polite">
           <TailLine facts={facts} onAction={(id) => handlers[id]?.()} />

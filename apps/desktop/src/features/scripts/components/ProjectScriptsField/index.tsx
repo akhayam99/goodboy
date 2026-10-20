@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import type { Project } from '@goodboy/types';
 import { Button, EmptyLine, Notice } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { autoChecksKey } from '../../autoChecksKey';
 import { useScriptPins } from '../../hooks/useScriptPins';
+import { parseScriptPins } from '../../parseScriptPins';
 import { scriptPinId } from '../../scriptPinId';
 import { ProjectScriptRow } from './ProjectScriptRow';
 
@@ -21,7 +23,12 @@ export const ProjectScriptsField = ({ project }: Props) => {
   const scan = useAppStore((state) => state.projectRootScripts[project.rootPath]);
   const loadProjectRootScripts = useAppStore((state) => state.loadProjectRootScripts);
   const toggleScriptPin = useAppStore((state) => state.toggleScriptPin);
+  const toggleAutoCheck = useAppStore((state) => state.toggleAutoCheck);
   const reportError = useAppStore((state) => state.reportError);
+  const rawAutoChecks = useAppStore(
+    (state) => state.settings[autoChecksKey({ projectId: project.id })],
+  );
+  const autoChecks = parseScriptPins({ raw: rawAutoChecks });
   const pins = useScriptPins({ projectIds: [project.id] })[project.id] ?? [];
   const [isRetrying, setIsRetrying] = useState(false);
   const base = project.baseBranch ?? 'main';
@@ -41,6 +48,11 @@ export const ProjectScriptsField = ({ project }: Props) => {
       setIsRetrying(false);
     }
   };
+
+  const toggleCheck = (pinId: string) =>
+    void toggleAutoCheck({ projectId: project.id, pinId }).catch((error: unknown) =>
+      reportError({ title: "Couldn't change the Auto checks", error }),
+    );
 
   const togglePin = (pinId: string) =>
     void toggleScriptPin({ projectId: project.id, pinId }).catch((error: unknown) =>
@@ -79,7 +91,7 @@ export const ProjectScriptsField = ({ project }: Props) => {
         <>
           <p className="text-meta text-faint-foreground">
             On {base}. Pinned scripts show on a session&apos;s Scripts page and under $ in the
-            palette.
+            palette. Auto runs the scripts used as checks after an agent changes code.
           </p>
           {groups.map((group) => (
             <div key={`${group.source}:${group.relDir}`} className="flex flex-col">
@@ -101,7 +113,9 @@ export const ProjectScriptsField = ({ project }: Props) => {
                     name={script.name}
                     command={script.body}
                     isPinned={pins.includes(pinId)}
+                    isAutoCheck={autoChecks.includes(pinId)}
                     onTogglePin={() => togglePin(pinId)}
+                    onToggleAutoCheck={() => toggleCheck(pinId)}
                   />
                 );
               })}

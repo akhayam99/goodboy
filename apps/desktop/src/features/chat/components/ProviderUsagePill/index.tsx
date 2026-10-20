@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { Gauge } from 'lucide-react';
-import { cn, formatUsd, Tooltip } from '@goodboy/ui';
+import { FactCard, cn } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
 import { budgetPctUsed } from '../../../budget/providerBudgetView';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { usageCardOf } from './usageCardOf';
 
 type Props = {
   readonly provider: ProviderId;
@@ -36,10 +37,17 @@ export const ProviderUsagePill = ({ provider }: Props) => {
     }
     return 'text-danger';
   })();
-  const reset = formatDayMonth({ at: status.windowEndMs + 1 }).toLowerCase();
-  const tooltip = `${provider}: ${formatUsd(status.spentUsd)} / ${formatUsd(status.capUsd)} used across all workspaces (${pctUsed}%) · resets ${reset}`;
+  const reset = formatDayMonth({ at: status.windowEndMs + 1 });
   return (
-    <Tooltip content={tooltip}>
+    <FactCard
+      card={usageCardOf({
+        provider,
+        spentUsd: status.spentUsd,
+        capUsd: status.capUsd,
+        pctUsed,
+        reset,
+      })}
+    >
       <span
         className={cn(
           'inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-chip',
@@ -47,8 +55,8 @@ export const ProviderUsagePill = ({ provider }: Props) => {
         )}
       >
         <Gauge size={ICON_SIZE.mark} aria-hidden />
-        {pctRemaining}% left · {reset}
+        {pctRemaining}% left · {reset.toLowerCase()}
       </span>
-    </Tooltip>
+    </FactCard>
   );
 };

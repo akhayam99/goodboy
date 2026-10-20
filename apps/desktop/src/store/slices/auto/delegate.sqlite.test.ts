@@ -188,6 +188,10 @@ describe('the delegate command', () => {
     );
     expect(outcome).toMatchObject({ isOk: false, code: 'spec_invalid' });
     expect(JSON.stringify(outcome)).toContain('History flow');
+    expect(JSON.stringify(outcome)).toContain('implementer with');
+    expect(JSON.stringify(outcome)).toContain('force');
+    expect(JSON.stringify(outcome)).toContain('backup');
+    expect(JSON.stringify(outcome)).not.toContain('Tell the user to rewrite');
     expect(await listAutoDelegations({ db: state.world.db, treeId: WORLD_TREE })).toHaveLength(0);
     expect(state.ports.ensuredChildren).toHaveLength(0);
   });

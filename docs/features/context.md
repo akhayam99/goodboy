@@ -41,7 +41,7 @@ Open goal, decisions, summary and explanations from any session page with the **
 
 ### Who receives what
 
-See which agents read each part of the context. The eye on a card's header, **Visible to**, lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything.
+See which agents read each part of the context. The eye on a card's header, **Visible to**, lists the roles that receive that part. Planners, implementers, reviewers, debuggers and resolvers get the decisions, scouts and docs agents do not, and you always see everything. Agents that Auto starts read only their brief, so the line says "Auto children read only their brief" on every part but the goal.
 
 ### Explanations
 

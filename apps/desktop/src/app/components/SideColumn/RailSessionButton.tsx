@@ -1,5 +1,5 @@
 import type { FocusEvent, KeyboardEvent, MouseEvent } from 'react';
-import { Tooltip, cn, inlineMarkdownText } from '@goodboy/ui';
+import { cn, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { sessionNodeOf } from '../../../features/session/sessionNode';
 import { StateNode } from '../../../shared/components/StateNode';
@@ -35,7 +35,7 @@ export const RailSessionButton = ({
   const words = summary.words ?? summary.reason;
   const label = words === '' ? text : `${text}, ${words}`;
   const isCurrent = sign === 'current';
-  const button = (
+  return (
     <button
       type="button"
       data-rail-session={session.id}
@@ -61,12 +61,5 @@ export const RailSessionButton = ({
     >
       <StateNode node={node} isOnSelectedRow={isCurrent} />
     </button>
-  );
-  return hasFlyout ? (
-    button
-  ) : (
-    <Tooltip content={label} side="right">
-      {button}
-    </Tooltip>
   );
 };

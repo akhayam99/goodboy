@@ -51,6 +51,15 @@ const ratioOn = ({
 }): number => contrastRatio({ first: tokenOf({ theme, name }).rgb, second: background });
 
 describe.each(THEME_NAMES)('text contrast in %s', (theme) => {
+  it.each(['foreground', 'faint-foreground'])(
+    'reads at 4.5:1 as %s on the floating surface of a label tooltip',
+    (name) => {
+      expect(
+        ratioOn({ theme, name, background: tokenOf({ theme, name: 'floating' }).rgb }),
+      ).toBeGreaterThanOrEqual(MIN_TEXT_CONTRAST);
+    },
+  );
+
   it.each(SURFACES)('faint foreground reads at 4.5:1 on %s', (surface) => {
     expect(
       ratioOn({

@@ -163,6 +163,21 @@ describe('buildAutoSystemPrompt', () => {
     expect(AUTO_DELEGATE_EXAMPLE).toContain('"mount":');
   });
 
+  it('teaches the publish field and says Goodboy pushes, never the agent', () => {
+    const prompt = buildAutoSystemPrompt({ isDelegationEnabled: true });
+
+    expect(prompt).toContain('An agent never pushes.');
+    expect(prompt).toContain('"publish":"push"');
+    expect(prompt).toContain('A force push waits for the user to confirm and keeps a backup.');
+    expect(
+      parseDelegateSpec({
+        text: JSON.stringify([
+          { role: 'implementer', task: 'x', reason: 'y', publish: { mode: 'force' } },
+        ]),
+      }).kind,
+    ).toBe('ok');
+  });
+
   it('ships the delegation prompt now the release gate is on', () => {
     expect(AUTO_SYSTEM_PROMPT).toBe(buildAutoSystemPrompt({ isDelegationEnabled: true }));
   });

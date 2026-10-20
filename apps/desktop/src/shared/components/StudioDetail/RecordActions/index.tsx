@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button, ConfirmPopover, Tooltip, cn } from '@goodboy/ui';
+import { Button, ConfirmPopover, OptionalTooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../conceptIcons';
 import { runRecordVerb } from './runRecordVerb';
 import type { RecordSecondaryVerbs, RecordVerb } from './types';
@@ -24,7 +24,7 @@ export const RecordActions = ({ primary, secondary, armed, onArm, onDisarm }: Pr
             const Icon = verb.icon;
             const isBlocked = verb.blockedReason != null;
             const button = (
-              <Tooltip content={verb.blockedReason ?? verb.label}>
+              <OptionalTooltip content={verb.blockedReason}>
                 <Button
                   variant="secondary"
                   size="sm"
@@ -37,7 +37,7 @@ export const RecordActions = ({ primary, secondary, armed, onArm, onDisarm }: Pr
                   <Icon size={ICON_SIZE.row} aria-hidden />
                   {verb.label}
                 </Button>
-              </Tooltip>
+              </OptionalTooltip>
             );
             if (verb.confirm === null || verb.confirm === undefined) {
               return (

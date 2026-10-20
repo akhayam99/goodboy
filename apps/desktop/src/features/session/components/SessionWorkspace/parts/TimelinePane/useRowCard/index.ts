@@ -7,8 +7,7 @@ import {
   type KeyboardEventHandler,
   type PointerEventHandler,
 } from 'react';
-import { useEscapeLayer } from '@goodboy/ui';
-import { ROW_CARD_REST_MS } from '../timelineRowIdentity';
+import { REST_HOVER_REST_MS, useEscapeLayer } from '@goodboy/ui';
 
 type Params = {
   readonly isEnabled: boolean;
@@ -48,7 +47,7 @@ export const useRowCard = ({ isEnabled }: Params): RowCard => {
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       setIsOpen(true);
-    }, ROW_CARD_REST_MS);
+    }, REST_HOVER_REST_MS);
   };
 
   const onBlur: FocusEventHandler<HTMLElement> = () => {

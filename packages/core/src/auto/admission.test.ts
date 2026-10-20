@@ -8,6 +8,7 @@ import {
   type AdmissionChild,
   type AdmissionSnapshot,
 } from './admission';
+import type { AdmissionParentFacts } from './substepAdmission';
 
 const NOW = 1_700_000_000_000;
 const ROOT = brandId<AgentId>({ value: 'agent-auto-root' });
@@ -232,6 +233,85 @@ describe('diagnoseAdmission', () => {
         }),
       ),
     ).toBe('breadth_cap');
+  });
+
+  describe('substeps', () => {
+    const parent = (patch: Partial<AdmissionParentFacts> = {}): AdmissionParentFacts => ({
+      delegationId: 'delegation-parent',
+      state: 'paused',
+      generation: 1,
+      pausedQuestionId: 'question-1',
+      depth: 1,
+      substeps: 0,
+      ...patch,
+    });
+
+    const helper = (agent = 'agent-scout-2', questionId = 'question-1'): AdmissionChild => ({
+      ...scout(agent),
+      substep: { parentDelegationId: 'delegation-parent', questionId },
+    });
+
+    const verdictOf = (
+      parents: ReadonlyArray<AdmissionParentFacts>,
+      children: ReadonlyArray<AdmissionChild>,
+      patch: Partial<AdmissionSnapshot> = {},
+    ) => diagnoseAdmission({ snapshot: snapshot({ parents, ...patch }), children });
+
+    it('admits a scout for a parent paused on that question in this generation', () => {
+      expect(codeOf(verdictOf([parent()], [helper()]))).toBe('ok');
+    });
+
+    it('admits four substeps at once when four paused parents left the open count', () => {
+      const parents = [1, 2, 3, 4].map((n) =>
+        parent({ delegationId: `delegation-parent-${n}`, pausedQuestionId: `question-${n}` }),
+      );
+      const children = [1, 2, 3, 4].map((n): AdmissionChild => ({
+        ...scout(`agent-scout-${n + 10}`),
+        substep: { parentDelegationId: `delegation-parent-${n}`, questionId: `question-${n}` },
+      }));
+      expect(codeOf(verdictOf(parents, children, { openCount: 0 }))).toBe('ok');
+    });
+
+    it('refuses a parent that is not paused, paused on another question, or unknown', () => {
+      expect(codeOf(verdictOf([parent({ state: 'running' })], [helper()]))).toBe('not_paused');
+      expect(codeOf(verdictOf([parent()], [helper('agent-scout-2', 'question-9')]))).toBe(
+        'not_paused',
+      );
+      expect(codeOf(verdictOf([], [helper()]))).toBe('not_paused');
+    });
+
+    it('refuses a paused parent of an older generation as generation_changed', () => {
+      expect(codeOf(verdictOf([parent({ generation: 0 })], [helper()]))).toBe('generation_changed');
+    });
+
+    it('refuses a substep of a substep as a depth cap', () => {
+      expect(codeOf(verdictOf([parent({ depth: 2 })], [helper()]))).toBe('depth_cap');
+    });
+
+    it('refuses the third substep of one parent, across batches and inside one batch', () => {
+      expect(codeOf(verdictOf([parent({ substeps: 2 })], [helper()]))).toBe('substep_cap');
+      const trio = [helper('agent-scout-2'), helper('agent-scout-3'), helper('agent-scout-4')];
+      const verdict = verdictOf([parent()], trio);
+      expect(verdict).toMatchObject({
+        kind: 'refused',
+        code: 'substep_cap',
+        perChild: [{ slot: 2 }],
+      });
+    });
+
+    it('refuses a role that cannot be a substep', () => {
+      const writer: AdmissionChild = {
+        ...implementer(),
+        substep: { parentDelegationId: 'delegation-parent', questionId: 'question-1' },
+      };
+      expect(codeOf(verdictOf([parent()], [writer]))).toBe('role_mismatch');
+    });
+
+    it('refuses with generation_changed when the tree moved on', () => {
+      expect(codeOf(verdictOf([parent()], [helper()], { expectedGeneration: 0 }))).toBe(
+        'generation_changed',
+      );
+    });
   });
 
   describe('revise', () => {

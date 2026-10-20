@@ -40,6 +40,14 @@ impl Cli {
     }
 }
 
+pub(crate) fn partial_output_flag(cli: Cli) -> Option<&'static str> {
+    match cli {
+        Cli::Claude => Some("--include-partial-messages"),
+        Cli::Cursor => Some("--stream-partial-output"),
+        Cli::Agy | Cli::Codex | Cli::Opencode => None,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Job {
     Turn,
@@ -303,6 +311,11 @@ const WRITER_ROLES: &[&str] = &[
 const READ_ONLY_CLAUDE_TOOLS: &str = "Read,Grep,Glob";
 const NATIVE_SUBAGENT_TOOLS: &[&str] = &["Task", "Agent"];
 const READ_ONLY_DENIED_TOOLS: &[&str] = &["Bash", "Edit", "Write", "MultiEdit", "NotebookEdit"];
+const AUTO_CHILD_DENIED_TOOLS: &[&str] = &[
+    "Bash(git push:*)",
+    "Bash(git push *)",
+    "Bash(*--no-verify*)",
+];
 
 pub(crate) fn role_access(role: &str) -> Option<RoleAccess> {
     if READ_ONLY_ROLES.contains(&role) {
@@ -519,6 +532,10 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
             if access == Some(RoleAccess::ReadOnly) {
                 disallowed_tools.extend(READ_ONLY_DENIED_TOOLS.iter().map(|tool| tool.to_string()));
             }
+            if args.is_auto_child {
+                disallowed_tools
+                    .extend(AUTO_CHILD_DENIED_TOOLS.iter().map(|tool| tool.to_string()));
+            }
             disallowed_tools.push("mcp__*".to_string());
             v.push("--disallowedTools".to_string());
             v.push(disallowed_tools.join(","));
@@ -533,6 +550,21 @@ mod tests {
 
     fn strings(parts: &[&str]) -> Vec<String> {
         parts.iter().map(|part| part.to_string()).collect()
+    }
+
+    #[test]
+    fn only_claude_and_cursor_have_a_partial_output_flag() {
+        assert_eq!(
+            partial_output_flag(Cli::Claude),
+            Some("--include-partial-messages")
+        );
+        assert_eq!(
+            partial_output_flag(Cli::Cursor),
+            Some("--stream-partial-output")
+        );
+        for cli in [Cli::Agy, Cli::Codex, Cli::Opencode] {
+            assert_eq!(partial_output_flag(cli), None);
+        }
     }
 
     #[test]
@@ -712,6 +744,7 @@ mod tests {
             write_set_lease: None,
             confined_role,
             blocks_push: false,
+            is_auto_child: false,
             excludes_tmp: false,
         }
     }
@@ -775,6 +808,25 @@ mod tests {
         let denied = value_after(&argv, "--disallowedTools").expect("deny list");
         assert!(denied.split(',').any(|entry| entry == "Task"));
         assert!(!denied.split(',').any(|entry| entry == "Bash"));
+    }
+
+    #[test]
+    fn an_auto_child_on_claude_denies_git_push_and_no_verify_and_other_turns_do_not() {
+        let mut child = spawn_args("acceptEdits", Some("implementer"), &[], &[], &[]);
+        child.is_auto_child = true;
+        let denied = value_after(&turn_args("claude", &child), "--disallowedTools").expect("deny");
+        for rule in [
+            "Bash(git push:*)",
+            "Bash(git push *)",
+            "Bash(*--no-verify*)",
+        ] {
+            assert!(denied.split(',').any(|entry| entry == rule), "{rule}");
+        }
+        let hand = spawn_args("acceptEdits", Some("implementer"), &[], &[], &[]);
+        let hand_denied =
+            value_after(&turn_args("claude", &hand), "--disallowedTools").expect("deny");
+        assert!(!hand_denied.contains("git push"));
+        assert!(!hand_denied.contains("--no-verify"));
     }
 
     #[test]

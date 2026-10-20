@@ -100,7 +100,11 @@ describe('SPEC3 9.6 Branch page capabilities from the branch tree', () => {
   it('the pull request title edits in place from the page title', async () => {
     await mount('c04-worktree-pr-draft');
 
-    fireEvent.click(screen.getByTitle('Edit title (E)'));
+    const trigger = document.querySelector<HTMLElement>('h1 button[aria-keyshortcuts="E"]');
+    expect(trigger).not.toBeNull();
+    if (trigger !== null) {
+      fireEvent.click(trigger);
+    }
 
     expect(screen.getByRole('textbox', { name: 'Pull request title' })).toBeDefined();
   });

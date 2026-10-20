@@ -9,6 +9,7 @@ import {
   AUTO_LEDGER_CHAR_BUDGET,
   AUTO_LEDGER_MAX_ARTIFACTS,
   AUTO_MAX_OPEN_CHILDREN,
+  AUTO_SUBSTEPS_PER_PARENT,
   AUTO_TREE_DEPTH,
   AUTO_TREE_LIMITS,
   AUTO_TURN_CEILING_USD,
@@ -43,7 +44,8 @@ describe('Auto limits', () => {
     expect(AUTO_BATCH_MIN_CHILDREN).toBe(1);
     expect(AUTO_BATCH_MAX_CHILDREN).toBe(FAN_OUT_MAX_CHILDREN);
     expect(AUTO_BATCH_MAX_CHILDREN).toBe(4);
-    expect(AUTO_TREE_DEPTH).toBe(1);
+    expect(AUTO_TREE_DEPTH).toBe(2);
+    expect(AUTO_SUBSTEPS_PER_PARENT).toBe(2);
   });
 
   it('keeps the turn ceiling', () => {

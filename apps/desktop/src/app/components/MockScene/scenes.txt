@@ -214,6 +214,7 @@ c07-auto-blocked
 c07-auto-capped
 c07-auto-child
 c07-auto-child-done
+c07-auto-child-push
 c07-auto-folded
 c07-auto-idle
 c07-auto-images
@@ -225,6 +226,7 @@ c07-auto-session-level
 c07-auto-start
 c07-auto-start-open
 c07-auto-stop-failed
+c07-auto-substep
 c07-auto-working
 c08-run-add-step
 c08-run-approval
@@ -400,6 +402,7 @@ exploremulti
 f58-chat-1100
 f58-chat-origin
 f58-chat-room
+fact-card
 features-composer-menu
 features-impact-overview
 features-newer-data
@@ -443,6 +446,7 @@ frames-chat-rail
 frames-guide-pinned
 frames-guide-rail
 frames-overview-rail-1920
+git-review-cards
 goalhint
 goalproposal
 goalreplace
@@ -588,6 +592,8 @@ overview-refreshing
 overview-unassigned-notes
 p20-usage-card-dark
 p20-usage-card-light
+p23-preset-picker-dark
+p23-preset-picker-light
 palette-query
 palette-stable-height
 palette-stable-height-typing
@@ -684,6 +690,7 @@ r4-title-edit
 r4-title-edit-near-limit
 r4-title-row-edit
 r4-workspace-switcher
+rail-chat-cards
 rail-draft-dot
 rail-flyout
 rail-pinned
@@ -827,11 +834,14 @@ terminal-studio
 terminal-studio-closeconfirm
 terminal-studio-empty
 terminal-studio-newmenu
+timeline-cards
 toast-over-drawer
 toast-over-drawer-overlay
 toasts
+tooltip-labels
 tooltip-shortcut
 tooltip-truncated
+top-bar-cards
 topbar-1100
 topbar-limits-overflow
 topbar-states

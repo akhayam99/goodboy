@@ -20,12 +20,6 @@ export const windowTone = ({ window }: Params): WindowTone => {
   return 'neutral';
 };
 
-export const WINDOW_TONE_TEXT: Readonly<Record<WindowTone, string>> = {
-  danger: 'text-danger',
-  warning: 'text-warning',
-  neutral: 'text-foreground',
-};
-
 export const WINDOW_TONE_FILL: Readonly<Record<WindowTone, string>> = {
   danger: 'bg-danger',
   warning: 'bg-warning',

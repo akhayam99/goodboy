@@ -12,6 +12,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly expectedWorktreePath?: string;
+  readonly expectedBranch?: string;
   readonly sha?: string;
 };
 
@@ -20,6 +21,7 @@ export const pushSessionBranch = async ({
   sessionId,
   mountId,
   expectedWorktreePath,
+  expectedBranch,
   sha,
 }: Params): Promise<PushResult> => {
   const session = sessionById(get().sessions, sessionId);
@@ -32,6 +34,12 @@ export const pushSessionBranch = async ({
   }
   if (expectedWorktreePath !== undefined && repo.worktreePath !== expectedWorktreePath) {
     return { ok: false, error: 'this mount moved to another worktree, so nothing was pushed' };
+  }
+  if (expectedBranch !== undefined && repo.branch !== expectedBranch) {
+    return {
+      ok: false,
+      error: `this mount is on ${repo.branch} now, not ${expectedBranch}, so nothing was pushed`,
+    };
   }
   const branch = repo.branch.length > 0 ? repo.branch : null;
   const push = await gitPush({

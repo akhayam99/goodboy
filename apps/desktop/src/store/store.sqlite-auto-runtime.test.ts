@@ -4,7 +4,9 @@ import { listAutoOutbox, setSetting } from '@goodboy/db';
 import { brandId, type AutoTreeId, type WorkspaceId } from '@goodboy/types';
 import { writeAutoTreeLimit } from '../features/auto/autoTreeLimit';
 import { currentAutoUserTurnPort } from '../features/auto/autoUserTurnPort';
+import { currentChecksRerunPort } from '../features/auto/checksRerunPort';
 import { currentDelegationDecisionPort } from '../features/auto/delegationDecisionPort';
+import { currentPublishPort } from '../features/auto/publishPort';
 import { currentTreeStopPort } from '../features/auto/treeStopPort';
 import { createAutoScheduler } from './slices/auto/scheduler';
 import { WORLD_TREE } from './slices/auto/testing/autoWorld';
@@ -174,9 +176,32 @@ describe('the Auto runtime on the real store', () => {
 
     expect(currentDelegationDecisionPort()).not.toBeNull();
     expect(currentTreeStopPort()).not.toBeNull();
+    expect(currentChecksRerunPort()).not.toBeNull();
+    expect(currentPublishPort()).not.toBeNull();
     stop();
     expect(currentDelegationDecisionPort()).toBeNull();
     expect(currentTreeStopPort()).toBeNull();
+    expect(currentChecksRerunPort()).toBeNull();
+    expect(currentPublishPort()).toBeNull();
+  });
+
+  it('refuses a push answer for a delegation nobody remembers', async () => {
+    stops.push(await startAutoRuntime({ isEnabled: false, tickMs: 10 }));
+
+    const result = await currentPublishPort()?.({
+      act: 'confirm',
+      delegationIds: ['delegation-nope'],
+    });
+
+    expect(result?.rows[0]?.state).toBe('refused');
+  });
+
+  it('refuses to run again the checks of a delegation nobody remembers', async () => {
+    stops.push(await startAutoRuntime({ isEnabled: false, tickMs: 10 }));
+
+    const result = await currentChecksRerunPort()?.({ delegationId: 'delegation-nope' });
+
+    expect(result?.kind).toBe('refused');
   });
 
   it('stops a stored tree through the port the Stop button uses', async () => {

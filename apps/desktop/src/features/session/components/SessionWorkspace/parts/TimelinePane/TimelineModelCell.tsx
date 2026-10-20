@@ -1,13 +1,12 @@
-import type { ReactNode } from 'react';
-import { Tooltip, cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import type { ModelsSummary } from '../../../../timeline/ranModels';
 import { TimelineProviderGlyph } from './TimelineProviderGlyph';
-import { ROW_CARD_REST_MS } from './timelineRowIdentity';
+import type { CardWrap } from './timelineRowIdentity';
 
 type Props = {
   readonly summary: ModelsSummary | null;
   readonly isPlanned?: boolean;
-  readonly card?: ReactNode;
+  readonly wrapCard?: CardWrap | null;
 };
 
 const MODEL_CELL =
@@ -15,7 +14,7 @@ const MODEL_CELL =
 
 const MAX_GLYPHS = 3;
 
-export const TimelineModelCell = ({ summary, isPlanned = false, card = null }: Props) => {
+export const TimelineModelCell = ({ summary, isPlanned = false, wrapCard = null }: Props) => {
   if (summary === null) {
     return <span aria-hidden data-meta-column="model" className={MODEL_CELL} />;
   }
@@ -46,12 +45,8 @@ export const TimelineModelCell = ({ summary, isPlanned = false, card = null }: P
       )}
     </span>
   );
-  if (card === null) {
+  if (wrapCard === null) {
     return block;
   }
-  return (
-    <Tooltip variant="card" side="bottom" restDelayMs={ROW_CARD_REST_MS} content={card}>
-      {block}
-    </Tooltip>
-  );
+  return wrapCard({ children: block });
 };

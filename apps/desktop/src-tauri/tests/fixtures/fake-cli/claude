@@ -4,6 +4,9 @@ case "$1" in
   --version)
     fake_version "2.1.4 (Claude Code)"
     ;;
+  --help)
+    printf 'Options:\n  %s  Include partial message chunks\n' '--include-partial-messages'
+    ;;
   auth)
     case "$fake_mode" in
       logged-out)

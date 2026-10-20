@@ -97,7 +97,7 @@ describe('NavCluster', () => {
     render(<NavCluster />);
     const live = screen.getByRole('button', { name: 'Back to Comments' });
     expect(live.parentElement?.getAttribute('data-tooltip')).toContain(
-      'Back to Comments · Retry failed webhook deliveries',
+      'Back to Comments\nRetry failed webhook deliveries',
     );
     fireEvent.click(live);
     expect(store.back).toHaveBeenCalledOnce();

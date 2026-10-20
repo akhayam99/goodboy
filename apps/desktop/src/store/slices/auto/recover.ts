@@ -4,6 +4,7 @@ import {
   getAutoDelegation,
   getAutoTree,
   listAutoAttemptsOfDelegation,
+  listAutoAttemptsOfTree,
   listAutoOutbox,
   listLiveAutoAttempts,
   listOpenAutoDelegations,
@@ -18,6 +19,7 @@ import { failAttempt } from './failAttempt';
 import { finishAttempt } from './finishAttempt';
 import { landAttemptRevision } from './landAttemptRevision';
 import type { ChildTurnEnded, RunOutcome } from './ports';
+import { pushSettledPublish } from './pushSettledPublish';
 import { settleAutoTurn } from './settleAutoTurn';
 import type { SleepParams } from './startDeliveredTurn';
 import { stopTree } from './stopTree';
@@ -296,6 +298,20 @@ const recoverLandings = async ({ ctx, tree }: ClaimedParams): Promise<void> => {
   }
 };
 
+type PublishesParams = {
+  readonly ctx: AgentVerbContext;
+  readonly treeId: AutoTree['id'];
+};
+
+const recoverPublishes = async ({ ctx, treeId }: PublishesParams): Promise<void> => {
+  const attempts = await listAutoAttemptsOfTree({ db: ctx.db, treeId });
+  for (const attempt of attempts) {
+    if (attempt.state === 'ended') {
+      await pushSettledPublish({ ctx, attemptId: attempt.id });
+    }
+  }
+};
+
 export const recoverTree = async ({
   ctx,
   treeId,
@@ -310,6 +326,7 @@ export const recoverTree = async ({
   if (tree === null) {
     return { kind: 'idle', reason: 'no_tree' };
   }
+  await recoverPublishes({ ctx, treeId });
   if (tree.stopState === 'requested' || tree.stopState === 'confirming') {
     await stopTree({ ctx, treeId });
     return { kind: 'recovered', watchers: [] };

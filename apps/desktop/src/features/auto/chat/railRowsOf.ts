@@ -1,3 +1,4 @@
+import { substepLinkOf } from '@goodboy/core';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { Agent, AgentId, TurnState } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
@@ -11,6 +12,7 @@ export type RailRow = Readonly<{
   id: string;
   agentId: AgentId;
   kind: 'root' | 'child';
+  depth: number;
   role: AgentKind;
   label: string;
   task: string | null;
@@ -73,6 +75,7 @@ const rootRowOf = ({ view, routing, rootTurn }: RootParams): RailRow => {
     id: view.tree.rootAgentId,
     agentId: view.tree.rootAgentId,
     kind: 'root',
+    depth: 0,
     role: 'auto',
     label: 'Auto',
     task: null,
@@ -94,6 +97,7 @@ export const restingRootRowOf = ({ agentId, provider, model, effort }: RestingPa
   id: agentId,
   agentId,
   kind: 'root',
+  depth: 0,
   role: 'auto',
   label: 'Auto',
   task: null,
@@ -113,18 +117,33 @@ export const railRowsOf = ({
   rootTurn = null,
 }: RowParams): ReadonlyArray<RailRow> => {
   const latestByChild = new Map<string, DelegationCardModel>();
+  const parentOfChild = new Map<string, string>();
   for (const delegation of view.delegations) {
     if (delegation.isAdopted) {
       continue;
     }
     const childAgent = agents.find((agent) => agent.id === delegation.childAgentId) ?? null;
     latestByChild.set(delegation.childAgentId, delegationCardOf({ delegation, childAgent }));
+    const link = substepLinkOf({ request: delegation.request });
+    const parent =
+      link === null ? undefined : view.delegations.find((d) => d.id === link.delegationId);
+    if (parent !== undefined && parent.childAgentId !== delegation.childAgentId) {
+      parentOfChild.set(delegation.childAgentId, parent.childAgentId);
+    }
   }
   const labels = autoChildLabelsOf({ delegations: view.delegations });
-  const children = [...latestByChild.values()].map((card): RailRow => ({
+  const cards = [...latestByChild.values()];
+  const ordered = cards
+    .filter((card) => !parentOfChild.has(card.childAgentId))
+    .flatMap((card) => [
+      card,
+      ...cards.filter((other) => parentOfChild.get(other.childAgentId) === card.childAgentId),
+    ]);
+  const children = ordered.map((card): RailRow => ({
     id: card.childAgentId,
     agentId: card.childAgentId,
     kind: 'child',
+    depth: parentOfChild.has(card.childAgentId) ? 2 : 1,
     role: card.role,
     label: labels.get(card.childAgentId) ?? card.roleLabel,
     task: card.task,

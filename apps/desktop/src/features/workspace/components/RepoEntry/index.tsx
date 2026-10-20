@@ -1,12 +1,13 @@
 import { AlertTriangle, GitBranch } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, Button, StatusDot, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, FactCard, StatusDot, cn, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { workspaceReposOf } from '../../../../store/slices/repo-divergence/workspaceReposOf';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useRepoDivergenceCheck } from '../../hooks/useRepoDivergenceCheck';
 import { RepoEntryPanel } from './RepoEntryPanel';
+import { repoEntryCardOf } from './repoEntryCardOf';
 import { repoEntryFactsOf } from './repoEntryFactsOf';
 
 type Props = {
@@ -39,7 +40,10 @@ export const RepoEntry = ({ workspaceId }: Props) => {
       ariaLabel="Repositories"
       className="flex w-96 max-h-[min(32rem,calc(100vh-2rem))] flex-col"
       trigger={
-        <Tooltip content={facts.tooltip} isSuppressed={dropdown.open}>
+        <FactCard
+          card={repoEntryCardOf({ facts, repoCount: projects.length })}
+          isSuppressed={dropdown.open}
+        >
           <Button
             variant="quiet"
             size="sm"
@@ -63,7 +67,7 @@ export const RepoEntry = ({ workspaceId }: Props) => {
             {facts.label === null ? null : <span className="truncate">{facts.label}</span>}
             {facts.dot === null ? null : <StatusDot tone={facts.dot} size="sm" />}
           </Button>
-        </Tooltip>
+        </FactCard>
       }
     >
       <RepoEntryPanel workspaceId={workspaceId} entries={entries} />

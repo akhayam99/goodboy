@@ -1,3 +1,13 @@
+import {
+  canPutBackPublish,
+  canRerunChecks,
+  canRetryPublish,
+  checksRunOfResult,
+  checksTextOf,
+  publishOfResult,
+  publishTextOf,
+  type PublishState,
+} from '@goodboy/core';
 import { isJsonRecord, listField, numberField, recordField, textField } from './readJson';
 
 type ResultCheckView = Readonly<{
@@ -13,6 +23,13 @@ type ResultArtifactView = Readonly<{
   revision: number | null;
 }>;
 
+type PublishView = Readonly<{
+  text: string;
+  state: PublishState;
+  canRetry: boolean;
+  canPutBack: boolean;
+}>;
+
 export type DelegationResultView = Readonly<{
   summary: string | null;
   changedFileCount: number;
@@ -23,7 +40,22 @@ export type DelegationResultView = Readonly<{
   isCostEstimated: boolean;
   reason: string | null;
   reasonText: string | null;
+  remoteText: string | null;
+  checksText: string | null;
+  checksVerdict: 'green' | 'red' | 'not_checked' | null;
+  canRerunChecks: boolean;
+  publish: PublishView | null;
 }>;
+
+const REMOTE_MOVED_CARD = 'The branch changed online while this agent worked.';
+const REMOTE_UNKNOWN_CARD = 'Could not check whether the branch changed online.';
+
+const remoteTextOf = ({ value }: StatusParams): string | null => {
+  if (value === 'moved') {
+    return REMOTE_MOVED_CARD;
+  }
+  return value === 'unknown' ? REMOTE_UNKNOWN_CARD : null;
+};
 
 type StatusParams = {
   readonly value: string | null;
@@ -94,10 +126,35 @@ export const delegationResultOf = ({ result }: Params): DelegationResultView | n
   const verified = recordField({ source: result, key: 'verified' });
   const cost = recordField({ source: result, key: 'cost' });
   const reasonOf = textField({ source: result, key: 'reason' });
+  const checks = mapped({ items: listField({ source: verified, key: 'checks' }), read: checkOf });
+  const checksRun = checksRunOfResult({ result });
+  const publish = publishOfResult({ result });
   return {
+    publish:
+      publish === null
+        ? null
+        : {
+            text: publishTextOf({ publish }),
+            state: publish.state,
+            canRetry: canRetryPublish({ publish }),
+            canPutBack: canPutBackPublish({ publish }),
+          },
+    checksText:
+      checksRun === null
+        ? null
+        : checksTextOf({
+            run: checksRun,
+            checks: checks.map((check) => ({
+              name: check.name,
+              status: check.status,
+              source: check.isClaimed ? 'child_claim' : 'harness',
+            })),
+          }),
+    checksVerdict: checksRun?.verdict ?? null,
+    canRerunChecks: checksRun !== null && canRerunChecks({ run: checksRun }),
     summary: textField({ source: declared, key: 'summary' }),
     changedFileCount: listField({ source: verified, key: 'changedFiles' }).length,
-    checks: mapped({ items: listField({ source: verified, key: 'checks' }), read: checkOf }),
+    checks,
     artifacts: mapped({ items: listField({ source: result, key: 'artifacts' }), read: artifactOf }),
     questions: mapped({
       items: listField({ source: result, key: 'openQuestions' }),
@@ -107,5 +164,11 @@ export const delegationResultOf = ({ result }: Params): DelegationResultView | n
     isCostEstimated: textField({ source: cost, key: 'basis' }) !== 'reported',
     reason: reasonOf,
     reasonText: reasonOf === null ? null : (REASON_TEXT.get(reasonOf) ?? null),
+    remoteText: remoteTextOf({
+      value: textField({
+        source: recordField({ source: verified, key: 'remote' }),
+        key: 'status',
+      }),
+    }),
   };
 };

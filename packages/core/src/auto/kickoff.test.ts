@@ -5,6 +5,7 @@ import {
   AUTO_DEFAULT_DONE_WHEN,
   AUTO_DEPENDENCIES_RULE,
   AUTO_KICKOFF_HEADER,
+  composeAnswerKickoff,
   composeDelegationKickoff,
   type DelegationKickoffParams,
 } from './kickoff';
@@ -21,11 +22,57 @@ const base = (overrides: Partial<DelegationKickoffParams> = {}): DelegationKicko
   ...overrides,
 });
 
+describe('the kickoff of an answered question', () => {
+  const answered = {
+    childAgentId: 'agent-implementer-1',
+    question: 'Which format?',
+    answer: 'Json.',
+  };
+
+  it('holds only the question and the answer when the session is kept', () => {
+    const text = composeAnswerKickoff(answered);
+    expect(text).toContain('**Your question** Which format?');
+    expect(text).toContain('**Answer** Json.');
+    expect(text).not.toContain('Your session was not kept');
+  });
+
+  it('puts the first brief and where the child stopped before the question when it is not kept', () => {
+    const text = composeAnswerKickoff({
+      ...answered,
+      memory: { brief: '**Task** add the export', tail: 'Wrote the header.' },
+    });
+    expect(text.indexOf('**Task** add the export')).toBeLessThan(text.indexOf('**Your question**'));
+    expect(text).toContain('**Where you stopped** Wrote the header.');
+  });
+
+  it('leaves out where the child stopped when nothing was kept', () => {
+    const text = composeAnswerKickoff({ ...answered, memory: { brief: '**Task** x', tail: null } });
+    expect(text).not.toContain('**Where you stopped**');
+  });
+});
+
 describe('the kickoff of a delegated child', () => {
   it('starts with the header that says who started the child and where a question goes', () => {
     const text = composeDelegationKickoff(base());
     expect(text.startsWith(AUTO_KICKOFF_HEADER)).toBe(true);
     expect(AUTO_KICKOFF_HEADER).toContain('A question you ask goes to Auto first.');
+  });
+
+  it('puts the decisions of the brief before the task and writes nothing without them', () => {
+    const decisions = '**Decisions** Written in full.\n- D27 Round once per batch.';
+    const text = composeDelegationKickoff(base({ decisions }));
+    expect(text.indexOf(decisions)).toBeGreaterThan(0);
+    expect(text.indexOf(decisions)).toBeLessThan(text.indexOf('**Task**'));
+    expect(composeDelegationKickoff(base())).not.toContain('**Decisions**');
+  });
+
+  it('lets a writer put a long report in a report artifact and keeps the scout expectation', () => {
+    for (const role of ['implementer', 'tester', 'docs', 'ci-fixer'] as const) {
+      expect(composeDelegationKickoff(base({ role }))).toContain('<<artifact v=1 kind=report>>');
+    }
+    expect(composeDelegationKickoff(base({ role: 'scout', mountLabel: null }))).toContain(
+      '**Expected output** A report artifact',
+    );
   });
 
   it('forbids a child to split its work or start agents of its own', () => {
@@ -73,6 +120,12 @@ describe('the kickoff of a delegated child', () => {
     const given = composeDelegationKickoff(base({ doneWhen: 'the build passes' }));
     expect(given).toContain('**Done when** the build passes');
     expect(given).not.toContain(AUTO_DEFAULT_DONE_WHEN.implementer);
+  });
+
+  it('tells an implementer that nothing is pushed', () => {
+    const text = composeDelegationKickoff(base({ role: 'implementer' }));
+    expect(text).toContain('Nothing is pushed.');
+    expect(AUTO_DEFAULT_DONE_WHEN.implementer.endsWith('Nothing is pushed.')).toBe(true);
   });
 
   it('forbids handing work on, fan-out and subagents', () => {

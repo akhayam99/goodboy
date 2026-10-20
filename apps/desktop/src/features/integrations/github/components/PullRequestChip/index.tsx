@@ -25,7 +25,7 @@ export const PullRequestChip = ({
 }: Props) => {
   const meta = PULL_REQUEST_PRESENTATION[state];
   const Icon = meta.icon;
-  const description = title ?? meta.label + (number !== undefined ? ` · #${number}` : '');
+  const description = title ?? meta.label + (number !== undefined ? ` #${number}` : '');
 
   if (variant === 'icon') {
     return (

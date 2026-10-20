@@ -181,7 +181,11 @@ vi.mock('../features/changelog/components/ChangelogStudio', () => ({
 vi.mock('../features/integrations/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({
   worktreeDiffCommit: vi.fn(),
+  worktreeCommitRange: vi.fn(),
+  worktreeDiffRange: vi.fn(),
+  worktreeRemoteHead: vi.fn(),
   worktreeSnapshot: vi.fn(),
+  worktreeStatus: vi.fn(),
 }));
 vi.mock('../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../features/companion/commandExecutor', () => ({

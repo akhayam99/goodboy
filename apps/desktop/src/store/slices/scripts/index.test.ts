@@ -26,6 +26,9 @@ import type {
   ProjectScript,
   ProjectScriptId,
 } from '@goodboy/types';
+import { autoChecksKey } from '../../../features/scripts/autoChecksKey';
+import { parseScriptPins } from '../../../features/scripts/parseScriptPins';
+import { makeGate } from '../auto/testing/makeGate';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../storyHarness')).tauriCoreModuleMock(),
@@ -601,6 +604,54 @@ describe('store contract', () => {
       expect(store.getState().scriptRuns[SESSION_ID]?.[scriptId]?.result?.stdout).toBe(
         'compiled 120 modules\n',
       );
+    });
+  });
+
+  describe('auto checks', () => {
+    const KEY = autoChecksKey({ projectId: PROJECT_ID });
+
+    const tickedOf = (): ReadonlyArray<string> =>
+      parseScriptPins({ raw: useAppStore.getState().settings[KEY] });
+
+    it('keeps both of two quick toggles while the first save is still writing', async () => {
+      const gate = makeGate();
+      storySpies.setSetting.mockImplementationOnce(async () => {
+        await gate.promise;
+        return undefined;
+      });
+      const { toggleAutoCheck } = useAppStore.getState();
+
+      const first = toggleAutoCheck({ projectId: PROJECT_ID, pinId: 'typecheck' });
+      const second = toggleAutoCheck({ projectId: PROJECT_ID, pinId: 'lint' });
+      gate.open();
+      await Promise.all([first, second]);
+
+      expect(tickedOf()).toEqual(['typecheck', 'lint']);
+      expect(storySpies.setSetting).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps the old selection when a save fails and lets the next toggle retry', async () => {
+      storySpies.setSetting.mockRejectedValueOnce(new Error('database is locked'));
+      const { toggleAutoCheck } = useAppStore.getState();
+
+      const failed = toggleAutoCheck({ projectId: PROJECT_ID, pinId: 'typecheck' });
+      const next = toggleAutoCheck({ projectId: PROJECT_ID, pinId: 'lint' });
+
+      await expect(failed).rejects.toThrow('database is locked');
+      await next;
+      expect(tickedOf()).toEqual(['lint']);
+
+      await toggleAutoCheck({ projectId: PROJECT_ID, pinId: 'typecheck' });
+      expect(tickedOf()).toEqual(['lint', 'typecheck']);
+    });
+
+    it('unticks a ticked script', async () => {
+      const { toggleAutoCheck } = useAppStore.getState();
+
+      await toggleAutoCheck({ projectId: PROJECT_ID, pinId: 'typecheck' });
+      await toggleAutoCheck({ projectId: PROJECT_ID, pinId: 'typecheck' });
+
+      expect(tickedOf()).toEqual([]);
     });
   });
 });

@@ -51,7 +51,7 @@ const LEVELS = [
   },
   {
     name: '5 tooltip',
-    className: 'rounded-md bg-foreground px-2 py-2 text-background shadow-md',
+    className: 'rounded-md border border-border-soft bg-floating px-2 py-2 shadow-lg',
   },
 ] as const;
 

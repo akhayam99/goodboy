@@ -1,7 +1,8 @@
+import type { Fact } from '@goodboy/ui';
 import type { BaseDivergence, Project } from '@goodboy/types';
 
 type Entry = {
-  readonly project: Project;
+  readonly project: Pick<Project, 'name'>;
   readonly report: BaseDivergence | undefined;
 };
 
@@ -13,7 +14,8 @@ export type RepoEntryFacts = {
   readonly label: string | null;
   readonly dot: 'info' | 'warning' | null;
   readonly isFailed: boolean;
-  readonly tooltip: string;
+  readonly summary: string;
+  readonly rows: ReadonlyArray<Fact>;
 };
 
 type CountParams = {
@@ -22,20 +24,25 @@ type CountParams = {
 
 const reposWord = ({ count }: CountParams): string => (count === 1 ? '1 repo' : `${count} repos`);
 
-type LineParams = {
-  readonly project: Project;
+type RowParams = {
+  readonly project: Pick<Project, 'name'>;
   readonly report: BaseDivergence;
 };
 
-const lineOf = ({ project, report }: LineParams): string | null => {
+const rowOf = ({ project, report }: RowParams): Fact | null => {
   const base = report.base ?? 'base';
   switch (report.state) {
     case 'behind':
-      return `${project.name}: ${base} ${report.behind} behind`;
+      return { label: project.name, value: `${report.behind} behind`, note: base, tone: 'info' };
     case 'diverged':
-      return `${project.name}: ${base} diverged from ${report.upstream ?? 'origin'}`;
+      return {
+        label: project.name,
+        value: 'Diverged',
+        note: report.upstream ?? 'origin',
+        tone: 'warning',
+      };
     case 'fetch-failed':
-      return `${project.name}: couldn't reach origin`;
+      return { label: project.name, value: "Can't reach origin", tone: 'danger' };
     case 'up-to-date':
     case 'ahead':
     case 'no-upstream':
@@ -67,7 +74,7 @@ export const repoEntryFactsOf = ({ entries }: Params): RepoEntryFacts => {
     parts.push(diverged.length === 1 ? 'Diverged' : `${diverged.length} diverged`);
   }
   const isFailed = parts.length === 0 && failedCount > 0;
-  const lines = reports.flatMap((entry) => lineOf(entry) ?? []);
+  const rows = reports.flatMap((entry) => rowOf(entry) ?? []);
   const isChecked = reports.length > 0;
   const summary = isChecked
     ? `${reposWord({ count: entries.length })}, nothing to pull from origin`
@@ -76,6 +83,7 @@ export const repoEntryFactsOf = ({ entries }: Params): RepoEntryFacts => {
     label: isFailed ? 'Check failed' : parts.length === 0 ? null : parts.join(' · '),
     dot: diverged.length > 0 ? 'warning' : behind.length > 0 ? 'info' : null,
     isFailed,
-    tooltip: lines.length === 0 ? summary : lines.join(' · '),
+    summary,
+    rows,
   };
 };

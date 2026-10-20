@@ -345,7 +345,24 @@ describe('the pinned sessions on the rail', () => {
     expect(document.querySelector<HTMLElement>('[data-rail-more]')?.textContent).toBe('+2');
   });
 
-  it('opens the flyout from the current node and leaves the others to their tooltip', () => {
+  it('opens the session hover card on a rested pin and closes it on leave', () => {
+    const pinned = pinnedSessions(3);
+    mountRail({ pinned, currentSessionId: pinnedId(pinned, 2) });
+    const other = screen.getByRole('button', { name: /Pinned work 1/ });
+
+    fireEvent.mouseEnter(other);
+    wait(300);
+    expect(screen.queryByTestId('session-hover-card')).toBeNull();
+
+    wait(300);
+    expect(screen.getByTestId('session-hover-card').textContent).toContain('Pinned work 1');
+
+    fireEvent.mouseLeave(other);
+    wait(400);
+    expect(screen.queryByTestId('session-hover-card')).toBeNull();
+  });
+
+  it('opens the flyout from the current node and leaves the others to their hover card', () => {
     const pinned = pinnedSessions(5);
     mountRail({ pinned, currentSessionId: pinnedId(pinned, 3) });
     const other = document.querySelector(`[data-rail-session="${pinned[0]?.id}"]`) as HTMLElement;

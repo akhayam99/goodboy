@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -129,6 +129,8 @@ const workOf = ({
       : {
           label: timeLabel,
           detail: '',
+          facts: [],
+          footnote: null,
           progress: null,
           headline: timeLabel,
           note: null,
@@ -162,7 +164,7 @@ const telemetryOf = ({
   recordedAt: '2026-10-04T16:57:00Z' as TelemetryRecord['recordedAt'],
 });
 
-type CardProps = Parameters<typeof RowIdentityCard>[0];
+type CardProps = Omit<Parameters<typeof RowIdentityCard>[0], 'children' | 'isOpen'>;
 
 const renderCard = (props: Partial<CardProps> = {}) =>
   render(
@@ -174,8 +176,11 @@ const renderCard = (props: Partial<CardProps> = {}) =>
       work={workOf()}
       phase="done"
       costUsd={0.62}
+      isOpen
       {...props}
-    />,
+    >
+      <button type="button">glyph</button>
+    </RowIdentityCard>,
   );
 
 beforeEach(async () => {
@@ -205,32 +210,68 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+const shownCard = () => within(screen.getByTestId('fact-card'));
+
+const termsOf = (): ReadonlyArray<HTMLElement> =>
+  Array.from(screen.getByTestId('fact-card').querySelectorAll<HTMLElement>('dt'));
+
 const factOf = ({ label }: { readonly label: string }): string | null =>
-  screen.queryByText(label)?.nextElementSibling?.textContent ?? null;
+  shownCard().queryByText(label)?.nextElementSibling?.textContent ?? null;
+
+const sentenceOf = (): string => {
+  const id = screen.getByRole('button', { name: 'glyph' }).getAttribute('aria-describedby') ?? '';
+  return document.getElementById(id)?.textContent ?? '';
+};
 
 describe('RowIdentityCard', () => {
   it('names the role and the place of a step in its workflow', () => {
     renderCard();
 
-    expect(screen.getByText('Implementer')).toBeDefined();
-    expect(screen.getByText('Step 4 of 6')).toBeDefined();
+    expect(shownCard().getByText('Implementer')).toBeDefined();
+    expect(shownCard().getByText('Step 4 of 6')).toBeDefined();
+  });
+
+  it('is described to a screen reader by one sentence with the same facts', () => {
+    renderCard();
+
+    expect(sentenceOf()).toContain('Implementer Step 4 of 6.');
+    expect(sentenceOf()).toContain('Model, Sonnet 5.5, High.');
+    expect(sentenceOf()).toContain('Cost, $0.62.');
+  });
+
+  it('stays shut until it is asked for', () => {
+    render(
+      <RowIdentityCard
+        entry={entryOf({ agent: STEP_FOUR })}
+        ordinal="4"
+        kindWord="Implementer"
+        models={MODELS}
+        work={workOf()}
+        phase="done"
+        costUsd={0.62}
+      >
+        <button type="button">glyph</button>
+      </RowIdentityCard>,
+    );
+
+    expect(screen.queryByTestId('fact-card')).toBeNull();
   });
 
   it('names a subagent by its step and a launch as a launch', () => {
     const subagent = agentOf({ id: 'agent-4-3' as AgentId, parentAgentId: 'agent-4' as AgentId });
     renderCard({ entry: entryOf({ agent: subagent }), ordinal: '4.3' });
-    expect(screen.getByText('Subagent 4.3 of step 4')).toBeDefined();
+    expect(shownCard().getByText('Subagent 4.3 of step 4')).toBeDefined();
     cleanup();
 
     const launch = agentOf({ id: 'agent-launch' as AgentId });
     renderCard({ entry: entryOf({ agent: launch, stepLabel: null }), ordinal: null });
-    expect(screen.getByText('Launch')).toBeDefined();
+    expect(shownCard().getByText('Launch')).toBeDefined();
   });
 
-  it('prints the model and effort that ran', () => {
+  it('prints the model that ran with its effort beside it', () => {
     renderCard();
 
-    expect(screen.getByText('Sonnet 5.5 · High')).toBeDefined();
+    expect(factOf({ label: 'Model' })).toBe('Sonnet 5.5High');
   });
 
   it('says what was planned only when routing picked something else', () => {
@@ -239,12 +280,14 @@ describe('RowIdentityCard', () => {
         planned: { provider: 'anthropic', model: 'claude-haiku-4-5', effort: 'low' },
       }),
     });
-    expect(screen.getByText(/^Planned Haiku 4\.5.*, routing picked Sonnet 5\.5/)).toBeDefined();
+    expect(
+      shownCard().getByText(/^Planned Haiku 4\.5.*, routing picked Sonnet 5\.5/),
+    ).toBeDefined();
     cleanup();
 
     renderCard();
-    expect(screen.queryByText(/Planned/)).toBeNull();
-    expect(screen.queryByText(/routing picked/)).toBeNull();
+    expect(shownCard().queryByText(/Planned/)).toBeNull();
+    expect(shownCard().queryByText(/routing picked/)).toBeNull();
   });
 
   it('lists when it started and finished, how long it was active and what it cost', () => {
@@ -259,7 +302,13 @@ describe('RowIdentityCard', () => {
   it('adds up tokens in, out and cached for this agent only, leaving summaries out', () => {
     renderCard();
 
-    expect(factOf({ label: 'Tokens' })).toBe('182.0k in · 24.0k out · 140.0k cached');
+    expect(factOf({ label: 'Tokens' })).toBe('182.0k in, 24.0k out140.0k cached');
+  });
+
+  it('never sends more rows than the card takes', () => {
+    renderCard();
+
+    expect(termsOf().length).toBeLessThanOrEqual(6);
   });
 
   it('counts the tokens of every run the agent went through', () => {
@@ -268,7 +317,7 @@ describe('RowIdentityCard', () => {
     });
     renderCard();
 
-    expect(factOf({ label: 'Tokens' })).toBe('187.0k in · 24.5k out · 140.0k cached');
+    expect(factOf({ label: 'Tokens' })).toBe('187.0k in, 24.5k out140.0k cached');
   });
 
   it('prints no finish for a running agent and the elapsed time as active time', () => {

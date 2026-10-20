@@ -43,7 +43,10 @@ export const HistoryRowMarkList = ({
         key="takes-in"
         action={mark.takesInMode}
         label={`${mark.takesInMode === 'fixup' ? 'Folds in' : 'Combines'} ${count} ${count === 1 ? 'commit' : 'commits'}`}
-        detail={mark.takesIn.map((taken) => quoted({ text: titleOf(taken.sha) })).join(', ')}
+        facts={mark.takesIn.map((taken, index) => ({
+          label: `Commit ${index + 1}`,
+          value: titleOf(taken.sha),
+        }))}
         isExpanded={isExpanded}
         onToggle={view === 'planned' ? onToggleExpanded : undefined}
       >
@@ -61,7 +64,7 @@ export const HistoryRowMarkList = ({
             ? `Folds into ${quoted({ text: titleOf(mark.into.target) })} (fixup)`
             : `Combines with ${quoted({ text: titleOf(mark.into.target) })} (squash)`
         }
-        detail={
+        note={
           mark.into.mode === 'fixup'
             ? "Only that commit's title is kept."
             : 'Both messages are kept.'
@@ -77,7 +80,7 @@ export const HistoryRowMarkList = ({
         key="rename"
         action="reword"
         label="Renamed on Apply (reword)"
-        detail={`New name: ${quoted({ text: mark.renamedTo })}`}
+        facts={[{ label: 'New name', value: mark.renamedTo }]}
       >
         <PenLine size={ICON_SIZE.row} aria-hidden />
       </HistoryChangeMark>,

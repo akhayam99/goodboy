@@ -156,6 +156,7 @@ type ExtractedQuestion = {
   readonly recommendedAnswer: string | null;
   readonly selectMode: 'one' | 'many' | null;
   readonly isBlocking: boolean;
+  readonly needs?: string;
 };
 
 export const extractMarkers = (
@@ -292,6 +293,7 @@ function extractQuestions(text: string): ReadonlyArray<ExtractedQuestion> {
       recommendedAnswer: recommended.length > 0 ? recommended : null,
       selectMode,
       isBlocking: attrs.blocking === 'true',
+      ...((attrs.needs ?? '').trim() === '' ? {} : { needs: (attrs.needs ?? '').trim() }),
     });
   }
   for (const needsInput of extractAllCommentNeedsInput(text)) {

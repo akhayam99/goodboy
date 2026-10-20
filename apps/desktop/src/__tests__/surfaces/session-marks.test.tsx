@@ -142,7 +142,12 @@ describe.each(NEEDS_YOU_REASONS)('every surface says %s the same way', (reason) 
     const { session, info } = waitingFor({ reason });
     const { container } = render(
       <ul>
-        <NeedsYouSessionRow session={session} onSelect={noop} />
+        <NeedsYouSessionRow
+          session={session}
+          onSelect={noop}
+          onHoverEnter={noop}
+          onHoverLeave={noop}
+        />
       </ul>,
     );
 

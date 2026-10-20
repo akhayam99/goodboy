@@ -16,7 +16,7 @@ const press = ({ selector }: { readonly selector: string }): void => {
 };
 
 const openEditors = (): void => {
-  press({ selector: 'button[title^="Edit title"]' });
+  press({ selector: 'button[aria-keyshortcuts="E"]' });
   const edit = [
     ...document.querySelectorAll<HTMLElement>('section[aria-label="Description"] button'),
   ].find((button) => button.textContent?.trim() === 'Edit');

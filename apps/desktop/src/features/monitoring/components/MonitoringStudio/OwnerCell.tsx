@@ -1,4 +1,4 @@
-import { Tooltip, cn } from '@goodboy/ui';
+import { Tooltip, TruncatedText, cn } from '@goodboy/ui';
 import type { PortRow } from '@goodboy/core';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
@@ -26,33 +26,28 @@ export const OwnerCell = ({ row }: Props) => {
       : sessionById(state.sessions, presentation.sessionId),
   );
 
-  const text =
-    presentation === null ? null : <span className="truncate">{presentation.label}</span>;
+  const text = presentation === null ? null : <TruncatedText>{presentation.label}</TruncatedText>;
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      {presentation === null || text === null ? null : (
-        <Tooltip content={presentation.label} anchorClassName="min-w-0 max-w-full">
-          {session === undefined ? (
-            <span
-              className={cn(
-                'flex min-w-0 max-w-full',
-                presentation.isGoodboy ? 'text-muted-foreground' : 'text-faint-foreground',
-              )}
-            >
-              {text}
-            </span>
-          ) : (
-            <button
-              type="button"
-              aria-label={`Open session: ${presentation.label}`}
-              className="relative z-10 flex min-w-0 max-w-full text-left text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-              onClick={() => navigate({ to: sessionPlace({ sessionId: session.id }) })}
-            >
-              {text}
-            </button>
+      {presentation === null || text === null ? null : session === undefined ? (
+        <span
+          className={cn(
+            'flex min-w-0 max-w-full',
+            presentation.isGoodboy ? 'text-muted-foreground' : 'text-faint-foreground',
           )}
-        </Tooltip>
+        >
+          {text}
+        </span>
+      ) : (
+        <button
+          type="button"
+          aria-label={`Open session: ${presentation.label}`}
+          className="relative z-10 flex min-w-0 max-w-full text-left text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          onClick={() => navigate({ to: sessionPlace({ sessionId: session.id }) })}
+        >
+          {text}
+        </button>
       )}
       {row.collision === undefined ? null : (
         <Tooltip content={otherWorktrees({ others: row.collision.others })}>

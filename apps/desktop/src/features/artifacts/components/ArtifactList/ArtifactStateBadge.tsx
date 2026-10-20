@@ -1,7 +1,6 @@
-import { cn, tintClasses, Tooltip } from '@goodboy/ui';
+import { FactCard, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { stateDescription } from '../../../../shared/utils/statePresentation';
-import { joinFacts } from '../../../../shared/utils/joinFacts';
+import { artifactStateCardOf } from '../../artifactStateCardOf';
 import type { ArtifactState } from '../../artifactStateOf';
 
 type Props = {
@@ -21,9 +20,7 @@ export const ArtifactStateBadge = ({ state }: Props) => {
       />
     );
   return (
-    <Tooltip
-      content={joinFacts({ facts: [stateDescription({ presentation: state }), state.detail] })}
-    >
+    <FactCard card={artifactStateCardOf({ state })}>
       <span
         data-testid="artifact-row-state"
         data-state={state.key}
@@ -32,6 +29,6 @@ export const ArtifactStateBadge = ({ state }: Props) => {
         {mark}
         <span className="truncate">{state.label}</span>
       </span>
-    </Tooltip>
+    </FactCard>
   );
 };

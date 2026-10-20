@@ -54,10 +54,33 @@ describe('reading how a child closed its work', () => {
     expect(closing.question).toBeNull();
   });
 
-  it('keeps only the tail of a long reply as the summary', () => {
-    const closing = parseChildClosing({ text: `${'a'.repeat(5_000)}END`, childAgentId: ID });
-    expect(closing.summary.length).toBe(2_000);
-    expect(closing.summary.endsWith('END')).toBe(true);
+  it('keeps the head and the last line of a long reply, marked as cut', () => {
+    const body = Array.from(
+      { length: 60 },
+      (_value, index) => `Section ${index} ${'x'.repeat(90)}`,
+    );
+    const text = `${body.join('\n\n')}\nLast line: payments-api is green.\n<<step-done id="${ID}">>`;
+    const closing = parseChildClosing({ text, childAgentId: ID });
+    expect(text.length).toBeGreaterThan(6_000);
+    expect(closing.summary.length).toBeLessThanOrEqual(4_000);
+    expect(closing.summary.startsWith('Section 0 ')).toBe(true);
+    expect(closing.summary).toContain('middle dropped');
+    expect(closing.summary.endsWith('Last line: payments-api is green.')).toBe(true);
+    expect(closing.completion).toBe('done');
+  });
+
+  it('keeps a reply under the budget whole and unmarked', () => {
+    const closing = parseChildClosing({ text: 'Short report.', childAgentId: ID });
+    expect(closing.summary).toBe('Short report.');
+  });
+
+  it('still reads a blocked status and a question from the dropped middle of a long reply', () => {
+    const filler = 'y'.repeat(3_000);
+    const text = `${filler}\n<<ctx-question blocking="true">>Which branch?<</ctx-question>>\n${filler}\n<<step-done id="${ID}" status="blocked">>`;
+    const closing = parseChildClosing({ text, childAgentId: ID });
+    expect(closing.completion).toBe('blocked');
+    expect(closing.question?.text).toBe('Which branch?');
+    expect(closing.summary).toContain('middle dropped');
   });
 
   it('reads a long run of dashes in a closing line in linear time', () => {

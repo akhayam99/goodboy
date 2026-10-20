@@ -115,7 +115,9 @@
   entry (`RepoEntry`): a branch icon alone while nothing needs a pull, a dot
   and "3 behind" or "Diverged" when a base branch moved on origin, a quiet
   "Check failed" when origin cannot be reached. Its facts come from
-  `repoEntryFactsOf` and each row's from `repoRowFactsOf`; the background
+  `repoEntryFactsOf` (one row per repo that needs a look, drawn as a fact card
+  by `repoEntryCardOf`; the summary is the card state when no repo
+  needs a look) and each row's from `repoRowFactsOf`; the background
   check is `useRepoDivergenceCheck` over `checkRepoDivergence`. Neither the column nor a studio
   header shows the workspace name again. A studio subtitle is a one-line
   purpose or the installed version, never the workspace.
@@ -695,7 +697,9 @@ hide animation or overlay can move it.
   itself.** The left column's one reduced state is the 44px rail
   (`ColumnRail`): on the workspace level the toggle, New, Sessions, Tasks, Chat, Workflows and Terminal as icons
   with their names and shortcuts in tooltips, then the open session and the
-  pinned sessions as 28px node buttons (see the rail paragraph below), then
+  pinned sessions as 28px node buttons (see the rail paragraph below; a pin that
+  does not own the flyout opens the facts-only session hover card after a
+  500 ms rest, not a one line label), then
   Settings, the bug and the Goodboy mark at the bottom. It works at rail width
   because it holds doors and a few marks, not the list; the sessions list comes
   back through the peek. The session rail has the same one reduced state: its
@@ -896,8 +900,9 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   `branchRowChipOf`); approved, queued, open, draft and running checks draw no
   chip, the glyph color carries them. The check counts come from the runs read
   for the request on any host, skipped kept apart from passed. The number, the
-  state word and the branch are not on the line: they sit in the row tooltip
-  (`#318 Open, 1 failing` over the branch name) and in the accessible name
+  state word and the branch are not on the line: they sit in the row's fact
+  card (`branchRowCardOf`: the branch as title, `#318` beside it, the state,
+  the chip as **Status** and its cause as the footnote) and in the accessible name
   ("title, #318, Open, branch hl/fix, 1 failing"), and the current branch shows
   its number and branch in its Pull request page. The host is never written as text on a
   row, only its logo. Live rows are ordered by that rank, ties by declaration
@@ -1786,8 +1791,8 @@ covered.
 - Left: workspace identity. It has a 200px limit and truncates, with the full
   name in its tooltip. The sidebar toggle lives in the column, not here.
 - Centre: the movement cluster, then the command center. `Back` and `Forward`
-  (24px icons) name their destination in the tooltip (`Back to Comments ·
-{session}  ⌘[`), sit at 40% with `Nothing to go back to` when the history is
+  (24px icons) name their destination in the tooltip (`Back to Comments`,
+  the session on a second line, `⌘[`), sit at 40% with `Nothing to go back to` when the history is
   empty, and open the last 12 entries on right click or a 400ms hold. Board and
   Chat left the bar for the column. Board, the column's first door, is pressed
   (`aria-current="page"`) on the board and does nothing; over a studio on the
@@ -1829,13 +1834,17 @@ covered.
   lives on the Storage row of the Settings rail. Now opens one popover grouped by those
   two, and a group with no rows is not drawn. Sessions that need you are not in
   the bar: the Sessions door of the column carries their warning dot. A script row moves to its
-  session and opens that run's output in the right drawer. `Limits`: one chip per connected plan provider (Claude, Codex,
+  session and opens that run's output in the right drawer. A running session
+  row opens the session hover card (facts only) after the pointer rests, the
+  same card the sidebar shows. `Limits`: one chip per connected plan provider (Claude, Codex,
   Gemini, Cursor), in the provider order, with providers that report nothing
   last. The order never follows state. At rest a chip is its glyph and one bar of
   the provider's tighter window; the percent shows in tabular gray above 70%, `Out` with the
   reset day at 100%, a clock marks data older than 30 minutes or a window that
-  reset since, and a dashed track means no data. The card tooltip always
-  carries every window, its percentage and its reset. A click on any chip, or
+  reset since, and a dashed track means no data. The chip's fact card
+  (`LimitsTooltip` around `limitsCardOf`) always carries every window as a row
+  with its percentage and its reset, the free Codex resets as a row when Codex
+  is out, and the update age in the footnote. A click on any chip, or
   on a provider under `+N`, opens the Providers menu anchored under the strip
   (`LimitsProvidersMenu` and its `ProvidersMenuPanel`): the policy list, Connect for each CLI provider that is missing, and
   Manage providers. Usage stays in the chip tooltip and in Settings >

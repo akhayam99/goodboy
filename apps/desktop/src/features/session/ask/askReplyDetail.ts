@@ -1,17 +1,13 @@
-import type { ChatMessage } from '@goodboy/types';
+import type { Fact } from '@goodboy/ui';
 import { pluralize } from '../../../shared/utils/pluralize';
-import { joinFacts } from '../../../shared/utils/joinFacts';
 import { formatAskCost } from './askRightNow';
 
 type Params = {
-  readonly message: ChatMessage;
+  readonly readCount: number;
   readonly costUsd: number | null;
 };
 
-export const askReplyDetail = ({ message, costUsd }: Params): string =>
-  joinFacts({
-    facts: [
-      costUsd === null ? null : formatAskCost(costUsd),
-      message.reads.length === 0 ? null : `read ${pluralize(message.reads.length, 'file')}`,
-    ],
-  });
+export const askReplyDetail = ({ readCount, costUsd }: Params): ReadonlyArray<Fact> => [
+  ...(costUsd === null ? [] : [{ label: 'Cost', value: formatAskCost(costUsd) }]),
+  ...(readCount === 0 ? [] : [{ label: 'Read', value: pluralize(readCount, 'file') }]),
+];

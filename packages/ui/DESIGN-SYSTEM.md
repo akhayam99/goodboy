@@ -45,7 +45,7 @@ between them instead of mixing one surface through opacity.
 | 3    | inset    | `bg-muted`      | opaque rails, highlighted code rows                   |
 | 4    | raised   | `bg-elevated`   | cards: board cards, `RailCard`                        |
 | 5    | floating | `bg-floating`   | popovers, menus, centred dialogs, toasts, the palette |
-| 6    | tooltip  | `bg-foreground` | the inverted chip, above everything                   |
+| 6    | tooltip  | `bg-floating`   | the label tooltip, one line on the floating surface   |
 
 Dark mode brightens one step at a time, 1.06 to 1.09:1 between neighbours.
 Light mode is ink on paper, read on two axes. On the elevation axis (what sits
@@ -435,7 +435,21 @@ together, and there is no arbitrary shadow.
 | 2 band     | `fill` (band), `subtle` (panel) | none        | none                          | `lg`                       | groups, panels on the sheet      |
 | 3 card     | `elevated`                      | `shadow-sm` | `border-soft`, hover `border` | `lg`                       | board cards, `RailCard`          |
 | 4 floating | `floating`                      | `shadow-lg` | `border`                      | `lg`                       | popovers, menus, toasts, dialogs |
-| 5 tooltip  | `foreground`                    | `shadow-md` | none                          | `md`                       | tooltips                         |
+| 5 tooltip  | `floating`                      | `shadow-lg` | `border-soft`                 | `md`                       | label tooltips                   |
+
+The label tooltip is `FLOATING_SURFACE` with the `md` radius and a soft border: foreground text in `text-label` medium, `px-2 py-1`, at most 280px wide, fading in over 120ms when motion is allowed. Its shortcut is a plain `Kbd` in the faint color. The shared `Tooltip` gives its node an `id` and sets `aria-describedby` on the trigger while it is open, unless its text equals the trigger's `aria-label`, so a screen reader never hears a name twice. The `card` variant keeps `bg-elevated` until the fact card replaces it.
+
+**Fact card.** `FactCard` (`packages/ui/src/components/FactCard`) is the hover card for a mark that has two facts or more, built from the session hover card: `FLOATING_SURFACE`, `p-3`, `gap-3` between parts, 320px wide, `z-tooltip`, with `pointer-events-none` so it never covers the next row. It takes data, never JSX: a `FactCardSpec` of an optional decorative glyph, a title with an optional sub, an optional state (a tone dot, the words, a pulse only for running work), one to six facts (label in muted, value in foreground with tabular numbers, an optional faint note, an optional tone) and an optional faint footnote. The label column is `fit-content(40%)`: a short label takes its width, a long one (a session title) cuts at 40% of the card so the value stays in view. More than six facts throws in development and names the card; a production build shows the first six. One sentence is a `Tooltip`, text that is already visible needs nothing or `TruncatedText`. A fact card holds no buttons: the click on the trigger acts and the footnote says what it does. It opens after 500ms of rest, closes after 180ms of grace, opens at once within 300ms of another card closing (`useRestHover`, shared with the session hover card), and opens at once on keyboard focus (the rested-focus prop makes a list with arrow keys wait the rest instead). Escape closes it and still reaches the layer beneath. A touch never opens it, so the tap does what the trigger does; the tap-open prop is for a trigger whose only job is the card, and a tap outside closes it. the suppressed prop keeps it shut under an open menu. The card is `aria-hidden`: `factCardSentence` writes one sentence from the data into a node that is always mounted, and the trigger points at it with `aria-describedby`, so a screen reader hears the card once, even before it opens. The trigger must be a native element or a component that forwards `ref`, the pointer, focus and click handlers and `aria-describedby`.
+
+**Top bar and spend cards.** The limits chip, the provider usage pill (spent, used, resets), the repositories entry (one row per repo that needs a look, five and "and N more" past six), the review throughput bar (one row per segment, the card sits on the whole bar) and each bar of the turn histogram (agents and share, the median in the footnote) wrap their trigger in a `FactCard` and send data only. A row in the Now popover opens the real session hover card in its facts-only form instead of a one line tooltip. `fitCardRows` (`shared/utils`) is the one place that keeps a card at six rows.
+
+**Git and review cards.** A check row opens a card with its name, the result as the state and the time it took, and a footnote that says where the click leads (the log, the checks page or the Debugger); it never shows the address. A history mark that takes in, folds into or renames a commit opens a card with a row per taken commit, or the new name, and the plain reason in the footnote; a mark with no extra fact stays a one line label. The plan line's conflict mark opens a row per conflicting file when there are two or more, and no tooltip for one file because the line already names it. A diff file header shows the file name as the title with its status, folder and rename source as rows, and an artifact state badge shows its label, the detail as the state and the reason in the footnote. A footnote wraps onto a second line instead of cutting. Each builds its `FactCardSpec` in a pure function next to the component (`checkCardOf`, `historyMarkCardOf`, `conflictCardOf`, `fileCardOf`, `artifactStateCardOf`).
+
+**Rail, chat and session cards.** An Auto rail row opens a card with its name, the state, the task and the route (`railRowCardOf`). The routing label and the routing model block open a Routing card with Provider, Model, Effort and, when the run left the plan, the plan sentence in the footnote; `routingLabelModel` returns that `card` and no joined `tooltip` string. A pinned session in the icon rail opens the real session hover card after a 500 ms rest, in its facts-only form. A chat's session mark lists one row per linked session with its stage (`chatSessionCardOf`). The Ask answer footer opens a card with Cost and Read (`askReplyDetail` returns rows, and no card when it has none). A running service's CPU and memory are two rows (`serviceUsageCardOf`). The work time cell gets Running, Active, Usually or Most finish within, a Cost row and the basis in the footnote, with "Longer than usual" as the state; `WorkTime` now carries `facts` and `footnote` beside the `detail` sentence other chips still read. The timeline clock opens Started and Finished rows (`clockSpanCardOf`) and keeps the one line "At 09:00" label for rows that are neither an agent nor a run.
+
+**Tooltip kinds guard.** `tooltip-kinds` counts, per file, a `Tooltip` or `OptionalTooltip` whose `content` is JSX (inline or a variable declared in the file), a `content` that joins facts (`·`, `joinFacts(`, `.join(`), a `content` that greys its text (`text-faint-foreground`, `text-muted-foreground`), and `variant="card"`. It is a plain ban now: the baseline file is gone and any count fails the test, with the kind to use in the message. A `Tooltip` has no `variant`, so a hand built card has no primitive to hide in. Two facts on one label go on two lines (`\n`, the label keeps line breaks) or into a `FactCard`. `floating-surface-is-one-constant` covers the label `Tooltip` and `FactCard` too: both paint `FLOATING_SURFACE` and neither sets a `bg-floating` fill (the `FactCard` parts set no fill or shadow at all).
+
+**Text that is already visible.** A tooltip never repeats what the screen shows. A branch name, a title or a row label that fits has no tooltip; one that can be cut goes through `TruncatedText`, which opens the full text only when the element is cut. A control that falls back to its own visible text (`MessageAction`, `RecordActions`) shows a tooltip only when it has something else to say, such as a blocked reason, through `OptionalTooltip`. A native `title` attribute is never used: the `native-title` baseline is empty and the guard is a ban, so a reason on a disabled control or a status line goes through `Tooltip`. `TermHint` is gone: a word that stays on screen gets a `tooltip` on its option, and a definition with facts is a `FactCard` with one row. Where the state word sits inside a row that already has its own tooltip (the timeline state line), only the inner mark keeps it.
 
 A right drawer is its own container, never a card inside the sheet: it takes `drawer` (see Surfaces), `frame-edge` and `rounded-frame` like the sheet it stands beside. Over the page it is flush with the window edge (no inset), takes `rounded-l-frame` and a left border only, and adds `shadow-xl`. Outside the tooltip, `shadow-md` belongs
 only to a dragged card.
@@ -1077,6 +1091,9 @@ the current branch reads in `foreground`. Every row and button takes its hover
 wash and focus ring from `ROW_INTERACTIVE`, never a copy.
 
 The hover card is `bg-floating`, `border`, `shadow-lg`, 320px wide and `p-3`,
+and its title row, state rows and facts line are the `FactCard` parts
+(`FactCardHeader`, `FactCardState`, `FactCardFootnote`), so it and every fact
+card share one anatomy and cannot drift; only its chips and actions are its own,
 at `z-popover`, 8px to the right of the column and aligned to its row, with a
 `gap-3` between its blocks: the title in `text-heading`, the node with the stage
 word and its reason in `text-meta` (under needs you, the winning reason's
@@ -1179,15 +1196,18 @@ Start, Resume, Retry. A label never passes nine characters and the row title
 names the object ("Start", never "Start implementer"). A row has no menu slot.
 
 The role glyph before the title and the model cell are the only two hover
-targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`),
-on the `Tooltip` `card` variant with `restDelayMs` set to 800: the pointer has to
-rest, every move restarts the wait, the card closes as it leaves and a card
-never opens because another one just closed. The run tree opens the same cards
-with the same delay: its glyph and meta sit above the row's click layer
-(`WORK_ROW.pointerLayer`) and a click on them still opens the step. Keyboard
-focus on a row opens the identity card after the same 800ms (a click never
-does), blur and Escape close it, and `i` on a focused row toggles it at once
-(`useRowCard`). Nothing is only in a card: the Brief has the same facts and the
+targets that open a card (`RowIdentityCard`, `RowModelsCard`, `RunIdentityCard`).
+Each one wraps its trigger in a `FactCard` and sends data only (header, facts,
+a footnote, six rows at most: a model list or a run with many steps keeps five
+and a footnote says how many more), so the cards sit on the floating surface
+with the session hover card's timing: the pointer rests 500ms, the card closes
+180ms after it leaves, and a card opens at once when another closed less than
+300ms ago. The run tree opens the same cards: its glyph and meta sit above the
+row's click layer (`WORK_ROW.pointerLayer`) and a click on them still opens the
+step. A trigger passes through `TimelineRowIdentity.wrapCard`, so the glyph and
+the model cell never import a card. Keyboard focus on a row opens the identity
+card after the same 500ms (a click never does), blur and Escape close it, and
+`i` on a focused row toggles it at once (`useRowCard`). Nothing is only in a card: the Brief has the same facts and the
 accessible name of a feed row reads "Implementer", then "Sonnet 5.5, High".
 
 The narrow rules are container queries, never window breakpoints, because
@@ -1959,18 +1979,6 @@ A metadata line is not a section and does not get a band.
 
 Artifacts exempted by `DESIGN.md`, including the text of an open question, never use `ClampedProse`.
 
-## Term hints
-
-`TermHint` explains a word that stays on screen but still needs a sentence. The
-word keeps its surrounding type and gets a dotted underline. A click or
-keyboard focus opens an `AnchoredPopover` with the term, one sentence and an
-optional action; hover never opens it and it never opens on its own. Escape,
-an outside click or moving focus away closes it. The anchor is a block `div`,
-so the sentence around a hint is a `div` or a `span`, never a `p`. A hint
-never sits inside another button or tab: put it in the line under the control.
-The desktop app has no wrapper for it now: a word that stays gets a
-`tooltip` on its `SegmentedTabs` option, six words at most.
-
 ## Card action grammar and creation grammar
 
 **One card action grammar.** Two fixed slots. Navigation sits top right and is
@@ -2032,7 +2040,7 @@ literal that is not an id. A key with no registered keys prints the label alone.
 
 **No native `title` on a DOM node.** `native-title` counts `title=` on a lowercase
 element in `apps/desktop/src` and `packages/ui/src` (an `<iframe title>` is its
-accessible name and is not counted), and its baseline only falls. A control or
+accessible name and is not counted), and its baseline is empty, so a new one fails the guard. A control or
 a label with a different meaning goes behind `Tooltip`. Text that a `truncate`
 cuts goes behind `TruncatedText`: it renders the element (`as` takes `span`, `div`,
 `p`, `h3`, `code`, `li`, `dd` or `td`; a page `h1` stays an `h1` inside `Tooltip`), measures it when the pointer
@@ -2059,9 +2067,9 @@ tooltip still opens. If a trigger needs its anchor shaped (because it is out of
 flow or stretches), pass `anchorClassName`. Do not hand-roll a wrapper, because
 a wrapper between `Tooltip` and the control hides the `disabled` the primitive
 checks. Keyboard focus still cannot reach the control while it is `disabled`.
-A tooltip that has to show a small table (the top bar Limits chips) passes
-`variant="card"`: a 260px elevated card that wraps, instead of the one-line
-label.
+`Tooltip` has one look, the label on `FLOATING_SURFACE`, and no `variant`. A
+tooltip that has to show several facts (the top bar Limits chips) is a
+`FactCard`, not a `Tooltip`.
 A card that must not open while the pointer only passes over a dense list
 passes `restDelayMs` (the Activity feed uses 800): the pointer has to rest, each
 move restarts the wait, focus does not open it, and every other tooltip keeps

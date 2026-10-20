@@ -5,6 +5,7 @@ import {
   AUTO_UNCONFINED_PROVIDERS,
   isAutoChildProvider,
   isAutoOwnProvider,
+  isAutoProviderResuming,
 } from './providers';
 
 describe('auto providers', () => {
@@ -35,5 +36,10 @@ describe('auto providers', () => {
     expect(isAutoChildProvider({ provider: 'codex' })).toBe(true);
     expect(isAutoChildProvider({ provider: 'cursor' })).toBe(false);
     expect(isAutoChildProvider({ provider: 'opencode' })).toBe(false);
+  });
+
+  it('names Claude as the only child provider that resumes a session', () => {
+    expect(isAutoProviderResuming({ provider: 'anthropic' })).toBe(true);
+    expect(isAutoProviderResuming({ provider: 'codex' })).toBe(false);
   });
 });

@@ -207,4 +207,43 @@ describe('a delegation turn through the real store', () => {
       deliveryId: 'attempt-1',
     });
   });
+
+  it('marks the spawn of an Auto child so the bridge can refuse its pushes', async () => {
+    await useAppStore.getState().sendTurn({
+      sessionId: first.sessionId,
+      agentId: first.agentId,
+      content: 'Kickoff from Auto',
+      origin: 'delegation',
+      confinedRole: 'implementer',
+      deliveryId: 'attempt-2',
+    });
+
+    expect(storySpies.runTurn.mock.calls[0]?.[0]).toMatchObject({ isAutoChild: true });
+  });
+
+  it('leaves the root, a hand-started turn and a plain turn unmarked', async () => {
+    await useAppStore.getState().sendTurn({
+      sessionId: first.sessionId,
+      agentId: first.agentId,
+      content: 'Root turn',
+      origin: 'delegation',
+      confinedRole: 'auto',
+      deliveryId: 'attempt-3',
+    });
+    await useAppStore.getState().sendTurn({
+      sessionId: first.sessionId,
+      agentId: first.agentId,
+      content: 'A plain message',
+    });
+    await useAppStore.getState().sendTurn({
+      sessionId: first.sessionId,
+      agentId: first.agentId,
+      content: 'A confined answer without Auto',
+      confinedRole: 'scout',
+    });
+
+    for (const call of storySpies.runTurn.mock.calls) {
+      expect(call[0]).not.toHaveProperty('isAutoChild');
+    }
+  });
 });

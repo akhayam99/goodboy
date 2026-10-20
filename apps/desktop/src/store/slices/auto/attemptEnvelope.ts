@@ -4,12 +4,15 @@ import {
   buildDelegationResult,
   parseAutoDelegationRole,
   type AutoDelegationRole,
+  type ChecksVerdict,
   type ChildClosing,
   type DelegationResultV1,
   type ProcessExit,
+  type ResultPublish,
   type ResultArtifact,
   type ResultChangedFile,
   type ResultQuestion,
+  type ResultRemote,
 } from '@goodboy/core';
 import type { AutoAttempt, AutoDelegation } from '@goodboy/db';
 
@@ -21,6 +24,9 @@ export type AttemptEnvelopeParams = Readonly<{
   isTimedOut?: boolean;
   closing: ChildClosing | null;
   changedFiles?: ReadonlyArray<ResultChangedFile>;
+  remote?: ResultRemote | null;
+  verification?: ChecksVerdict | null;
+  publish?: ResultPublish | null;
   artifacts?: ReadonlyArray<ResultArtifact>;
   artifactPersistence?: DelegationResultV1['artifactPersistence'];
   openQuestions?: ReadonlyArray<ResultQuestion>;
@@ -58,6 +64,9 @@ export const attemptEnvelope = ({
   isTimedOut = false,
   closing,
   changedFiles = [],
+  remote = null,
+  verification = null,
+  publish = null,
   artifacts = [],
   artifactPersistence,
   openQuestions = [],
@@ -89,7 +98,10 @@ export const attemptEnvelope = ({
     summary,
     summarySource: summary === null ? 'child' : 'summarizer',
     changedFiles,
-    checks: [],
+    checks: verification?.checks ?? [],
+    checksRun: verification?.run ?? null,
+    publish,
+    remote,
     artifacts,
     artifactPersistence: artifactPersistence ?? (isExpected ? 'failed' : 'not_applicable'),
     isArtifactExpected: isExpected,

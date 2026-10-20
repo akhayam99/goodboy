@@ -101,6 +101,20 @@ describe('c07 Auto scenes', () => {
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('c07-auto-substep draws the Scout one level under the Implementer that waits for it', async () => {
+    mount({ id: 'c07-auto-substep' });
+
+    const tree = await autoTree();
+    const levels = within(tree)
+      .getAllByRole('treeitem')
+      .map((row) => row.getAttribute('aria-level'));
+    expect(levels).toEqual(['1', '2', '2', '3', '2']);
+    const implementer = await treeRow(/^Implementer, /);
+    expect(implementer.getAttribute('aria-expanded')).toBe('true');
+    const scout = await treeRow(/^Scout, /);
+    expect(scout.getAttribute('aria-level')).toBe('3');
+  });
+
   it('c07-auto-working nests the children under Auto and names each row by role, title and state', async () => {
     mount({ id: 'c07-auto-working' });
 
@@ -112,10 +126,10 @@ describe('c07 Auto scenes', () => {
     expect(within(implementer).queryByText('Sonnet 5.5')).toBeNull();
     expect(await treeRow(/^Tester, Queued$/)).toBeDefined();
 
-    fireEvent.mouseEnter(implementer);
-    expect((await screen.findByRole('tooltip', undefined, WAIT)).textContent).toContain(
-      'Implementer, Running',
-    );
+    fireEvent.pointerEnter(implementer, { pointerType: 'mouse' });
+    const card = (await screen.findByTestId('fact-card', undefined, WAIT)).textContent;
+    expect(card).toContain('Implementer');
+    expect(card).toContain('Running');
   });
 
   it('c07-auto-working walks the tree with the arrow keys and opens a child with Enter', async () => {
@@ -231,6 +245,15 @@ describe('c07 Auto scenes', () => {
       screen.getAllByText('Three tests added in payments-api, all pass.').length,
     ).toBeGreaterThan(0);
     expect(screen.getByText('keeps the balance after two attempts')).toBeDefined();
+    expect(screen.getByText('Not checked: timed out')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Run checks again' })).toBeDefined();
+  });
+
+  it('c07-auto-child-push says the push did not go out and offers one more try', async () => {
+    mount({ id: 'c07-auto-child-push' });
+
+    expect(await screen.findByText('Not pushed: connection reset', undefined, WAIT)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Try the push again' })).toBeDefined();
   });
 
   it('c07-auto-project asks where the Implementer works and names the primary by the choice', async () => {

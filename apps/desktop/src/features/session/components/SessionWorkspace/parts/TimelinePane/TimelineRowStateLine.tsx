@@ -1,4 +1,4 @@
-import { WORK_ROW, cn, Tooltip } from '@goodboy/ui';
+import { WORK_ROW, cn } from '@goodboy/ui';
 import type { RowState } from '../../../../../workTreeModel/rowState';
 import { statePresentationOf } from '../../../../../workTreeModel/statePresentation';
 import { TimelineRowStateWord } from './TimelineRowStateWord';
@@ -13,13 +13,11 @@ export const TimelineRowStateLine = ({ state }: Props) => {
     return null;
   }
   return (
-    <Tooltip content={shown.word}>
-      <span
-        data-testid="timeline-row-state"
-        className={cn(WORK_ROW.stateSlot, 'text-meta text-muted-foreground')}
-      >
-        <TimelineRowStateWord shown={shown} />
-      </span>
-    </Tooltip>
+    <span
+      data-testid="timeline-row-state"
+      className={cn(WORK_ROW.stateSlot, 'text-meta text-muted-foreground')}
+    >
+      <TimelineRowStateWord shown={shown} />
+    </span>
   );
 };

@@ -10,9 +10,17 @@ import { LARGE_REQUEST_MIN_PROMPT_TOKENS, requestPromptTokens } from '../priceLe
 import { parseJsonAllowingControlChars } from './parseJsonAllowingControlChars';
 import { createPermissionRequestEvent } from '../../permissions/events';
 import { blockBoundaryPrefix, resetTextBoundary } from './text-boundary';
+import {
+  closeStreamedBlock,
+  resetStreamedText,
+  streamedTextEvents,
+  takeStreamedBlock,
+  type StreamedTextState,
+} from './streamedText';
 
 export type ParseContext = {
   readonly runId: ProviderRunId;
+  streamedText?: StreamedTextState;
   readonly now: () => IsoDateTime;
   readonly onUnknown?: (type: string, payload: unknown) => void;
   readonly onProviderLimits?: (limits: ProviderLimits) => void;
@@ -25,7 +33,53 @@ export type AnthropicEnvelopeParserOptions = {
   readonly logTag: string;
 };
 
-const KNOWN_PAYLOAD_TYPES: ReadonlySet<string> = new Set(['system', 'assistant', 'user', 'result']);
+const KNOWN_PAYLOAD_TYPES: ReadonlySet<string> = new Set([
+  'system',
+  'assistant',
+  'user',
+  'result',
+  'stream_event',
+]);
+
+type StreamEvent = {
+  readonly type?: unknown;
+  readonly delta?: { readonly type?: unknown; readonly text?: unknown };
+};
+
+const isStreamEvent = (value: unknown): value is StreamEvent =>
+  typeof value === 'object' && value !== null;
+
+type StreamEventParams = {
+  readonly payload: Record<string, unknown>;
+  readonly ctx: ParseContext;
+  readonly at: IsoDateTime;
+};
+
+const streamEventEvents = ({ payload, ctx, at }: StreamEventParams): ReadonlyArray<TurnEvent> => {
+  if (payload.parent_tool_use_id != null) {
+    return [];
+  }
+  const event = payload.event;
+  if (!isStreamEvent(event)) {
+    return [];
+  }
+  if (event.type === 'message_start') {
+    resetStreamedText({ ctx });
+    return [];
+  }
+  if (event.type === 'content_block_start' || event.type === 'content_block_stop') {
+    closeStreamedBlock({ ctx });
+    return [];
+  }
+  const delta = event.delta;
+  if (event.type !== 'content_block_delta' || delta?.type !== 'text_delta') {
+    return [];
+  }
+  if (typeof delta.text !== 'string') {
+    return [];
+  }
+  return streamedTextEvents({ ctx, text: delta.text, at });
+};
 
 type AssistantMessage = {
   readonly id?: string;
@@ -213,7 +267,14 @@ export const parseAnthropicEnvelopeValue = ({
 
   const at = ctx.now();
 
+  if (payload.type !== 'assistant' && payload.type !== 'stream_event') {
+    closeStreamedBlock({ ctx });
+  }
+
   switch (payload.type) {
+    case 'stream_event':
+      return streamEventEvents({ payload, ctx, at });
+
     case 'assistant': {
       const message = payload.message as AssistantMessage | undefined;
       const contextTokens = contextTokensFromUsage({ usage: message?.usage });
@@ -221,7 +282,12 @@ export const parseAnthropicEnvelopeValue = ({
         ctx.lastAssistantContextTokens = contextTokens;
       }
       recordLargeRequest({ ctx, messageId: message?.id, usage: message?.usage });
-      return parseAssistant(message, ctx, at);
+      return parseAssistant({
+        message,
+        ctx,
+        at,
+        isDelta: typeof payload.timestamp_ms === 'number',
+      });
     }
 
     case 'user':
@@ -276,6 +342,7 @@ export const parseAnthropicEnvelopeValue = ({
         events.push({ kind: 'done', runId: ctx.runId, at });
       }
       resetTextBoundary({ runId: ctx.runId });
+      resetStreamedText({ ctx });
       return events;
     }
 
@@ -314,23 +381,43 @@ export const parseAnthropicEnvelopeValue = ({
   }
 };
 
-function parseAssistant(
-  message: AssistantMessage | undefined,
-  ctx: ParseContext,
-  at: IsoDateTime,
-): ReadonlyArray<TurnEvent> {
+type AssistantTextParams = {
+  readonly text: string;
+  readonly ctx: ParseContext;
+  readonly at: IsoDateTime;
+  readonly isDelta: boolean;
+};
+
+const assistantTextEvents = ({
+  text,
+  ctx,
+  at,
+  isDelta,
+}: AssistantTextParams): ReadonlyArray<TurnEvent> => {
+  if (isDelta) {
+    return streamedTextEvents({ ctx, text, at });
+  }
+  if (takeStreamedBlock({ ctx, text })) {
+    return [];
+  }
+  const prefix = blockBoundaryPrefix({ runId: ctx.runId, text });
+  return [{ kind: 'assistant_text', runId: ctx.runId, delta: `${prefix}${text}`, at }];
+};
+
+type AssistantParams = {
+  readonly message: AssistantMessage | undefined;
+  readonly ctx: ParseContext;
+  readonly at: IsoDateTime;
+  readonly isDelta: boolean;
+};
+
+function parseAssistant({ message, ctx, at, isDelta }: AssistantParams): ReadonlyArray<TurnEvent> {
   const blocks = message?.content ?? [];
   const events: TurnEvent[] = [];
 
   for (const block of blocks) {
     if (block.type === 'text' && block.text.length > 0) {
-      const prefix = blockBoundaryPrefix({ runId: ctx.runId, text: block.text });
-      events.push({
-        kind: 'assistant_text',
-        runId: ctx.runId,
-        delta: `${prefix}${block.text}`,
-        at,
-      });
+      events.push(...assistantTextEvents({ text: block.text, ctx, at, isDelta }));
     } else if (block.type === 'tool_use') {
       events.push({
         kind: 'tool_call_start',

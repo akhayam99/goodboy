@@ -1,10 +1,11 @@
-import { AUTO_BATCH_MAX_CHILDREN, AUTO_TREE_LIMITS } from './limits';
+import { AUTO_BATCH_MAX_CHILDREN, AUTO_SUBSTEPS_PER_PARENT, AUTO_TREE_LIMITS } from './limits';
 import type { AutoRefusalCode } from './refusals';
 
 export const AUTO_REFUSAL_TEXT = {
   request_conflict:
     'That request id was already used with a different spec. Send the same spec again to repeat the call, or use a new id.',
   depth_cap: 'Only the Auto agent of a conversation hands work over. An agent never delegates.',
+  substep_cap: `A paused agent can have ${AUTO_SUBSTEPS_PER_PARENT} substeps at most, and a substep never has its own. Answer it yourself.`,
   breadth_cap: `At most ${AUTO_BATCH_MAX_CHILDREN} agents can run at once. Wait for results, or send fewer children.`,
   empty_batch: 'The batch has no children.',
   budget:

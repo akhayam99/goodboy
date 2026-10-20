@@ -236,6 +236,33 @@ export const getAutoDelegation = async ({
   return row === undefined ? null : toDelegation({ row });
 };
 
+type GetPausedAutoDelegationOfQuestionParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+  readonly questionId: string;
+};
+
+export const getPausedAutoDelegationOfQuestion = async ({
+  db,
+  treeId,
+  questionId,
+}: GetPausedAutoDelegationOfQuestionParams): Promise<AutoDelegation | null> => {
+  const rows = await db.select<DelegationRow>(
+    `${DELEGATION_SELECT} WHERE tree_id = ? AND state = 'paused'
+      AND EXISTS (
+        SELECT 1 FROM auto_attempts latest
+        WHERE latest.delegation_id = auto_delegations.id AND latest.state = 'paused'
+          AND latest.question_id = ?
+          AND latest.ordinal = (
+            SELECT MAX(ordinal) FROM auto_attempts WHERE delegation_id = auto_delegations.id
+          )
+      )`,
+    [treeId, questionId],
+  );
+  const row = rows[0];
+  return row === undefined ? null : toDelegation({ row });
+};
+
 type IsAutoChildAgentParams = {
   readonly db: Database;
   readonly agentId: string;
@@ -360,6 +387,68 @@ export const casAutoDelegationStateStatement = ({
     abortCode,
   };
 };
+
+type PatchChecksStatementParams = {
+  readonly delegationId: AutoDelegationId;
+  readonly generation: number;
+  readonly checks: unknown;
+  readonly checksRun: unknown;
+  readonly abortCode: string;
+};
+
+export const patchAutoDelegationChecksStatement = ({
+  delegationId,
+  generation,
+  checks,
+  checksRun,
+  abortCode,
+}: PatchChecksStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_delegations
+    SET result_json = json_set(result_json, '$.verified.checks', json(?), '$.verified.checksRun', json(?))
+    WHERE id = ? AND generation = ? AND state = 'settled' AND result_json IS NOT NULL`,
+  params: [JSON.stringify(checks), JSON.stringify(checksRun), delegationId, generation],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
+type PatchPublishStatementParams = {
+  readonly delegationId: AutoDelegationId;
+  readonly generation: number;
+  readonly publish: unknown;
+  readonly abortCode: string;
+};
+
+export const patchAutoDelegationPublishStatement = ({
+  delegationId,
+  generation,
+  publish,
+  abortCode,
+}: PatchPublishStatementParams): GuardedStatement => ({
+  sql: `UPDATE auto_delegations
+    SET result_json = json_set(result_json, '$.verified.publish', json(?))
+    WHERE id = ? AND generation = ? AND state = 'settled' AND result_json IS NOT NULL`,
+  params: [JSON.stringify(publish), delegationId, generation],
+  abortWhen: 'noChanges',
+  abortCode,
+});
+
+type FollowPublishStatementParams = {
+  readonly delegationId: AutoDelegationId;
+  readonly generation: number;
+  readonly publish: unknown;
+};
+
+export const followAutoDelegationPublishStatement = ({
+  delegationId,
+  generation,
+  publish,
+}: FollowPublishStatementParams): PlainStatement => ({
+  sql: `UPDATE auto_delegations
+    SET result_json = json_set(result_json, '$.verified.publish', json(?))
+    WHERE id = ? AND generation = ? AND state = 'settled' AND result_json IS NOT NULL
+      AND json_extract(result_json, '$.verified.publish.state') = 'pushing'`,
+  params: [JSON.stringify(publish), delegationId, generation],
+});
 
 type SettleDelegationStatementParams = {
   readonly delegationId: AutoDelegationId;

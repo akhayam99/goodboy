@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react';
-import { FOCUS_RING, cn } from '@goodboy/ui';
+import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import type { PullRequestTitleEdit } from '../../hooks/usePullRequestTitleEdit';
 
 type Props = {
@@ -42,17 +42,19 @@ export const PullRequestTitle = ({ title, edit, noun = 'Pull request' }: Props) 
   }
 
   return (
-    <button
-      type="button"
-      title="Edit title (E)"
-      onClick={edit.start}
-      className={cn(
-        '-mx-2 flex min-h-8 max-w-full min-w-0 cursor-text items-center rounded-md px-2 text-left',
-        'motion-safe:transition-colors hover:bg-hover',
-        FOCUS_RING,
-      )}
-    >
-      <span className="min-w-0 truncate">{title}</span>
-    </button>
+    <Tooltip content="Edit title (E)">
+      <button
+        type="button"
+        aria-keyshortcuts="E"
+        onClick={edit.start}
+        className={cn(
+          '-mx-2 flex min-h-8 max-w-full min-w-0 cursor-text items-center rounded-md px-2 text-left',
+          'motion-safe:transition-colors hover:bg-hover',
+          FOCUS_RING,
+        )}
+      >
+        <span className="min-w-0 truncate">{title}</span>
+      </button>
+    </Tooltip>
   );
 };

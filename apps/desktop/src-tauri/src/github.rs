@@ -547,29 +547,63 @@ pub(crate) fn lease_push_outcome(result: &GhRunResult) -> LeasePushOutcome {
     LeasePushOutcome::Failed { message }
 }
 
+pub(crate) fn lease_push_args(
+    branch: &str,
+    expected_remote_sha: Option<&str>,
+    source_sha: Option<&str>,
+) -> Result<Vec<String>, String> {
+    if branch.trim().is_empty() {
+        return Err("the branch name is empty".to_string());
+    }
+    let source = match source_sha.filter(|sha| !sha.is_empty()) {
+        Some(sha)
+            if (7..=64).contains(&sha.len()) && sha.chars().all(|c| c.is_ascii_hexdigit()) =>
+        {
+            sha.to_string()
+        }
+        Some(sha) => return Err(format!("{sha} is not a commit sha")),
+        None => format!("refs/heads/{branch}"),
+    };
+    Ok(vec![
+        "push".to_string(),
+        lease_argument(branch, expected_remote_sha),
+        "origin".to_string(),
+        format!("{source}:refs/heads/{branch}"),
+    ])
+}
+
+pub(crate) fn push_with_lease_blocking(
+    cwd: &str,
+    branch: &str,
+    expected_remote_sha: Option<&str>,
+    source_sha: Option<&str>,
+    token: Option<&str>,
+) -> Result<LeasePushOutcome, GithubError> {
+    let owned = lease_push_args(branch, expected_remote_sha, source_sha)
+        .map_err(GithubError::Validation)?;
+    let args: Vec<&str> = owned.iter().map(String::as_str).collect();
+    let result = run_git_authenticated(&args, cwd, token)?;
+    Ok(lease_push_outcome(&result))
+}
+
 #[tauri::command]
 pub async fn git_push_with_lease(
     cwd: String,
     branch: String,
     expected_remote_sha: Option<String>,
+    source_sha: Option<String>,
     workspace_id: Option<String>,
     project_id: Option<String>,
 ) -> Result<LeasePushOutcome, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
-        if branch.trim().is_empty() {
-            return Err(GithubError::Validation(
-                "the branch name is empty".to_string(),
-            ));
-        }
         let token = read_token(workspace_id.as_deref(), project_id.as_deref());
-        let lease = lease_argument(&branch, expected_remote_sha.as_deref());
-        let refspec = format!("refs/heads/{branch}:refs/heads/{branch}");
-        let result = run_git_authenticated(
-            &["push", &lease, "origin", &refspec],
+        push_with_lease_blocking(
             &cwd,
+            &branch,
+            expected_remote_sha.as_deref(),
+            source_sha.as_deref(),
             token.as_deref(),
-        )?;
-        Ok(lease_push_outcome(&result))
+        )
     })
     .await
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?

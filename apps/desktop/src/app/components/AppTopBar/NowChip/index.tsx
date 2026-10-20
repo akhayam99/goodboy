@@ -22,6 +22,8 @@ import {
 } from '../../../../features/scripts/hooks/useRunningScripts';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useNow } from '../../../../shared/hooks/useNow';
+import { SessionHoverCard } from '../../../../features/workspace/components/SessionHoverCard';
+import { useHoverCardTarget } from '../../../../features/workspace/components/SessionHoverCard/useHoverCardTarget';
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 import { NowGroup } from './NowGroup';
 import { attentionPlace } from '../../../../features/session/attentionPlace';
@@ -68,6 +70,15 @@ export const NowChip = ({ onOpenScript }: Props) => {
   });
   const { open: isOpen, close, toggle } = dropdown;
   const now = useNow(1_000, isOpen && scripts.length > 0);
+  const hover = useHoverCardTarget();
+  const { close: closeHover } = hover;
+  const hoveredSession = running.find((session) => session.id === hover.target?.sessionId) ?? null;
+
+  useEffect(() => {
+    if (!isOpen) {
+      closeHover();
+    }
+  }, [isOpen, closeHover]);
 
   const total = running.length + scripts.length;
 
@@ -169,6 +180,8 @@ export const NowChip = ({ onOpenScript }: Props) => {
                 session={session}
                 onSelect={selectSession}
                 fallbackTone="info"
+                onHoverEnter={hover.enter}
+                onHoverLeave={hover.leave}
               />
             ))}
           </NowGroup>
@@ -192,6 +205,17 @@ export const NowChip = ({ onOpenScript }: Props) => {
           Open Monitoring
         </Button>
       </div>
+      <SessionHoverCard
+        session={hoveredSession}
+        isArchived={false}
+        anchor={hover.target?.anchor ?? null}
+        boundary={null}
+        onKeep={hover.keep}
+        onLeave={hover.leave}
+        onClose={hover.close}
+        onOpenAttention={selectSession}
+        isFactsOnly
+      />
     </AnchoredPopover>
   );
 };

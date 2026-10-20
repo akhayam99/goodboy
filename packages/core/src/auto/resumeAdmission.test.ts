@@ -65,6 +65,16 @@ describe('admitting the resume of a child that asked a question', () => {
     expect(diagnoseResume({ snapshot: handed, role: 'scout' }).kind).toBe('ok');
   });
 
+  it('refuses the resume of a paused child when the running slots are full', () => {
+    const full = snapshot({ openCount: 4 });
+    expect(diagnoseResume({ snapshot: full, role: 'scout' })).toEqual({
+      kind: 'refused',
+      code: 'breadth_cap',
+    });
+    const free = snapshot({ openCount: 3 });
+    expect(diagnoseResume({ snapshot: free, role: 'scout' }).kind).toBe('ok');
+  });
+
   it('refuses outside the turn it was called from', () => {
     const idle = snapshot({ tree: tree({ phase: 'waiting', activeRunId: null }) });
     expect(diagnoseResume({ snapshot: idle, role: 'scout' })).toEqual({

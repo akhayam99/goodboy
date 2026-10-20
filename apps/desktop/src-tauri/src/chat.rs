@@ -416,6 +416,7 @@ fn build_chat_cli_args(
         write_set_lease: None,
         confined_role: None,
         blocks_push: true,
+        is_auto_child: false,
         excludes_tmp: true,
     };
     let cli = turn_args(shape, &spawn);

@@ -1,10 +1,18 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+import type { FactCard } from '@goodboy/ui';
 
-export const ROW_CARD_REST_MS = 800;
+export type CardTrigger = ComponentProps<typeof FactCard>['children'];
+
+type CardWrapParams = {
+  readonly children: CardTrigger;
+  readonly isOpen?: boolean;
+};
+
+export type CardWrap = (params: CardWrapParams) => ReactNode;
 
 export type TimelineRowIdentity = {
   readonly roleLabel: string | null;
   readonly summary: string | null;
   readonly hasGlyph: boolean;
-  readonly card: ReactNode;
+  readonly wrapCard: CardWrap;
 };

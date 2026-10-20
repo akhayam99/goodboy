@@ -1,5 +1,6 @@
-import { Tooltip, WORK_META_COLUMN, cn, tintClasses } from '@goodboy/ui';
+import { FactCard, WORK_META_COLUMN, cn, tintClasses } from '@goodboy/ui';
 import { TIME_LEFT_SUFFIX, type WorkTime } from '../workTime';
+import { workTimeCardOf } from '../workTimeCardOf';
 
 type Props = {
   readonly time: WorkTime | null;
@@ -12,10 +13,9 @@ export const WorkTimeCell = ({ time, cost = null, note = null }: Props) => {
     return null;
   }
   const isLeft = time.label.endsWith(TIME_LEFT_SUFFIX);
-  const detail = cost === null ? time.detail : `${time.detail}. Cost ${cost}`;
   return (
     <>
-      <Tooltip content={note === null ? detail : `${note}. ${detail}`}>
+      <FactCard card={workTimeCardOf({ time, cost, note })}>
         <span
           data-testid="work-time"
           data-note={note === null ? undefined : 'true'}
@@ -30,7 +30,7 @@ export const WorkTimeCell = ({ time, cost = null, note = null }: Props) => {
             time.label
           )}
         </span>
-      </Tooltip>
+      </FactCard>
       {note === null ? null : <span className="sr-only">{note}</span>}
     </>
   );

@@ -99,24 +99,28 @@ export const ShippedPanel = ({
         </StudioWidget>
         <StudioWidget label="review throughput" hint="time from comment to resolution">
           <StackedBar
+            heading="Review throughput"
             segments={[
               {
                 key: 'fast',
                 tone: 'success',
                 share: totalReviews > 0 ? (fastReviews / totalReviews) * 100 : 0,
-                title: `${fastReviews} under one hour`,
+                label: 'Under one hour',
+                value: String(fastReviews),
               },
               {
                 key: 'day',
                 tone: 'warning',
                 share: totalReviews > 0 ? (sameDayReviews / totalReviews) * 100 : 0,
-                title: `${sameDayReviews} within one day`,
+                label: 'Within one day',
+                value: String(sameDayReviews),
               },
               {
                 key: 'slow',
                 tone: 'danger',
                 share: totalReviews > 0 ? (slowReviews / totalReviews) * 100 : 0,
-                title: `${slowReviews} over one day`,
+                label: 'Over one day',
+                value: String(slowReviews),
               },
             ]}
           />

@@ -19,7 +19,7 @@ import { currentPlatform } from '../../../../shared/platform';
 import { requestAskReset } from '../../../../features/session/ask/requestAskReset';
 import { SESSION } from './activityRunSeed';
 import { SessionAskScene } from './SessionAskScene';
-import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
+import { factCardOf } from '../../../../__tests__/helpers/factCard';
 
 beforeAll(async () => {
   await importStore();
@@ -98,9 +98,10 @@ describe('the session Ask scene', () => {
     expect(answer.querySelector('strong')?.textContent).toContain('One question is blocking');
     expect(within(answer).getAllByTestId('ask-chip').length).toBeGreaterThan(1);
     expect(screen.getByTestId('ask-footer').textContent).toMatch(/· 6s$/);
-    expect(tooltipTextOf({ element: screen.getByTestId('ask-footer') })).toBe(
-      '$0.04 · read 2 files',
-    );
+    expect(factCardOf({ element: screen.getByTestId('ask-footer') }).rows).toEqual([
+      ['Cost', '$0.04'],
+      ['Read', '2 files'],
+    ]);
     expect(within(screen.getByTestId('ask-actions')).getByText('Answer question 1')).toBeDefined();
   });
 

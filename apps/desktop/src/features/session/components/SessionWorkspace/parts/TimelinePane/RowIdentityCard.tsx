@@ -1,5 +1,5 @@
 import type { ProviderRunId, TelemetryRecord } from '@goodboy/types';
-import { formatTokens, formatUsd } from '@goodboy/ui';
+import { FactCard, formatTokens, formatUsd, type Fact } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { AgentKindChip } from '../../../../../../shared/components/AgentKindChip';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
@@ -9,8 +9,7 @@ import type { AgentRowWork } from '../../../../hooks/useAgentRowWork';
 import { agentTokenTotals } from '../../../../timeline/agentTokenTotals';
 import type { TimelineAgentEntry } from '../../../../timeline/buildTimelineGroups';
 import type { AgentModels } from '../../../../timeline/ranModels';
-import { RowCardFacts, type RowCardFact } from './RowCardFacts';
-import { RowCardHeader } from './RowCardHeader';
+import type { CardTrigger } from './timelineRowIdentity';
 import { useRowPosition } from './useRowPosition';
 
 type Props = {
@@ -21,6 +20,8 @@ type Props = {
   readonly work: AgentRowWork;
   readonly phase: RowPhase;
   readonly costUsd: number;
+  readonly isOpen?: boolean;
+  readonly children: CardTrigger;
 };
 
 const EMPTY_RUN_IDS: ReadonlyArray<ProviderRunId> = [];
@@ -33,6 +34,8 @@ export const RowIdentityCard = ({
   work,
   phase,
   costUsd,
+  isOpen = false,
+  children,
 }: Props) => {
   const { agent } = entry;
   const { routing, time } = work;
@@ -53,7 +56,14 @@ export const RowIdentityCard = ({
   const runIds = agent.runId == null ? history : [...history, agent.runId];
   const tokens = agentTokenTotals({ records, runIds });
   const finishedAt = agent.completedAt ?? agent.lastFinishedAt ?? null;
-  const facts: Array<RowCardFact> = [];
+  const facts: Array<Fact> = [];
+  if (last !== null) {
+    facts.push(
+      last.effort === null
+        ? { label: 'Model', value: last.name }
+        : { label: 'Model', value: last.name, note: last.effort },
+    );
+  }
   if (agent.startedAt != null) {
     facts.push({ label: 'Started', value: formatClock({ at: agent.startedAt }) });
   }
@@ -70,28 +80,25 @@ export const RowIdentityCard = ({
   if (tokens !== null) {
     facts.push({
       label: 'Tokens',
-      value: `${formatTokens(tokens.input)} in · ${formatTokens(tokens.output)} out · ${formatTokens(tokens.cached)} cached`,
+      value: `${formatTokens(tokens.input)} in, ${formatTokens(tokens.output)} out`,
+      note: `${formatTokens(tokens.cached)} cached`,
     });
   }
   if (costUsd > 0) {
     facts.push({ label: 'Cost', value: formatUsd(costUsd) });
   }
   return (
-    <span className="flex flex-col gap-2">
-      <RowCardHeader
-        glyph={<AgentKindChip kind={entry.agentKind} density="glyph" isDecorative />}
-        title={kindWord}
-        sub={position}
-      />
-      {last === null ? null : (
-        <span className="text-body text-foreground">
-          {last.effort === null ? last.name : `${last.name} · ${last.effort}`}
-        </span>
-      )}
-      {divergence === null ? null : (
-        <span className="text-meta text-muted-foreground">{divergence}</span>
-      )}
-      <RowCardFacts facts={facts} />
-    </span>
+    <FactCard
+      isOpen={isOpen}
+      card={{
+        glyph: <AgentKindChip kind={entry.agentKind} density="glyph" isDecorative />,
+        title: kindWord,
+        sub: position,
+        facts,
+        ...(divergence === null ? {} : { footnote: divergence }),
+      }}
+    >
+      {children}
+    </FactCard>
   );
 };

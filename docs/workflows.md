@@ -434,7 +434,9 @@ entry (`PresetRunPage`, in `features/session/components/PresetRun`) and the
 Agents panel of the session tools holds the run's identity row, its agents as
 a tree, **Add step** and the limit foot
 ([The session tools](navigation.md#the-session-tools)). A row there opens the
-step's transcript in the drawer (`run-step`).
+step's transcript in the drawer (`run-step`); hovering it opens a fact card
+with the name and the state (`runHeadCardOf` for the run, `runAgentCardOf` for
+an agent, with its role glyph), never a joined tooltip line.
 
 - **Overview** (`RunOverviewPage`): the run title as the header with the run
   `⋯`, the goal and its attachments (`RunGoal`), the write destination ("Writes
@@ -1239,6 +1241,11 @@ next step starts from.
 
 Steps run one after another. Parallel work happens inside a step. The
 `parallel_agents` setting decides whether a scout step can split into several agents.
+
+The orchestrator prompt carries **WHEN TO ADD A ROLE**, the table Auto also reads
+(`packages/core/src/roleNeeds.ts`, driver `orchestrator`, only roles the orchestrator may pick,
+so no rewriter, scribe or CI fixer). Discovery before a decision is skipped when the goal already
+names the files to change. The default is the fewest steps that finish the goal.
 
 ### When a step stops without its done marker
 

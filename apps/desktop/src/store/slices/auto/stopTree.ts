@@ -1,3 +1,4 @@
+import { substepLinkOf } from '@goodboy/core';
 import {
   AUTO_OWNER_GUARD_SQL,
   autoOwnerGuardParams,
@@ -200,17 +201,28 @@ export const stopTree = async ({ ctx, treeId }: StopTreeParams): Promise<StopTre
   );
   const attempts = await listLiveAutoAttempts({ db: ctx.db, treeId });
   const delegations = await listAutoDelegations({ db: ctx.db, treeId });
-  const childOf = new Map(
-    delegations.map((delegation) => [delegation.id, delegation.childAgentId]),
-  );
-  const entries: CancelEntry[] = attempts.flatMap((attempt) => {
-    const agentId = childOf.get(attempt.delegationId);
-    return agentId === undefined ? [] : [{ agentId, sessionId: tree.sessionId }];
+  const childOf = new Map(delegations.map((delegation) => [delegation.id, delegation]));
+  const live = attempts.flatMap((attempt) => {
+    const delegation = childOf.get(attempt.delegationId);
+    return delegation === undefined
+      ? []
+      : [
+          {
+            entry: { agentId: delegation.childAgentId, sessionId: tree.sessionId },
+            isSubstep: substepLinkOf({ request: delegation.request }) !== null,
+          },
+        ];
   });
+  const rest: CancelEntry[] = live.filter((item) => !item.isSubstep).map((item) => item.entry);
   if (tree.activeRunId !== null) {
-    entries.push({ agentId: tree.rootAgentId, sessionId: tree.sessionId });
+    rest.push({ agentId: tree.rootAgentId, sessionId: tree.sessionId });
   }
-  const stuck = await cancelAll({ ctx, entries });
+  const substepStuck = await cancelAll({
+    ctx,
+    entries: live.filter((item) => item.isSubstep).map((item) => item.entry),
+  });
+  const restStuck = await cancelAll({ ctx, entries: rest });
+  const stuck = [...substepStuck, ...restStuck];
   if (stuck.length > 0) {
     await markStuck({ ctx, stuck, treeId });
     return { kind: 'stopping', stuck };

@@ -9,9 +9,14 @@ import {
 } from '../../../features/auto/autoUserTurnPort';
 import { readAutoTreeLimit } from '../../../features/auto/autoTreeLimit';
 import {
+  currentChecksRerunPort,
+  registerChecksRerunPort,
+} from '../../../features/auto/checksRerunPort';
+import {
   currentDelegationDecisionPort,
   registerDelegationDecisionPort,
 } from '../../../features/auto/delegationDecisionPort';
+import { currentPublishPort, registerPublishPort } from '../../../features/auto/publishPort';
 import { currentTreeRetryPort, registerTreeRetryPort } from '../../../features/auto/treeRetryPort';
 import { currentTreeStopPort, registerTreeStopPort } from '../../../features/auto/treeStopPort';
 import {
@@ -57,6 +62,8 @@ const REGISTERED_PORTS: AutoBridgePorts = {
   retry: (params) => requirePort({ port: currentTreeRetryPort() })(params),
   userTurn: (params) => requirePort({ port: currentAutoUserTurnPort() })(params),
   decision: (params) => requirePort({ port: currentDelegationDecisionPort() })(params),
+  rerunChecks: (params) => requirePort({ port: currentChecksRerunPort() })(params),
+  publish: (params) => requirePort({ port: currentPublishPort() })(params),
 };
 
 type ForwardParams = {
@@ -67,6 +74,8 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
   const client = await createAutoBridgeClient({ bus, newId: () => crypto.randomUUID() });
   registerTreeStopPort({ port: client.ports.stop });
   registerTreeRetryPort({ port: client.ports.retry });
+  registerChecksRerunPort({ port: client.ports.rerunChecks });
+  registerPublishPort({ port: client.ports.publish });
   registerDelegationDecisionPort({ port: client.ports.decision });
   registerAutoUserTurnPort({ port: client.ports.userTurn });
   const unfollow = await followArtifactAnnouncements({
@@ -79,6 +88,8 @@ const forwardToMain = async ({ bus }: ForwardParams): Promise<() => void> => {
     client.close();
     registerTreeStopPort({ port: null });
     registerTreeRetryPort({ port: null });
+    registerChecksRerunPort({ port: null });
+    registerPublishPort({ port: null });
     registerDelegationDecisionPort({ port: null });
     registerAutoUserTurnPort({ port: null });
   };
@@ -149,6 +160,17 @@ export const startAutoRuntime = async ({
       return { kind: 'retried' };
     },
   });
+  registerChecksRerunPort({
+    port: ({ delegationId }) =>
+      runtimeOf().rerunChecks(brandId<AutoDelegationId>({ value: delegationId })),
+  });
+  registerPublishPort({
+    port: ({ act, delegationIds }) =>
+      runtimeOf().publish({
+        act,
+        delegationIds: delegationIds.map((value) => brandId<AutoDelegationId>({ value })),
+      }),
+  });
   const unserve = await serveAutoBridge({
     bus,
     ports: REGISTERED_PORTS,
@@ -158,6 +180,8 @@ export const startAutoRuntime = async ({
   });
   const unregister = (): void => {
     unserve();
+    registerChecksRerunPort({ port: null });
+    registerPublishPort({ port: null });
     registerTreeRetryPort({ port: null });
     registerAutoUserTurnPort({ port: null });
     registerAutoDrivePort({ port: null });

@@ -1,17 +1,8 @@
 import { useContext, type KeyboardEvent, type ReactNode } from 'react';
 import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
-import {
-  Button,
-  ROW_INTERACTIVE,
-  Tooltip,
-  WORK_META_COLUMN,
-  WORK_ROW,
-  cn,
-  tintClasses,
-} from '@goodboy/ui';
+import { Button, ROW_INTERACTIVE, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
-import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import { useHoverMarkViewed } from '../../../../hooks/useHoverMarkViewed';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
@@ -21,7 +12,8 @@ import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { ActionColumnContext } from './ActionColumnContext';
 import { TIMELINE_GUTTER } from './timelineLayout';
-import { clockTooltipOf, isClocklessRow } from './timelineClock';
+import { TimelineClockLabel } from './TimelineClockLabel';
+import { isClocklessRow } from './timelineClock';
 import type { TimelineRowIdentity } from './timelineRowIdentity';
 import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
@@ -159,9 +151,7 @@ export const TimelineStreamRow = ({
           style={{ height: boxHeight }}
         >
           {item.at == null || isClocklessRow({ item }) ? null : (
-            <Tooltip content={clockTooltipOf({ item })}>
-              <span>{formatClock({ at: item.at })}</span>
-            </Tooltip>
+            <TimelineClockLabel item={item} at={item.at} />
           )}
         </span>
       </span>

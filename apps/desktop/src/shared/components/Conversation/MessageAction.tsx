@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, OptionalTooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../conceptIcons';
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
 };
 
 export const MessageAction = ({ icon: Icon, label, tooltip, isDisabled = false, onRun }: Props) => (
-  <Tooltip content={tooltip ?? label}>
+  <OptionalTooltip content={tooltip}>
     <button
       type="button"
       disabled={isDisabled}
@@ -24,5 +24,5 @@ export const MessageAction = ({ icon: Icon, label, tooltip, isDisabled = false, 
       <Icon size={ICON_SIZE.row} aria-hidden />
       {label}
     </button>
-  </Tooltip>
+  </OptionalTooltip>
 );

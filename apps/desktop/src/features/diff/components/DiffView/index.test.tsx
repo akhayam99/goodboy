@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { FileDiff, IsoDateTime } from '@goodboy/types';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { DiffView } from '.';
 import type { DiffComments, DiffThread } from './types';
 
@@ -417,7 +418,8 @@ describe('DiffView comments', () => {
     render(<DiffView files={[LEDGER]} comments={comments} />);
     const close = screen.getByRole('button', { name: 'Close note' });
     expect(close.hasAttribute('disabled')).toBe(true);
-    expect(close.getAttribute('title')).toBe(reason);
+    expect(close.hasAttribute('title')).toBe(false);
+    expect(tooltipTextOf({ element: close })).toBe(reason);
     expect(screen.getByRole('button', { name: 'Delete' }).hasAttribute('disabled')).toBe(true);
     screen.getByText(reason);
   });

@@ -47,6 +47,13 @@ export const blockBoundaryPrefix = ({ runId, text }: PrefixParams): string => {
   return prefix;
 };
 
+export const continueBoundaryText = ({ runId, text }: PrefixParams): void => {
+  const state = stateFor({ runId });
+  const trailing = countTrailingNewlines({ text });
+  state.hasText = true;
+  state.trailingNewlines = trailing === text.length ? state.trailingNewlines + trailing : trailing;
+};
+
 export const resetTextBoundary = ({ runId }: RunParams): void => {
   STATE_BY_RUN.delete(runId);
 };

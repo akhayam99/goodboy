@@ -28,7 +28,11 @@ export const AUTO_BATCH_MIN_CHILDREN = 1;
 
 export const AUTO_BATCH_MAX_CHILDREN = FAN_OUT_MAX_CHILDREN;
 
-export const AUTO_TREE_DEPTH = 1;
+export const AUTO_TREE_DEPTH = 2;
+
+export const AUTO_SUBSTEPS_PER_PARENT = 2;
+
+export const AUTO_SUBSTEP_PARENT_SLACK_MS = 5 * 60_000;
 
 export const AUTO_TREE_LIMITS = {
   delegateCallsPerTurn: 6,
@@ -69,3 +73,21 @@ export const AUTO_DIGEST_SETTLED_MAX = 12;
 export const AUTO_DIGEST_TASK_CHARS = 160;
 
 export const AUTO_REVISE_ASK_CHARS = 240;
+
+export const AUTO_BRIEF_VERSION = 2;
+
+export const AUTO_BRIEF_DECISION_CHARS = 600;
+
+export const AUTO_FACTS_MOUNTS_MAX = 4;
+
+export const AUTO_FACTS_CHARS = 6_000;
+
+export const AUTO_FACTS_FETCH_MS = 30_000;
+
+export const AUTO_FACTS_COMMITS_MAX = 30;
+
+export const AUTO_FACTS_THREADS_MAX = 20;
+
+export const AUTO_FACTS_CHECKS_MAX = 30;
+
+export const AUTO_FACTS_THREAD_CHARS = 240;

@@ -1,4 +1,4 @@
-import type { WorkNodeState } from '@goodboy/ui';
+import type { FactCardSpec, WorkNodeState } from '@goodboy/ui';
 import type { AgentId } from '@goodboy/types';
 import type { AgentKind } from '../../../features/session/agent-kind';
 
@@ -8,7 +8,7 @@ export type SpawnedRow = Readonly<{
   level: number;
   hasChildren: boolean;
   title: string;
-  detail: string | null;
+  card: FactCardSpec;
   role: AgentKind;
   node: WorkNodeState;
   word: string;

@@ -115,6 +115,7 @@ type SpawnArgs = {
   readonly credentialId?: string;
   readonly cursorMaxMode?: boolean;
   readonly blocksPush?: boolean;
+  readonly isAutoChild?: boolean;
   readonly excludesTmp?: boolean;
   readonly writerLease?: {
     readonly path: string;

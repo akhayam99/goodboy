@@ -11,7 +11,13 @@ const SUMMARY_CHARS = 4_000;
 
 export type AutoBlock =
   | Readonly<{ action: 'delegate'; requestId: string | null; spec: string }>
-  | Readonly<{ action: 'answer'; delegation: string; question: string; text: string }>
+  | Readonly<{
+      action: 'answer';
+      delegation: string;
+      question: string;
+      text: string;
+      artifact: string | null;
+    }>
   | Readonly<{ action: 'finish'; summary: string }>;
 
 export type AutoBlockOutcome =
@@ -139,7 +145,8 @@ const answerOf = ({ fields }: FieldsParams): AutoBlockOutcome => {
   if (delegation === null || question === null || text === null) {
     return invalid({ reason: 'an answer block needs "delegation", "question" and "text"' });
   }
-  return { kind: 'block', block: { action: 'answer', delegation, question, text } };
+  const artifact = textOf({ value: fields['artifact'], max: FIELD_CHARS });
+  return { kind: 'block', block: { action: 'answer', delegation, question, text, artifact } };
 };
 
 const finishOf = ({ fields }: FieldsParams): AutoBlockOutcome => {

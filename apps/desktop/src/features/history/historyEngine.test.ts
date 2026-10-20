@@ -133,9 +133,26 @@ describe('history engine bridge', () => {
       cwd: '/w',
       branch: 'fix',
       expectedRemoteSha: 'abc',
+      sourceSha: null,
       workspaceId: 'ws',
       projectId: null,
     });
+  });
+
+  it('pushes a named commit instead of the branch when one is given', async () => {
+    await pushWithLease({
+      worktreePath: '/w',
+      branch: 'fix',
+      expectedRemoteSha: 'abc',
+      sourceSha: 'def4567',
+      workspaceId: 'ws',
+      projectId: null,
+    });
+
+    expect(invoke).toHaveBeenCalledWith(
+      'git_push_with_lease',
+      expect.objectContaining({ sourceSha: 'def4567' }),
+    );
   });
 
   it('treats a failed version probe as unsupported', async () => {

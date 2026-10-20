@@ -103,6 +103,74 @@ describe('answering the question of a child', () => {
     expect(world.errors).toEqual([]);
   });
 
+  it('hands a provider that does not resume its first brief and where it stopped', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    world.state.ports.setRouting({
+      kind: 'ready',
+      provider: 'codex',
+      model: 'gpt-5',
+      effort: 'medium',
+      reason: 'a code change',
+      proposal: 'none',
+    });
+    await userSays({ world, id: 'outbox-user-1', text: 'add the ledger export' });
+    await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
+    await autoTurnEnds({ world });
+    await childTurnEnds({ world, index: 0, text: ASK });
+    const first = world.state.ports.childTurns[0]?.text ?? '';
+
+    await answer(world);
+    await autoTurnEnds({ world });
+
+    const resumed = world.state.ports.childTurns[1]?.text ?? '';
+    expect(resumed).toContain(first);
+    expect(resumed).toContain('add the export');
+    expect(resumed).toContain('**Where you stopped** I need a choice.');
+    expect(resumed).toContain('Use json lines.');
+    expect(world.errors).toEqual([]);
+  });
+
+  it('keeps the resume text of a provider that resumes to the question and the answer', async () => {
+    const world = await asked();
+
+    await answer(world);
+    await autoTurnEnds({ world });
+
+    const resumed = world.state.ports.childTurns[1]?.text ?? '';
+    expect(resumed).not.toContain('Your session was not kept');
+    expect(resumed).not.toContain('add the export');
+    expect(resumed).not.toContain('**Where you stopped**');
+  });
+
+  it('keeps the first brief when the answer is replayed or the app restarts before the resume', async () => {
+    const world = await makeRuntimeWorld({ capUsd: 10 });
+    world.state.ports.setRouting({
+      kind: 'ready',
+      provider: 'codex',
+      model: 'gpt-5',
+      effort: 'medium',
+      reason: 'a code change',
+      proposal: 'none',
+    });
+    await userSays({ world, id: 'outbox-user-1', text: 'add the ledger export' });
+    await autoDelegates({ world, spec: { children: [IMPLEMENTER] } });
+    await autoTurnEnds({ world });
+    await childTurnEnds({ world, index: 0, text: ASK });
+    await answer(world);
+    const again = await answer(world);
+    expect(again).toMatchObject({ isOk: true, data: { replayed: true } });
+
+    const restarted = restartedWorld({ world });
+    await restarted.runtime.recover(world.treeId);
+    await restarted.runtime.settled();
+
+    const resumed = restarted.state.ports.childTurns;
+    expect(resumed).toHaveLength(1);
+    expect(resumed[0]?.text).toContain('add the export');
+    expect(resumed[0]?.text).toContain('**Where you stopped** I need a choice.');
+    expect(restarted.errors).toEqual([]);
+  });
+
   it('delivers the final result once, counts the resume and reconciles every reservation', async () => {
     const world = await asked();
     await answer(world);

@@ -86,4 +86,66 @@ describe('attributing changed files to one attempt', () => {
 
     expect(outcome.changedFiles).toHaveLength(50);
   });
+
+  it('credits a writer with files it committed, even when the status is clean', () => {
+    const outcome = attributeChanges({
+      baseline: snapshot({}),
+      result: snapshot({}, { head: 'def456' }),
+      isWriter: true,
+      committedPaths: ['src/export.ts', 'src/export.test.ts'],
+    });
+
+    expect(outcome.changedFiles).toEqual([
+      { path: 'src/export.test.ts', ownership: 'attempt' },
+      { path: 'src/export.ts', ownership: 'attempt' },
+    ]);
+    expect(outcome.isComplete).toBe(true);
+  });
+
+  it('lists nothing for a rewrite that kept the same tree', () => {
+    const outcome = attributeChanges({
+      baseline: snapshot({}),
+      result: snapshot({}, { head: 'def456' }),
+      isWriter: true,
+      committedPaths: [],
+    });
+
+    expect(outcome.changedFiles).toEqual([]);
+    expect(outcome.isComplete).toBe(true);
+  });
+
+  it('marks the list incomplete when the head moved and the tree diff could not be read', () => {
+    const outcome = attributeChanges({
+      baseline: snapshot({}),
+      result: snapshot({}, { head: 'def456' }),
+      isWriter: true,
+      committedPaths: null,
+    });
+
+    expect(outcome.changedFiles).toEqual([]);
+    expect(outcome.isComplete).toBe(false);
+  });
+
+  it('counts a committed file once when it is also dirty', () => {
+    const outcome = attributeChanges({
+      baseline: snapshot({}),
+      result: snapshot({ 'src/a.ts': 'h1' }, { head: 'def456' }),
+      isWriter: true,
+      committedPaths: ['src/a.ts'],
+    });
+
+    expect(outcome.changedFiles).toEqual([{ path: 'src/a.ts', ownership: 'attempt' }]);
+  });
+
+  it('ignores committed paths for a read-only role', () => {
+    const outcome = attributeChanges({
+      baseline: snapshot({}),
+      result: snapshot({}, { head: 'def456' }),
+      isWriter: false,
+      committedPaths: ['src/a.ts'],
+    });
+
+    expect(outcome.changedFiles).toEqual([]);
+    expect(outcome.hasReadOnlyViolation).toBe(false);
+  });
 });

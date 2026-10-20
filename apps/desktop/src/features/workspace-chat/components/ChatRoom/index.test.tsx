@@ -638,7 +638,7 @@ describe('ChatRoom', () => {
     expect(screen.queryByText(/Shift\+Enter/)).toBeNull();
     fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), { target: { value: 'Hi' } });
     expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Send' }) })).toBe(
-      'Enter to send · Shift+Enter for a new line',
+      'Send with Enter, new line with Shift+Enter',
     );
   });
 

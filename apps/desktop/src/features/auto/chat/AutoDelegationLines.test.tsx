@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { useAppStore } from '../../../store';
 import type { AutoTreeView } from '../../../store/slices/auto-view/state';
 import { registerDelegationDecisionPort } from '../delegationDecisionPort';
+import { registerPublishPort, type PublishPort } from '../publishPort';
 import { aDelegation, aPlanRow, aView, FIXTURE_SESSION } from '../testing/autoViewFixtures';
 import { AutoDelegationLines } from './AutoDelegationLines';
 
@@ -126,6 +127,103 @@ describe('AutoDelegationLines', () => {
     });
 
     expect(screen.getByText('revising v2')).toBeDefined();
+  });
+});
+
+const waitingPush = ({ key, branch }: { readonly key: string; readonly branch: string }) =>
+  aDelegation({
+    key,
+    role: 'implementer',
+    state: 'settled',
+    outcome: 'completed',
+    settledAt: 1_000,
+    result: {
+      declared: { summary: 'Squashed.' },
+      verified: {
+        changedFiles: [],
+        checks: [],
+        publish: {
+          mode: 'force',
+          state: 'awaiting_confirm',
+          branch,
+          sha: 'abc1234',
+          leaseSha: 'remote111',
+          backupRef: 'refs/goodboy/backup/b-6b/keep-1',
+          message: null,
+          isRetryable: false,
+          isConfirmed: false,
+          tries: 0,
+          reviewerReportId: null,
+          isContentChanging: false,
+        },
+      },
+      cost: { usd: 0.1, basis: 'reported' },
+    },
+  });
+
+describe('the one confirm row of a batch of force pushes', () => {
+  afterEach(() => registerPublishPort({ port: null }));
+
+  const renderPushes = () =>
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [
+          waitingPush({ key: 'impl-a', branch: 'harborline/fix-ledger' }),
+          waitingPush({ key: 'impl-b', branch: 'harborline/fix-notify' }),
+        ],
+      }),
+    });
+
+  it('names every branch once and offers one Force push and one Do not push', () => {
+    renderPushes();
+
+    expect(screen.getAllByRole('group', { name: 'Confirm the force push' })).toHaveLength(1);
+    expect(
+      screen.getByText(
+        'Force push 2 branches? harborline/fix-ledger, harborline/fix-notify. Each earlier version is kept as a backup.',
+      ),
+    ).toBeDefined();
+  });
+
+  it('sends one confirm covering both branches', async () => {
+    const port = vi.fn<PublishPort>(async () => ({ kind: 'done', rows: [] }));
+    registerPublishPort({ port });
+    renderPushes();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Force push' }));
+
+    await waitFor(() => expect(port).toHaveBeenCalledOnce());
+    expect(port).toHaveBeenCalledWith({
+      act: 'confirm',
+      delegationIds: ['delegation-impl-a', 'delegation-impl-b'],
+    });
+  });
+
+  it('sends one decline for the whole batch', async () => {
+    const port = vi.fn<PublishPort>(async () => ({ kind: 'done', rows: [] }));
+    registerPublishPort({ port });
+    renderPushes();
+
+    fireEvent.click(screen.getByRole('button', { name: "Don't push" }));
+
+    await waitFor(() =>
+      expect(port).toHaveBeenCalledWith({
+        act: 'decline',
+        delegationIds: ['delegation-impl-a', 'delegation-impl-b'],
+      }),
+    );
+  });
+
+  it('shows no row when no push waits', () => {
+    renderLines({
+      view: aView({
+        phase: 'waiting',
+        delegations: [aDelegation({ key: 'impl', role: 'implementer', state: 'running' })],
+      }),
+    });
+
+    expect(screen.queryByRole('group', { name: 'Confirm the force push' })).toBeNull();
   });
 });
 

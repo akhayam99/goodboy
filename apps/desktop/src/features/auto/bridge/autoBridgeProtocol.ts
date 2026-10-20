@@ -1,5 +1,7 @@
 import type { AutoUserTurnParams, AutoUserTurnPort } from '../autoUserTurnPort';
 import type { DelegationDecision, DelegationDecisionPort } from '../delegationDecisionPort';
+import type { ChecksRerunPort } from '../checksRerunPort';
+import type { PublishAct, PublishPort } from '../publishPort';
 import type { TreeRetryPort } from '../treeRetryPort';
 import type { TreeStopPort } from '../treeStopPort';
 
@@ -16,6 +18,8 @@ export type AutoArtifactsChanged = Readonly<{
 export type AutoBridgeCall =
   | Readonly<{ kind: 'stop'; treeId: string }>
   | Readonly<{ kind: 'retry'; treeId: string }>
+  | Readonly<{ kind: 'rerunChecks'; delegationId: string }>
+  | Readonly<{ kind: 'publish'; act: PublishAct; delegationIds: ReadonlyArray<string> }>
   | Readonly<{ kind: 'userTurn'; messageId: string; turn: AutoUserTurnParams }>
   | Readonly<{ kind: 'decision'; delegationId: string; decision: DelegationDecision }>;
 
@@ -46,6 +50,8 @@ export type AutoBridgeBus = Readonly<{
 export type AutoBridgePorts = Readonly<{
   stop: TreeStopPort;
   retry: TreeRetryPort;
+  rerunChecks: ChecksRerunPort;
+  publish: PublishPort;
   userTurn: AutoUserTurnPort;
   decision: DelegationDecisionPort;
 }>;

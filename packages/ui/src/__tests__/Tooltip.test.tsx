@@ -49,18 +49,10 @@ describe('Tooltip', () => {
     vi.useRealTimers();
   });
 
-  it('lays out rich content as a card that wraps', async () => {
+  it('draws every label on the one floating surface and wraps long text', async () => {
     vi.useFakeTimers();
     render(
-      <Tooltip
-        variant="card"
-        content={
-          <span>
-            <span>Claude</span>
-            <span>82% used</span>
-          </span>
-        }
-      >
+      <Tooltip content="A long line of text that has to wrap">
         <button type="button">btn</button>
       </Tooltip>,
     );
@@ -69,9 +61,10 @@ describe('Tooltip', () => {
       vi.advanceTimersByTime(400);
     });
     const tip = screen.getByRole('tooltip');
-    expect(tip.textContent).toBe('Claude82% used');
-    expect(tip.className).toContain('bg-elevated');
-    expect(tip.className).not.toContain('whitespace-nowrap');
+    expect(tip.className).toContain('bg-floating');
+    expect(tip.className).toContain('shadow-lg');
+    expect(tip.className).toContain('whitespace-pre-line');
+    expect(tip.className).not.toContain('bg-elevated');
     vi.useRealTimers();
   });
 
@@ -623,5 +616,128 @@ describe('Tooltip shortcut', () => {
     const tip = screen.getByRole('tooltip');
     expect(tip.style.visibility).toBe('visible');
     expect(tip.style.top).not.toBe('-9999px');
+  });
+});
+
+describe('Tooltip label surface', () => {
+  it('paints the label on the floating surface with foreground text', () => {
+    render(
+      <Tooltip content="Open Harborline" isOpen>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    const classes = screen.getByRole('tooltip').className;
+    expect(classes).toContain('bg-floating');
+    expect(classes).toContain('border-border-soft');
+    expect(classes).toContain('text-foreground');
+    expect(classes).toContain('max-w-70');
+    expect(classes).toContain('motion-safe:animate-popover-in');
+    expect(classes).not.toContain('bg-foreground');
+    expect(classes).not.toContain('text-background');
+  });
+
+  it('draws the shortcut as a plain Kbd with no inverted tone', () => {
+    registerShortcutGlyphs({ lookup: ({ id }) => (id === 'search.open' ? '⌘K' : '') });
+    render(
+      <Tooltip content="Search" shortcut="search.open" isOpen>
+        <button type="button">btn</button>
+      </Tooltip>,
+    );
+    const kbd = screen.getByRole('tooltip').querySelector('kbd');
+    expect(kbd?.textContent).toBe('⌘K');
+    expect(kbd?.className).not.toContain('text-background');
+  });
+});
+
+describe('Tooltip description', () => {
+  it('points the trigger at the tooltip while it is open', () => {
+    render(
+      <Tooltip content="Last run 14:02 on Harborline" isOpen>
+        <button type="button">Build</button>
+      </Tooltip>,
+    );
+    const tip = screen.getByRole('tooltip');
+    expect(tip.id).not.toBe('');
+    expect(screen.getByRole('button').getAttribute('aria-describedby')).toBe(tip.id);
+    expect(
+      screen.getByRole('button', { description: 'Last run 14:02 on Harborline' }),
+    ).toBeDefined();
+  });
+
+  it('sets no description while the tooltip is closed', () => {
+    render(
+      <Tooltip content="Last run 14:02 on Harborline">
+        <button type="button">Build</button>
+      </Tooltip>,
+    );
+    expect(screen.getByRole('button').getAttribute('aria-describedby')).toBeNull();
+  });
+
+  it('skips the description when the text repeats the trigger name', () => {
+    render(
+      <Tooltip content="Open Northwind" isOpen>
+        <button type="button" aria-label="Open Northwind">
+          x
+        </button>
+      </Tooltip>,
+    );
+    expect(screen.getByRole('button').getAttribute('aria-describedby')).toBeNull();
+  });
+
+  it('describes a trigger whose name differs from the text', () => {
+    render(
+      <Tooltip content="Resets in 3 hours" isOpen>
+        <button type="button" aria-label="Usage">
+          x
+        </button>
+      </Tooltip>,
+    );
+    expect(screen.getByRole('button').getAttribute('aria-describedby')).toBe(
+      screen.getByRole('tooltip').id,
+    );
+  });
+
+  it('keeps the trigger own description next to the tooltip', () => {
+    render(
+      <Tooltip content="Resets in 3 hours" isOpen>
+        <button type="button" aria-describedby="hint-acme">
+          Usage
+        </button>
+      </Tooltip>,
+    );
+    expect(screen.getByRole('button').getAttribute('aria-describedby')).toBe(
+      `hint-acme ${screen.getByRole('tooltip').id}`,
+    );
+  });
+
+  it('restores the trigger own description once the tooltip closes', () => {
+    const { rerender } = render(
+      <Tooltip content="Resets in 3 hours" isOpen>
+        <button type="button" aria-describedby="hint-acme">
+          Usage
+        </button>
+      </Tooltip>,
+    );
+    rerender(
+      <Tooltip content="Resets in 3 hours" isOpen={false}>
+        <button type="button" aria-describedby="hint-acme">
+          Usage
+        </button>
+      </Tooltip>,
+    );
+    expect(screen.getByRole('button').getAttribute('aria-describedby')).toBe('hint-acme');
+  });
+
+  it('describes the trigger inside the anchor of a disabled control', () => {
+    render(
+      <Tooltip content="Checks are still running" isOpen>
+        <button type="button" disabled>
+          Merge
+        </button>
+      </Tooltip>,
+    );
+    expect(screen.getByRole('button').getAttribute('aria-describedby')).toBe(
+      screen.getByRole('tooltip').id,
+    );
   });
 });

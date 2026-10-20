@@ -18,6 +18,7 @@ export type AttributeChangesParams = Readonly<{
   baseline: MountSnapshot | null;
   result: MountSnapshot | null;
   isWriter: boolean;
+  committedPaths?: ReadonlyArray<string> | null;
 }>;
 
 export type AttributedChanges = Readonly<{
@@ -37,19 +38,21 @@ export const attributeChanges = ({
   baseline,
   result,
   isWriter,
+  committedPaths = null,
 }: AttributeChangesParams): AttributedChanges => {
   if (baseline === null || result === null) {
     return { changedFiles: [], hasReadOnlyViolation: false, isComplete: false };
   }
   const before = hashMapOf({ snapshot: baseline });
   const after = hashMapOf({ snapshot: result });
-  const paths = [...new Set([...before.keys(), ...after.keys()])].sort();
+  const committed = new Set(isWriter ? (committedPaths ?? []) : []);
+  const paths = [...new Set([...before.keys(), ...after.keys(), ...committed])].sort();
   const changed: ResultChangedFile[] = [];
   const preexisting: ResultChangedFile[] = [];
   for (const path of paths) {
     const was = before.get(path) ?? ATTRIBUTION_CLEAN;
     const now = after.get(path) ?? ATTRIBUTION_CLEAN;
-    if (was !== now) {
+    if (was !== now || committed.has(path)) {
       changed.push({ path, ownership: isWriter ? 'attempt' : 'unattributed' });
       continue;
     }
@@ -63,6 +66,9 @@ export const attributeChanges = ({
       ...preexisting.slice(0, ATTRIBUTION_LIST_CAP),
     ],
     hasReadOnlyViolation: !isWriter && changed.length > 0,
-    isComplete: !baseline.isPartial && !result.isPartial,
+    isComplete:
+      !baseline.isPartial &&
+      !result.isPartial &&
+      !(isWriter && committedPaths === null && baseline.head !== result.head),
   };
 };

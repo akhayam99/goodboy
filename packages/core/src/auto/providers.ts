@@ -24,3 +24,8 @@ export const isAutoChildProvider = ({ provider }: ProviderParams): boolean =>
 
 export const isAutoOwnProvider = ({ provider }: ProviderParams): boolean =>
   AUTO_OWN_PROVIDERS.some((candidate) => candidate === provider);
+
+export const AUTO_RESUMING_PROVIDERS = ['anthropic'] as const satisfies ReadonlyArray<ProviderId>;
+
+export const isAutoProviderResuming = ({ provider }: ProviderParams): boolean =>
+  AUTO_RESUMING_PROVIDERS.some((candidate) => candidate === provider);

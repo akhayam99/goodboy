@@ -1,4 +1,9 @@
-import { composeAnswerKickoff, isAutoWriterRole, type AutoDelegationRole } from '@goodboy/core';
+import {
+  composeAnswerKickoff,
+  isAutoProviderResuming,
+  isAutoWriterRole,
+  type AutoDelegationRole,
+} from '@goodboy/core';
 import {
   getAutoAttempt,
   getAutoTree,
@@ -10,7 +15,7 @@ import {
   type AutoTree,
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
-import { resumeOf, snapshotJson, snapshotOf } from './attemptBaseline';
+import { remoteJson, remoteOf, resumeOf, snapshotJson, snapshotOf } from './attemptBaseline';
 import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
@@ -64,14 +69,18 @@ const attemptToLaunch = async ({
   role,
   target,
 }: AttemptToLaunchParams): Promise<AutoAttempt | null> => {
+  const isWriter = isAutoWriterRole({ role });
   if (delegation.state === 'accepted') {
     const snapshot = await readSnapshot({ ports: ctx.ports, worktreePath: target.worktreePath });
+    const remote = isWriter
+      ? await ctx.ports.readRemoteHead({ worktreePath: target.worktreePath, branch: null })
+      : null;
     const started = await ctx.scheduler.startAttempt({
       treeId: tree.id,
       delegationId: delegation.id,
       generation: tree.generation,
-      baseline: snapshotJson({ snapshot, nowMs: ctx.now() }),
-      writeSet: isAutoWriterRole({ role }) ? { worktreePath: target.worktreePath } : null,
+      baseline: { ...snapshotJson({ snapshot, nowMs: ctx.now() }), ...remoteJson({ remote }) },
+      writeSet: isWriter ? { worktreePath: target.worktreePath } : null,
     });
     return started.kind === 'started' ? started.attempt : null;
   }
@@ -80,11 +89,21 @@ const attemptToLaunch = async ({
   if (latest === undefined || latest.state !== 'starting' || latest.runId !== null) {
     return null;
   }
-  if (snapshotOf({ baseline: latest.baseline }) === null) {
-    const snapshot = await readSnapshot({ ports: ctx.ports, worktreePath: target.worktreePath });
+  const isSnapshotMissing = snapshotOf({ baseline: latest.baseline }) === null;
+  const isRemoteMissing = isWriter && remoteOf({ baseline: latest.baseline }) === null;
+  if (isSnapshotMissing || isRemoteMissing) {
+    const snapshot = isSnapshotMissing
+      ? await readSnapshot({ ports: ctx.ports, worktreePath: target.worktreePath })
+      : null;
+    const remote = isRemoteMissing
+      ? await ctx.ports.readRemoteHead({ worktreePath: target.worktreePath, branch: null })
+      : null;
     const merge = mergeAutoAttemptBaselineStatement({
       attemptId: latest.id,
-      patch: snapshotJson({ snapshot, nowMs: ctx.now() }),
+      patch: {
+        ...(isSnapshotMissing ? snapshotJson({ snapshot, nowMs: ctx.now() }) : {}),
+        ...remoteJson({ remote }),
+      },
     });
     await ctx.db.execute(merge.sql, merge.params);
   }
@@ -98,15 +117,31 @@ type TextParams = {
 
 const kickoffTextOf = ({ delegation, attempt }: TextParams): string => {
   const resume = resumeOf({ baseline: attempt.baseline });
+  const kickoff = delegation.request['kickoff'];
+  const brief = typeof kickoff === 'string' ? kickoff : '';
   if (resume !== null) {
+    const provider = delegation.routing['provider'];
+    const isResuming = typeof provider === 'string' && isAutoProviderResuming({ provider });
     return composeAnswerKickoff({
       childAgentId: delegation.childAgentId,
       question: resume.question,
       answer: resume.answer,
+      memory: isResuming ? null : { brief, tail: resume.tail },
+      report: resume.report,
     });
   }
-  const kickoff = delegation.request['kickoff'];
-  return typeof kickoff === 'string' ? kickoff : '';
+  return brief;
+};
+
+type BriefVersionFieldParams = {
+  readonly delegation: AutoDelegation;
+};
+
+const briefVersionField = ({
+  delegation,
+}: BriefVersionFieldParams): { readonly briefVersion?: number } => {
+  const stored = delegation.request['briefVersion'];
+  return typeof stored === 'number' ? { briefVersion: stored } : {};
 };
 
 type LaunchOneParams = {
@@ -159,6 +194,7 @@ const startTurn = async ({
       mountTarget: target,
       runId: ctx.ports.newId(),
       captureMode: delegation.reviseOf === null ? 'new' : 'revise',
+      ...briefVersionField({ delegation }),
       onEnded: onChildEnded,
     });
   } catch (error) {

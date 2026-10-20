@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { RotateCcw, Search } from 'lucide-react';
 import {
   AnchoredPopover,
@@ -79,6 +79,28 @@ export const PresetPicker = ({
   });
   const { activeIndex, setActiveIndex } = keyboard;
 
+  const focusHost = () => {
+    (isSearchable ? searchRef.current : listRef.current)?.focus();
+  };
+
+  const isAtHostEnd = (target: EventTarget): boolean =>
+    target === listRef.current ||
+    (target === searchRef.current && searchRef.current?.selectionStart === query.length);
+
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'ArrowRight' && activeIndex >= 0 && isAtHostEnd(event.target)) {
+      const glyph = document
+        .getElementById(listboxOptionId({ id: listId, index: activeIndex }))
+        ?.querySelector<HTMLElement>('[data-preset-glyph]');
+      if (glyph !== null && glyph !== undefined) {
+        event.preventDefault();
+        glyph.focus();
+        return;
+      }
+    }
+    keyboard.onKeyDown(event);
+  };
+
   useEffect(() => {
     if (!open) {
       setQuery('');
@@ -114,7 +136,7 @@ export const PresetPicker = ({
         />
       }
     >
-      <div className="flex min-h-0 flex-col" onKeyDown={keyboard.onKeyDown}>
+      <div className="flex min-h-0 flex-col" onKeyDown={onKeyDown}>
         {isSearchable ? (
           <div className="flex h-9 shrink-0 items-center gap-2 px-2 text-muted-foreground">
             <Search size={ICON_SIZE.row} aria-hidden className="shrink-0" />
@@ -166,6 +188,7 @@ export const PresetPicker = ({
                 isActive={index === activeIndex}
                 isSelected={preset.id === selectedId}
                 onActivate={() => setActiveIndex(index)}
+                onExitMarks={focusHost}
                 onSelect={() => choose(index)}
                 onDelete={() => void onDelete(preset)}
               />

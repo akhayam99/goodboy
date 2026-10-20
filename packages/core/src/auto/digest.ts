@@ -4,10 +4,12 @@ import {
   AUTO_DIGEST_SETTLED_MAX,
   AUTO_DIGEST_TASK_CHARS,
 } from './limits';
+import type { AutoSubstepRole } from './substep';
 
 export type DigestQuestion = Readonly<{
   questionId: string;
   text: string;
+  needs?: AutoSubstepRole;
 }>;
 
 export type DigestDelegation = Readonly<{
@@ -18,7 +20,15 @@ export type DigestDelegation = Readonly<{
   task: string;
   createdAt: number;
   question: DigestQuestion | null;
+  parentId?: string;
 }>;
+
+type SubstepNeedsParams = {
+  readonly needs: AutoSubstepRole;
+};
+
+export const substepNeedsLine = ({ needs }: SubstepNeedsParams): string =>
+  `It asks for a ${needs}. Start one with "forQuestion" set to the question id, or answer it yourself. A substep costs one delegation and two attempts of this conversation's counters.`;
 
 export type StateDigestParams = Readonly<{
   delegations: ReadonlyArray<DigestDelegation>;
@@ -58,10 +68,15 @@ type OpenLineParams = {
 const openLine = ({ delegation, nowMs }: OpenLineParams): string => {
   const task = oneLine({ text: delegation.task, max: AUTO_DIGEST_TASK_CHARS });
   if (delegation.state === 'paused' && delegation.question !== null) {
-    return `- ${delegation.id} ${delegation.role}, waiting for your answer (question ${delegation.question.questionId}): ${oneLine({ text: delegation.question.text, max: AUTO_DIGEST_TASK_CHARS })}`;
+    const needs =
+      delegation.question.needs === undefined
+        ? ''
+        : ` ${substepNeedsLine({ needs: delegation.question.needs })}`;
+    return `- ${delegation.id} ${delegation.role}, waiting for your answer (question ${delegation.question.questionId}): ${oneLine({ text: delegation.question.text, max: AUTO_DIGEST_TASK_CHARS })}${needs}`;
   }
   const age = ageLabel({ ms: nowMs - delegation.createdAt });
-  return `- ${delegation.id} ${delegation.role}, ${delegation.state.replace('_', ' ')} for ${age}: ${task}`;
+  const substep = delegation.parentId === undefined ? '' : ` (helps ${delegation.parentId})`;
+  return `- ${delegation.id} ${delegation.role}${substep}, ${delegation.state.replace('_', ' ')} for ${age}: ${task}`;
 };
 
 export const buildStateDigest = ({ delegations, nowMs }: StateDigestParams): string => {

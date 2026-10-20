@@ -6,7 +6,7 @@ export const AUTO_DEFAULT_DONE_WHEN = {
     'The question is answered with file references, or the search is exhausted and the gaps are listed.',
   planner: 'A plan with steps, risks and acceptance checks exists and covers the request.',
   implementer:
-    'The change is made in the mount, it builds, and the listed checks pass or their failure is explained.',
+    'The change is made in the mount, it builds, and the listed checks pass or their failure is explained. Nothing is pushed.',
   investigator:
     'A root cause is stated with evidence, and a fix is proposed. The fix itself is a later hand-over.',
   tester: 'The named behavior has tests that pass, or a failing case is shown with its output.',
@@ -24,17 +24,20 @@ export const AUTO_DEFAULT_DONE_WHEN = {
 const artifactBlock = (kind: 'plan' | 'report'): string =>
   `A ${kind} artifact, written as one \`<<artifact v=1 kind=${kind}>>\` block that holds a JSON object with \`title\`, \`format\` ("markdown") and \`content\`, closed by \`<</artifact>>\`.`;
 
+const LONG_REPORT_NOTE =
+  ' If the report runs past a page, put it in a `<<artifact v=1 kind=report>>` block like a scout does and keep the summary short.';
+
 export const AUTO_DEFAULT_EXPECTED = {
   scout: artifactBlock('report'),
   planner: artifactBlock('plan'),
-  implementer: 'A short text summary and the results of the checks you ran.',
+  implementer: `A short text summary and the results of the checks you ran.${LONG_REPORT_NOTE}`,
   investigator: artifactBlock('report'),
-  tester: 'A short text summary and the results of the tests you ran.',
+  tester: `A short text summary and the results of the tests you ran.${LONG_REPORT_NOTE}`,
   reviewer: artifactBlock('report'),
-  docs: 'A short text summary and the results of the checks you ran.',
+  docs: `A short text summary and the results of the checks you ran.${LONG_REPORT_NOTE}`,
   scribe:
     'The pull request text in one `<<pr-title>>...<</pr-title>>` block and one `<<pr-body>>...<</pr-body>>` block. Do not run gh or git push: Goodboy opens the pull request.',
-  'ci-fixer': 'A short text summary, the commit you made and the checks you ran.',
+  'ci-fixer': `A short text summary, the commit you made and the checks you ran.${LONG_REPORT_NOTE}`,
   rewriter: 'The new commit list (sha and subject) and the checks you ran.',
 } as const satisfies Readonly<Record<AutoDelegationRole, string>>;
 
@@ -78,7 +81,10 @@ export type DelegationKickoffParams = Readonly<{
   inputs: ReadonlyArray<KickoffArtifactInput>;
   revise: KickoffRevise | null;
   mountLabel: string | null;
+  facts?: string | null;
+  decisions?: string | null;
   retryNote?: string | null;
+  isSubstep?: boolean;
 }>;
 
 type RoleSectionParams = {
@@ -139,12 +145,17 @@ const reviseSection = ({ revise }: ReviseSectionParams): string => {
 
 type ReturnContractParams = {
   readonly childAgentId: string;
+  readonly isSubstep: boolean;
 };
 
-const returnContract = ({ childAgentId }: ReturnContractParams): string =>
+const NEEDS_RULE =
+  'When you cannot finish without a scout or an investigator, add `needs="scout"` or `needs="investigator"` to that question block: Auto may start one and answers you with its report.';
+
+const returnContract = ({ childAgentId, isSubstep }: ReturnContractParams): string =>
   [
     `**Return** When the work is done, end your last message with \`<<step-done id="${childAgentId}">>\` on its own line. If you cannot go on and nothing can be asked, say why and end with \`<<step-done id="${childAgentId}" status="blocked">>\`.`,
     'When only the user or Auto can decide something, ask it in one `<<ctx-question blocking="true">>the question<</ctx-question>>` block and stop.',
+    ...(isSubstep ? [] : [NEEDS_RULE]),
     'Do not hand the work to another agent, do not split it into several agents, and do not start subagents. If the result needs more work, say so and Auto decides.',
   ].join('\n');
 
@@ -152,19 +163,35 @@ export type AnswerKickoffParams = Readonly<{
   childAgentId: string;
   question: string;
   answer: string;
+  memory?: Readonly<{ brief: string; tail: string | null }> | null;
+  report?: string | null;
 }>;
 
 export const composeAnswerKickoff = ({
   childAgentId,
   question,
   answer,
-}: AnswerKickoffParams): string =>
-  [
-    'Auto answered the question you asked.',
+  memory = null,
+  report = null,
+}: AnswerKickoffParams): string => {
+  const sections = ['Auto answered the question you asked.'];
+  if (memory !== null && memory.brief !== '') {
+    sections.push(
+      'Your session was not kept, so here is what you were given and where you stopped.',
+      memory.brief,
+    );
+    if (memory.tail !== null && memory.tail !== '') {
+      sections.push(`**Where you stopped** ${memory.tail}`);
+    }
+  }
+  sections.push(
     `**Your question** ${question}`,
     `**Answer** ${answer}`,
+    ...(report === null || report === '' ? [] : [`**Report handed over**\n${report}`]),
     `Continue the work. When it is done, end your last message with \`<<step-done id="${childAgentId}">>\` on its own line, as before.`,
-  ].join('\n\n');
+  );
+  return sections.join('\n\n');
+};
 
 export const composeDelegationKickoff = ({
   role,
@@ -175,7 +202,10 @@ export const composeDelegationKickoff = ({
   inputs,
   revise,
   mountLabel,
+  facts = null,
+  decisions = null,
   retryNote = null,
+  isSubstep = false,
 }: DelegationKickoffParams): string => {
   const sections: string[] = [AUTO_KICKOFF_HEADER, roleSection({ role })];
   if (retryNote !== null) {
@@ -184,12 +214,18 @@ export const composeDelegationKickoff = ({
   if (mountLabel !== null) {
     sections.push(`**Mount** ${mountLabel}`);
   }
+  if (facts !== null) {
+    sections.push(facts);
+  }
+  if (decisions !== null) {
+    sections.push(decisions);
+  }
   sections.push(revise === null ? `**Task** ${task}` : reviseSection({ revise }));
   sections.push(`**Done when** ${doneWhen ?? AUTO_DEFAULT_DONE_WHEN[role]}`);
   sections.push(`**Expected output** ${expected ?? AUTO_DEFAULT_EXPECTED[role]}`);
   if (inputs.length > 0) {
     sections.push(inputsSection({ inputs }));
   }
-  sections.push(returnContract({ childAgentId }));
+  sections.push(returnContract({ childAgentId, isSubstep }));
   return sections.join('\n\n');
 };

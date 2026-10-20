@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import {
@@ -81,27 +81,58 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 const renderCard = ({ models }: { readonly models: AgentModels }) =>
-  render(<RowModelsCard entry={entry} ordinal="3" kindWord="Implementer" models={models} />);
+  render(
+    <RowModelsCard entry={entry} ordinal="3" kindWord="Implementer" models={models} isOpen>
+      <button type="button">models</button>
+    </RowModelsCard>,
+  );
+
+const shownCard = () => within(screen.getByTestId('fact-card'));
+
+const termsOf = (): ReadonlyArray<HTMLElement> =>
+  Array.from(screen.getByTestId('fact-card').querySelectorAll<HTMLElement>('dt'));
 
 describe('RowModelsCard', () => {
   it('lists the models in the order they ran, each with the reason it ended', () => {
     renderCard({ models: FALLBACK });
-    const items = screen.getAllByRole('listitem');
+    const labels = termsOf();
 
-    expect(items).toHaveLength(2);
-    expect(items[0]?.textContent).toContain('Kimi K3 · High');
-    expect(items[0]?.textContent).toContain(
+    expect(labels.map((label) => label.textContent)).toEqual(['Kimi K3 High', 'Sonnet 5.5 High']);
+    expect(labels[0]?.nextElementSibling?.textContent).toBe(
       `Stopped, failed at ${formatClock({ at: KIMI_ENDED })}`,
     );
-    expect(items[1]?.textContent).toContain('Sonnet 5.5 · High');
-    expect(items[1]?.textContent).toContain(`Finished ${formatClock({ at: SONNET_ENDED })}`);
+    expect(labels[1]?.nextElementSibling?.textContent).toBe(
+      `Finished ${formatClock({ at: SONNET_ENDED })}`,
+    );
   });
 
-  it('names the role and says it lists models in run order', () => {
+  it('names the role in the header', () => {
     renderCard({ models: FALLBACK });
 
-    expect(screen.getByText('Implementer')).toBeDefined();
-    expect(screen.getByText('Models, in run order')).toBeDefined();
+    expect(shownCard().getByText('Implementer')).toBeDefined();
+  });
+
+  it('tells apart a model that ran twice with the same effort', () => {
+    if (SONNET === undefined) {
+      throw new Error('no model');
+    }
+    renderCard({ models: { isPlanned: false, models: [SONNET, SONNET] } });
+
+    expect(termsOf().map((label) => label.textContent)).toEqual([
+      'Sonnet 5.5 High',
+      'Sonnet 5.5 High (2)',
+    ]);
+  });
+
+  it('keeps five models and says how many more ran when the card would overflow', () => {
+    if (SONNET === undefined) {
+      throw new Error('no model');
+    }
+    const many = [1, 2, 3, 4, 5, 6, 7].map((index) => ({ ...SONNET, name: `Model ${index}` }));
+    renderCard({ models: { isPlanned: false, models: many } });
+
+    expect(termsOf()).toHaveLength(5);
+    expect(shownCard().getByText('and 2 more')).toBeDefined();
   });
 
   it('says a model still runs, and that a planned one has not started', () => {
@@ -111,13 +142,13 @@ describe('RowModelsCard', () => {
     renderCard({
       models: { isPlanned: false, models: [{ ...SONNET, endReason: null, endedAtMs: null }] },
     });
-    expect(screen.getByText('Running')).toBeDefined();
+    expect(shownCard().getByText('Running')).toBeDefined();
     cleanup();
 
     renderCard({
       models: { isPlanned: true, models: [{ ...SONNET, endReason: null, endedAtMs: null }] },
     });
-    expect(screen.getByText('Planned, not started')).toBeDefined();
+    expect(shownCard().getByText('Planned, not started')).toBeDefined();
   });
 
   it('says a turn that was cancelled or needs the user in plain words', () => {
@@ -134,7 +165,9 @@ describe('RowModelsCard', () => {
       },
     });
 
-    expect(screen.getByText(`Stopped at ${formatClock({ at: KIMI_ENDED })}`)).toBeDefined();
-    expect(screen.getByText(`Needs you since ${formatClock({ at: SONNET_ENDED })}`)).toBeDefined();
+    expect(shownCard().getByText(`Stopped at ${formatClock({ at: KIMI_ENDED })}`)).toBeDefined();
+    expect(
+      shownCard().getByText(`Needs you since ${formatClock({ at: SONNET_ENDED })}`),
+    ).toBeDefined();
   });
 });

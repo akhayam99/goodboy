@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
-import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
+import { FOCUS_RING, FactCard, Tooltip, cn, type Fact } from '@goodboy/ui';
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import type { HistoryAction } from '../../historyRowMarks';
+import { historyMarkCardOf } from './historyMarkCardOf';
 
 type Props = {
   readonly action: HistoryAction;
   readonly label: string;
-  readonly detail?: string;
+  readonly facts?: ReadonlyArray<Fact>;
+  readonly note?: string;
   readonly children: ReactNode;
   readonly isExpanded?: boolean;
   readonly onToggle?: () => void;
@@ -18,35 +20,14 @@ const MARK =
 export const HistoryChangeMark = ({
   action,
   label,
-  detail,
+  facts = [],
+  note,
   children,
   isExpanded,
   onToggle,
 }: Props) => {
-  const content = (
-    <span className="flex max-w-80 flex-col">
-      <span>{label}</span>
-      {detail === undefined ? null : <span className="text-faint-foreground">{detail}</span>}
-    </span>
-  );
-  if (onToggle !== undefined) {
-    return (
-      <Tooltip content={content}>
-        <button
-          type="button"
-          data-mark={action}
-          aria-label={label}
-          aria-expanded={isExpanded === true}
-          onClick={onToggle}
-          className={cn(MARK, FOCUS_RING, HISTORY_ACTION_CLASSES[action].mark, 'cursor-pointer')}
-        >
-          {children}
-        </button>
-      </Tooltip>
-    );
-  }
-  return (
-    <Tooltip content={content}>
+  const mark =
+    onToggle === undefined ? (
       <span
         role="img"
         data-mark={action}
@@ -55,6 +36,20 @@ export const HistoryChangeMark = ({
       >
         {children}
       </span>
-    </Tooltip>
-  );
+    ) : (
+      <button
+        type="button"
+        data-mark={action}
+        aria-label={label}
+        aria-expanded={isExpanded === true}
+        onClick={onToggle}
+        className={cn(MARK, FOCUS_RING, HISTORY_ACTION_CLASSES[action].mark, 'cursor-pointer')}
+      >
+        {children}
+      </button>
+    );
+  if (facts.length === 0 && note === undefined) {
+    return <Tooltip content={label}>{mark}</Tooltip>;
+  }
+  return <FactCard card={historyMarkCardOf({ label, facts, note })}>{mark}</FactCard>;
 };

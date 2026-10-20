@@ -111,6 +111,106 @@ describe('delegationCardOf', () => {
     expect(card.isOpen).toBe(false);
   });
 
+  it('says that the branch moved online, or that nobody could tell, and nothing when it did not', () => {
+    const remoteTextOf = (status: string | null) =>
+      delegationCardOf({
+        delegation: aDelegation({
+          key: 'impl',
+          role: 'implementer',
+          state: 'settled',
+          outcome: 'completed',
+          result: {
+            ...RESULT,
+            verified: {
+              ...RESULT.verified,
+              ...(status === null ? {} : { remote: { status, branch: 'ak/ledger-export' } }),
+            },
+          },
+        }),
+        childAgent: null,
+      }).result?.remoteText;
+
+    expect(remoteTextOf('moved')).toBe('The branch changed online while this agent worked.');
+    expect(remoteTextOf('unknown')).toBe('Could not check whether the branch changed online.');
+    expect(remoteTextOf('unchanged')).toBeNull();
+    expect(remoteTextOf(null)).toBeNull();
+  });
+
+  it('reads the verdict of the checks, and offers a rerun only where it can describe the work', () => {
+    const resultOf = (checksRun: unknown, checks: ReadonlyArray<unknown> = []) =>
+      delegationCardOf({
+        delegation: aDelegation({
+          key: 'impl',
+          role: 'implementer',
+          state: 'settled',
+          outcome: 'completed',
+          result: { ...RESULT, verified: { ...RESULT.verified, checks, checksRun } },
+        }),
+        childAgent: null,
+      }).result;
+
+    const red = resultOf({ verdict: 'red', reason: null, commit: 'abc123' }, [
+      { name: 'typecheck', status: 'fail', source: 'harness' },
+    ]);
+    expect(red?.checksText).toBe('Checks red: typecheck');
+    expect(red?.checksVerdict).toBe('red');
+    expect(red?.canRerunChecks).toBe(true);
+    expect(
+      resultOf({ verdict: 'not_checked', reason: 'none_ticked', commit: 'abc123' }),
+    ).toMatchObject({
+      checksText: 'Not checked: no scripts are ticked as Auto checks',
+      canRerunChecks: false,
+    });
+    expect(
+      resultOf({ verdict: 'not_checked', reason: 'tree_dirty', commit: 'abc123' }),
+    ).toMatchObject({ canRerunChecks: false });
+    expect(resultOf(undefined)).toMatchObject({ checksText: null, canRerunChecks: false });
+  });
+
+  it('reads the push record and offers a retry or a put back only where each can work', () => {
+    const publishOf = (publish: unknown) =>
+      delegationCardOf({
+        delegation: aDelegation({
+          key: 'impl',
+          role: 'implementer',
+          state: 'settled',
+          outcome: 'completed',
+          result: { ...RESULT, verified: { ...RESULT.verified, publish } },
+        }),
+        childAgent: null,
+      }).result?.publish ?? null;
+    const base = {
+      mode: 'force',
+      branch: 'ak/ledger-export',
+      sha: 'abc1234def',
+      leaseSha: 'remote111',
+      backupRef: 'refs/goodboy/backup/b-6b/keep-1',
+      message: null,
+      isRetryable: false,
+      isConfirmed: true,
+      tries: 1,
+      reviewerReportId: null,
+      isContentChanging: false,
+    };
+
+    expect(publishOf({ ...base, state: 'awaiting_confirm' })).toMatchObject({
+      text: 'Waiting for you to confirm the force push of ak/ledger-export',
+      canRetry: false,
+      canPutBack: false,
+    });
+    expect(publishOf({ ...base, state: 'pushed' })).toMatchObject({
+      state: 'pushed',
+      canPutBack: true,
+    });
+    expect(
+      publishOf({ ...base, state: 'failed', message: 'connection reset', isRetryable: true }),
+    ).toMatchObject({ text: 'Not pushed: connection reset', canRetry: true });
+    expect(
+      publishOf({ ...base, state: 'failed', message: 'x', isRetryable: true, tries: 2 }),
+    ).toMatchObject({ canRetry: false });
+    expect(publishOf(undefined)).toBeNull();
+  });
+
   it('says a failed child in a sentence and shows an estimated cost as estimated', () => {
     const card = delegationCardOf({
       delegation: aDelegation({

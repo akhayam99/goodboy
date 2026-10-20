@@ -27,7 +27,7 @@ export const SpawnedAutoGroup = ({ sessionId, rootAgentId, selectedAgentId }: Pr
           glyph={<WorkNode state={row.node} label={row.word} mark={{ kind: 'dot' }} size="sm" />}
           role={row.role}
           title={row.title}
-          detail={row.detail}
+          card={row.card}
           word={row.word}
           time={<DelegationClock agentId={row.agentId} isLive={row.isLive} />}
           isSelected={row.agentId === selectedAgentId}

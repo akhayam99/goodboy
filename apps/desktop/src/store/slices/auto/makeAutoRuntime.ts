@@ -2,7 +2,13 @@ import type { Database } from '@goodboy/db';
 import { isAutoPlanApprovalRequired } from '../../../features/auto/isAutoPlanApprovalRequired';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { lookupDeliveryRun, listLiveRunIds } from '../../../features/chat/turn';
-import { worktreeSnapshot } from '../../../features/worktree/worktree';
+import {
+  worktreeCommitRange,
+  worktreeDiffRange,
+  worktreeRemoteHead,
+  worktreeSnapshot,
+  worktreeStatus,
+} from '../../../features/worktree/worktree';
 import { useAppStore, type AppStore } from '../../store';
 import { createAutoRuntime, type AutoRuntime } from './createAutoRuntime';
 import { createRealAutoPorts } from './createRealAutoPorts';
@@ -53,6 +59,10 @@ export const makeAutoRuntime = ({
     }),
     lookupDeliveryRun,
     worktreeSnapshot,
+    worktreeDiffRange,
+    worktreeCommitRange,
+    worktreeStatus: ({ worktreePath }) => worktreeStatus({ worktreePath }),
+    worktreeRemoteHead,
     listLiveRunIds,
     isPlanApprovalRequired: () => isAutoPlanApprovalRequired({ settings: getState().settings }),
     sleep,

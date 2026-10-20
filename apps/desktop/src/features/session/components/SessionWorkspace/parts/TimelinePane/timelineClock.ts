@@ -1,24 +1,29 @@
+import type { FactCardSpec } from '@goodboy/ui';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
-import { clockSpanText, latestFinishOf } from '../../../../timeline/clockSpan';
+import { clockSpanCardOf, latestFinishOf } from '../../../../timeline/clockSpan';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 
-export const isClocklessRow = ({ item }: { readonly item: TimelineRowItem }): boolean =>
+type ItemParams = {
+  readonly item: TimelineRowItem;
+};
+
+export const isClocklessRow = ({ item }: ItemParams): boolean =>
   item.entry.kind === 'question' && item.entry.lane != null && item.grade === 'fact';
 
-export const clockTooltipOf = ({ item }: { readonly item: TimelineRowItem }): string => {
+export const clockCardOf = ({ item }: ItemParams): FactCardSpec | null => {
   const { entry, at, rowState } = item;
   if (at === null) {
-    return '';
+    return null;
   }
   if (entry.kind === 'agent') {
-    return clockSpanText({
+    return clockSpanCardOf({
       startedAt: entry.agent.startedAt ?? at,
       finishedAt: entry.agent.completedAt ?? entry.agent.lastFinishedAt ?? null,
       phase: rowState.phase,
     });
   }
   if (entry.kind === 'run') {
-    return clockSpanText({
+    return clockSpanCardOf({
       startedAt: at,
       finishedAt: latestFinishOf({
         entries: entry.children.flatMap((child) => (child.kind === 'agent' ? [child] : [])),
@@ -26,5 +31,8 @@ export const clockTooltipOf = ({ item }: { readonly item: TimelineRowItem }): st
       phase: rowState.phase,
     });
   }
-  return `At ${formatClock({ at })}`;
+  return null;
 };
+
+export const clockLabelOf = ({ item }: ItemParams): string =>
+  item.at === null ? '' : `At ${formatClock({ at: item.at })}`;

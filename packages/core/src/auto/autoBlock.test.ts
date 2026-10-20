@@ -43,8 +43,28 @@ describe('parseAutoBlock', () => {
       }),
     ).toEqual({
       kind: 'block',
-      block: { action: 'answer', delegation: 'd1', question: 'q1', text: 'Use the cache.' },
+      block: {
+        action: 'answer',
+        delegation: 'd1',
+        question: 'q1',
+        text: 'Use the cache.',
+        artifact: null,
+      },
     });
+  });
+
+  it('reads the artifact an answer hands over', () => {
+    expect(
+      parseAutoBlock({
+        text: block({
+          action: 'answer',
+          delegation: 'd1',
+          question: 'q1',
+          text: 'See the report.',
+          artifact: 'artifact-1',
+        }),
+      }),
+    ).toMatchObject({ kind: 'block', block: { action: 'answer', artifact: 'artifact-1' } });
   });
 
   it('reads a finish block', () => {

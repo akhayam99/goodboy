@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { ICON_SIZE, Tooltip, cn } from '@goodboy/ui';
+import { FactCard, ICON_SIZE, cn } from '@goodboy/ui';
 import { PROVIDER_BRAND, brandColor } from '../../../features/providers/components/provider-brand';
 import { TriggerSeparator } from '../RoutingPicker/TriggerSeparator';
 import { routingNameText } from '../RoutingPicker/routingSummary';
@@ -44,7 +44,7 @@ export const RoutingLabel = ({
       />
     ) : null;
 
-  if (shown.label == null) {
+  if (shown.label == null || shown.card === null) {
     return (
       <span className={cn('inline-flex min-w-0 items-center gap-1 text-meta', className)}>
         <span className="text-faint-foreground">{MISSING_LABEL}</span>
@@ -52,7 +52,7 @@ export const RoutingLabel = ({
     );
   }
   return (
-    <Tooltip content={shown.tooltip}>
+    <FactCard card={shown.card}>
       <span
         data-testid={shown.isDiverged ? 'routing-divergence' : undefined}
         className={cn(
@@ -87,6 +87,6 @@ export const RoutingLabel = ({
         ))}
         {glyphPlacement === 'trailing' ? glyph : null}
       </span>
-    </Tooltip>
+    </FactCard>
   );
 };

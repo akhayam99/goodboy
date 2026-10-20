@@ -1,5 +1,7 @@
 import type { AutoUserTurnParams, AutoUserTurnResult } from '../autoUserTurnPort';
+import type { ChecksRerunResult } from '../checksRerunPort';
 import type { DelegationDecisionResult } from '../delegationDecisionPort';
+import type { PublishResult } from '../publishPort';
 import type { TreeRetryResult } from '../treeRetryPort';
 import type { TreeStopResult } from '../treeStopPort';
 import {
@@ -11,6 +13,8 @@ import {
 } from './autoBridgeProtocol';
 
 const AUTO_BRIDGE_TIMEOUT_MS = 30_000;
+
+const AUTO_BRIDGE_LONG_TIMEOUT_MS = 30 * 60_000;
 
 const NO_ANSWER = 'The main window did not answer. Do it from the main window.';
 
@@ -39,6 +43,36 @@ const isRetryResult = (value: unknown): value is TreeRetryResult =>
   (value['kind'] === 'retried' ||
     (value['kind'] === 'refused' && typeof value['message'] === 'string'));
 
+const isRerunResult = (value: unknown): value is ChecksRerunResult =>
+  isRecord(value) &&
+  ((value['kind'] === 'rerun' &&
+    (value['verdict'] === 'green' ||
+      value['verdict'] === 'red' ||
+      value['verdict'] === 'not_checked')) ||
+    (value['kind'] === 'refused' && typeof value['message'] === 'string'));
+
+const PUBLISH_STATES = [
+  'pushing',
+  'awaiting_confirm',
+  'pushed',
+  'declined',
+  'failed',
+  'put_back',
+  'refused',
+] as const;
+
+const isPublishRow = (value: unknown): boolean =>
+  isRecord(value) &&
+  typeof value['delegationId'] === 'string' &&
+  PUBLISH_STATES.some((state) => state === value['state']) &&
+  (value['message'] === null || typeof value['message'] === 'string');
+
+const isPublishResult = (value: unknown): value is PublishResult =>
+  isRecord(value) &&
+  value['kind'] === 'done' &&
+  Array.isArray(value['rows']) &&
+  value['rows'].every(isPublishRow);
+
 type Pending = {
   readonly resolve: (result: unknown) => void;
   readonly reject: (error: Error) => void;
@@ -49,6 +83,7 @@ export type AutoBridgeClientParams = Readonly<{
   bus: AutoBridgeBus;
   newId: () => string;
   timeoutMs?: number;
+  longTimeoutMs?: number;
 }>;
 
 export type AutoBridgeClient = Readonly<{
@@ -70,17 +105,20 @@ const turnKeyOf = ({ turn }: TurnKeyParams): string =>
 
 type SendParams = {
   readonly call: AutoBridgeCall;
+  readonly waitMs: number;
 };
 
 type AskParams<Result> = {
   readonly call: AutoBridgeCall;
   readonly isResult: (value: unknown) => value is Result;
+  readonly waitMs?: number;
 };
 
 export const createAutoBridgeClient = async ({
   bus,
   newId,
   timeoutMs = AUTO_BRIDGE_TIMEOUT_MS,
+  longTimeoutMs = AUTO_BRIDGE_LONG_TIMEOUT_MS,
 }: AutoBridgeClientParams): Promise<AutoBridgeClient> => {
   const pending = new Map<string, Pending>();
   const unsettledTurns = new Map<string, string>();
@@ -104,13 +142,13 @@ export const createAutoBridgeClient = async ({
       waiting.reject(new Error(typeof error === 'string' && error !== '' ? error : NO_ANSWER));
     },
   });
-  const send = ({ call }: SendParams): Promise<unknown> =>
+  const send = ({ call, waitMs }: SendParams): Promise<unknown> =>
     new Promise<unknown>((resolve, reject) => {
       const id = newId();
       const timer = setTimeout(() => {
         pending.delete(id);
         reject(new Error(NO_ANSWER));
-      }, timeoutMs);
+      }, waitMs);
       pending.set(id, { resolve, reject, timer });
       const request: AutoBridgeRequest = { id, call };
       bus.emit({ event: AUTO_BRIDGE_EVENT.request, payload: request }).catch((error: unknown) => {
@@ -119,8 +157,12 @@ export const createAutoBridgeClient = async ({
         reject(error instanceof Error ? error : new Error(NO_ANSWER));
       });
     });
-  const ask = async <Result>({ call, isResult }: AskParams<Result>): Promise<Result> => {
-    const result = await send({ call });
+  const ask = async <Result>({
+    call,
+    isResult,
+    waitMs = timeoutMs,
+  }: AskParams<Result>): Promise<Result> => {
+    const result = await send({ call, waitMs });
     if (!isResult(result)) {
       throw new Error(NO_ANSWER);
     }
@@ -129,6 +171,18 @@ export const createAutoBridgeClient = async ({
   const ports: AutoBridgePorts = {
     stop: ({ treeId }) => ask({ call: { kind: 'stop', treeId }, isResult: isStopResult }),
     retry: ({ treeId }) => ask({ call: { kind: 'retry', treeId }, isResult: isRetryResult }),
+    rerunChecks: ({ delegationId }) =>
+      ask({
+        call: { kind: 'rerunChecks', delegationId },
+        isResult: isRerunResult,
+        waitMs: longTimeoutMs,
+      }),
+    publish: ({ act, delegationIds }) =>
+      ask({
+        call: { kind: 'publish', act, delegationIds },
+        isResult: isPublishResult,
+        waitMs: longTimeoutMs,
+      }),
     decision: ({ delegationId, decision }) =>
       ask({ call: { kind: 'decision', delegationId, decision }, isResult: isDecisionResult }),
     userTurn: async (turn) => {

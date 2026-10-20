@@ -68,6 +68,10 @@ const bareRetry = (retryOf: string) => ({
   mount: null,
   revises: null,
   changeFrom: [],
+  publish: null,
+  facts: [],
+  decisions: [],
+  forQuestion: null,
   retryOf,
 });
 

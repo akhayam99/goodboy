@@ -1,7 +1,8 @@
-import { Tooltip, cn } from '@goodboy/ui';
+import { Tooltip } from '@goodboy/ui';
 import type { RunWorkflowKind } from '../../../../timeline/runWorkflowKind';
 import { RUN_KIND_GLYPH } from './runKindGlyph';
-import { ROW_CARD_REST_MS, type TimelineRowIdentity } from './timelineRowIdentity';
+import { TimelineRunGlyph } from './TimelineRunGlyph';
+import type { TimelineRowIdentity } from './timelineRowIdentity';
 
 type Props = {
   readonly kind: RunWorkflowKind;
@@ -11,8 +12,6 @@ type Props = {
   readonly isCardOpen?: boolean;
 };
 
-const GLYPH_SIZE = 10;
-
 export const TimelineRunChip = ({
   kind,
   workflowName,
@@ -20,34 +19,12 @@ export const TimelineRunChip = ({
   identity = null,
   isCardOpen = false,
 }: Props) => {
-  const { icon: Icon, label, isNamedInTooltip } = RUN_KIND_GLYPH[kind];
+  const { label, isNamedInTooltip } = RUN_KIND_GLYPH[kind];
   const name = workflowName.trim();
   const tooltip = isNamedInTooltip && name.length > 0 ? `${name} ${label.toLowerCase()}` : label;
-  const glyph = (
-    <span
-      role="img"
-      aria-label={tooltip}
-      data-testid="run-glyph"
-      className={cn(
-        'inline-flex size-4.5 shrink-0 items-center justify-center self-center rounded-full bg-current/12 motion-safe:transition-colors',
-        muted ? 'text-faint-foreground' : 'text-muted-foreground',
-      )}
-    >
-      <Icon size={GLYPH_SIZE} aria-hidden />
-    </span>
-  );
+  const glyph = <TimelineRunGlyph kind={kind} label={tooltip} isMuted={muted} />;
   if (identity === null) {
     return <Tooltip content={tooltip}>{glyph}</Tooltip>;
   }
-  return (
-    <Tooltip
-      variant="card"
-      side="bottom"
-      restDelayMs={ROW_CARD_REST_MS}
-      isOpen={isCardOpen}
-      content={identity.card}
-    >
-      {glyph}
-    </Tooltip>
-  );
+  return identity.wrapCard({ children: glyph, isOpen: isCardOpen });
 };

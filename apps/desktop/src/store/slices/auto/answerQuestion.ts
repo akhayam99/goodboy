@@ -1,18 +1,27 @@
-import { AUTO_DELEGATION_DEADLINE_MINUTES, diagnoseResume, isAutoWriterRole } from '@goodboy/core';
+import {
+  AUTO_DELEGATION_DEADLINE_MINUTES,
+  AUTO_DELIVERY_ARTIFACT_CHARS,
+  AUTO_MAX_OPEN_CHILDREN,
+  diagnoseResume,
+  isAutoWriterRole,
+} from '@goodboy/core';
 import {
   AUTO_RESUME_TREE_ABORT,
   autoResumeTreeStatement,
   casAutoDelegationStateStatement,
+  getAutoArtifact,
   getAutoDelegation,
   insertAutoAttemptStatement,
   insertAutoReservationStatement,
   listAutoAttemptsOfDelegation,
+  readAutoArtifactLiveState,
   type AutoAttempt,
   type AutoDelegation,
   type Statement,
 } from '@goodboy/db';
 import {
   brandId,
+  type ArtifactId,
   type AutoAttemptId,
   type AutoDelegationId,
   type AutoReservationId,
@@ -60,6 +69,29 @@ const questionTextOf = ({ attempt }: QuestionTextParams): string => {
   const snapshot = attempt.resultSnapshot;
   const question = isRecord(snapshot) ? snapshot['question'] : undefined;
   return typeof question === 'string' ? question : '';
+};
+
+const questionTailOf = ({ attempt }: QuestionTextParams): string => {
+  const snapshot = attempt.resultSnapshot;
+  const tail = isRecord(snapshot) ? snapshot['tail'] : undefined;
+  return typeof tail === 'string' ? tail : '';
+};
+
+type ReportParams = {
+  readonly ctx: AgentVerbContext;
+  readonly treeId: AutoAttempt['treeId'];
+  readonly artifactText: string;
+};
+
+const reportOf = async ({ ctx, treeId, artifactText }: ReportParams): Promise<string | null> => {
+  const artifactId = brandId<ArtifactId>({ value: artifactText });
+  const registered = await getAutoArtifact({ db: ctx.db, artifactId });
+  const live = await readAutoArtifactLiveState({ db: ctx.db, artifactId });
+  if (registered === null || registered.treeId !== treeId || live === null) {
+    return null;
+  }
+  const body = live.sourceText.slice(0, AUTO_DELIVERY_ARTIFACT_CHARS);
+  return `${live.title} (version ${live.revision})\n${body}`;
 };
 
 type ResumeOfQuestionParams = {
@@ -166,6 +198,12 @@ export const answerQuestion = async ({
   if (delegation.state !== 'paused' || paused.state !== 'paused' || latest?.id !== paused.id) {
     return refuseOutcome({ code: 'not_paused' });
   }
+  const artifactText = textOf({ value: args['artifact'], max: 1_000 });
+  const report =
+    artifactText === null ? null : await reportOf({ ctx, treeId: grant.treeId, artifactText });
+  if (artifactText !== null && report === null) {
+    return refuseOutcome({ code: 'artifact_unknown' });
+  }
   const nowMs = ctx.now();
   const role = delegationRoleOf({ delegation });
   const snapshot = await readAdmissionSnapshot({
@@ -200,6 +238,7 @@ export const answerQuestion = async ({
       nowMs,
       generation: grant.generation,
       runId: grant.runId,
+      maxOpenChildren: AUTO_MAX_OPEN_CHILDREN,
       requestedUsd: verdict.ceilingUsd,
     }),
     casAutoDelegationStateStatement({
@@ -219,7 +258,13 @@ export const answerQuestion = async ({
       treeId: tree.id,
       generation: grant.generation,
       baseline: {
-        resume: { questionId, question: questionTextOf({ attempt: paused }), answer: text },
+        resume: {
+          questionId,
+          question: questionTextOf({ attempt: paused }),
+          answer: text,
+          tail: questionTailOf({ attempt: paused }),
+          ...(report === null ? {} : { report }),
+        },
       },
       writeSet:
         isAutoWriterRole({ role }) && typeof worktreePath === 'string' ? { worktreePath } : null,

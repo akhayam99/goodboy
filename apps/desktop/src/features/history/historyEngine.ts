@@ -45,6 +45,7 @@ type LeasePushParams = {
   readonly worktreePath: string;
   readonly branch: string;
   readonly expectedRemoteSha: string | null;
+  readonly sourceSha?: string;
   readonly workspaceId: string | null;
   readonly projectId: string | null;
 };
@@ -142,6 +143,19 @@ export const listHistoryBackups = async ({
 }: BackupsParams): Promise<ReadonlyArray<HistoryBackup>> =>
   invokeCommand<ReadonlyArray<HistoryBackup>>('history_backups_list', { worktreePath, branch });
 
+type CreateBackupParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly sha: string;
+};
+
+export const createHistoryBackup = async ({
+  worktreePath,
+  branch,
+  sha,
+}: CreateBackupParams): Promise<string> =>
+  invokeCommand<string>('history_backup_create', { worktreePath, branch, sha });
+
 type BackupFactsParams = {
   readonly worktreePath: string;
   readonly baseRef: string;
@@ -172,6 +186,7 @@ export const pushWithLease = async ({
   worktreePath,
   branch,
   expectedRemoteSha,
+  sourceSha,
   workspaceId,
   projectId,
 }: LeasePushParams): Promise<LeasePushOutcome> =>
@@ -179,6 +194,7 @@ export const pushWithLease = async ({
     cwd: worktreePath,
     branch,
     expectedRemoteSha,
+    sourceSha: sourceSha ?? null,
     workspaceId,
     projectId,
   });

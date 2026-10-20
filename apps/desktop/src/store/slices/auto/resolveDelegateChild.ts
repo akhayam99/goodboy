@@ -1,13 +1,21 @@
 import {
+  AUTO_BRIEF_VERSION,
   AUTO_DELEGATION_DEADLINE_MINUTES,
   canAutoRoleRunCommands,
+  composeBranchFacts,
+  composeBriefDecisions,
   composeDelegationKickoff,
+  delegationDepthOf,
   doesTaskNeedCommands,
   roleCannotRunCommandsMessage,
+  isAutoSubstepRole,
+  isAutoWriterRole,
+  substepLinkOf,
   isUserPayload,
   parseAutoDelegationRole,
   pickAutoMount,
   type AutoDelegationRole,
+  type AdmissionSubstep,
   type AutoRefusalCode,
   type DelegateChildSpec,
   type KickoffArtifactInput,
@@ -18,7 +26,9 @@ import {
   getAutoArtifact,
   getAutoDelegation,
   getAutoOutbox,
+  getPausedAutoDelegationOfQuestion,
   listArtifactRevisions,
+  listSessionDecisions,
   readAutoArtifactLiveState,
   type AutoDelegation,
   type AutoTree,
@@ -32,6 +42,7 @@ import {
   type AutoOutboxId,
 } from '@goodboy/types';
 import type { AdmitChildInput } from './admit';
+import { gatherBranchFacts, mountLabelOf } from './gatherBranchFacts';
 import type { AgentGrant } from './ports';
 import type { AgentVerbContext } from './verbContext';
 
@@ -245,6 +256,18 @@ type RetryNoteParams = {
 const retryNoteOf = ({ retry }: RetryNoteParams): string =>
   `The earlier attempt ended ${retry.outcome ?? 'without a result'} (${retry.reason ?? 'no reason recorded'}). Do the work again from the start of the task below.`;
 
+type BriefVersionParams = {
+  readonly retry: AutoDelegation | null;
+};
+
+const briefVersionOf = ({ retry }: BriefVersionParams): number | null => {
+  if (retry === null) {
+    return AUTO_BRIEF_VERSION;
+  }
+  const stored = retry.request['briefVersion'];
+  return typeof stored === 'number' ? stored : null;
+};
+
 const isResolved = (value: ReviseTarget | ResolvedDelegateChild): value is ResolvedDelegateChild =>
   'kind' in value;
 
@@ -270,7 +293,56 @@ export const resolveDelegateChild = async ({
       slot,
       code: 'spec_invalid',
       message:
-        'a History rewriter only runs from the History flow of the branch, in a copy that flow prepares, so Auto cannot start one. Nothing was started. Tell the user to rewrite the history from the branch, or hand the commit changes to an implementer.',
+        'a History rewriter only runs from the History flow of the branch, in a copy that flow prepares, so Auto cannot start one. Nothing was started. Use an implementer with "publish":{"mode":"force"} for the rewrite: it rewrites the commits on the branch, Goodboy checks the tree, keeps a backup and asks the user to confirm the force push. Goodboy does not check each rewritten commit.',
+    });
+  }
+  const parent =
+    child.forQuestion === null
+      ? null
+      : await getPausedAutoDelegationOfQuestion({
+          db: ctx.db,
+          treeId: tree.id,
+          questionId: child.forQuestion,
+        });
+  if (child.forQuestion !== null && !isAutoSubstepRole({ role })) {
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message: 'forQuestion is for a scout or an investigator. Nothing was started',
+    });
+  }
+  if (child.forQuestion !== null && revise !== null) {
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message: 'a substep is a new piece of work, so it cannot revise an artifact',
+    });
+  }
+  if (child.forQuestion !== null && parent === null) {
+    return refuse({
+      slot,
+      code: 'not_paused',
+      message: `no agent is waiting on question ${child.forQuestion}. Nothing was started`,
+    });
+  }
+  const substep: AdmissionSubstep | null =
+    child.forQuestion === null || parent === null
+      ? null
+      : { parentDelegationId: parent.id, questionId: child.forQuestion };
+  if (child.facts.length > 0 && role !== 'scout') {
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message:
+        'facts is for a scout: Goodboy reads the branch facts into its brief. Nothing was started',
+    });
+  }
+  if (child.publish !== null && (!isAutoWriterRole({ role }) || role === 'scribe')) {
+    return refuse({
+      slot,
+      code: 'spec_invalid',
+      message:
+        'publish is for an implementer or a CI fixer: they commit work that Goodboy can push. Nothing was started',
     });
   }
   if (
@@ -302,6 +374,30 @@ export const resolveDelegateChild = async ({
       message: 'the mount of the earlier attempt moved, so the work cannot repeat on it',
     });
   }
+  const gathered =
+    child.facts.length === 0
+      ? null
+      : await gatherBranchFacts({
+          ports: ctx.ports,
+          sessionId: grant.sessionId,
+          mounts,
+          mountIds: child.facts,
+        });
+  if (gathered !== null && gathered.kind === 'unknown_mount') {
+    return refuse({
+      slot,
+      code: 'mount_missing',
+      message: `facts names ${gathered.mountId}, which is not a mount of this conversation. Nothing was started`,
+    });
+  }
+  const decisions =
+    child.decisions.length === 0
+      ? null
+      : composeBriefDecisions({
+          ids: child.decisions,
+          rows: await listSessionDecisions({ db: ctx.db, sessionId: grant.sessionId }),
+        });
+  const briefVersion = briefVersionOf({ retry });
   const inputs = await inputsOf({ ctx, tree, artifactIds: child.artifactIds });
   const words = revise === null ? null : await userWordsOf({ ctx, tree, rowIds: child.changeFrom });
   const producerRouting = revise?.producerRouting ?? {};
@@ -333,8 +429,12 @@ export const resolveDelegateChild = async ({
     expected: child.expected,
     inputs: inputs.bodies,
     revise: revise === null ? null : revise.revise,
-    mountLabel: `${mount.id} (${mount.mountName ?? 'unnamed'}, branch ${mount.branch})`,
+    mountLabel: mountLabelOf({ mount }),
+    facts: gathered === null ? null : composeBranchFacts({ facts: gathered.facts }),
+    decisions,
     retryNote: retry === null ? null : retryNoteOf({ retry }),
+    isSubstep:
+      substep !== null || (retry !== null && substepLinkOf({ request: retry.request }) !== null),
   });
   const nowMs = ctx.now();
   return {
@@ -350,9 +450,23 @@ export const resolveDelegateChild = async ({
         doneWhen: child.doneWhen,
         expected: child.expected,
         kickoff,
-        mountLabel: `${mount.id} (${mount.mountName ?? 'unnamed'}, branch ${mount.branch})`,
+        mountLabel: mountLabelOf({ mount }),
         artifactIds: child.artifactIds,
         changeFrom: child.changeFrom,
+        ...(child.facts.length > 0 && { facts: child.facts }),
+        ...(child.decisions.length > 0 && { decisions: child.decisions }),
+        ...(briefVersion !== null && { briefVersion }),
+        ...(retry !== null &&
+          retry.request['parent'] !== undefined && { parent: retry.request['parent'] }),
+        ...(parent !== null &&
+          substep !== null && {
+            parent: {
+              delegationId: parent.id,
+              questionId: substep.questionId,
+              depth: delegationDepthOf({ request: parent.request }) + 1,
+            },
+          }),
+        ...(child.publish !== null && { publish: child.publish }),
       },
       target: {
         mountId: mount.id,
@@ -384,6 +498,7 @@ export const resolveDelegateChild = async ({
       inputArtifacts: inputs.refs,
       isConfirmForced: words?.isAmbiguous === true,
       retryOf: retry?.id ?? null,
+      substep,
       deadlineAt: nowMs + AUTO_DELEGATION_DEADLINE_MINUTES * 60_000,
     },
   };

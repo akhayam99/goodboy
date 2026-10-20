@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { FLOATING_SURFACE } from '@goodboy/ui';
@@ -18,6 +18,7 @@ describe('the floating surface', () => {
     ['Popover', join(UI_SRC, 'components', 'Popover.tsx')],
     ['ContextMenu', join(UI_SRC, 'components', 'ContextMenu', 'ContextMenu.tsx')],
     ['MenuChoicePanel', join(UI_SRC, 'components', 'ContextMenu', 'MenuChoicePanel.tsx')],
+    ['FactCard', join(UI_SRC, 'components', 'FactCard', 'index.tsx')],
     [
       'SessionHoverCard',
       join(DESKTOP_SRC, 'features', 'workspace', 'components', 'SessionHoverCard', 'index.tsx'),
@@ -39,6 +40,26 @@ describe('the floating surface', () => {
     expect(source).toContain('FLOATING_SURFACE');
     expect(source).not.toMatch(/bg-floating/);
     expect(source).not.toMatch(/shadow-(?:md|lg|xl)/);
+  });
+
+  it('paints the label Tooltip from the constant, with no fill of its own', () => {
+    const source = read(join(UI_SRC, 'components', 'Tooltip.tsx'));
+
+    expect(source).toContain('FLOATING_SURFACE');
+    expect(source).not.toMatch(/bg-floating/);
+  });
+
+  it('keeps the FactCard parts free of a surface of their own', () => {
+    const parts = readdirSync(join(UI_SRC, 'components', 'FactCard')).filter(
+      (file) => file.endsWith('.tsx') && !file.endsWith('.test.tsx') && file !== 'index.tsx',
+    );
+
+    expect(parts.length).toBeGreaterThan(0);
+    parts.forEach((file) => {
+      expect(read(join(UI_SRC, 'components', 'FactCard', file))).not.toMatch(
+        /bg-floating|bg-elevated|shadow-(?:md|lg|xl)/,
+      );
+    });
   });
 
   it.each([

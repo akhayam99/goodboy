@@ -18,6 +18,7 @@ import { recordUsageTelemetry } from './recordUsageTelemetry';
 import { codexMeasuredUsage } from './codexMeasuredUsage';
 import type { GetFn, SetFn } from './types';
 import { confinedRoleOf, READ_ONLY_ANSWER_ROLE } from './confinedRoleOf';
+import { isAutoChildTurn } from './isAutoChildTurn';
 import type { TurnContext } from './turnContext';
 
 type Params = Readonly<{
@@ -84,6 +85,7 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
       ...(confinedRole !== undefined && { confinedRole }),
       ...(ctx.input.deliveryId !== undefined && { deliveryId: ctx.input.deliveryId }),
       ...((isolatedCopyPath !== null || isScribeTurn) && { blocksPush: true }),
+      ...(isAutoChildTurn({ input: ctx.input, confinedRole }) && { isAutoChild: true }),
       ...(rewriterCopy !== null && { excludesTmp: true }),
       ...(apiKeyBinding ?? {}),
       ...claudeFlags,

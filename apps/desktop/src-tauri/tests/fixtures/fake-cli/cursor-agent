@@ -73,6 +73,9 @@ case "$1" in
         ;;
     esac
     ;;
+  --help)
+    printf 'Options:\n  %s  Stream partial output\n' '--stream-partial-output'
+    ;;
   *)
     fake_turn cursor-agent.jsonl "$@"
     ;;

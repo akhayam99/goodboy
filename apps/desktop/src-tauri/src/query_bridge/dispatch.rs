@@ -269,12 +269,17 @@ fn named_project_id(app: &AppHandle, workspace_id: &str, name: &str) -> Result<S
     .ok_or_else(|| format!("unknown project: {}", name))
 }
 
-pub async fn dispatch(app: &AppHandle, request: &QueryRequest) -> Result<Value, BridgeError> {
+pub async fn dispatch(
+    app: &AppHandle,
+    request: &QueryRequest,
+    caller: super::auto_child::Caller,
+) -> Result<Value, BridgeError> {
     if request.workspace_id.is_empty() {
         return Err("no workspace: pass --workspace <id>".into());
     }
     let spec = spec_for(&request.provider, &request.verb)
         .ok_or_else(|| format!("unknown command: {} {}", request.provider, request.verb))?;
+    super::auto_child::refuse_act(&request.provider, &request.verb, caller)?;
     if request.provider == "project" {
         return super::project::materialize(app, request).await;
     }

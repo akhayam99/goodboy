@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -179,16 +179,23 @@ const renderCard = ({
 }: RenderParams = {}) =>
   render(
     <WorkTimeContext.Provider value={sourceOf({ spans })}>
-      <RunIdentityCard entry={entryOf({ children })} isModelsOnly={isModelsOnly} />
+      <RunIdentityCard entry={entryOf({ children })} isModelsOnly={isModelsOnly} isOpen>
+        <button type="button">run</button>
+      </RunIdentityCard>
     </WorkTimeContext.Provider>,
   );
+
+const shownCard = () => within(screen.getByTestId('fact-card'));
+
+const factOf = ({ label }: { readonly label: string }): string | null =>
+  shownCard().queryByText(label)?.nextElementSibling?.textContent ?? null;
 
 describe('RunIdentityCard', () => {
   it('names the workflow by its title and says what kind it is', () => {
     renderCard();
 
-    expect(screen.getByText('Harden the webhook')).toBeDefined();
-    expect(screen.getByText('Preset run')).toBeDefined();
+    expect(shownCard().getByText('Harden the webhook')).toBeDefined();
+    expect(shownCard().getByText('Preset run')).toBeDefined();
   });
 
   it('tallies the steps by state and the questions answered', () => {
@@ -202,26 +209,23 @@ describe('RunIdentityCard', () => {
       ],
     });
 
-    expect(screen.getByText('2 done · 1 running · 2 queued · 1 question answered')).toBeDefined();
+    expect(factOf({ label: 'Done' })).toBe('2');
+    expect(factOf({ label: 'Running' })).toBe('1');
+    expect(factOf({ label: 'Queued' })).toBe('2');
+    expect(factOf({ label: 'Answered' })).toBe('1');
   });
 
   it('says how far the run is', () => {
     renderCard({ children: [stepOf({ status: 'completed' }), stepOf({ status: 'running' })] });
 
-    expect(screen.getByText('Step 2 of 7')).toBeDefined();
+    expect(factOf({ label: 'Progress' })).toBe('Step 2 of 7');
   });
 
   it('lists each model with the steps it ran and what it cost', () => {
     renderCard();
-    const rows = screen.getAllByRole('listitem');
 
-    expect(rows).toHaveLength(2);
-    expect(rows[0]?.textContent).toContain('Sonnet 5.5');
-    expect(rows[0]?.textContent).toContain('2 steps');
-    expect(rows[0]?.textContent).toContain('$0.81');
-    expect(rows[1]?.textContent).toContain('GPT-6.1 Sol');
-    expect(rows[1]?.textContent).toContain('1 step');
-    expect(rows[1]?.textContent).toContain('$0.41');
+    expect(factOf({ label: 'Sonnet 5.5' })).toBe('2 steps$0.81');
+    expect(factOf({ label: 'GPT-6.1 Sol' })).toBe('1 step$0.41');
   });
 
   it('keeps only the header and the models on the card of the model cell', () => {
@@ -230,15 +234,31 @@ describe('RunIdentityCard', () => {
       children: [stepOf({ status: 'completed' }), stepOf({ status: 'running' })],
     });
 
-    expect(screen.queryByText('Step 2 of 7')).toBeNull();
-    expect(screen.queryByText(/done/)).toBeNull();
-    expect(screen.getByText('Models')).toBeDefined();
+    expect(factOf({ label: 'Progress' })).toBeNull();
+    expect(factOf({ label: 'Done' })).toBeNull();
+    expect(factOf({ label: 'Sonnet 5.5' })).toBe('2 steps$0.81');
   });
 
-  it('leaves the models section out of a run that has not run anything yet', () => {
+  it('leaves the models rows out of a run that has not run anything yet', () => {
     renderCard({ spans: [] });
 
-    expect(screen.queryByText('Models')).toBeNull();
-    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    expect(factOf({ label: 'Sonnet 5.5' })).toBeNull();
+    expect(factOf({ label: 'GPT-6.1 Sol' })).toBeNull();
+  });
+
+  it('fits a long tally and many models in six rows and counts the rest', () => {
+    renderCard({
+      children: [
+        stepOf({ status: 'completed', hasAnswer: true }),
+        stepOf({ status: 'running' }),
+        stepOf({ status: 'pending' }),
+        stepOf({ status: 'failed' }),
+        stepOf({ status: 'blocked' }),
+        stepOf({ status: 'stopped' }),
+      ],
+    });
+
+    expect(Array.from(screen.getByTestId('fact-card').querySelectorAll('dt'))).toHaveLength(5);
+    expect(shownCard().getByText(/^and \d+ more$/)).toBeDefined();
   });
 });

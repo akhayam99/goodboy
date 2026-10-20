@@ -136,6 +136,8 @@ pub struct SpawnArgs {
     #[serde(default)]
     pub blocks_push: bool,
     #[serde(default)]
+    pub is_auto_child: bool,
+    #[serde(default)]
     pub excludes_tmp: bool,
     #[serde(default)]
     pub delivery_id: Option<String>,
@@ -212,19 +214,68 @@ pub(crate) struct SpawnOneArgs<'a> {
     pub write_set_lease: Option<&'a crate::worktree_writer::WriteSetBinding>,
     pub confined_role: Option<&'a str>,
     pub blocks_push: bool,
+    pub is_auto_child: bool,
     pub excludes_tmp: bool,
 }
 
 pub(crate) const PUSH_BLOCK_URL: &str = "goodboy-blocked://history-rewriter";
+pub(crate) const AUTO_CHILD_PUSH_BLOCK_URL: &str = "goodboy-blocked://auto-child";
+
+pub(crate) const HOST_TOKEN_ENV: &[&str] = &[
+    "GH_TOKEN",
+    "GITHUB_TOKEN",
+    "GH_ENTERPRISE_TOKEN",
+    "GITHUB_ENTERPRISE_TOKEN",
+    "GITLAB_TOKEN",
+    "GITLAB_ACCESS_TOKEN",
+];
+
+const PUSH_REWRITTEN_PREFIXES: &[&str] = &["https://", "http://", "ssh://", "git://", "git@"];
+
+pub(crate) fn apply_push_block_config(command: &mut Command, url: &str) {
+    let mut entries = vec![
+        ("remote.origin.pushurl".to_string(), url.to_string()),
+        (
+            "remote.pushDefault".to_string(),
+            "goodboy-blocked".to_string(),
+        ),
+    ];
+    let rewrite = format!("url.{url}/.pushInsteadOf");
+    for prefix in PUSH_REWRITTEN_PREFIXES {
+        entries.push((rewrite.clone(), prefix.to_string()));
+    }
+    command.env("GIT_CONFIG_COUNT", entries.len().to_string());
+    for (index, (key, value)) in entries.iter().enumerate() {
+        command.env(format!("GIT_CONFIG_KEY_{index}"), key);
+        command.env(format!("GIT_CONFIG_VALUE_{index}"), value);
+    }
+}
+
+fn remove_host_tokens(command: &mut Command) {
+    for name in HOST_TOKEN_ENV {
+        command.env_remove(name);
+    }
+}
 
 pub(crate) fn apply_push_block(command: &mut Command) {
-    command.env("GIT_CONFIG_COUNT", "2");
-    command.env("GIT_CONFIG_KEY_0", "remote.origin.pushurl");
-    command.env("GIT_CONFIG_VALUE_0", PUSH_BLOCK_URL);
-    command.env("GIT_CONFIG_KEY_1", "remote.pushDefault");
-    command.env("GIT_CONFIG_VALUE_1", "goodboy-blocked");
-    command.env_remove("GH_TOKEN");
-    command.env_remove("GITHUB_TOKEN");
+    apply_push_block_config(command, PUSH_BLOCK_URL);
+    remove_host_tokens(command);
+}
+
+fn apply_git_host_access(command: &mut Command, args: &SpawnOneArgs<'_>) {
+    if args.blocks_push {
+        apply_push_block(command);
+        return;
+    }
+    if args.is_auto_child {
+        apply_push_block_config(command, AUTO_CHILD_PUSH_BLOCK_URL);
+        remove_host_tokens(command);
+        return;
+    }
+    if let Some(token) = crate::github::token_for_workspace(args.workspace_id) {
+        command.env("GH_TOKEN", &token);
+        command.env("GITHUB_TOKEN", &token);
+    }
 }
 
 fn max_mode_config_dir_for(binary: &str, cursor_max_mode: bool) -> Option<std::path::PathBuf> {
@@ -237,14 +288,21 @@ fn max_mode_config_dir_for(binary: &str, cursor_max_mode: bool) -> Option<std::p
     crate::cursor_config::max_mode_config_dir()
 }
 
+type SpawnedTurn = (
+    Child,
+    Vec<crate::worktree_writer::RunLeaseGuard>,
+    crate::query_bridge::TurnProcess,
+);
+
 fn spawn_leased_child(
     command: &mut Command,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
     binding: Option<&WriterLeaseBinding>,
     write_set: Option<&crate::worktree_writer::WriteSetBinding>,
     run_id: &str,
+    kind: crate::query_bridge::TurnKind,
     on_exit: impl Fn(&str) + Send + Clone + 'static,
-) -> Result<(Child, Vec<crate::worktree_writer::RunLeaseGuard>), TurnError> {
+) -> Result<SpawnedTurn, TurnError> {
     let mut guards = Vec::new();
     if let Some(binding) = binding {
         guards.push(
@@ -271,11 +329,13 @@ fn spawn_leased_child(
             .ok_or(TurnError::WriterLeaseNotOwned)?,
         );
     }
-    let child = command
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-    Ok((child, guards))
+    let (child, turn) = crate::query_bridge::spawn_turn(kind, || {
+        command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+    })?;
+    Ok((child, guards, turn))
 }
 
 fn spawn_one<E: TurnEmitter>(
@@ -301,12 +361,7 @@ fn spawn_one<E: TurnEmitter>(
         }
     }
 
-    if args.blocks_push {
-        apply_push_block(&mut command);
-    } else if let Some(token) = crate::github::token_for_workspace(args.workspace_id) {
-        command.env("GH_TOKEN", &token);
-        command.env("GITHUB_TOKEN", &token);
-    }
+    apply_git_host_access(&mut command, &args);
 
     crate::query_bridge::apply_turn_env(
         &mut command,
@@ -318,7 +373,10 @@ fn spawn_one<E: TurnEmitter>(
         },
     );
 
-    let cli_args = turn_args(args.binary, &args);
+    let mut cli_args = turn_args(args.binary, &args);
+    cli_args.extend(crate::providers::cli_probe::partial_output_args(
+        args.binary,
+    ));
     for a in &cli_args {
         command.arg(a);
     }
@@ -328,12 +386,17 @@ fn spawn_one<E: TurnEmitter>(
         .writer_lease
         .map(|binding| binding.holder.clone())
         .or_else(|| args.write_set_lease.map(|set| set.holder.clone()));
-    let (mut child, lease_guards) = spawn_leased_child(
+    let kind = match args.is_auto_child {
+        true => crate::query_bridge::TurnKind::AutoChild,
+        false => crate::query_bridge::TurnKind::HandStarted,
+    };
+    let (mut child, lease_guards, turn_process) = spawn_leased_child(
         &mut command,
         leases,
         args.writer_lease,
         args.write_set_lease,
         args.run_id,
+        kind,
         move |path: &str| {
             if let Some(holder) = &event_holder {
                 event_app.emit_turn(
@@ -406,6 +469,7 @@ fn spawn_one<E: TurnEmitter>(
             backlog_clone.finish(&run_id_owned);
         }
         drop(lease_guards);
+        drop(turn_process);
     });
 
     Ok(args.run_id.to_string())
@@ -493,6 +557,7 @@ pub async fn turn_spawn(
             write_set_lease: args.write_set_lease.as_ref(),
             confined_role: args.confined_role.as_deref(),
             blocks_push: args.blocks_push,
+            is_auto_child: args.is_auto_child,
             excludes_tmp: args.excludes_tmp,
         },
     );
@@ -707,9 +772,103 @@ mod tests {
             Some(&binding),
             None,
             "run-1",
+            crate::query_bridge::TurnKind::HandStarted,
             |_| {},
         );
         assert!(matches!(result, Err(TurnError::WriterLeaseNotOwned)));
+    }
+
+    #[cfg(unix)]
+    fn git_at(dir: &std::path::Path, args: &[&str], is_blocked: bool) -> std::process::Output {
+        let mut command = Command::new("git");
+        command
+            .current_dir(dir)
+            .args(args)
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .env_remove("GIT_CONFIG_COUNT");
+        if is_blocked {
+            apply_push_block_config(&mut command, AUTO_CHILD_PUSH_BLOCK_URL);
+        }
+        command.output().expect("run git")
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn the_auto_child_push_block_fails_a_real_push_to_every_remote_and_url() {
+        let root = std::env::temp_dir().join(format!(
+            "goodboy-push-block-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|elapsed| elapsed.as_nanos())
+                .unwrap_or_default()
+        ));
+        let repo = root.join("ledger-core");
+        let bare = root.join("ledger-core.git");
+        std::fs::create_dir_all(&repo).unwrap();
+        let bare_path = bare.to_str().unwrap();
+        assert!(git_at(&root, &["init", "-q", "--bare", bare_path], false)
+            .status
+            .success());
+        for args in [
+            vec!["init", "-q", "-b", "main"],
+            vec!["config", "user.email", "test@example.com"],
+            vec!["config", "user.name", "Northwind"],
+            vec!["commit", "-q", "--allow-empty", "-m", "one"],
+            vec![
+                "remote",
+                "add",
+                "origin",
+                "https://example.invalid/acme/ledger-core.git",
+            ],
+            vec![
+                "remote",
+                "add",
+                "upstream",
+                "git@example.invalid:acme/ledger-core.git",
+            ],
+        ] {
+            assert!(git_at(&repo, &args, false).status.success(), "{args:?}");
+        }
+
+        for args in [
+            vec!["push", "origin", "HEAD:refs/heads/main"],
+            vec!["push", "upstream", "HEAD:refs/heads/main"],
+            vec![
+                "push",
+                "https://example.invalid/acme/notify-relay.git",
+                "HEAD:refs/heads/main",
+            ],
+            vec![
+                "push",
+                "ssh://git@example.invalid/acme/notify-relay.git",
+                "HEAD:refs/heads/main",
+            ],
+            vec![
+                "push",
+                "git://example.invalid/acme/notify-relay.git",
+                "HEAD:refs/heads/main",
+            ],
+        ] {
+            let pushed = git_at(&repo, &args, true);
+            let stderr = String::from_utf8_lossy(&pushed.stderr);
+            assert!(!pushed.status.success(), "{args:?}");
+            assert!(stderr.contains("goodboy-blocked"), "{args:?}: {stderr}");
+        }
+        assert!(!git_at(&repo, &["push"], true).status.success());
+        assert!(
+            git_at(
+                &repo,
+                &["push", "-q", bare_path, "HEAD:refs/heads/main"],
+                false
+            )
+            .status
+            .success(),
+            "the same push without the block goes through"
+        );
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]
@@ -835,6 +994,7 @@ mod tests {
             write_set_lease: None,
             confined_role: None,
             blocks_push: false,
+            is_auto_child: false,
             excludes_tmp: false,
         };
         assert_eq!(args.run_id, "run-1");
@@ -871,6 +1031,7 @@ mod tests {
             write_set_lease: None,
             confined_role: None,
             blocks_push: false,
+            is_auto_child: false,
             excludes_tmp: false,
         }
     }

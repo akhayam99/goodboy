@@ -377,17 +377,22 @@ describe('the file header', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('Comment, 2 open');
   });
 
-  it('leaves the path to a real tooltip and carries no native title', async () => {
+  it('leaves the path to a fact card and carries no native title', async () => {
     vi.useFakeTimers();
     renderWithMenu(<DiffView files={[FILE]} />);
     expect(headerOf().querySelector('[title]')).toBeNull();
 
-    fireEvent.mouseEnter(within(headerOf()).getByText('LedgerRow.tsx'));
+    fireEvent.pointerEnter(within(headerOf()).getByText('LedgerRow.tsx'), {
+      pointerType: 'mouse',
+    });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(600);
     });
 
-    expect(screen.getByRole('tooltip').textContent).toBe(FILE.path);
+    const card = within(screen.getByTestId('fact-card'));
+    expect(card.getByText('LedgerRow.tsx')).toBeDefined();
+    expect(card.getByText('Modified')).toBeDefined();
+    expect(card.getByText('ledger-core/src/rows')).toBeDefined();
   });
 
   it('keeps the file name whole and the folders in front of it', () => {

@@ -6,6 +6,9 @@ import {
   buildMountsLine,
   buildStateDigest,
   isResultsPayload,
+  parseSubstepNeeds,
+  substepLinkOf,
+  type AutoSubstepRole,
   type DeliveryArtifactBody,
   type DigestDelegation,
   type PickableMount,
@@ -58,6 +61,13 @@ const questionTextOf = ({ snapshot }: QuestionParams): string => {
   return typeof snapshot.question === 'string' ? snapshot.question : '';
 };
 
+const needsOf = ({ snapshot }: QuestionParams): AutoSubstepRole | null => {
+  if (typeof snapshot !== 'object' || snapshot === null || !('needs' in snapshot)) {
+    return null;
+  }
+  return parseSubstepNeeds({ role: snapshot.needs });
+};
+
 const digestDelegations = async ({
   db,
   delegations,
@@ -65,6 +75,7 @@ const digestDelegations = async ({
   Promise.all(
     delegations.map(async (delegation): Promise<DigestDelegation> => {
       const task = delegation.request['task'];
+      const link = substepLinkOf({ request: delegation.request });
       const base = {
         id: delegation.id,
         role: delegation.role,
@@ -72,6 +83,7 @@ const digestDelegations = async ({
         outcome: delegation.outcome,
         task: typeof task === 'string' ? task : '',
         createdAt: delegation.createdAt,
+        ...(link === null ? {} : { parentId: link.delegationId }),
       };
       if (delegation.state !== 'paused') {
         return { ...base, question: null };
@@ -81,11 +93,13 @@ const digestDelegations = async ({
       if (paused === undefined || paused.questionId === null) {
         return { ...base, question: null };
       }
+      const needs = needsOf({ snapshot: paused.resultSnapshot });
       return {
         ...base,
         question: {
           questionId: paused.questionId,
           text: questionTextOf({ snapshot: paused.resultSnapshot }),
+          ...(needs === null ? {} : { needs }),
         },
       };
     }),

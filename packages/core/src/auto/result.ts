@@ -1,10 +1,13 @@
 import type { AutoOutcome } from '@goodboy/db';
 import type { ChildClosing, ChildCompletion } from './closing';
+import { checksTextOf } from './checks';
+import { publishTextOf, type ResultPublish } from './publish';
+import { STEP_OUTPUT_EXCERPT_CHARS } from '../summarizer/step-output';
 import { isMissingShellText, rerouteHintOf } from './roleTools';
 import type { AutoDelegationRole } from './roles';
 
 export const DELEGATION_RESULT_SCHEMA_VERSION = 1;
-export const DELEGATION_SUMMARY_CHARS = 2_000;
+export const DELEGATION_SUMMARY_CHARS = STEP_OUTPUT_EXCERPT_CHARS;
 
 export type DelegationOutcome = AutoOutcome;
 
@@ -31,10 +34,26 @@ export type ResultChangedFile = Readonly<{
   ownership: FileOwnership;
 }>;
 
+export type ResultRemote = Readonly<{
+  status: 'unchanged' | 'moved' | 'unknown';
+  branch: string | null;
+  before: string | null;
+  after: string | null;
+}>;
+
 export type ResultCheck = Readonly<{
   name: string;
   status: 'pass' | 'fail' | 'unknown';
   source: 'harness' | 'child_claim';
+}>;
+
+export type ChecksNotRunReason =
+  'none_ticked' | 'check_missing' | 'timed_out' | 'tree_moved' | 'tree_dirty' | 'not_available';
+
+export type ResultChecksRun = Readonly<{
+  verdict: 'green' | 'red' | 'not_checked';
+  reason: ChecksNotRunReason | null;
+  commit: string | null;
 }>;
 
 export type DelegationResultV1 = Readonly<{
@@ -56,6 +75,9 @@ export type DelegationResultV1 = Readonly<{
   verified: Readonly<{
     changedFiles: ReadonlyArray<ResultChangedFile>;
     checks: ReadonlyArray<ResultCheck>;
+    remote?: ResultRemote;
+    checksRun?: ResultChecksRun;
+    publish?: ResultPublish;
   }>;
   artifacts: ReadonlyArray<ResultArtifact>;
   artifactPersistence: 'ok' | 'failed' | 'not_applicable';
@@ -130,6 +152,9 @@ export type BuildResultParams = Readonly<{
   summarySource: 'child' | 'summarizer' | 'none';
   changedFiles: ReadonlyArray<ResultChangedFile>;
   checks: ReadonlyArray<ResultCheck>;
+  remote?: ResultRemote | null;
+  checksRun?: ResultChecksRun | null;
+  publish?: ResultPublish | null;
   artifacts: ReadonlyArray<ResultArtifact>;
   artifactPersistence: DelegationResultV1['artifactPersistence'];
   isArtifactExpected: boolean;
@@ -167,7 +192,14 @@ export const buildDelegationResult = (params: BuildResultParams): DelegationResu
       summary,
       summarySource: summary === '' ? 'none' : params.summarySource,
     },
-    verified: { changedFiles: params.changedFiles, checks: params.checks },
+    verified: {
+      changedFiles: params.changedFiles,
+      checks: params.checks,
+      ...(params.remote !== undefined && params.remote !== null && { remote: params.remote }),
+      ...(params.checksRun !== undefined &&
+        params.checksRun !== null && { checksRun: params.checksRun }),
+      ...(params.publish !== undefined && params.publish !== null && { publish: params.publish }),
+    },
     artifacts: params.artifacts,
     artifactPersistence: params.artifactPersistence,
     openQuestions: params.openQuestions,
@@ -185,6 +217,25 @@ type RenderResultParams = {
 };
 
 const oneLine = (text: string): string => text.replace(/\s+/g, ' ').trim();
+
+const REMOTE_MOVED_TEXT = 'The branch changed online while this agent worked';
+const REMOTE_UNKNOWN_TEXT =
+  'Whether the branch changed online while this agent worked could not be read';
+
+type RemoteLineParams = {
+  readonly remote: ResultRemote;
+};
+
+const remoteLineOf = ({ remote }: RemoteLineParams): string | null => {
+  const branch = remote.branch === null ? '' : ` (${remote.branch})`;
+  if (remote.status === 'moved') {
+    return `  ${REMOTE_MOVED_TEXT}${branch}`;
+  }
+  if (remote.status === 'unknown') {
+    return `  ${REMOTE_UNKNOWN_TEXT}${branch}`;
+  }
+  return null;
+};
 
 export const renderDelegationResult = ({ result, label }: RenderResultParams): string => {
   const who =
@@ -211,8 +262,21 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
         .join(', ')}`,
     );
   }
+  const remote = result.verified.remote;
+  const remoteLine = remote === undefined ? null : remoteLineOf({ remote });
+  if (remoteLine !== null) {
+    lines.push(remoteLine);
+  }
   for (const check of result.verified.checks) {
     lines.push(`  check ${check.name}: ${check.status} (${check.source})`);
+  }
+  const checksRun = result.verified.checksRun;
+  if (checksRun !== undefined) {
+    lines.push(`  ${checksTextOf({ run: checksRun, checks: result.verified.checks })}`);
+  }
+  const publish = result.verified.publish;
+  if (publish !== undefined) {
+    lines.push(`  ${publishTextOf({ publish })}`);
   }
   for (const artifact of result.artifacts) {
     const base = artifact.baseRevision === null ? '' : ` from version ${artifact.baseRevision}`;

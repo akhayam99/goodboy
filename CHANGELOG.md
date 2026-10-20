@@ -12,6 +12,43 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.7
+
+Auto checks and pushes what its agents write, Claude and Cursor answers show sooner, and hover facts sit in one card across the app.
+
+### New
+
+#### Auto checks and pushes its agents' work
+<!-- gb area=agents -->
+
+Mark a project script as an Auto check from its row in the folder's scripts. When an agent Auto started finishes its changes, Goodboy runs those scripts on the commit it ended on, and the card says Checks green, Checks red or Not checked with the reason. Run checks again runs them anew.
+
+Auto can ask Goodboy to push the agent's branch. A push waits until the agent is done and its checks are not red, and Try the push again retries from the same commit. A force push keeps a backup of the online commit, waits for your Force push or Don't push, and Put back restores it. Agents Auto starts cannot push on their own.
+
+#### Role glyphs in the Preset menu
+<!-- gb area=workflows screen=workflows -->
+
+Each preset in the Preset menu shows one role glyph per step, in step order, with +n after the fifth. Hover or focus a glyph for a card with its role, its step, model, effort, instruction and what it hands on. The arrow keys walk the glyphs.
+
+### Improved
+
+#### Focused briefs and branch facts for Auto agents
+<!-- gb area=agents -->
+
+An agent Auto starts reads its own brief and the goal, without the session's decisions, and the context drawer says so on every other part. Auto can hand it chosen decisions in full, give a scout a branch's commits, pull request, open review threads and checks, and add a scout helper under an agent waiting on a question. The card says when the branch changed online while the agent worked.
+
+#### Claude and Cursor answers write in as they arrive
+<!-- gb area=agents -->
+
+With a Claude or Cursor CLI that offers partial output, an answer writes in as the model produces it, so the first words show sooner. Other providers and older CLIs write in whole blocks as before, and no text shows twice.
+
+#### One hover card for facts across the app
+<!-- gb area=app -->
+
+A timeline role or model, a check, a usage limit, a commit mark, a diff file header, an artifact badge, an Agents row and a branch row now open one card of labeled facts on hover or keyboard focus. Short labels sit on the same surface as the card instead of an inverted pill.
+
+Tooltips that repeated the text on screen are gone, and a name shows one only when it is cut. Screen readers hear a tooltip as the control's description, once.
+
 ## Goodboy v0.27.6
 
 Answers write themselves in at a steady pace, every branch sits on one line of the Projects card, and a new overview tells each branch's story.

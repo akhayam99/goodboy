@@ -265,6 +265,50 @@ pub async fn history_backup_facts(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
+pub(crate) fn create_kept_backup(
+    cwd: &Path,
+    branch: &str,
+    sha: &str,
+) -> Result<String, WorktreeError> {
+    let is_sha = (7..=64).contains(&sha.len()) && sha.bytes().all(|byte| byte.is_ascii_hexdigit());
+    if !is_sha {
+        return Err(WorktreeError::Io(std::io::Error::other(format!(
+            "{sha} is not a commit sha"
+        ))));
+    }
+    let commit = git(
+        cwd,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("{sha}^{{commit}}"),
+        ],
+    )?
+    .trim()
+    .to_string();
+    let ref_name = format!("{}/{KEPT_STAMP}{}", backup_namespace(branch), now_nanos());
+    git(cwd, &["update-ref", &ref_name, &commit])?;
+    Ok(ref_name)
+}
+
+#[tauri::command]
+pub async fn history_backup_create(
+    worktree_path: String,
+    branch: String,
+    sha: String,
+) -> Result<String, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(worktree_path));
+        }
+        create_kept_backup(&cwd, &branch, &sha)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
 #[tauri::command]
 pub async fn history_backups_list(
     worktree_path: String,

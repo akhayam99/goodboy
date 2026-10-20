@@ -37,6 +37,8 @@ type TimeParams = {
 const timeOf = ({ label }: TimeParams): WorkTime => ({
   label,
   detail: `Active ${label}`,
+  facts: [{ label: 'Active', value: label }],
+  footnote: null,
   progress: null,
   headline: label,
   note: null,
