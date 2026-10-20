@@ -1,12 +1,11 @@
 import { providerIdOf } from '../../../../shared/utils/providerIdOf';
-import { formatTokens, formatUsd } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
-import { formatClock } from '../../../../shared/utils/time/formatClock';
-import { formatInteger } from '../../../../shared/utils/formatInteger';
-import { NAMES } from '../../../../shared/names';
 import { modelLabel } from '../../utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import type { TurnFooterData } from './useTurnFooter';
+import { UsageDetailRowView } from './UsageDetailRowView';
+import { usageDetailRows } from './usageDetailRows';
+import { usageFigures } from '../../utils/usageFigures';
 
 const providerLabelFor = (provider: TurnFooterData['provider']): string | null => {
   if (provider === null) {
@@ -17,26 +16,8 @@ const providerLabelFor = (provider: TurnFooterData['provider']): string | null =
     : provider;
 };
 
-const detailRow = ({
-  label,
-  value,
-  indent = false,
-}: {
-  readonly label: string;
-  readonly value: string;
-  readonly indent?: boolean;
-}) => (
-  <div key={label} className="flex items-baseline justify-between gap-3">
-    <span className={indent ? 'pl-3 text-faint-foreground' : 'text-muted-foreground'}>{label}</span>
-    <span className="tabular-nums text-foreground">{value}</span>
-  </div>
-);
-
 type Props = {
   readonly data: TurnFooterData;
-  readonly totalInput: number;
-  readonly cachedPct: number | null;
-  readonly contextWindow: number | null;
   readonly duration: string | null;
   readonly startedAt: IsoDateTime | null;
   readonly endedAt: IsoDateTime | null;
@@ -46,9 +27,6 @@ type Props = {
 
 export const TurnFooterDetail = ({
   data,
-  totalInput,
-  cachedPct,
-  contextWindow,
   duration,
   startedAt,
   endedAt,
@@ -57,55 +35,35 @@ export const TurnFooterDetail = ({
 }: Props) => {
   const providerLabel = providerLabelFor(data.provider);
   const heading = [
-    data.model != null
+    data.model !== null
       ? modelLabel(data.model, providerIdOf({ value: data.provider }))
       : 'Unknown model',
     data.effort,
     providerLabel,
   ]
-    .filter((part) => part != null && part.length > 0)
+    .filter((part) => part !== null && part.length > 0)
     .join(' · ');
+  const rows = usageDetailRows({
+    data,
+    figures: usageFigures({ data }),
+    duration,
+    startedAt,
+    endedAt,
+    outcome,
+    turns,
+  });
 
   return (
-    <div className="flex w-70 flex-col gap-2 p-2 text-label">
-      <div className="text-row text-foreground">{heading}</div>
-      <div className="flex flex-col gap-0.5">
-        {outcome !== null && detailRow({ label: 'Ended', value: outcome })}
-        {turns !== null && turns > 0 && detailRow({ label: 'Turns', value: formatInteger(turns) })}
-        {detailRow({ label: 'Input', value: formatInteger(totalInput) })}
-        {cachedPct != null &&
-          detailRow({
-            label: 'from cache',
-            value: `${formatInteger(data.cachedInputTokens)}   ${cachedPct}%`,
-            indent: true,
-          })}
-        {data.cacheCreationInputTokens > 0 &&
-          detailRow({
-            label: 'cache write',
-            value: formatInteger(data.cacheCreationInputTokens),
-            indent: true,
-          })}
-        {detailRow({ label: 'Output', value: formatInteger(data.outputTokens) })}
-        {data.contextTokens != null &&
-          contextWindow != null &&
-          contextWindow > 0 &&
-          detailRow({
-            label: NAMES.contextWindow,
-            value: `${formatTokens(data.contextTokens)} of ${formatTokens(contextWindow)}   ${Math.round((data.contextTokens / contextWindow) * 100)}%`,
-          })}
-        {duration != null &&
-          startedAt != null &&
-          endedAt != null &&
-          detailRow({
-            label: 'Duration',
-            value: `${duration}  (${formatClock({ at: startedAt })} to ${formatClock({ at: endedAt })})`,
-          })}
-        {data.estimatedCostUsd != null &&
-          detailRow({
-            label: 'Cost',
-            value: `~${formatUsd(data.estimatedCostUsd)}  estimated at API prices`,
-          })}
-      </div>
+    <div className="flex min-w-60 flex-col gap-2 p-2 text-label">
+      <div className="break-words text-row text-foreground">{heading}</div>
+      <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5">
+        {rows.map((row) => (
+          <UsageDetailRowView key={row.label} row={row} />
+        ))}
+      </dl>
+      {data.estimatedCostUsd !== null && (
+        <p className="text-meta text-faint-foreground">Cost estimated at API prices</p>
+      )}
     </div>
   );
 };

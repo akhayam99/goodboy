@@ -249,14 +249,11 @@ describe('atomic admission', () => {
         nowMs: WORLD_NOW,
         generation: 1,
         runId: WORLD_RUN,
-        grants: 0,
         count,
         requestedUsd,
         limits: {
           maxCallsPerTurn: 6,
           maxRefusals: 10,
-          maxDelegations: 12,
-          maxAttempts: 20,
           maxOpenChildren: 4,
         },
       });
@@ -282,19 +279,31 @@ describe('atomic admission', () => {
     });
   });
 
-  it('stops at the lifetime counter that tripped, and a grant raises it', async () => {
+  it('keeps admitting past the old counts of delegations and runs while the spend cap covers it', async () => {
     const world = await makeAutoWorld();
-    await world.db.execute('UPDATE auto_trees SET delegations_used = 12 WHERE id = ?', [
-      WORLD_TREE,
-    ]);
-    const blocked = await world.scheduler.admit(
+    await world.db.execute(
+      'UPDATE auto_trees SET delegations_used = 12, attempts_used = 20, grants = 3 WHERE id = ?',
+      [WORLD_TREE],
+    );
+    const admitted = await world.scheduler.admit(
       batchInput({ children: [childInput({ key: 'a' })] }),
     );
-    expect(blocked).toMatchObject({ kind: 'refused', code: 'limit_delegations' });
-    await world.db.execute('UPDATE auto_trees SET grants = 1 WHERE id = ?', [WORLD_TREE]);
-    const granted = await world.scheduler.admit(
+    expect(admitted.kind).toBe('accepted');
+    const tree = await getAutoTree({ db: world.db, treeId: WORLD_TREE });
+    expect(tree).toMatchObject({ delegationsUsed: 13, attemptsUsed: 21 });
+  });
+
+  it('refuses at the spend cap and admits again once the limit is raised', async () => {
+    const world = await makeAutoWorld();
+    await world.db.execute('UPDATE auto_trees SET cap_usd = 0 WHERE id = ?', [WORLD_TREE]);
+    const refused = await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a' })] }),
+    );
+    expect(refused).toMatchObject({ kind: 'refused', code: 'budget' });
+    await world.db.execute('UPDATE auto_trees SET cap_usd = 10 WHERE id = ?', [WORLD_TREE]);
+    const raised = await world.scheduler.admit(
       batchInput({ requestId: 'request-2', children: [childInput({ key: 'a' })] }),
     );
-    expect(granted.kind).toBe('accepted');
+    expect(raised.kind).toBe('accepted');
   });
 });

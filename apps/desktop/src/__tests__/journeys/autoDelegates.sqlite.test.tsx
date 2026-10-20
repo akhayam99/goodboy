@@ -21,8 +21,11 @@ import type {
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
-import { AutoWorkRail } from '../../features/auto/chat/AutoWorkRail';
 import { railRowsOf } from '../../features/auto/chat/railRowsOf';
+import { autoSpawnedRowsOf } from '../../app/components/SpawnedPanel/autoSpawnedRowsOf';
+import type { SpawnedRow } from '../../app/components/SpawnedPanel/spawnedRow';
+import { SpawnedTree } from '../../app/components/SpawnedPanel/SpawnedTree';
+import { SpawnedTreeRow } from '../../app/components/SpawnedPanel/SpawnedTreeRow';
 import { brandedId } from '../../features/history/testing/brandedId';
 import { stubProviderRouting } from '../helpers/journeyHarness';
 import { makeAutoRuntime } from '../../store/slices/auto/makeAutoRuntime';
@@ -269,6 +272,31 @@ const attemptReservations = async () =>
     (reservation) => reservation.ownerKind === 'attempt',
   );
 
+type WorkTreeParams = {
+  readonly rows: ReadonlyArray<SpawnedRow>;
+};
+
+const workTree = ({ rows }: WorkTreeParams) => (
+  <SpawnedTree label="Work">
+    {rows.map((row) => (
+      <SpawnedTreeRow
+        key={row.id}
+        id={row.id}
+        level={row.level}
+        hasChildren={row.hasChildren}
+        glyph={null}
+        role={row.role}
+        title={row.title}
+        detail={row.detail}
+        word={row.word}
+        time={null}
+        isSelected={false}
+        onOpen={() => undefined}
+      />
+    ))}
+  </SpawnedTree>
+);
+
 const showRail = async (view: RenderResult) => {
   await useAppStore.getState().loadAutoTrees({ sessionId });
   const [treeView] = useAppStore.getState().autoTreeViews[sessionId] ?? [];
@@ -276,19 +304,20 @@ const showRail = async (view: RenderResult) => {
     throw new Error('the Auto tree has no view');
   }
   view.rerender(
-    <AutoWorkRail
-      rows={railRowsOf({
-        view: treeView,
-        agents: useAppStore.getState().sessionPhaseRuns[sessionId] ?? [],
-        rootRouting: { provider: null, model: null, effort: null },
-      })}
-      selectedAgentId={null}
-      onOpen={() => undefined}
-    />,
+    workTree({
+      rows: autoSpawnedRowsOf({
+        rows: railRowsOf({
+          view: treeView,
+          agents: useAppStore.getState().sessionPhaseRuns[sessionId] ?? [],
+          rootRouting: { provider: null, model: null, effort: null },
+        }),
+        baseLevel: 1,
+      }),
+    }),
   );
-  return within(screen.getByRole('list', { name: 'Work' }))
-    .getAllByRole('listitem')
-    .map((item) => item.textContent ?? '');
+  return within(screen.getByRole('tree', { name: 'Work' }))
+    .getAllByRole('treeitem')
+    .map((item) => item.getAttribute('aria-label') ?? '');
 };
 
 const openTree = async () => {
@@ -304,7 +333,7 @@ const openTree = async () => {
 describe('journey: Auto delegates and a child finishes', () => {
   it('runs the parent, starts the child, and hands the result back', async () => {
     const db = storySqlite();
-    const view = render(<AutoWorkRail rows={[]} selectedAgentId={null} onOpen={() => undefined} />);
+    const view = render(workTree({ rows: [] }));
     await openTree();
     expect(await treePhase()).toBe('answering');
     expect(await listAutoDelegations({ db, treeId })).toEqual([]);

@@ -7,11 +7,11 @@ import type { SuggestionActions } from '../../useSuggestionActions';
 import type { ActionTrack, SuggestionActionTarget } from '../../../actions/types';
 import type { AgentKind, AgentKindRouting } from '../../../session/agent-kind';
 import { useIsAutoOn } from '../../../auto/useIsAutoOn';
-import { NextStepMenu } from './NextStepMenu';
+import { NextStepMenu } from '../../NextStepMenu';
 import { NextStepRunsOn } from './NextStepRunsOn';
-import { NextStepTile } from './NextStepTile';
-import { NextStepRebasePicker } from './NextStepRebasePicker';
-import { NEXT_STEP_CELLS, NEXT_STEP_GRID } from './nextStepGrid';
+import { NextStepTile } from '../../NextStepTile';
+import { NextStepRebasePicker } from '../../NextStepRebasePicker';
+import { NEXT_STEP_CELLS, NEXT_STEP_GRID } from '../../nextStepGrid';
 
 const BAND_TONE: Record<NextStepBand, 'warning' | 'info' | 'primary' | 'neutral'> = {
   0: 'warning',

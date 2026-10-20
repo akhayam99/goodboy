@@ -164,7 +164,11 @@ handle gutter, because the container is flush with the window's right edge. It
 opens beside the page: the pane gives up the drawer's track and the centred
 column slides left to re-centre in what is left of it (see The content
 column). The drawer pushes only while the page container keeps 560px plus its
-48px of gutters and the room covers the drawer's saved width; below that it
+48px of gutters and the room covers the drawer's saved width. That is the one
+breakpoint of the drawer, named `DRAWER_PUSH_RESERVE` (624: 560, 48 and the
+two 8px insets) in `drawerGeometry.ts`: a column at least the reserve plus the
+drawer's width pushes (1024 for a side drawer at 400, 1344 for a reader at
+720), and nothing else in the app measures a width to choose; below that it
 lies over the page, full height, with a scrim and an `inert` page, never
 squeezed. While it lies over the page, `DrawerColumn` draws an edge host
 (`data-drawer-edge`) at the right edge above the scrim and hands it to the page
@@ -312,8 +316,8 @@ Five rules:
 5. **First-time states sit at the top left of the page column**, in one `EmptyState`
    layout; only the empty chat stage centres.
 
-The Branch page is one detail on one 960 column; its sections are the entries of the sidebar's
-worktree level, so the page has no rail of its own (`BranchDetail` draws the studio band first
+The Branch page is one detail on one 960 column; its sections are the pages under the entries of the sidebar's
+current branch row of the Projects tree, so the page has no rail of its own (`BranchDetail` draws the studio band first
 when a host hands one through `StudioBandContext`).
 
 Centring lives in `PageColumn` alone (`mx-auto` on `column` and `measure`, none
@@ -384,7 +388,7 @@ the message. A user or injected card keeps a fixed 48px start gap
 the fix run drawer.
 
 **The Branch page** is one detail whose header, Ask button and every section body share the 960px
-column, so nothing moves from one section to the next. Its sections are the worktree level's
+column, so nothing moves from one section to the next. Its sections are the pages under the current branch row in
 entries in the sidebar; Files opens its file tree under the Files entry, outside the column, so
 the diff keeps the column. The Pull request entry is one column: a label 96 property block in
 three groups, then the description and the activity. Comments is one full-width list; the open comment and its
@@ -476,6 +480,11 @@ that carries text (`Eyebrow`, `TimelineDayRule`). An unlabeled line inside
 content is a bug, not a style choice. A toolbar group or a dialog block that
 sits inside content does not get its own `<Divider>` either: it gets a `gap`
 or a card.
+
+Folder groups in the Projects card are the one content-level exception, owner
+approved 18/10: `ProjectTree` draws the `Divider` primitive between one folder
+group and the next (never above the first, never inside a group), so each
+folder reads as its own block next to its branch rows.
 
 Never use a `border-t/-r/-b/-l` on a container as a divider. Borders that draw
 a control's own shape are fine.
@@ -570,6 +579,14 @@ right click and Shift+F10. Write the reveal as `row-actions`, never as
 counts the second form. A status the user must see (Stopping, Force stop) is
 not a verb and sits outside the reveal. `MonitoringStudio/ActionsCell.tsx` is
 the reference.
+
+In the Projects card of the rail, every trailing element (the card plus, the
+folder plus, the Rebase all or Abort header action, the row chip and the row
+dots) ends on one right edge. Icon slots are `TRAIL_SLOT` boxes flush with the
+card inset; a chip, `Rebase all` and `Abort` take `TRAIL_PILL_INSET`
+(`shared/components/trailingSlot.ts`) so their ink lands where the plus glyph
+does. The row dots sit over the chip's place, and the chip hides while they
+show (hover, focus inside, current row).
 
 ## An expanded row is one group, not two
 

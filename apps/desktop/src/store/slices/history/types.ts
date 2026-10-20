@@ -100,6 +100,7 @@ export type HistoryRun = {
   readonly movedHead: string | null;
   readonly threadShas: ReadonlyArray<HistoryThreadShas>;
   readonly commitCount: number | null;
+  readonly batchId?: string | null;
   readonly pushFix?: { readonly agentId: AgentId };
   readonly pendingMove?:
     | { readonly kind: 'apply'; readonly input: ApplyHistoryRewriteInput }
@@ -200,6 +201,7 @@ export type HistoryMountInput = {
 
 export type RebaseBranchInput = HistoryMountInput & {
   readonly ontoBranch?: string;
+  readonly batchId?: string;
 };
 
 export type RebaseBranchOutcome = 'rebased' | 'conflict' | 'stopped' | 'busy';

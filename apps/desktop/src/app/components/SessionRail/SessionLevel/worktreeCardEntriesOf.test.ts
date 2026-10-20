@@ -106,6 +106,7 @@ const checksEntryOf = ({
     threads: [],
     diff: null,
     view,
+    scope: null,
   }).find((entry) => entry.tab === 'checks');
 
 describe('the check counts of a branch row on every host', () => {

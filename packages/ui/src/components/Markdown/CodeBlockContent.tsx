@@ -4,6 +4,7 @@ import { CODE_TOKEN_CLASS, CodeHighlighterContext, type CodeLines } from './code
 type Props = {
   readonly content: string;
   readonly lang: string | null;
+  readonly isOpen: boolean;
 };
 
 type State = {
@@ -11,7 +12,7 @@ type State = {
   readonly lines: CodeLines | null;
 };
 
-export const CodeBlockContent = ({ content, lang }: Props) => {
+export const CodeBlockContent = ({ content, lang, isOpen }: Props) => {
   const highlighter = useContext(CodeHighlighterContext);
   const key = `${lang ?? ''}\u0000${content}`;
   const [state, setState] = useState<State>(() => ({
@@ -20,7 +21,7 @@ export const CodeBlockContent = ({ content, lang }: Props) => {
   }));
 
   useEffect(() => {
-    if (highlighter === null || !lang) {
+    if (isOpen || highlighter === null || !lang) {
       return;
     }
     let live = true;
@@ -32,7 +33,11 @@ export const CodeBlockContent = ({ content, lang }: Props) => {
     return () => {
       live = false;
     };
-  }, [content, highlighter, lang]);
+  }, [content, highlighter, isOpen, lang]);
+
+  if (isOpen) {
+    return <>{content}</>;
+  }
 
   const lines =
     state.key === key

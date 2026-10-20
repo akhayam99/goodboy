@@ -13,7 +13,8 @@ const { extractAllCommentResolvedMock, extractScribeTextMock } = vi.hoisted(() =
   })),
 }));
 
-vi.mock('@goodboy/core', () => ({
+vi.mock('@goodboy/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core')>()),
   extractAllCommentResolved: extractAllCommentResolvedMock,
   extractScribeText: extractScribeTextMock,
   isReviewThreadId: (threadId: string) => threadId.startsWith('PRRT_'),

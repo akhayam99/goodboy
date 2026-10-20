@@ -237,12 +237,18 @@ describe('the shell chapter', () => {
     expect(foot).toContain('Archive and Delete');
   });
 
-  it('drills the rail through a branch, a run and Auto, with the back row and the key', () => {
-    const levels = pointOf('shell', 'Levels');
-    ['Pull request', 'Comments', 'Files', 'Commits', 'Checks', '‹ Runs', '⌘['].forEach((entry) =>
-      expect(levels).toContain(entry),
+  it('shows what a run and Auto started in the Agents panel, with its key and no rail level', () => {
+    const agents = pointOf('shell', 'Agents panel');
+    ['⌘⌥L', 'run or Auto', 'Back to agents'].forEach((entry) => expect(agents).toContain(entry));
+    expect(agents).not.toContain('‹ Runs');
+  });
+
+  it('opens a branch in place from the Projects card', () => {
+    const branchPage = pointOf('review', 'Branch page');
+    ['in place', 'Pull request', 'Comments', 'Files', 'Commits', 'Checks'].forEach((entry) =>
+      expect(branchPage).toContain(entry),
     );
-    expect(levels).toContain('The session level has no back row');
+    expect(branchPage).not.toContain('steps into');
   });
 
   it('names the session tools in their column at the right of the page', () => {

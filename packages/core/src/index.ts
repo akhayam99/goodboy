@@ -148,11 +148,9 @@ export {
   AUTO_DELEGATION_DEADLINE_MINUTES,
   AUTO_STALE_DECIDE_MS,
   AUTO_GATES,
-  AUTO_GRANT_ALLOWANCE,
   AUTO_LEDGER_CHAR_BUDGET,
   AUTO_LEDGER_MAX_ARTIFACTS,
   AUTO_LEDGER_OUTLINE_CHARS,
-  AUTO_MAX_GRANTS_PER_TREE,
   AUTO_MAX_OPEN_CHILDREN,
   AUTO_OUTBOX_CLAIM_MS,
   AUTO_OWNER_LEASE_MS,
@@ -161,9 +159,6 @@ export {
   AUTO_TREE_LIMITS,
   AUTO_TURN_CEILING_USD,
   attemptCeilingUsd,
-  effectiveTreeLimits,
-  type AutoEffectiveLimits,
-  type AutoTreeLimitKey,
 } from './auto/limits';
 export {
   autoBudgetOf,

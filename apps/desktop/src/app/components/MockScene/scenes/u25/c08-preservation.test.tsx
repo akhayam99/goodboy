@@ -112,7 +112,7 @@ const failWritesWith = ({ marker }: FailParams): { readonly heal: () => void } =
   };
 };
 
-const runLevel = () => within(nodeOf('[data-level-layer="run"]'));
+const runLevel = () => within(nodeOf('[data-spawned-panel="run"]'));
 
 const tail = () => within(nodeOf('[data-run-tail]'));
 
@@ -335,7 +335,7 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(tail().getByRole('button', { name: 'Start step 3' })).toBeDefined();
   });
 
-  it('Sub agents sit under their step in the run level', async () => {
+  it('Sub agents sit under their step in the Agents panel', async () => {
     await mount('c08-run-working');
     act(() => {
       useAppStore.setState((state) => ({
@@ -360,7 +360,7 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(runLevel().getByText('Map the batch writer')).toBeDefined();
   });
 
-  it('Skipped and Blocked step words show in the run level', async () => {
+  it('Skipped and Blocked step words show in the Agents panel', async () => {
     await mount('c08-run-ready');
     patchAgent({ id: C08_REVIEWER_ID, patch: { status: 'skipped' } });
     await settle();

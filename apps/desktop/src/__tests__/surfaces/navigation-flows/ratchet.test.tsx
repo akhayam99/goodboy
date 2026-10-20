@@ -171,7 +171,9 @@ describe('navigation flow table ratchet', () => {
         (label) =>
           ![...sessionGoals, ...workspaceNames, ...agentNames].some((name) =>
             label.startsWith(name),
-          ) && !/^Switch to (light|dark) mode/.test(label),
+          ) &&
+          !/^Switch to (light|dark) mode/.test(label) &&
+          !/^Use the (new|classic) session overview/.test(label),
       )
       .map((label) => `palette:${label.replace(/(Ctrl|⌘).*$/, '').trim()}`);
 

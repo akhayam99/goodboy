@@ -319,19 +319,19 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rail',
-        desc: 'Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions, with counts; Auto agents reads Experimental. Then the Projects card, a tree of folders and branches, and the Linked card.',
+        desc: 'Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions, with counts; Auto agents reads Experimental. Then the Projects card, one tree of folders and branches, and the Linked card.',
       },
       {
         term: 'Rail foot and +',
         desc: 'The + on the Projects card adds or connects a folder, and the + on a folder row starts a new branch in it. The foot reads the spend, such as $2 / $10, with Archive and Delete.',
       },
       {
-        term: 'Levels',
-        desc: 'A branch, a run or Auto steps the rail in: Pull request, Comments, Files, Commits and Checks on a branch, ‹ Runs and its steps on a run. ⌘[ steps out. The session level has no back row.',
+        term: 'Agents panel',
+        desc: 'Agents, or ⌘⌥L, shows what a run or Auto started as a tree. An agent opens its transcript; Back to agents returns.',
       },
       {
         term: 'Session tools',
-        desc: 'The column at the right of the session page holds Ask, Terminal, Explore, Context and Scripts, each a pane beside the page that Esc closes. Fold session rail, or ⌥⌘B, shrinks the rail.',
+        desc: 'The column at the right of the session page holds Ask, Terminal, Explore, Context, Agents and Scripts, each a pane beside the page that Esc closes. Fold session rail, or ⌥⌘B, shrinks the rail.',
       },
     ],
     links: [],
@@ -364,7 +364,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Activity',
-        desc: "One row per launch in the Overview, with its concept's glyph, the model, the time and the cost. Needs you sits above it, and Log keeps facts such as links and branches.",
+        desc: 'One row per launch in the Overview, with its model, time and cost. Needs you sits above it, and Log keeps links and branches. Classic and New switches to the experimental overview: Now, Next, What was done and Full log.',
       },
       {
         term: 'Next',
@@ -385,7 +385,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run page',
-        desc: 'A run steps the rail into Overview, its steps, Add step and the limit. The line at the end says what it waits for, with the button that moves it on, such as Review plan.',
+        desc: 'Agents beside a run holds its steps, Add step and the limit. The line at the end says what it waits for, with the button that moves it on, such as Review plan.',
       },
       {
         term: 'Orchestrated',
@@ -493,7 +493,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Branch page',
-        desc: 'Click a branch on the Projects card and the rail steps into it, with Rebase on its status line while it is behind. The palette, a notification or the board open the same page.',
+        desc: 'Click a branch on the Projects card and its page opens in place: Pull request, Comments, Files, Commits and Checks. Rebase sits on its row. The palette, a notification or the board open the same page.',
       },
       {
         term: 'Pull request',
@@ -558,7 +558,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Rebase all',
-        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and hands conflicts to one Auto run. Next's rebase picker adds Also tidy commits with Auto.",
+        desc: "With two or more branches behind, Rebase all on the Projects card rebases the clean ones with git and hands conflicts to one Auto run. Rows show Rebasing, Queued or Conflict; the header has Abort. Next's rebase picker adds Also tidy commits with Auto.",
       },
       {
         term: 'Force push',
@@ -778,7 +778,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Update ready',
-        desc: "The version pill in the Goodboy row opens the update card: Update now downloads, then Restart now installs, with Later and What's new beside them. With agents running, Restart when they finish waits for them. A failed update offers Retry.",
+        desc: 'The version pill in the Goodboy row opens the update card: Update now downloads, then Restart now installs. With agents running, Restart when they finish waits for them. A failed update offers Retry.',
       },
       {
         term: 'Check for Updates',
@@ -817,7 +817,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: '⌘B folds the sidebar and ⌥⌘B the column inside the page, and ⌘[ steps the rail out or goes Back. In a session, ⌘L opens Ask, ⌘⌥T Terminal, ⌘⌥X Explore, ⌘⌥C Context and ⌘⌥S Scripts.',
+        desc: '⌘B folds the sidebar and ⌥⌘B the column inside the page, and ⌘[ steps the rail out or goes Back. In a session, ⌘L opens Ask, ⌘⌥T Terminal, ⌘⌥X Explore, ⌘⌥C Context, ⌘⌥L Agents and ⌘⌥S Scripts.',
       },
       {
         term: 'Terminal',

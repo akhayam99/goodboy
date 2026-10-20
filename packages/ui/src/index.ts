@@ -45,6 +45,7 @@ export {
   READER_DRAWER_MIN,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
+  RIGHT_DRAWER_MIN,
   canDrawerPush,
   drawerModeOf,
   drawerWidthOf,
@@ -202,6 +203,7 @@ export type { InputProps } from './components/Input';
 export { KbdPill } from './components/KbdPill';
 export type { KbdPillProps } from './components/KbdPill';
 export { Markdown } from './components/Markdown';
+export type { FreshTail } from './components/Markdown/freshenNode';
 export {
   CODE_TOKEN_CLASS,
   CodeHighlighterContext,

@@ -6,8 +6,6 @@ import { AUTO_OWNER_GUARD_SQL, autoOwnerGuardParams } from './auto-trees';
 export type AutoAdmissionLimits = Readonly<{
   maxCallsPerTurn: number;
   maxRefusals: number;
-  maxDelegations: number;
-  maxAttempts: number;
   maxOpenChildren: number;
 }>;
 
@@ -18,7 +16,6 @@ type AdmissionTreeStatementParams = {
   readonly nowMs: number;
   readonly generation: number;
   readonly runId: string;
-  readonly grants: number;
   readonly count: number;
   readonly requestedUsd: number;
   readonly limits: AutoAdmissionLimits;
@@ -33,7 +30,6 @@ export const autoAdmissionTreeStatement = ({
   nowMs,
   generation,
   runId,
-  grants,
   count,
   requestedUsd,
   limits,
@@ -43,10 +39,9 @@ export const autoAdmissionTreeStatement = ({
         delegations_used = delegations_used + ?, attempts_used = attempts_used + ?,
         turn_delegate_calls = turn_delegate_calls + 1
     WHERE id = ? AND root_agent_id = ? AND generation = ? AND phase = 'deciding'
-      AND is_yield_requested = 0 AND stop_state = 'none' AND active_run_id = ? AND grants = ?
+      AND is_yield_requested = 0 AND stop_state = 'none' AND active_run_id = ?
       AND ${AUTO_OWNER_GUARD_SQL}
       AND turn_delegate_calls < ? AND refusals_used < ? AND ? < hard_deadline_at
-      AND delegations_used + ? <= ? AND attempts_used + ? <= ?
       AND (SELECT COUNT(*) FROM auto_delegations
             WHERE tree_id = auto_trees.id AND state <> 'settled') + ? <= ?
       AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
@@ -58,15 +53,10 @@ export const autoAdmissionTreeStatement = ({
     rootAgentId,
     generation,
     runId,
-    grants,
     ...autoOwnerGuardParams({ ownerId, nowMs }),
     limits.maxCallsPerTurn,
     limits.maxRefusals,
     nowMs,
-    count,
-    limits.maxDelegations,
-    count,
-    limits.maxAttempts,
     count,
     limits.maxOpenChildren,
     requestedUsd,
@@ -191,7 +181,6 @@ type ResumeTreeStatementParams = {
   readonly nowMs: number;
   readonly generation: number;
   readonly runId: string;
-  readonly maxAttempts: number;
   readonly requestedUsd: number;
 };
 
@@ -204,7 +193,6 @@ export const autoResumeTreeStatement = ({
   nowMs,
   generation,
   runId,
-  maxAttempts,
   requestedUsd,
 }: ResumeTreeStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_trees
@@ -213,7 +201,7 @@ export const autoResumeTreeStatement = ({
     WHERE id = ? AND root_agent_id = ? AND generation = ?
       AND phase IN ('deciding', 'delegating') AND stop_state = 'none' AND active_run_id = ?
       AND ${AUTO_OWNER_GUARD_SQL}
-      AND ? < hard_deadline_at AND attempts_used + 1 <= ?
+      AND ? < hard_deadline_at
       AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
@@ -223,7 +211,6 @@ export const autoResumeTreeStatement = ({
     runId,
     ...autoOwnerGuardParams({ ownerId, nowMs }),
     nowMs,
-    maxAttempts,
     requestedUsd,
   ],
   abortWhen: 'noChanges',

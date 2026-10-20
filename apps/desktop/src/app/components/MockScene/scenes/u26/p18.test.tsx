@@ -80,7 +80,8 @@ describe('the u26 p18 child drawer scenes', () => {
     await drawerOf();
     const accessButtons = screen.getAllByRole('button', { name: 'Permission mode: Full access' });
     const modelButtons = screen.getAllByRole('button', { name: /^Model routing:/ });
-    expect(accessButtons.length).toBeGreaterThanOrEqual(2);
+    expect(accessButtons).toHaveLength(1);
+    expect(modelButtons.length).toBeGreaterThanOrEqual(2);
     expect(modelButtons.at(-1)?.getAttribute('aria-label')).toContain('Opus');
   });
 

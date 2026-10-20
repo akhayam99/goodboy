@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type {
+  AgentId,
   EffortLevel,
   ProviderId,
   Session,
@@ -27,9 +28,10 @@ import { resolveSessionSettings } from '../../../../../store/slices/overrides/se
 
 type Params = {
   readonly session: Session;
+  readonly agentId?: AgentId | null;
 };
 
-export const useTurnRouting = ({ session }: Params) => {
+export const useTurnRouting = ({ session, agentId }: Params) => {
   const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig);
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
   const storeSetAgentEffortOverride = useAppStore((s) => s.setAgentEffortOverride);
@@ -37,7 +39,10 @@ export const useTurnRouting = ({ session }: Params) => {
   const workspaceDefaultVerbosity = useAppStore(
     (s) => resolveSessionSettings({ state: s, session }).defaultVerbosityOverride ?? null,
   );
-  const selectedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
+  const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null);
+  const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
+  const selectedAgentIdRef = useRef(selectedAgentId);
+  selectedAgentIdRef.current = selectedAgentId;
   const agentModelOverride = useAppStore((s) =>
     selectedAgentId ? (s.agentModelOverride[selectedAgentId] ?? null) : null,
   );
@@ -61,7 +66,7 @@ export const useTurnRouting = ({ session }: Params) => {
   );
 
   const [selectedProvider, setSelectedProviderState] = useState<ProviderId | null>(() => {
-    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+    const initialAgentId = selectedAgentIdRef.current;
     const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
     const initialAgent = initialAgentId
       ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
@@ -69,7 +74,7 @@ export const useTurnRouting = ({ session }: Params) => {
     return asProvider(initialAgent?.providerOverride) ?? asProvider(session.providerOverride);
   });
   const [selectedModel, setSelectedModelState] = useState<string | null>(() => {
-    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+    const initialAgentId = selectedAgentIdRef.current;
     const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
     const initialAgent = initialAgentId
       ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
@@ -83,7 +88,7 @@ export const useTurnRouting = ({ session }: Params) => {
   const [isPicked, setIsPicked] = useState(false);
   const [effort, setEffortState] = useState<EffortLevel>(() => {
     const state = useAppStore.getState();
-    const initialAgentId = state.selectedAgentId[session.id] ?? null;
+    const initialAgentId = selectedAgentIdRef.current;
     const initialRuns = state.sessionPhaseRuns[session.id] ?? [];
     const initialAgent = initialAgentId
       ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)
@@ -94,7 +99,7 @@ export const useTurnRouting = ({ session }: Params) => {
     return agentEffort ?? asEffortLevel(session.effort) ?? 'medium';
   });
   const [verbosity, setVerbosityState] = useState<VerbosityLevel>(() => {
-    const initialAgentId = useAppStore.getState().selectedAgentId[session.id] ?? null;
+    const initialAgentId = selectedAgentIdRef.current;
     const initialRuns = useAppStore.getState().sessionPhaseRuns[session.id] ?? [];
     const agentRow = initialAgentId
       ? (initialRuns.find((r) => r.id === initialAgentId) ?? null)

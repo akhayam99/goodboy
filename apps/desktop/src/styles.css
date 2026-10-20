@@ -367,6 +367,22 @@
    so reduced-motion users get no fade/rise — the animation resolves to a no-op
    (unknown animation name) instead of a movement neutralized after the fact. */
 @media (prefers-reduced-motion: no-preference) {
+  @keyframes reveal-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  [data-fresh] {
+    animation-name: reveal-fade;
+    animation-delay: var(--reveal-delay, 0ms);
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+
   @keyframes fold-fade-in {
     from {
       opacity: 0;

@@ -140,6 +140,7 @@ describe('c03 session tools scenes', () => {
       'Terminal',
       'Explore',
       'Context',
+      'Agents',
       'Scripts',
     ]);
     expect(icons.map((icon) => icon.getAttribute('aria-pressed'))).toEqual([
@@ -148,15 +149,16 @@ describe('c03 session tools scenes', () => {
       'false',
       'false',
       'false',
+      'false',
     ]);
   });
 
-  it('keeps the same tools while the rail drills into a worktree', async () => {
+  it('keeps the same tools while a branch is open in the rail', async () => {
     await mount('c03-panes-drilled');
     const rail = screen.getByRole('navigation', { name: 'Session' });
-    expect(rail.getAttribute('data-session-rail')).toBe('worktree');
+    expect(rail.getAttribute('data-session-rail')).toBe('session');
     expect(pressed()).toEqual(['Explore']);
-    expect(within(cluster()).getAllByRole('button')).toHaveLength(5);
+    expect(within(cluster()).getAllByRole('button')).toHaveLength(6);
   });
 
   it.each([

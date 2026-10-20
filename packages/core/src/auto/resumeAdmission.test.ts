@@ -96,12 +96,9 @@ describe('admitting the resume of a child that asked a question', () => {
     });
   });
 
-  it('counts the resume against the attempt limit and the budget', () => {
+  it('resumes whatever the attempt count, and stops at the budget', () => {
     const spent = snapshot({ tree: tree({ attemptsUsed: 20 }) });
-    expect(diagnoseResume({ snapshot: spent, role: 'scout' })).toEqual({
-      kind: 'refused',
-      code: 'limit_attempts',
-    });
+    expect(diagnoseResume({ snapshot: spent, role: 'scout' }).kind).toBe('ok');
     const broke = snapshot({ remainingUsd: 0 });
     expect(diagnoseResume({ snapshot: broke, role: 'scout' })).toEqual({
       kind: 'refused',

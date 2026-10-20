@@ -31,25 +31,12 @@ export const AUTO_BATCH_MAX_CHILDREN = FAN_OUT_MAX_CHILDREN;
 export const AUTO_TREE_DEPTH = 1;
 
 export const AUTO_TREE_LIMITS = {
-  autoTurns: 30,
-  delegations: 12,
-  attempts: 20,
   delegateCallsPerTurn: 6,
   refusals: 10,
   questionCyclesPerDelegation: 3,
   noProgressStreak: 3,
   wallClockHours: 24,
 } as const;
-
-export type AutoTreeLimitKey = keyof typeof AUTO_TREE_LIMITS;
-
-export const AUTO_GRANT_ALLOWANCE = {
-  autoTurns: 6,
-  delegations: 4,
-  attempts: 4,
-} as const;
-
-export const AUTO_MAX_GRANTS_PER_TREE = 3;
 
 type AttemptCeilingParams = {
   readonly role: AutoDelegationRole;
@@ -82,27 +69,3 @@ export const AUTO_DIGEST_SETTLED_MAX = 12;
 export const AUTO_DIGEST_TASK_CHARS = 160;
 
 export const AUTO_REVISE_ASK_CHARS = 240;
-
-export type AutoEffectiveLimits = {
-  readonly autoTurns: number;
-  readonly delegations: number;
-  readonly attempts: number;
-  readonly delegateCallsPerTurn: number;
-  readonly refusals: number;
-  readonly questionCyclesPerDelegation: number;
-  readonly noProgressStreak: number;
-};
-
-type EffectiveLimitsParams = {
-  readonly grants: number;
-};
-
-export const effectiveTreeLimits = ({ grants }: EffectiveLimitsParams): AutoEffectiveLimits => ({
-  autoTurns: AUTO_TREE_LIMITS.autoTurns + grants * AUTO_GRANT_ALLOWANCE.autoTurns,
-  delegations: AUTO_TREE_LIMITS.delegations + grants * AUTO_GRANT_ALLOWANCE.delegations,
-  attempts: AUTO_TREE_LIMITS.attempts + grants * AUTO_GRANT_ALLOWANCE.attempts,
-  delegateCallsPerTurn: AUTO_TREE_LIMITS.delegateCallsPerTurn,
-  refusals: AUTO_TREE_LIMITS.refusals,
-  questionCyclesPerDelegation: AUTO_TREE_LIMITS.questionCyclesPerDelegation,
-  noProgressStreak: AUTO_TREE_LIMITS.noProgressStreak,
-});

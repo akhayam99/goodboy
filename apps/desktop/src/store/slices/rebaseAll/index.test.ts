@@ -217,6 +217,18 @@ describe('rebase all', () => {
     expect(statesOf()).toEqual(['rebased', 'rebased', 'rebased']);
   });
 
+  it('gives every branch of one run the id of that run as its batch', async () => {
+    stub({ outcomes: {} });
+
+    await store.getState().rebaseAll({ sessionId: SESSION_ID, mountIds: ALL, shouldTidy: false });
+
+    const runId = store.getState().rebaseAllRuns[SESSION_ID]?.id;
+    const calls = vi.mocked(store.getState().rebaseBranch).mock.calls;
+    expect(calls.map(([input]) => input.mountId)).toEqual(ALL);
+    expect(runId).toBeDefined();
+    expect(calls.every(([input]) => input.batchId === runId)).toBe(true);
+  });
+
   it('stops the remaining branches on abort and keeps the finished ones done', async () => {
     stub({
       outcomes: { [RELAY_MOUNT]: 'conflict' },
@@ -379,6 +391,72 @@ describe('rebase all', () => {
     expect(store.getState().rebaseAllRuns[SESSION_ID]?.phase).toBe('handed');
     expect(store.getState().rebaseAllRuns[SESSION_ID]?.autoAgentId).toBe(AUTO_ID);
     expect(spawned).toHaveLength(1);
+  });
+
+  it('drops the late result of a batch that is gone and never revives its rows', async () => {
+    let release = (): void => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    stub({ outcomes: {} });
+    store.setState({
+      rebaseBranch: vi.fn(async () => {
+        await gate;
+        return 'rebased' as const;
+      }),
+    });
+
+    const first = store
+      .getState()
+      .rebaseAll({ sessionId: SESSION_ID, mountIds: ALL, shouldTidy: false });
+    await vi.waitFor(() => expect(statesOf()).toEqual(['rebasing', 'queued', 'queued']));
+    store.setState({ rebaseAllRuns: {} });
+    release();
+
+    await expect(first).resolves.toBe('aborted');
+    expect(store.getState().rebaseAllRuns[SESSION_ID]).toBeUndefined();
+  });
+
+  it('lets the branch in flight finish on abort, and the late answer lands on that row only', async () => {
+    let release = (): void => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    store.setState({
+      rebaseBranch: vi.fn(async () => {
+        await gate;
+        return 'rebased' as const;
+      }),
+    });
+
+    const first = store
+      .getState()
+      .rebaseAll({ sessionId: SESSION_ID, mountIds: ALL, shouldTidy: false });
+    await vi.waitFor(() => expect(statesOf()).toEqual(['rebasing', 'queued', 'queued']));
+    const run = store.getState().rebaseAllRuns[SESSION_ID];
+    store.getState().abortRebaseAll({ sessionId: SESSION_ID, runId: run?.id ?? '' });
+    store.getState().abortRebaseAll({ sessionId: SESSION_ID, runId: 'another-run' });
+    release();
+
+    await expect(first).resolves.toBe('aborted');
+    expect(statesOf()).toEqual(['rebased', 'skipped', 'skipped']);
+  });
+
+  it('retries only the branch that failed with a new batch once the old one is dismissed', async () => {
+    stub({ outcomes: { [LEDGER_MOUNT]: new Error('origin cannot be reached') } });
+    await store.getState().rebaseAll({ sessionId: SESSION_ID, mountIds: ALL, shouldTidy: false });
+    expect(statesOf()).toEqual(['failed', 'rebased', 'rebased']);
+    const run = store.getState().rebaseAllRuns[SESSION_ID];
+    store.getState().dismissRebaseAll({ sessionId: SESSION_ID, runId: run?.id ?? '' });
+
+    stub({ outcomes: {} });
+    await expect(
+      store
+        .getState()
+        .rebaseAll({ sessionId: SESSION_ID, mountIds: [LEDGER_MOUNT], shouldTidy: false }),
+    ).resolves.toBe('done');
+
+    expect(statesOf()).toEqual(['rebased']);
   });
 
   it('keeps a finished run until it is dismissed, and never dismisses a running one', async () => {

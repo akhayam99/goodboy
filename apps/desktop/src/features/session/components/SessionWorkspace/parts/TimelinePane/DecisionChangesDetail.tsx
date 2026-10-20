@@ -1,9 +1,9 @@
-import { useLayoutEffect, useRef } from 'react';
 import { Button } from '@goodboy/ui';
 import type {
   DecisionChangeDetail,
   DetailHeightParams,
 } from '../../../../timeline/decisionChangeLines';
+import { useReportedHeight } from '../../../../hooks/useReportedHeight';
 
 type Props = {
   readonly id: string;
@@ -20,29 +20,7 @@ export const DecisionChangesDetail = ({
   onOpenInContext,
   onMeasured,
 }: Props) => {
-  const body = useRef<HTMLDivElement | null>(null);
-  const measuredRef = useRef(onMeasured);
-  measuredRef.current = onMeasured;
-
-  useLayoutEffect(() => {
-    const element = body.current;
-    if (element === null) {
-      return;
-    }
-    const measure = () => {
-      const height = Math.ceil(element.getBoundingClientRect().height);
-      if (height > 0) {
-        measuredRef.current({ rowId, height });
-      }
-    };
-    measure();
-    if (typeof ResizeObserver === 'undefined') {
-      return;
-    }
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [rowId]);
+  const body = useReportedHeight({ rowId, onMeasured });
 
   return (
     <div ref={body} id={id} className="flex min-w-0 flex-col gap-1 py-1 pl-2 pr-2">

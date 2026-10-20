@@ -1,7 +1,7 @@
 import {
   AUTO_MAX_OPEN_CHILDREN,
+  AUTO_TREE_LIMITS,
   diagnoseAdmission,
-  effectiveTreeLimits,
   isAutoWriterRole,
   sha256Hex,
   type AdmissionChild,
@@ -180,7 +180,6 @@ const buildStatements = ({
   if (tree === null) {
     return [];
   }
-  const limits = effectiveTreeLimits({ grants: tree.grants });
   const statements: Statement[] = [
     autoAdmissionTreeStatement({
       treeId: params.treeId,
@@ -189,14 +188,11 @@ const buildStatements = ({
       nowMs: params.nowMs,
       generation: params.generation,
       runId: params.runId,
-      grants: tree.grants,
       count: params.children.length,
       requestedUsd,
       limits: {
-        maxCallsPerTurn: limits.delegateCallsPerTurn,
-        maxRefusals: limits.refusals,
-        maxDelegations: limits.delegations,
-        maxAttempts: limits.attempts,
+        maxCallsPerTurn: AUTO_TREE_LIMITS.delegateCallsPerTurn,
+        maxRefusals: AUTO_TREE_LIMITS.refusals,
         maxOpenChildren: AUTO_MAX_OPEN_CHILDREN,
       },
     }),

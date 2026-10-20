@@ -56,12 +56,20 @@ const mount = async (name: SceneName): Promise<void> => {
 const levelOf = (): string | null =>
   document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail') ?? null;
 
-const runLevel = (): HTMLElement => {
-  const layer = document.querySelector<HTMLElement>('[data-level-layer="run"]');
-  if (layer === null) {
-    throw new Error('no run level');
+const runPanel = (): HTMLElement => {
+  const panel = document.querySelector<HTMLElement>('[data-spawned-panel="run"]');
+  if (panel === null) {
+    throw new Error('no Agents panel on the run');
   }
-  return layer;
+  return panel;
+};
+
+const runDock = (): HTMLElement => {
+  const foot = document.querySelector<HTMLElement>('[data-run-spend-foot]');
+  if (foot === null) {
+    throw new Error('no run foot');
+  }
+  return foot;
 };
 
 const tail = (): HTMLElement => {
@@ -101,16 +109,16 @@ describe('the c08 preset run scenes', () => {
     expect(within(grid).queryByText('First try at the flaky export tests')).toBeNull();
   });
 
-  it('c08-run-working drills the sidebar into the run and embeds the running step', async () => {
+  it('c08-run-working keeps the rail on the session, shows the run in the Agents panel and embeds the running step', async () => {
     await mount('c08-run-working');
 
-    expect(levelOf()).toBe('run');
-    const level = within(runLevel());
-    expect(level.getByRole('button', { name: 'Back to Runs' })).toBeDefined();
-    expect(level.getByText('Fix flaky tests in the ledger export')).toBeDefined();
-    expect(level.getByRole('button', { name: 'Overview' })).toBeDefined();
-    expect(level.getByText('Add step')).toBeDefined();
-    expect(level.getByText('Limit $3.00')).toBeDefined();
+    expect(levelOf()).toBe('session');
+    const panel = within(runPanel());
+    expect(panel.queryByRole('button', { name: 'Back to Runs' })).toBeNull();
+    expect(panel.getByText('Fix flaky tests in the ledger export')).toBeDefined();
+    expect(panel.getByRole('tree', { name: 'Run agents' })).toBeDefined();
+    expect(panel.getByText('Add step')).toBeDefined();
+    expect(within(runDock()).getByText('Limit $3.00')).toBeDefined();
     expect(document.querySelector('[data-run-step-heading]')?.textContent).toBe(
       'Step 2 · Implementer',
     );
@@ -162,13 +170,12 @@ describe('the c08 preset run scenes', () => {
 
     expect(within(tail()).getByText('Paused at the limit')).toBeDefined();
     expect(within(tail()).getByRole('button', { name: 'Raise limit' })).toBeDefined();
-    expect(within(runLevel()).getByText('$3.00 spent')).toBeDefined();
+    expect(within(runDock()).getByText('$3.00 spent')).toBeDefined();
   });
 
-  it('c08-run-capped opens the session limit editor for a session cap on the run level', async () => {
+  it('c08-run-capped opens the session limit editor for a session cap on the run page', async () => {
     await mount('c08-run-capped');
 
-    expect(document.querySelector('[data-session-spend]')).toBeNull();
     await act(async () => {
       requestSessionSpendLimitEdit({ sessionId: C08_SESSION_ID });
       await vi.advanceTimersByTimeAsync(100);
@@ -181,12 +188,12 @@ describe('the c08 preset run scenes', () => {
     expect(within(dialog).getByLabelText('Limit in dollars')).toBeDefined();
   });
 
-  it('c08-run-done offers report and wireframe, and leaves Add step to the rail', async () => {
+  it('c08-run-done offers report and wireframe, and leaves Add step to the Agents panel', async () => {
     await mount('c08-run-done');
 
     expect(within(tail()).getByText('Run finished')).toBeDefined();
     expect(within(tail()).queryByRole('button')).toBeNull();
-    expect(within(runLevel()).getByText('Add step')).toBeDefined();
+    expect(within(runPanel()).getByText('Add step')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Create report' })).toBeDefined();
     expect(screen.getByRole('button', { name: /^Create wireframe/ })).toBeDefined();
   });
@@ -195,7 +202,7 @@ describe('the c08 preset run scenes', () => {
     await mount('c08-run-archived');
 
     expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
-    expect(within(runLevel()).queryByText('Add step')).toBeNull();
+    expect(within(runPanel()).queryByText('Add step')).toBeNull();
     expect(document.querySelector('[data-run-tail]')).toBeNull();
   });
 
@@ -214,17 +221,14 @@ describe('the c08 preset run scenes', () => {
     expect(within(menu).getByText('Archive run')).toBeDefined();
   });
 
-  it('c08-run-folded shows the run level as icons: back, Overview and one per step', async () => {
+  it('c08-run-folded folds the rail on the session and keeps one tree row per step in the panel', async () => {
     await mount('c08-run-folded');
 
-    expect(levelOf()).toBe('run');
-    const rail = document.querySelector<HTMLElement>('[data-rail-level="run"]');
-    if (rail === null) {
-      throw new Error('no folded run level');
-    }
-    expect(within(rail).getByRole('button', { name: 'Back to Runs' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Overview' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: /^Step 2, Implementer, / })).toBeDefined();
+    expect(levelOf()).toBe('session');
+    expect(document.querySelector('[data-rail-level="run"]')).toBeNull();
+    const tree = within(runPanel()).getByRole('tree', { name: 'Run agents' });
+    expect(within(tree).getAllByRole('treeitem').length).toBeGreaterThan(1);
+    expect(within(tree).getByRole('treeitem', { name: /Implementer/ })).toBeDefined();
   });
 
   it('c08-run-add-step opens the step draft in the center', async () => {

@@ -388,7 +388,7 @@ Asking for a certain provider or model on a step is a hint too.
 ### Limit
 
 Each run can have a limit in dollars. You set it on the run (the limit
-in the run level foot or the orchestrated facts line) or in the creation form. You also choose what happens when
+in the foot of the Agents panel on a run or the orchestrated facts line) or in the creation form. You also choose what happens when
 the run reaches it: **Pause workflows** or **Warn only**, the same editor
 and words as the session's limit. The limit starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
@@ -412,9 +412,10 @@ the same columns. The state word shows only when it needs reading ("Plan ready",
 Waits to start are the dot alone, named in its tooltip (`isWordRead`). Groups:
 **In progress**, **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button
 and carries no action; an archived run is restored from its page. The state
-word and the dot come from `runRowFactsOf`, the same function the run level's
-identity row reads. The header holds **Run a workflow**; a session with no run shows
-today's start card. Opening a preset run drills into its run level.
+word and the dot come from `runRowFactsOf`, the same function the identity row
+of the Agents panel reads. The header holds **Run a workflow**; a session with no run shows
+today's start card. Opening a preset run shows its page; the session rail stays
+on the session and the run's agents are in the Agents panel.
 
 The Orchestrated page (`OrchestratedPane`, lens `orchestrated`, ⌘⌥W pressed
 again) lists the orchestrated runs on the same `RunsGrid`, its counts on the
@@ -426,12 +427,14 @@ mode (`OrchestrateStart`). Opening a row shows
 [the orchestrated document](#the-orchestrated-document); Esc or Back returns
 to the list (`parentPlace`).
 
-## The preset run level
+## The preset run page
 
-A preset run is a recipe the user advances, so its steps are navigation: the
-session rail drills into the run ([Session rail](navigation.md#session-rail))
-and the center shows the selected entry (`PresetRunPage`, in
-`features/session/components/PresetRun`).
+A preset run is a recipe the user advances: the center shows the selected
+entry (`PresetRunPage`, in `features/session/components/PresetRun`) and the
+Agents panel of the session tools holds the run's identity row, its agents as
+a tree, **Add step** and the limit foot
+([The session tools](navigation.md#the-session-tools)). A row there opens the
+step's transcript in the drawer (`run-step`).
 
 - **Overview** (`RunOverviewPage`): the run title as the header with the run
   `⋯`, the goal and its attachments (`RunGoal`), the write destination ("Writes
@@ -456,7 +459,7 @@ and the center shows the selected entry (`PresetRunPage`, in
   today's gates (`StartStepPrimary` and its Start anyway confirm,
   `WorkflowRunStartButton`, **Review plan**, **Approve plan**, **Resume**),
   a stopped step with **Continue step**, "Run finished" or "Stopped by you"
-  with no verb (the rail **Add step** is its home). An archived run has no tail. While the run lives the header holds only **Pause run**
+  with no verb (the Agents panel's **Add step** is its home). An archived run has no tail. While the run lives the header holds only **Pause run**
   (or **Resume run** once paused, in the same place) and **Stop run** (asks
   first, `RunLiveVerbs`) as words; every other verb
   is on the tail or in the menu.
@@ -465,7 +468,7 @@ and the center shows the selected entry (`PresetRunPage`, in
   `choices` item), **Skip step N** for the selected step while it has not
   finished (asks first, `skipStepDescription`), Copy run summary, Save as
   preset, Archive run, Delete run.
-- **Add step** in the session rail opens the Overview and asks `WorkflowAddStep`
+- **Add step** in the Agents panel opens the Overview and asks `WorkflowAddStep`
   to open its draft there (`requestRunAddStep`, after the navigation settles).
 
 ## How a run advances

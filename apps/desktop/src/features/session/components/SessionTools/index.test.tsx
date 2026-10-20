@@ -66,7 +66,7 @@ const README: ExploreEntry = {
 };
 
 describe('SessionTools', () => {
-  it('stacks Ask, Terminal, Explore, Context and Scripts as icons in a vertical toolbar', () => {
+  it('stacks Ask, Terminal, Explore, Context, Agents and Scripts as icons in a vertical toolbar', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
@@ -76,6 +76,7 @@ describe('SessionTools', () => {
       'Terminal',
       'Explore',
       'Context',
+      'Agents',
       'Scripts',
     ]);
     expect(buttons.every((button) => button.textContent === '')).toBe(true);
@@ -86,19 +87,19 @@ describe('SessionTools', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     const buttons = within(toolbar).getAllByRole('button');
-    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1, -1, -1, -1]);
     act(() => {
       buttons[0]?.focus();
     });
     fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(buttons[1]);
     fireEvent.keyDown(toolbar, { key: 'End' });
-    expect(document.activeElement).toBe(buttons[4]);
+    expect(document.activeElement).toBe(buttons[5]);
     fireEvent.keyDown(toolbar, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(buttons[0]);
     fireEvent.keyDown(toolbar, { key: 'ArrowUp' });
-    expect(document.activeElement).toBe(buttons[4]);
-    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, -1, -1, 0]);
+    expect(document.activeElement).toBe(buttons[5]);
+    expect(buttons.map((button) => button.tabIndex)).toEqual([-1, -1, -1, -1, -1, 0]);
   });
 
   it('presses the icon of the open pane', async () => {

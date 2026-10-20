@@ -249,6 +249,7 @@ export const useAppShortcuts = ({
   useShortcut('lens.explore', () => toggleCurrentPane({ pane: 'explore' }));
   useShortcut('lens.plans', () => goToLens({ kind: 'plans' }));
   useShortcut('lens.scripts', () => toggleCurrentPane({ pane: 'scripts' }));
+  useShortcut('session.spawned', () => toggleCurrentPane({ pane: 'spawned' }));
   useShortcut('session.terminal', () => toggleSessionTerminal({}));
   useShortcut('lens.pr', () => goToLens({ kind: 'pr' }));
   useShortcut('lens.linear', () => goToLens({ kind: 'linear' }));

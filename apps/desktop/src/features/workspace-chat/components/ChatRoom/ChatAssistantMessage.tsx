@@ -8,6 +8,7 @@ import { chatAnswerMeta } from '../../chatAnswerMeta';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
+import { useRevealedMarkdown } from '../../../chat/reveal/useRevealedMarkdown';
 import { ChatReads } from './ChatReads';
 import { ChatTyping } from './ChatTyping';
 
@@ -18,9 +19,17 @@ type Props = {
 };
 
 const PROSE_CLASS = 'text-prose';
+const REPLY_ITEM_KEY = 'reply';
 
 const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props) => {
   const isStreaming = message.status === 'streaming';
+  const reveal = useRevealedMarkdown({
+    runId: message.id,
+    itemKey: REPLY_ITEM_KEY,
+    text: message.content,
+    isComplete: !isStreaming,
+  });
+  const isWriting = isStreaming || reveal.isRevealing;
   const hasText = message.content.trim() !== '';
   const meta = joinFacts({
     facts: [
@@ -46,17 +55,20 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
   }
   return (
     <div
+      ref={reveal.rootRef}
       data-chat-message="assistant"
-      aria-busy={isStreaming ? true : undefined}
+      aria-busy={isWriting ? true : undefined}
       className="group/answer flex flex-col gap-2"
     >
-      {hasText ? <Markdown text={message.content} className={PROSE_CLASS} /> : null}
-      {isStreaming && !hasText ? <ChatTyping workspaceName={workspaceName} /> : null}
+      {hasText && reveal.text !== '' ? (
+        <Markdown text={reveal.text} fresh={reveal.fresh} className={PROSE_CLASS} />
+      ) : null}
+      {isWriting && reveal.text === '' ? <ChatTyping workspaceName={workspaceName} /> : null}
       <ChatReads reads={message.reads} />
       {message.status === 'stopped' ? (
         <p className="text-meta text-faint-foreground">Stopped</p>
       ) : null}
-      {isStreaming || !hasText ? null : (
+      {isWriting || !hasText ? null : (
         <div className="-ml-2 flex h-7 items-center gap-1">
           <div className="flex items-center gap-1">
             {onStartWork === undefined ? null : (

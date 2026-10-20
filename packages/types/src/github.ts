@@ -54,6 +54,7 @@ export type PullRequestState = {
   mergedAt?: string | null;
   author?: string | null;
   checksUnknown?: boolean;
+  hasReviewRequests?: boolean;
 };
 
 export type GithubInboxPrRole = 'review-requested' | 'author';

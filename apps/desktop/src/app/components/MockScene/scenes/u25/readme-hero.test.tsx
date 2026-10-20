@@ -67,7 +67,8 @@ describe('readme hero scene', () => {
     const labels = [...projects.querySelectorAll('[data-worktree-entries] [data-entry-label]')].map(
       (label) => label.textContent ?? '',
     );
-    expect(labels).toEqual(['Pull request', 'Comments', 'Files', 'Checks']);
+    expect(labels).toEqual([]);
+    expect(projects.querySelectorAll('[data-worktree-branch]').length).toBeGreaterThan(0);
     expect(within(rail).getByRole('group', { name: 'Linked' })).toBeDefined();
     expect(useAppStore.getState().drawer?.kind).toBe('context');
 

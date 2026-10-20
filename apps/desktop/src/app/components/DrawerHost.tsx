@@ -22,6 +22,8 @@ import { ReviewCommentDrawerHost } from '../../features/resolve/components/Revie
 import { AutoChildPane } from './AutoChildPane';
 import { FixRunTranscriptDrawer } from './FixRunTranscriptDrawer';
 import { RunStepDrawer } from '../../features/session/components/RunStepDrawer';
+import { SpawnedPanel } from './SpawnedPanel';
+import { LogDrawer } from '../../features/session/central/log/LogDrawer';
 import { ExploreAddFolder } from './ExploreAddFolder';
 import { ExploreFileChanges } from './ExploreFileChanges';
 import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
@@ -197,6 +199,26 @@ export const DrawerHost = () => {
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
           agentId={drawer.payload.agentId}
+          {...(drawer.payload.from === 'spawned' && {
+            back: {
+              label: 'Back to agents',
+              onBack: () =>
+                openDrawer({ kind: 'spawned', sessionId: drawer.sessionId, payload: null }),
+            },
+          })}
+          onClose={closeDrawer}
+        />
+      );
+    case 'spawned':
+      return (
+        <SpawnedPanel key={drawer.sessionId} sessionId={drawer.sessionId} onClose={closeDrawer} />
+      );
+    case 'session-log':
+      return (
+        <LogDrawer
+          key={drawerKey(drawer)}
+          sessionId={drawer.sessionId}
+          focusEntryId={drawer.payload.focusEntryId}
           onClose={closeDrawer}
         />
       );
@@ -207,6 +229,13 @@ export const DrawerHost = () => {
           sessionId={drawer.sessionId}
           runId={drawer.payload.runId}
           agentId={drawer.payload.agentId}
+          {...(drawer.payload.from === 'spawned' && {
+            back: {
+              label: 'Back to agents',
+              onBack: () =>
+                openDrawer({ kind: 'spawned', sessionId: drawer.sessionId, payload: null }),
+            },
+          })}
           onClose={closeDrawer}
         />
       );

@@ -193,7 +193,7 @@ const openRunPage = async (ctx: Ctx): Promise<void> => {
   await settle();
   await screen.findByRole('region', RUN_TAIL, WAIT);
   expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(
-    'run',
+    'session',
   );
 };
 
@@ -209,14 +209,6 @@ const backToTheList = async (ctx: Ctx): Promise<void> => {
 const pressEscape = async (): Promise<void> => {
   await userEvent.setup().keyboard('{Escape}');
   await settle();
-};
-
-const clickRunsBackRow = async (): Promise<void> => {
-  const level = document.querySelector<HTMLElement>('[data-level-layer="run"]');
-  if (level === null) {
-    throw new Error('the session rail did not drill into the run');
-  }
-  await click(within(level).getByRole('button', { name: 'Back to Runs' }));
 };
 
 export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
@@ -238,12 +230,32 @@ export const RUN_PAGE_ROWS: ReadonlyArray<Row> = [
     lands: backToTheList,
   },
   {
-    name: 'the back row of the run level goes back to the Runs list',
-    covers: ['navigate', 'setFocusedWorkflowRun'],
+    name: 'the Agents panel follows the run, opens a step in a drawer and goes back to the tree',
+    covers: ['openDrawer'],
     open: async (ctx) => {
       await openRunPage(ctx);
-      await clickRunsBackRow();
+      await click(screen.getByTestId('pane-toggle-spawned'));
+      const panel = await screen.findByRole('region', { name: 'Agents' }, WAIT);
+      const tree = within(panel).getByRole('tree', { name: 'Run agents' });
+      const [first] = within(tree).getAllByRole('treeitem');
+      if (first === undefined) {
+        throw new Error('the run tree has no agent');
+      }
+      await click(first);
+      await waitFor(() => {
+        const drawer = useAppStore.getState().drawer;
+        expect(drawer?.kind).toBe('run-step');
+        expect(drawer?.kind === 'run-step' ? drawer.payload.from : null).toBe('spawned');
+      }, WAIT);
+      expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
+      await click(screen.getByRole('button', { name: 'Back to agents' }));
     },
-    lands: backToTheList,
+    lands: async (ctx) => {
+      await waitFor(() => {
+        expect(useAppStore.getState().drawer?.kind).toBe('spawned');
+        expect(useAppStore.getState().focusedWorkflowRunId[ctx.sessionId]).toBe(RUN_ID);
+      }, WAIT);
+      expect(screen.getByRole('tree', { name: 'Run agents' })).toBeDefined();
+    },
   },
 ];

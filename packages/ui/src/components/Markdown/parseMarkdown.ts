@@ -1,7 +1,7 @@
 export type CellAlign = 'left' | 'center' | 'right';
 
 export type Block =
-  | { kind: 'code'; lang: string | null; content: string }
+  | { kind: 'code'; lang: string | null; content: string; isClosed: boolean }
   | { kind: 'heading'; level: 1 | 2 | 3 | 4 | 5 | 6; content: string }
   | { kind: 'hr' }
   | { kind: 'list'; ordered: boolean; start: number; items: ReadonlyArray<ListItem> }
@@ -407,8 +407,9 @@ function parseBlocks(input: string): ReadonlyArray<Block> {
         buf.push(lines[i] ?? '');
         i++;
       }
+      const isClosed = i < lines.length;
       i++;
-      blocks.push({ kind: 'code', lang, content: buf.join('\n') });
+      blocks.push({ kind: 'code', lang, content: buf.join('\n'), isClosed });
       continue;
     }
 

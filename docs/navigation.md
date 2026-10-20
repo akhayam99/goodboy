@@ -428,7 +428,7 @@ never exists on one surface only.
   it, and Unlink, Move to and Take off this branch sit in its right click
   menu (Shift+F10), with no kebab and no hover control.
   Putting work on a branch is `Link work to this branch` (`mount.putTaskOnBranch`), on the
-  Overview branch row and in the worktree level's `⋯`. Link work is the single entry
+  Overview branch row and in the Projects tree row menu. Link work is the single entry
   for linking work to a session or workspace. Moving a task is one verb,
   `Move to`: in the linked row's menu (Shift+F10), in the focused issue's
   `Linked to` row and in the palette.
@@ -608,7 +608,7 @@ the mock scenes alike, reads). **The column never changes; a session adds one
 rail of its own.** The column is the workspace's navigation and looks the same
 on every screen. Inside a session the session rail (see Session rail) sits at
 the left of the page, inside the content sheet on the page background, and
-holds the levels that drill (session, worktree, run, Auto). No other surface
+holds the levels that drill (session, run, Auto). No other surface
 adds a navigation column: filters or a list that belong to a page sit beside
 the detail as a page rail. The right drawer is context, never navigation. The
 right drawer holds reference material beside the page and closes with the pane
@@ -715,7 +715,8 @@ hide animation or overlay can move it.
   window width folds it. `shellFoldsOf` (read through `useShellFolds`) reads the
   open pane's tier: a reader tier pane (720: a file, a diff, a document, New)
   folds the session rail to its 44px icons while it is open; a side tier pane
-  (416: Ask, Terminal, Explore, Context, Scripts) folds nothing. The saved
+  (416: Ask, Terminal, Explore, Context, Agents, Scripts and the transcripts
+  Agents opens) folds nothing. The saved
   choices are untouched, and the rail toggle opens a rail folded this way for
   as long as the pane stays open. The session rail keeps its own toggle at the
   left of its top row.
@@ -745,8 +746,10 @@ Overview notices slot ([mounts.md](mounts.md#worktree-rows-and-the-overview-noti
 shows the workspace: New session, the doors, then the Pinned and Sessions
 lists. Clicking a session row selects that row, opens the session on its
 Overview and shows its session rail at the left of the page, inside the
-content sheet. The rail holds the levels that drill: level 1 is the session,
-level 2 a worktree, a preset run or Auto. A drill and its back cross the
+content sheet. The rail holds the levels that drill: level 1 is the session (its Projects tree holds every branch, with no level for a worktree),
+and only the folded rail drills into a worktree's pages. A preset run and Auto
+never drill the rail: what they spawned lives in the Agents panel of the
+session tools (see The session tools). A drill and its back cross the
 rail's levels in one move: a frozen copy of the leaving level slides 24px
 toward the back and fades in 120ms while the new level slides in 24px from the
 drill side over 200ms (`LevelStack`, `useLevelSwap`; the folded icons drill the
@@ -874,57 +877,65 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   header (`useProjectsSignal`) and Linked its item count from 2, so a state
   that needs you never hides in a fold. Cards sit 8px apart, 16px under the
   pages.
-- **Projects is a tree** you fold at two depths, many nodes open at once. A
-  project row (`SessionLevel/ProjectTree`) is one toggle (`aria-expanded`):
-  folder icon, name, then its branch count from 1 in quiet tabular gray beside
-  a chevron in the right slot. Its worktrees sit one 16px indent in
-  (`SessionLevel/WorktreeRow`): the pull request state icon in its GitHub color
-  (`pullRequestStateToneOf`, next to `pullRequestStateWordOf`, whose words are
-  the labels of `PULL_REQUEST_PRESENTATION` so an open pull request reads
-  Open everywhere; one function, `features/branch/branchRowFactsOf`, holds a
-  row's title (the pull request title, else the branch name), state word,
-  number, host key, finished flag, order rank (queued, approved, open, draft,
-  none, merged, closed), check counts and the one signal worst first: `n
-failing`, then `Conflict`, then `n behind`; the check counts come from the
-  runs read for the request on any host, skipped kept apart from passed, and
-  the host is never written as text on a row, only its logo, with the host in
-  the accessible name) and shared with
-  the worktree level identity row, the folded rail and the session hover card:
-  draft gray, open or approved green, in the merge queue (`queued`) the warning
-  amber, merged violet, closed red, no pull request a neutral branch glyph),
-  mono branch cut at the end only, never in the middle, full name in the
-  shared tooltip (`BranchName`), pull request number right aligned at its content width, then
-  the worst state as one 6px dot in the last column (`worktreeRowStateOf`:
-  danger for a failed check; warning for conflicts, a running rebase, behind
-  its base, a branch decision waiting, comments waiting on you; none when
-  fine), named in its tooltip and in the row's accessible name with the state
-  word. A click on the row opens the worktree; the chevron in the indent
-  before the icon (a 24px button named `<branch> pages`, `aria-expanded`)
-  folds its main pages, one more indent in, as 24px rows
-  (`SessionLevel/WorktreeEntries`, `worktreeCardEntriesOf`): **Pull
-  request** (Merge request on GitLab), **Comments** and **Checks** while it
-  has a pull request, and **Files** always; Commits stays on the worktree
-  level, since its not pushed count reads the history the level loads. Each
-  slot is the worktree level's own (`worktreeEntryFactsOf`, drawn by
-  `WorktreeEntrySlot`): Draft, Merged or Closed; the comments that need you
-  (`commentsCountOf` over the worktree's queue threads) with a warning dot;
-  the diff stat `+652 -99` in green and red (`useMountDiffStats`, the source
-  of the Overview project rows); failing checks with a danger dot or running
-  ones with an info dot (`checksWordOf` in the tooltip). A row opens that
-  worktree directly on its tab (`switchBranchMount` with `tab`); the drill
-  keeps the full set. An open worktree row drops a reason its own Comments
-  entry or toned Checks entry already shows (`shownByEntries`), one mark per
-  fact; folded, the dot carries them again. Defaults: projects open; a
-  worktree folded unless it needs you (comments waiting or a failing check)
-  or you opened its page in this rail. What you open or fold is remembered per
-  session (`useRailTreeOpen`, `goodboy:session-rail-tree-open:v1`, the last 50
-  sessions). Merged and closed worktrees list after the live ones in their
-  project, as rows like any other. Folded, the
+- **Projects is one tree**, holding every branch of the session, so there is no
+  second sidebar to go back from. A folder row (`SessionLevel/ProjectTree`) is
+  its name and its `+`; the name toggles the folder and a chevron shows only
+  while it is folded. Its accessible name keeps the count and the host ("payments-api, 3
+  branches, on GitHub"), never as visible text. A folder's branches sit one
+  28px line each (`SessionLevel/WorktreeRow`, `BranchRowLine`): the pull
+  request state glyph in its color (`pullRequestStateToneOf`, next to
+  `pullRequestStateWordOf`, whose words are the labels of
+  `PULL_REQUEST_PRESENTATION` so an open pull request reads Open everywhere;
+  draft gray, open or approved green, in the merge queue the warning amber,
+  merged violet, closed red, no pull request a neutral branch glyph), the title,
+  and at most one chip. One function, `features/branch/branchRowFactsOf`,
+  holds a row's title (the pull request title, else the branch name, drawn in
+  mono), state word, number, host key, finished flag, order rank (queued,
+  approved, open, draft, none, merged, closed), check counts and the one
+  signal worst first: `n failing`, then `Conflict`, then `n behind` (`BranchRowChip`,
+  `branchRowChipOf`); approved, queued, open, draft and running checks draw no
+  chip, the glyph color carries them. The check counts come from the runs read
+  for the request on any host, skipped kept apart from passed. The number, the
+  state word and the branch are not on the line: they sit in the row tooltip
+  (`#318 Open, 1 failing` over the branch name) and in the accessible name
+  ("title, #318, Open, branch hl/fix, 1 failing"), and the current branch shows
+  its number and branch in its Pull request page. The host is never written as text on a
+  row, only its logo. Live rows are ordered by that rank, ties by declaration
+  (`branchRowsOf`); merged and closed rows fold into one "n finished" row at
+  the bottom of the folder (`FinishedFold`), closed by default, kept open
+  while the current branch is inside it. A row that changes state moves, and
+  focus and the current branch follow the mount, never an index. What you
+  fold is remembered per session (`useRailTreeOpen`,
+  `goodboy:session-rail-tree-open:v1`, the last 50 sessions). A click on a
+  row makes its branch current and opens its pages in place (`switchBranchMount`
+  pushes the Branch page into the center); a click on the current row folds or
+  opens its pages. Only the current branch shows pages, so the card does not grow
+  when you are busy. Folded, the
   rail draws one pull request state icon per worktree under the page icons
   (`RailWorktrees`), its tooltip "project, branch, state word, worst state" and the worst
-  state dot on its corner (`useWorktreeRowState`, shared with the open row); the
-  folded rail never draws the session node. A worktree row drills into the worktree level
-  (level 2) on its landing entry. The card header carries one `+`
+  state dot on its corner (`useWorktreeRowState`); the
+  folded rail never draws the session node, and a worktree icon there drills
+  the folded rail into the worktree's page icons (`RailWorktreeLevel`), since
+  the folded rail has no tree. **Rebase all**
+  (`features/history/RebaseAllCard`) is the first line of the card: `n branches behind`
+  with a Rebase all button, then, while a batch runs, `Rebasing 2 of 9` with
+  Abort in the same 28px line and the same button size, and Dismiss once it
+  ended. It draws no list of branches: each branch's state lives on its row
+  from the one source, the batch in the store (`rebaseAllRuns`,
+  `rebaseAllBranchOf`), also read by that header line (`rebaseAllSummaryOf`):
+  a breathing `Rebasing` chip (`soft-pulse`, still under reduced motion) with
+  the replay step in the tooltip, a quiet `Queued` on the ones waiting, no chip once a
+  branch is rebased even while its behind count is stale, a danger `Conflict`
+  (tooltip "Waiting for Auto") on a branch Auto has not started, a breathing
+  `Auto resolving` with the Auto icon on the branch whose rebase is stopped in
+  its worktree (tooltip "Auto resolves 1 file: <path>", from the stop files of
+  its history run), `Rebased by Auto` once an Auto branch is clean again until
+  every Auto branch of the batch is clean (`rebaseAllBatchSettledOf`), then no
+  chip, `Failed` with the cause in the row tooltip. When Auto has the rest the
+  header line reads `Auto has the rest`, still with no list. One function
+  (`branchRowChipOf`) owns every chip text and tone. A late
+  answer for a batch that is gone is dropped by run id; Abort lets the branch in
+  flight finish and skips the queued ones. The card header carries one `+`
   (`LevelAddTrigger`, a ghost `xs` icon button named Add folder: no border,
   no fill at rest, so the rail stays light) that opens the project picker
   straight away (`MountProjectAction`, no menu first): the workspace projects
@@ -941,31 +952,43 @@ failing`, then `Conflict`, then `n behind`; the check counts come from the
   focus) but visible at rest and in the tab order, never hover only; a folder
   project keeps an empty slot of the same width so the counts line up. An
   archived session draws neither `+`.
-- **Level 2, the worktree.** Showing the Branch lens is being on level 2
-  (`useSessionRailLevel` reads `activeLens === 'branch'`, so history, links and
-  keys drill the rail without extra state). It reads: the back row
-  `‹ <session title>` (named `Back to session <title>`), which opens the
-  session's Overview; the identity row (`WorktreeLevel/WorktreeIdentityRow`:
-  the project name in gray, then the mono branch with the chevron of today's
-  branch switcher, `BranchSwitcher`, and a visible `⋯` holding the mount
-  registry for that worktree: Open in editor, Copy branch name, Copy path,
-  Link work to this branch, Start new turns here, Switch branch…, Close
-  branch, Remove from session; the entries, the status line and the pull
-  request header own the rest); the status line, only while a git act is due
-  (`6 behind main · 1 conflict` with `Rebase`, or `Rebasing on main` with
-  `Abort`), the one home of Rebase; then the entries Pull request (`Merge
-request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
-  fixed right-aligned slot from `worktreeEntryFactsOf`: `#418 Draft` or
-  `None`, the comment count with a warning dot while one waits on you, the
-  diff stat `+652 -99` in green and red beside the file count (the
-  `useMountDiffStats` source of the Overview rows, "12 files · +652 -99" in
-  the tooltip), `2 not pushed` or the commit count, `1 failed` with a danger
-  dot or the check count; a known zero leaves the slot empty. Files is a plain entry like the others: picking it opens
-  the diff page in the center, whose changed file list sits in its own rail on
-  the right of that page (see Branch page, Files), never in the session rail. The entries are
-  the Branch page's own rail, portalled into the level (`worktreeLevelSlot`),
-  so the page keeps one source for every number. ⌘[ in the rail and the
-  back row go up one level each.
+- **The current branch, in the tree.** There is no level 2 for a worktree: the
+  open rail stays on the session level whatever page is open, and showing the
+  Branch lens only marks one row current (`SessionLevel/WorktreeRow`,
+  `isOpened`: the row of the mount the Branch page shows). What level 2 held
+  moved onto that row. Under it, always visible while it is current: the
+  status line, only while a git act is due (`BranchStatusLine`: `6 behind main
+· 1 conflict` with `Rebase`, or `Rebasing on main` with `Abort`, the one home
+  of Rebase; a failure keeps the line and shows the error under it with Retry,
+  and the stopped-rebase prompt `RebaseConflictPrompt` sits under it); then
+  its pages (`WorktreeEntries`), open unless you folded them: Pull request
+  (Merge request on GitLab, with its number and the branch in mono),
+  Comments, Files, Commits, Checks, the one with the open page marked
+  current. Each page ends in one fixed right-aligned slot from
+  `worktreeEntryFactsOf`: `Draft`, the comment count with a warning dot while
+  one waits on you, the diff stat `+652 -99` in green and red beside the file
+  count (the `useMountDiffStats` source of the Overview rows), `2 not pushed`
+  or the commit count, `1 failed` with a danger dot or the check count; a
+  known zero leaves the slot empty. Files is a plain page like the others:
+  picking it opens the diff in the center, whose changed file list sits in its
+  own rail on the right of that page, never in the session rail. The pages are
+  drawn once, by the tree; the Branch page no longer portals its own rail
+  anywhere. The branch switch (Switch branch…), Link work to this branch, Copy
+  branch name, Copy path, Open in editor, Close branch and the rest are the
+  mount registry, in the row menu below. A session restored with the Branch
+  lens saved opens on the tree with that branch current and its page in the
+  center.
+- **The row menu.** One menu per branch row, the mount registry for that
+  worktree (`useObjectMenuTrigger`, the same verbs as the old identity row
+  and the status line): the row's `⋯` (`ObjectOverflowMenu`, named `<project>
+· <branch> actions`), a right click on the row and Shift+F10 on it open the
+  same list, so no verb is reachable only one way. The `⋯` sits in a
+  `row-actions` cell (`data-worktree-actions`): empty at rest on a row that is
+  not current, shown on hover, on focus inside the row and while its menu is
+  open, and always drawn on the current row, so the guard against hover only
+  actions has nothing to count. The cell keeps its 24px at rest so the chips
+  line up. The anchors of the branch switch and of Link work open beside the
+  row (`BranchRowAnchors`).
 - **Folder** takes the place of Projects in a session that edits a plain
   folder in place (`SessionLevel/LevelFolder.tsx`, the folders of
   `inPlaceFoldersOf`): a card with one row per folder, its name and what
@@ -984,12 +1007,11 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   Unlink and Move. It is a card like Projects, and its header carries the same
   `+` (`LevelAddTrigger`, named Link work), opening Link work (L). Every card
   header of the session level uses this one control, never a bordered chip.
-- **Back.** On level 2 the back row goes up to level 1, and so does ⌘[ while
-  focus is in the rail; on level 1 ⌘[ in the rail does nothing, and anywhere
-  else ⌘[ is the top bar Back. Leaving the Auto level is part of the history
-  entry (`focus.selection['sidebar-level']`, written by `pickRailLevel`), so
-  Back and Forward restore it, and any move into the session (a row click, a
-  page key, a link from the palette, a notification) starts a fresh entry. A
+- **Back.** On the folded worktree level the back icon goes up to level 1, and
+  so does ⌘[ while focus is in the rail; on level 1 ⌘[ in the rail does
+  nothing, and anywhere else ⌘[ is the top bar Back. Any move into the session
+  (a row click, a page key, a link from the palette, a notification) starts a
+  fresh history entry. A
   studio over the session (Tasks, Chat, Workflows, Terminal, Monitoring,
   Impact) covers the page and its rail; the column selects that studio's door
   and leaves the session row unselected.
@@ -999,34 +1021,20 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   on a worktree, on a run and on Auto, folded rail or not.
 - **Folded (44px).** The rail's own toggle (`SessionRailToggle`, Fold session
   rail, ⌥⌘B) folds it to the current level as icons with right tooltips
-  (`SessionRailIcons`): on level 2 the back icon, then one icon per worktree
-  entry (`RailWorktreeLevel`) or per run step (`RailRunLevel`); on the Auto
-  level the back icon, then one 28px button per rail row, centered on the icon
-  column like the run steps, holding its role glyph with its state node as a
-  small badge on the lower right corner (the node of the Auto word map the open
-  rail draws), with the role and state word in the tooltip (`RailAutoLevel`); on level 1 one icon per page with its dot,
-  then one pull request state icon per worktree. The folded rail has no foot and no top
+  (`SessionRailIcons`): on a branch the back icon, then one icon per page of the
+  worktree (`RailWorktreeLevel`; only the folded rail drills there); on level 1
+  one icon per page with its dot, then one pull request state icon per
+  worktree. The folded rail has no foot and no top
   row buttons; the tools column beside the content stays as it is.
   ⌘B folds the column only, which shows New, the doors and the pinned session
   nodes on every screen. Folding the session rail leaves the diff page's file
   rail as it is.
-- **Level 2, a preset run.** Opening a run with a fixed step list (a saved
-  workflow or Describe steps; `executionMode` not `dynamic`) drills the rail
-  into it (`RunLevel`, `LevelStack` layer `run`). It reads: the back row
-  `‹ Runs`, the identity row (the run's state dot from `runRowFactsOf`, the
-  run title, which renames inline on click), **Overview**, the steps as the
-  run tree in its `rail` density (ordinals, sub agents, the state word, the
-  same tracks; model, effort and cost stay in the role glyph's card), **Add
-  step** as the last row, and the foot "Limit $3.00 · $1.12 spent"
-  (`RunLevelFoot`: the limit opens `RunSpendLimitPopover`, the spent amount is
-  `useRunSpendUsd`, the number the cap is checked against). The level comes
-  from one function, `presetRunFocusOf`: the selected agent belongs to a
-  preset run (any link to a step lands here, the deepest level that holds it),
-  or the Runs page has a preset run focused. Back (the back row, or ⌘[ in the
-  rail) calls `leaveRunLevel`: the Runs list, session level, a new history
-  entry. Esc on the run Overview does the same. An orchestrated run does not
-  drill: the rail stays on the session level with **Orchestrated** selected
-  and the center shows its document
+- **A preset run keeps the rail on the session.** Opening a run with a fixed
+  step list (a saved workflow or Describe steps; `executionMode` not
+  `dynamic`) shows the run page in the center and leaves the rail on level 1;
+  its spawned agents are in the Agents panel (see The session tools). Esc on
+  the run Overview calls `leaveRunLevel`: the Runs list, a new history entry.
+  An orchestrated run shows its document with **Orchestrated** selected
   ([The orchestrated document](workflows.md#the-orchestrated-document)).
 - **Orchestrated** is its own session page (lens `orchestrated`, after Runs,
   ⌘⌥W pressed again; Runs counts preset runs only). It lists the orchestrated
@@ -1036,26 +1044,19 @@ request` on GitLab), Comments, Files, Commits, Checks. Each entry ends in one
   and `parentPlace` from an orchestrated run land on this list. A step row of
   the document opens the step in the pane (drawer kind `run-step`), never the
   center.
-- **The Auto level (level 2).** Auto agents opens the session's only Auto
-  conversation and drills the rail into it (`openAutoAgents`); with none or
-  several it opens the Auto agents page (`AutoAgentsPane`: one grid row per
-  conversation with its state word and **Start an auto** in the header; with
-  none, the shared `EmptyState` "No Auto agents yet" with **Start an auto**;
-  both open the Auto form of the New drawer through `openAutoForm`, and the
-  page has no composer of its own), and a row there drills in. The Auto level (`SessionRail/AutoLevel`) reads: the back
-  row `‹ <session title>`, the Work rail exactly as the chat had it (Auto
-  first, then each child with its state word, queued children on the dashed
-  spine), the empty state "No agents started yet" while Auto has no child, and
-  the foot "Limit $10.00 · $5.23 left" (`AutoLimitFoot`; the limit opens the
-  limit popover). It shows while the center is an Auto agent or one of its
-  children (`useIsOnAutoAgent`) unless the user went back: the back row and ⌘[
-  write `sidebar-level: session` (`pickRailLevel`), which keeps the Auto
-  chat in the center with Auto agents selected; a click on Auto agents drills
-  in again. The Agents key (`lens.agents`) pressed again on Agents opens Auto
+- **Auto keeps the rail on the session.** Auto agents opens the session's only
+  Auto conversation with the Agents panel open (`openAutoAgents`, through
+  `openSpawned`); with none or several it opens the Auto agents page
+  (`AutoAgentsPane`: one grid row per conversation with its state word and
+  **Start an auto** in the header; with none, the shared `EmptyState` "No Auto
+  agents yet" with **Start an auto**; both open the Auto form of the New drawer
+  through `openAutoForm`, and the page has no composer of its own), and a row
+  there opens that conversation with the Agents panel open. Auto agents stays
+  selected on the rail while an Auto agent is in the center. The Agents key (`lens.agents`) pressed again on Agents opens Auto
   agents while it shows (`isAutoAgentsShown`), and pressed on Auto agents goes
   back to the Overview.
 
-The tools (Ask, Terminal, Explore, Context, Scripts) are panes, not pages:
+The tools (Ask, Terminal, Explore, Context, Agents, Scripts) are panes, not pages:
 they open from the session tools column at the right of the content (see The
 session tools), never from a page header.
 The linked records keep their lenses for now and stay in the palette.
@@ -1495,8 +1496,8 @@ activity yet show the plain overview with its actions.
 
 One thin icon column at the right edge of the session content, between the
 page and the open drawer, the same on every rail level and in this order:
-**Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C) and
-**Scripts** (⌘⌥S) (`SESSION_TOOLS`). `SessionTools`
+**Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C),
+**Agents** (⌘⌥L) and **Scripts** (⌘⌥S) (`SESSION_TOOLS`). `SessionTools`
 (`features/session/components/SessionTools`) is mounted by `SessionFrame`
 after the page, 44px wide on the sheet background, its buttons starting on the
 rail top row's line. Each tool is a 32px `IconButton`
@@ -1512,8 +1513,40 @@ Session tools) with one tab stop; Up, Down, Home and End move it
 when the window is too narrow for the pane to push (about 1100px with the
 sidebar open), the pane floats over the page with the scrim and covers the
 column, as it covers the rest of the page, until Esc or its close returns it;
-the tool chords keep working. Folding the rail leaves the column in place, and
-a drill never moves it.
+the tool chords keep working. The line between the two is one rule,
+`drawerLayoutOf` with `DRAWER_PUSH_RESERVE` ([styling.md](styling.md)).
+Folding the rail leaves the column in place, and a drill never moves it.
+
+- **Agents holds what a run or Auto spawned** (drawer kind `spawned`,
+  `app/components/SpawnedPanel`), in place of the old level 2 of the session
+  rail. Its body follows the page (`useSpawnedFocus`): on a preset run (from
+  Runs, Now, What was done or a link to a step, read through
+  `presetRunFocusOf`) it shows the run's identity row (the state dot and the
+  title, which renames inline on click), the run's agents as a tree, **Add
+  step** and the foot "Limit $3.00 · $1.12 spent" (`RunSpendFoot`); on an Auto
+  agent or one of its children it shows Auto and its children as a tree, "No
+  agents started yet" while Auto has none, and the limit foot
+  (`AutoLimitFoot`). With nothing selected, or after **All launches**, it
+  lists every live and recent launch of the session newest first
+  (`launchesOf`: preset runs that are not archived and Auto roots), each with
+  its agents under it; picking a launch opens it in the center and keeps the
+  panel open (`openSpawned` passes the panel as the navigation's drawer). A
+  row is one 28px line: state glyph, role glyph, title, the active time
+  (`DelegationClock`, the clock every work row reads); settled sub agents of a
+  run fold into one row like the run page's (`useFoldedRunTree`). The rows
+  are a `tree` with `treeitem`s and `aria-level` (`SpawnedTree`): one tab
+  stop, Up and Down, Home and End, Left to the parent, Right to the first
+  child or to open a fold, Enter or Space to open (`treeKeyTargetOf`).
+- **A row opens its transcript in the drawer.** A run agent opens the
+  `run-step` drawer, an Auto child the `auto-child` drawer, both with `from:
+'spawned'`, so Agents stays lit (`openPaneOf`) and the drawer shows **Back
+  to agents**; the Auto row and a run head open their page in the center. The
+  drawer pushes the page or lies over it by the one drawer rule, with the
+  scrim, Esc and focus trapped and returned (`DrawerColumn`, `DrawerFrame`).
+- **A saved level 2 lands on the panel.** A window saved on a run or on the
+  Auto level before the panel opens on the same page with Agents open
+  (`withoutRemovedPages` drops the retired `sidebar-level` key). The panel
+  is per window: the drawer belongs to the window's store.
 
 - **Outside a session there is no tools group.** The workspace pages (the
   board, the studios) already hold the two tools that make sense there as
@@ -2081,9 +2114,9 @@ exists. Old checklist ids map to the four on hydrate.
 
 Auto is described in [auto.md](auto.md); this is where it sits. Auto is always
 on: Settings has no Auto switch, and the **Experimental** marker sits beside
-the count of the **Auto agents** entry of the session rail. The Work rail of an Auto agent, and of each
-child of an Auto tree, is the session rail's Auto level (see Session rail), never
-a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
+the count of the **Auto agents** entry of the session rail. The tree of an Auto agent, and of each
+child of an Auto tree, is the Agents panel of the session tools (see The session
+tools), never a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The
 plan drawer swaps its toolbar for `AutoPlanToolbar` when the plan belongs to an
 Auto tree, and the Overview timeline hides the children of a tree and draws its
@@ -3532,12 +3565,12 @@ Files tab, Write review, the Bitbucket pull request changes and the
 Rust side runs git with `core.quotepath=false` and `parseUnifiedDiff` reads
 quoted headers, so a name with accents is its own file.
 
-**Frame.** The Branch page is the center of the worktree level (Session
-rail, level 2): one detail with no rail of its own. Its sections are the
-level's entries; `BranchPage` renders them (`BranchRail`) through a portal
-into the slot the level registers (`worktreeLevelSlot`,
-`useWorktreeLevelSlot`), so the counts stay computed once by the page. A host
-with no session rail (a scene, a test with no slot) shows the page alone. The
+**Frame.** The Branch page is the center of the Projects tree (Session
+rail): one detail with no rail of its own. Its sections are the pages under
+the current branch row of the tree (`SessionLevel/WorktreeEntries`); the page
+publishes its counts once (`worktreeEntryFactsBus`, read by the folded rail)
+and the tree computes the same facts for its rows (`worktreeEntryFactsOf`). A host
+with no session rail (a scene, a test) shows the page alone. The
 header, the banners and every section body sit on the 960px column of the
 detail; nothing moves from one section to the next.
 
@@ -3547,19 +3580,15 @@ the Pull request entry and it becomes an input in the same 32px row, `Enter` sav
 to the host, `Esc` cancels, a failure is an inline notice with Retry), one primary and `⋯`. No
 state chip and no meta line: the state, the number, the author, the base and the readiness are
 the Pull request property block, the commit count is the Commits entry, and a blocked primary
-says its reason in its tooltip. **The switcher** (`BranchSwitcher`) is the branch line of the
-worktree level's identity row. It opens a menu of the session's
-branches (`branchMenuGroups`, the rows of the trail's `Branch ▾` menu: repo
-glyph, branch cut at the end, `#318 Open`, a check on the current one,
-grouped by repo when there are several) and `New branch`. Choosing a branch
-makes it the active mount and replaces the address with the landing tab of
-that branch (`switchBranchMount`, also what the trail menu and the sidebar rows
-run), so the crumb, the header and the body follow together and nothing of the
-branch it leaves carries over. `New branch` swaps the menu for a name field
-(empty names it automatically) and a `Create branch` that forks a worktree
-(`forkMount`) and lands on it on its landing tab; a folder project cannot fork and
-offers none. With one branch the chip has no chevron and opens the name field at
-once (a menu of one is not drawn); with neither it is plain text.
+says its reason in its tooltip. **There is no branch switcher in the header or
+the rail**: the branches of the session are the rows of the Projects tree
+(`SessionLevel/ProjectTree`), and choosing one makes it the active mount and
+replaces the address with the landing tab of that branch (`switchBranchMount`,
+also what the trail menu and the sidebar rows run), so the crumb, the header
+and the body follow together and nothing of the branch it leaves carries over.
+A new branch is the `+` on its folder row (`project.newBranch`), which opens
+the new branch form (`forkMount` lands on the new worktree on its landing tab);
+a folder project cannot fork and shows none.
 
 The header holds at most one secondary and one primary (`branchActionsOf`). The secondary is
 the first push that applies: `Push N fixes` (every accepted thread, then unpushed commits), `Publish N
@@ -3976,9 +4005,12 @@ the 40-file one, `brand-diff-empty` the clean branch and `brand-diff-edits-only`
 the one that matches its base but has edits.
 
 A jump is instant, not smooth: file bodies keep
-`content-visibility` with estimated heights, so for a few frames the view
+`content-visibility` with a height estimated from their rows
+(`bodyEstimatePx`, see docs/traps.md "Diff file body height"), so for a few frames the view
 measures the picked header and snaps it back to the top until the heights
-settle. The picked file stays the active one until you scroll, so `J` and `K`
+settle. While you read, `useScrollAnchor` keeps the file under you still when
+a body above it renders and changes height; it stands down during that snap.
+The picked file stays the active one until you scroll, so `J` and `K`
 start from it. Each file has a sticky header (status letter, path, `from <old path>` on a rename,
 changes, comment count, a visible `Comment on file` button, `Viewed`, `⋯` with
 Open in editor, Copy path, Comment on file); a viewed file collapses and opens again when you unmark it, from the

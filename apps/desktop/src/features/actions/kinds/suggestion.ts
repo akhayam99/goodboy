@@ -10,7 +10,13 @@ import type {
   SessionSuggestion,
 } from '../../suggestions/types';
 import { branchPlace } from '../../../store/slices/navigation/place';
-import type { ActionDefinition, ObjectKindDefinition, SuggestionActionTarget } from '../types';
+import type {
+  ActionDefinition,
+  FoldedVerb,
+  ObjectKindDefinition,
+  SuggestionActionTarget,
+} from '../types';
+import { foldedVerbActions } from './actionCard';
 
 export const TALK_ACTION_ID = 'suggestion.talkWithAuto';
 
@@ -25,7 +31,13 @@ export type SuggestionFacts = {
   readonly suggestion: SessionSuggestion;
   readonly startsRole: AgentKind | null;
   readonly isAutoOn: boolean;
+  readonly onNotNow: (() => void) | null;
+  readonly foldedVerbs: ReadonlyArray<FoldedVerb>;
 };
+
+const NO_VERBS: ReadonlyArray<FoldedVerb> = [];
+
+export const NOT_NOW_ACTION_ID = 'suggestion.notNow';
 
 type RoleAlternativeParams = {
   readonly id: string;
@@ -124,8 +136,11 @@ export const SUGGESTION_KIND: ObjectKindDefinition<SuggestionActionTarget, Sugge
     suggestion: target.suggestion,
     startsRole: target.startsRole,
     isAutoOn: target.isAutoOn,
+    onNotNow: target.onNotNow ?? null,
+    foldedVerbs: target.foldedVerbs ?? NO_VERBS,
   }),
   adapted: ({ facts }) => [
+    ...foldedVerbActions<SuggestionFacts>({ verbs: facts.foldedVerbs, kind: 'suggestion' }),
     ...rebaseTargetsOf({ suggestion: facts.suggestion }).map((target) =>
       rebaseTargetAction({ target }),
     ),
@@ -160,6 +175,14 @@ export const SUGGESTION_KIND: ObjectKindDefinition<SuggestionActionTarget, Sugge
           title: facts.suggestion.title,
           detail: facts.suggestion.detail ?? null,
         }),
+    },
+    {
+      id: NOT_NOW_ACTION_ID,
+      label: 'Not now',
+      icon: CONCEPT_ICONS.archive,
+      group: 'act',
+      when: ({ facts }) => facts.onNotNow !== null,
+      run: ({ facts }) => facts.onNotNow?.(),
     },
   ],
 };

@@ -192,8 +192,8 @@ cost of the whole tree. The word follows the tree phase:
 **Deciding what to do**, **Starting agents**, **Waiting for Implementer and
 Tester**, **Needs you**, **Reading the results**, **Blocked, open the
 chat**, **Stopping**, **Stopped by you**, **Idle**, **Finished by you**. The
-children are not rows of the Overview; they live in the Work rail, the session rail's
-Auto level.
+children are not rows of the Overview; they live in the Auto tree of the Agents
+panel.
 
 Auto never finishes itself. A tree that rests after its agents settled (stored
 phase `done`) reads **Idle** in the row and the rail root, never Done. **Mark finished** in the agent menu
@@ -206,18 +206,14 @@ writing to it reopens it to **Deciding**.
 
 ## The chat
 
-- **Work rail.** The Work rail is the session rail's Auto level
-  ([navigation.md](navigation.md#session-rail)): opening Auto agents, an Auto
-  agent or one of its children drills the session rail into it, with the back row
-  `‹ <session title>` on top. Auto comes first, then one row per child, all
-  expanded and with no group row. A row has the role, the name and state on the
-  first line, the task Auto gave and the time on the second, with the model in
-  the row's tooltip. Auto's own row keeps its model on the second line, since
-  its state is said once, on the tail. One spine runs from ring edge
-  to ring edge in the tone of the ring it reaches: green when done, blue when
-  working, dashed when queued. The rail is always there: while Auto has no
-  child it shows Auto alone ("Idle" before a tree exists) and "No agents
-  started yet". Every state word is gray beside its toned node and comes from
+- **The tree in the Agents panel.** What Auto spawned lives in the Agents
+  panel of the session tools ([navigation.md](navigation.md#the-session-tools)):
+  opening Auto agents or an Auto agent opens it, and it follows an Auto agent
+  or one of its children in the center. Auto comes first, then one row per
+  child under it, all expanded and with no group row. A row is one line: state
+  node, role glyph, name and the time; its tooltip and accessible name say the
+  name and the state word. While Auto has no child it shows Auto alone ("Idle"
+  before a tree exists) and "No agents started yet". Every state word is gray beside its toned node and comes from
   one word map (`autoTreeWordOf` for Auto, `delegationCardOf` for a child):
   **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
   **Stopped**; the Auto agents list reads the same words. The foot is one
@@ -314,16 +310,23 @@ writing to it reopens it to **Deciding**.
   `DelegationResult`; the summary is markdown through the shared `Markdown`,
   with any artifact block dropped by `splitArtifactText`) and its tail (`autoChildLive`: its live line with **Stop
   agent**, **Failed: ...** or **Stopped** with **Retry through Auto**, or
-  **Returned to Auto**). **Open full** puts the child in the center with the
-  Auto level kept and its row selected; there the notice reads the same and
-  **Open Auto** goes back.
+  **Returned to Auto**). A pane opened from the Agents panel shows **Back to
+  agents**. **Open full** puts the child in the center; there the notice reads
+  the same and **Open Auto** goes back.
 - **Talking to a child.** The pane and the child page carry a composer,
   "Message Implementer", under the line "Started by Auto. Auto sees what you
   tell it." A message is a plain turn on the child (queued while its turn
   runs), and `noticeAutoOfChildTurn` (called by `sendTurn`) also hands Auto a
   note through the user turn port: "I wrote to the Implementer you started:
   ...", read with Auto's next delivery. A lost note is reported and the
-  message still goes to the child. **Retry through Auto** asks Auto to retry
+  message still goes to the child. The drawer composer names its agent: `ChatView`
+  hands its `agentId` to `ChatInput`, which keys the draft, the queue, the
+  attachments, the routing and the send by that id and remounts per agent, so a
+  child's draft never shows in the main Auto composer, two children never share
+  one, and a send or a Queue or Send now reaches the child (a stopped or done
+  one takes the turn through the normal resume path). The store's selected
+  agent of the session is Auto's root and is not the drawer's target.
+  **Retry through Auto** asks Auto to retry
   a stopped child; it never runs a plain turn on it (`docs/turns.md`, resume
   rules).
 - **No permission picker in the tree.** The composer of Auto and of its
@@ -374,7 +377,7 @@ registers; without a port the click says Auto cannot take the answer yet.
 
 ## Blocked and Retry
 
-A tree is blocked when a limit stops the next delivery (turns, three answers in a
+A tree is blocked when a guard stops the next delivery (three answers in a
 row with no progress, the time limit, the budget), when the provider refuses to
 start Auto's turn, or when Auto stopped answering: a tree still deciding 10 minutes
 after its delivery (`AUTO_STALE_DECIDE_MS`) with no live root run settles from what
@@ -384,11 +387,29 @@ before it replied. Retry to send the message again." and puts the message back.
 A blocked tree writes nothing while it waits. It resumes by itself only after a
 budget block, once the limit is raised. Otherwise **Retry** on the tail
 (`retryBlockedTree`, through the retry port) resumes it: it clears the reason,
-resets the no progress streak, takes one more grant of turns at the turn limit (at
-most three) and redelivers what waits. Past the time limit, at the budget or with
-every grant used it refuses with the reason on the tail. A message from the user to
+resets the no progress streak and redelivers what waits. Past the time limit or at
+the budget it refuses with the reason on the tail. A message from the user to
 a blocked tree is a Retry too, and the first recovery after a restart retries a
 block that no limit caused.
+
+## What stops an Auto tree
+
+No fixed count of agents, runs or turns ends a tree or refuses a hand over. A tree
+that already delegated 12 agents, ran 20 attempts or took 30 turns keeps going. What
+stops it is a guard that protects the user:
+
+- the spend cap of the tree (`AUTO_DEFAULT_TREE_CAP_USD` or the limit the user set
+  and raises), with a per attempt ceiling per role (`AUTO_ATTEMPT_CEILING_USD`);
+- `AUTO_TREE_LIMITS`: delegate calls per turn, refused hand overs, question cycles
+  per delegation, the no progress streak and the wall clock hours;
+- four open children and four per batch.
+
+At the spend cap the tail reads **Paused at the limit** with **Raise to ...** and
+**Change limit**; raising it drives the tree again, nothing else to do. The counters
+`delegations_used`, `attempts_used`, `turns_used` and `grants` stay in `auto_trees`
+(no migration): the first three only count and show, `grants` is no longer written
+or read. An old tree with its counts at the old cap resumes as it is. The prompt
+tells Auto the spend left (`autoBudgetPromptLine`), never a count of agents left.
 
 ## How Auto decides
 

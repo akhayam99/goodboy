@@ -2,8 +2,8 @@ import { AUTO_USD_EPSILON, type AutoArtifact, type AutoTree } from '@goodboy/db'
 import {
   AUTO_BATCH_MAX_CHILDREN,
   AUTO_MAX_OPEN_CHILDREN,
+  AUTO_TREE_LIMITS,
   attemptCeilingUsd,
-  effectiveTreeLimits,
 } from './limits';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
@@ -72,7 +72,6 @@ type TreeChecksParams = {
 };
 
 const treeRefusal = ({ snapshot, tree, count }: TreeChecksParams): AutoRefusalCode | null => {
-  const limits = effectiveTreeLimits({ grants: tree.grants });
   const isOwner =
     tree.schedulerOwner === snapshot.ownerId &&
     tree.ownerLeaseExpiresAt !== null &&
@@ -101,20 +100,14 @@ const treeRefusal = ({ snapshot, tree, count }: TreeChecksParams): AutoRefusalCo
   if (count > AUTO_BATCH_MAX_CHILDREN) {
     return 'breadth_cap';
   }
-  if (tree.turnDelegateCalls >= limits.delegateCallsPerTurn) {
+  if (tree.turnDelegateCalls >= AUTO_TREE_LIMITS.delegateCallsPerTurn) {
     return 'limit_calls';
   }
-  if (tree.refusalsUsed >= limits.refusals) {
+  if (tree.refusalsUsed >= AUTO_TREE_LIMITS.refusals) {
     return 'limit_refusals';
   }
   if (snapshot.nowMs >= tree.hardDeadlineAt) {
     return 'limit_wall_clock';
-  }
-  if (tree.delegationsUsed + count > limits.delegations) {
-    return 'limit_delegations';
-  }
-  if (tree.attemptsUsed + count > limits.attempts) {
-    return 'limit_attempts';
   }
   if (snapshot.openCount + count > AUTO_MAX_OPEN_CHILDREN) {
     return 'breadth_cap';

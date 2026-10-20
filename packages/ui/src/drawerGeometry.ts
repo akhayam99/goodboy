@@ -34,8 +34,9 @@ type PushParams = {
   readonly drawerWidthPx: number;
 };
 
-const pushRoomOf = (mainWidthPx: number): number =>
-  mainWidthPx - DRAWER_INSET * 2 - COLUMN_GUTTERS - COLUMN_MIN_PUSH;
+export const DRAWER_PUSH_RESERVE = DRAWER_INSET * 2 + COLUMN_GUTTERS + COLUMN_MIN_PUSH;
+
+const pushRoomOf = (mainWidthPx: number): number => mainWidthPx - DRAWER_PUSH_RESERVE;
 
 export const canDrawerPush = ({ mainWidthPx, drawerWidthPx }: PushParams): boolean =>
   pushRoomOf(mainWidthPx) >= drawerWidthPx;

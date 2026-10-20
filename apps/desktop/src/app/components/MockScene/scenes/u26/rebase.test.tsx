@@ -182,25 +182,83 @@ describe('the u26 rebase scenes', () => {
     });
   });
 
-  it('reads the progress per branch and stops the rest on Abort', async () => {
+  it('reads the progress on each branch row and stops the rest on Abort', async () => {
     await mount({ name: 'u26-rebase-all-running-dark' });
 
-    const lineOf = ({ name }: NameParams): string => {
-      const node = [...document.querySelectorAll('[data-rebase-all-branch]')].find((row) =>
-        (row.textContent ?? '').includes(name),
-      );
-      return node?.textContent ?? '';
+    const chipOf = ({ name }: NameParams): string | null => {
+      const row = screen.getByRole('button', { name: new RegExp(`^hl/${name}(,|$)`) });
+      return within(row).queryByTestId('branch-row-chip')?.textContent ?? null;
     };
-    expect(lineOf({ name: 'ledger-core' })).toContain('Rebased');
-    expect(lineOf({ name: 'notify-relay' })).toContain('Conflict in 2 files');
-    expect(lineOf({ name: 'payments-api' })).toContain('Replaying 2 of 5');
-    expect(screen.getByRole('status').textContent).toContain('Rebasing 3 of 3 branches');
+    expect(document.querySelector('[data-rebase-all-branch]')).toBeNull();
+    expect(chipOf({ name: 'fix-duplicate-credit' })).toBeNull();
+    expect(chipOf({ name: 'retry-credit-notes' })).toBeNull();
+    expect(chipOf({ name: 'webhook-backoff' })).toBe('Rebasing');
+    expect(chipOf({ name: 'retry-copy' })).toBe('Queued');
+    expect(chipOf({ name: 'delivery-metrics' })).toBe('Conflict');
+    expect(chipOf({ name: 'export-batch' })).toBe('Queued');
+    expect(chipOf({ name: 'posting-dedupe' })).toBe('Queued');
+    expect(screen.getByRole('status').textContent).toBe('Rebasing 4 of 7');
 
     fireEvent.click(screen.getByRole('button', { name: 'Abort' }));
     await settle();
 
     expect(useAppStore.getState().rebaseAllRuns[SESSION_ID]?.isAborted).toBe(true);
     expect(screen.getByRole('status').textContent).toContain('Stopping after this branch');
+  });
+
+  it('says who does what on each branch row once Auto has the rest, with no list', async () => {
+    await mount({ name: 'u26-rebase-all-auto-dark' });
+
+    const rowOf = ({ name }: NameParams) =>
+      screen.getByRole('button', { name: new RegExp(`^hl/${name}(,|$)`) });
+    const chipOf = ({ name }: NameParams) =>
+      within(rowOf({ name })).queryByTestId('branch-row-chip');
+    const textOf = ({ name }: NameParams) => chipOf({ name })?.textContent ?? null;
+
+    expect(document.querySelector('[data-rebase-all-branch]')).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('Auto has the rest');
+    expect(textOf({ name: 'fix-duplicate-credit' })).toBeNull();
+    expect(textOf({ name: 'webhook-backoff' })).toBe('Auto resolving');
+    expect(textOf({ name: 'retry-copy' })).toBe('Rebased by Auto');
+    expect(textOf({ name: 'delivery-metrics' })).toBe('Conflict');
+    expect(textOf({ name: 'export-batch' })).toBe('Failed');
+    expect(
+      chipOf({ name: 'webhook-backoff' })
+        ?.closest('[data-chip-kind]')
+        ?.hasAttribute('data-is-breathing'),
+    ).toBe(true);
+    expect(
+      chipOf({ name: 'retry-copy' })
+        ?.closest('[data-chip-kind]')
+        ?.hasAttribute('data-is-breathing'),
+    ).toBe(false);
+  });
+
+  it('drops Rebased by Auto once every branch Auto took has settled', async () => {
+    await mount({ name: 'u26-rebase-all-auto-dark' });
+    const run = useAppStore.getState().rebaseAllRuns[SESSION_ID];
+    if (run === undefined) {
+      throw new Error('the scene has no run');
+    }
+    useAppStore.setState({
+      rebaseAllRuns: {
+        [SESSION_ID]: {
+          ...run,
+          branches: run.branches.map((branch) =>
+            branch.state === 'auto' && !branch.branch.includes('retry-copy')
+              ? { ...branch, state: 'rebased' as const }
+              : branch,
+          ),
+        },
+      },
+    });
+    await settle();
+
+    expect(
+      within(screen.getByRole('button', { name: /^hl\/retry-copy(,|$)/ })).queryByTestId(
+        'branch-row-chip',
+      ),
+    ).toBeNull();
   });
 
   it('offers Dismiss only once Auto has taken the work or the run has ended', async () => {

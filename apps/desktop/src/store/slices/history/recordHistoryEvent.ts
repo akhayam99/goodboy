@@ -20,6 +20,11 @@ export const recordHistoryEvent = async ({
   planId,
   extra,
 }: Params): Promise<void> => {
+  const run = get().historyRuns[target.mountId];
+  const batchId =
+    origin === 'rebase' && run?.origin === 'rebase' && run.sessionId === target.sessionId
+      ? (run.batchId ?? null)
+      : null;
   await get()
     .recordSessionEvent({
       sessionId: target.sessionId,
@@ -32,6 +37,7 @@ export const recordHistoryEvent = async ({
         branch: target.branch,
         origin,
         ...(planId !== null && { planId }),
+        ...(batchId !== null && { batchId }),
         ...extra,
       },
     })

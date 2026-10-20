@@ -15,8 +15,6 @@ export const AUTO_REFUSAL_TEXT = {
   tree_stopped: 'This conversation was stopped.',
   generation_changed: 'The work was restarted since this turn began.',
   not_owner: 'Another window runs this conversation. Try again in a moment.',
-  limit_delegations: 'This conversation reached its limit of delegated agents.',
-  limit_attempts: 'This conversation reached its limit of agent runs.',
   limit_calls: `You may call delegate ${AUTO_TREE_LIMITS.delegateCallsPerTurn} times in one turn. End your turn.`,
   limit_refusals: 'Too many delegate calls were refused in this conversation. Tell the user.',
   limit_wall_clock: 'This conversation reached its time limit.',

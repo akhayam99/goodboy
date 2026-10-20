@@ -699,7 +699,7 @@ time and one level deep. It is always available and labelled **Experimental** on
 session entry; there is no switch in Settings. **Start an auto** starts it, and
 **Start an agent** keeps the role start. A person sees an Auto tree as one row in the
 Overview, under **Auto agents** in the session, and as one chat with one
-line for each delegation, its Work rail being the sidebar's Auto level
+line for each delegation, its tree in the Agents panel of the session tools
 ([auto.md](auto.md)).
 
 ### Agent kinds

@@ -6,16 +6,13 @@ import {
   AUTO_BATCH_MIN_CHILDREN,
   AUTO_AUX_RESERVATION_USD,
   AUTO_GATES,
-  AUTO_GRANT_ALLOWANCE,
   AUTO_LEDGER_CHAR_BUDGET,
   AUTO_LEDGER_MAX_ARTIFACTS,
-  AUTO_MAX_GRANTS_PER_TREE,
   AUTO_MAX_OPEN_CHILDREN,
   AUTO_TREE_DEPTH,
   AUTO_TREE_LIMITS,
   AUTO_TURN_CEILING_USD,
   attemptCeilingUsd,
-  effectiveTreeLimits,
 } from './limits';
 import { AUTO_DELEGATION_ROLES } from './roles';
 
@@ -32,11 +29,8 @@ describe('Auto limits', () => {
     expect(AUTO_ATTEMPT_CEILING_USD.implementer).toBeGreaterThan(AUTO_ATTEMPT_CEILING_USD.scout);
   });
 
-  it('holds the tree lifetime counters of the design', () => {
+  it('holds the guards that protect the user and no fixed count of agents, runs or turns', () => {
     expect(AUTO_TREE_LIMITS).toEqual({
-      autoTurns: 30,
-      delegations: 12,
-      attempts: 20,
       delegateCallsPerTurn: 6,
       refusals: 10,
       questionCyclesPerDelegation: 3,
@@ -52,9 +46,7 @@ describe('Auto limits', () => {
     expect(AUTO_TREE_DEPTH).toBe(1);
   });
 
-  it('lets a user grant a fixed allowance, three times at most', () => {
-    expect(AUTO_GRANT_ALLOWANCE).toEqual({ autoTurns: 6, delegations: 4, attempts: 4 });
-    expect(AUTO_MAX_GRANTS_PER_TREE).toBe(3);
+  it('keeps the turn ceiling', () => {
     expect(AUTO_TURN_CEILING_USD).toBe(0.5);
   });
 });
@@ -72,29 +64,6 @@ describe('attemptCeilingUsd', () => {
   it('is zero when nothing remains, never negative', () => {
     expect(attemptCeilingUsd({ role: 'tester', remainingUsd: 0 })).toBe(0);
     expect(attemptCeilingUsd({ role: 'tester', remainingUsd: -2 })).toBe(0);
-  });
-});
-
-describe('effectiveTreeLimits', () => {
-  it('is the base counters before any grant', () => {
-    expect(effectiveTreeLimits({ grants: 0 })).toMatchObject({
-      autoTurns: 30,
-      delegations: 12,
-      attempts: 20,
-      delegateCallsPerTurn: 6,
-      refusals: 10,
-    });
-  });
-
-  it('adds the fixed allowance once per grant and nothing else', () => {
-    expect(effectiveTreeLimits({ grants: 2 })).toMatchObject({
-      autoTurns: 42,
-      delegations: 20,
-      attempts: 28,
-      delegateCallsPerTurn: 6,
-      refusals: 10,
-      questionCyclesPerDelegation: 3,
-    });
   });
 });
 

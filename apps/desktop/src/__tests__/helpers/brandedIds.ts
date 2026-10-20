@@ -1,4 +1,6 @@
 import type {
+  ChatId,
+  ChatMessageId,
   IntegrationBindingId,
   IntegrationCredentialId,
   IsoDateTime,
@@ -31,6 +33,23 @@ export const credentialIdOf = ({ value }: Params): IntegrationCredentialId => {
 export const workspaceIdOf = ({ value }: Params): WorkspaceId => {
   if (!isWorkspaceId(value)) {
     throw new Error('empty workspace id');
+  }
+  return value;
+};
+
+const isChatId = (value: string): value is ChatId => value.length > 0;
+const isChatMessageId = (value: string): value is ChatMessageId => value.length > 0;
+
+export const chatIdOf = ({ value }: Params): ChatId => {
+  if (!isChatId(value)) {
+    throw new Error('empty chat id');
+  }
+  return value;
+};
+
+export const chatMessageIdOf = ({ value }: Params): ChatMessageId => {
+  if (!isChatMessageId(value)) {
+    throw new Error('empty chat message id');
   }
   return value;
 };

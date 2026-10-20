@@ -249,19 +249,23 @@ export const seedC07 = ({
   }));
   const store = useAppStore.getState();
   if (place === 'auto' || place === 'session') {
-    store.navigate({ to: agentPlace({ sessionId: AUTO_SESSION.id, agentId: AUTO_ROOT_ID }) });
+    store.navigate({
+      to: agentPlace({ sessionId: AUTO_SESSION.id, agentId: AUTO_ROOT_ID }),
+      drawer:
+        place === 'auto' ? { kind: 'spawned', sessionId: AUTO_SESSION.id, payload: null } : null,
+    });
   }
   if (place === 'list' || place === 'start') {
     store.navigate({ to: lensPlace({ state: store, sessionId: AUTO_SESSION.id, lens: 'auto' }) });
-  }
-  if (place === 'session') {
-    useAppStore.getState().pickRailLevel({ level: 'session' });
   }
   if (pane !== undefined) {
     useAppStore.getState().openDrawer({
       kind: 'auto-child',
       sessionId: AUTO_SESSION.id,
-      payload: { agentId: CHILD_ID[pane] },
+      payload:
+        place === 'auto'
+          ? { agentId: CHILD_ID[pane], from: 'spawned' }
+          : { agentId: CHILD_ID[pane] },
     });
   }
 };

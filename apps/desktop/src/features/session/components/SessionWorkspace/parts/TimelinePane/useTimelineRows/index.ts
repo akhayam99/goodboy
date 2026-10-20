@@ -22,7 +22,7 @@ import {
 import { runSpendUsd } from '../../../../../../../store/slices/workflows/runSpendUsd';
 import { useAttachedWorkflowRuns } from '../../../../../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../../../../../workflows/useWorkflowAdvanceStates';
-import { entriesOfView, type ActivityView } from '../../../../../timeline/activityView';
+import { entriesOfView, type EntriesView } from '../../../../../timeline/activityView';
 import { logEntriesMatching } from '../../../../../timeline/logSearch';
 import { agentSpendById } from '../../../../../timeline/agentSpendById';
 import {
@@ -41,6 +41,10 @@ import {
   type DecisionChangeDetail,
   type DetailHeightParams,
 } from '../../../../../timeline/decisionChangeLines';
+import {
+  historyBatchDetailOf,
+  type HistoryBatchDetail,
+} from '../../../../../timeline/historyBatchDetail';
 import { needsYouOwners, type NeedsYouOwner } from '../../../../../timeline/needsYou';
 import { shownQuestionIds } from '../../../../../timeline/shownQuestionIds';
 import { timelineLaneRuns, type TimelineLaneRuns } from '../../../../../timeline/timelineLaneRuns';
@@ -63,7 +67,7 @@ const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
 type Params = {
   readonly session: Session;
-  readonly view: ActivityView;
+  readonly view: EntriesView;
   readonly query: string;
   readonly explode: ExplodeGroups;
 };
@@ -87,6 +91,7 @@ export type TimelineRows = {
   readonly spendByAgentId: ReadonlyMap<string, number>;
   readonly spendByRunId: ReadonlyMap<string, number>;
   readonly decisionDetails: ReadonlyMap<string, DecisionChangeDetail>;
+  readonly batchDetails: ReadonlyMap<string, HistoryBatchDetail>;
   readonly expandedRows: ReadonlySet<string>;
   readonly toggleExpanded: (rowId: string) => void;
   readonly setDetailHeight: (params: DetailHeightParams) => void;
@@ -295,7 +300,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
 
   const viewEntries = useMemo(() => {
     const inView = entriesOfView({ entries: model.entries, events, view, liveAgentIds });
-    return view === 'log' ? logEntriesMatching({ entries: inView, query }) : inView;
+    return view !== 'activity' ? logEntriesMatching({ entries: inView, query }) : inView;
   }, [events, liveAgentIds, model.entries, query, view]);
 
   const stream = useMemo(
@@ -306,13 +311,14 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
-        showQuestions: view === 'log',
+        showQuestions: view !== 'activity',
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         jobFactsByAgentId: jobActivity.factsByAgentId,
         autoFactsByAgentId,
         expandedGroupIds: explode.expandedIds,
         fullGroupIds: explode.fullIds,
         foldsFinished: true,
+        shouldFoldHistoryBatches: view === 'all',
       }),
     [
       advanceByRunId,
@@ -338,13 +344,14 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
             advanceByRunId,
             decidingRunIds,
             dayLabelFor: dayLabel,
-            showQuestions: view === 'log',
+            showQuestions: view !== 'activity',
             resolveFactsByAgentId: resolveActivity.factsByAgentId,
             jobFactsByAgentId: jobActivity.factsByAgentId,
             autoFactsByAgentId,
             expandedGroupIds,
             fullGroupIds,
             foldsFinished: true,
+            shouldFoldHistoryBatches: view === 'all',
           }),
       }),
     [
@@ -407,6 +414,23 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     return details;
   }, [estimatedDetails, measuredHeights]);
 
+  const batchDetails = useMemo(() => {
+    const details = new Map<string, HistoryBatchDetail>();
+    for (const item of stream.items) {
+      if (
+        item.kind !== 'row' ||
+        item.entry.kind !== 'event' ||
+        item.entry.historyBatch === undefined
+      ) {
+        continue;
+      }
+      const detail = historyBatchDetailOf({ batch: item.entry.historyBatch });
+      const height = measuredHeights.get(item.id);
+      details.set(item.id, height === undefined ? detail : { ...detail, height });
+    }
+    return details;
+  }, [measuredHeights, stream.items]);
+
   const setDetailHeight = useCallback(({ rowId, height }: DetailHeightParams) => {
     setMeasuredHeights((current) => {
       if (current.get(rowId) === height) {
@@ -419,13 +443,15 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
   const itemCache = useRef<ReadonlyMap<string, TimelineStreamItem>>(new Map());
   const laidOutItems = useMemo(() => {
     const next = stream.items.map((item) => {
-      const detail = expandedRows.has(item.id) ? decisionDetails.get(item.id) : undefined;
+      const detail = expandedRows.has(item.id)
+        ? (decisionDetails.get(item.id) ?? batchDetails.get(item.id))
+        : undefined;
       return detail === undefined ? item : { ...item, height: item.height + detail.height };
     });
     const kept = keepEqualById({ previous: itemCache.current, next });
     itemCache.current = new Map(kept.map((item) => [item.id, item]));
     return kept;
-  }, [decisionDetails, expandedRows, stream.items]);
+  }, [batchDetails, decisionDetails, expandedRows, stream.items]);
 
   const toggleExpanded = useCallback((rowId: string) => {
     setExpandedRows((current) => {
@@ -476,6 +502,7 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     spendByAgentId,
     spendByRunId,
     decisionDetails,
+    batchDetails,
     expandedRows,
     toggleExpanded,
     setDetailHeight,

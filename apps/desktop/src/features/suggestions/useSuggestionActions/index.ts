@@ -1,5 +1,8 @@
 import { analyzeFailingChecks } from '../../branch/checks/analyzeFailingChecks';
 import { failingChecksOf } from '../../branch/checks/failingChecksOf';
+import { pushCheckFix } from '../../branch/checks/pushCheckFix';
+import { startCheckFix } from '../../branch/checks/startCheckFix';
+import { checkFixTargetOf } from '../checkFixTargetOf';
 import { NAMES } from '../../../shared/names';
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -409,7 +412,49 @@ export const useSuggestionActions = ({
           ...(routing !== undefined && { routing }),
         });
       };
-      const isAnalyzedBefore = suggestion.payload.progress?.chain === 'fixed-pushed';
+      const chain = suggestion.payload.progress?.chain ?? 'none';
+      const { mountId } = suggestion.payload;
+      if (chain === 'proposal') {
+        return {
+          primary: {
+            label: 'Start fix',
+            agentKind: 'implementer',
+            isDisabled: false,
+            failureTitle: "Couldn't start the Implementer",
+            run: async () => {
+              const target = checkFixTargetOf({
+                state: useAppStore.getState(),
+                sessionId,
+                mountId,
+              });
+              if (target === null) {
+                throw new Error('Refresh the failing checks and try Start fix again.');
+              }
+              await startCheckFix({ sessionId, url: target.url, mountId });
+            },
+          },
+          onDismiss: null,
+        };
+      }
+      if (chain === 'fixed-local') {
+        return {
+          primary: {
+            label: 'Push',
+            isDisabled: false,
+            failureTitle: "Couldn't push the branch",
+            run: async () => {
+              const target = checkFixTargetOf({
+                state: useAppStore.getState(),
+                sessionId,
+                mountId,
+              });
+              await pushCheckFix({ sessionId, mountId, fixAgentId: target?.fixAgentId });
+            },
+          },
+          onDismiss: null,
+        };
+      }
+      const isAnalyzedBefore = chain === 'fixed-pushed' || chain === 'fix-failed';
       return {
         primary: {
           label: isAnalyzedBefore ? 'Analyze again' : 'Analyze',

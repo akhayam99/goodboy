@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { STORAGE_KEYS, persistedPref } from '../../../../../shared/lib/storage-keys';
 
-type RailTreeNodeKind = 'project' | 'branch';
+type RailTreeNodeKind = 'project' | 'branch' | 'finished';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -17,6 +17,7 @@ export type RailTreeNode = {
 export type RailTreeOpen = {
   readonly isOpen: (node: RailTreeNode) => boolean;
   readonly toggle: (node: RailTreeNode) => void;
+  readonly open: (node: RailTreeNode) => void;
 };
 
 type SessionChoices = Readonly<Record<string, boolean>>;
@@ -56,6 +57,11 @@ const treeChoicesPref = persistedPref<TreeChoices>({
   fallback: {},
 });
 
+type WriteParams = {
+  readonly key: string;
+  readonly isNowOpen: boolean;
+};
+
 type KeyParams = Pick<RailTreeNode, 'kind' | 'id'>;
 
 const nodeKey = ({ kind, id }: KeyParams): string => `${kind}:${id}`;
@@ -69,10 +75,9 @@ export const useRailTreeOpen = ({ sessionId }: Params): RailTreeOpen => {
       choices[nodeKey({ kind, id })] ?? isOpenByDefault,
     [choices],
   );
-  const toggle = useCallback(
-    ({ kind, id, isOpenByDefault }: RailTreeNode): void => {
-      const key = nodeKey({ kind, id });
-      const next = { ...choices, [key]: !(choices[key] ?? isOpenByDefault) };
+  const write = useCallback(
+    ({ key, isNowOpen }: WriteParams): void => {
+      const next = { ...choices, [key]: isNowOpen };
       const others = Object.entries(treeChoicesPref.read()).filter(
         ([otherId]) => otherId !== sessionId,
       );
@@ -83,5 +88,16 @@ export const useRailTreeOpen = ({ sessionId }: Params): RailTreeOpen => {
     },
     [choices, sessionId],
   );
-  return { isOpen, toggle };
+  const toggle = useCallback(
+    ({ kind, id, isOpenByDefault }: RailTreeNode): void => {
+      const key = nodeKey({ kind, id });
+      write({ key, isNowOpen: !(choices[key] ?? isOpenByDefault) });
+    },
+    [choices, write],
+  );
+  const open = useCallback(
+    ({ kind, id }: RailTreeNode): void => write({ key: nodeKey({ kind, id }), isNowOpen: true }),
+    [write],
+  );
+  return { isOpen, toggle, open };
 };

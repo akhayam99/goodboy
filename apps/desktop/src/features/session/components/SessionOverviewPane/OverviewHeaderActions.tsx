@@ -1,6 +1,7 @@
 import type { Session } from '@goodboy/types';
 import { ArchivedRestore } from './ArchivedRestore';
 import { OverviewActions } from './OverviewActions';
+import { ViewToggle } from './ViewToggle';
 
 type Props = {
   readonly session: Session;
@@ -8,8 +9,15 @@ type Props = {
 };
 
 export const OverviewHeaderActions = ({ session, hasNextLead = false }: Props) => {
-  if (session.archivedAt != null) {
-    return <ArchivedRestore session={session} />;
-  }
-  return <OverviewActions session={session} hasNextLead={hasNextLead} />;
+  const isArchived = session.archivedAt != null;
+  return (
+    <div className="flex items-center gap-2">
+      <ViewToggle />
+      {isArchived ? (
+        <ArchivedRestore session={session} />
+      ) : (
+        <OverviewActions session={session} hasNextLead={hasNextLead} />
+      )}
+    </div>
+  );
 };

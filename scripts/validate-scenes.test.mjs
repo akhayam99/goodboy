@@ -16,6 +16,7 @@ import {
 } from './validateScenesBrowser.mjs';
 import { headerLineFailures } from './validateScenesHeaderLine.mjs';
 import { updatePillFailures } from './validateScenesUpdatePill.mjs';
+import { drawerComposerFailures } from './validateScenesDrawerComposer.mjs';
 import {
   COLUMN_ROW_SELECTOR,
   columnDriftFailures,
@@ -812,6 +813,57 @@ describe('updatePillFailures', () => {
     assert.equal(
       updatePillFailures({ scene: 'fixture', width: 1024, measured: null })[0]?.check,
       'the Goodboy row shows the update pill',
+    );
+  });
+});
+
+describe('drawerComposerFailures', () => {
+  const control = (name, left, right) => ({ name, left, right, top: 800, bottom: 828, height: 28 });
+  const measured = {
+    toolbar: { name: '', left: 1060, right: 1400, top: 800, bottom: 828, height: 28 },
+    drawer: { name: '', left: 1048, right: 1432, top: 40, bottom: 890, height: 850 },
+    controls: [
+      control('Add', 1076, 1104),
+      control('Model routing', 1120, 1170),
+      control('Send now', 1180, 1260),
+      control('Queue', 1270, 1340),
+    ],
+  };
+
+  it('passes controls that hold one row of one height inside the drawer', () => {
+    assert.deepEqual(drawerComposerFailures({ scene: 'fixture', width: 1440, measured }), []);
+  });
+
+  it('fails controls that overlap and one that runs past the drawer edge', () => {
+    const checks = drawerComposerFailures({
+      scene: 'fixture',
+      width: 1440,
+      measured: {
+        ...measured,
+        controls: [control('Model routing', 1120, 1200), control('Send now', 1180, 1440)],
+      },
+    }).map((failure) => failure.check);
+    assert.deepEqual(checks, [
+      'every toolbar control stays inside the toolbar',
+      'no toolbar control runs past the drawer edge',
+      'no two toolbar controls overlap',
+    ]);
+  });
+
+  it('fails a button taller than its neighbours', () => {
+    const tall = { ...control('Queue', 1270, 1340), height: 48, bottom: 848 };
+    const checks = drawerComposerFailures({
+      scene: 'fixture',
+      width: 1440,
+      measured: { ...measured, controls: [measured.controls[2], tall] },
+    }).map((failure) => failure.check);
+    assert.deepEqual(checks, ['every toolbar button has the same height']);
+  });
+
+  it('fails a scene without a drawer composer', () => {
+    assert.equal(
+      drawerComposerFailures({ scene: 'fixture', width: 1440, measured: null })[0]?.check,
+      'the drawer shows a composer toolbar',
     );
   });
 });

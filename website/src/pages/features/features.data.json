@@ -217,6 +217,12 @@
           "main": true
         },
         {
+          "title": "New session overview (experimental)",
+          "text": "Switch the toggle next to New to New (Experimental). A session then reads as where it stands, what needs you and what was done. The log opens in a drawer, and the same toggle takes you back to Classic.",
+          "group": "Overview and activity",
+          "main": true
+        },
+        {
           "title": "Next",
           "text": "Goodboy shows the one move that unblocks a task, like answering a question or opening a pull request. A move that starts an agent says which model it runs on. Put a suggestion away until things change.",
           "group": "Overview and activity",

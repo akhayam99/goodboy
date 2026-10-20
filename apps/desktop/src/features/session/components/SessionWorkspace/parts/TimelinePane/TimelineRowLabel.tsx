@@ -65,6 +65,9 @@ const detailOf = ({ entry, grade }: FactParams): string | null => {
   if (entry.kind !== 'event' || entry.projectRun != null) {
     return null;
   }
+  if (entry.historyBatch !== undefined) {
+    return entry.historyBatch.sub;
+  }
   if (
     entry.event.kind === 'decisions_changed' &&
     entry.event.payload?.consolidatedAfter === undefined
@@ -117,7 +120,10 @@ const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment>
     ];
   }
   if (entry.kind === 'event') {
-    const { projectRun } = entry;
+    const { projectRun, historyBatch } = entry;
+    if (historyBatch !== undefined) {
+      return [{ kind: 'text', text: historyBatch.title }];
+    }
     if (projectRun != null) {
       return sessionEventProjectRunLabel({
         mounted: projectRun.mounted,

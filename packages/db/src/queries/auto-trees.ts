@@ -578,26 +578,3 @@ export const moveRestingAutoTree = async ({
   );
   return result.rowsAffected === 1;
 };
-
-type GrantAutoTreeParams = {
-  readonly db: Database;
-  readonly treeId: AutoTreeId;
-  readonly expectedGrants: number;
-  readonly maxGrants: number;
-  readonly nowMs: number;
-};
-
-export const grantAutoTreeIfUnchanged = async ({
-  db,
-  treeId,
-  expectedGrants,
-  maxGrants,
-  nowMs,
-}: GrantAutoTreeParams): Promise<boolean> => {
-  const result = await db.execute(
-    `UPDATE auto_trees SET grants = grants + 1, phase_rev = phase_rev + 1, updated_at = ?
-     WHERE id = ? AND grants = ? AND grants < ?`,
-    [nowMs, treeId, expectedGrants, maxGrants],
-  );
-  return result.rowsAffected === 1;
-};

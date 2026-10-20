@@ -2,6 +2,7 @@ import type { AgentId, IsoDateTime, SessionId, TurnState } from '@goodboy/types'
 import { updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
+import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
 import { awaitRunStopped } from '../agents/awaitRunStopped';
 import type { CancelTurnReason } from './cancelCurrentTurn';
@@ -35,6 +36,7 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
     }
     const { runId } = agentState;
     cancelledRunIds.add(runId);
+    revealPacer.flushRun({ runId });
     try {
       await cancelTurn(runId);
     } catch (error) {

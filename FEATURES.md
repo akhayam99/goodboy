@@ -32,7 +32,7 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 [More on starting a task](docs/features/start.md)
 
-<a id="session-overview"></a><a id="refresh-a-session"></a><a id="activity"></a><a id="next"></a><a id="time-left"></a><a id="changes"></a><a id="file-versions"></a>
+<a id="session-overview"></a><a id="refresh-a-session"></a><a id="activity"></a><a id="new-session-overview-experimental"></a><a id="next"></a><a id="time-left"></a><a id="changes"></a><a id="file-versions"></a>
 
 ## Overview and activity
 
@@ -40,6 +40,7 @@ Open a session to see what it is for, what needs you and what happened so far.
 
 - Session overview
 - Activity
+- New session overview (experimental)
 - Next
 
 [More on overview and activity](docs/features/overview.md)

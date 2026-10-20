@@ -36,6 +36,12 @@ export const SESSION_TOOLS: ReadonlyArray<SessionTool> = [
     shortcut: 'lens.context',
   },
   {
+    pane: 'spawned',
+    icon: CONCEPT_ICONS.agents,
+    label: 'Agents',
+    shortcut: 'session.spawned',
+  },
+  {
     pane: 'scripts',
     icon: CONCEPT_ICONS.scripts,
     label: 'Scripts',

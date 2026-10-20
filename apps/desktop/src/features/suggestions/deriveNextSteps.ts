@@ -217,6 +217,7 @@ type Params = {
   readonly mounts?: ReadonlyArray<SuggestionMount>;
   readonly cleanupProposals?: ReadonlyArray<SuggestionCleanupProposal>;
   readonly checkChains?: ReadonlyArray<SuggestionCheckChain>;
+  readonly isActivityShown?: boolean;
   readonly hasGoal?: boolean;
   readonly hasEverAttachedWorkflow?: boolean;
   readonly recommendedWorkflow?: SuggestionRecommendedWorkflow | null;
@@ -240,6 +241,7 @@ export const deriveNextSteps = ({
   mounts = [],
   cleanupProposals = [],
   checkChains = [],
+  isActivityShown = true,
   hasGoal = false,
   hasEverAttachedWorkflow = workflowRuns.length > 0,
   recommendedWorkflow = null,
@@ -467,6 +469,9 @@ export const deriveNextSteps = ({
     if (pr.checks !== 'failure' && progress?.chain !== 'fixed-pushed') {
       continue;
     }
+    if (!isActivityShown && progress?.chain === 'fixed-pushed' && progress.outcome !== 'failed') {
+      continue;
+    }
     if (isMountBusyOf({ agents, mountId: mount.mountId, mountCount: mounts.length })) {
       continue;
     }
@@ -621,7 +626,9 @@ export const deriveNextSteps = ({
     });
   }
   const deduped = dedupeByTargetKey({
-    suggestions: suggestions.filter((suggestion) => !isOfferedByActivity({ suggestion })),
+    suggestions: isActivityShown
+      ? suggestions.filter((suggestion) => !isOfferedByActivity({ suggestion }))
+      : suggestions,
   });
   const kept = applyDismissals({ suggestions: deduped, dismissedFingerprints });
   return sortNextSteps({ suggestions: kept, demotedKinds });

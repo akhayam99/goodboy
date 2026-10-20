@@ -1,17 +1,27 @@
 import { useEffect, useState } from 'react';
-import type { WorktreeStatus } from '@goodboy/types';
-import { RebaseAllCard } from '../../../../../features/history/RebaseAllCard';
+import type { SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
-import { LevelCard } from '../../../SessionRail/SessionLevel/LevelCard';
+import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
+import { SessionLevel } from '../../../SessionRail/SessionLevel';
 import { CTX_STATUS } from '../brand/contextBranch';
 import { mockSceneIpc } from '../mockSceneIpc';
-import { SESSION_ID, seedResolveScene } from '../resolveSeed';
-import { REBASE_ALL_MOUNTS, conflictRunOf, rebaseAllRunOf, rebasingRunOf } from './rebaseSeed';
+import { SESSION, SESSION_ID, seedResolveScene } from '../resolveSeed';
+import {
+  BATCH_CONFLICT_MOUNT,
+  BATCH_REBASING_MOUNT,
+  REBASE_ALL_MOUNTS,
+  REBASE_BATCH_MOUNTS,
+  conflictRunOf,
+  rebaseAllRunOf,
+  rebasingRunOf,
+} from './rebaseSeed';
+
+export type RebaseAllStage = 'idle' | 'running' | 'auto';
 
 type Props = {
   readonly theme: 'dark' | 'light';
-  readonly isRunning: boolean;
+  readonly stage: RebaseAllStage;
 };
 
 const BEHIND_STATUS: WorktreeStatus = {
@@ -22,63 +32,104 @@ const BEHIND_STATUS: WorktreeStatus = {
   inProgress: null,
 };
 
-const LABEL_ID = 'u26-rebase-all-projects';
-
-type SeedParams = {
-  readonly isRunning: boolean;
+const REBASED_STATUS: WorktreeStatus = {
+  ...BEHIND_STATUS,
+  mainDistance: { kind: 'known', ahead: 3, behind: 0 },
 };
 
-const seed = ({ isRunning }: SeedParams): void => {
+const AUTO_RESOLVING_STATUS: WorktreeStatus = {
+  ...BEHIND_STATUS,
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 1, changed: 1 },
+  inProgress: 'rebase',
+};
+
+const REBASED_SLUGS: ReadonlyArray<string> = [
+  'fix-duplicate-credit',
+  'retry-credit-notes',
+  'retry-copy',
+];
+
+type SeedParams = {
+  readonly stage: RebaseAllStage;
+};
+
+type StatusParams = {
+  readonly payload: unknown;
+  readonly stage: RebaseAllStage;
+};
+
+const statusOf = ({ payload, stage }: StatusParams): WorktreeStatus => {
+  if (stage !== 'auto') {
+    return BEHIND_STATUS;
+  }
+  const text = JSON.stringify(payload ?? {});
+  if (text.includes('webhook-backoff')) {
+    return AUTO_RESOLVING_STATUS;
+  }
+  const isRebased = REBASED_SLUGS.some((slug) => text.includes(slug));
+  return isRebased ? REBASED_STATUS : BEHIND_STATUS;
+};
+
+const seed = ({ stage }: SeedParams): void => {
   seedResolveScene({ expandedThreadId: null });
-  mockSceneIpc((command) => (command === 'worktree_status' ? BEHIND_STATUS : null));
-  const [ledger, relay, payments] = REBASE_ALL_MOUNTS;
+  mockSceneIpc((command, payload) =>
+    command === 'worktree_status' ? statusOf({ payload, stage }) : null,
+  );
+  const mounts: ReadonlyArray<SessionProjectMount> =
+    stage === 'idle' ? REBASE_ALL_MOUNTS : REBASE_BATCH_MOUNTS;
   useAppStore.setState((state) => {
     const [project] = state.projects;
     const projects =
       project === undefined
         ? state.projects
-        : REBASE_ALL_MOUNTS.map((mount) => ({
+        : [...new Map(mounts.map((mount) => [mount.projectId, mount])).values()].map((mount) => ({
             ...project,
             id: mount.projectId,
             name: mount.mountName,
           }));
     return {
       projects,
-      sessionProjectMounts: { ...state.sessionProjectMounts, [SESSION_ID]: REBASE_ALL_MOUNTS },
-      ...(isRunning &&
-        ledger !== undefined &&
-        relay !== undefined &&
-        payments !== undefined && {
-          rebaseAllRuns: { [SESSION_ID]: rebaseAllRunOf() },
+      sessionProjectMounts: { ...state.sessionProjectMounts, [SESSION_ID]: mounts },
+      ...(stage !== 'idle' &&
+        BATCH_CONFLICT_MOUNT !== undefined &&
+        BATCH_REBASING_MOUNT !== undefined && {
+          rebaseAllRuns: { [SESSION_ID]: rebaseAllRunOf({ isAuto: stage === 'auto' }) },
           historyRuns: {
-            [relay.mountId]: conflictRunOf({
+            [BATCH_CONFLICT_MOUNT.mountId]: conflictRunOf({
               sessionId: SESSION_ID,
-              mountId: relay.mountId,
+              mountId: BATCH_CONFLICT_MOUNT.mountId,
               files: ['src/retry/backoff.ts', 'src/retry/queue.ts'],
             }),
-            [payments.mountId]: rebasingRunOf({ mountId: payments.mountId }),
+            [BATCH_REBASING_MOUNT.mountId]:
+              stage === 'auto'
+                ? conflictRunOf({
+                    sessionId: SESSION_ID,
+                    mountId: BATCH_REBASING_MOUNT.mountId,
+                    files: ['src/retry/backoff.ts'],
+                  })
+                : rebasingRunOf({ mountId: BATCH_REBASING_MOUNT.mountId }),
           },
         }),
     };
   });
 };
 
-export const RebaseAllScene = ({ theme, isRunning }: Props) => {
+export const RebaseAllScene = ({ theme, stage }: Props) => {
   const [isReady, setIsReady] = useState(false);
   useEffect(() => {
     applyDocumentTheme({ theme });
-    seed({ isRunning });
+    seed({ stage });
     setIsReady(true);
-  }, [isRunning, theme]);
+  }, [stage, theme]);
   if (!isReady) {
     return null;
   }
   return (
     <div data-shot className="flex h-screen min-h-0 bg-background p-4">
-      <div className="flex w-72 shrink-0 flex-col gap-2 bg-background p-2">
-        <LevelCard id={LABEL_ID} label="Projects" isOpen onToggle={() => undefined}>
-          <RebaseAllCard sessionId={SESSION_ID} />
-        </LevelCard>
+      <div className="flex w-72 shrink-0 flex-col bg-background">
+        <ObjectMenuProvider>
+          <SessionLevel session={SESSION} isActive />
+        </ObjectMenuProvider>
       </div>
     </div>
   );

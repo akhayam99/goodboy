@@ -12,13 +12,11 @@ import {
   useResizableWidth,
 } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useAppStore } from '../../../store';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { openLens } from '../../../features/session/openLens';
 import { ActionStatusLine } from '../../../features/actions/components/ActionControls/ActionStatusLine';
 import type { ObjectTarget } from '../../../features/actions/types';
 import { useActionControls } from '../../../features/actions/useActionControls';
-import { leaveRunLevel } from '../../../features/workflows/leaveRunLevel';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
 import { useShellFolds } from '../../hooks/useShellFolds';
 import { SessionLevelActions } from './SessionLevel/SessionLevelActions';
@@ -43,10 +41,9 @@ const isBackKey = (event: KeyboardEvent): boolean =>
 export const SessionRail = ({ session }: Props) => {
   const sessionId = session.id;
   const place = useColumnPlace();
-  const level = useSessionRailLevel({ sessionId });
   const folds = useShellFolds();
   const fold = useSessionRailFold({ isNarrow: folds.isRailNarrow });
-  const pickRailLevel = useAppStore((state) => state.pickRailLevel);
+  const level = useSessionRailLevel({ sessionId, isFolded: fold.isFolded });
   const resizable = useResizableWidth<HTMLElement>({
     storageKey: STORAGE_KEYS.sessionRailWidth,
     defaultWidth: LEFT_SIDEBAR_DEFAULT,
@@ -65,19 +62,6 @@ export const SessionRail = ({ session }: Props) => {
   const controls = useActionControls({ target, scopeKey: sessionId });
   const isSessionChrome = level === 'session' && !fold.isFolded;
   const isTopFailure = controls.failure !== null && !FOOT_ACTION_IDS.has(controls.failure.actionId);
-  const goBack = () => {
-    if (level === 'run') {
-      leaveRunLevel({ sessionId });
-      return;
-    }
-    if (level === 'worktree') {
-      openLens({ sessionId, lens: null });
-      return;
-    }
-    if (level === 'auto') {
-      pickRailLevel({ level: 'session' });
-    }
-  };
   return (
     <nav
       ref={resizable.targetRef}
@@ -90,7 +74,7 @@ export const SessionRail = ({ session }: Props) => {
         }
         event.preventDefault();
         event.stopPropagation();
-        goBack();
+        openLens({ sessionId, lens: null });
       }}
       style={{
         ...resizable.style,

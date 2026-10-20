@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
@@ -33,8 +32,6 @@ import type { BranchPushState, BranchReviewCounts } from '../../branchPrimary';
 import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTabs';
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
-import { useWorktreeLevelSlot } from '../../hooks/useWorktreeLevelSlot';
-import { BranchRail } from '../BranchRail';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
 import { notPushedCountOf } from '../../../history/notPushedCountOf';
 import { commentsCountOf } from '../../../resolve/commentsCountOf';
@@ -69,7 +66,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
   const [page, setPage] = useState<HTMLElement | null>(null);
   const [fileSlot, setFileSlot] = useState<HTMLElement | null>(null);
-  const levelHost = useWorktreeLevelSlot();
   const historyMountId = identity.mount?.mountId ?? null;
   const historyCommits = useAppStore((s) =>
     historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits ?? null),
@@ -382,7 +378,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     worktreeEntryFactsBus.publish({ sessionId, facts: latestFacts.current });
   }, [factsKey, isActive, sessionId]);
   useEffect(() => () => worktreeEntryFactsBus.clear({ sessionId }), [sessionId]);
-  const railNode = <BranchRail tabs={tabs} current={tab} facts={entryFacts} onSelect={selectTab} />;
   const railSlot = useMemo<DiffRailHost>(() => ({ slot: fileSlot, page }), [fileSlot, page]);
 
   const tabActionsSlotNode = (
@@ -447,7 +442,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
                 className="flex h-full min-h-0 shrink-0 empty:hidden"
               />
             ) : null}
-            {levelHost === null || !isActive ? null : createPortal(railNode, levelHost)}
           </div>
         </DiffRailContext.Provider>
       </TabActionsSlotContext.Provider>

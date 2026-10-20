@@ -1,21 +1,34 @@
-import { useId, useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { IconButton, Reveal, SelectableRow, StatusDot, Tooltip, cn } from '@goodboy/ui';
+import { useId, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { Reveal, cn } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { BranchName } from '../../../../features/branch/components/BranchHeader/BranchName';
+import { distanceBehind, unmergedCount } from '../../../../shared/lib/gitStatus';
+import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
+import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
+import type { MountActionTarget } from '../../../../features/actions/types';
 import { branchRowFactsOf } from '../../../../features/branch/branchRowFactsOf';
-import { pullRequestStateToneOf } from '../../../../features/branch/pullRequestStateToneOf';
+import { resolveBranchTab, type BranchScope } from '../../../../features/branch/branchTabs';
+import { useBranchTab } from '../../../../features/branch/hooks/useBranchTab';
 import { switchBranchMount } from '../../../../features/branch/switchBranchMount';
 import type { EntryDiffStat } from '../../../../features/branch/worktreeEntryFacts';
+import { rebaseAllBranchOf } from '../../../../features/history/RebaseAllCard/rebaseAllBranchOf';
+import { isRebasedBranchSettled } from '../../../../features/history/RebaseAllCard/rebaseAllBatchSettledOf';
+import { rebaseProgressTextOf } from '../../../../features/history/RebaseAllCard/rebaseProgressTextOf';
 import { useTaskDropState } from '../../../../features/session/hooks/useTaskDropState';
+import { useMountRemoteHostKind } from '../../../../features/worktree/useMountRemoteHostKind';
+import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
+import { BranchRowAnchors } from './BranchRowAnchors';
+import { BranchRowLine } from './BranchRowLine';
+import { BranchStatusLine } from './BranchStatusLine';
+import { branchRowChipOf } from './branchRowChipOf';
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';
 import { useWorktreeCardEntries } from './useWorktreeCardEntries';
 import { useWorktreeRowState } from './useWorktreeRowState';
+import { requestStateOf } from './requestStateOf';
 import { WorktreeEntries } from './WorktreeEntries';
-import type { EntryShownFact } from './worktreeRowStateOf';
-import type { WorktreeCardEntry } from './worktreeCardEntriesOf';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -24,21 +37,11 @@ type Props = {
   readonly status: WorktreeStatus | null;
   readonly isShown: boolean;
   readonly isOpened: boolean;
+  readonly isBatchSettled: boolean;
   readonly diff?: EntryDiffStat | null;
 };
 
-type NeedsYouParams = {
-  readonly entries: ReadonlyArray<WorktreeCardEntry>;
-};
-
-const isNeedingYou = ({ entries }: NeedsYouParams): boolean =>
-  entries.some(
-    (entry) =>
-      (entry.tab === 'comments' && entry.fact.tone !== null) ||
-      (entry.tab === 'checks' && entry.fact.tone === 'danger'),
-  );
-
-const NONE_SHOWN: ReadonlyArray<EntryShownFact> = [];
+const NO_FILES: ReadonlyArray<string> = [];
 
 export const WorktreeRow = ({
   sessionId,
@@ -47,54 +50,90 @@ export const WorktreeRow = ({
   status,
   isShown,
   isOpened,
+  isBatchSettled,
   diff = null,
 }: Props) => {
   const entriesId = useId();
-  const [wasOpened, setWasOpened] = useState(isOpened);
-  if (isOpened && !wasOpened) {
-    setWasOpened(true);
-  }
-  const request = row.request;
-  const branch = row.branch === '' ? row.mountName : row.branch;
   const path = row.worktreePath ?? row.lastWorktreePath;
-  const entries = useWorktreeCardEntries({ sessionId, row, diff });
+  const sessionScope = useAppStore(useShallow((state) => branchScopeOf({ state, sessionId })));
+  const ownState = requestStateOf({ request: row.request });
+  const scope = useMemo<BranchScope>(
+    () => ({
+      state: ownState === 'none' ? sessionScope.state : ownState,
+      hasComments: sessionScope.hasComments,
+    }),
+    [ownState, sessionScope.hasComments, sessionScope.state],
+  );
+  const { entries, runs } = useWorktreeCardEntries({
+    sessionId,
+    row,
+    diff,
+    scope: isOpened ? scope : null,
+  });
   const livePath = row.isAttached ? row.worktreePath : null;
   const hasEntries = livePath !== null && entries.length > 0;
-  const node: RailTreeNode = {
-    kind: 'branch',
-    id: row.mountId,
-    isOpenByDefault: wasOpened || isNeedingYou({ entries }),
-  };
-  const isOpen = hasEntries && tree.isOpen(node);
-  const shownByEntries = useMemo(
-    () =>
-      new Set<EntryShownFact>(
-        !isOpen
-          ? NONE_SHOWN
-          : entries.flatMap((entry) =>
-              entry.tab === 'comments' || (entry.tab === 'checks' && entry.fact.tone !== null)
-                ? [entry.tab]
-                : [],
-            ),
-      ),
-    [entries, isOpen],
-  );
-  const state = useWorktreeRowState({ sessionId, row, status, shownByEntries });
+  const node: RailTreeNode = { kind: 'branch', id: row.mountId, isOpenByDefault: true };
+  const isOpen = hasEntries && isOpened && tree.isOpen(node);
+  const behind = status === null ? null : distanceBehind({ distance: status.mainDistance });
+  const conflicts = status === null ? null : unmergedCount({ workingTree: status.workingTree });
   const facts = branchRowFactsOf({
     branch: row.branch,
     mountName: row.mountName,
-    request,
-    checks: null,
-    behind: null,
-    conflicts: null,
+    request: row.request,
+    checks: runs,
+    behind,
+    conflicts,
   });
-  const requestState = facts.state;
-  const mark = pullRequestStateToneOf({ state: requestState });
-  const StateIcon = mark.icon;
-  const number = facts.number ?? '';
+  const storedTab = useBranchTab({ sessionId, mountPath: row.worktreePath });
+  const currentTab = isShown ? resolveBranchTab({ tab: storedTab, scope }) : null;
+  const rebase = useAppStore((state) =>
+    rebaseAllBranchOf({ run: state.rebaseAllRuns[sessionId] ?? null, mountId: row.mountId }),
+  );
+  const progress = useAppStore((state) =>
+    rebase?.state === 'rebasing'
+      ? rebaseProgressTextOf({ historyRun: state.historyRuns[row.mountId] ?? null })
+      : null,
+  );
+  const conflictFiles = useAppStore(
+    (state) => state.historyRuns[row.mountId]?.stop?.files ?? NO_FILES,
+  );
+  const chip = branchRowChipOf({
+    signal: facts.signal,
+    rebase,
+    isSettled: isRebasedBranchSettled({ status: status ?? undefined }),
+    isRebaseStopped: status?.inProgress === 'rebase',
+    isBatchSettled,
+    progress,
+    conflictFiles,
+  });
+  const state = useWorktreeRowState({ sessionId, row, status });
+  const reason = chip === null ? state.reason : null;
+  const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: row.repoRoot });
+  const target = useMemo<MountActionTarget>(
+    () => ({ kind: 'mount', sessionId, mountId: row.mountId, status, remoteKind }),
+    [remoteKind, row.mountId, sessionId, status],
+  );
+  const menu = useObjectMenuTrigger({ target, anchorKey: `mount-${row.mountId}` });
   const isDropTarget = row.branch !== '' && row.isAttached && !row.isFinished;
   const dropState = useTaskDropState({ target: { projectId: row.projectId, branch: row.branch } });
   const isDragLive = isDropTarget && dropState !== 'idle';
+  const select = () => {
+    if (!isOpened && path !== null) {
+      void switchBranchMount({
+        sessionId,
+        mountId: row.mountId,
+        worktreePath: path,
+        mode: 'push',
+      });
+      if (hasEntries) {
+        tree.open(node);
+      }
+      return;
+    }
+    if (hasEntries) {
+      tree.toggle(node);
+    }
+  };
 
   return (
     <div
@@ -102,81 +141,57 @@ export const WorktreeRow = ({
       data-task-project={isDropTarget ? row.projectId : undefined}
       data-task-branch={isDropTarget ? row.branch : undefined}
       data-worktree-open={isOpen ? '' : undefined}
+      data-worktree-current={isOpened ? '' : undefined}
       className={cn(
         'flex min-w-0 flex-col rounded-md',
         isDragLive && dropState === 'over' && 'bg-selected',
         isDragLive && (dropState === 'dim' || dropState === 'refused') && 'opacity-50',
       )}
     >
-      <div className="relative flex min-w-0">
-        <SelectableRow
-          selected={isShown}
-          ariaCurrent={isShown ? 'page' : undefined}
-          ariaLabel={[row.projectName, branch, number, facts.stateWord, state.reason]
-            .filter((part) => part !== null && part !== '')
-            .join(', ')}
-          {...(path !== null && {
-            onClick: () =>
-              void switchBranchMount({
-                sessionId,
-                mountId: row.mountId,
-                worktreePath: path,
-                mode: 'push',
-              }),
-          })}
-          className="h-7 items-center gap-2 pl-5 pr-1 text-ui"
-        >
-          <StateIcon
-            size={ICON_SIZE.row}
-            aria-hidden
-            data-pr-state={requestState}
-            data-pr-tone={mark.tone}
-            className={cn('shrink-0', mark.iconClass)}
-          />
-          <span data-worktree-branch="" className="flex min-w-0 flex-1">
-            <BranchName branch={branch} />
-          </span>
-          {number === '' ? null : (
-            <span className="shrink-0 text-right text-meta tabular-nums text-faint-foreground">
-              {number}
-            </span>
+      <div
+        onContextMenu={menu.onContextMenu}
+        onKeyDown={menu.onKeyDown}
+        data-row-opened={isOpened ? '' : undefined}
+        className="group/row relative flex min-w-0 items-center"
+      >
+        <BranchRowLine
+          facts={facts}
+          chip={chip}
+          ariaLabel={[facts.label, reason].filter((part) => part !== null).join(', ')}
+          reason={reason}
+          isShown={isShown}
+          isExpanded={hasEntries && isOpened ? isOpen : undefined}
+          onSelect={path === null ? undefined : select}
+        />
+        <span
+          data-worktree-actions=""
+          data-actions-at-rest={isOpened ? 'shown' : 'hidden'}
+          className={cn(
+            TRAIL_SLOT,
+            'absolute inset-y-0 right-0 my-auto',
+            !isOpened && 'row-actions',
           )}
-          <span data-worktree-dot="" className="flex w-2 shrink-0 items-center justify-center">
-            {state.tone === null ? null : (
-              <Tooltip content={state.reason}>
-                <span className="flex">
-                  <StatusDot tone={state.tone} size="sm" />
-                </span>
-              </Tooltip>
-            )}
-          </span>
-        </SelectableRow>
-        {hasEntries ? (
-          <span className="absolute inset-y-0 -left-1 flex items-center">
-            <IconButton
-              icon={ChevronRight}
-              size="xs"
-              label={`${branch} pages`}
-              tooltipSide="right"
-              aria-expanded={isOpen}
-              aria-controls={entriesId}
-              data-worktree-toggle=""
-              onClick={() => tree.toggle(node)}
-              className={cn(
-                'text-faint-foreground [&>svg]:motion-safe:transition-transform',
-                isOpen && '[&>svg]:rotate-90',
-              )}
-            />
-          </span>
-        ) : null}
+        >
+          <ObjectOverflowMenu
+            target={target}
+            label={`${row.projectName} · ${facts.branch} actions`}
+            size="compact"
+            hideWhenEmpty
+          />
+        </span>
       </div>
-      {livePath === null ? null : (
+      <BranchRowAnchors sessionId={sessionId} row={row} />
+      {isOpened ? (
+        <BranchStatusLine sessionId={sessionId} row={row} status={status} target={target} />
+      ) : null}
+      {livePath === null || !isOpened ? null : (
         <Reveal open={isOpen} id={entriesId}>
           <WorktreeEntries
             sessionId={sessionId}
-            mountId={row.mountId}
             worktreePath={livePath}
-            branch={branch}
+            branch={facts.branch}
+            number={facts.number}
+            currentTab={currentTab}
             entries={entries}
           />
         </Reveal>

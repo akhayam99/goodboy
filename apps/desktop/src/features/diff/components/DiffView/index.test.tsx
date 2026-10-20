@@ -118,6 +118,14 @@ describe('DiffView rendering', () => {
     expect(screen.getAllByRole('row').length).toBeGreaterThan(6);
   });
 
+  it('anchors the reading position in script on the file scroller, never in css', () => {
+    render(<DiffView files={[LEDGER, RELAY]} />);
+    const viewport = document
+      .querySelector('[data-file-card]')
+      ?.closest<HTMLElement>('.overflow-y-auto');
+    expect(viewport?.style.overflowAnchor).toBe('none');
+  });
+
   it('wraps by default and remembers turning it off', () => {
     render(<DiffView files={[LEDGER]} />);
     expect(codeCells()[0]?.className).toContain('whitespace-pre-wrap');

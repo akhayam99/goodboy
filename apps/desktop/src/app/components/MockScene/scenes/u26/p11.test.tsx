@@ -84,12 +84,12 @@ describe('the u26 p11 Auto result scenes', () => {
     expect(tester.textContent).not.toContain('Show more');
   });
 
-  it('names the two reviewers apart in the Work rail too', async () => {
+  it('names the two reviewers apart in the Agents tree too', async () => {
     mount({ id: 'u26-auto-results-light' });
 
-    const rail = await screen.findByRole('list', { name: 'Work' }, WAIT);
-    expect(within(rail).getByRole('button', { name: 'Show Reviewer 1' })).toBeDefined();
-    expect(within(rail).getByRole('button', { name: 'Show Reviewer 2' })).toBeDefined();
+    const tree = await screen.findByRole('tree', { name: 'Auto agents' }, WAIT);
+    expect(within(tree).getByRole('treeitem', { name: /^Reviewer 1, / })).toBeDefined();
+    expect(within(tree).getByRole('treeitem', { name: /^Reviewer 2, / })).toBeDefined();
   });
 
   it('opens the child that wrote a report from its card', async () => {

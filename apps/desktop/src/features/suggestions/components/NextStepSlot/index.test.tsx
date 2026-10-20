@@ -24,7 +24,7 @@ vi.mock('../../../../store', async () => ({
     selector({ sessionPhaseRuns: {}, reportError }),
 }));
 vi.mock('../../../auto/useIsAutoOn', () => ({ useIsAutoOn: () => false }));
-vi.mock('./NextStepMenu', () => ({ NextStepMenu: () => null }));
+vi.mock('../../NextStepMenu', () => ({ NextStepMenu: () => null }));
 vi.mock('../../useSessionSuggestions', () => ({
   useSessionSuggestions: () => suggestionState.list,
 }));

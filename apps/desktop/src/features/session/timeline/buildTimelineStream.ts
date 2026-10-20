@@ -41,6 +41,20 @@ import type { CiFixStage } from '../../branch/checks/ciFixStages';
 import { jobRowState } from './jobActivity';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { decisionCountsText, isEmptyDecisionDiff } from './sessionEventPresentation';
+import { historyBatchByEventIdOf } from './historyBatchesOf';
+import {
+  historyBatchBaseOf,
+  historyBatchFactsOf,
+  historyBatchSubOf,
+  historyBatchTitleOf,
+} from './historyBatchText';
+import {
+  addDecisionTotals,
+  answeredCountOf,
+  contextPayloadOf,
+  laneRootOf,
+  type DecisionTotals,
+} from './laneFacts';
 import { countGroupSummary, stepsGroupSummary, type GroupSummary } from './groupSummary';
 import {
   isSubagentAttention,
@@ -166,6 +180,7 @@ type Params = {
   readonly expandedGroupIds?: ReadonlySet<string>;
   readonly fullGroupIds?: ReadonlySet<string>;
   readonly foldsFinished?: boolean;
+  readonly shouldFoldHistoryBatches?: boolean;
 };
 
 type DraftRow = {
@@ -274,37 +289,6 @@ const isEmptyDecisionRow = ({ draft }: DraftParams): boolean =>
   draft.entry.kind === 'event' &&
   draft.entry.event.kind === 'decisions_changed' &&
   isEmptyDecisionDiff({ payload: draft.entry.event.payload });
-
-const DECISION_COUNT_KEYS = [
-  'added',
-  'removed',
-  'replaced',
-  'withdrawn',
-  'merged',
-  'restored',
-] as const;
-
-type DecisionCountKey = (typeof DECISION_COUNT_KEYS)[number];
-
-type DecisionTotals = Partial<Record<DecisionCountKey, number>>;
-
-const addDecisionTotals = ({
-  totals,
-  payload,
-}: {
-  readonly totals: DecisionTotals;
-  readonly payload: SessionEventPayload | null;
-}): DecisionTotals =>
-  Object.fromEntries(
-    DECISION_COUNT_KEYS.flatMap((key) => {
-      const current = totals[key];
-      const next = payload?.[key];
-      if (current === undefined && next === undefined) {
-        return [];
-      }
-      return [[key, (current ?? 0) + (next ?? 0)]];
-    }),
-  );
 
 type MergeDecisionRowsParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
@@ -533,6 +517,59 @@ const mergeConsecutiveStoppedRows = ({
   }
 
   return merged;
+};
+
+const mergeHistoryBatches = ({
+  drafts,
+}: {
+  readonly drafts: ReadonlyArray<DraftRow>;
+}): ReadonlyArray<DraftRow> => {
+  const events = drafts.flatMap((draft) =>
+    draft.groupId == null && draft.entry.kind === 'event' ? [draft.entry.event] : [],
+  );
+  const batchByEventId = historyBatchByEventIdOf({ events });
+  if (batchByEventId.size === 0) {
+    return drafts;
+  }
+  const folded = new Set<string>();
+  return drafts.flatMap((draft): ReadonlyArray<DraftRow> => {
+    if (draft.groupId != null || draft.entry.kind !== 'event') {
+      return [draft];
+    }
+    const batch = batchByEventId.get(draft.entry.event.id);
+    if (batch === undefined) {
+      return [draft];
+    }
+    if (folded.has(batch.key)) {
+      return [];
+    }
+    folded.add(batch.key);
+    const newest = batch.events[batch.events.length - 1] ?? draft.entry.event;
+    const facts = historyBatchFactsOf({ branches: batch.branches });
+    return [
+      {
+        ...draft,
+        id: batch.entryId,
+        at: newest.createdAt,
+        entry: {
+          ...draft.entry,
+          id: batch.entryId,
+          at: newest.createdAt,
+          event: newest,
+          historyBatch: {
+            key: batch.key,
+            title: historyBatchTitleOf({
+              origin: batch.origin,
+              facts,
+              base: historyBatchBaseOf({ batch, events }),
+            }),
+            sub: historyBatchSubOf({ origin: batch.origin, facts }),
+            events: batch.events,
+          },
+        },
+      },
+    ];
+  });
 };
 
 const questionBucketOf = ({
@@ -1262,21 +1299,6 @@ const NO_LANES: ReadonlyMap<string, LaneFacts> = new Map();
 
 const NO_RUN_FOLDS: ReadonlyMap<string, RunFold> = new Map();
 
-const laneRootOf = ({ entry }: { readonly entry: TimelineTopLevelEntry }): string | null => {
-  if (entry.kind === 'question') {
-    return entry.lane?.rootEntryId ?? null;
-  }
-  if (
-    entry.kind === 'plan' ||
-    entry.kind === 'artifact' ||
-    entry.kind === 'event' ||
-    entry.kind === 'learning'
-  ) {
-    return entry.lane?.rootEntryId ?? null;
-  }
-  return null;
-};
-
 const isLaneEntryShown = ({
   entry,
   context,
@@ -1299,19 +1321,6 @@ const isLaneEntryShown = ({
   return entry.kind === 'learning';
 };
 
-const contextPayloadOf = ({
-  entry,
-}: {
-  readonly entry: TimelineTopLevelEntry;
-}): SessionEventPayload | null => {
-  if (entry.kind === 'learning') {
-    return { added: 1 };
-  }
-  return entry.kind === 'event' && entry.event.kind === 'decisions_changed'
-    ? entry.event.payload
-    : null;
-};
-
 const laneFactsByRootId = ({
   entries,
   context,
@@ -1331,8 +1340,7 @@ const laneFactsByRootId = ({
     facts.set(root, {
       rows: current.rows + (isShown ? 1 : 0),
       newestAt: isShown ? newerOf({ first: current.newestAt, second: entry.at }) : current.newestAt,
-      answered:
-        current.answered + questions.filter((question) => question.status === 'answered').length,
+      answered: current.answered + answeredCountOf({ entry }),
       hasOpen: current.hasOpen || questions.some((question) => question.status === 'open'),
       contextTotals: addDecisionTotals({
         totals: current.contextTotals,
@@ -2002,6 +2010,7 @@ export const buildTimelineStream = ({
   expandedGroupIds = NO_EXPANDED_GROUPS,
   fullGroupIds = NO_EXPANDED_GROUPS,
   foldsFinished = false,
+  shouldFoldHistoryBatches = false,
 }: Params): TimelineStream => {
   const chainedRunById = new Map<string, ChainedRun>();
   for (const entry of entries) {
@@ -2159,13 +2168,14 @@ export const buildTimelineStream = ({
   }
 
   const sorted = [...rows].sort((first, second) => compareNewestFirst({ first, second }));
-  const merged = mergeConsecutiveStoppedRows({
+  const unbatched = mergeConsecutiveStoppedRows({
     drafts: mergeConsecutiveProjectRows({
       drafts: mergeConsecutiveDecisionRows({ drafts: sorted }).filter(
         (draft) => !isEmptyDecisionRow({ draft }),
       ),
     }),
   });
+  const merged = shouldFoldHistoryBatches ? mergeHistoryBatches({ drafts: unbatched }) : unbatched;
   const ordered = withMembersAboveOrigin({
     drafts: withPendingAtFamilyHead({ drafts: merged, groups: context.groups }),
     groups: context.groups,

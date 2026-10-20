@@ -111,6 +111,18 @@ describe('TurnFooter', () => {
     screen.getByText('Output');
   });
 
+  it('sizes the detail card to its content, not to the footer trigger', () => {
+    render(<TurnFooter item={usageItem()} sessionId={null} agentId={null} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Turn detail' }));
+    const card = screen.getByText('Input').closest('[data-dropdown-portal] > div');
+    expect(card instanceof HTMLElement).toBe(true);
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+    expect(card.style.width).toBe('');
+    expect(card.style.maxWidth).toBe('360px');
+  });
+
   it('keeps the same model and time shape on a stopped turn, with a stopped glyph', () => {
     useAppStore.setState({ sessionTelemetry: { [SESSION_ID]: [RECORD] } });
     render(

@@ -69,23 +69,59 @@ export const REBASE_ALL_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   mountOf({ name: 'payments-api', branch: 'hl/fix-duplicate-credit' }),
 ];
 
-const BRANCH_STATES: ReadonlyArray<RebaseAllBranchState> = ['rebased', 'conflict', 'rebasing'];
+type BatchSeed = {
+  readonly project: string;
+  readonly slug: string;
+  readonly state: RebaseAllBranchState;
+  readonly autoState: RebaseAllBranchState;
+};
 
-export const rebaseAllRunOf = (): RebaseAllRun => ({
+const BATCH: ReadonlyArray<BatchSeed> = [
+  { project: 'payments-api', slug: 'fix-duplicate-credit', state: 'rebased', autoState: 'rebased' },
+  { project: 'payments-api', slug: 'retry-credit-notes', state: 'rebased', autoState: 'rebased' },
+  { project: 'payments-api', slug: 'webhook-backoff', state: 'rebasing', autoState: 'auto' },
+  { project: 'notify-relay', slug: 'retry-copy', state: 'queued', autoState: 'auto' },
+  { project: 'notify-relay', slug: 'delivery-metrics', state: 'conflict', autoState: 'auto' },
+  { project: 'ledger-core', slug: 'export-batch', state: 'queued', autoState: 'failed' },
+  { project: 'ledger-core', slug: 'posting-dedupe', state: 'queued', autoState: 'rebased' },
+];
+
+const batchMountOf = ({ project, slug }: BatchSeed): SessionProjectMount => ({
+  ...mountOf({ name: project, branch: `hl/${slug}` }),
+  mountId: brandedId<MountId>({ value: `mock-u26-batch-${slug}` }),
+  worktreePath: `/w/harborline/${project}-${slug}`,
+  parallelIndex: 0,
+});
+
+export const REBASE_BATCH_MOUNTS: ReadonlyArray<SessionProjectMount> = BATCH.map(batchMountOf);
+
+export const BATCH_REBASING_MOUNT = REBASE_BATCH_MOUNTS[2];
+
+export const BATCH_CONFLICT_MOUNT = REBASE_BATCH_MOUNTS[4];
+
+type RunParams = {
+  readonly isAuto: boolean;
+};
+
+export const rebaseAllRunOf = ({ isAuto }: RunParams): RebaseAllRun => ({
   id: 'mock-u26-rebase-all',
   sessionId: SESSION_ID,
   shouldTidy: false,
   isAborted: false,
-  phase: 'running',
+  phase: isAuto ? 'handed' : 'running',
   autoAgentId: null,
   error: null,
-  branches: REBASE_ALL_MOUNTS.map((mount, index) => ({
-    mountId: mount.mountId,
-    projectName: mount.mountName,
-    branch: mount.branch,
-    state: BRANCH_STATES[index] ?? 'queued',
-    message: null,
-  })),
+  branches: REBASE_BATCH_MOUNTS.map((mount, index) => {
+    const seed = BATCH[index];
+    const state = (isAuto ? seed?.autoState : seed?.state) ?? 'queued';
+    return {
+      mountId: mount.mountId,
+      projectName: mount.mountName,
+      branch: mount.branch,
+      state,
+      message: state === 'failed' ? 'Could not fetch main' : null,
+    };
+  }),
 });
 
 type RebasingParams = {

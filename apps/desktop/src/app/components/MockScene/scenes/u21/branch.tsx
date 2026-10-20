@@ -9,17 +9,12 @@ import type {
 import { BranchPage } from '../../../../../features/branch/components/BranchPage';
 import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { useAppStore } from '../../../../../store';
+import { branchPlace } from '../../../../../store/slices/navigation/place';
 import type { MountGithubState } from '../../../../../store/types';
 import { handlersFor } from '../brand/DiffStage';
 import { BRANCH_FILES_PATCH } from '../brand/contextDiffPatch';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { NOW_ISO, SESSION, SESSION_ID, WORKSPACE_ID, seedResolveScene } from '../resolveSeed';
-
-type Variant = 'switcher' | 'description-open';
-
-type Props = {
-  readonly variant: Variant;
-};
 
 const PAYMENTS_ID = 'mock-u21-project-payments-api' as ProjectId;
 const LEDGER_ID = 'mock-u21-project-ledger-core' as ProjectId;
@@ -136,7 +131,7 @@ const githubOf = ({
   links: [],
 });
 
-const seed = ({ variant }: Props): void => {
+const seed = (): void => {
   seedResolveScene({ expandedThreadId: null });
   const state = useAppStore.getState();
   const github = state.sessionGithub[SESSION_ID];
@@ -144,7 +139,7 @@ const seed = ({ variant }: Props): void => {
     throw new Error('the resolve seed has no pull request');
   }
   const current = github.pr;
-  const mounts = variant === 'switcher' ? [FIX_MOUNT, NOTES_MOUNT, LEDGER_MOUNT] : [FIX_MOUNT];
+  const mounts = [FIX_MOUNT, NOTES_MOUNT, LEDGER_MOUNT];
   const drafted: PullRequestState = {
     ...current,
     number: 331,
@@ -153,8 +148,7 @@ const seed = ({ variant }: Props): void => {
     headBranch: 'hl/retry-credit-notes',
     body: '',
   };
-  const withBody: PullRequestState =
-    variant === 'description-open' ? { ...current, body: PR_BODY } : current;
+  const withBody: PullRequestState = { ...current, body: PR_BODY };
   useAppStore.setState({
     projects: [
       projectOf({ id: PAYMENTS_ID, name: 'payments-api' }),
@@ -164,7 +158,7 @@ const seed = ({ variant }: Props): void => {
     sessionActiveMount: { [SESSION_ID]: FIX_MOUNT_ID },
     diffMountPath: { [SESSION_ID]: FIX_PATH },
     loadPullRequestView: async () => undefined,
-    ...(variant === 'description-open' && { branchTab: { [SESSION_ID]: 'pr' as const } }),
+    branchTab: { [SESSION_ID]: 'pr' as const },
     sessionGithub: {
       [SESSION_ID]: { ...github, pr: withBody },
     },
@@ -177,7 +171,6 @@ const seed = ({ variant }: Props): void => {
 };
 
 const HANDLERS = handlersFor(BRANCH_FILES_PATCH);
-const OPEN_DELAY_MS = 400;
 
 const EMPTY_THREADS = JSON.stringify({
   data: {
@@ -209,25 +202,17 @@ const installWorktreeIpc = (): void => {
   });
 };
 
-const BranchU21Scene = ({ variant }: Props) => {
+const BranchU21Scene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seed({ variant });
+    seed();
     installWorktreeIpc();
+    useAppStore.getState().navigate({
+      to: branchPlace({ sessionId: SESSION_ID, mountPath: FIX_PATH, tab: 'pr' }),
+    });
     setIsReady(true);
-  }, [variant]);
-
-  useEffect(() => {
-    if (!isReady || variant !== 'switcher') {
-      return;
-    }
-    const timer = window.setTimeout(
-      () => document.querySelector<HTMLElement>('[data-testid="branch-switcher"]')?.click(),
-      OPEN_DELAY_MS,
-    );
-    return () => window.clearTimeout(timer);
-  }, [isReady, variant]);
+  }, []);
 
   if (!isReady) {
     return null;
@@ -243,6 +228,5 @@ const BranchU21Scene = ({ variant }: Props) => {
 };
 
 export const U21_BRANCH_SCENES = {
-  'branch-switcher': () => <BranchU21Scene variant="switcher" />,
-  'branch-description-open': () => <BranchU21Scene variant="description-open" />,
+  'branch-description-open': BranchU21Scene,
 };

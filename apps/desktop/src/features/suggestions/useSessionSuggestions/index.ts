@@ -34,7 +34,8 @@ import {
 } from '../../../shared/hooks/useCheckFixCommitSync';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
 import { planOwnerOf } from '../../plans/planOwnerOf';
-import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
+import { splitWorkflowRuns, type AttachedRun } from '../../workflows/activeWorkflowRuns';
+import type { WorkflowAdvanceState } from '../../workflows/advanceGate';
 import { useAttachedWorkflowRuns } from '../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../workflows/useWorkflowAdvanceStates';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
@@ -59,6 +60,12 @@ type Params = {
   readonly agents?: ReadonlyArray<Agent>;
   readonly withRebase?: boolean;
   readonly shownQuestionIds?: ReadonlySet<string>;
+};
+
+type FromParams = Params & {
+  readonly attachedRuns: ReadonlyArray<AttachedRun>;
+  readonly advanceByRunId: ReadonlyMap<string, WorkflowAdvanceState>;
+  readonly isActivityShown?: boolean;
 };
 
 const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
@@ -119,12 +126,15 @@ const latestRebaseRequests = ({
   return requests;
 };
 
-export const useSessionSuggestions = ({
+export const useSessionSuggestionsFrom = ({
   session,
   agents,
   withRebase = true,
   shownQuestionIds = NO_SHOWN_QUESTIONS,
-}: Params) => {
+  attachedRuns,
+  advanceByRunId,
+  isActivityShown = true,
+}: FromParams) => {
   const sessionId = session.id;
   const storedAgents = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -132,16 +142,10 @@ export const useSessionSuggestions = ({
   const effectiveAgents = agents ?? storedAgents;
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
-  const attachedRuns = useAttachedWorkflowRuns({ session });
   const { active, agentsByRunId } = useMemo(
     () => splitWorkflowRuns({ attachedRuns, agents: effectiveAgents }),
     [attachedRuns, effectiveAgents],
   );
-  const advanceByRunId = useWorkflowAdvanceStates({
-    sessionId,
-    workflows: active,
-    agents: effectiveAgents,
-  });
   const planConsumptions = useAppStore(
     useShallow((state) => plans.map((plan) => state.planConsumptions[plan.id] ?? EMPTY_ARRAY)),
   );
@@ -461,6 +465,7 @@ export const useSessionSuggestions = ({
         sizeBytes: proposal.sizeBytes,
         isArchived: proposal.reason === 'archive',
       })),
+      isActivityShown,
       hasGoal: session.goal.trim() !== '',
       hasEverAttachedWorkflow: attachedRuns.some(({ run }) => run.discardedAt == null),
       recommendedWorkflow,
@@ -493,9 +498,32 @@ export const useSessionSuggestions = ({
     projects,
     rebaseMounts,
     fixableCount,
+    isActivityShown,
     sessionId,
     shownQuestionIds,
     withRebase,
     worktreeStatuses,
   ]);
+};
+
+export const useSessionSuggestions = ({ session, agents, ...rest }: Params) => {
+  const storedAgents = useAppStore((state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
+  const effectiveAgents = agents ?? storedAgents;
+  const attachedRuns = useAttachedWorkflowRuns({ session });
+  const { active } = useMemo(
+    () => splitWorkflowRuns({ attachedRuns, agents: effectiveAgents }),
+    [attachedRuns, effectiveAgents],
+  );
+  const advanceByRunId = useWorkflowAdvanceStates({
+    sessionId: session.id,
+    workflows: active,
+    agents: effectiveAgents,
+  });
+  return useSessionSuggestionsFrom({
+    session,
+    agents: effectiveAgents,
+    attachedRuns,
+    advanceByRunId,
+    ...rest,
+  });
 };

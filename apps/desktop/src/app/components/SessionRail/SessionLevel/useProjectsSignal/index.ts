@@ -50,6 +50,7 @@ export const useProjectsSignal = ({ sessionId, rows, statuses }: Params): Worktr
         threads,
         diff: null,
         view: views[index] ?? null,
+        scope: null,
       });
       return [
         worktreeRowStateFor({

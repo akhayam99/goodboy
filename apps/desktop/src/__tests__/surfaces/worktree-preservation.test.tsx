@@ -53,9 +53,9 @@ const mount = async (name: SceneName): Promise<void> => {
 };
 
 const level = () => {
-  const layer = document.querySelector<HTMLElement>('[data-level-layer="worktree"]:not([inert])');
+  const layer = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
   if (layer === null) {
-    throw new Error('the scene is not on the worktree level');
+    throw new Error('the scene shows no session level');
   }
   return within(layer);
 };
@@ -77,7 +77,7 @@ const branchMenu = async (): Promise<ReadonlyArray<string>> => {
   return screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
 };
 
-describe('SPEC3 9.6 Branch page capabilities from the worktree level', () => {
+describe('SPEC3 9.6 Branch page capabilities from the branch tree', () => {
   it('section keys stay on the entries: Pull request, Comments and Files carry their shortcut', async () => {
     await mount('c04-worktree-pr-behind');
 
@@ -89,16 +89,12 @@ describe('SPEC3 9.6 Branch page capabilities from the worktree level', () => {
     expect(BRANCH_TAB_REGISTRY.files.shortcut).toBe('lens.files');
   });
 
-  it('the branch switcher opens from the identity row with New branch', async () => {
-    await mount('c04-worktree-pr-draft');
+  it('the branches of the session are the tree rows, with New branch on the folder', async () => {
+    await mount('c04-session-worktrees');
 
-    fireEvent.click(level().getByTestId('branch-switcher'));
-    await advance();
-
-    expect(
-      screen.queryByRole('menuitem', { name: 'New branch' }) ??
-        screen.queryByRole('textbox', { name: 'Branch name' }),
-    ).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'New branch in payments-api' })).toBeDefined();
+    expect(screen.getByRole('list', { name: 'ledger-core worktrees' })).toBeDefined();
+    expect(document.querySelector('[data-testid="branch-switcher"]')).toBeNull();
   });
 
   it('the pull request title edits in place from the page title', async () => {
@@ -206,7 +202,7 @@ describe('SPEC3 9.6 Branch page capabilities from the worktree level', () => {
   });
 });
 
-describe('SPEC3 9.3 worktree actions from the worktree level', () => {
+describe('SPEC3 9.3 branch actions from the branch row', () => {
   it('the worktree menu holds Switch branch, Link work to this branch, copy and editor actions', async () => {
     await mount('c04-worktree-pr-draft');
 
@@ -226,7 +222,7 @@ describe('SPEC3 9.3 worktree actions from the worktree level', () => {
     }
   });
 
-  it('Switch branch opens the switch panel under the identity row', async () => {
+  it('Switch branch opens the switch panel under the row', async () => {
     await mount('c04-worktree-pr-draft');
 
     await worktreeMenu();

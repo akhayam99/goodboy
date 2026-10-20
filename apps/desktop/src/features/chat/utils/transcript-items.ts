@@ -47,7 +47,7 @@ export type TranscriptItem =
       text: string;
       at: IsoDateTime;
     }
-  | { kind: 'assistant_text'; key: string; text: string }
+  | { kind: 'assistant_text'; key: string; text: string; runId?: ProviderRunId | null }
   | {
       kind: 'artifact_block';
       key: string;
@@ -205,7 +205,7 @@ const assistantTextItems = ({
   const segments = split.segments;
   const first = segments[0];
   if (segments.length === 1 && first !== undefined && first.kind === 'prose') {
-    return { items: [{ kind: 'assistant_text', key, text }], scan: split.scan };
+    return { items: [{ kind: 'assistant_text', key, text, runId }], scan: split.scan };
   }
 
   const out: TranscriptItem[] = [];
@@ -229,7 +229,7 @@ const assistantTextItems = ({
     if (segment.text.trim().length === 0) {
       continue;
     }
-    out.push({ kind: 'assistant_text', key: proseKey, text: segment.text });
+    out.push({ kind: 'assistant_text', key: proseKey, text: segment.text, runId });
   }
   return { items: out, scan: split.scan };
 };

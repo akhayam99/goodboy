@@ -2,7 +2,7 @@ import type { PrCheckRun, PullRequestState, PullRequestView, ResolveThread } fro
 import type { SessionGithubState } from '../../../../store/types';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
-import { branchTabsOf } from '../../../../features/branch/branchTabs';
+import { branchTabsOf, type BranchScope } from '../../../../features/branch/branchTabs';
 import { requestNounLabel } from '../../../../features/branch/requestNounLabel';
 import {
   worktreeEntryFactsOf,
@@ -25,9 +25,8 @@ type Params = {
   readonly threads: ReadonlyArray<ResolveThread>;
   readonly diff: EntryDiffStat | null;
   readonly view: PullRequestView | null;
+  readonly scope: BranchScope | null;
 };
-
-const CARD_TABS: ReadonlySet<BranchTab> = new Set<BranchTab>(['pr', 'comments', 'files', 'checks']);
 
 const UNREAD_CHECKS = 'Checks unknown: this token cannot read them';
 
@@ -53,12 +52,25 @@ const unreadReasonOf = ({ view, pr }: UnreadParams): string | null =>
     ? UNREAD_CHECKS
     : null;
 
+type CheckRunsParams = Pick<Params, 'row' | 'github' | 'view'>;
+
+export const checkRunsOf = ({
+  row,
+  github,
+  view,
+}: CheckRunsParams): ReadonlyArray<PrCheckRun> | null => {
+  const request = row.request;
+  const pr = request !== null && github?.pr?.number === request.number ? github.pr : null;
+  return runsOf({ github, view, pr });
+};
+
 export const worktreeCardEntriesOf = ({
   row,
   github,
   threads,
   diff,
   view,
+  scope,
 }: Params): ReadonlyArray<WorktreeCardEntry> => {
   const request = row.request;
   const pullRequestState = requestStateOf({ request });
@@ -80,14 +92,12 @@ export const worktreeCardEntriesOf = ({
     checks: runsOf({ github, view, pr }),
     checksUnreadReason: unreadReasonOf({ view, pr }),
   });
-  return branchTabsOf({ state: pullRequestState, hasComments: false })
-    .filter((entry) => CARD_TABS.has(entry.id) && (entry.id !== 'pr' || request !== null))
-    .map((entry) => ({
-      tab: entry.id,
-      label:
-        entry.id === 'pr' && request !== null
-          ? requestNounLabel({ host: request.provider })
-          : entry.label,
-      fact: facts[entry.id],
-    }));
+  return branchTabsOf(scope ?? { state: pullRequestState, hasComments: false }).map((entry) => ({
+    tab: entry.id,
+    label:
+      entry.id === 'pr' && request !== null
+        ? requestNounLabel({ host: request.provider })
+        : entry.label,
+    fact: facts[entry.id],
+  }));
 };

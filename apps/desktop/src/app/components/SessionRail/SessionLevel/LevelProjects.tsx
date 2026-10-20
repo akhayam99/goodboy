@@ -12,6 +12,7 @@ import { BRANCH_LENSES } from '../branchLenses';
 import { useLapProject } from '../../../../features/bootstrap/useLapProject';
 import { MountProjectAction } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import { RebaseAllCard } from '../../../../features/history/RebaseAllCard';
+import { rebaseAllBatchSettledOf } from '../../../../features/history/RebaseAllCard/rebaseAllBatchSettledOf';
 import { LevelCard } from './LevelCard';
 import { ProjectTree } from './ProjectTree';
 import { CARD_ROW_INSET } from './railInset';
@@ -48,6 +49,12 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   const snapshot = useWorktreeStatusSnapshot({ targets });
   const diffStats = useMountDiffStats(sessionId);
   const signal = useProjectsSignal({ sessionId, rows: liveRows, statuses: snapshot.statuses });
+  const run = useAppStore((state) => state.rebaseAllRuns[sessionId] ?? null);
+  const isBatchSettled = rebaseAllBatchSettledOf({
+    run,
+    rows: liveRows,
+    statuses: snapshot.statuses,
+  });
   const isArchived = session.archivedAt != null;
   const lap = useLapProject({ sessionId });
   const lapName = groups.length === 0 && lap.stage !== null ? (lap.project?.name ?? null) : null;
@@ -90,18 +97,23 @@ export const LevelProjects = ({ session, isActive }: Props) => {
           <span className="truncate">{lapName}</span>
         </div>
       )}
-      {groups.map((group) => (
-        <ProjectTree
-          key={group.projectId}
-          sessionId={sessionId}
-          group={group}
-          tree={tree}
-          statuses={snapshot.statuses}
-          diffStats={diffStats}
-          shownPath={shownPath}
-          openedPath={openedPath}
-        />
-      ))}
+      {groups.length === 0 ? null : (
+        <div data-card-projects="" className="flex min-w-0 flex-col gap-3">
+          {groups.map((group) => (
+            <ProjectTree
+              key={group.projectId}
+              sessionId={sessionId}
+              group={group}
+              tree={tree}
+              statuses={snapshot.statuses}
+              diffStats={diffStats}
+              shownPath={shownPath}
+              openedPath={openedPath}
+              isBatchSettled={isBatchSettled}
+            />
+          ))}
+        </div>
+      )}
     </LevelCard>
   );
 };

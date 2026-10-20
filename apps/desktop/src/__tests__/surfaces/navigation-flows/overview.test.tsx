@@ -11,7 +11,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { vi } from 'vitest';
 import { bridge, installNavigationHooks, runNavigationRows, type BridgeArgs } from './harness';
-import { OVERVIEW_ROWS } from './overview.rows';
+import { OVERVIEW_LAYOUT_ROWS, OVERVIEW_ROWS } from './overview.rows';
 
 installNavigationHooks();
-runNavigationRows({ rows: OVERVIEW_ROWS });
+runNavigationRows({ rows: [...OVERVIEW_ROWS, ...OVERVIEW_LAYOUT_ROWS] });

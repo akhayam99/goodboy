@@ -43,7 +43,12 @@ const mount = ({ id }: { readonly id: string }): void => {
   );
 };
 
-const rail = () => screen.getByRole('list', { name: 'Work' });
+const rail = () => screen.getByRole('tree', { name: 'Auto agents' });
+
+const railLabels = (): ReadonlyArray<string> =>
+  within(rail())
+    .getAllByRole('treeitem')
+    .map((item) => item.getAttribute('aria-label') ?? '');
 
 const limitFoot = () => screen.getByRole('region', { name: 'Limit' });
 
@@ -74,7 +79,7 @@ describe('the Auto chat scenes', () => {
     expect(
       await screen.findByText(/Retries are posted by postCredit/, undefined, WAIT),
     ).toBeDefined();
-    expect(within(rail()).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(rail()).getAllByRole('treeitem')).toHaveLength(1);
     expect(screen.getByText('No agents started yet')).toBeDefined();
     expect(screen.queryByRole('article')).toBeNull();
     expect(
@@ -89,8 +94,8 @@ describe('the Auto chat scenes', () => {
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
     const work = rail();
-    expect(within(work).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(work).getByText('Starting')).toBeDefined();
+    expect(within(work).getAllByRole('treeitem')).toHaveLength(2);
+    expect(railLabels().some((label) => label.endsWith('Starting'))).toBe(true);
     expect(screen.queryByRole('article')).toBeNull();
     const tail = screen.getByText('Starting agents').closest('[role="status"]');
     if (!(tail instanceof HTMLElement)) {
@@ -107,8 +112,8 @@ describe('the Auto chat scenes', () => {
     expect(within(toolbar).getByRole('button', { name: /Approve plan/ })).toBeDefined();
     expect(within(toolbar).getByRole('button', { name: /Ask for changes/ })).toBeDefined();
     const sidebar = screen.getByRole('navigation', { name: 'Sidebar' });
-    expect(sidebar.querySelector('[data-rail-level="auto"]')).not.toBeNull();
-    expect(within(sidebar).getByRole('button', { name: /, Needs you$/ })).toBeDefined();
+    expect(sidebar.childElementCount).toBe(0);
+    expect(within(sidebar).queryByRole('tree')).toBeNull();
     expect(
       screen.getByRole('button', { name: 'Open plan Retry-safe credit retries' }),
     ).toBeDefined();
@@ -121,7 +126,7 @@ describe('the Auto chat scenes', () => {
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
     const work = rail();
-    expect(within(work).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(work).getAllByRole('treeitem')).toHaveLength(4);
     expect(within(work).queryByText(/subagents/i)).toBeNull();
     expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
@@ -194,7 +199,7 @@ describe('the Auto chat scenes', () => {
     expect(
       (await screen.findAllByRole('list', { name: 'Delegations' }, WAIT)).length,
     ).toBeGreaterThan(0);
-    expect(within(rail()).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(rail()).getAllByRole('treeitem')).toHaveLength(5);
     expect(screen.getAllByRole('button', { name: /^Open / })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
     expect(
@@ -206,7 +211,7 @@ describe('the Auto chat scenes', () => {
     mount({ id: 'auto-chat-done' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    expect(within(rail()).getByText('Idle')).toBeDefined();
+    expect(railLabels().some((label) => label.endsWith('Idle'))).toBe(true);
     expect(document.querySelector('[data-auto-tail]')).toBeNull();
     expect(await screen.findByRole('button', { name: 'Mark finished' }, WAIT)).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
@@ -218,7 +223,7 @@ describe('the Auto chat scenes', () => {
     mount({ id: 'auto-chat-finished' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    expect(within(rail()).getAllByText('Done').length).toBeGreaterThan(0);
+    expect(railLabels().some((label) => label.endsWith('Done'))).toBe(true);
     expect(screen.queryByText('Finished. Write to reopen.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mark finished' })).toBeNull();
   });

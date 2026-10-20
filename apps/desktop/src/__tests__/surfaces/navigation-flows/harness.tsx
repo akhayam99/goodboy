@@ -15,6 +15,7 @@ import {
 import type { MountGithubState } from '../../../store/types';
 import { seedSessionWithMounts } from '../../helpers/seedSessionWithMounts';
 import { App } from '../../../App';
+import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
@@ -254,6 +255,9 @@ export const boot = async ({ seed }: { readonly seed: Seed }): Promise<Ctx> => {
         };
   const mounts = seeded.sessionProjectMounts[sessionId] ?? [];
   useAppStore.setState({
+    ...(mount !== null && {
+      sessionActiveMount: { ...seeded.sessionActiveMount, [sessionId]: mount.mountId },
+    }),
     sessionWorktreeRecords: {
       ...seeded.sessionWorktreeRecords,
       [sessionId]: mounts.map((candidate, index) => ({
@@ -321,22 +325,12 @@ export const clickMenuItem = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('menuitem', { name }));
 };
 
-const leaveWorktreeLevel = async (): Promise<void> => {
-  const back = document.querySelector<HTMLElement>(
-    '[data-level-layer="worktree"]:not([inert]) [data-level-back] button',
-  );
-  if (back !== null) {
-    await click(back);
-  }
-};
-
 export const clickFirstButton = async (name: RegExp): Promise<void> => {
   const [first] = await screen.findAllByRole('button', { name });
   await click(first!);
 };
 
 const sessionLevel = async (): Promise<HTMLElement> => {
-  await leaveWorktreeLevel();
   await waitFor(() =>
     expect(document.querySelector('[data-level-layer="session"]:not([inert])')).not.toBeNull(),
   );
@@ -350,6 +344,11 @@ const sessionLevel = async (): Promise<HTMLElement> => {
 export const openCrumb = async (label: RegExp): Promise<void> => {
   const level = within(await sessionLevel());
   if (label.test('Branch')) {
+    if (
+      document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]')
+    ) {
+      return;
+    }
     const projects = within(level.getByRole('group', { name: 'Projects' }));
     const [first] = projects.getAllByRole('button').filter((row) => row.closest('li') !== null);
     if (first === undefined) {
@@ -366,11 +365,13 @@ export const openCrumb = async (label: RegExp): Promise<void> => {
 const worktreeLevel = async (): Promise<HTMLElement> => {
   await openCrumb(/Branch/);
   await waitFor(() =>
-    expect(document.querySelector('[data-level-layer="worktree"]:not([inert])')).not.toBeNull(),
+    expect(
+      document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]'),
+    ).not.toBeNull(),
   );
-  const level = document.querySelector<HTMLElement>('[data-level-layer="worktree"]:not([inert])');
+  const level = document.querySelector<HTMLElement>('[data-level-layer="session"]:not([inert])');
   if (level === null) {
-    throw new Error('the sidebar is not on a worktree level');
+    throw new Error('the sidebar is not on the session level');
   }
   return level;
 };
@@ -381,8 +382,14 @@ export const openWorktreeEntry = async (name: RegExp): Promise<void> => {
 };
 
 export const openWorktreeMenu = async (): Promise<void> => {
-  const level = within(await worktreeLevel());
-  await click(await level.findByRole('button', { name: / actions$/ }, WAIT));
+  const level = await worktreeLevel();
+  const trigger = level.querySelector<HTMLElement>(
+    '[data-worktree-current] [data-worktree-actions] button',
+  );
+  if (trigger === null) {
+    throw new Error('the current branch row draws no menu button');
+  }
+  await click(trigger);
 };
 
 export const openPalette = async (label: RegExp, query?: string): Promise<void> => {
@@ -427,11 +434,12 @@ export const lens = (lensName: string | null) => async (ctx: Ctx) => {
   );
 };
 
-type PaneName = 'Explore' | 'Scripts';
+type PaneName = 'Explore' | 'Scripts' | 'Agents';
 
 const PANE_KIND: Readonly<Record<PaneName, string>> = {
   Explore: 'explore',
   Scripts: 'scripts',
+  Agents: 'spawned',
 };
 
 export const pane = (name: PaneName) => async (ctx: Ctx) => {
@@ -588,6 +596,7 @@ export const installNavigationHooks = (): void => {
   }, STORE_IMPORT_TIMEOUT_MS);
   beforeEach(async () => {
     await resetStoryStore();
+    localStorage.removeItem(STORAGE_KEYS.sessionRailTreeOpen);
     consoleErrors = [];
     insertedAgents.clear();
     calls = new Set();

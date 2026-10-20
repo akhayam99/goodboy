@@ -9,6 +9,7 @@ const NO_OMISSIONS: ReadonlyArray<string> = [];
 
 export type ObjectOverflowMenuProps = ObjectOverflowTriggerProps & {
   readonly hideWhenEmpty?: boolean;
+  readonly minEntries?: number;
 };
 
 export type ObjectOverflowTriggerProps = ActionMenuBehavior & {

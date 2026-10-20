@@ -19,7 +19,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { ProviderId } from '@goodboy/types';
 import {
@@ -45,7 +45,6 @@ import { SessionDraftPane } from '../../features/session/components/SessionDraft
 import { WorkspaceSwitcher } from '../../features/workspace/components/WorkspaceSwitcher';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { BranchPage } from '../../features/branch/components/BranchPage';
-import { WorktreeEntriesSlot } from '../../app/components/MockScene/scenes/WorktreeEntriesSlot';
 import { CONTEXT_TAB_LABEL } from '../../features/session/components/ContextDrawer/contextTabs';
 import type { SettingsFocus } from '../../features/settings/settingsFocus';
 
@@ -308,7 +307,6 @@ describe('primary surfaces mount on real store selectors', () => {
     await mountSurface({
       ui: (
         <>
-          <WorktreeEntriesSlot />
           <KeepAliveWorkSurface sessionId={sessionId} isActive />
         </>
       ),
@@ -326,7 +324,6 @@ describe('primary surfaces mount on real store selectors', () => {
     await mountSurface({
       ui: (
         <>
-          <WorktreeEntriesSlot />
           <KeepAliveWorkSurface sessionId={sessionId} isActive />
         </>
       ),
@@ -336,11 +333,7 @@ describe('primary surfaces mount on real store selectors', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
 
-    expect(
-      within(screen.getByRole('navigation', { name: 'Worktree' }))
-        .getByRole('button', { name: /^Files/ })
-        .getAttribute('aria-current'),
-    ).toBe('page');
+    expect(useAppStore.getState().branchTab[sessionId]).toBe('files');
     expect(screen.queryByText('No worktree for this session')).toBeNull();
     expectNoRenderLoop();
   });

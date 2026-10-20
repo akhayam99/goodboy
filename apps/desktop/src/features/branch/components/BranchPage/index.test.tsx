@@ -38,7 +38,7 @@ import {
   SESSION,
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
-import { WorktreeEntriesSlot } from '../../../../app/components/MockScene/scenes/WorktreeEntriesSlot';
+import { SceneBranchTabs } from '../../../../app/components/MockScene/scenes/SceneBranchTabs';
 import { railOf, sectionNames } from '../../../../test/branchRail';
 import { BranchPage } from './index';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
@@ -69,7 +69,7 @@ const mount = async ({
   seedResolveScene({ expandedThreadId: threadId });
   render(
     <ToastProvider>
-      <WorktreeEntriesSlot />
+      <SceneBranchTabs sessionId={SESSION.id} />
       <BranchPage session={SESSION} workingDir={null} />
       <DrawerHost />
     </ToastProvider>,
@@ -276,29 +276,6 @@ describe('Branch page header and sections', () => {
     expect(railRow(/^Checks/).getAttribute('aria-current')).toBe('page');
     expect(railRow(/^Comments/).getAttribute('aria-current')).toBeNull();
   });
-
-  it('moves between sections with Up and Down while the rail has focus', async () => {
-    await mount();
-    await visit(/^Comments/);
-    railRow(/^Comments/).focus();
-
-    fireEvent.keyDown(railRow(/^Comments/), { key: 'ArrowDown' });
-    await settle();
-    expect(useAppStore.getState().branchTab[SESSION.id]).toBe('files');
-    expect(document.activeElement).toBe(railRow(/^Files/));
-
-    fireEvent.keyDown(railRow(/^Files/), { key: 'ArrowUp' });
-    await settle();
-    expect(useAppStore.getState().branchTab[SESSION.id]).toBe('comments');
-    expect(document.activeElement).toBe(railRow(/^Comments/));
-
-    fireEvent.keyDown(railRow(/^Comments/), { key: 'ArrowUp' });
-    await settle();
-    expect(useAppStore.getState().branchTab[SESSION.id]).toBe('pr');
-    fireEvent.keyDown(railRow(/^Pull request/), { key: 'ArrowUp' });
-    await settle();
-    expect(useAppStore.getState().branchTab[SESSION.id]).toBe('pr');
-  });
 });
 
 describe('Branch page sections by state', () => {
@@ -374,7 +351,7 @@ describe('Branch page sections by state', () => {
     withCommits();
     render(
       <ToastProvider>
-        <WorktreeEntriesSlot />
+        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -443,7 +420,7 @@ describe('Branch page column', () => {
     withCommits();
     render(
       <ToastProvider>
-        <WorktreeEntriesSlot />
+        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -501,7 +478,7 @@ describe('Branch page counts', () => {
     });
     render(
       <ToastProvider>
-        <WorktreeEntriesSlot />
+        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -520,7 +497,7 @@ describe('Branch page counts', () => {
     withCommits({ remoteSha: 'c'.repeat(40) });
     render(
       <ToastProvider>
-        <WorktreeEntriesSlot />
+        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -545,7 +522,7 @@ describe('Branch page counts before any visit', () => {
     useAppStore.setState({ loadHistoryDraft });
     render(
       <ToastProvider>
-        <WorktreeEntriesSlot />
+        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -567,7 +544,7 @@ describe('Branch page counts before any visit', () => {
     useAppStore.setState({ loadHistoryDraft });
     render(
       <ToastProvider>
-        <WorktreeEntriesSlot />
+        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -717,7 +694,7 @@ describe('Branch page entries in the sidebar', () => {
     withCommits();
     render(
       <ToastProvider>
-        <WorktreeEntriesSlot />
+        <SceneBranchTabs sessionId={SESSION.id} />
         <BranchPage session={SESSION} workingDir={WORKTREE} />
       </ToastProvider>,
     );
@@ -727,11 +704,9 @@ describe('Branch page entries in the sidebar', () => {
   const fileRail = (): HTMLElement | null =>
     document.querySelector<HTMLElement>('[data-slot="diff-file-rail"] aside[aria-label="Files"]');
 
-  it('draws the entries in the sidebar slot and never beside the page', async () => {
+  it('never draws the entries beside the page', async () => {
     await mountFiles();
 
-    const slot = document.querySelector('[data-slot="worktree-level-entries"]');
-    expect(slot?.contains(railOf())).toBe(true);
     expect(document.querySelector('[data-branch-pane]')?.contains(railOf())).toBe(false);
     expect(screen.queryByRole('button', { name: 'Sections' })).toBeNull();
   });
@@ -765,7 +740,7 @@ describe('Branch page entries in the sidebar', () => {
     }
   });
 
-  it('keeps the diff in the page when no sidebar hosts the entries', async () => {
+  it('keeps the diff in the page when no tree hosts the entries', async () => {
     seedResolveScene({ expandedThreadId: null });
     seedWorktree({ isDiffLoaded: true });
     render(
@@ -779,7 +754,7 @@ describe('Branch page entries in the sidebar', () => {
     });
     await settle();
 
-    expect(screen.queryByRole('navigation', { name: 'Worktree' })).toBeNull();
+    expect(document.querySelector('[data-worktree-entries]')).toBeNull();
     expect(screen.getAllByText(/credit\.ts/).length).toBeGreaterThan(0);
   });
 });

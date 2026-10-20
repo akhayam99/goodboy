@@ -356,13 +356,13 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   agent on that mount finishes it), `Open terminal`, and `Abort rebase`
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).
-- **A worktree names its layers on its level.** The worktree level of the
+- **A worktree names its layers under its row.** The current branch row of the Projects tree in the
   session rail holds the code host layers as entries: Pull request with its number,
   Files with the diff count (`useMountDiffStats`, read from
   `sessionWorktreeRecords`, which `applyMountViews` rewrites on every mount
   change, so a branch attached or forked while the session is open counts at
   once) and Comments while review comments wait. `Rewrite history` sits in the
-  identity row menu.
+  row menu of the tree.
 - **Finished worktrees fold into `N finished`.** A row is finished when its
   request merged or closed (`isCompletedRequest` in `buildMountRows`,
   `mountRowModel.ts`); the session level folds those rows under one
@@ -536,12 +536,12 @@ action the user can see, or allows one on a mount the user sees as gone.
 ## Worktree rows and the Overview notices
 
 The Overview has no Projects section. A worktree is a one line row of the
-session level in the session rail (`WorktreeRow` in the Projects card: branch,
-pull request number, the worst state as one dot, then its main pages one indent
-in: Pull request, Comments, Files with the diff stat, Checks) and drills into
-its worktree level, whose identity row
-menu holds the `mount` kind of the action registry
-(`features/actions/kinds/mount.ts`) and whose status line holds Rebase. The
+Projects tree in the session rail (`WorktreeRow`: state glyph, the pull request
+title or the branch, at most one chip: failing, conflict or behind). The
+current branch alone opens in place under its row: the status line with
+Rebase, then its pages (Pull request, Comments, Files with the diff stat,
+Commits, Checks). Its row menu (the `⋯`, a right click, Shift+F10) holds the
+`mount` kind of the action registry (`features/actions/kinds/mount.ts`). The
 navigation rules live in [navigation.md](navigation.md#session-rail).
 
 What a worktree asks the user to decide shows once, in the Overview notices
@@ -576,9 +576,87 @@ task and writes them once, so one Undo restores the exact rows, including
 removing a generated session row. `assignSessionExternalTask` and
 `takeOffSessionExternalTask` are thin callers of it. A task of another project is
 refused. **Link work to this branch** (the `mount.putTaskOnBranch` label in a
-mount menu) opens the put on a branch picker anchored under the identity row of
-the worktree level. `forkMount` takes `taskIdentifier` and `taskTitle` so a
+mount menu) opens the put on a branch picker anchored under the branch row of
+the tree. `forkMount` takes `taskIdentifier` and `taskTitle` so a
 worktree made for a task is named `{prefix}/{task-id}-{slug}`. The Linked rows,
 the Board card and the sidebar dedupe by provider and external id
 (`distinctTasks`); a task only placed on a branch is a Linked row too, named
 `on <branch>`.
+
+## On the session overview
+
+The Now block closes with the branch facts, read by `useBranchFacts`
+(`features/session/central/branches/`) from `useMountRows` and `mountRequestOf`.
+
+- Every branch is one 36 px row of the Branches list (`BranchList`, `BranchRow`):
+  the branch name (never the folder, which is the second text, with the request
+  number, only when the column is wide), a track of seven dots (Branch,
+  Commits, Pushed, Pull request, Checks, Review, Merged: `BranchTrack`), the
+  current step word, the blocker sentence, "in Next" when a Next card names that
+  branch, and a chevron. One branch has no eyebrow; two or more have the
+  eyebrow with the count. A row opens the Branch page of that mount and holds
+  no button: a verb lives only in Next.
+- `branchStoryOf` is the one function that turns the facts into the step word,
+  the tone, the blocker and the dots. The row, its accessible name
+  (`branchSentenceOf`, which starts with the branch) and the rank all read it.
+  Merged and closed branches stay in the list (`useBranchFacts` reads
+  `finishedRows` too), last.
+- The order is `branchEntriesOf`: failing first, then a branch with a card in
+  Next (in the card order of `cardOrderOf`, which also maps a Rebase card to
+  each branch it rebases), then a branch where an agent works, then waiting,
+  then local, then merged. The list shows 8 rows and folds the rest into one
+  disclosure row ("12 more branches, 4 merged", `aria-expanded`); with 9
+  branches all nine show, because the fold row would be as tall as the one
+  row it hides.
+- Check names and open conversations come from `PrDetail`. `useBranchDetails`
+  reads it with `refreshSessionPrDetail({ mountId })` only for a GitHub branch
+  that is open, fresh and has failing checks or a change request, on the
+  existing 30 s detail TTL. It asks again only when the mount, its pull
+  request number or the PR snapshot time (`fetchedAt`) changes, never because
+  its own detail read changed `mountGithub`. A failed read records
+  `mountDetailFailures[mountId]` (time and mount revision) and the same
+  revision is not read again for 60 s unless forced; a new revision reads at
+  once, and a failure that lands after the revision moved is dropped.
+  `branchDetailOf` drops a detail of another pull
+  request number. GitLab and Bitbucket, and a read that failed, keep "Checks
+  failed on the last push" and "A reviewer asked for changes".
+- `useBranchLabels({ sessionId })` gives the project and branch of a mount when
+  the session has two or more, for the branch chips on cards, groups and done
+  rows (`BranchChip`).
+- PR cards are gated per branch in every overview: `deriveNextSteps` skips fix
+  checks, mark ready, merge, open PR and push on a mount only while an agent
+  runs on that mount (`isMountBusyOf`, see Next steps in
+  [concepts.md](./concepts.md)). The Open a pull request and single Rebase
+  card titles name the branch when two mounts share a folder (`mountLabelOf`).
+- Host nouns: `#` for GitHub and Bitbucket, `!` for GitLab. Both read through
+  `mountRequestOf`, so `#309` and `!42` sit side by side.
+- Behind is `distanceBehind` on `useWorktreeStatuses`, the number the rebase card
+  uses (`features/suggestions/useSessionSuggestions/index.ts:403`).
+- A stale read is one `isFresh` calls old (`features/suggestions/nextStepGates.ts:11`,
+  5 minutes). The checks dot becomes a ring, the word is Open or Draft and the
+  blocker says "Checked 12m ago" (`branchFactsOf`, `branchStoryOf`).
+- A step that cannot apply is a short dash (`skipped`) in its slot, never a
+  pending circle, so the seven slots still line up. Only a fresh read can skip
+  (a stale read keeps every circle), and only when the host data proves it
+  (`mountRequestOf` projects `isChecksAbsent` and `isReviewOptional`):
+  - Checks, GitHub: `checks` is null and `checksUnknown` is not set (the
+    `statusCheckRollup` is empty; an unreadable rollup keeps the circle).
+    GitLab: the merge request has no `headPipeline`. Bitbucket: never skipped,
+    because a null `checks` also means the statuses were not read.
+  - Review, GitHub: `reviewDecision` is null and `reviewRequests` (read with
+    the PR list, `hasReviewRequests`) is empty; a requested reviewer keeps the
+    circle. GitLab: approvals were read, none are left and nobody approved.
+    Bitbucket: the pull request is open and has no reviewer, so no decision.
+  - A branch with both skipped reads Ready to merge ("No checks or review
+    required"). A failing check is never skipped.
+  - A queued pull request (merge queue or auto merge, `queued` in
+    `PullRequestStateKind`) shows Queued on the Merged slot as the current
+    step.
+  - Every dot has its step name in the shared Tooltip (`BranchStep.name`, which
+    reads "Checks skipped" for a dash) and `branchSentenceOf` lists the skipped
+    steps in the row's accessible name.
+- Only GitHub gets a PR card today. `useSessionSuggestions` reads
+  `mountGithub` alone for the PR verbs
+  (`features/suggestions/useSessionSuggestions/index.ts:447`), so a GitLab or
+  Bitbucket branch shows its state in the list and has no Mark ready, Merge or
+  Fix checks card yet.

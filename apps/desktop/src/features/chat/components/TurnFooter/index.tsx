@@ -1,10 +1,9 @@
 import { AnchoredPopover, useDropdown, type WorkNodeState } from '@goodboy/ui';
-import { inputTokensForUsage } from '@goodboy/core';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnOutcome } from '../../utils/turnOutcome';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
-import { contextWindowFor } from '../../../session/contextWindowFor';
+import { USAGE_CARD_MAX_WIDTH } from '../../utils/usageCardMaxWidth';
 import { TranscriptShell } from '../TranscriptShell';
 import { useTurnFooter } from './useTurnFooter';
 import { TurnFooterDetail } from './TurnFooterDetail';
@@ -36,19 +35,16 @@ export const TurnFooter = ({
   startedAt = null,
 }: Props) => {
   const data = useTurnFooter({ sessionId, agentId, runId: item.runId, fallbackUsage: item.usage });
-  const dropdown = useDropdown({ align: 'end', expectedHeight: 220, expectedWidth: 280 });
+  const dropdown = useDropdown({
+    align: 'end',
+    width: 'w-max',
+    maxWidth: USAGE_CARD_MAX_WIDTH,
+    expectedHeight: 220,
+    expectedWidth: 280,
+  });
   const durationMs =
     startedAt !== null ? Math.max(0, Date.parse(item.at) - Date.parse(startedAt)) : null;
   const duration = durationMs != null ? formatDuration({ durationMs }) : null;
-
-  const totalInput = inputTokensForUsage({
-    provider: data.provider ?? 'anthropic',
-    inputTokens: data.inputTokens,
-    cachedInputTokens: data.cachedInputTokens,
-    cacheCreationInputTokens: data.cacheCreationInputTokens,
-  });
-  const cachedPct = totalInput > 0 ? Math.round((data.cachedInputTokens / totalInput) * 100) : null;
-  const contextWindow = data.model != null ? contextWindowFor(data.model) : null;
 
   return (
     <TranscriptShell tone="neutral" variant="plain" className="flex w-fit">
@@ -76,9 +72,6 @@ export const TurnFooter = ({
       >
         <TurnFooterDetail
           data={data}
-          totalInput={totalInput}
-          cachedPct={cachedPct}
-          contextWindow={contextWindow}
           duration={duration}
           startedAt={startedAt}
           endedAt={item.at}

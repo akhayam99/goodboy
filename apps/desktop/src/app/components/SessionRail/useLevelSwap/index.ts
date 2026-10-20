@@ -30,8 +30,6 @@ type SwapRecord = {
 const DEPTH: Readonly<Record<RailLevel, number>> = {
   session: 0,
   worktree: 1,
-  run: 1,
-  auto: 1,
 };
 
 type DirectionParams = {

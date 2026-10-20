@@ -23,7 +23,7 @@ import {
 const worktreeMarked = async (): Promise<void> => {
   await waitFor(() => {
     const identity = document.querySelector(
-      '[data-level-layer="worktree"]:not([inert]) [data-worktree-identity]',
+      '[data-level-layer="session"]:not([inert]) [data-worktree-current]',
     );
     expect(identity).not.toBeNull();
   }, WAIT);
@@ -32,7 +32,9 @@ const worktreeMarked = async (): Promise<void> => {
 const worktreeLevelShown = async (): Promise<void> => {
   await waitFor(
     () =>
-      expect(document.querySelector('[data-level-layer="worktree"]:not([inert])')).not.toBeNull(),
+      expect(
+        document.querySelector('[data-level-layer="session"]:not([inert]) [data-worktree-current]'),
+      ).not.toBeNull(),
     WAIT,
   );
 };
