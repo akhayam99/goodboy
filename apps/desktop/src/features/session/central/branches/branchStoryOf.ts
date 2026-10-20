@@ -4,7 +4,7 @@ import { BRANCH_STATE_TONE, type BranchState } from './branchStateTone';
 
 type BranchStepId = 'commits' | 'pushed' | 'pr' | 'checks' | 'review' | 'merged';
 
-export type BranchStep = Readonly<{
+type BranchStep = Readonly<{
   id: BranchStepId;
   label: string;
   name: string;

@@ -18,7 +18,8 @@ import { useAppStore } from '../../../../../store';
 import { MOCK_SCENES } from '../..';
 import { spawnedTreeItemsOf } from '../../../SpawnedPanel/spawnedTreeItemsOf';
 import { U27_AGENTS_TREE_SCENES } from './agents-tree';
-import { TREE_SESSION, liveChildOf } from './agentsTreeSeed';
+import { TREE_SESSION } from './agentsTreeSeed';
+import { liveChildOf } from './testing/liveChildOf';
 
 const WAIT = { timeout: 15_000 };
 const LIVE_BRIEF = 'Make the payments-api retry safe end to end, with tests and docs.';

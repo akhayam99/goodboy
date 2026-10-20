@@ -293,39 +293,3 @@ export const TREE_ROOT_IDS: ReadonlyArray<AgentId> = TREES.map((tree) =>
 );
 
 export const TREE_LIVE_ROOT_ID: AgentId = rootIdOf({ key: LIVE.key });
-
-type LiveChildParams = {
-  readonly key: string;
-  readonly title: string;
-  readonly minute: number;
-};
-
-type LiveChild = Readonly<{
-  agent: Agent;
-  delegation: AutoTreeView['delegations'][number];
-}>;
-
-export const liveChildOf = ({ key, title, minute }: LiveChildParams): LiveChild => {
-  const [view] = TREE_VIEWS;
-  const treeId = view?.tree.id ?? brandId<AutoTreeId>({ value: `mock-tree-${LIVE.key}` });
-  return {
-    agent: {
-      id: childIdOf({ key }),
-      sessionId: TREE_SESSION.id,
-      ordinal: LIVE.ordinal * 100 + 50,
-      name: 'scout',
-      status: 'running',
-      startedAt: iso({ minute }),
-      parentAgentId: TREE_LIVE_ROOT_ID,
-      lastViewedAt: iso({ minute: 120 }),
-    },
-    delegation: {
-      ...aDelegation({ key, role: 'scout', state: 'running', outcome: null, settledAt: null }),
-      treeId,
-      childAgentId: childIdOf({ key }),
-      request: { title, task: 'Look.' },
-      createdAt: ms({ minute }),
-      deadlineAt: ms({ minute: minute + 600 }),
-    },
-  };
-};

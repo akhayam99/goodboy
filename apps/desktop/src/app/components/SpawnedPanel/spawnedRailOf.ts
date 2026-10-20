@@ -7,7 +7,7 @@ import {
 } from '../../../features/workTreeModel/railGeometry';
 import { parentIdsOf } from './parentIdsOf';
 
-export type SpawnedRailNode = Readonly<{
+type SpawnedRailNode = Readonly<{
   id: string;
   level: number;
   isPending: boolean;
