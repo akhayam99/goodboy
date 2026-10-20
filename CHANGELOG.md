@@ -12,6 +12,43 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.8
+
+The Agents drawer reads like Activity, right click opens a Goodboy menu on every row, and Auto agents keep working until their task is done.
+
+### Improved
+
+#### The Agents drawer reads like Activity
+<!-- gb area=agents -->
+
+The Agents drawer draws the Activity rail: Now on top, each agent joined to the one that started it, the newest launch first and children above their parent. Every parent folds with its chevron or the arrow keys. A live tree opens, a settled one folds to one row that says how many agents it holds.
+
+An agent Auto starts is named by its task, the same name in the drawer, the transcript, Next and Now. An Auto root reads its first ask.
+
+#### Right click opens a Goodboy menu on every row
+<!-- gb area=app -->
+
+A right click on a session, agent, branch, pull request, changed file, check, review comment, decision or question row opens its Goodboy menu, never the system menu with Look Up or Translate. Rows in the Agents drawer, Activity steps and the session's Branches list gained one. Selected text in a message, a diff or a document, a text field and the terminal keep the system menu.
+
+#### A steadier Now card with a Stuck state
+<!-- gb area=sessions -->
+
+The Now card keeps its groups in the order they started and shows one count of what waits on you, which takes you to Next. The tall color bar is gone.
+
+When an agent Auto started cannot go on, Now says Stuck, names it and gives the reason in words. Answer and Stop sit right under the sentence, with Retry when the agent can run again. A finished agent shows what it reported.
+
+#### One color per branch state
+<!-- gb area=sessions -->
+
+Each branch state has one color across the Now card and the rail: merged violet, approved and ready to merge green, open and in review blue, changes requested and conflicts amber, failing checks red. The branch stages draw as one connected track, each stage named on hover, and every branch row says one fact.
+
+### Fixed
+
+- Auto no longer sets money aside for each agent it starts, so a limit stops new agents only once it is really spent. <!-- gb area=agents -->
+- An agent Auto started that keeps working is never cut at 30 minutes. Only one that shows no activity for 30 minutes is stopped, and its work is kept. <!-- gb area=agents -->
+- A stopped, timed out or failed agent Auto started continues its own work in its worktree, keeping its commits, instead of starting over. <!-- gb area=agents -->
+- A limit reached while agents run lets them finish, and their results reach Auto once you raise the limit. <!-- gb area=agents -->
+
 ## Goodboy v0.27.7
 
 Auto checks and pushes what its agents write, Claude and Cursor answers show sooner, and hover facts sit in one card across the app.

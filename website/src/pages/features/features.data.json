@@ -302,7 +302,7 @@
         },
         {
           "title": "Right click menus",
-          "text": "Right click almost anything to see every action it has. The menu and the palette list the same actions in the same order.",
+          "text": "Right click any row to see every action it has. The menu and the palette list the same actions in the same order.",
           "group": "Search and navigation",
           "also": "right click menus"
         },
