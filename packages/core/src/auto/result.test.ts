@@ -38,7 +38,6 @@ const base = (overrides: Partial<BuildResultParams> = {}): BuildResultParams => 
   isArtifactExpected: false,
   openQuestions: [],
   costUsd: 0.42,
-  reservedCeilingUsd: 3,
   ...overrides,
 });
 
@@ -127,10 +126,13 @@ describe('the outcome of a delegation', () => {
     ).toBe('timed_out');
   });
 
-  it('charges the reserved ceiling when the provider reported no cost', () => {
-    expect(buildDelegationResult(base({ costUsd: null })).cost).toEqual({
-      usd: 3,
-      basis: 'reserved_ceiling',
+  it('leaves the cost unknown when no cost was recorded, never a ceiling', () => {
+    const result = buildDelegationResult(base({ costUsd: null }));
+    expect(result.cost).toEqual({ usd: null, basis: 'estimate' });
+    expect(renderDelegationResult({ result })).toContain('s, cost unknown');
+    expect(buildDelegationResult(base({ costUsd: 7.5 })).cost).toEqual({
+      usd: 7.5,
+      basis: 'reported',
     });
     expect(buildDelegationResult(base()).cost).toEqual({ usd: 0.42, basis: 'reported' });
   });

@@ -1,6 +1,6 @@
 import type { AgentId, ArtifactId, AutoDelegationId, AutoTreeId } from '@goodboy/types';
 import type { GuardedStatement, PlainStatement } from '../client';
-import { autoBudgetCoversSql } from './auto-reservations';
+import { autoBudgetLeftSql } from './auto-reservations';
 import { AUTO_OWNER_GUARD_SQL, autoOwnerGuardParams } from './auto-trees';
 
 export type AutoAdmissionLimits = Readonly<{
@@ -17,7 +17,6 @@ type AdmissionTreeStatementParams = {
   readonly generation: number;
   readonly runId: string;
   readonly count: number;
-  readonly requestedUsd: number;
   readonly limits: AutoAdmissionLimits;
 };
 
@@ -31,7 +30,6 @@ export const autoAdmissionTreeStatement = ({
   generation,
   runId,
   count,
-  requestedUsd,
   limits,
 }: AdmissionTreeStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_trees
@@ -44,7 +42,7 @@ export const autoAdmissionTreeStatement = ({
       AND turn_delegate_calls < ? AND refusals_used < ? AND ? < hard_deadline_at
       AND (SELECT COUNT(*) FROM auto_delegations
             WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + ? <= ?
-      AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
+      AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
     count,
@@ -59,7 +57,6 @@ export const autoAdmissionTreeStatement = ({
     nowMs,
     count,
     limits.maxOpenChildren,
-    requestedUsd,
   ],
   abortWhen: 'noChanges',
   abortCode: AUTO_ADMISSION_TREE_ABORT,
@@ -229,7 +226,6 @@ type ResumeTreeStatementParams = {
   readonly generation: number;
   readonly runId: string;
   readonly maxOpenChildren: number;
-  readonly requestedUsd: number;
 };
 
 export const AUTO_RESUME_TREE_ABORT = 'resume_tree';
@@ -242,7 +238,6 @@ export const autoResumeTreeStatement = ({
   generation,
   runId,
   maxOpenChildren,
-  requestedUsd,
 }: ResumeTreeStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_trees
     SET phase = 'delegating', is_yield_requested = 1, phase_rev = phase_rev + 1, updated_at = ?,
@@ -253,7 +248,7 @@ export const autoResumeTreeStatement = ({
       AND ? < hard_deadline_at
       AND (SELECT COUNT(*) FROM auto_delegations
             WHERE tree_id = auto_trees.id AND state NOT IN ('settled', 'paused')) + 1 <= ?
-      AND ${autoBudgetCoversSql({ treeRef: 'auto_trees.id' })}`,
+      AND ${autoBudgetLeftSql({ treeRef: 'auto_trees.id' })}`,
   params: [
     nowMs,
     treeId,
@@ -263,7 +258,6 @@ export const autoResumeTreeStatement = ({
     ...autoOwnerGuardParams({ ownerId, nowMs }),
     nowMs,
     maxOpenChildren,
-    requestedUsd,
   ],
   abortWhen: 'noChanges',
   abortCode: AUTO_RESUME_TREE_ABORT,

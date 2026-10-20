@@ -112,31 +112,41 @@ const codeOf = (verdict: ReturnType<typeof diagnoseAdmission>): string =>
   verdict.kind === 'refused' ? verdict.code : 'ok';
 
 describe('diagnoseAdmission', () => {
-  it('accepts a batch inside every limit and caps each reservation to what remains', () => {
+  it('accepts a batch inside every limit and holds no money for it', () => {
     const verdict = diagnoseAdmission({
       snapshot: snapshot({ remainingUsd: 4 }),
       children: [scout(), scout('agent-scout-2')],
     });
-    expect(verdict).toEqual({ kind: 'ok', ceilingsUsd: [0.5, 0.5], requestedUsd: 1 });
+    expect(verdict).toEqual({ kind: 'ok' });
   });
 
-  it('shrinks a later reservation when the earlier one took most of the budget', () => {
+  it('admits an implementer and a scout on the last cents of the limit, with no ceiling', () => {
     const verdict = diagnoseAdmission({
       snapshot: snapshot({
-        remainingUsd: 3.25,
+        remainingUsd: 0.01,
         artifacts: [planFacts({ artifact: { approvalState: 'approved', approvedRevision: 2 } })],
       }),
       children: [implementer(2), scout()],
     });
-    expect(verdict).toEqual({ kind: 'ok', ceilingsUsd: [3, 0.25], requestedUsd: 3.25 });
+    expect(verdict).toEqual({ kind: 'ok' });
   });
 
-  it('refuses with budget when a child would get nothing', () => {
+  it('admits with no limit', () => {
     const verdict = diagnoseAdmission({
-      snapshot: snapshot({ remainingUsd: 0.5 }),
+      snapshot: snapshot({ remainingUsd: Number.POSITIVE_INFINITY }),
       children: [scout(), scout('agent-scout-2')],
     });
-    expect(verdict).toMatchObject({ kind: 'refused', code: 'budget', perChild: [{ slot: 1 }] });
+    expect(verdict).toEqual({ kind: 'ok' });
+  });
+
+  it('refuses the whole batch with budget once real spend reached the limit', () => {
+    for (const remainingUsd of [0, -0.4]) {
+      const verdict = diagnoseAdmission({
+        snapshot: snapshot({ remainingUsd }),
+        children: [scout(), scout('agent-scout-2')],
+      });
+      expect(verdict).toEqual({ kind: 'refused', code: 'budget', perChild: [] });
+    }
   });
 
   it('refuses a caller that is not the root of the tree as a depth cap', () => {

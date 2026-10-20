@@ -160,7 +160,6 @@ export type BuildResultParams = Readonly<{
   isArtifactExpected: boolean;
   openQuestions: ReadonlyArray<ResultQuestion>;
   costUsd: number | null;
-  reservedCeilingUsd: number;
 }>;
 
 export const buildDelegationResult = (params: BuildResultParams): DelegationResultV1 => {
@@ -205,7 +204,7 @@ export const buildDelegationResult = (params: BuildResultParams): DelegationResu
     openQuestions: params.openQuestions,
     cost:
       params.costUsd === null
-        ? { usd: params.reservedCeilingUsd, basis: 'reserved_ceiling' }
+        ? { usd: null, basis: 'estimate' }
         : { usd: params.costUsd, basis: 'reported' },
     reason: resolved.reason,
   };
@@ -244,7 +243,7 @@ export const renderDelegationResult = ({ result, label }: RenderResultParams): s
       : `${label} (${result.role} ${result.childAgentId}, ${result.delegationId})`;
   const lines: string[] = [
     `- ${who}: ${result.outcome}${result.reason === null ? '' : `, ${result.reason}`}`,
-    `  ran on ${result.routing.provider} ${result.routing.model} ${result.routing.effort}; ${result.process.turns} turns, ${Math.round(result.process.durationMs / 1000)}s, cost ${result.cost.usd === null ? 'unknown' : result.cost.usd.toFixed(2)} USD (${result.cost.basis})`,
+    `  ran on ${result.routing.provider} ${result.routing.model} ${result.routing.effort}; ${result.process.turns} turns, ${Math.round(result.process.durationMs / 1000)}s, cost ${result.cost.usd === null ? 'unknown' : `${result.cost.usd.toFixed(2)} USD (${result.cost.basis})`}`,
   ];
   if (result.declared.summary !== '') {
     lines.push(`  it said: ${oneLine(result.declared.summary)}`);

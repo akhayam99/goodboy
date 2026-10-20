@@ -26,6 +26,7 @@ import { brandId, type AutoReservationId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { buildDeliveryMessage } from './buildDeliveryMessage';
 import { chooseDeliveryRows } from './deliveryRows';
+import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AutoTurnEnded, TurnStartOutcome } from './ports';
 import { userImagesOf } from './userImagesOf';
 import type { AgentVerbContext } from './verbContext';
@@ -268,8 +269,12 @@ export const deliverNext = async ({
           nowMs: ctx.now(),
         });
   const runId = ctx.ports.newId();
+  const claims = claimStatements({ ctx, tree, rows, runId, text });
   const claimed = await ctx.db.transaction({
-    statements: claimStatements({ ctx, tree, rows, runId, text }),
+    statements:
+      tree.phase === 'blocked'
+        ? [...claims, pausedDeadlineStatement({ treeId: tree.id, nowMs: ctx.now() })]
+        : claims,
   });
   if (claimed.status === 'aborted') {
     if (claimed.abortCode === ABORT_BUDGET) {

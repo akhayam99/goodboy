@@ -6,7 +6,7 @@ export const AUTO_REFUSAL_USER_REASON = {
   substep_cap: 'too many helpers for one agent',
   breadth_cap: 'too many agents at once',
   empty_batch: 'it named no agent',
-  budget: 'the limit left does not cover it',
+  budget: 'the conversation reached its limit',
   already_yielded: 'it already handed work over in this turn',
   not_deciding: 'the turn had already ended',
   tree_stopped: 'the conversation was stopped',

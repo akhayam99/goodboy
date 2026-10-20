@@ -29,7 +29,6 @@ const result = buildDelegationResult({
   isArtifactExpected: false,
   openQuestions: [],
   costUsd: 0.1,
-  reservedCeilingUsd: 0.5,
 });
 
 const rows = [

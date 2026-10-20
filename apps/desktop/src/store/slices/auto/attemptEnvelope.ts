@@ -1,6 +1,5 @@
 import {
   AUTO_ROLE_ARTIFACT,
-  attemptCeilingUsd,
   buildDelegationResult,
   parseAutoDelegationRole,
   type AutoDelegationRole,
@@ -107,6 +106,5 @@ export const attemptEnvelope = ({
     isArtifactExpected: isExpected,
     openQuestions,
     costUsd,
-    reservedCeilingUsd: attemptCeilingUsd({ role, remainingUsd: Number.POSITIVE_INFINITY }),
   });
 };

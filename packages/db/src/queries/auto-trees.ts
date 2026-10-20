@@ -1,11 +1,6 @@
 import { brandId, type AgentId, type AutoTreeId, type SessionId } from '@goodboy/types';
 import type { Database, GuardedStatement } from '../client';
-import {
-  AUTO_USD_EPSILON,
-  autoReservedUsdSql,
-  autoSettledUsdSql,
-  readAutoTreeSpend,
-} from './auto-reservations';
+import { AUTO_USD_EPSILON, autoUsedUsdSql, readAutoTreeSpend } from './auto-reservations';
 
 export const AUTO_PHASES = [
   'answering',
@@ -531,7 +526,7 @@ export const setAutoTreeCapIfUnchanged = async ({
   capUsd,
   nowMs,
 }: SetAutoTreeCapParams): Promise<SetAutoTreeCapOutcome> => {
-  const usedSql = `${autoSettledUsdSql({ treeRef: 'auto_trees.id' })} + ${autoReservedUsdSql({ treeRef: 'auto_trees.id' })}`;
+  const usedSql = autoUsedUsdSql({ treeRef: 'auto_trees.id' });
   const result = await db.execute(
     `UPDATE auto_trees SET cap_usd = ?, updated_at = ?
      WHERE id = ? AND cap_usd IS ? AND (? IS NULL OR ? + ${AUTO_USD_EPSILON} >= ${usedSql})`,
@@ -547,7 +542,7 @@ export const setAutoTreeCapIfUnchanged = async ({
   if (spend.capUsd !== expectedCapUsd) {
     return { kind: 'stale', capUsd: spend.capUsd };
   }
-  return { kind: 'below_used', usedUsd: spend.settledUsd + spend.reservedUsd };
+  return { kind: 'below_used', usedUsd: spend.settledUsd + spend.liveUsd + spend.reservedUsd };
 };
 
 export const AUTO_RESTING_PHASES = ['answering', 'done', 'finished'] as const;

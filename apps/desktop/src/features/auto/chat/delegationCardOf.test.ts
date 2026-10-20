@@ -32,7 +32,7 @@ const RESULT = {
 };
 
 describe('delegationCardOf', () => {
-  it('names the role, the model, the reason and the ceiling of a running child', () => {
+  it('names the role, the model and the reason of a running child, and no ceiling', () => {
     const child = anAgent({
       id: brandId<AgentId>({ value: 'agent-impl' }),
       startedAt: brandId<IsoDateTime>({ value: new Date(FIXTURE_NOW).toISOString() }),
@@ -48,9 +48,9 @@ describe('delegationCardOf', () => {
       effort: 'high',
       status: { word: 'Running', isLive: true },
       isOpen: true,
-      ceilingUsd: 3,
       result: null,
     });
+    expect(card).not.toHaveProperty('ceilingUsd');
     expect(card.reason).toContain('idempotency');
   });
 
@@ -225,6 +225,23 @@ describe('delegationCardOf', () => {
 
     expect(card.result?.reasonText).toBe('It ended without saying whether the work was done.');
     expect(card.result?.isCostEstimated).toBe(true);
+  });
+
+  it('says a child stopped for no activity kept its work', () => {
+    const card = delegationCardOf({
+      delegation: aDelegation({
+        key: 'impl',
+        role: 'implementer',
+        state: 'settled',
+        outcome: 'timed_out',
+        result: { reason: 'no_activity' },
+      }),
+      childAgent: null,
+    });
+
+    expect(card.result?.reasonText).toBe(
+      'It showed no activity for 30 minutes and was stopped. Its work is kept.',
+    );
   });
 
   it('reads a reason or an artifact kind that names an object key as an unknown word', () => {

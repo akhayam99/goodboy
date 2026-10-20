@@ -9,6 +9,7 @@ import {
   readAutoTreeSpend,
   reconcileAutoReservationStatement,
   releaseAutoReservationStatement,
+  type AutoReservationOwnerKind,
 } from './auto-reservations';
 
 const treeId = brandId<AutoTreeId>({ value: 'tree-1' });
@@ -24,13 +25,14 @@ type ReserveParams = {
   readonly db: Awaited<ReturnType<typeof world>>;
   readonly owner: string;
   readonly usd: number;
+  readonly ownerKind?: AutoReservationOwnerKind;
 };
 
-const reserve = async ({ db, owner, usd }: ReserveParams) => {
+const reserve = async ({ db, owner, usd, ownerKind = 'attempt' }: ReserveParams) => {
   const statement = insertAutoReservationStatement({
     id: brandId<AutoReservationId>({ value: `reservation-${owner}` }),
     treeId,
-    ownerKind: 'attempt',
+    ownerKind,
     ownerId: owner,
     reservedUsd: usd,
     nowMs: AUTO_SEED_NOW,
@@ -39,15 +41,16 @@ const reserve = async ({ db, owner, usd }: ReserveParams) => {
 };
 
 describe('auto reservations and spend', () => {
-  it('reads settled, reserved and remaining from the one query', async () => {
+  it('reads settled, held and remaining from the one query, holding nothing for a child', async () => {
     const db = await world();
     await reserve({ db, owner: 'attempt-a', usd: 1.5 });
-    await reserve({ db, owner: 'attempt-b', usd: 0.5 });
+    await reserve({ db, owner: 'turn-1', usd: 0.5, ownerKind: 'auto_turn' });
     expect(await readAutoTreeSpend({ db, treeId })).toEqual({
       capUsd: 5,
       settledUsd: 0,
-      reservedUsd: 2,
-      remainingUsd: 3,
+      liveUsd: 0,
+      reservedUsd: 0.5,
+      remainingUsd: 4.5,
       estimatedUsd: 0,
     });
     expect(
@@ -55,10 +58,19 @@ describe('auto reservations and spend', () => {
     ).toBeNull();
   });
 
-  it('replaces a reservation with the actual cost, and with the ceiling when the cost is unknown', async () => {
+  it('settles a child at its cost, at nothing when unknown, and Auto at its hold', async () => {
     const db = await world();
     await reserve({ db, owner: 'attempt-a', usd: 1.5 });
-    await reserve({ db, owner: 'attempt-b', usd: 0.5 });
+    await reserve({ db, owner: 'attempt-b', usd: 3 });
+    await reserve({ db, owner: 'turn-1', usd: 0.5, ownerKind: 'auto_turn' });
+    const turn = reconcileAutoReservationStatement({
+      treeId,
+      ownerKind: 'auto_turn',
+      ownerId: 'turn-1',
+      costUsd: null,
+      nowMs: AUTO_SEED_NOW,
+      abortCode: 'reconcile',
+    });
     const known = reconcileAutoReservationStatement({
       treeId,
       ownerKind: 'attempt',
@@ -75,11 +87,12 @@ describe('auto reservations and spend', () => {
       nowMs: AUTO_SEED_NOW,
       abortCode: 'reconcile',
     });
-    const outcome = await db.transaction({ statements: [known, unknown] });
+    const outcome = await db.transaction({ statements: [known, unknown, turn] });
     expect(outcome.status).toBe('committed');
     expect(await readAutoTreeSpend({ db, treeId })).toEqual({
       capUsd: 5,
       settledUsd: 0.75,
+      liveUsd: 0,
       reservedUsd: 0,
       remainingUsd: 4.25,
       estimatedUsd: 0.5,
@@ -90,7 +103,7 @@ describe('auto reservations and spend', () => {
       ownerKind: 'attempt',
       ownerId: 'attempt-b',
     });
-    expect(b).toMatchObject({ state: 'reconciled', actualUsd: 0.5, isCostKnown: false });
+    expect(b).toMatchObject({ state: 'reconciled', actualUsd: 0, isCostKnown: false });
   });
 
   it('reconciles once: the second try aborts and changes nothing', async () => {
@@ -112,11 +125,12 @@ describe('auto reservations and spend', () => {
 
   it('frees a released reservation from the remaining budget', async () => {
     const db = await world();
-    await reserve({ db, owner: 'attempt-a', usd: 3 });
+    await reserve({ db, owner: 'turn-1', usd: 0.5, ownerKind: 'auto_turn' });
+    expect((await readAutoTreeSpend({ db, treeId }))?.remainingUsd).toBe(4.5);
     const release = releaseAutoReservationStatement({
       treeId,
-      ownerKind: 'attempt',
-      ownerId: 'attempt-a',
+      ownerKind: 'auto_turn',
+      ownerId: 'turn-1',
       reason: 'stale_result',
       nowMs: AUTO_SEED_NOW,
     });

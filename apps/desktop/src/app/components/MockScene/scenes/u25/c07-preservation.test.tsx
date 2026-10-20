@@ -93,11 +93,11 @@ describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () 
     expect(within(popover).getByText('Turns')).toBeDefined();
   });
 
-  it('Delegation reason, model changed note, Reserved up to: the child pane brief', async () => {
+  it('Delegation reason and model changed note, no Reserved up to: the child pane brief', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-child'] });
 
     expect(await screen.findByText(/^Why Auto chose Implementer:/, undefined, WAIT)).toBeDefined();
-    expect(screen.getByText(/Reserved up to \$3\.00/)).toBeDefined();
+    expect(screen.queryByText(/Reserved up to/)).toBeNull();
   });
 
   it('Delegation result and Returned to Auto: the end of the child pane', async () => {

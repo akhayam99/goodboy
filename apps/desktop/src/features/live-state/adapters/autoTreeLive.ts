@@ -41,6 +41,20 @@ type ViewParams = {
   readonly view: AutoTreeView;
 };
 
+const AT_LIMIT = [TAIL_ACTION.raiseLimit, TAIL_ACTION.changeLimit, TAIL_ACTION.stopAuto];
+
+const stillRunningOf = ({ view }: ViewParams): string | null => {
+  const count = view.delegations.filter(
+    (delegation) => delegation.state === 'starting' || delegation.state === 'running',
+  ).length;
+  if (count === 0) {
+    return null;
+  }
+  return count === 1
+    ? 'No new agent starts. The agent still running finishes its work and can spend past the limit.'
+    : `No new agent starts. The ${count} agents still running finish their work and can spend past the limit.`;
+};
+
 const pausedAtLimit = ({ view }: ViewParams): TailFacts | null => {
   const budget = view.budget;
   if (budget === null || budget.capUsd === null || budget.remainingUsd === null) {
@@ -50,22 +64,25 @@ const pausedAtLimit = ({ view }: ViewParams): TailFacts | null => {
     return null;
   }
   const used = formatUsd(budget.spentUsd + budget.reservedUsd);
+  const lead = `Paused at the limit: ${used} of ${formatUsd(budget.capUsd)}`;
+  const running = stillRunningOf({ view });
   return {
     state: 'paused',
-    phrase: `Paused at the limit: ${used} of ${formatUsd(budget.capUsd)}`,
+    phrase: running === null ? lead : `${lead}. ${running}`,
     startedAt: null,
-    actions: [TAIL_ACTION.raiseLimit, TAIL_ACTION.changeLimit],
+    actions: AT_LIMIT,
   };
 };
 
 const blocked = ({ view }: ViewParams): TailFacts => {
   const reason = view.tree.blockedReason;
   if (reason === AUTO_BLOCK_TEXT.budget) {
+    const running = stillRunningOf({ view });
     return {
       state: 'failed',
-      phrase: `Blocked: ${reason}`,
+      phrase: running === null ? `Blocked: ${reason}` : `Blocked: ${reason} ${running}`,
       startedAt: null,
-      actions: [TAIL_ACTION.raiseLimit, TAIL_ACTION.changeLimit],
+      actions: AT_LIMIT,
     };
   }
   if (reason === AUTO_BLOCK_TEXT.limit_wall_clock) {

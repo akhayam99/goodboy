@@ -1,10 +1,5 @@
 import { AUTO_USD_EPSILON, type AutoArtifact, type AutoTree } from '@goodboy/db';
-import {
-  AUTO_BATCH_MAX_CHILDREN,
-  AUTO_MAX_OPEN_CHILDREN,
-  AUTO_TREE_LIMITS,
-  attemptCeilingUsd,
-} from './limits';
+import { AUTO_BATCH_MAX_CHILDREN, AUTO_MAX_OPEN_CHILDREN, AUTO_TREE_LIMITS } from './limits';
 import type { AutoRefusalCode } from './refusals';
 import type { AutoDelegationRole } from './roles';
 import { isAutoWriterRole } from './roles';
@@ -60,7 +55,7 @@ export type AdmissionChildRefusal = Readonly<{
 }>;
 
 export type AdmissionVerdict =
-  | Readonly<{ kind: 'ok'; ceilingsUsd: ReadonlyArray<number>; requestedUsd: number }>
+  | Readonly<{ kind: 'ok' }>
   | Readonly<{
       kind: 'refused';
       code: AutoRefusalCode;
@@ -309,24 +304,8 @@ export const diagnoseAdmission = ({
   if (first !== undefined) {
     return { kind: 'refused', code: first.code, perChild };
   }
-  let remaining = snapshot.remainingUsd;
-  const ceilingsUsd: number[] = [];
-  for (const child of children) {
-    const ceiling = attemptCeilingUsd({ role: child.role, remainingUsd: remaining });
-    ceilingsUsd.push(ceiling);
-    remaining -= ceiling;
+  if (snapshot.remainingUsd <= AUTO_USD_EPSILON) {
+    return { kind: 'refused', code: 'budget', perChild: [] };
   }
-  const lacking = ceilingsUsd.findIndex((ceiling) => ceiling <= AUTO_USD_EPSILON);
-  if (lacking !== -1) {
-    return {
-      kind: 'refused',
-      code: 'budget',
-      perChild: [{ slot: lacking, code: 'budget', latestRevision: null }],
-    };
-  }
-  return {
-    kind: 'ok',
-    ceilingsUsd,
-    requestedUsd: ceilingsUsd.reduce((sum, ceiling) => sum + ceiling, 0),
-  };
+  return { kind: 'ok' };
 };

@@ -1,4 +1,4 @@
-import { AUTO_ATTEMPT_CEILING_USD, parseAutoDelegationRole } from '@goodboy/core';
+import { parseAutoDelegationRole } from '@goodboy/core';
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, AgentId } from '@goodboy/types';
 import { AGENT_KIND_META, kindForRole, type AgentKind } from '../../session/agent-kind';
@@ -18,7 +18,6 @@ export type DelegationCardModel = Readonly<{
   reason: string | null;
   routingNote: string | null;
   status: DelegationStatus;
-  ceilingUsd: number | null;
   isRevision: boolean;
   reviseVersion: number | null;
   isOpen: boolean;
@@ -95,7 +94,6 @@ export const delegationCardOf = ({ delegation, childAgent }: Params): Delegation
     reason: textField({ source: delegation.request, key: 'reason' }),
     routingNote: routingNoteOf({ routing: delegation.routing, model }),
     status,
-    ceilingUsd: role === null ? null : AUTO_ATTEMPT_CEILING_USD[role],
     isRevision: delegation.reviseOf !== null,
     reviseVersion: delegation.baseRevision === null ? null : delegation.baseRevision + 1,
     isOpen: delegation.state !== 'settled',

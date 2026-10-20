@@ -604,9 +604,9 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   is already resuming, and reports a failure only after trying the rest.
 - **An Auto child never gets a plain turn.** Continue, Resume and Resume all
   on an agent Auto started go through Auto (`autoRetryRouteOf`): the stopped
-  notice offers **Retry through Auto**, which sends Auto "Retry the
-  Implementer that stopped: <task>" so the tree decides the retry and reads
-  its result. `resumeStoppedAgents` skips Auto children: the tree recovers its
+  notice offers **Retry through Auto**, which sends Auto "Continue the
+  Implementer that stopped (delegation <id>) from where it left off: <task>"
+  so the tree continues the same agent with `retryOf` and reads its result. `resumeStoppedAgents` skips Auto children: the tree recovers its
   own work after a restart. The child is found from the tree view, or from its
   parent being the Auto root when the view has not loaded.
 - **The thinking line counts from the turn start and ends with the turn.** Its

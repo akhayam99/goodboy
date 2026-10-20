@@ -724,12 +724,14 @@ kept.
   paused parent leaves its slot to a substep), remaining budget, plan approval and
   revision. A substep adds its own guard (`autoSubstepStatements`): the parent is
   paused on that question in this generation and has fewer than two helpers. `core/auto/admission.ts` only names the refusal for the caller.
-- Money has one source, `treeSpend`: settled, reserved and remaining. It feeds
-  admission, the prompt line and the screen through `autoBudgetOf`;
-  remaining is `autoRemainingUsdSql` in SQL and `autoTreeSpendOf` in JS, and
-  the delivery line counts the turn reservation it is delivered with. An
-  attempt reserves its ceiling at admission and is reconciled to the actual
-  cost, or to the ceiling, marked estimated, when the provider reports none.
+- Money has one source, `treeSpend`: settled, live (what running children spent,
+  from their telemetry), reserved and remaining. It feeds admission, the prompt
+  line and the screen through `autoBudgetOf`; remaining is `autoRemainingUsdSql`
+  in SQL and `autoTreeSpendOf` in JS, and the delivery line counts the turn
+  reservation it is delivered with. An attempt keeps a reservation row at 0 USD
+  (old rows with an amount are read as 0) and is reconciled to the actual cost,
+  or to 0 with the cost marked unknown when none was recorded. Admission only
+  asks that the limit has money left (`autoBudgetLeftSql`).
 - `settleAttempt` and `landRevision` apply a result only while the tree
   generation, the lease, the attempt and the delegation still match. Anything
   else is dropped and its reservation released.
@@ -797,8 +799,14 @@ kept.
   delegations as stopped, reconcile or release the reservations and set `stopped`; one
   cancel that fails leaves the tree `stopping`, and a restart resumes it. A late result of
   the old generation is dropped by the fences. A new user message reopens a stopped tree.
-- `enforceDeadlines.ts` cancels a child past its deadline and settles it timed out only
-  after the exit is confirmed; a waiting child needs no process to expire.
+- `enforceDeadlines.ts` never cuts a working child on the clock. A running child is
+  cancelled only when its agent wrote no `turn_events` row (output, tool call, usage)
+  for `AUTO_CHILD_IDLE_MINUTES` (30), counted from the later of its attempt start and
+  the start of this runtime (`readAgentLastEventAt`), so a past `deadline_at` on an old
+  row never expires it at load; a tool call without its end (`hasAgentOpenToolCall`)
+  counts as activity. It settles `timed_out` with reason `no_activity` only
+  after the exit is confirmed, and Auto continues it with `retryOf`. A child paused on
+  a question still expires at `deadline_at` and needs no process to expire.
   `expireStaleDecide.ts` handles a tree still `deciding` `AUTO_STALE_DECIDE_MS` (10
   minutes) after it entered the phase with no live root run: it settles the turn from the
   run outcome when one is stored, else moves the tree to `blocked` with
@@ -835,7 +843,7 @@ kept.
 - A child that asks a blocking question ends its attempt `paused` and queues a question row
   for Auto at once. `answerQuestion.ts` (the `answer` action) resumes it: in one transaction
   it admits a new attempt on the same agent with the question and the answer stored on it,
-  reserves a new ceiling, counts it against the attempt limit and the four running
+  checks that the limit has money left, counts it against the attempt limit and the four running
   slots (`core/auto/resumeAdmission.ts`) and moves the delegation from `paused` to `starting`.
   The same question answered twice is one resume; a different text is refused. The question
   of a child never reaches the open questions of the session
@@ -846,7 +854,10 @@ kept.
   so every process of the tree has a delegation. A retry is a delegate entry with `retryOf` and a reason only
   (`prepareRetry.ts`): it repeats the work of a settled delegation as a new delegation on
   the same agent and mount, with the model of the earlier attempt unless one is given,
-  and the settled result stays as it was. A revise whose version already landed is not
+  and the settled result stays as it was. A retry of a delegation that did not complete
+  continues its work: the kickoff says to keep what is in the worktree, and its first
+  attempt carries the baseline of the earlier one (`carriedSnapshot.ts`), so the
+  result counts the commits made before the stop. A revise whose version already landed is not
   repeated: the retry answers with the landed version.
 - The screens read the registry through one slice, `store/slices/auto-view/`:
   `loadAutoTrees({ sessionId })` reads the trees of a session with their

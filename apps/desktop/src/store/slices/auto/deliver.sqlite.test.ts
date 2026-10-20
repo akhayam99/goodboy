@@ -22,7 +22,7 @@ const phaseOf = async (state: DeliveryWorld) =>
   (await getAutoTree({ db: state.world.db, treeId: WORLD_TREE }))?.phase;
 
 describe('the budget line of a delivery', () => {
-  it('says the Left the rail reads while that turn runs, its own reservation included', async () => {
+  it('says the Left the rail reads while that turn runs, its own hold included', async () => {
     const state = await makeDeliveryWorld();
     await addUserRow({ world: state.world, id: 'outbox-user-1', text: 'hello' });
 
@@ -36,9 +36,8 @@ describe('the budget line of a delivery', () => {
     const budget = views[0]?.budget;
     expect(budget?.reservedUsd).toBe(AUTO_TURN_CEILING_USD);
     expect(text).toContain(`Left ${budget?.remainingUsd?.toFixed(2)} USD.`);
-    expect(text).toContain(
-      `Reserved ${budget?.reservedUsd.toFixed(2)} USD, of which ${AUTO_TURN_CEILING_USD.toFixed(2)} USD for this answer.`,
-    );
+    expect(text).toContain(`Held ${AUTO_TURN_CEILING_USD.toFixed(2)} USD for this answer.`);
+    expect(text).not.toContain('Reserved');
   });
 });
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { autoBudgetOf, autoBudgetLabel, autoBudgetPromptLine } from '@goodboy/core';
-import { listAutoReservations } from '@goodboy/db';
+import { getAutoTree, listAutoReservations, setAutoTreeCapIfUnchanged } from '@goodboy/db';
+import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import {
   brandId,
   type AutoAttemptId,
@@ -13,6 +14,7 @@ import {
   childInput,
   makeAutoWorld,
   startNewTurn,
+  WORLD_NOW,
   WORLD_TREE,
   type AutoWorld,
 } from './testing/autoWorld';
@@ -63,6 +65,38 @@ const requireSpend = async ({ world }: RequireSpendParams) => {
   return spend;
 };
 
+type SpendLiveParams = {
+  readonly world: AutoWorld;
+  readonly key: string;
+  readonly usd: number;
+};
+
+const spendLive = async ({ world, key, usd }: SpendLiveParams): Promise<void> => {
+  const runId = `run-${key}`;
+  await world.db.execute(
+    `INSERT OR IGNORE INTO provider_runs
+      (id, session_id, provider, model, status_kind, status_payload, created_at)
+     VALUES (?, ?, 'anthropic', 'claude-sonnet-5-5', 'succeeded', '{}', ?)`,
+    [runId, AUTO_SEED_SESSION, WORLD_NOW],
+  );
+  await world.db.execute(
+    `INSERT INTO telemetry_records
+      (id, run_id, session_id, kind, provider, model, input_tokens, output_tokens,
+       estimated_cost_usd, recorded_at)
+     VALUES (?, ?, ?, 'turn', 'anthropic', 'claude-sonnet-5-5', 1, 1, ?, ?)`,
+    [`telemetry-${key}-${usd}`, runId, AUTO_SEED_SESSION, usd, WORLD_NOW],
+  );
+};
+
+type NextTurnParams = {
+  readonly world: AutoWorld;
+};
+
+const nextTurn = async ({ world }: NextTurnParams) => {
+  const tree = await getAutoTree({ db: world.db, treeId: WORLD_TREE });
+  return startNewTurn({ world, expectedPhaseRev: tree?.phaseRev ?? 0, from: ['delegating'] });
+};
+
 const sumOf = (rows: ReadonlyArray<{ readonly value: number }>): number =>
   rows.reduce((sum, row) => sum + row.value, 0);
 
@@ -100,10 +134,11 @@ describe('treeSpend', () => {
       9,
     );
     expect(spend).toMatchObject({
-      settledUsd: 1.6,
-      reservedUsd: 0.75,
-      remainingUsd: 2.65,
-      estimatedUsd: 0.5,
+      settledUsd: 1.1,
+      liveUsd: 0,
+      reservedUsd: 0,
+      remainingUsd: 3.9,
+      estimatedUsd: 0,
     });
   });
 
@@ -130,19 +165,57 @@ describe('treeSpend', () => {
         children: [childInput({ key: 'b', role: 'implementer' })],
       }),
     );
-    expect(next.kind === 'accepted' ? next.receipt.delegations[0]?.ceilingUsd : null).toBe(
-      Math.min(3, facts.remainingUsd ?? Number.POSITIVE_INFINITY),
-    );
+    expect(next.kind).toBe('accepted');
+    expect((await requireSpend({ world })).remainingUsd).toBeCloseTo(2.6, 9);
   });
 
-  it('counts an unknown cost at its ceiling and says it is an estimate', async () => {
+  it('charges nothing it did not see when a child reports no cost, never a ceiling', async () => {
     const world = await makeAutoWorld();
-    await world.scheduler.admit(batchInput({ children: [childInput({ key: 'a' })] }));
+    await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
+    );
     await run({ world, key: 'a' });
     await settle({ world, key: 'a', costUsd: null });
     const budget = await world.scheduler.budget({ treeId: WORLD_TREE });
-    expect(budget?.facts).toMatchObject({ spentUsd: 0.5, hasEstimate: true });
-    expect(budget?.label).toBe('0.50 USD of 5.00 USD, estimated');
+    expect(budget?.facts).toMatchObject({ spentUsd: 0, remainingUsd: 5 });
+    const rows = await listAutoReservations({ db: world.db, treeId: WORLD_TREE });
+    expect(rows[0]).toMatchObject({ state: 'reconciled', actualUsd: 0, isCostKnown: false });
+  });
+
+  it('counts what a running child spent so far as spent', async () => {
+    const world = await makeAutoWorld({ capUsd: 50 });
+    await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
+    );
+    await run({ world, key: 'a' });
+    await spendLive({ world, key: 'a', usd: 4.25 });
+    expect(await requireSpend({ world })).toMatchObject({
+      settledUsd: 0,
+      liveUsd: 4.25,
+      reservedUsd: 0,
+      remainingUsd: 45.75,
+    });
+    await settle({ world, key: 'a', costUsd: 4.25 });
+    expect(await requireSpend({ world })).toMatchObject({
+      settledUsd: 4.25,
+      liveUsd: 0,
+      remainingUsd: 45.75,
+    });
+  });
+
+  it('reads an old reservation held for a running child as nothing held', async () => {
+    const world = await makeAutoWorld({ capUsd: 5 });
+    await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
+    );
+    await world.db.execute(
+      `UPDATE auto_reservations SET reserved_usd = 3 WHERE tree_id = ? AND owner_kind = 'attempt'`,
+      [WORLD_TREE],
+    );
+    expect(await requireSpend({ world })).toMatchObject({ reservedUsd: 0, remainingUsd: 5 });
+    await run({ world, key: 'a' });
+    await settle({ world, key: 'a', costUsd: null });
+    expect(await requireSpend({ world })).toMatchObject({ settledUsd: 0, remainingUsd: 5 });
   });
 
   it('reads nothing for a tree that does not exist', async () => {
@@ -153,33 +226,67 @@ describe('treeSpend', () => {
   });
 });
 
-describe('a bound, not a threshold', () => {
-  it('admits what the cap holds, refuses the rest, and frees budget as attempts settle cheaper', async () => {
+describe('real spend against the limit, no ceiling per child', () => {
+  it('admits four implementers under a $1 limit, since nothing is held for them', async () => {
     const world = await makeAutoWorld({ capUsd: 1 });
-    const four = ['a', 'b', 'c', 'd'].map((key) => childInput({ key }));
-    const refused = await world.scheduler.admit(batchInput({ children: four }));
-    expect(refused).toMatchObject({ kind: 'refused', code: 'budget' });
-    const fits = await world.scheduler.admit(
-      batchInput({ requestId: 'request-2', children: four.slice(0, 2) }),
+    const four = ['a', 'b', 'c', 'd'].map((key) => childInput({ key, role: 'implementer' }));
+    const admitted = await world.scheduler.admit(batchInput({ children: four }));
+    expect(admitted.kind).toBe('accepted');
+    expect(await requireSpend({ world })).toMatchObject({ reservedUsd: 0, remainingUsd: 1 });
+  });
+
+  it('lets a child that spends past $3 keep running and settle at what it spent', async () => {
+    const world = await makeAutoWorld({ capUsd: 50 });
+    await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
     );
-    expect(fits.kind).toBe('accepted');
-    expect((await treeSpend({ db: world.db, treeId: WORLD_TREE }))?.remainingUsd).toBe(0);
-    for (const key of ['a', 'b']) {
-      await run({ world, key });
-      await settle({ world, key, costUsd: 0.1 });
-    }
-    expect(await treeSpend({ db: world.db, treeId: WORLD_TREE })).toMatchObject({
-      settledUsd: 0.2,
-      reservedUsd: 0,
-      remainingUsd: 0.8,
+    await run({ world, key: 'a' });
+    await spendLive({ world, key: 'a', usd: 3.5 });
+    await spendLive({ world, key: 'a', usd: 4 });
+    const attempts = await world.db.select<{ readonly state: string }>(
+      'SELECT state FROM auto_attempts WHERE id = ?',
+      ['attempt-a'],
+    );
+    expect(attempts[0]?.state).toBe('running');
+    await settle({ world, key: 'a', costUsd: 7.5 });
+    expect(await requireSpend({ world })).toMatchObject({ settledUsd: 7.5, remainingUsd: 42.5 });
+  });
+
+  it('admits with no limit whatever the children spent', async () => {
+    const world = await makeAutoWorld({ capUsd: 1 });
+    await setAutoTreeCapIfUnchanged({
+      db: world.db,
+      treeId: WORLD_TREE,
+      expectedCapUsd: 1,
+      capUsd: null,
+      nowMs: world.clock.now(),
     });
-    await startNewTurn({ world, expectedPhaseRev: 4, from: ['delegating'] });
-    const again = await world.scheduler.admit(
-      batchInput({
-        requestId: 'request-3',
-        children: [childInput({ key: 'c' }), childInput({ key: 'd' })],
-      }),
+    await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
     );
-    expect(again.kind).toBe('accepted');
+    await run({ world, key: 'a' });
+    await spendLive({ world, key: 'a', usd: 12 });
+    await nextTurn({ world });
+    const next = await world.scheduler.admit(
+      batchInput({ requestId: 'request-2', children: [childInput({ key: 'b' })] }),
+    );
+    expect(next.kind).toBe('accepted');
+    expect((await requireSpend({ world })).remainingUsd).toBeNull();
+  });
+
+  it('refuses a new child once real spend reaches the limit, and pauses the tree there', async () => {
+    const world = await makeAutoWorld({ capUsd: 5 });
+    await world.scheduler.admit(
+      batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
+    );
+    await run({ world, key: 'a' });
+    await spendLive({ world, key: 'a', usd: 5 });
+    const budget = await world.scheduler.budget({ treeId: WORLD_TREE });
+    expect(budget?.facts).toMatchObject({ spentUsd: 5, remainingUsd: 0 });
+    await nextTurn({ world });
+    const refused = await world.scheduler.admit(
+      batchInput({ requestId: 'request-2', children: [childInput({ key: 'b' })] }),
+    );
+    expect(refused).toMatchObject({ kind: 'refused', code: 'budget' });
   });
 });

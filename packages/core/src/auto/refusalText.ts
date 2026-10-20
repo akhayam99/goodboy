@@ -8,8 +8,7 @@ export const AUTO_REFUSAL_TEXT = {
   substep_cap: `A paused agent can have ${AUTO_SUBSTEPS_PER_PARENT} substeps at most, and a substep never has its own. Answer it yourself.`,
   breadth_cap: `At most ${AUTO_BATCH_MAX_CHILDREN} agents can run at once. Wait for results, or send fewer children.`,
   empty_batch: 'The batch has no children.',
-  budget:
-    'The budget left does not cover this batch. Send fewer or cheaper children, or ask the user to raise the limit.',
+  budget: 'This conversation reached its limit. Ask the user to raise the limit.',
   already_yielded:
     'You already handed work over in this turn. End your turn now. The agents start when it is over.',
   not_deciding: 'This is not a turn Auto is answering in right now.',

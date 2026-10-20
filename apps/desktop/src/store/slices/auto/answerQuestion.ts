@@ -136,13 +136,11 @@ const replayOutcome = ({ prior, delegation, questionId, text }: ReplayParams): B
 type RefusalAfterAbortParams = {
   readonly ctx: AgentVerbContext;
   readonly command: AgentCommand;
-  readonly delegation: AutoDelegation;
 };
 
 const refusalAfterTreeAbort = async ({
   ctx,
   command,
-  delegation,
 }: RefusalAfterAbortParams): Promise<BridgeOutcome> => {
   const { grant } = command;
   const snapshot = await readAdmissionSnapshot({
@@ -156,7 +154,7 @@ const refusalAfterTreeAbort = async ({
     children: [],
     isPlanApprovalRequired: ctx.ports.isPlanApprovalRequired(),
   });
-  const verdict = diagnoseResume({ snapshot, role: delegationRoleOf({ delegation }) });
+  const verdict = diagnoseResume({ snapshot });
   return refuseOutcome({ code: verdict.kind === 'refused' ? verdict.code : 'tree_busy' });
 };
 
@@ -217,7 +215,7 @@ export const answerQuestion = async ({
     children: [],
     isPlanApprovalRequired: ctx.ports.isPlanApprovalRequired(),
   });
-  const verdict = diagnoseResume({ snapshot, role });
+  const verdict = diagnoseResume({ snapshot });
   const tree = snapshot.tree;
   if (verdict.kind === 'refused' || tree === null) {
     return refuseOutcome({ code: verdict.kind === 'refused' ? verdict.code : 'not_owner' });
@@ -239,7 +237,6 @@ export const answerQuestion = async ({
       generation: grant.generation,
       runId: grant.runId,
       maxOpenChildren: AUTO_MAX_OPEN_CHILDREN,
-      requestedUsd: verdict.ceilingUsd,
     }),
     casAutoDelegationStateStatement({
       delegationId: delegation.id,
@@ -275,7 +272,7 @@ export const answerQuestion = async ({
       treeId: tree.id,
       ownerKind: 'attempt',
       ownerId: attemptId,
-      reservedUsd: verdict.ceilingUsd,
+      reservedUsd: 0,
       nowMs,
     }),
     {
@@ -287,7 +284,7 @@ export const answerQuestion = async ({
   const outcome = await ctx.db.transaction({ statements });
   if (outcome.status === 'aborted') {
     if (outcome.abortCode === AUTO_RESUME_TREE_ABORT) {
-      return refusalAfterTreeAbort({ ctx, command, delegation });
+      return refusalAfterTreeAbort({ ctx, command });
     }
     if (outcome.abortCode !== ABORT_ATTEMPT && outcome.abortCode !== ABORT_DELEGATION) {
       throw new Error(`Auto answer aborted on ${outcome.abortCode}`);

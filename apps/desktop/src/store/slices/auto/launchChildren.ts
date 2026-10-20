@@ -16,6 +16,7 @@ import {
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { remoteJson, remoteOf, resumeOf, snapshotJson, snapshotOf } from './attemptBaseline';
+import { carriedSnapshot } from './carriedSnapshot';
 import { childImagesOf } from './childImagesOf';
 import { delegationRoleOf } from './attemptEnvelope';
 import { failAttempt } from './failAttempt';
@@ -71,7 +72,9 @@ const attemptToLaunch = async ({
 }: AttemptToLaunchParams): Promise<AutoAttempt | null> => {
   const isWriter = isAutoWriterRole({ role });
   if (delegation.state === 'accepted') {
-    const snapshot = await readSnapshot({ ports: ctx.ports, worktreePath: target.worktreePath });
+    const carried = await carriedSnapshot({ ctx, delegation, worktreePath: target.worktreePath });
+    const snapshot =
+      carried ?? (await readSnapshot({ ports: ctx.ports, worktreePath: target.worktreePath }));
     const remote = isWriter
       ? await ctx.ports.readRemoteHead({ worktreePath: target.worktreePath, branch: null })
       : null;

@@ -10,6 +10,7 @@ import {
   type AutoTree,
   type Statement,
 } from '@goodboy/db';
+import { pausedDeadlineStatement } from './pausedDeadlineStatement';
 import type { AgentVerbContext } from './verbContext';
 
 export type RetryBlockedTreeParams = Readonly<{
@@ -84,6 +85,7 @@ export const retryBlockedTree = async ({
       patch: { blockedReason: null, noProgressStreak: 0 },
       abortCode: ABORT_PHASE,
     }),
+    pausedDeadlineStatement({ treeId, nowMs }),
   ];
   const result = await ctx.db.transaction({ statements });
   if (result.status !== 'committed') {
