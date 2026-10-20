@@ -638,7 +638,8 @@ migration; `checksVerdictOf` and `checksTextOf` (`packages/core/src/auto/checks.
 and the one line the digest and the card print ("Checks green: typecheck, lint", "Checks red:
 typecheck", "Not checked: timed out"). A script is ticked in the project settings, next to its pin
 (`toggleAutoCheck`, settings key `scripts.autoChecks.<projectId>`, a JSON array of the pin ids of
-`scriptPinId`; saved scripts and manifest scripts share the grammar). None ticked reads
+`scriptPinId`; toggles of one project go through one keyed queue and read the selection only after
+the previous save, so two quick ticks keep both and a failed save leaves the old selection; saved scripts and manifest scripts share the grammar). None ticked reads
 `none_ticked`. A ticked script the branch does not have is never dropped: `listAutoChecks` returns
 it under `missing` with its name (`missingCheckName`), `runAutoChecks` runs nothing and
 `missingChecksOf` reads `check_missing` with one `unknown` row per missing script, printed "Not
