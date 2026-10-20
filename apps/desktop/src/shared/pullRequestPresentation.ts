@@ -35,8 +35,8 @@ export const PULL_REQUEST_PRESENTATION = {
     icon: GitPullRequest,
     label: 'Open',
     reason: 'waiting for a reviewer',
-    textClass: 'text-success',
-    tone: 'success',
+    textClass: 'text-info',
+    tone: 'info',
   },
   approved: {
     icon: CircleCheck,
@@ -63,8 +63,8 @@ export const PULL_REQUEST_PRESENTATION = {
     icon: GitPullRequestClosed,
     label: 'Closed',
     reason: 'closed without being merged',
-    textClass: 'text-danger',
-    tone: 'danger',
+    textClass: 'text-muted-foreground',
+    tone: 'neutral',
   },
 } satisfies Record<PullRequestPresentationState, PullRequestPresentation>;
 

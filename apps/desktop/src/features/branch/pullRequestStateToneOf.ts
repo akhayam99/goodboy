@@ -28,11 +28,11 @@ type StateMark = {
 const STATE_MARK: Readonly<Record<PullRequestPresentationState, StateMark>> = {
   none: { icon: GitBranch, tone: 'neutral' },
   draft: { icon: GitPullRequestDraft, tone: 'neutral' },
-  open: { icon: GitPullRequest, tone: 'success' },
+  open: { icon: GitPullRequest, tone: 'info' },
   approved: { icon: GitPullRequest, tone: 'success' },
-  queued: { icon: GitPullRequestArrow, tone: 'warning' },
+  queued: { icon: GitPullRequestArrow, tone: 'primary' },
   merged: { icon: GitMerge, tone: 'merged' },
-  closed: { icon: GitPullRequestClosed, tone: 'danger' },
+  closed: { icon: GitPullRequestClosed, tone: 'neutral' },
 };
 
 export const pullRequestStateToneOf = ({ state }: Params): PullRequestStateTone => {

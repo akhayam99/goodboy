@@ -233,6 +233,7 @@ const extraOf = ({ index }: ExtraParams): StorySpec => {
 
 type StoryParams = {
   readonly count: 7 | 9 | 20;
+  readonly repo: string | null;
 };
 
 export type CentralStorySeed = Readonly<{
@@ -242,7 +243,7 @@ export type CentralStorySeed = Readonly<{
 
 const MINUTE_MS = 60_000;
 
-export const centralStorySeedOf = ({ count }: StoryParams): CentralStorySeed => {
+export const centralStorySeedOf = ({ count, repo }: StoryParams): CentralStorySeed => {
   const specs =
     count === 7
       ? SKIPPED
@@ -255,7 +256,7 @@ export const centralStorySeedOf = ({ count }: StoryParams): CentralStorySeed => 
   const rows = specs.map((spec) => ({
     ...aMountRow({
       key: spec.key,
-      projectName: spec.repo,
+      projectName: repo ?? spec.repo,
       branch: spec.branch,
       request:
         spec.request === undefined

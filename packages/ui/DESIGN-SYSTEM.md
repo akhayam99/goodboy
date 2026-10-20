@@ -178,6 +178,11 @@ state is a `StateDot` or a glyph in a 16px column.
   buttons of its own and nothing appears on hover. `isSelected` sets
   `data-selected` and `aria-current`. Up and Down move focus between rows.
 - `rowHeight` is 32 by default and 28 in the sidebar.
+- `isShrinkable` on a fixed column makes its width a cap (`minmax(0,232px)`):
+  in a column too narrow for every width, the `fill` column gives way first,
+  then the shrinkable columns, so the grid never scrolls sideways. A track or a
+  chevron stays fixed. The Now card branch rows mark the branch, project and
+  state columns shrinkable.
 - `shouldHideWhenEmpty` on a column drops it from the template, its cells and its
   gap, while no mounted row fills it (a cell of `null`, `undefined`, `false` or
   `''` is empty). As soon as one row fills it, every row keeps the cell, empty
@@ -1050,6 +1055,45 @@ session ahead of a mount in the queue, and failing checks speak ahead of both.
 waits for your approval" otherwise. An unread reply is not a mark: the node
 stays the quiet ring and takes the row's 6px dot (`hasUnread`), and the dot
 also shows on any other node while a reply waits among the other reasons.
+
+A branch and its pull request follow one state table on every surface: the
+Now card branch rows (`BRANCH_STATE_TONE` in
+`features/session/central/branches/branchStateTone.ts`), the pull request pill
+and icon (`PULL_REQUEST_PRESENTATION`, `pullRequestStateToneOf`) and the
+attention reasons above. Color says the state of the thing in the row, never
+whether it has a card in Next. `stateToneMap.test.ts` walks every map and fails
+on a disagreement.
+
+| state                                                  | tone    | words                        |
+| ------------------------------------------------------ | ------- | ---------------------------- |
+| merged                                                 | merged  | Merged                       |
+| approved, ready to merge                               | success | Approved, Ready to merge     |
+| in merge queue                                         | primary | In merge queue               |
+| open, in review                                        | info    | Open, In review              |
+| checks running, rebasing                               | info    | Checks running, Rebasing     |
+| draft                                                  | neutral | Draft                        |
+| no pull request, not pushed, nothing committed, closed | neutral | No pull request, Not pushed  |
+| changes requested, conflicts, remote branch gone       | warning | Changes requested, Conflicts |
+| checks failing                                         | danger  | Checks failing               |
+| done agent or step                                     | neutral | a muted check, never green   |
+
+Green for an open pull request would make approved stop standing out, so open
+is `info`. A done segment of `StepMeter` fills `muted-foreground` and a done
+child in `LiveChildLine` draws a muted check; the shared `WorkNode` done node
+keeps its violet disc.
+
+`StageTrack` draws where a branch stands as one 80px line of stages (Commit,
+Push, Pull request, Checks, Review, Merge on a Now card branch row). A 1px
+line joins the stages and is filled `muted-foreground` up to the last stage
+reached, `border` after it. A stage has four looks: done is a 6px
+`muted-foreground` dot, current a 10px dot in the state tone (the only tone on
+the track), todo a 6px hollow `faint-foreground` ring and skipped a short dash.
+There is no ring state: a running or stale step is current, and its tone and
+word say the rest. Each stage names itself and its state in its own Tooltip
+("Checks skipped"). The track is `role="img"` and its accessible name lists
+every stage with its state ("Commit done, Push done, Pull request current,
+Checks to do, ..."). Never use `StepMeter` (segments of a run) or `WorkNode`
+(one node) for stages with connectors.
 
 The other nodes are the stage's own. Running is the ring with the centre dot,
 done is `finished`: a solid `merged` violet disc with a white 12px check, the

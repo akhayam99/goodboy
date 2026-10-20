@@ -588,19 +588,25 @@ the Board card and the sidebar dedupe by provider and external id
 The Now block closes with the branch facts, read by `useBranchFacts`
 (`features/session/central/branches/`) from `useMountRows` and `mountRequestOf`.
 
-- Every branch is one 36 px row of the Branches list (`BranchList`, `BranchRow`):
-  the branch name (never the folder, which is the second text, with the request
-  number, only when the column is wide), a track of seven dots (Branch,
-  Commits, Pushed, Pull request, Checks, Review, Merged: `BranchTrack`), the
-  current step word, the blocker sentence, "in Next" when a Next card names that
-  branch, and a chevron. One branch has no eyebrow; two or more have the
-  eyebrow with the count. A row opens the Branch page of that mount and holds
-  no button: a verb lives only in Next.
+- Every branch is one 32 px `ListGridRow` of the Branches `ListGrid`
+  (`BranchList`, `BranchRow`), so every column lines up: the branch name
+  (232 px, never the folder), the project (112 px, only when the branches span
+  two or more projects), the request number (48 px), a `StageTrack` of six
+  stages (Commit, Push, Pull request, Checks, Review, Merge) joined by one line
+  (80 px), the state word (124 px), one short fact (the rest, such as "2
+  threads to answer" or "24 commits to push") and a chevron (16 px). A row
+  never says it has a card in Next: the rank already puts it first. One branch
+  has no eyebrow; two or more have the eyebrow with the count. A row opens the
+  Branch page of that mount and holds no button: a verb lives only in Next.
 - `branchStoryOf` is the one function that turns the facts into the step word,
   the tone, the blocker and the dots. The row, its accessible name
   (`branchSentenceOf`, which starts with the branch) and the rank all read it.
   Merged and closed branches stay in the list (`useBranchFacts` reads
-  `finishedRows` too), last.
+  `finishedRows` too), last. The story names a `BranchState` and its tone
+  comes only from `BRANCH_STATE_TONE` (`branchStateTone.ts`), the table in
+  [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md); never from whether the
+  branch has a card in Next. An approved branch that cannot merge says
+  Conflicts, amber.
 - The order is `branchEntriesOf`: failing first, then a branch with a card in
   Next (in the card order of `cardOrderOf`, which also maps a Rebase card to
   each branch it rebases), then a branch where an agent works, then waiting,
@@ -618,8 +624,10 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   revision is not read again for 60 s unless forced; a new revision reads at
   once, and a failure that lands after the revision moved is dropped.
   `branchDetailOf` drops a detail of another pull
-  request number. GitLab and Bitbucket, and a read that failed, keep "Checks
-  failed on the last push" and "A reviewer asked for changes".
+  request number. GitLab and Bitbucket, and a read that failed, keep "Failed
+  on the last push" and "A reviewer asked for changes"; a read detail says the
+  check names ("static-analysis failed") or the threads ("2 threads to
+  answer").
 - `useBranchLabels({ sessionId })` gives the project and branch of a mount when
   the session has two or more, for the branch chips on cards, groups and done
   rows (`BranchChip`).
@@ -633,10 +641,10 @@ The Now block closes with the branch facts, read by `useBranchFacts`
 - Behind is `distanceBehind` on `useWorktreeStatuses`, the number the rebase card
   uses (`features/suggestions/useSessionSuggestions/index.ts:403`).
 - A stale read is one `isFresh` calls old (`features/suggestions/nextStepGates.ts:11`,
-  5 minutes). The checks dot becomes a ring, the word is Open or Draft and the
+  5 minutes). Checks is the current stage, the word is Open or Draft and the
   blocker says "Checked 12m ago" (`branchFactsOf`, `branchStoryOf`).
 - A step that cannot apply is a short dash (`skipped`) in its slot, never a
-  pending circle, so the seven slots still line up. Only a fresh read can skip
+  pending circle, so the six slots still line up. Only a fresh read can skip
   (a stale read keeps every circle), and only when the host data proves it
   (`mountRequestOf` projects `isChecksAbsent` and `isReviewOptional`):
   - Checks, GitHub: `checks` is null and `checksUnknown` is not set (the
@@ -650,11 +658,12 @@ The Now block closes with the branch facts, read by `useBranchFacts`
   - A branch with both skipped reads Ready to merge ("No checks or review
     required"). A failing check is never skipped.
   - A queued pull request (merge queue or auto merge, `queued` in
-    `PullRequestStateKind`) shows Queued on the Merged slot as the current
-    step.
-  - Every dot has its step name in the shared Tooltip (`BranchStep.name`, which
-    reads "Checks skipped" for a dash) and `branchSentenceOf` lists the skipped
-    steps in the row's accessible name.
+    `PullRequestStateKind`) shows In merge queue on the Merge stage as the
+    current step.
+  - Every stage names itself and its state in the shared Tooltip ("Checks
+    skipped" for a dash), the track's accessible name lists every stage with
+    its state, and `branchSentenceOf` lists the skipped steps (`BranchStep.name`)
+    in the row's accessible name.
 - Only GitHub gets a PR card today. `useSessionSuggestions` reads
   `mountGithub` alone for the PR verbs
   (`features/suggestions/useSessionSuggestions/index.ts:447`), so a GitLab or

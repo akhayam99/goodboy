@@ -23,11 +23,16 @@ const CASES: ReadonlyArray<{
     tone: 'neutral',
     iconClass: 'text-muted-foreground',
   },
-  { state: 'open', icon: GitPullRequest, tone: 'success', iconClass: 'text-success' },
+  { state: 'open', icon: GitPullRequest, tone: 'info', iconClass: 'text-info' },
   { state: 'approved', icon: GitPullRequest, tone: 'success', iconClass: 'text-success' },
-  { state: 'queued', icon: GitPullRequestArrow, tone: 'warning', iconClass: 'text-warning' },
+  { state: 'queued', icon: GitPullRequestArrow, tone: 'primary', iconClass: 'text-primary' },
   { state: 'merged', icon: GitMerge, tone: 'merged', iconClass: 'text-merged' },
-  { state: 'closed', icon: GitPullRequestClosed, tone: 'danger', iconClass: 'text-danger' },
+  {
+    state: 'closed',
+    icon: GitPullRequestClosed,
+    tone: 'neutral',
+    iconClass: 'text-muted-foreground',
+  },
 ];
 
 describe('pullRequestStateToneOf', () => {

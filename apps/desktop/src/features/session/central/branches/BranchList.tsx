@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Eyebrow, ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import {
+  Eyebrow,
+  ICON_SIZE,
+  ListGrid,
+  ROW_INTERACTIVE,
+  cn,
+  type ListGridColumn,
+} from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { BranchRow } from './BranchRow';
 import { branchFoldOf, type BranchEntry } from './branchStoryOf';
@@ -10,25 +17,57 @@ type Props = {
   readonly entries: ReadonlyArray<BranchEntry>;
 };
 
+const BRANCH_COLUMN: ListGridColumn = {
+  key: 'branch',
+  width: 232,
+  isTitle: true,
+  isShrinkable: true,
+};
+
+const PROJECT_COLUMN: ListGridColumn = { key: 'project', width: 112, isShrinkable: true };
+
+const ROW_COLUMNS: ReadonlyArray<ListGridColumn> = [
+  { key: 'request', width: 48, isNumeric: true, tone: 'hint' },
+  { key: 'track', width: 80 },
+  { key: 'state', width: 124, isShrinkable: true },
+  { key: 'detail', width: 'fill' },
+  { key: 'open', width: 16, align: 'end' },
+];
+
+const SINGLE_PROJECT_COLUMNS: ReadonlyArray<ListGridColumn> = [BRANCH_COLUMN, ...ROW_COLUMNS];
+
+const MULTI_PROJECT_COLUMNS: ReadonlyArray<ListGridColumn> = [
+  BRANCH_COLUMN,
+  PROJECT_COLUMN,
+  ...ROW_COLUMNS,
+];
+
 export const BranchList = ({ sessionId, entries }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const fold = branchFoldOf({ entries });
   const rows = isOpen ? entries : fold.shown;
+  const isProjectShown = new Set(entries.map((entry) => entry.fact.projectName)).size >= 2;
   return (
-    <section aria-label="Branches" className="@container flex min-w-0 flex-col gap-1">
+    <section aria-label="Branches" className="flex min-w-0 flex-col gap-1">
       {entries.length >= 2 ? (
         <div className="flex items-center gap-2 px-1">
           <Eyebrow label="Branches" muted />
-          <span className="text-meta text-faint-foreground">{entries.length}</span>
+          <span className="text-ui text-faint-foreground">{entries.length}</span>
         </div>
       ) : null}
-      <ul className="flex list-none flex-col">
+      <ListGrid
+        label="Branches"
+        columns={isProjectShown ? MULTI_PROJECT_COLUMNS : SINGLE_PROJECT_COLUMNS}
+      >
         {rows.map((entry) => (
-          <li key={entry.fact.mountId}>
-            <BranchRow sessionId={sessionId} entry={entry} />
-          </li>
+          <BranchRow
+            key={entry.fact.mountId}
+            sessionId={sessionId}
+            entry={entry}
+            isProjectShown={isProjectShown}
+          />
         ))}
-      </ul>
+      </ListGrid>
       {fold.label === null ? null : (
         <button
           type="button"
@@ -36,7 +75,7 @@ export const BranchList = ({ sessionId, entries }: Props) => {
           data-branch-fold=""
           onClick={() => setIsOpen((wasOpen) => !wasOpen)}
           className={cn(
-            'flex h-9 w-full min-w-0 items-center gap-2 rounded-md px-1 text-left text-label text-muted-foreground',
+            'flex h-9 w-full min-w-0 items-center gap-2 rounded-md px-1 text-left text-ui text-muted-foreground',
             ROW_INTERACTIVE,
           )}
         >

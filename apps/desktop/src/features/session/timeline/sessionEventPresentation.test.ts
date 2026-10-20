@@ -335,11 +335,11 @@ describe('sessionEventLabel', () => {
 
 describe('sessionEventEmphasis', () => {
   it('uses the shared pull request colors', () => {
-    expect(sessionEventEmphasis({ kind: 'pr_created' })).toBe('success');
-    expect(sessionEventEmphasis({ kind: 'pr_ready' })).toBe('success');
+    expect(sessionEventEmphasis({ kind: 'pr_created' })).toBe('info');
+    expect(sessionEventEmphasis({ kind: 'pr_ready' })).toBe('info');
     expect(sessionEventEmphasis({ kind: 'pr_approved' })).toBe('success');
     expect(sessionEventEmphasis({ kind: 'pr_merged' })).toBe('merged');
-    expect(sessionEventEmphasis({ kind: 'pr_closed' })).toBe('danger');
+    expect(sessionEventEmphasis({ kind: 'pr_closed' })).toBe('neutral');
   });
 
   it('dims what was taken away', () => {
