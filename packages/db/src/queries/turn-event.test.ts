@@ -102,6 +102,36 @@ describe('turn event queries', () => {
     await expect(readFirstUserText({ db, agentId: otherAgentId })).resolves.toBeNull();
   });
 
+  it('reads the operator ask before any user_text, and never a delivery Auto sent', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-delivered',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'Artifacts in this tree', deliveredBy: 'auto', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-legacy',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'legacy text', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-ask',
+      sessionId,
+      agentId,
+      event: { kind: 'operator_text', runId, text: 'Add refunds to payments-api', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-delivered-only',
+      sessionId,
+      agentId: otherAgentId,
+      event: { kind: 'user_text', runId, text: 'Artifacts in this tree', deliveredBy: 'auto', at },
+    });
+
+    await expect(readFirstUserText({ db, agentId })).resolves.toBe('Add refunds to payments-api');
+    await expect(readFirstUserText({ db, agentId: otherAgentId })).resolves.toBeNull();
+  });
+
   it('keeps who delivered a user_text, and never counts the operator echo as a turn', async () => {
     await insertTurnEvent(db, {
       id: 'event-delivered',

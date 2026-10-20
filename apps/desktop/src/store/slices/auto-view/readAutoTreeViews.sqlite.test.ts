@@ -56,6 +56,39 @@ describe('readAutoTreeViews', () => {
     expect(sameAutoTreeViews({ first: before, second: after })).toBe(false);
   });
 
+  it('titles an Auto root by the operator ask, never by the delivery Auto sent its root', async () => {
+    const world = await makeAutoWorld();
+    const before = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+    const rootAgentId = before[0]?.tree.rootAgentId;
+    if (rootAgentId === undefined) {
+      throw new Error('no tree');
+    }
+    const at = brandId<IsoDateTime>({ value: new Date(world.clock.now()).toISOString() });
+    const runId = brandId<ProviderRunId>({ value: 'mock-run-delivery' });
+    await insertTurnEvent(world.db, {
+      id: 'delivery-1',
+      sessionId: AUTO_SEED_SESSION,
+      agentId: rootAgentId,
+      event: {
+        kind: 'user_text',
+        runId,
+        text: 'Artifacts in this tree, as of 2026-10-21T10:00:00.000Z, generation 1.',
+        deliveredBy: 'auto',
+        at,
+      },
+    });
+    await insertTurnEvent(world.db, {
+      id: 'operator-1',
+      sessionId: AUTO_SEED_SESSION,
+      agentId: rootAgentId,
+      event: { kind: 'operator_text', runId, text: 'Add refunds to payments-api', at },
+    });
+
+    const views = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+
+    expect(views[0]?.rootAsk).toBe('Add refunds to payments-api');
+  });
+
   it('reads the newest pending refusal of the current generation, and drops it once delivered', async () => {
     const world = await makeAutoWorld();
     const refusal = (code: string) => ({

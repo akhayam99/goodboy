@@ -218,7 +218,10 @@ writing to it reopens it to **Deciding**.
   ([navigation.md](navigation.md#the-session-tools)). Auto is titled by the
   first line of the ask it started with (`autoRootTitleOf`), which the tree
   view carries (`AutoTreeView.rootAsk`, `readFirstUserText`) so no transcript
-  has to load; then the transcript brief, then "Auto". A row is one line: state node, role glyph, name
+  has to load. The ask is the root's first `operator_text`, else its first
+  `user_text` not marked `deliveredBy: 'auto'`, never the delivery Auto builds
+  (whose first line is the artifact ledger header); then the transcript brief,
+  then "Auto". A row is one line: state node, role glyph, name
   and the time; its accessible name says the role, the name and the state
   word, and its fact card (`railRowCardOf`) gives the name, the
   state, the task Auto gave, the provider, the model and the effort as rows.

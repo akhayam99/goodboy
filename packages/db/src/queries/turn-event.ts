@@ -290,8 +290,15 @@ export const readFirstUserText = async ({
   const rows = await db.select<TextRow>(
     `SELECT json_extract(payload, '$.text') AS text
      FROM turn_events
-     WHERE agent_id = ? AND json_extract(payload, '$.kind') = 'user_text'
-     ORDER BY created_at ASC, rowid ASC
+     WHERE agent_id = ?
+       AND (
+         json_extract(payload, '$.kind') = 'operator_text'
+         OR (
+           json_extract(payload, '$.kind') = 'user_text'
+           AND json_extract(payload, '$.deliveredBy') IS NULL
+         )
+       )
+     ORDER BY json_extract(payload, '$.kind') = 'operator_text' DESC, created_at ASC, rowid ASC
      LIMIT 1`,
     [agentId],
   );
