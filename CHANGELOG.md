@@ -12,6 +12,26 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.9
+
+Every page shows the way up from where you are, and the text an agent writes appears live wherever it lands.
+
+### Improved
+
+#### A trail at the top of every page
+<!-- gb area=app -->
+
+Each page in a session draws a trail above its title, from the session down to the run, agent, artifact, branch, file or issue you are on. A crumb takes you up to that level, `⌘↑` goes up one, and Back after a crumb returns where you were.
+
+The trail takes the place of the back links pages drew by hand. Tasks, Impact spend records and archived chats name their place in the band at the top of the studio, and an opened issue has its own address, so Back returns to the list.
+
+#### Agent text writes in wherever it lands
+<!-- gb area=agents -->
+
+Ask answers and the workspace chat write in with the same fade as an agent's conversation, and stream as Claude writes. Auto child results, an agent's recorded outcome and the Debugger finding write in as they land.
+
+Review replies and questions, decisions, commit and pull request text, orchestrator cards and handoffs fade in once as a run lands them. Text you open later or load after a reload shows whole.
+
 ## Goodboy v0.27.8
 
 The Agents drawer reads like Activity, right click opens a Goodboy menu on every row, and Auto agents keep working until their task is done.
