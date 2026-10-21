@@ -15,6 +15,8 @@ import type {
   TurnState,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { applyAgentTurnState } from '../sessions/sessionMutators';
 import { claimTurnStart } from './turnStartWindow';
@@ -154,6 +156,9 @@ export const startTurnRun = async ({ set, get, ctx }: Params) => {
       sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
     }));
     if (phaseTransitionEvent && retry == null) {
+      liveTextRegistry.mark({
+        runId: landingLiveKey({ scope: 'transcript-event', id: phaseTransitionEvent.at }),
+      });
       get().appendTurnEvent(activeAgentId, sessionId, { ...phaseTransitionEvent, runId });
     }
   }

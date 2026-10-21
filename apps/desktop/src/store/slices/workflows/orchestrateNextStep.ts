@@ -87,6 +87,8 @@ import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
 import { orchestratorProcessText } from './standingGuidance';
+import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 
 export type OrchestrateOptions = {
   readonly routing?: OrchestratorRouting;
@@ -162,6 +164,7 @@ const emitDecision = ({
     ...(stepName != null && { stepName }),
     at: new Date().toISOString() as IsoDateTime,
   };
+  liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'transcript-event', id: event.at }) });
   get().appendTurnEvent(agentId, sessionId, event);
   return agentId;
 };
@@ -271,6 +274,7 @@ const persistRunSummary = async ({
     return;
   }
   await updateWorkflowRunOrchestratorSummary(tauriDatabase, workflowRunId, trimmed);
+  liveTextRegistry.mark({ runId: workflowRunId });
   patchWorkflowRun({
     set,
     sessionId,

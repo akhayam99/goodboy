@@ -23,6 +23,8 @@ import {
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { BranchPage } from '../../../branch/components/BranchPage';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
+import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../chat/reveal/liveTextRegistry';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -206,5 +208,30 @@ describe('steering the answer in place', () => {
 
     fireEvent.click(within(drawerHeader()).getByRole('button', { name: 'More actions' }));
     expect(await screen.findByRole('menuitem', { name: /^Edit reply/ })).toBeDefined();
+  });
+});
+
+const replySection = (): Element | null => comment().querySelector('.group\\/reply');
+
+describe('a reply the resolver writes while the user looks', () => {
+  beforeEach(() => {
+    liveTextRegistry.clear();
+  });
+
+  it('fades the reply in when its thread just landed', async () => {
+    liveTextRegistry.mark({
+      runId: landingLiveKey({ scope: 'resolve-thread', id: THREAD_IDS.retryConstant }),
+    });
+
+    await mountReply({ variant: 'bundled' });
+
+    expect(replySection()?.hasAttribute('data-fresh')).toBe(true);
+  });
+
+  it('shows a loaded reply whole', async () => {
+    await mountReply({ variant: 'bundled' });
+
+    expect(replySection()).not.toBeNull();
+    expect(replySection()?.hasAttribute('data-fresh')).toBe(false);
   });
 });

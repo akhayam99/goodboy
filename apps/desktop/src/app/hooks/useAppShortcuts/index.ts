@@ -27,6 +27,7 @@ import type { BranchTab } from '../../../store/slices/navigation/types';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useMenuCommands } from '../useMenuCommands';
 import { closeCurrentLevel } from './closeCurrentLevel';
+import { goUp } from './goUp';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -215,6 +216,7 @@ export const useAppShortcuts = ({
   });
   useShortcut('nav.back', back);
   useShortcut('nav.forward', forward);
+  useShortcut('nav.up', () => goUp({}));
   useMouseHistoryButtons({ back, forward });
   useShortcut('workspace.1', () => selectWorkspaceByIndex({ index: 0 }));
   useShortcut('workspace.2', () => selectWorkspaceByIndex({ index: 1 }));

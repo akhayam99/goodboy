@@ -26,6 +26,8 @@ import { DrawerHost } from '../../../../app/components/DrawerHost';
 import { eligibleReviewThreadCount } from '../../../suggestions/eligibleThreads';
 import { requestReview } from '../../../review/reviewRequest';
 import { isFixableThread } from '../../fixableComments';
+import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../chat/reveal/liveTextRegistry';
 
 type StoreState = ReturnType<StoryStore['getState']>;
 
@@ -451,5 +453,33 @@ describe('retry in bulk', () => {
     await mount({ stage: 'answers' });
 
     expect(screen.queryByRole('button', { name: /^Retry \d+ that couldn't fix/ })).toBeNull();
+  });
+});
+
+describe('the questions of a fix run landing while the answers panel is open', () => {
+  const openPanel = async (): Promise<HTMLElement> => {
+    await mount({ stage: 'answers' });
+    fireEvent.click(screen.getByRole('button', { name: 'Use the recommended answers (2)' }));
+    return screen.findByRole('region', { name: 'Answer the questions of the fix run' });
+  };
+
+  beforeEach(() => {
+    liveTextRegistry.clear();
+  });
+
+  it('fades in the question its thread just wrote', async () => {
+    liveTextRegistry.mark({
+      runId: landingLiveKey({ scope: 'resolve-thread', id: 'PRRT_bulk_q2' }),
+    });
+
+    const panel = await openPanel();
+
+    expect(panel.querySelectorAll('[data-fresh]')).toHaveLength(1);
+  });
+
+  it('shows loaded questions whole', async () => {
+    const panel = await openPanel();
+
+    expect(panel.querySelector('[data-fresh]')).toBeNull();
   });
 });

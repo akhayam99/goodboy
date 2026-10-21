@@ -145,7 +145,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/bootstrap/MoveReport/index.tsx',
     ],
   },
-  SessionCrumbs: { kind: 'helper', files: [] },
+  SessionTrail: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
   LinkIssueAction: { kind: 'helper', files: [] },
   EmptyState: { kind: 'helper', files: [] },
@@ -389,7 +389,14 @@ describe('content column contract', () => {
   it('hands the studio frame the under-trail context so no studio title sits lower than a session title', () => {
     const source = read('app/components/StudioFrame/index.tsx');
 
-    expect(source).toMatch(/<UnderTrailContext\.Provider value>\{children\}/);
+    expect(source).toMatch(
+      /<UnderTrailContext\.Provider value=\{isUnderTrail\}>\s*\{children\}\s*<\/UnderTrailContext\.Provider>/,
+    );
+    expect(source).toMatch(
+      /<UnderTrailContext\.Provider value=\{isUnderTrail\}>\s*\{drawerSpec\.node\}\s*<\/UnderTrailContext\.Provider>/,
+    );
+    expect(source).toMatch(/const isUnderTrail = isBandDrawn \|\| isOuterUnderTrail;/);
+    expect(source).toMatch(/const isOuterUnderTrail = useContext\(UnderTrailContext\);/);
   });
 
   it('renders every h1 through the title row primitive, outside the few dialogs and documents', () => {
@@ -453,6 +460,7 @@ describe('content column contract', () => {
           name !== '' &&
           name !== 'UnderTrailContext' &&
           name !== 'PaneBannerContext' &&
+          name !== 'PageTrailContext' &&
           name !== 'PaneActionsContext',
       );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);

@@ -71,6 +71,8 @@ describe('the u27 reveal scenes', () => {
       'u27-reveal-still-dark',
       'u27-reveal-table-light',
       'u27-reveal-table-dark',
+      'u27-reveal-ask-light',
+      'u27-reveal-ask-dark',
     ]);
     for (const [id, Scene] of Object.entries(U27_REVEAL_SCENES)) {
       expect(MOCK_SCENES[id]).toBe(Scene);
@@ -118,6 +120,28 @@ describe('the u27 reveal scenes', () => {
     settle(4000);
     expect(container.querySelector('[data-fresh]')).toBeNull();
     expect(container.textContent).toContain('Only the last two steps need a quiet window.');
+  });
+
+  it('writes the Ask answer in with a fading tail, then shows all of it', () => {
+    const { container } = mount({ id: 'u27-reveal-ask-light' });
+
+    settle(300);
+    for (
+      let frame = 0;
+      frame < 120 && container.querySelector('[data-fresh]') === null;
+      frame += 1
+    ) {
+      settle(16);
+    }
+    expect(container.querySelector('[data-testid="ask-turn"] [aria-busy="true"]')).not.toBeNull();
+    expect(container.querySelector('[data-fresh]')).not.toBeNull();
+    expect(container.textContent).not.toContain('release on track for today');
+
+    settle(4000);
+    expect(container.querySelector('[aria-busy]')).toBeNull();
+    expect(container.textContent).toContain(
+      'Answering keeps the Harborline release on track for today.',
+    );
   });
 
   it('holds the mid shot before the answer lands', () => {

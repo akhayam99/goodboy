@@ -1,10 +1,12 @@
 import { memo, type ReactNode } from 'react';
 import { ctxTagLabel } from './ctxTagStyle';
+import { freshenNode, type FreshTail } from './freshenNode';
 import { parseInline, type InlineNode } from './parseInline';
 
 type Props = {
   readonly text: string;
   readonly className?: string;
+  readonly fresh?: FreshTail | undefined;
 };
 
 const CODE_CLASS = 'rounded-md bg-muted px-1 py-0 font-mono text-foreground';
@@ -49,8 +51,13 @@ const renderNodes = ({ nodes, keyPrefix }: RenderParams): ReactNode =>
     }
   });
 
-const InlineMarkdownImpl = ({ text, className }: Props) => (
-  <span className={className}>{renderNodes({ nodes: parseInline({ text }), keyPrefix: 'i' })}</span>
-);
+const InlineMarkdownImpl = ({ text, className, fresh }: Props) => {
+  const node = renderNodes({ nodes: parseInline({ text }), keyPrefix: 'i' });
+  return (
+    <span className={className}>
+      {fresh === undefined ? node : freshenNode({ node, tail: fresh })}
+    </span>
+  );
+};
 
 export const InlineMarkdown = memo(InlineMarkdownImpl);

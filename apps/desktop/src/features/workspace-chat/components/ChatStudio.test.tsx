@@ -277,3 +277,39 @@ describe('the Chat page new chat chord', () => {
     expect(newSession).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('archived chats in the studio band', () => {
+  const ARCHIVED_SEEDS: ReadonlyArray<ChatSeed> = [
+    ...SEEDS,
+    { key: 'invoice', title: 'Northwind invoice export', ageMs: 4 * MINUTE, isArchived: true },
+  ];
+
+  const openArchived = async (): Promise<void> => {
+    holder.backend = newChatBackend();
+    await seedChats({ backend: holder.backend, seeds: ARCHIVED_SEEDS });
+    useAppStore.setState({ currentWorkspaceId: CHAT_WORKSPACE_ID });
+    await useAppStore.getState().loadChats({ workspaceId: CHAT_WORKSPACE_ID });
+    render(<Host />);
+    await pressChatDoor();
+    fireEvent.click(await screen.findByRole('button', { name: /Archived · 1/ }));
+  };
+
+  it('names the archived list in the band and its Chat crumb returns to the list', async () => {
+    await openArchived();
+
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(trail).getByText('Archived')).toBeDefined();
+    fireEvent.click(within(trail).getByRole('button', { name: 'Chat' }));
+
+    expect(screen.getByRole('textbox', { name: 'Search chats' })).toBeDefined();
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+  });
+
+  it('still closes the studio on Esc from the archived list', async () => {
+    await openArchived();
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    await waitFor(() => expect(screen.getByText('Board')).toBeDefined());
+  });
+});

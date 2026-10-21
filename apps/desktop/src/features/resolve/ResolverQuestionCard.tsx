@@ -6,6 +6,8 @@ import { useAppStore } from '../../store';
 import { launchKeyOf } from '../../store/slices/resolve/resolveLaunch';
 import { AnswerOptionRow } from '../../shared/components/AnswerOptionRow';
 import { ICON_SIZE } from '../../shared/components/conceptIcons';
+import { landingLiveKey } from '../chat/reveal/landingLiveKey';
+import { useFreshLanding } from '../chat/reveal/useFreshLanding';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 import { useThreadQuestion } from './hooks/useThreadQuestion';
 import { FIX_RUN_QUESTION_COPY } from './reviewFlowCopy';
@@ -30,6 +32,10 @@ export const ResolverQuestionCard = ({ sessionId, row }: Props) => {
   const isRunning = useAppStore((s) => {
     const kind = attempt === null ? undefined : s.agentTurnState[attempt.agentId]?.kind;
     return kind === 'running' || kind === 'starting';
+  });
+  const landing = useFreshLanding({
+    liveKey: landingLiveKey({ scope: 'resolve-thread', id: threadId }),
+    text: question ?? '',
   });
   const selected = picked ?? recommended;
   const typed = free.trim();
@@ -67,7 +73,9 @@ export const ResolverQuestionCard = ({ sessionId, row }: Props) => {
         {FIX_RUN_QUESTION_COPY.title}
       </h2>
       {question !== null && question !== '' && (
-        <Markdown text={question} variant="preview" className="text-body text-muted-foreground" />
+        <div key={landing.fadeKey} {...landing.fade} className="min-w-0">
+          <Markdown text={question} variant="preview" className="text-body text-muted-foreground" />
+        </div>
       )}
       {options.length > 0 && (
         <div

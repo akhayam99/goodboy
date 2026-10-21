@@ -3,6 +3,8 @@ import { Route } from 'lucide-react';
 import { Markdown, cn, tintClasses } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
+import { landingLiveKey } from '../../reveal/landingLiveKey';
+import { useFreshLanding } from '../../reveal/useFreshLanding';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
@@ -20,59 +22,65 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
   const [open, setOpen] = useState(false);
   const note = item.operatorNote?.trim() ?? '';
   const hasNote = note !== '';
+  const landing = useFreshLanding({
+    liveKey: landingLiveKey({ scope: 'transcript-event', id: item.at }),
+    text: item.reason,
+  });
 
   return (
-    <TranscriptDisclosure
-      tone="neutral"
-      open={open}
-      bodyClassName="gap-2 text-label text-foreground"
-      header={
-        <TranscriptRowHeader
-          grouped
-          tone="neutral"
-          icon={<Route size={ICON_SIZE.row} aria-hidden />}
-          eyebrow="orchestrator"
-          badge={
-            hasNote ? (
-              <span
-                data-testid="orchestrator-decision-note-badge"
-                className={cn(
-                  'shrink-0 rounded-md px-1 py-px text-chip',
-                  infoTint.bg,
-                  infoTint.text,
-                )}
+    <div key={landing.fadeKey} {...landing.fade} className="flex min-w-0 flex-col">
+      <TranscriptDisclosure
+        tone="neutral"
+        open={open}
+        bodyClassName="gap-2 text-label text-foreground"
+        header={
+          <TranscriptRowHeader
+            grouped
+            tone="neutral"
+            icon={<Route size={ICON_SIZE.row} aria-hidden />}
+            eyebrow="orchestrator"
+            badge={
+              hasNote ? (
+                <span
+                  data-testid="orchestrator-decision-note-badge"
+                  className={cn(
+                    'shrink-0 rounded-md px-1 py-px text-chip',
+                    infoTint.bg,
+                    infoTint.text,
+                  )}
+                >
+                  your note
+                </span>
+              ) : null
+            }
+            preview={item.stepName ?? item.action}
+            meta={formatClock({ at: item.at })}
+            open={open}
+            onToggle={() => setOpen((value) => !value)}
+          />
+        }
+      >
+        {hasNote ? (
+          <>
+            <div className="flex min-w-0 flex-col gap-1" data-testid="orchestrator-decision-note">
+              <span className={LABEL_CLASS}>your note</span>
+              <TranscriptShell
+                tone="info"
+                variant="boxed"
+                className="min-w-0 text-label text-foreground"
               >
-                your note
-              </span>
-            ) : null
-          }
-          preview={item.stepName ?? item.action}
-          meta={formatClock({ at: item.at })}
-          open={open}
-          onToggle={() => setOpen((value) => !value)}
-        />
-      }
-    >
-      {hasNote ? (
-        <>
-          <div className="flex min-w-0 flex-col gap-1" data-testid="orchestrator-decision-note">
-            <span className={LABEL_CLASS}>your note</span>
-            <TranscriptShell
-              tone="info"
-              variant="boxed"
-              className="min-w-0 text-label text-foreground"
-            >
-              <Markdown text={note} />
-            </TranscriptShell>
-          </div>
-          <div className="flex min-w-0 flex-col gap-1">
-            <span className={LABEL_CLASS}>what the orchestrator decided</span>
-            <Markdown text={item.reason} />
-          </div>
-        </>
-      ) : (
-        <Markdown text={item.reason} />
-      )}
-    </TranscriptDisclosure>
+                <Markdown text={note} />
+              </TranscriptShell>
+            </div>
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className={LABEL_CLASS}>what the orchestrator decided</span>
+              <Markdown text={item.reason} />
+            </div>
+          </>
+        ) : (
+          <Markdown text={item.reason} />
+        )}
+      </TranscriptDisclosure>
+    </div>
   );
 };

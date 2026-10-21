@@ -24,14 +24,14 @@ import { CoverageNotice } from './CoverageNotice';
 import { ModelTable } from './ModelTable';
 import { SpendAnchorTitle } from './SpendAnchorTitle';
 import { TurnsTable } from './TurnsTable';
-import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
+import { providerLabel } from '../../providerLabel';
+import { buildModelBreakdown, coverageTurnCounts, type WorkspaceTurn } from './lib';
 
 const RING_SIZE = 96;
 
 type Props = {
   readonly frame: PaneFrame;
   readonly rangeLabel: string;
-  readonly onBack: () => void;
   readonly provider: ProviderName;
   readonly entry: ProviderBudgetEntry | null;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
@@ -49,7 +49,6 @@ type Props = {
 export const ProviderPanel = ({
   frame,
   rangeLabel,
-  onBack,
   provider,
   entry,
   turns,
@@ -90,7 +89,6 @@ export const ProviderPanel = ({
         glyph={<ProviderIcon provider={provider} size={ICON_SIZE.hero} />}
         title={name}
         meta={`${formatUsd(figures.range.usd)} spent, ${rangeText}`}
-        onBack={onBack}
       />
       <ErrorStrip label="limits" error={rulesResult.error} onRetry={onRetryRules} />
       <ErrorStrip

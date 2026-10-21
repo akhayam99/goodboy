@@ -188,6 +188,13 @@ export const SHORTCUTS = {
 
   'nav.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app', group: 'navigate' },
   'nav.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app', group: 'navigate' },
+  'nav.up': {
+    combo: 'cmd+ArrowUp',
+    label: 'Up one level',
+    plane: 'app',
+    group: 'navigate',
+    yieldsToText: true,
+  },
   'find.next': {
     combo: 'cmd+KeyG',
     label: 'Next match',

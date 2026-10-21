@@ -10,6 +10,8 @@ export type TrailSegmentModel = {
   readonly glyph?: ReactNode;
   readonly accessory?: ReactNode;
   readonly onSelect?: () => void;
+  readonly tooltip?: string;
+  readonly shortcut?: string;
   readonly menu?: CrumbMenuModel | null;
   readonly isPinned?: boolean;
 };

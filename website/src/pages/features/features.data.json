@@ -1144,13 +1144,13 @@
       "items": [
         {
           "title": "Workspace chat",
-          "text": "Ask about your repos without starting a session. The answer reads every project and never changes a file, and you can turn it into work later.",
+          "text": "Ask about your repos without starting a session. The answer reads every project, writes in live and never changes a file. You can turn it into work later.",
           "group": "Agents",
           "main": true
         },
         {
           "title": "Ask in a session",
-          "text": "Ask what is going on in a session with ⌘L. A panel reads it for you and offers a button for each thing you can do now.",
+          "text": "Ask what is going on in a session with ⌘L. A panel reads it for you and writes its answer in live. Each thing you can do now gets a button.",
           "group": "Agents",
           "also": "ask in a session"
         },
@@ -1277,7 +1277,7 @@
         },
         {
           "title": "Keyboard shortcuts, back and forward",
-          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts. ⌘[ and ⌘] move through history. The Mac menu bar carries the same keys.",
+          "text": "Drive Goodboy from the keyboard. ⌘/ opens the list of shortcuts. ⌘[ and ⌘] move through history, and ⌘↑ goes up the trail at the top of each page. The Mac menu bar carries the same keys.",
           "group": "Keyboard and terminal",
           "main": true
         },

@@ -1,6 +1,7 @@
 import type { AutoDelegation } from '@goodboy/db';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { agentLiveKey } from '../../chat/reveal/agentLiveKey';
 import { TailLine } from '../../live-state/TailLine';
 import { autoChildLive } from '../../live-state/adapters/autoChildLive';
 import type { TailActionId, TailFacts } from '../../live-state/tailFacts';
@@ -44,6 +45,7 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
       {card.result === null ? null : (
         <DelegationResult
           result={card.result}
+          liveKey={agentLiveKey({ agentId: agent.id })}
           isRerunningChecks={runningId === delegation.id}
           onRerunChecks={() => void rerun({ delegationId: delegation.id, sessionId })}
           isActingPublish={publishing.busyIds.includes(delegation.id)}

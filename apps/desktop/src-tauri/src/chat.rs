@@ -726,6 +726,14 @@ fn forward_lines(sink: &ChatSink, live: &LiveChild, stdout: ChildStdout) {
     }
 }
 
+fn with_partial_output(mut cli: Vec<String>, partial: &[String]) -> Vec<String> {
+    let at = cli.iter().rposition(|arg| arg == "--").unwrap_or(cli.len());
+    for (offset, arg) in partial.iter().enumerate() {
+        cli.insert(at + offset, arg.clone());
+    }
+    cli
+}
+
 fn spawn_chat_turn(
     app: &AppHandle,
     registry: &LiveChildRegistry,
@@ -734,6 +742,8 @@ fn spawn_chat_turn(
     prepared: PreparedChatTurn,
     cleanup_root: Option<PathBuf>,
 ) -> Result<String, ChatError> {
+    let partial = crate::providers::cli_probe::partial_output_args(prepared.binary);
+    let cli = with_partial_output(prepared.cli, &partial);
     let mut command = crate::path_env::command(prepared.binary);
     command.current_dir(&prepared.working_dir);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
@@ -741,7 +751,7 @@ fn spawn_chat_turn(
     crate::process_group::isolate(&mut command);
     crate::turn::apply_push_block(&mut command);
     let mut child = command
-        .args(&prepared.cli)
+        .args(&cli)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -1119,6 +1129,7 @@ pub async fn ask_turn(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::providers::cli_args::partial_output_flag;
 
     fn flag_value<'a>(cli: &'a [String], flag: &str) -> Option<&'a str> {
         cli.iter()
@@ -1183,6 +1194,25 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn partial_output_lands_before_the_prompt_and_keeps_the_read_only_guard() {
+        let partial = vec![partial_output_flag(Cli::Claude).unwrap().to_string()];
+        let cli = with_partial_output(cli_for("anthropic"), &partial);
+        let prompt_at = cli.len() - 1;
+        assert_eq!(cli[prompt_at], "Where is the consent step defined?");
+        assert_eq!(cli[prompt_at - 1], "--");
+        assert_eq!(cli[prompt_at - 2], "--include-partial-messages");
+        assert_eq!(cli.iter().filter(|arg| arg.as_str() == "--").count(), 1);
+        assert!(assert_read_only("claude", &cli, CodexSandbox::ReadOnly).is_ok());
+    }
+
+    #[test]
+    fn a_cli_without_partial_output_keeps_its_argv() {
+        let cli = cli_for("codex");
+        assert_eq!(partial_output_flag(Cli::Codex), None);
+        assert_eq!(with_partial_output(cli.clone(), &[]), cli);
     }
 
     #[test]

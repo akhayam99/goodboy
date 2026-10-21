@@ -11,6 +11,7 @@ import { resolveErrorTurnMessage } from './resolveErrorTurnMessage';
 import { learnFromCliRefusal } from './learnFromCliRefusal';
 import { classifyToolCallFailure, toolCallFailureMessage } from './classifyToolCallFailure';
 import { cursorMaxModeMessage, matchCursorMaxModeFailure } from './matchCursorMaxModeFailure';
+import { agentLiveKey } from '../../../features/chat/reveal/agentLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { feedAuthRefusal } from '../providers/feedAuthRefusal';
@@ -160,10 +161,11 @@ export const readTurnStream = async ({ set, get, ctx }: Params) => {
         ? { ...resolvedEvent, provider }
         : resolvedEvent;
     if (event.kind === 'error') {
-      revealPacer.flushRun({ runId });
+      revealPacer.flushRun({ runId, agentId: activeAgentId });
     }
     if (event.kind === 'assistant_text') {
       liveTextRegistry.mark({ runId });
+      liveTextRegistry.mark({ runId: agentLiveKey({ agentId: activeAgentId }) });
     }
     get().appendTurnEvent(activeAgentId, sessionId, event);
     if (event.kind === 'provider_session_init') {

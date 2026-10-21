@@ -817,7 +817,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Sidebar, rail and panes',
-        desc: '⌘B folds the sidebar and ⌥⌘B the column inside the page, and ⌘[ steps the rail out or goes Back. In a session, ⌘L opens Ask, ⌘⌥T Terminal, ⌘⌥X Explore, ⌘⌥C Context, ⌘⌥L Agents and ⌘⌥S Scripts.',
+        desc: '⌘B folds the sidebar, ⌥⌘B the page column. ⌘[ steps the rail out or goes Back, and ⌘↑ goes up. In a session, ⌘L opens Ask, ⌘⌥T Terminal, ⌘⌥X Explore, ⌘⌥C Context, ⌘⌥L Agents and ⌘⌥S Scripts.',
       },
       {
         term: 'Terminal',

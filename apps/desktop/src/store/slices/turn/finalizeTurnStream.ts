@@ -8,6 +8,8 @@ import {
 } from '@goodboy/db';
 import type { TurnState } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { invokeAgentList } from '../../../features/workflows/workflows';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
 import { recordProviderRun } from '../providers/recordProviderRun';
@@ -203,6 +205,7 @@ export const finalizeTurnStream = async ({ set, get, ctx }: Params) => {
       agentId: activeAgentId,
     });
     if (result.openQuestionsChanged) {
+      liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'questions', id: sessionId }) });
       await get().loadSessionOpenQuestions(sessionId);
       if (resolveAttemptId !== undefined && agentRowEarly !== null && !wasCancelled) {
         await get().persistResolveTurn({

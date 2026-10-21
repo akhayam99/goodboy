@@ -56,7 +56,7 @@ type Props = {
   readonly query?: string;
   readonly lookup?: ReactNode;
   readonly drawer?: ReactNode;
-  readonly full?: ReactNode;
+  readonly full?: { readonly identifier: string; readonly page: ReactNode } | null;
   readonly connected?: ReadonlyArray<InboxProvider>;
   readonly onSeed?: () => void;
 };
@@ -229,7 +229,14 @@ export const TasksStage = ({
       </InboxList>
     </PaneShell>
   );
-  const page = full === null ? list : <TaskFullPage onBack={noop}>{full}</TaskFullPage>;
+  const page =
+    full === null ? (
+      list
+    ) : (
+      <TaskFullPage identifier={full.identifier} onBack={noop}>
+        {full.page}
+      </TaskFullPage>
+    );
 
   return (
     <StudioFrame

@@ -25,6 +25,7 @@ type TaskDetailProps = {
 
 const h = vi.hoisted(() => ({
   openUrl: vi.fn(async () => undefined),
+  replaceTaskLinks: vi.fn(async (_params: unknown) => true),
 }));
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -34,7 +35,9 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../../../../store/storyHarness')).dbModuleMock(),
+  (await import('../../../../../../store/storyHarness')).dbModuleMock({
+    replaceSessionTaskLinks: h.replaceTaskLinks,
+  }),
 );
 vi.mock('../../../../../integrations/linear/client', async () =>
   (await import('../../../../../../store/storyHarness')).linearClientModuleMock(),
@@ -110,6 +113,8 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 import { parseIntegrationTaskUrl } from './parseIntegrationTaskUrl';
+import { BOARD_PLACE, sessionPlace } from '../../../../../../store/slices/navigation/place';
+import { captureLocation } from '../../../../../../store/slices/navigation/captureLocation';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -226,6 +231,8 @@ beforeEach(async () => {
     gitlab_fetch_assigned_mrs: [],
   });
   h.openUrl.mockClear();
+  h.replaceTaskLinks.mockReset();
+  h.replaceTaskLinks.mockImplementation(async () => true);
 });
 
 afterEach(cleanup);
@@ -303,7 +310,7 @@ describe('IntegrationPane', () => {
       );
 
       expect(screen.getByText(detailText)).toBeDefined();
-      expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
     },
   );
 
@@ -345,7 +352,7 @@ describe('IntegrationPane', () => {
     expect(screen.queryByText('Linear')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Unlink GB-42' })).toBeNull();
     expect(within(actions).getByRole('button', { name: 'More actions for GB-42' })).toBeDefined();
-    expect(within(actions).getByRole('button', { name: 'All issues' })).toBeDefined();
+    expect(within(actions).queryByRole('button', { name: 'All issues' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Link/ })).toBeNull();
   });
 
@@ -443,7 +450,28 @@ describe('IntegrationPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'View GB-43' }));
 
     expect(screen.getByText('Linear detail GB-43')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+    expect(useAppStore.getState().focusedExternalTask[SESSION_ID]).toEqual({
+      provider: 'linear',
+      externalId: SECOND_TASK.externalId,
+      projectId: SECOND_TASK.projectId ?? null,
+    });
+  });
+
+  it.each(['back', 'up'] as const)('returns to the list when %s leaves the issue', (move) => {
+    act(() =>
+      useAppStore
+        .getState()
+        .navigate({ to: sessionPlace({ sessionId: SESSION_ID, lens: 'linear' }) }),
+    );
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
+
+    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
+
+    act(() => useAppStore.getState()[move]());
+
+    expect(useAppStore.getState().focusedExternalTask[SESSION_ID] ?? null).toBeNull();
+    expect(screen.getByRole('button', { name: 'View GB-42' })).toBeDefined();
   });
 
   it('folds a merged work item behind a completed count until expanded', () => {
@@ -479,6 +507,7 @@ describe('IntegrationPane', () => {
   });
 
   it('unlinks the focused task from its menu after a confirm and restores it through app Undo', async () => {
+    useAppStore.setState({ currentWorkspaceId: WORKSPACE_ID });
     render(
       <ToastProvider>
         <UndoToastBridge />
@@ -495,10 +524,45 @@ describe('IntegrationPane', () => {
     expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([]);
     expect(screen.queryByRole('group', { name: /Unlink/ })).toBeNull();
     expect(screen.getByText('Unlinked GB-42')).toBeDefined();
+    expect(useAppStore.getState().focusedExternalTask[SESSION_ID] ?? null).toBeNull();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     });
     expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([TASK]);
+  });
+
+  it('leaves the user where they went when an unlink resolves after they left the issue', async () => {
+    let commit: (isCommitted: boolean) => void = () => undefined;
+    h.replaceTaskLinks.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          commit = resolve;
+        }),
+    );
+    useAppStore.setState({ currentWorkspaceId: WORKSPACE_ID });
+    render(
+      <ToastProvider>
+        <IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for GB-42' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /Unlink from session/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Unlink' }));
+    await waitFor(() => expect(h.replaceTaskLinks).toHaveBeenCalledOnce());
+    act(() => {
+      useAppStore.getState().navigate({ to: BOARD_PLACE });
+    });
+    expect(useAppStore.getState().focusedExternalTask[SESSION_ID]?.externalId).toBe('GB-42');
+
+    await act(async () => {
+      commit(true);
+    });
+
+    await waitFor(() =>
+      expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([]),
+    );
+    expect(captureLocation({ state: useAppStore.getState() }).place).toEqual(BOARD_PLACE);
   });
 
   const pasteLinearLink = () => {

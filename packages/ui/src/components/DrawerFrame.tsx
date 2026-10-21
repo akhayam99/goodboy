@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { ArrowLeft, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '../cn';
 import { useEscapeLayer } from '../useEscapeLayer';
 import { lastFocusedElement } from '../useLastFocused';
-import { Button } from './Button';
+import { DrawerBackLink } from './DrawerBackLink';
 import { IconButton } from './IconButton';
 import { ScrollFade } from './ScrollFade';
 import { PANE_RHYTHM } from '../paneRhythm';
@@ -200,14 +200,7 @@ export const DrawerFrame = ({
           ) : null}
         </header>
       )}
-      {back === undefined || isHeaderless ? null : (
-        <div data-drawer-back="" className="flex shrink-0 px-2 pt-2">
-          <Button variant="quiet" size="xs" onClick={back.onBack}>
-            <ArrowLeft size={ICON_SIZE.row} aria-hidden />
-            {back.label}
-          </Button>
-        </div>
-      )}
+      {back === undefined || isHeaderless ? null : <DrawerBackLink back={back} />}
       {scroll === 'self' || isHeaderless ? (
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       ) : (

@@ -646,7 +646,7 @@ export const InboxStudio = ({
 
   const fullPage = (requestClose: () => void) =>
     fullRecord === null ? null : (
-      <TaskFullPage onBack={closeFull}>
+      <TaskFullPage identifier={fullRecord.identifier} onBack={closeFull}>
         <InboxDetail
           record={fullRecord}
           workspaceId={workspaceId}

@@ -12,6 +12,8 @@ import { FIX_RUN_COPY } from '../../reviewFlowCopy';
 import { threadFixSha } from '../../threadFixSha';
 import { threadLocationOf } from '../../threadLocationOf';
 import { useAgentOutcome } from '../../../../shared/hooks/useAgentOutcome';
+import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
+import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { FixRunCommits } from './FixRunCommits';
 import { FixRunNote } from './FixRunNote';
 import { FixRunStatusLine, type SharedState } from './FixRunStatusLine';
@@ -47,6 +49,10 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
   const { entries } = useReviewEntries({ sessionId, scope: 'all' });
   const outcome = useAgentOutcome({ agent });
   const status = fixRunStatusOf({ attempts, agentId: agent.id, turnKind });
+  const outcomeLanding = useFreshLanding({
+    liveKey: landingLiveKey({ scope: 'resolve-agent', id: agent.id }),
+    text: status === 'ended' ? outcome.text : '',
+  });
   const mountId = brief.attempt.mountTarget?.mountId ?? null;
   const touched = brief.ownThreadIds.map((threadId) => ({
     threadId,
@@ -113,7 +119,11 @@ export const FixRunSummary = ({ session, agent, brief }: Props) => {
       />
       {status === 'ended' && outcome.text !== '' && (
         <FixRunNote label={FIX_RUN_COPY.didHeading}>
-          <div className="text-body text-foreground">
+          <div
+            key={outcomeLanding.fadeKey}
+            {...outcomeLanding.fade}
+            className="text-body text-foreground"
+          >
             <Markdown text={outcome.text} />
           </div>
           {outcome.isFromReply && (

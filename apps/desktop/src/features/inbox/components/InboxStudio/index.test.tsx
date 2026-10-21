@@ -927,10 +927,25 @@ describe('InboxStudio at scale', () => {
     expect(screen.queryByRole('list', { name: 'Task items' })).toBeNull();
     expect(detailText()).toBe('ENG-1');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Tasks' }));
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(trail).getByText('ENG-1')).toBeDefined();
+    fireEvent.click(within(trail).getByRole('button', { name: 'Tasks' }));
 
     expect(screen.getByRole('list', { name: 'Task items' })).toBeDefined();
     expect(detailText()).toBe('none');
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+  });
+
+  it('closes the full page on Esc and keeps the studio open', () => {
+    renderStudio();
+    fireEvent.click(openRow(/Ship the inbox/));
+    fireEvent.click(screen.getByTestId('detail-open-full'));
+    expect(h.isEscapeEnabled).toBe(false);
+
+    pressKey({ code: 'Escape', key: 'Escape' });
+
+    expect(screen.getByRole('list', { name: 'Task items' })).toBeDefined();
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
   });
 
   it('puts a source that did not load in its group as one line with retry', () => {

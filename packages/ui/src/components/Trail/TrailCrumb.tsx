@@ -52,12 +52,17 @@ export const TrailCrumb = ({ segment, isCurrent, isIconOnly, delayStyle }: Props
         {content}
       </button>
     );
-    return isIconOnly ? (
-      <Tooltip content={segment.label} anchorClassName="flex shrink-0">
+    if (!isIconOnly && segment.tooltip === undefined) {
+      return button;
+    }
+    return (
+      <Tooltip
+        content={segment.tooltip ?? segment.label}
+        shortcut={segment.shortcut}
+        anchorClassName={isIconOnly ? 'flex shrink-0' : 'flex min-w-0'}
+      >
         {button}
       </Tooltip>
-    ) : (
-      button
     );
   }
   return (

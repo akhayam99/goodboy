@@ -1873,6 +1873,14 @@ of a menu segment share one `hover` chip, and the chevron turns 90 degrees
 while the menu is open. Colour changes take 120ms `ease-out`; nothing else
 moves.
 
+**Trail on pages.** A page below a door names its place with a `Trail` handed to
+its header through `PageTrailContext`: `PageHeader` draws it first, a 24px line
+(`data-slot="page-trail"`) above the title row in the header's 8px gap, on the
+title's left edge, with no band, border or background. `PaneShell` clears the
+context for its body, so only the page's own header draws it. The last crumb
+names the kind and carries `aria-current="page"`; a link crumb may carry a
+`tooltip` and a `shortcut` (the parent crumb reads `Go up to Run` with ⌘↑).
+
 **Crumb menus.** Every trail segment with siblings opens one `CrumbMenu`: a
 `floating` popover, radius 8, `border-soft`, 4px padding, a 26px heading
 (`Steps · Ship a fix`, count on the right), rows of 30px with five fixed slots

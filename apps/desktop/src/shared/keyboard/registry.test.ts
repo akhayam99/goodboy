@@ -218,7 +218,9 @@ describe('shortcut registry', () => {
   it('never binds a combo macOS reserves, or the text field owns', () => {
     for (const [id, entry] of entries) {
       if (
-        (entry.combo === 'cmd+KeyZ' || entry.combo === 'cmd+shift+KeyZ') &&
+        (entry.combo === 'cmd+KeyZ' ||
+          entry.combo === 'cmd+shift+KeyZ' ||
+          entry.combo === 'cmd+ArrowUp') &&
         entry.yieldsToText === true
       ) {
         continue;

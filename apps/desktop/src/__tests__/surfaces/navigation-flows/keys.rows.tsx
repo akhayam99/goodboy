@@ -9,6 +9,7 @@ import type { ChatId, SessionId, StarredIssue, Workspace, WorkspaceId } from '@g
 import { shortcutGlyphs, type ShortcutId } from '../../../shared/keyboard/registry';
 import { agentPlace, sessionPlace } from '../../../store';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
+import { currentStack } from '../../../store/slices/navigation/currentStack';
 import { App } from '../../../App';
 import { seedActivityRunScene } from '../../../app/components/MockScene/scenes/activityRunSeed';
 import { seedResolveScene } from '../../../app/components/MockScene/scenes/resolveSeed';
@@ -47,6 +48,8 @@ const ANCHOR = /^Search \(/;
 const undoRuns: Array<number> = [];
 
 const undoPrevented: Array<boolean> = [];
+
+const upIndexes: Array<number> = [];
 
 const focusAnchor = async (): Promise<HTMLElement> => {
   const anchor = await screen.findByRole('button', { name: ANCHOR });
@@ -319,6 +322,38 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
       await openCrumb(/^Agents/);
       await press('nav.back')();
       await press('nav.forward')();
+    },
+    lands: lens('agents'),
+  }),
+  keyRow({
+    id: 'nav.up',
+    note: 'goes up to the parent and reuses the entry below when it is the parent',
+    open: async () => {
+      await openCrumb(/^Agents/);
+      upIndexes.push(currentStack(useAppStore.getState()).index);
+      await press('nav.up')();
+    },
+    lands: async (ctx) => {
+      await lens(null)(ctx);
+      expect(currentStack(useAppStore.getState()).index).toBe((upIndexes.at(-1) ?? 0) - 1);
+    },
+  }),
+  keyRow({
+    id: 'nav.up',
+    note: 'on the Overview goes up to the board',
+    open: press('nav.up'),
+    lands: () => heading('Sessions'),
+  }),
+  keyRow({
+    id: 'nav.up',
+    note: 'yields to a text field, where it moves the caret',
+    open: async () => {
+      await openCrumb(/^Agents/);
+      const field = document.createElement('textarea');
+      document.body.append(field);
+      field.focus();
+      await pressed('nav.up', field);
+      field.remove();
     },
     lands: lens('agents'),
   }),
@@ -704,6 +739,37 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
       });
       await settle();
       await pressed('app.close', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+    },
+  }),
+  keyRow({
+    id: 'nav.up',
+    note: 'from Impact, Spend and a provider goes up to Spend, as the trail shows',
+    open: async () => {
+      useAppStore.getState().openStudio({
+        studio: { kind: 'impact', scope: { kind: 'provider', provider: 'anthropic' } },
+      });
+      await settle();
+      await pressed('nav.up', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => {
+        expect(useAppStore.getState().appStudio).toEqual({
+          kind: 'impact',
+          scope: { kind: 'spend' },
+        });
+      }, WAIT);
+    },
+  }),
+  keyRow({
+    id: 'nav.up',
+    note: 'at the root of a page with no trail closes the page',
+    open: async () => {
+      useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: { kind: 'spend' } } });
+      await settle();
+      await pressed('nav.up', document.body);
     },
     lands: async () => {
       await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);

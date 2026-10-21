@@ -23,6 +23,7 @@ import {
 } from '../../../../store/storyHarness';
 import { useAppStore } from '../../../../store';
 
+import { liveTextRegistry } from '../../reveal/liveTextRegistry';
 import { OPERATOR_NOTES_GUIDANCE } from '../../utils/operatorNotesGuidance';
 import { HandoffBlock } from '.';
 
@@ -466,5 +467,24 @@ describe('HandoffBlock', () => {
     renderBlock();
 
     expect(loadAgentHandoff).toHaveBeenCalledWith({ agentId: AGENT });
+  });
+
+  it('fades in once a handoff recorded while the user looks', () => {
+    liveTextRegistry.clear();
+    useAppStore.setState({ agentHandoffs: {} });
+    void useAppStore.getState().recordAgentHandoff({ handoff: handoff() });
+
+    const { container } = renderBlock();
+
+    expect(container.querySelector('[data-fresh]')).not.toBeNull();
+    screen.getByText('Backfill the settled batches behind a flag.');
+  });
+
+  it('shows a loaded handoff whole', () => {
+    liveTextRegistry.clear();
+
+    const { container } = renderBlock();
+
+    expect(container.querySelector('[data-fresh]')).toBeNull();
   });
 });

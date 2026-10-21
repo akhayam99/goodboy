@@ -7,7 +7,7 @@ import type { QueryResult } from '../../../../shared/types/queryResult';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
 import { AlertBanner } from './AlertBanner';
 import { SpendBar } from './SpendBar';
-import { providerLabel } from './lib';
+import { providerLabel } from '../../providerLabel';
 
 type Props = {
   readonly providers: ReadonlyArray<ProviderBudgetEntry>;

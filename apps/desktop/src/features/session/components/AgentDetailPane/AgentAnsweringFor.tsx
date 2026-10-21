@@ -1,6 +1,8 @@
 import { Markdown, Band, cn } from '@goodboy/ui';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../../store';
+import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
+import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -10,6 +12,10 @@ type Props = {
 
 export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
+  const landing = useFreshLanding({
+    liveKey: landingLiveKey({ scope: 'questions', id: sessionId }),
+    text: question?.text ?? '',
+  });
   if (question === null) {
     return null;
   }
@@ -17,7 +23,11 @@ export const AgentAnsweringFor = ({ sessionId, question, asker }: Props) => {
   return (
     <Band inset="content" label="Answering for" hint="This answer lands as the user's own.">
       <div className="flex flex-col gap-2">
-        <blockquote className="border-l-2 border-border pl-2 text-body text-foreground">
+        <blockquote
+          key={landing.fadeKey}
+          {...landing.fade}
+          className="border-l-2 border-border pl-2 text-body text-foreground"
+        >
           <Markdown text={question.text} className="min-w-0 gap-2 break-words leading-relaxed" />
         </blockquote>
         {asker !== null && (

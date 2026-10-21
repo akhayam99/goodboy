@@ -36,7 +36,7 @@ export const cancelTurnConfirmed = (set: SetFn, get: GetFn) => {
     }
     const { runId } = agentState;
     cancelledRunIds.add(runId);
-    revealPacer.flushRun({ runId });
+    revealPacer.flushRun({ runId, agentId });
     try {
       await cancelTurn(runId);
     } catch (error) {

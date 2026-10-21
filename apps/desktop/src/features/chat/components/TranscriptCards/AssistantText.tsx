@@ -56,13 +56,23 @@ export const AssistantText = ({
       {reveal.isRevealing ? null : (
         <>
           {sessionId && agentId && hasScribeText ? (
-            <ScribeTextCard assistantText={text} sessionId={sessionId} agentId={agentId} />
+            <ScribeTextCard
+              assistantText={text}
+              sessionId={sessionId}
+              agentId={agentId}
+              runId={runId}
+            />
           ) : null}
           {sessionId ? (
             <div className="flex flex-col items-start gap-2 empty:hidden">
               <PlanChip assistantText={text} sessionId={sessionId} />
               <HandoffChip assistantText={text} sessionId={sessionId} sourceAgentId={agentId} />
-              <ResolverThreadsCard assistantText={text} sessionId={sessionId} agentId={agentId} />
+              <ResolverThreadsCard
+                assistantText={text}
+                sessionId={sessionId}
+                agentId={agentId}
+                runId={runId}
+              />
             </div>
           ) : null}
           {hasCommentResolvedMarker || displayText.length === 0 ? null : (

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { AgentId, Session, SessionId } from '@goodboy/types';
-import { cn, useEscapeLayer, PaneBannerContext, PaneShell } from '@goodboy/ui';
+import { cn, useEscapeLayer, PaneBannerContext, PageTrailContext, PaneShell } from '@goodboy/ui';
 import { ArtifactStudio } from '../../../artifacts/components/ArtifactStudio';
 import { EMPTY_ARRAY, useAppStore, useIsSessionCollectionLoaded } from '../../../../store';
 import type { LensKind } from '../../../../store';
@@ -34,6 +34,7 @@ import { SIMPLE_LENSES } from '../../lens-labels';
 import { resolveLensSurface } from '../../lens-surface';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { SessionTrail } from './SessionTrail';
 
 type SessionWorkspaceProps = {
   readonly session: Session;
@@ -105,6 +106,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   useEscapeLayer(leaveAgentOverlay, showAgentOverlay && isActive);
 
   const banner = <FirstLapBanner sessionId={sessionId} />;
+  const trail = <SessionTrail sessionId={sessionId} />;
 
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
@@ -114,83 +116,91 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           inert={!showLens}
         >
           <PaneBannerContext.Provider value={showAgentOverlay ? null : banner}>
-            {surface === 'overview' ? (
-              isOverviewLoaded ? (
-                <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
-              ) : (
-                <SessionOverviewLoading
-                  isFreshLayout={isFreshOverviewLayout}
-                  onRetry={onRetryOverview}
-                />
-              )
-            ) : null}
-            {lens === 'questions' ? <QuestionsPane session={session} /> : null}
-            {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
-            {lens === 'workflows' ? (
-              <WorkflowsPane session={session} isActive={isActive && showLens} />
-            ) : null}
-            {lens === 'orchestrated' ? <OrchestratedPane session={session} /> : null}
-            {lens === 'branch' ? (
-              <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
-            ) : null}
-            {lens === 'linear' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="linear"
-              />
-            ) : null}
-            {lens === 'gitlab_issues' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="gitlab"
-              />
-            ) : null}
-            {lens === 'jira_issues' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="jira"
-              />
-            ) : null}
-            {lens === 'slack_threads' ? (
-              <IntegrationPane
-                sessionId={sessionId}
-                workspaceId={session.workspaceId}
-                provider="slack"
-              />
-            ) : null}
-            {lens === 'github_issue' ? (
-              githubIssueNumber != null ? (
-                <GithubTaskDetail
-                  workspaceId={session.workspaceId}
-                  rootPath={projectWorktreePath}
-                  {...(githubTask != null && { task: githubTask })}
-                  issueNumber={githubIssueNumber}
-                />
-              ) : (
-                <PaneShell title="GitHub issue">
-                  <EmptyState
-                    size="section"
-                    icon={CONCEPT_ICONS.github}
-                    tone={CONCEPT_TONE.github}
-                    title="No GitHub issue linked"
-                    description="Link a GitHub issue to this session to see it here."
-                    action={<LinkIssueAction session={session} initialSource="github" />}
+            <PageTrailContext.Provider value={showLens && lens !== 'agents' ? trail : null}>
+              {surface === 'overview' ? (
+                isOverviewLoaded ? (
+                  <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
+                ) : (
+                  <SessionOverviewLoading
+                    isFreshLayout={isFreshOverviewLayout}
+                    onRetry={onRetryOverview}
                   />
-                </PaneShell>
-              )
-            ) : null}
-            {lens === 'files' ? (
-              <FilesPane sessionId={sessionId} sessionDir={workingDir} onClose={onSelectOverview} />
-            ) : null}
-            {lens === 'auto' ? <AutoAgentsPane session={session} /> : null}
+                )
+              ) : null}
+              {lens === 'questions' ? <QuestionsPane session={session} /> : null}
+              {lens === 'plans' ? <ArtifactStudio sessionId={sessionId} /> : null}
+              {lens === 'workflows' ? (
+                <WorkflowsPane session={session} isActive={isActive && showLens} />
+              ) : null}
+              {lens === 'orchestrated' ? <OrchestratedPane session={session} /> : null}
+              {lens === 'branch' ? (
+                <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
+              ) : null}
+              {lens === 'linear' ? (
+                <IntegrationPane
+                  sessionId={sessionId}
+                  workspaceId={session.workspaceId}
+                  provider="linear"
+                />
+              ) : null}
+              {lens === 'gitlab_issues' ? (
+                <IntegrationPane
+                  sessionId={sessionId}
+                  workspaceId={session.workspaceId}
+                  provider="gitlab"
+                />
+              ) : null}
+              {lens === 'jira_issues' ? (
+                <IntegrationPane
+                  sessionId={sessionId}
+                  workspaceId={session.workspaceId}
+                  provider="jira"
+                />
+              ) : null}
+              {lens === 'slack_threads' ? (
+                <IntegrationPane
+                  sessionId={sessionId}
+                  workspaceId={session.workspaceId}
+                  provider="slack"
+                />
+              ) : null}
+              {lens === 'github_issue' ? (
+                githubIssueNumber != null ? (
+                  <GithubTaskDetail
+                    workspaceId={session.workspaceId}
+                    rootPath={projectWorktreePath}
+                    {...(githubTask != null && { task: githubTask })}
+                    issueNumber={githubIssueNumber}
+                  />
+                ) : (
+                  <PaneShell title="GitHub issue">
+                    <EmptyState
+                      size="section"
+                      icon={CONCEPT_ICONS.github}
+                      tone={CONCEPT_TONE.github}
+                      title="No GitHub issue linked"
+                      description="Link a GitHub issue to this session to see it here."
+                      action={<LinkIssueAction session={session} initialSource="github" />}
+                    />
+                  </PaneShell>
+                )
+              ) : null}
+              {lens === 'files' ? (
+                <FilesPane
+                  sessionId={sessionId}
+                  sessionDir={workingDir}
+                  onClose={onSelectOverview}
+                />
+              ) : null}
+              {lens === 'auto' ? <AutoAgentsPane session={session} /> : null}
+            </PageTrailContext.Provider>
             <Pane visible={lens === 'agents'}>
               <PaneBannerContext.Provider
                 value={lens === 'agents' && !showAgentOverlay ? banner : null}
               >
-                <AgentsPane session={session} />
+                <PageTrailContext.Provider value={lens === 'agents' && showLens ? trail : null}>
+                  <AgentsPane session={session} />
+                </PageTrailContext.Provider>
               </PaneBannerContext.Provider>
             </Pane>
           </PaneBannerContext.Provider>
@@ -198,20 +208,24 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
 
         {surfaceLayer === 'run' && runFocus !== null ? (
           <PaneBannerContext.Provider value={banner}>
-            <div className="absolute inset-0 z-20 flex flex-col bg-background">
-              <PresetRunPage session={session} focus={runFocus} isActive={isActive} />
-            </div>
+            <PageTrailContext.Provider value={trail}>
+              <div className="absolute inset-0 z-20 flex flex-col bg-background">
+                <PresetRunPage session={session} focus={runFocus} isActive={isActive} />
+              </div>
+            </PageTrailContext.Provider>
           </PaneBannerContext.Provider>
         ) : null}
         {showAgentOverlay ? (
           <PaneBannerContext.Provider value={banner}>
-            <AgentOverlay
-              session={session}
-              sessionId={sessionId}
-              isChatActive={isActive && selectedAgentId != null}
-              selectedAgentId={selectedAgentId}
-              onBack={leaveAgentOverlay}
-            />
+            <PageTrailContext.Provider value={trail}>
+              <AgentOverlay
+                session={session}
+                sessionId={sessionId}
+                isChatActive={isActive && selectedAgentId != null}
+                selectedAgentId={selectedAgentId}
+                onBack={leaveAgentOverlay}
+              />
+            </PageTrailContext.Provider>
           </PaneBannerContext.Provider>
         ) : null}
       </div>

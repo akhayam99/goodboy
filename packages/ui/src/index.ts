@@ -54,6 +54,7 @@ export {
 } from './drawerGeometry';
 export type { DrawerMode, DrawerPlacement, DrawerSizing, PageTier } from './drawerGeometry';
 export { DrawerFrame } from './components/DrawerFrame';
+export { DrawerBackLink } from './components/DrawerBackLink';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';
 export type {
@@ -253,6 +254,7 @@ export {
 } from './components/PaneShell/paneActionsContext';
 export { UnderTrailContext } from './components/PaneShell/underTrailContext';
 export { PaneBannerContext } from './components/PaneShell/paneBannerContext';
+export { PageTrailContext } from './components/PaneShell/pageTrailContext';
 export { PageColumn } from './components/PageColumn';
 export type { PageColumnWidth } from './components/PageColumn';
 export { FormActions } from './components/FormActions';

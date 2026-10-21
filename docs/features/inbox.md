@@ -97,7 +97,7 @@ See screenshots attached in Linear, Jira and GitHub inside Goodboy. Your key goe
 
 ### Records read the same way
 
-Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open full** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in groups spaced apart on one grid of labels and values: status, priority and assignee, then project and labels, then pull requests and sessions, then details. A Sentry error shows its level as a word and its culprit once, with no made up description. The conversation ends with its reply box, **Reply on Linear** or **Reply on GitHub**, which scrolls with it. **‹ Tasks** above the full page leads back. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
+Read items from any tool the same way. The header holds the tool mark, the key and the star, with the start action, **Open full** and `⋯` (open in the tool, copy the link, refresh) beside them, and the title on its own line. Under it, the properties sit in groups spaced apart on one grid of labels and values: status, priority and assignee, then project and labels, then pull requests and sessions, then details. A Sentry error shows its level as a word and its culprit once, with no made up description. The conversation ends with its reply box, **Reply on Linear** or **Reply on GitHub**, which scrolls with it. On the full page the studio band reads **Tasks › key**, and the Tasks crumb leads back. Values you can change, like the status or the assignee of a Linear issue, open their menu from the value.
 
 ### Comment threads
 

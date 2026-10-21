@@ -1,7 +1,7 @@
 import { IconButton, Notice, formatUsd } from '@goodboy/ui';
 import { X } from 'lucide-react';
 import type { BudgetAlert } from '@goodboy/types';
-import { providerLabel } from './lib';
+import { providerLabel } from '../../providerLabel';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {

@@ -323,8 +323,11 @@ describe('ChatList', () => {
 
       fireEvent.click(await screen.findByRole('button', { name: /Archived · 2/ }));
       expect(screen.getByRole('button', { name: 'Northwind invoice export format' })).toBeDefined();
-      fireEvent.click(screen.getByRole('button', { name: 'Chats' }));
+      const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+      expect(within(trail).getByText('Archived')).toBeDefined();
+      fireEvent.click(within(trail).getByRole('button', { name: 'Chat' }));
       expect(screen.getByRole('textbox', { name: 'Search chats' })).toBeDefined();
+      expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
     });
 
     it('restores one chat', async () => {

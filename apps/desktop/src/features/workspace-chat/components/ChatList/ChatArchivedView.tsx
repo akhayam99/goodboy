@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Search } from 'lucide-react';
-import { Button, ScrollFade } from '@goodboy/ui';
+import { Search } from 'lucide-react';
+import { Button, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { ChatId, ChatSummary } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { StudioTrail } from '../../../../shared/components/StudioShell/StudioTrail';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { formatSpan } from '../../../../shared/utils/time/formatSpan';
@@ -38,17 +39,19 @@ export const ChatArchivedView = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex h-7 items-center gap-2 rounded-md pl-2 pr-2 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          <ArrowLeft size={ICON_SIZE.control} aria-hidden />
-          Chats
-        </button>
-        <h2 className="text-heading text-foreground">Archived</h2>
-      </div>
+      <StudioTrail
+        segments={[
+          {
+            id: 'chat',
+            label: 'Chat',
+            icon: CONCEPT_ICONS.chat,
+            iconClassName: tintClasses(CONCEPT_TONE.chat).icon,
+            onSelect: onBack,
+          },
+          { id: 'archived', label: 'Archived', icon: CONCEPT_ICONS.chat },
+        ]}
+      />
+      <h2 className="text-heading text-foreground">Archived</h2>
       <label className="flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-faint-foreground focus-within:border-border">
         <Search size={ICON_SIZE.row} aria-hidden />
         <input

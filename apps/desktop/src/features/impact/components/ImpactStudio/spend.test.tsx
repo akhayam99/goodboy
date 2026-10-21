@@ -3,40 +3,47 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import type { ImpactMetrics } from '../../hooks/useImpactMetrics';
 
-const { state, mocks } = vi.hoisted(() => ({
-  mocks: { useImpactMetrics: vi.fn() },
-  state: {
-    currentSessionId: 'session-1',
-    sessions: [{ id: 'session-1', goal: 'build the feature' }] as ReadonlyArray<{
-      id: string;
-      goal: string;
-    }>,
-    sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
-    providerSpendBreakdown: [{ provider: 'anthropic', spentUsd: 3 }] as ReadonlyArray<{
-      provider: string;
-      spentUsd: number;
-    }>,
-    providerBudgetStatus: {} as Record<string, unknown>,
-    budgetAlerts: [] as ReadonlyArray<unknown>,
-    budgetRules: [] as ReadonlyArray<unknown>,
-    sessionBudgets: {} as Record<string, { softCapUsd: number }>,
-    clearSessionBudget: vi.fn(),
-    currentWorkspaceId: 'workspace-1',
-    navigate: vi.fn(),
-    loadBudgetRules: vi.fn(),
-    loadBudgetAlerts: vi.fn(),
-    loadSessionTelemetry: vi.fn(),
-    loadSessionBudget: vi.fn(),
-    dismissBudgetAlert: vi.fn(),
-    saveBudgetRule: vi.fn(),
-    deleteBudgetRule: vi.fn(),
-    setSessionBudget: vi.fn(),
-    refreshProviderSpendBreakdown: vi.fn(),
-  },
-}));
+const { state, mocks } = vi.hoisted(() => {
+  const sessions: ReadonlyArray<{ id: string; goal: string }> = [
+    { id: 'session-1', goal: 'build the feature' },
+  ];
+  const sessionTelemetry: Record<string, ReadonlyArray<unknown>> = {};
+  const providerSpendBreakdown: ReadonlyArray<{ provider: string; spentUsd: number }> = [
+    { provider: 'anthropic', spentUsd: 3 },
+  ];
+  const providerBudgetStatus: Record<string, unknown> = {};
+  const budgetAlerts: ReadonlyArray<unknown> = [];
+  const budgetRules: ReadonlyArray<unknown> = [];
+  const sessionBudgets: Record<string, { softCapUsd: number }> = {};
+  return {
+    mocks: { useImpactMetrics: vi.fn() },
+    state: {
+      currentSessionId: 'session-1',
+      sessions,
+      sessionTelemetry,
+      providerSpendBreakdown,
+      providerBudgetStatus,
+      budgetAlerts,
+      budgetRules,
+      sessionBudgets,
+      clearSessionBudget: vi.fn(),
+      currentWorkspaceId: 'workspace-1',
+      navigate: vi.fn(),
+      loadBudgetRules: vi.fn(),
+      loadBudgetAlerts: vi.fn(),
+      loadSessionTelemetry: vi.fn(),
+      loadSessionBudget: vi.fn(),
+      dismissBudgetAlert: vi.fn(),
+      saveBudgetRule: vi.fn(),
+      deleteBudgetRule: vi.fn(),
+      setSessionBudget: vi.fn(),
+      refreshProviderSpendBreakdown: vi.fn(),
+    },
+  };
+});
 
 vi.mock('../../hooks/useImpactMetrics', () => ({
   useImpactMetrics: mocks.useImpactMetrics,
@@ -53,6 +60,9 @@ vi.mock('../../../../store', async () => ({
 
 import { ImpactStudio } from './index';
 import type { ImpactScope } from '../../lib';
+
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const WORKSPACE_ID = brandId<WorkspaceId>({ value: 'workspace-1' });
 
 const EMPTY_RESULT = { data: null, error: null };
 
@@ -105,13 +115,7 @@ type RenderParams = {
 };
 
 const renderStudio = ({ initialScope, onClose = vi.fn() }: RenderParams = {}) =>
-  render(
-    <ImpactStudio
-      workspaceId={'workspace-1' as WorkspaceId}
-      initialScope={initialScope}
-      onClose={onClose}
-    />,
-  );
+  render(<ImpactStudio workspaceId={WORKSPACE_ID} initialScope={initialScope} onClose={onClose} />);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -159,8 +163,33 @@ describe('Impact studio spend scopes', () => {
     fireEvent.click(claudeRow!);
     expect(screen.getByText(/spent, 30 days/i)).toBeDefined();
     expect(screen.getByRole('tab', { name: 'Spend', selected: true })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'All spend' }));
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(trail).getByText('Claude')).toBeDefined();
+    fireEvent.click(within(trail).getByRole('button', { name: 'Spend' }));
     expect(screen.queryByText(/spent, 30 days/i)).toBeNull();
+    expect(screen.getByText('Sessions by spend')).toBeDefined();
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+  });
+
+  it('returns from a session record to the overview through the Impact crumb', () => {
+    renderStudio({ initialScope: { kind: 'session', sessionId: SESSION_ID } });
+
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(trail).getByText('build the feature')).toBeDefined();
+    fireEvent.click(within(trail).getByRole('button', { name: 'Impact' }));
+    expect(screen.getByRole('tab', { name: 'Overview', selected: true })).toBeDefined();
+    expect(screen.queryByText('Session spend')).toBeNull();
+  });
+
+  it('closes the studio on Esc from a spend record', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    renderStudio({ initialScope: { kind: 'provider', provider: 'anthropic' }, onClose });
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    vi.advanceTimersByTime(300);
+    expect(onClose).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 
   it('anchors a session inside spend from its row', () => {
@@ -178,7 +207,7 @@ describe('Impact studio spend scopes', () => {
   });
 
   it('opens the session panel when the studio is asked for a session scope', () => {
-    renderStudio({ initialScope: { kind: 'session', sessionId: 'session-1' as SessionId } });
+    renderStudio({ initialScope: { kind: 'session', sessionId: SESSION_ID } });
 
     expect(screen.getAllByText(/build the feature/i).length).toBeGreaterThan(0);
     expect(screen.getByText('Session spend')).toBeDefined();
@@ -289,7 +318,7 @@ describe('Impact studio spend scopes', () => {
   });
 
   it('sets a session spend cap via setSessionBudget', async () => {
-    renderStudio({ initialScope: { kind: 'session', sessionId: 'session-1' as SessionId } });
+    renderStudio({ initialScope: { kind: 'session', sessionId: SESSION_ID } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Set limit' }));
     fireEvent.change(screen.getByLabelText('Limit in dollars'), {
@@ -316,7 +345,7 @@ describe('Impact studio spend scopes', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open session build the feature' }));
     expect(state.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId }),
+      to: sessionPlace({ sessionId: SESSION_ID }),
     });
     expect(onClose).toHaveBeenCalled();
   });

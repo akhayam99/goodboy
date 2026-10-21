@@ -5,6 +5,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore, sessionPlace } from '../../../../store';
 import type { PaneFrame } from '../../../../shared/types/paneFrame';
+import { providerLabel } from '../../../budget/providerLabel';
 import { ProviderPanel } from '../../../budget/components/spend/ProviderPanel';
 import { SessionPanel } from '../../../budget/components/spend/SessionPanel';
 import { useWorkspaceSpend } from '../../../budget/hooks/useWorkspaceSpend';
@@ -24,6 +25,7 @@ import { ImpactTabs } from './ImpactTabs';
 import { OverviewPanel } from './OverviewPanel';
 import { ShippedPanel } from './ShippedPanel';
 import { SpendPanel } from './SpendPanel';
+import { SpendRecordTrail } from './SpendRecordTrail';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -33,6 +35,7 @@ type Props = {
 };
 
 const SPEND_SCOPE: ImpactScope = { kind: 'spend' };
+const OVERVIEW_SCOPE: ImpactScope = { kind: 'overview' };
 
 export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose }: Props) => {
   const [windowId, setWindowId] = useState<ImpactWindowId>('last30');
@@ -55,8 +58,9 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
     },
     [onClose, navigate],
   );
-  const selectTab = useCallback((tab: ImpactTab) => setScope({ kind: tab }), []);
-  const backToSpend = useCallback(() => setScope(SPEND_SCOPE), []);
+  const selectTab = useCallback((tab: ImpactTab) => setScope({ kind: tab }), [setScope]);
+  const backToSpend = useCallback(() => setScope(SPEND_SCOPE), [setScope]);
+  const backToOverview = useCallback(() => setScope(OVERVIEW_SCOPE), [setScope]);
 
   const selectedSession =
     scope.kind === 'session'
@@ -67,7 +71,7 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
     if (scope.kind === 'session' && selectedSession === null) {
       setScope(SPEND_SCOPE);
     }
-  }, [scope, selectedSession]);
+  }, [scope, selectedSession, setScope]);
 
   const rangeLabel = IMPACT_WINDOW_OPTIONS.find((option) => option.value === windowId)?.label ?? '';
   const rangeSpend = useMemo(
@@ -155,43 +159,55 @@ export const ImpactStudio = ({ workspaceId, initialScope, onScopeChange, onClose
         );
       case 'provider':
         return (
-          <ProviderPanel
-            frame={frame}
-            rangeLabel={rangeLabel}
-            onBack={backToSpend}
-            provider={scope.provider}
-            entry={spend.providers.find((entry) => entry.provider === scope.provider) ?? null}
-            turns={spend.turns}
-            rule={spend.rules.find((rule) => rule.provider === scope.provider) ?? null}
-            rulesResult={spend.data.rules}
-            telemetryResult={spend.data.telemetry}
-            isLoading={spend.data.loading.rules || spend.data.loading.telemetry}
-            onSaveLimit={({ capUsd, thresholdPct }) =>
-              spend.saveProviderCap({ provider: scope.provider, capUsd, thresholdPct })
-            }
-            onRemoveLimit={() => spend.removeProviderCap({ provider: scope.provider })}
-            onRetryRules={() => spend.data.retry('rules')}
-            onRetryTelemetry={() => spend.data.retry('telemetry')}
-            onOpenSession={openSession}
-          />
+          <>
+            <SpendRecordTrail
+              label={providerLabel({ provider: scope.provider })}
+              onImpact={backToOverview}
+              onSpend={backToSpend}
+            />
+            <ProviderPanel
+              frame={frame}
+              rangeLabel={rangeLabel}
+              provider={scope.provider}
+              entry={spend.providers.find((entry) => entry.provider === scope.provider) ?? null}
+              turns={spend.turns}
+              rule={spend.rules.find((rule) => rule.provider === scope.provider) ?? null}
+              rulesResult={spend.data.rules}
+              telemetryResult={spend.data.telemetry}
+              isLoading={spend.data.loading.rules || spend.data.loading.telemetry}
+              onSaveLimit={({ capUsd, thresholdPct }) =>
+                spend.saveProviderCap({ provider: scope.provider, capUsd, thresholdPct })
+              }
+              onRemoveLimit={() => spend.removeProviderCap({ provider: scope.provider })}
+              onRetryRules={() => spend.data.retry('rules')}
+              onRetryTelemetry={() => spend.data.retry('telemetry')}
+              onOpenSession={openSession}
+            />
+          </>
         );
       case 'session':
         return selectedSession === null ? null : (
-          <SessionPanel
-            frame={frame}
-            onBack={backToSpend}
-            sessionId={selectedSession.sessionId}
-            goal={inlineMarkdownText({ text: selectedSession.goal })}
-            isCurrent={selectedSession.isCurrent}
-            turns={spend.turns.filter((turn) => turn.sessionId === selectedSession.sessionId)}
-            telemetryResult={spend.data.telemetry}
-            budgetResult={spend.data.sessionBudgets}
-            isLoading={spend.data.loading.telemetry || spend.data.loading.sessionBudgets}
-            onOpened={requestClose}
-            onRetryTelemetry={() => spend.data.retry('telemetry')}
-            onRetryBudget={() => spend.data.retry('sessionBudgets')}
-            onOpenSession={openSession}
-          />
+          <>
+            <SpendRecordTrail
+              label={inlineMarkdownText({ text: selectedSession.goal })}
+              onImpact={backToOverview}
+              onSpend={backToSpend}
+            />
+            <SessionPanel
+              frame={frame}
+              sessionId={selectedSession.sessionId}
+              goal={inlineMarkdownText({ text: selectedSession.goal })}
+              isCurrent={selectedSession.isCurrent}
+              turns={spend.turns.filter((turn) => turn.sessionId === selectedSession.sessionId)}
+              telemetryResult={spend.data.telemetry}
+              budgetResult={spend.data.sessionBudgets}
+              isLoading={spend.data.loading.telemetry || spend.data.loading.sessionBudgets}
+              onOpened={requestClose}
+              onRetryTelemetry={() => spend.data.retry('telemetry')}
+              onRetryBudget={() => spend.data.retry('sessionBudgets')}
+              onOpenSession={openSession}
+            />
+          </>
         );
       default: {
         const exhaustive: never = scope;
