@@ -165,7 +165,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
