@@ -13,6 +13,8 @@ import { extractMarkers } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { ResolveAttempt, ResolveThread, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { agentThreadIds } from '../../../features/session/agentThreadIds';
 import { resolverTurnOutcomes } from '../../../features/session/resolverTurnOutcomes';
 import { captureResolveCandidate } from './captureResolveCandidate';
@@ -235,12 +237,17 @@ export const persistResolveTurn = async ({
       }
     }
     const capturedRows = await listResolveThreads({ db, sessionId });
+    const attemptsNow = await listResolveAttempts({ db, sessionId });
+    for (const threadId of processed) {
+      liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'resolve-thread', id: threadId }) });
+    }
+    liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'resolve-agent', id: agent.id }) });
     projectResolveRows({
       set,
       get,
       sessionId,
       rows: capturedRows,
-      attempts: await listResolveAttempts({ db, sessionId }),
+      attempts: attemptsNow,
     });
     const refreshedQueueItems = await listResolveQueueItems({ db, sessionId });
     set((state) => ({

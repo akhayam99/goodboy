@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Pencil, Trash2, Undo2 } from 'lucide-react';
 import { Button, Chip, ClampedProse, Markdown, cn } from '@goodboy/ui';
+import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { BlockEditor } from './BlockEditor';
 import { DecisionNumber } from './DecisionNumber';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -20,6 +21,7 @@ const overflowsTwoLines = ({ text }: OverflowParams): boolean =>
 type Props = {
   readonly number: number;
   readonly text: string;
+  readonly liveKey: string | null;
   readonly why: string | null;
   readonly byline: string;
   readonly isNew: boolean;
@@ -38,6 +40,7 @@ type Props = {
 export const DecisionRowItem = ({
   number,
   text,
+  liveKey,
   why,
   byline,
   isNew,
@@ -59,6 +62,7 @@ export const DecisionRowItem = ({
   const isSwapped = text !== firstText.current;
   const label = `Decision ${number}`;
   const isLong = overflowsTwoLines({ text });
+  const landing = useFreshLanding({ liveKey, text });
 
   const commit = () => {
     setIsEditing(false);
@@ -119,6 +123,8 @@ export const DecisionRowItem = ({
 
   return (
     <div
+      key={landing.fadeKey}
+      {...landing.fade}
       ref={rowRef}
       data-decision={number}
       className={cn(

@@ -10,6 +10,7 @@ import type { AgentId, PrComment, ResolveThread, SessionId } from '@goodboy/type
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { openReviewThread } from '../../../review/openReviewThread';
+import { useFreshLanding } from '../../reveal/useFreshLanding';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { ResolverThreadVerdictRow } from './ResolverThreadVerdictRow';
@@ -21,6 +22,7 @@ type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
   readonly agentId?: AgentId | null;
+  readonly runId?: string | null;
 };
 
 const EMPTY_COMMENTS: ReadonlyArray<PrComment> = [];
@@ -39,7 +41,12 @@ const previewSentence = ({
     }),
   });
 
-export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }: Props) => {
+export const ResolverThreadsCard = ({
+  assistantText,
+  sessionId,
+  agentId = null,
+  runId = null,
+}: Props) => {
   const analysisMarkers = useMemo(
     () =>
       extractAllCommentAnalysis(assistantText).filter((marker) =>
@@ -107,6 +114,10 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
   );
 
   const [open, setOpen] = useState(false);
+  const landing = useFreshLanding({
+    liveKey: runId,
+    text: verdicts.map(({ threadId, outcome }) => `${threadId} ${outcome}`).join('\n'),
+  });
 
   const onOpen = (threadId: string) => {
     void openReviewThread({ sessionId, threadId });
@@ -124,51 +135,55 @@ export const ResolverThreadsCard = ({ assistantText, sessionId, agentId = null }
 
   if (verdicts.length === 1) {
     return (
-      <ResolverThreadVerdictRow
-        verdict={onlyVerdict}
-        position={1}
-        nested={false}
-        onOpen={() => onOpen(onlyVerdict.threadId)}
-        onOpenCommit={onOpenCommit}
-        data-testid="resolver-thread-verdict"
-      />
+      <div key={landing.fadeKey} {...landing.fade} className="flex min-w-0 flex-col">
+        <ResolverThreadVerdictRow
+          verdict={onlyVerdict}
+          position={1}
+          nested={false}
+          onOpen={() => onOpen(onlyVerdict.threadId)}
+          onOpenCommit={onOpenCommit}
+          data-testid="resolver-thread-verdict"
+        />
+      </div>
     );
   }
 
   return (
-    <TranscriptDisclosure
-      tone="neutral"
-      open={open}
-      bodyClassName="gap-1"
-      data-testid="resolver-threads-card"
-      header={
-        <TranscriptRowHeader
-          grouped
-          tone="neutral"
-          icon={<Icon size={ICON_SIZE.row} aria-hidden />}
-          eyebrow="resolve findings"
-          preview={previewSentence({ verdicts })}
-          meta={`${verdicts.length}`}
-          open={open}
-          onToggle={() => setOpen((value) => !value)}
-          aria-label={open ? 'Collapse resolve findings' : 'Expand resolve findings'}
-        />
-      }
-    >
-      <ul className="flex min-w-0 flex-col gap-1">
-        {verdicts.map((verdict, index) => (
-          <li key={`${verdict.kind}:${verdict.threadId}`}>
-            <ResolverThreadVerdictRow
-              verdict={verdict}
-              position={index + 1}
-              nested
-              onOpen={() => onOpen(verdict.threadId)}
-              onOpenCommit={onOpenCommit}
-              data-testid={`resolver-thread-verdict-${index}`}
-            />
-          </li>
-        ))}
-      </ul>
-    </TranscriptDisclosure>
+    <div key={landing.fadeKey} {...landing.fade} className="flex min-w-0 flex-col">
+      <TranscriptDisclosure
+        tone="neutral"
+        open={open}
+        bodyClassName="gap-1"
+        data-testid="resolver-threads-card"
+        header={
+          <TranscriptRowHeader
+            grouped
+            tone="neutral"
+            icon={<Icon size={ICON_SIZE.row} aria-hidden />}
+            eyebrow="resolve findings"
+            preview={previewSentence({ verdicts })}
+            meta={`${verdicts.length}`}
+            open={open}
+            onToggle={() => setOpen((value) => !value)}
+            aria-label={open ? 'Collapse resolve findings' : 'Expand resolve findings'}
+          />
+        }
+      >
+        <ul className="flex min-w-0 flex-col gap-1">
+          {verdicts.map((verdict, index) => (
+            <li key={`${verdict.kind}:${verdict.threadId}`}>
+              <ResolverThreadVerdictRow
+                verdict={verdict}
+                position={index + 1}
+                nested
+                onOpen={() => onOpen(verdict.threadId)}
+                onOpenCommit={onOpenCommit}
+                data-testid={`resolver-thread-verdict-${index}`}
+              />
+            </li>
+          ))}
+        </ul>
+      </TranscriptDisclosure>
+    </div>
   );
 };

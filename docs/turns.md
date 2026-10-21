@@ -493,6 +493,8 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   `finish` shows it all at once.
 - A stream `error` and a stop flush the reveal of that run first
   (`revealPacer.flushRun`), so the error row never lands above half written text.
+  Given the run's `agentId`, it also flushes the text keyed on that agent
+  (`agentLiveKey`), so a Debugger finding or a child result is whole too.
 - `useRevealedMarkdown` is what a host calls. It wraps `useRevealedText` and
   turns the fading pieces into a `fresh` tail for `Markdown`: the last block
   renders the revealed prefix with its newest characters in `<span data-fresh>`
@@ -503,8 +505,10 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   pointer down in the row, on a non empty selection in it and when find in view
   starts, so selection and copy always get the full text.
 - Hosts: `AssistantText` (the agent chat, run step page and drawer, agent
-  overlay, Auto and its children, and the transcript drawer in `record` mode)
-  and `ChatAssistantMessage` (the workspace chat). The `assistant_text` item
+  overlay, Auto and its children, and the transcript drawer in `record` mode),
+  `ChatAssistantMessage` (the workspace chat) and `AskTurn` (Ask, ⌘L, which
+  renders handles as chips, so it feeds the tail to `InlineMarkdown` per text
+  run through `sliceFreshTail`). The `assistant_text` item
   carries its `runId`, which with the item key is the pacer key. In the
   conversation the final answer row is added when `activeRunId` goes null,
   inside the 1.5 s live window of the run's last delta, so it reveals as the
@@ -512,6 +516,50 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
   whole. The chips and the copy button under an answer wait until the reveal
   ends. The workspace chat marks its reply by message id in `sendChatMessage`
   and flushes it when the reply fails or is stopped.
+- Text an agent writes outside the conversation keys on the agent:
+  `readTurnStream` also marks `agentLiveKey({ agentId })` on each
+  `assistant_text`. `RevealedMarkdown` (`features/chat/reveal/`) is the
+  block host for it: the Auto child result summary (`DelegationResult`), the
+  recorded outcome at the end of an agent page (`AgentConversationEnd`) and the
+  Debugger finding (`CheckAnalysisDrawer`). Text that lands more than 1.5 s
+  after the agent's last delta shows whole.
+- `useFreshLanding` is the entry point for a block that lands or is replaced
+  whole: when its live key was marked inside the landing window it returns a
+  new React key and `data-fresh` with the 220 ms fade, so the block fades in
+  once and is never typed out. The landing window (`liveTextRegistry.isLanding`)
+  is the 1.5 s lag cap plus one frame plus the longest piece (220 ms and eight
+  40 ms table rows), about 2 s: the latest moment a live reveal can end, so a
+  card that mounts when its answer finishes revealing still fades. A null key
+  never fades. Reduced motion drops the fade through the `[data-fresh]` media
+  rule. Hosts and the write that marks them:
+  - run id (each `assistant_text`): the resolve verdicts card in the transcript
+    (`ResolverThreadsCard`) and the scribe's pull request text
+    (`ScribeTextCard`, which wraps the shared `ScribeProposalView` so `shared/`
+    never imports the engine), both mounted when `AssistantText` ends its reveal.
+  - agent key: the Debugger's proposed fix.
+  - workflow run id (`persistRunSummary`): the orchestrated run result
+    (`OrchestratedResult`).
+  - `landingLiveKey` (`features/chat/reveal/landingLiveKey.ts`), one key per
+    write: `resolve-thread` and `resolve-agent`, marked in
+    `persistResolveTurn` just before the rows are projected, for the reply in
+    Comments (`ReviewComment`), the resolver question card
+    (`ResolverQuestionCard`), a question in the bulk answers panel
+    (`AnswerCard`) and what a fix run did (`FixRunSummary`);
+    `decisions` (`noteDecisionChanges`) for agent decisions in the context
+    drawer (`DecisionRowItem`; a decision the user wrote never fades);
+    `questions` (`finalizeTurnStream`, before the open questions reload) for
+    the question an agent answers for (`AgentAnsweringFor`); `handoff`
+    (`recordAgentHandoff`) for the handoff card (`HandoffBlock`; `ClampedText`
+    still measures the final text, only opacity moves); `transcript-event`
+    keyed by the event's `at` (`orchestrateNextStep` and `startTurnRun`) for
+    the orchestrator decision card and the step transition card.
+    A key per write, not the agent key, so opening a page while the agent still
+    streams shows its older rows whole. Loads, reloads and a second window never
+    mark, so they show whole.
+- Not revealed: a reply note after posting (`ReplyNote` `posted`, the text was
+  on screen before the user posted it), plans, reports and artifacts (opened
+  later, shown whole by rule), and session titles and state words (not model
+  text).
 - Screen readers: the revealing row carries `aria-busy="true"` inside the
   polite list and the final text is read once when the flag clears. The flag
   derives from the reveal state, so it clears on finish, flush, error, stop
@@ -519,9 +567,11 @@ The engine lives in `features/chat/reveal/`; the hosts are listed below.
 - Partial output: a turn of Claude or Cursor spawns with
   `--include-partial-messages` or `--stream-partial-output` when
   `cli_probe::partial_output_args` finds the flag in the CLI's `--help` (once
-  per binary and version, in `spawn_one`; side jobs and the workspace chat keep
-  their argv). An old CLI, a failed probe and every other provider keep whole
-  text blocks. The envelope parser (`anthropic-envelope-parser.ts`,
+  per binary and version, in `spawn_one`; side jobs keep their argv). The
+  workspace chat and Ask (`chat.rs` `spawn_chat_turn`) add the same flag after
+  their read only argv is checked, just before the single `--`, so a Claude
+  chat or Ask answer streams too; Codex has no flag there. An old CLI, a failed
+  probe and every other provider keep whole text blocks. The envelope parser (`anthropic-envelope-parser.ts`,
   `streamedText.ts`) turns each `text_delta` of a top level `stream_event`
   into one `assistant_text` marked `isPartial`, and drops the text block of the whole `assistant`
   line that follows when it is contained in the text it already streamed.
@@ -1425,6 +1475,12 @@ stream reader) with a session scope: `ask_turn` in
   `stabilizeAskAnswer` rewrites handles as stable references
   (`[[agent:<id>|Implementer]]`) before the message is saved, so chips work
   after a restart without the pack.
+- **Reveal.** `sendAskQuestion` marks the reply live by message id on each
+  delta and flushes it when the answer fails or is stopped. `AskTurn` runs the
+  text through `useRevealedMarkdown` and parses only the revealed prefix, and
+  `AskAnswer` hands each text run its share of the fading tail
+  (`sliceFreshTail`) for `InlineMarkdown`. The actions and the footer wait
+  until the reveal ends (see Text reveal).
 - **Stop.** Stop is latched from the moment the reply shows as streaming:
   `sendAskQuestion` checks it after saving the two messages and never launches
   the CLI, and a Stop that lands while `ask_turn` is spawning cancels again

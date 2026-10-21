@@ -50,6 +50,21 @@ describe('InlineMarkdown', () => {
     expect(container.textContent).toBe('2 regions down');
   });
 
+  it('fades only the fresh tail and keeps the rest plain', () => {
+    const fresh = {
+      pieces: [{ key: 0, length: 4 }],
+      fadeMs: 220,
+      rowStaggerMs: 40,
+      maxStaggerRows: 8,
+    };
+    const { container } = render(<InlineMarkdown text="see **auth** now" fresh={fresh} />);
+
+    expect(container.textContent).toBe('see auth now');
+    const spans = container.querySelectorAll('[data-fresh]');
+    expect(spans).toHaveLength(1);
+    expect(spans[0]?.textContent).toBe(' now');
+  });
+
   it('applies the className to the wrapper', () => {
     const { container } = render(<InlineMarkdown text="title" className="truncate" />);
 

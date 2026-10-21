@@ -27,6 +27,8 @@ import { createResolveThread } from './createResolveThread';
 import { reconcileResolveAttempts } from './reconcileResolveAttempts';
 import { threadOutcome } from './threadOutcome';
 import { SETTLE_CEILING_MS, markTurnActive, markTurnSettled } from '../turn/turnSettled';
+import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 
 const h = vi.hoisted(() => ({
   execute: vi.fn(),
@@ -1715,5 +1717,39 @@ describe('starting a resolver on a queued comment', () => {
     expect(
       (live.get().sessionResolveAttempts[SESSION_ID] ?? []).map((attempt) => attempt.id),
     ).toContain(attemptId);
+  });
+});
+
+const isLanding = ({ scope, id }: Parameters<typeof landingLiveKey>[0]): boolean =>
+  liveTextRegistry.isLanding({ runId: landingLiveKey({ scope, id }) });
+
+describe('a resolver turn landing while the user looks', () => {
+  it('marks each written thread and the agent live as the rows land', async () => {
+    liveTextRegistry.clear();
+    const live = createHarness();
+
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+    });
+
+    expect(isLanding({ scope: 'resolve-thread', id: 'PRRT_1' })).toBe(true);
+    expect(isLanding({ scope: 'resolve-thread', id: 'PRRT_2' })).toBe(true);
+    expect(isLanding({ scope: 'resolve-agent', id: AGENT_ID })).toBe(true);
+  });
+
+  it('marks nothing when a session loads the rows it already had', async () => {
+    await createHarness().actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+    });
+    liveTextRegistry.clear();
+
+    await createHarness().actions.loadResolveSession({ sessionId: SESSION_ID });
+
+    expect(isLanding({ scope: 'resolve-thread', id: 'PRRT_1' })).toBe(false);
+    expect(isLanding({ scope: 'resolve-agent', id: AGENT_ID })).toBe(false);
   });
 });

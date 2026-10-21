@@ -9,6 +9,7 @@ import {
 import type { AgentId, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 import { TEST_NOW, anAgent, nextProviderRunId } from '@goodboy/types/testing';
 import { seedSessionWithMounts } from '../__tests__/helpers/seedSessionWithMounts';
+import { agentLiveKey } from '../features/chat/reveal/agentLiveKey';
 import { liveTextRegistry } from '../features/chat/reveal/liveTextRegistry';
 import { revealPacer } from '../features/chat/reveal/revealPacer';
 
@@ -67,6 +68,7 @@ type Seed = {
 
 let useAppStore: StoryStore;
 let spawnedRunId: ProviderRunId | null = null;
+let streamAgentId: AgentId | null = null;
 
 const answerStream = async function* ({ runId }: RunParams): AsyncIterable<TurnEvent> {
   spawnedRunId = runId;
@@ -77,6 +79,14 @@ const answerThenErrorStream = async function* ({ runId }: RunParams): AsyncItera
   spawnedRunId = runId;
   yield { kind: 'assistant_text', runId, delta: ANSWER, at: TEST_NOW };
   revealPacer.track({ key: `${runId}:text-1`, text: LONG_TEXT, isComplete: true, startCut: 0 });
+  if (streamAgentId !== null) {
+    revealPacer.track({
+      key: `${agentLiveKey({ agentId: streamAgentId })}:finding`,
+      text: LONG_TEXT,
+      isComplete: true,
+      startCut: 0,
+    });
+  }
   yield { kind: 'error', runId, message: 'connection reset by peer', at: TEST_NOW };
 };
 
@@ -101,6 +111,7 @@ describe('live text mark', () => {
     liveTextRegistry.clear();
     revealPacer.reset();
     spawnedRunId = null;
+    streamAgentId = null;
     const routingMod = await import('../features/providers/routing');
     vi.mocked(routingMod.resolveProviderForTurn).mockResolvedValue({
       selectedProvider: 'anthropic',
@@ -117,12 +128,13 @@ describe('live text mark', () => {
 
   it('marks the run live when text comes through the turn stream', async () => {
     runTurnSpy.mockImplementation((args: RunParams) => answerStream({ runId: args.runId }));
-    const { sessionId } = setupSession();
+    const { sessionId, agentId } = setupSession();
 
     await useAppStore.getState().sendTurn({ sessionId, content: 'hello' });
 
     expect(spawnedRunId).not.toBeNull();
     expect(liveTextRegistry.isLive({ runId: spawnedRunId ?? nextProviderRunId() })).toBe(true);
+    expect(liveTextRegistry.isLive({ runId: agentLiveKey({ agentId }) })).toBe(true);
   });
 
   it('never marks text that is loaded or replayed through appendTurnEvent', () => {
@@ -137,6 +149,7 @@ describe('live text mark', () => {
     });
 
     expect(liveTextRegistry.isLive({ runId })).toBe(false);
+    expect(liveTextRegistry.isLive({ runId: agentLiveKey({ agentId }) })).toBe(false);
   });
 
   it('finishes the reveal of the run before an error row lands', async () => {
@@ -149,5 +162,31 @@ describe('live text mark', () => {
 
     const snapshot = revealPacer.snapshotOf({ key: `${spawnedRunId}:text-1` });
     expect(snapshot?.cut).toBe(LONG_TEXT.length);
+  });
+
+  it('finishes the agent keyed text of the run before an error row lands', async () => {
+    runTurnSpy.mockImplementation((args: RunParams) =>
+      answerThenErrorStream({ runId: args.runId }),
+    );
+    const { sessionId, agentId } = setupSession();
+    streamAgentId = agentId;
+
+    await useAppStore.getState().sendTurn({ sessionId, content: 'hello' });
+
+    const snapshot = revealPacer.snapshotOf({ key: `${agentLiveKey({ agentId })}:finding` });
+    expect(snapshot?.cut).toBe(LONG_TEXT.length);
+  });
+
+  it('leaves the agent keyed text of another agent revealing on an error', async () => {
+    runTurnSpy.mockImplementation((args: RunParams) =>
+      answerThenErrorStream({ runId: args.runId }),
+    );
+    const { sessionId } = setupSession();
+    const otherKey = `${agentLiveKey({ agentId: 'agent-northwind' })}:finding`;
+    revealPacer.track({ key: otherKey, text: LONG_TEXT, isComplete: true, startCut: 0 });
+
+    await useAppStore.getState().sendTurn({ sessionId, content: 'hello' });
+
+    expect(revealPacer.snapshotOf({ key: otherKey })?.cut).toBeLessThan(LONG_TEXT.length);
   });
 });

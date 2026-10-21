@@ -1,4 +1,6 @@
 import { Button, Chip, cn, inlineMarkdownText } from '@goodboy/ui';
+import { landingLiveKey } from '../../../../chat/reveal/landingLiveKey';
+import { useFreshLanding } from '../../../../chat/reveal/useFreshLanding';
 import { REVIEW_BULK_LABEL } from '../../../reviewBulkCopy';
 import type { BulkQuestion } from '../bulkQuestions';
 
@@ -24,6 +26,10 @@ export const AnswerCard = ({
 }: Props) => {
   const note = question.entry.row.reviewerNote;
   const file = fileOf({ path: note?.path ?? null });
+  const landing = useFreshLanding({
+    liveKey: landingLiveKey({ scope: 'resolve-thread', id: question.threadId }),
+    text: question.text,
+  });
   if (isDropped) {
     return (
       <div className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-3 py-2 text-meta text-muted-foreground">
@@ -53,7 +59,9 @@ export const AnswerCard = ({
           {REVIEW_BULK_LABEL.drop}
         </Button>
       </div>
-      <p className="text-body text-foreground">{inlineMarkdownText({ text: question.text })}</p>
+      <p key={landing.fadeKey} {...landing.fade} className="text-body text-foreground">
+        {inlineMarkdownText({ text: question.text })}
+      </p>
       <div
         role="radiogroup"
         aria-label={`${REVIEW_BULK_LABEL.answerFor} ${file ?? question.threadId}`}

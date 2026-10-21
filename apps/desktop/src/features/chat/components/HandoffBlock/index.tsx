@@ -1,5 +1,7 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import { landingLiveKey } from '../../reveal/landingLiveKey';
+import { useFreshLanding } from '../../reveal/useFreshLanding';
 import { UserText } from '../TranscriptCards/UserText';
 import { HandoffAlsoReceived } from './HandoffAlsoReceived';
 import { HandoffCard } from './HandoffCard';
@@ -15,6 +17,11 @@ type Props = {
 
 export const HandoffBlock = ({ item, sessionId, agentId, workingDir, isBrief = false }: Props) => {
   const state = useAgentHandoff({ agentId: item.handoffId });
+  const landing = useFreshLanding({
+    liveKey:
+      item.handoffId === null ? null : landingLiveKey({ scope: 'handoff', id: item.handoffId }),
+    text: state.status === 'ready' ? (item.handoffId ?? '') : '',
+  });
 
   if (state.status === 'loading') {
     return null;
@@ -45,5 +52,9 @@ export const HandoffBlock = ({ item, sessionId, agentId, workingDir, isBrief = f
       </div>
     );
   }
-  return <HandoffCard handoff={state.handoff} sessionId={sessionId} at={item.at} />;
+  return (
+    <div key={landing.fadeKey} {...landing.fade} className="flex min-w-0 flex-col">
+      <HandoffCard handoff={state.handoff} sessionId={sessionId} at={item.at} />
+    </div>
+  );
 };

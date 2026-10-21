@@ -6,6 +6,8 @@ import type { TranscriptItem } from '../../utils/transcript-items';
 import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { stripWorkflowHandoffHeading } from './stripWorkflowHandoffHeading';
+import { landingLiveKey } from '../../reveal/landingLiveKey';
+import { useFreshLanding } from '../../reveal/useFreshLanding';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -24,6 +26,10 @@ export const PhaseTransitionCard = ({ item }: Props) => {
   const context = stripWorkflowHandoffHeading({ context: item.carryForwardContext });
   const hasContext = context.trim().length > 0;
   const canRetry = item.sessionId != null && item.fromAgentId != null;
+  const landing = useFreshLanding({
+    liveKey: landingLiveKey({ scope: 'transcript-event', id: item.at }),
+    text: `${item.fromStep.name} ${item.toStep.name}`,
+  });
   const retry = async () => {
     const sessionId = item.sessionId;
     const agentId = item.fromAgentId;
@@ -39,71 +45,73 @@ export const PhaseTransitionCard = ({ item }: Props) => {
   };
 
   return (
-    <TranscriptDisclosure
-      tone="neutral"
-      open={open && hasContext}
-      bodyClassName="gap-2"
-      header={
-        <TranscriptRowHeader
-          grouped
-          tone="neutral"
-          icon={<Milestone size={ICON_SIZE.row} aria-hidden />}
-          eyebrow="step"
-          open={open}
-          onToggle={() => setOpen((value) => !value)}
-          badge={
-            item.degraded === true && (
-              <span
-                className={`shrink-0 rounded-md px-1 py-px text-chip ${warningTint.bg} ${warningTint.text}`}
+    <div key={landing.fadeKey} {...landing.fade} className="flex min-w-0 flex-col">
+      <TranscriptDisclosure
+        tone="neutral"
+        open={open && hasContext}
+        bodyClassName="gap-2"
+        header={
+          <TranscriptRowHeader
+            grouped
+            tone="neutral"
+            icon={<Milestone size={ICON_SIZE.row} aria-hidden />}
+            eyebrow="step"
+            open={open}
+            onToggle={() => setOpen((value) => !value)}
+            badge={
+              item.degraded === true && (
+                <span
+                  className={`shrink-0 rounded-md px-1 py-px text-chip ${warningTint.bg} ${warningTint.text}`}
+                >
+                  partial brief
+                </span>
+              )
+            }
+            preview={
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="truncate">
+                  {item.fromStep.ordinal + 1}. {item.fromStep.name}
+                </span>
+                <ArrowRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-60" />
+                <span className="truncate">
+                  {item.toStep.ordinal + 1}. {item.toStep.name}
+                </span>
+              </span>
+            }
+            meta={
+              <span className="flex items-center gap-2">
+                {item.durationMs != null && (
+                  <span>{formatDuration({ durationMs: item.durationMs })}</span>
+                )}
+                <span>{timestamp}</span>
+              </span>
+            }
+          />
+        }
+      >
+        {item.degraded === true ? (
+          <Notice
+            tone="warning"
+            placement="inline"
+            title="The step summary failed"
+            body="This step received a deterministic copy of the previous output. Long output omits its middle. A retry repairs the summary for later steps, but cannot replace context already sent to this step."
+            actions={
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!canRetry || isRetrying}
+                onClick={() => void retry()}
               >
-                partial brief
-              </span>
-            )
-          }
-          preview={
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="truncate">
-                {item.fromStep.ordinal + 1}. {item.fromStep.name}
-              </span>
-              <ArrowRight size={ICON_SIZE.row} aria-hidden className="shrink-0 opacity-60" />
-              <span className="truncate">
-                {item.toStep.ordinal + 1}. {item.toStep.name}
-              </span>
-            </span>
-          }
-          meta={
-            <span className="flex items-center gap-2">
-              {item.durationMs != null && (
-                <span>{formatDuration({ durationMs: item.durationMs })}</span>
-              )}
-              <span>{timestamp}</span>
-            </span>
-          }
-        />
-      }
-    >
-      {item.degraded === true ? (
-        <Notice
-          tone="warning"
-          placement="inline"
-          title="The step summary failed"
-          body="This step received a deterministic copy of the previous output. Long output omits its middle. A retry repairs the summary for later steps, but cannot replace context already sent to this step."
-          actions={
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={!canRetry || isRetrying}
-              onClick={() => void retry()}
-            >
-              {isRetrying ? 'Retrying summary' : 'Retry summary'}
-            </Button>
-          }
-        />
-      ) : null}
-      <Eyebrow label="carried forward" />
-      <div className="overflow-x-auto text-label text-foreground">
-        <Markdown text={context} />
-      </div>
-    </TranscriptDisclosure>
+                {isRetrying ? 'Retrying summary' : 'Retry summary'}
+              </Button>
+            }
+          />
+        ) : null}
+        <Eyebrow label="carried forward" />
+        <div className="overflow-x-auto text-label text-foreground">
+          <Markdown text={context} />
+        </div>
+      </TranscriptDisclosure>
+    </div>
   );
 };

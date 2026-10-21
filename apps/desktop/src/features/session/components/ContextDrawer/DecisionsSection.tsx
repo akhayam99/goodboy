@@ -19,6 +19,7 @@ import { AddDecisionRow } from './AddDecisionRow';
 import { DecisionChangesList, type ReadParams } from './DecisionChangesList';
 import { ClosedDecisionRow } from './ClosedDecisionRow';
 import { DecisionRowItem } from './DecisionRowItem';
+import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
 import { EnteringRow } from './EnteringRow';
 import { RawDocumentEditor } from './RawDocumentEditor';
 import {
@@ -296,6 +297,11 @@ export const DecisionsSection = ({
                 <DecisionRowItem
                   number={row.number}
                   text={row.text}
+                  liveKey={
+                    row.agentId === null
+                      ? null
+                      : landingLiveKey({ scope: 'decisions', id: sessionId })
+                  }
                   why={row.why}
                   byline={activeDecisionByline({
                     decision: row,

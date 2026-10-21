@@ -9,6 +9,8 @@ import type {
   ProviderRunId,
   SessionId,
 } from '@goodboy/types';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
+import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { activeAskBackend } from '../../../features/session/ask/activeAskBackend';
 import { buildAskPack } from '../../../features/session/ask/buildAskPack';
 import { buildAskSystemPrompt } from '../../../features/session/ask/buildAskSystemPrompt';
@@ -119,6 +121,9 @@ const finishReply = async ({ set, get, threadId, messageId, outcome }: FinishPar
     : outcome.status === 'done'
       ? 'done'
       : 'failed';
+  if (status !== 'done') {
+    revealPacer.flushRun({ runId: messageId });
+  }
   const finished: ChatMessage = {
     ...current,
     content: stabilizeAskAnswer({
@@ -243,13 +248,15 @@ export const sendAskQuestion =
           }),
           dossier: pack.files,
         },
-        onText: (delta) =>
+        onText: (delta) => {
+          liveTextRegistry.mark({ runId: reply.id });
           patchMessage({
             set,
             threadId: thread.id,
             messageId: reply.id,
             update: (message) => ({ ...message, content: `${message.content}${delta}` }),
-          }),
+          });
+        },
         onRead: (path) =>
           patchMessage({
             set,

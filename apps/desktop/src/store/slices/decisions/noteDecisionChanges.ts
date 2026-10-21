@@ -1,5 +1,7 @@
 import type { DecisionChange } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
+import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 import { decisionsChangedPayload } from './decisionsChangedPayload';
 import type { GetFn } from './types';
 
@@ -14,6 +16,7 @@ export const noteDecisionChanges = (get: GetFn) => {
     if (changes.length === 0) {
       return;
     }
+    liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'decisions', id: sessionId }) });
     await get().loadSessionDecisions(sessionId);
     const payload = decisionsChangedPayload({
       changes,

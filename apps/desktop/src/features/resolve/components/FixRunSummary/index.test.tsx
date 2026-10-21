@@ -28,6 +28,8 @@ import {
   seedResolveScene,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { resolverBriefOf } from '../../hooks/useResolverBrief';
+import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
+import { liveTextRegistry } from '../../../chat/reveal/liveTextRegistry';
 import { FixRunSummary } from '.';
 
 type StoreState = ReturnType<StoryStore['getState']>;
@@ -350,5 +352,44 @@ describe('the fix run summary', () => {
     expect(await screen.findByText('c81e5aa')).toBeDefined();
     expect(screen.queryByText('Commit')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Commits 1' })).toBeDefined();
+  });
+});
+
+const isFresh = ({ text }: { readonly text: string }): boolean =>
+  screen.getByText(text).closest('[data-fresh]') !== null;
+
+describe('the fix run summary landing live', () => {
+  beforeEach(() => {
+    liveTextRegistry.clear();
+  });
+
+  it('fades in what the run did when its rows land while the user looks', async () => {
+    liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'resolve-agent', id: SINGLE }) });
+
+    await mount({ agentId: SINGLE });
+
+    expect(isFresh({ text: 'Capped the retry loop and added jitter.' })).toBe(true);
+  });
+
+  it('shows what a loaded run did whole', async () => {
+    await mount({ agentId: SINGLE });
+
+    expect(isFresh({ text: 'Capped the retry loop and added jitter.' })).toBe(false);
+  });
+
+  it('fades in the question a run asks when it lands while the user looks', async () => {
+    liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'resolve-thread', id: ERROR_SHAPE }) });
+
+    await mount({ agentId: ASKING });
+
+    const card = screen.getByTestId('resolver-question');
+    expect(card.querySelector('[data-fresh]')).not.toBeNull();
+  });
+
+  it('shows the question of a loaded run whole', async () => {
+    await mount({ agentId: ASKING });
+
+    const card = screen.getByTestId('resolver-question');
+    expect(card.querySelector('[data-fresh]')).toBeNull();
   });
 });

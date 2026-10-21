@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Band, Markdown } from '@goodboy/ui';
+import { Band } from '@goodboy/ui';
 import type { Agent, Session, TurnState } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useTranscript } from '../../../../store';
+import { RevealedMarkdown } from '../../../chat/reveal/RevealedMarkdown';
+import { agentLiveKey } from '../../../chat/reveal/agentLiveKey';
 import { lastReplyOf } from '../../lastReplyOf';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
@@ -18,6 +20,8 @@ type Props = {
   readonly session: Session;
   readonly agent: Agent;
 };
+
+const OUTCOME_ITEM_KEY = 'outcome';
 
 export const AgentConversationEnd = ({ session, agent }: Props) => {
   const runs: ReadonlyArray<Agent> = useAppStore(
@@ -72,7 +76,11 @@ export const AgentConversationEnd = ({ session, agent }: Props) => {
       {isRecordedOutcome ? (
         <Band inset="content" label="Outcome" headingLevel={2}>
           <div className="text-prose text-foreground">
-            <Markdown text={outcome.text} />
+            <RevealedMarkdown
+              liveKey={agentLiveKey({ agentId: agent.id })}
+              itemKey={OUTCOME_ITEM_KEY}
+              text={outcome.text}
+            />
           </div>
         </Band>
       ) : null}

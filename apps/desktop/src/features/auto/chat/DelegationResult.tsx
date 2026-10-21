@@ -1,10 +1,14 @@
 import { Check, MessageSquare, X } from 'lucide-react';
-import { Button, ICON_SIZE, Markdown } from '@goodboy/ui';
+import { Button, ICON_SIZE } from '@goodboy/ui';
+import { RevealedMarkdown } from '../../chat/reveal/RevealedMarkdown';
 import { splitArtifactText } from '../../chat/utils/split-artifact-blocks';
 import type { DelegationResultView } from './delegationResultOf';
 
+const SUMMARY_ITEM_KEY = 'delegation-summary';
+
 type Props = {
   readonly result: DelegationResultView;
+  readonly liveKey?: string;
   readonly isRerunningChecks?: boolean;
   readonly onRerunChecks?: () => void;
   readonly isActingPublish?: boolean;
@@ -58,6 +62,7 @@ const proseOf = ({ summary }: SummaryParams): string | null => {
 
 export const DelegationResult = ({
   result,
+  liveKey = '',
   isRerunningChecks = false,
   onRerunChecks,
   isActingPublish = false,
@@ -67,7 +72,14 @@ export const DelegationResult = ({
   const summary = proseOf({ summary: result.summary });
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      {summary === null ? null : <Markdown text={summary} className="min-w-0 text-label" />}
+      {summary === null ? null : (
+        <RevealedMarkdown
+          liveKey={liveKey}
+          itemKey={SUMMARY_ITEM_KEY}
+          text={summary}
+          className="min-w-0 text-label"
+        />
+      )}
       {result.reasonText === null ? null : (
         <p className="text-label text-warning">{result.reasonText}</p>
       )}

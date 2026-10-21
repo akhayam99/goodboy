@@ -13,6 +13,8 @@ import {
 } from '../../../../store/slices/resolve/acceptResolveQueueItem';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { useActionEnv } from '../../../actions/useActionEnv';
+import { landingLiveKey } from '../../../chat/reveal/landingLiveKey';
+import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { attemptNumberOf, previousAttemptsOf } from '../../attemptHistory';
@@ -174,6 +176,10 @@ export const ReviewComment = ({
         ? remoteReply()
         : draftReply;
   const [replyText, setReplyText] = useState(reply);
+  const replyLanding = useFreshLanding({
+    liveKey: landingLiveKey({ scope: 'resolve-thread', id: threadId }),
+    text: reply,
+  });
   const note = row.reviewerNote;
   const author = note?.author ?? null;
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
@@ -332,7 +338,11 @@ export const ReviewComment = ({
       )}
 
       {replyShown && (
-        <div className="group/reply flex min-w-0 flex-col gap-2">
+        <div
+          key={replyLanding.fadeKey}
+          {...replyLanding.fade}
+          className="group/reply flex min-w-0 flex-col gap-2"
+        >
           <SectionHeader
             label={replyHeading({ author })}
             headingLevel={2}

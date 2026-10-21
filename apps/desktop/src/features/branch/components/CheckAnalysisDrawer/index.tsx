@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Bug } from 'lucide-react';
-import { Button, DrawerFrame, HeaderActions, Markdown } from '@goodboy/ui';
+import { Button, DrawerFrame, HeaderActions } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
@@ -18,6 +18,9 @@ import { sectionOf } from '../../checks/sectionOf';
 import { startCheckFix } from '../../checks/startCheckFix';
 import { useCheckChain } from '../../hooks/useCheckChain';
 import { useCheckFixPush } from '../../hooks/useCheckFixPush';
+import { RevealedMarkdown } from '../../../chat/reveal/RevealedMarkdown';
+import { agentLiveKey } from '../../../chat/reveal/agentLiveKey';
+import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { AnalysisHeader } from './AnalysisHeader';
 import { CiFixSteps } from './CiFixSteps';
 import { DrawerSection } from './DrawerSection';
@@ -31,6 +34,8 @@ type Props = {
   readonly checkUrl: string;
   readonly onClose: () => void;
 };
+
+const FINDING_ITEM_KEY = 'finding';
 
 export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: Props) => {
   const { chain, events, turnState } = useCheckChain({ sessionId, mountId, url: checkUrl });
@@ -68,6 +73,8 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
   const analysis =
     agent === null ? null : checkAnalysisOf({ agent, events: events ?? [], turnState });
   const kickoff = analysis?.kickoff ?? '';
+  const liveKey = agent === null ? '' : agentLiveKey({ agentId: agent.id });
+  const proposalLanding = useFreshLanding({ liveKey, text: analysis?.proposal ?? '' });
   const given = sectionOf({ text: kickoff, heading: 'What it was given' })?.body ?? null;
   const log = sectionOf({ text: kickoff, heading: 'Failed log tail' })?.body ?? null;
   const urlName = useAppStore((state) => checkNameOf({ state, mountId, url: checkUrl }));
@@ -121,7 +128,12 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
           />
           <DrawerSection label="Finding" isCollapsible={hasFixLanded}>
             {analysis.finding.length > 0 ? (
-              <Markdown text={analysis.finding} />
+              <RevealedMarkdown
+                liveKey={liveKey}
+                itemKey={FINDING_ITEM_KEY}
+                text={analysis.finding}
+                isComplete={!analysis.isRunning}
+              />
             ) : (
               <p className="text-body text-muted-foreground">Waiting for the Debugger's finding.</p>
             )}
@@ -134,17 +146,23 @@ export const CheckAnalysisDrawer = ({ sessionId, mountId, checkUrl, onClose }: P
                   : 'No fix was proposed.'}
               </p>
             ) : (
-              <ProposedFix
-                sessionId={sessionId}
-                hintScope={hintScope}
-                proposal={analysis.proposal}
-                options={analysis.options}
-                isActionable={chain.state === 'proposal'}
-                isStarting={isStarting}
-                routing={routingShortText(fixRouting)}
-                onStart={(params) => void startFix(params)}
-                onDismiss={() => dismissCheckProposal({ sessionId, agentId: agent.id })}
-              />
+              <div
+                key={proposalLanding.fadeKey}
+                className="flex min-w-0 flex-col gap-3"
+                {...proposalLanding.fade}
+              >
+                <ProposedFix
+                  sessionId={sessionId}
+                  hintScope={hintScope}
+                  proposal={analysis.proposal}
+                  options={analysis.options}
+                  isActionable={chain.state === 'proposal'}
+                  isStarting={isStarting}
+                  routing={routingShortText(fixRouting)}
+                  onStart={(params) => void startFix(params)}
+                  onDismiss={() => dismissCheckProposal({ sessionId, agentId: agent.id })}
+                />
+              </div>
             )}
           </DrawerSection>
           <DrawerSection label="What it was given" isCollapsible>

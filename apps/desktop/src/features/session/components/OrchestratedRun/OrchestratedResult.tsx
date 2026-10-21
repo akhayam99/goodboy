@@ -2,6 +2,7 @@ import { Check, CircleDashed } from 'lucide-react';
 import { Markdown } from '@goodboy/ui';
 import { parseRunSummaryText } from '@goodboy/core';
 import type { Session } from '@goodboy/types';
+import { useFreshLanding } from '../../../chat/reveal/useFreshLanding';
 import { RunFinishedActions } from '../AgentTree/RunFinishedActions';
 import type { RunView } from '../AgentTree/useRunView';
 import { decisionEntries } from '../../../workflows/decisionEntries';
@@ -18,9 +19,12 @@ export const OrchestratedResult = ({ session, view }: Props) => {
   const reason = decisionEntries({ run, steps: workflow.steps }).closing?.reason ?? '';
   const text = run.orchestratorSummary?.trim() ?? '';
   const summary = parseRunSummaryText(text);
+  const landing = useFreshLanding({ liveKey: run.id, text });
 
   return (
     <section
+      key={landing.fadeKey}
+      {...landing.fade}
       aria-label="Result"
       data-orchestrated-result=""
       className="flex min-w-0 flex-col gap-4"

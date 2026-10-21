@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ChatId, ChatMessageId, ProviderRunId } from '@goodboy/types';
+import { brandId, type ChatId, type ChatMessageId, type ProviderRunId } from '@goodboy/types';
 
 type Envelope = {
   readonly runId: string;
@@ -25,6 +25,8 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: listenMock }));
 import { runChatTurn, type ChatTurnRequest } from './runChatTurn';
 
 const RUN = 'run-consent' as ProviderRunId;
+
+const PARTIAL_RUN = brandId<ProviderRunId>({ value: 'run-partial' });
 
 const request = (patch: Partial<ChatTurnRequest>): ChatTurnRequest => ({
   runId: RUN,
@@ -108,6 +110,36 @@ describe('runChatTurn', () => {
       },
     });
     expect(unlistenMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('streams each partial delta once and drops the whole block that repeats them', async () => {
+    const streamed = (text: string) =>
+      JSON.stringify({
+        type: 'stream_event',
+        event: { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } },
+        parent_tool_use_id: null,
+      });
+    invokeMock.mockImplementation(async () => {
+      emit({ runId: PARTIAL_RUN, type: 'line', line: streamed('It lives ') });
+      emit({ runId: PARTIAL_RUN, type: 'line', line: streamed('in payments-api.') });
+      emit({
+        runId: PARTIAL_RUN,
+        type: 'line',
+        line: assistant([{ type: 'text', text: 'It lives in payments-api.' }]),
+      });
+      emit({ runId: PARTIAL_RUN, type: 'end', exit_code: 0, stderr: '' });
+      return PARTIAL_RUN;
+    });
+    const text: string[] = [];
+
+    const outcome = await runChatTurn({
+      request: request({ runId: PARTIAL_RUN }),
+      onText: (delta) => text.push(delta),
+      onRead: () => undefined,
+    });
+
+    expect(outcome).toEqual({ status: 'done' });
+    expect(text).toEqual(['It lives ', 'in payments-api.']);
   });
 
   it('asks Rust for the chat images and names the new message, never a path', async () => {

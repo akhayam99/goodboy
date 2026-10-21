@@ -1,3 +1,4 @@
+import { agentLiveKey } from './agentLiveKey';
 import { healMarkdownPrefix } from './healMarkdownPrefix';
 import { pieceLifetimeMs } from './pieceLifetimeMs';
 import { REVEAL_PACE } from './revealNumbers';
@@ -55,6 +56,7 @@ type SubscribeParams = {
 
 type RunParams = {
   readonly runId: string;
+  readonly agentId?: string;
 };
 
 const LAG_MS = REVEAL_PACE.lagCapSeconds * 1000;
@@ -267,9 +269,13 @@ export const revealPacer = {
       finish(entry);
     }
   },
-  flushRun: ({ runId }: RunParams): void => {
+  flushRun: ({ runId, agentId }: RunParams): void => {
+    const prefixes = [
+      `${runId}:`,
+      ...(agentId === undefined ? [] : [`${agentLiveKey({ agentId })}:`]),
+    ];
     for (const [key, entry] of entries) {
-      if (key.startsWith(`${runId}:`)) {
+      if (prefixes.some((prefix) => key.startsWith(prefix))) {
         finish(entry);
       }
     }
