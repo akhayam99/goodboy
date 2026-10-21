@@ -22,7 +22,6 @@ import {
   autoReviseArtifactStatements,
   autoSubstepStatements,
   insertAutoDelegationStatement,
-  getAutoReservation,
   insertAutoReservationStatement,
   listAutoDelegationsOfRequest,
   recordAutoRefusal,
@@ -83,7 +82,6 @@ type AdmitReceiptEntry = Readonly<{
   attemptId: AutoAttemptId;
   role: string;
   state: 'accepted' | 'awaiting_confirm';
-  ceilingUsd: number;
 }>;
 
 type AdmitReceipt = Readonly<{
@@ -120,35 +118,18 @@ const toAdmissionChild = ({ child }: ToAdmissionChildParams): AdmissionChild => 
 });
 
 type ReceiptOfRowsParams = {
-  readonly db: Database;
   readonly rows: ReadonlyArray<AutoDelegation>;
   readonly requestId: AutoRequestId;
 };
 
-const receiptOfRows = async ({
-  db,
-  rows,
-  requestId,
-}: ReceiptOfRowsParams): Promise<AdmitReceipt> => {
-  const delegations = await Promise.all(
-    rows.map(async (row) => {
-      const reservation = await getAutoReservation({
-        db,
-        treeId: row.treeId,
-        ownerKind: 'attempt',
-        ownerId: row.firstAttemptId,
-      });
-      return {
-        delegationId: row.id,
-        childAgentId: row.childAgentId,
-        attemptId: row.firstAttemptId,
-        role: row.role,
-        state:
-          row.state === 'awaiting_confirm' ? ('awaiting_confirm' as const) : ('accepted' as const),
-        ceilingUsd: reservation?.reservedUsd ?? 0,
-      };
-    }),
-  );
+const receiptOfRows = ({ rows, requestId }: ReceiptOfRowsParams): AdmitReceipt => {
+  const delegations = rows.map((row) => ({
+    delegationId: row.id,
+    childAgentId: row.childAgentId,
+    attemptId: row.firstAttemptId,
+    role: row.role,
+    state: row.state === 'awaiting_confirm' ? ('awaiting_confirm' as const) : ('accepted' as const),
+  }));
   return {
     requestId,
     batchId: rows[0]?.batchId ?? brandId<AutoBatchId>({ value: 'unknown' }),
@@ -159,8 +140,6 @@ const receiptOfRows = async ({
 type BuildStatementsParams = {
   readonly params: AdmitBatchParams;
   readonly snapshot: AdmissionSnapshot;
-  readonly ceilingsUsd: ReadonlyArray<number>;
-  readonly requestedUsd: number;
 };
 
 type BodyHashOfParams = {
@@ -177,12 +156,7 @@ const bodyHashOf = ({ snapshot, artifactId }: BodyHashOfParams): string | null =
   return sha256Hex(live.sourceText);
 };
 
-const buildStatements = ({
-  params,
-  snapshot,
-  ceilingsUsd,
-  requestedUsd,
-}: BuildStatementsParams): ReadonlyArray<Statement> => {
+const buildStatements = ({ params, snapshot }: BuildStatementsParams): ReadonlyArray<Statement> => {
   const tree = snapshot.tree;
   if (tree === null) {
     return [];
@@ -196,7 +170,6 @@ const buildStatements = ({
       generation: params.generation,
       runId: params.runId,
       count: params.children.length,
-      requestedUsd,
       limits: {
         maxCallsPerTurn: AUTO_TREE_LIMITS.delegateCallsPerTurn,
         maxRefusals: AUTO_TREE_LIMITS.refusals,
@@ -299,7 +272,7 @@ const buildStatements = ({
         treeId: params.treeId,
         ownerKind: 'attempt',
         ownerId: child.attemptId,
-        reservedUsd: ceilingsUsd[slot] ?? 0,
+        reservedUsd: 0,
         nowMs: params.nowMs,
       }),
     );
@@ -342,7 +315,7 @@ export const replayAdmission = async ({
   if (rows[0]?.requestHash !== requestHash) {
     return { kind: 'refused', code: 'request_conflict', perChild: [] };
   }
-  const receipt = await receiptOfRows({ db, rows, requestId });
+  const receipt = receiptOfRows({ rows, requestId });
   return { kind: 'replayed', receipt };
 };
 
@@ -389,21 +362,15 @@ export const admitBatch = async (params: AdmitBatchParams): Promise<AdmitOutcome
       return { kind: 'refused', code: verdict.code, perChild: verdict.perChild };
     }
     const outcome = await params.db.transaction({
-      statements: buildStatements({
-        params,
-        snapshot,
-        ceilingsUsd: verdict.ceilingsUsd,
-        requestedUsd: verdict.requestedUsd,
-      }),
+      statements: buildStatements({ params, snapshot }),
     });
     if (outcome.status === 'committed') {
-      const entries = params.children.map((child, slot) => ({
+      const entries = params.children.map((child) => ({
         delegationId: child.delegationId,
         childAgentId: child.childAgentId,
         attemptId: child.attemptId,
         role: child.role,
         state: child.isConfirmForced ? ('awaiting_confirm' as const) : ('accepted' as const),
-        ceilingUsd: verdict.ceilingsUsd[slot] ?? 0,
       }));
       return {
         kind: 'accepted',

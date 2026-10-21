@@ -6,6 +6,7 @@ export type ListGridColumn = {
   readonly isTitle?: boolean;
   readonly tone?: 'label' | 'secondary' | 'hint';
   readonly shouldHideWhenEmpty?: boolean;
+  readonly isShrinkable?: boolean;
 };
 
 type Params = {
@@ -16,5 +17,10 @@ type Params = {
 export const listGridTemplate = ({ columns, hiddenKeys }: Params): string =>
   columns
     .filter((column) => hiddenKeys === undefined || !hiddenKeys.has(column.key))
-    .map((column) => (column.width === 'fill' ? 'minmax(0,1fr)' : `${column.width}px`))
+    .map((column) => {
+      if (column.width === 'fill') {
+        return 'minmax(0,1fr)';
+      }
+      return column.isShrinkable === true ? `minmax(0,${column.width}px)` : `${column.width}px`;
+    })
     .join(' ');

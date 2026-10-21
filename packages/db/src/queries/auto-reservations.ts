@@ -15,21 +15,36 @@ type TreeRefParams = {
 
 export const autoReservedUsdSql = ({ treeRef }: TreeRefParams): string =>
   `(SELECT COALESCE(SUM(reserved_usd), 0) FROM auto_reservations
-     WHERE tree_id = ${treeRef} AND state = 'reserved')`;
+     WHERE tree_id = ${treeRef} AND state = 'reserved' AND owner_kind <> 'attempt')`;
+
+export const autoLiveUsdSql = ({ treeRef }: TreeRefParams): string =>
+  `(SELECT COALESCE(SUM(telemetry_records.estimated_cost_usd), 0) FROM auto_reservations
+     JOIN auto_attempts ON auto_attempts.id = auto_reservations.owner_id
+       AND auto_attempts.tree_id = auto_reservations.tree_id
+     JOIN telemetry_records ON telemetry_records.run_id = auto_attempts.run_id
+     WHERE auto_reservations.tree_id = ${treeRef} AND auto_reservations.owner_kind = 'attempt'
+       AND auto_reservations.state = 'reserved')`;
 
 export const autoSettledUsdSql = ({ treeRef }: TreeRefParams): string =>
   `(SELECT COALESCE(SUM(actual_usd), 0) FROM auto_reservations
      WHERE tree_id = ${treeRef} AND state = 'reconciled')`;
 
+export const autoUsedUsdSql = ({ treeRef }: TreeRefParams): string =>
+  `(${autoSettledUsdSql({ treeRef })} + ${autoLiveUsdSql({ treeRef })} + ${autoReservedUsdSql({ treeRef })})`;
+
 export const autoRemainingUsdSql = ({ treeRef }: TreeRefParams): string =>
-  `(auto_trees.cap_usd - ${autoSettledUsdSql({ treeRef })} - ${autoReservedUsdSql({ treeRef })})`;
+  `(auto_trees.cap_usd - ${autoUsedUsdSql({ treeRef })})`;
 
 export const autoBudgetCoversSql = ({ treeRef }: TreeRefParams): string =>
   `(auto_trees.cap_usd IS NULL OR ${autoRemainingUsdSql({ treeRef })} + ${AUTO_USD_EPSILON} >= ?)`;
 
+export const autoBudgetLeftSql = ({ treeRef }: TreeRefParams): string =>
+  `(auto_trees.cap_usd IS NULL OR ${autoRemainingUsdSql({ treeRef })} > ${AUTO_USD_EPSILON})`;
+
 export type AutoTreeSpend = Readonly<{
   capUsd: number | null;
   settledUsd: number;
+  liveUsd: number;
   reservedUsd: number;
   remainingUsd: number | null;
   estimatedUsd: number;
@@ -38,6 +53,7 @@ export type AutoTreeSpend = Readonly<{
 type SpendRow = {
   readonly cap_usd: number | null;
   readonly settled_usd: number;
+  readonly live_usd: number;
   readonly reserved_usd: number;
   readonly remaining_usd: number | null;
   readonly estimated_usd: number;
@@ -55,6 +71,7 @@ export const readAutoTreeSpend = async ({
   const rows = await db.select<SpendRow>(
     `SELECT auto_trees.cap_usd AS cap_usd,
        ${autoSettledUsdSql({ treeRef: 'auto_trees.id' })} AS settled_usd,
+       ${autoLiveUsdSql({ treeRef: 'auto_trees.id' })} AS live_usd,
        ${autoReservedUsdSql({ treeRef: 'auto_trees.id' })} AS reserved_usd,
        ${autoRemainingUsdSql({ treeRef: 'auto_trees.id' })} AS remaining_usd,
        (SELECT COALESCE(SUM(actual_usd), 0) FROM auto_reservations
@@ -69,6 +86,7 @@ export const readAutoTreeSpend = async ({
   return {
     capUsd: row.cap_usd,
     settledUsd: row.settled_usd,
+    liveUsd: row.live_usd,
     reservedUsd: row.reserved_usd,
     remainingUsd: row.remaining_usd,
     estimatedUsd: row.estimated_usd,
@@ -238,7 +256,8 @@ export const reconcileAutoReservationStatement = ({
 }: ReconcileReservationStatementParams): GuardedStatement => ({
   sql: `UPDATE auto_reservations
     SET state = 'reconciled',
-        actual_usd = CASE WHEN ? IS NULL THEN reserved_usd ELSE ? END,
+        actual_usd = CASE WHEN ? IS NOT NULL THEN ?
+          WHEN owner_kind = 'attempt' THEN 0 ELSE reserved_usd END,
         cost_known = CASE WHEN ? IS NULL THEN 0 ELSE 1 END,
         updated_at = ?
     WHERE tree_id = ? AND owner_kind = ? AND owner_id = ? AND state = 'reserved'`,

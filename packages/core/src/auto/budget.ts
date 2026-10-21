@@ -19,13 +19,15 @@ type AutoTreeSpendOfParams = Omit<AutoTreeSpend, 'remainingUsd'>;
 export const autoTreeSpendOf = ({
   capUsd,
   settledUsd,
+  liveUsd,
   reservedUsd,
   estimatedUsd,
 }: AutoTreeSpendOfParams): AutoTreeSpend => ({
   capUsd,
   settledUsd,
+  liveUsd,
   reservedUsd,
-  remainingUsd: capUsd === null ? null : capUsd - settledUsd - reservedUsd,
+  remainingUsd: capUsd === null ? null : capUsd - settledUsd - liveUsd - reservedUsd,
   estimatedUsd,
 });
 
@@ -35,7 +37,7 @@ type BudgetOfParams = {
 
 export const autoBudgetOf = ({ spend }: BudgetOfParams): AutoBudgetFacts => ({
   capUsd: spend.capUsd === null ? null : roundUsd({ usd: spend.capUsd }),
-  spentUsd: roundUsd({ usd: spend.settledUsd }),
+  spentUsd: roundUsd({ usd: spend.settledUsd + spend.liveUsd }),
   reservedUsd: roundUsd({ usd: spend.reservedUsd }),
   remainingUsd:
     spend.remainingUsd === null ? null : Math.max(0, roundUsd({ usd: spend.remainingUsd })),
@@ -83,17 +85,17 @@ type PromptLineParams = FactsParams & {
 export const autoBudgetPromptLine = ({ facts, turnReservedUsd }: PromptLineParams): string => {
   const estimate = facts.hasEstimate ? ' (some of it estimated)' : '';
   const spent = `Spent ${usdText({ usd: facts.spentUsd })}${estimate}.`;
-  const reserved =
+  const answer =
     turnReservedUsd > 0
-      ? `Reserved ${usdText({ usd: facts.reservedUsd })}, of which ${usdText({ usd: roundUsd({ usd: turnReservedUsd }) })} for this answer.`
-      : `Reserved for running agents ${usdText({ usd: facts.reservedUsd })}.`;
+      ? [`Held ${usdText({ usd: roundUsd({ usd: turnReservedUsd }) })} for this answer.`]
+      : [];
   if (facts.capUsd === null || facts.remainingUsd === null) {
-    return ['Budget for this conversation: no cap.', spent, reserved].join(' ');
+    return ['Budget for this conversation: no cap.', spent, ...answer].join(' ');
   }
   return [
     `Budget for this conversation: ${usdText({ usd: facts.capUsd })}.`,
     spent,
-    reserved,
+    ...answer,
     `Left ${usdText({ usd: facts.remainingUsd })}.`,
   ].join(' ');
 };

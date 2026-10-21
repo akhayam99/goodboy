@@ -160,6 +160,7 @@ type ViewParams = {
   readonly capUsd?: number;
   readonly pendingRefusal?: AutoPendingRefusal | null;
   readonly deliveredResults?: ReadonlyArray<AutoDeliveredResult>;
+  readonly rootAsk?: string | null;
 };
 
 export const aView = ({
@@ -171,13 +172,21 @@ export const aView = ({
   capUsd = 10,
   pendingRefusal = null,
   deliveredResults = [],
+  rootAsk = null,
 }: ViewParams = {}): AutoTreeView => ({
   pendingRefusal,
   deliveredResults,
+  rootAsk,
   tree: aTree({ phase, capUsd }),
   delegations,
   artifacts,
   budget: autoBudgetOf({
-    spend: autoTreeSpendOf({ capUsd, settledUsd: spentUsd, reservedUsd, estimatedUsd: 0 }),
+    spend: autoTreeSpendOf({
+      capUsd,
+      settledUsd: spentUsd,
+      liveUsd: 0,
+      reservedUsd,
+      estimatedUsd: 0,
+    }),
   }),
 });

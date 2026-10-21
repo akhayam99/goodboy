@@ -45,7 +45,12 @@ export const NextStackView = ({ cards, actionsFor, chipFor }: Props) => {
     ({ actions }) => actions.menu !== null || actions.foldedTarget !== null,
   );
   return (
-    <section ref={ref} aria-label="Next steps" className="flex min-w-0 flex-col gap-2">
+    <section
+      ref={ref}
+      aria-label="Next steps"
+      data-next-stack=""
+      className="flex min-w-0 flex-col gap-2"
+    >
       <SectionHeader
         label="Next"
         headingLevel={2}

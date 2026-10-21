@@ -1,7 +1,10 @@
+import { AUTO_CHILD_IDLE_MINUTES } from '@goodboy/core';
 import {
   getAutoTree,
+  hasAgentOpenToolCall,
   listOpenAutoDelegations,
   listAutoAttemptsOfDelegation,
+  readAgentLastEventAt,
   type AutoAttempt,
   type AutoDelegation,
   type AutoTree,
@@ -12,15 +15,30 @@ import type { AgentVerbContext } from './verbContext';
 export type EnforceDeadlinesParams = Readonly<{
   ctx: AgentVerbContext;
   treeId: AutoTree['id'];
+  watchedSinceMs: number;
 }>;
 
-const REASON = 'deadline_passed';
+const DEADLINE_REASON = 'deadline_passed';
+const IDLE_REASON = 'no_activity';
+const IDLE_MS = AUTO_CHILD_IDLE_MINUTES * 60_000;
 
 type ExpireParams = {
   readonly ctx: AgentVerbContext;
   readonly tree: AutoTree;
   readonly delegation: AutoDelegation;
   readonly attempt: AutoAttempt;
+};
+
+type ExpireRunningParams = ExpireParams & {
+  readonly reason: string;
+};
+
+type IdleParams = {
+  readonly ctx: AgentVerbContext;
+  readonly delegation: AutoDelegation;
+  readonly attempt: AutoAttempt;
+  readonly watchedSinceMs: number;
+  readonly nowMs: number;
 };
 
 const expirePaused = async ({ ctx, tree, delegation, attempt }: ExpireParams): Promise<boolean> => {
@@ -31,14 +49,14 @@ const expirePaused = async ({ ctx, tree, delegation, attempt }: ExpireParams): P
         sql: `UPDATE auto_attempts
           SET state = 'ended', outcome = 'timed_out', end_reason = ?, ended_at = ?
           WHERE id = ? AND generation = ? AND state = 'paused'`,
-        params: [REASON, nowMs, attempt.id, tree.generation],
+        params: [DEADLINE_REASON, nowMs, attempt.id, tree.generation],
         abortWhen: 'noChanges',
         abortCode: 'expire_paused',
       },
       {
         sql: `UPDATE auto_outbox SET state = 'dropped', dropped_reason = ?
           WHERE tree_id = ? AND join_key = ? AND state = 'pending'`,
-        params: [REASON, tree.id, `question:${attempt.id}`],
+        params: [DEADLINE_REASON, tree.id, `question:${attempt.id}`],
       },
       {
         sql: 'UPDATE auto_trees SET phase_rev = phase_rev + 1, updated_at = ? WHERE id = ?',
@@ -54,7 +72,8 @@ const expireRunning = async ({
   tree,
   delegation,
   attempt,
-}: ExpireParams): Promise<boolean> => {
+  reason,
+}: ExpireRunningParams): Promise<boolean> => {
   const cancelled = await ctx.ports.cancelRun({
     sessionId: tree.sessionId,
     agentId: delegation.childAgentId,
@@ -71,16 +90,43 @@ const expireRunning = async ({
     delegation,
     attempt,
     generation: tree.generation,
-    reason: REASON,
+    reason,
     outcome: 'timed_out',
     costUsd: null,
   });
   return settled.kind === 'settled';
 };
 
+const isIdle = async ({
+  ctx,
+  delegation,
+  attempt,
+  watchedSinceMs,
+  nowMs,
+}: IdleParams): Promise<boolean> => {
+  const quietSince = Math.max(attempt.startedAt, watchedSinceMs);
+  if (nowMs - quietSince < IDLE_MS) {
+    return false;
+  }
+  const lastEventAt = await readAgentLastEventAt({
+    db: ctx.db,
+    agentId: delegation.childAgentId,
+    sinceMs: quietSince,
+  });
+  if (lastEventAt !== null && nowMs - lastEventAt < IDLE_MS) {
+    return false;
+  }
+  return !(await hasAgentOpenToolCall({
+    db: ctx.db,
+    agentId: delegation.childAgentId,
+    sinceMs: attempt.startedAt,
+  }));
+};
+
 export const enforceDeadlines = async ({
   ctx,
   treeId,
+  watchedSinceMs,
 }: EnforceDeadlinesParams): Promise<boolean> => {
   const isOwner = await ctx.scheduler.claim({ treeId });
   const tree = isOwner ? await getAutoTree({ db: ctx.db, treeId }) : null;
@@ -91,12 +137,16 @@ export const enforceDeadlines = async ({
   const open = await listOpenAutoDelegations({ db: ctx.db, treeId });
   let hasActed = false;
   for (const delegation of open) {
-    const isExpired = delegation.deadlineAt <= nowMs;
-    const isLive =
-      delegation.state === 'starting' ||
-      delegation.state === 'running' ||
-      delegation.state === 'paused';
-    if (!isExpired || !isLive) {
+    const isDeadlinePassed = delegation.deadlineAt <= nowMs;
+    const isPausedDelegation = delegation.state === 'paused';
+    const isWorking = delegation.state === 'starting' || delegation.state === 'running';
+    if (!isWorking && !isPausedDelegation) {
+      continue;
+    }
+    if (isPausedDelegation && (!isDeadlinePassed || tree.phase === 'blocked')) {
+      continue;
+    }
+    if (isWorking && !isDeadlinePassed && nowMs - watchedSinceMs < IDLE_MS) {
       continue;
     }
     const attempts = await listAutoAttemptsOfDelegation({
@@ -108,9 +158,21 @@ export const enforceDeadlines = async ({
       continue;
     }
     const params = { ctx, tree, delegation, attempt };
-    const hasChanged =
-      attempt.state === 'paused' ? await expirePaused(params) : await expireRunning(params);
-    hasActed = hasActed || hasChanged;
+    if (attempt.state === 'paused') {
+      if (!isDeadlinePassed || tree.phase === 'blocked') {
+        continue;
+      }
+      hasActed = (await expirePaused(params)) || hasActed;
+      continue;
+    }
+    if (isPausedDelegation) {
+      hasActed = (await expireRunning({ ...params, reason: DEADLINE_REASON })) || hasActed;
+      continue;
+    }
+    if (!(await isIdle({ ctx, delegation, attempt, watchedSinceMs, nowMs }))) {
+      continue;
+    }
+    hasActed = (await expireRunning({ ...params, reason: IDLE_REASON })) || hasActed;
   }
   return hasActed;
 };

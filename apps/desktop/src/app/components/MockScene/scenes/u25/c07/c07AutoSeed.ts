@@ -194,7 +194,13 @@ type CappedParams = {
 const cappedViewOf = ({ view }: CappedParams): AutoTreeView => ({
   ...view,
   budget: autoBudgetOf({
-    spend: autoTreeSpendOf({ capUsd: 10, settledUsd: 9.5, reservedUsd: 0.5, estimatedUsd: 0 }),
+    spend: autoTreeSpendOf({
+      capUsd: 10,
+      settledUsd: 9.5,
+      liveUsd: 0,
+      reservedUsd: 0.5,
+      estimatedUsd: 0,
+    }),
   }),
 });
 

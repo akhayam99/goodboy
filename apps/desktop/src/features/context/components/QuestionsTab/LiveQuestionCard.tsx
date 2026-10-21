@@ -12,6 +12,7 @@ import { useQuestionDelegateControls } from '../../hooks/useQuestionDelegateCont
 import { QuestionCard, type QuestionCardState } from './QuestionCard';
 import type { QuestionPagerModel } from './QuestionCard/QuestionPager';
 import { useOpenQuestions } from './useOpenQuestions';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
@@ -56,6 +57,15 @@ export const LiveQuestionCard = ({
   const delegate = useQuestionDelegateControls({ sessionId, question });
   const { answer, undo } = useAnswerQuestion({ sessionId });
   const sendAsMessage = useSendQuestionAsMessage({ sessionId });
+  const menu = useObjectMenuTrigger({
+    target: {
+      kind: 'question',
+      sessionId,
+      questionId: question.id,
+      askerId: question.createdByAgentId ?? null,
+    },
+    anchorKey: `question-card:${question.id}`,
+  });
 
   const asker =
     question.createdByAgentId == null
@@ -94,7 +104,12 @@ export const LiveQuestionCard = ({
   };
 
   return (
-    <div data-oq-anchor={question.id} className="min-w-0">
+    <div
+      data-oq-anchor={question.id}
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
+      className="min-w-0"
+    >
       <QuestionCard
         question={question}
         variant={variant}

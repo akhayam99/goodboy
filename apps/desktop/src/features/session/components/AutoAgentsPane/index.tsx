@@ -37,7 +37,7 @@ export const AutoAgentsPane = ({ session }: Props) => {
   );
   const rows = useMemo(
     () =>
-      roots.map((agent, index): Readonly<{ agent: Agent; row: RailRow }> => {
+      roots.map((agent, index): Readonly<{ agent: Agent; row: RailRow; ask: string | null }> => {
         const routing = {
           provider: providers[agent.id] ?? null,
           model: models[agent.id] ?? null,
@@ -53,7 +53,11 @@ export const AutoAgentsPane = ({ session }: Props) => {
                 rootRouting: routing,
                 rootTurn: turnStates[index] ?? null,
               });
-        return { agent, row: root ?? restingRootRowOf({ agentId: agent.id, ...routing }) };
+        return {
+          agent,
+          row: root ?? restingRootRowOf({ agentId: agent.id, ...routing }),
+          ask: view?.rootAsk ?? null,
+        };
       }),
     [roots, views, agents, providers, models, efforts, turnStates],
   );
@@ -81,8 +85,14 @@ export const AutoAgentsPane = ({ session }: Props) => {
       >
         {hasRows ? (
           <ul aria-label={NAMES.autoAgents} className="flex flex-col">
-            {rows.map(({ agent, row }) => (
-              <AutoTreeRow key={agent.id} agent={agent} row={row} onOpen={() => open(agent.id)} />
+            {rows.map(({ agent, row, ask }) => (
+              <AutoTreeRow
+                key={agent.id}
+                agent={agent}
+                row={row}
+                ask={ask}
+                onOpen={() => open(agent.id)}
+              />
             ))}
           </ul>
         ) : (

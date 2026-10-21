@@ -81,7 +81,7 @@ describe('AutoDeliveryResults', () => {
       within(cards)
         .getAllByRole('article')
         .map((card) => card.getAttribute('aria-label')),
-    ).toEqual(['Reviewer 2, Done']);
+    ).toEqual(['work for review-b, Done']);
     expect(within(cards).getByText('One race in applyCredit.')).toBeDefined();
     expect(screen.queryByText('No blocking issues.')).toBeNull();
   });

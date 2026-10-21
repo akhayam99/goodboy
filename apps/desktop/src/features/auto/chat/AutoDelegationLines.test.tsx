@@ -61,14 +61,15 @@ describe('AutoDelegationLines', () => {
 
     const line = screen.getByRole('listitem');
     expect(within(line).queryByText('Delegated to')).toBeNull();
-    expect(within(line).getByText('Implementer')).toBeDefined();
+    expect(within(line).getByRole('img', { name: 'Implementer' })).toBeDefined();
+    expect(within(line).getByText('work for impl')).toBeDefined();
     expect(within(line).queryByText(/Reserved up to/)).toBeNull();
     expect(within(line).queryByText('Running')).toBeNull();
     fireEvent.click(within(line).getByRole('button', { name: /^Open / }));
     expect(onOpenChild).toHaveBeenCalledWith('agent-impl');
   });
 
-  it('names two agents of one role apart, as their result cards do', () => {
+  it('names two agents of one role apart by their task, as their result cards do', () => {
     renderLines({
       view: aView({
         phase: 'waiting',
@@ -80,8 +81,9 @@ describe('AutoDelegationLines', () => {
     });
 
     const lines = screen.getAllByRole('listitem');
-    expect(within(lines[0] ?? document.body).getByText('Reviewer 1')).toBeDefined();
-    expect(within(lines[1] ?? document.body).getByText('Reviewer 2')).toBeDefined();
+    expect(within(lines[0] ?? document.body).getByText('work for review-a')).toBeDefined();
+    expect(within(lines[1] ?? document.body).getByText('work for review-b')).toBeDefined();
+    expect(within(lines[1] ?? document.body).getByRole('img', { name: 'Reviewer' })).toBeDefined();
   });
 
   it('asks for the plan approval under the Planner line, with the plan one click away', () => {

@@ -1,19 +1,16 @@
 import { AUTO_USD_EPSILON } from '@goodboy/db';
 import type { AdmissionSnapshot } from './admission';
-import { AUTO_MAX_OPEN_CHILDREN, attemptCeilingUsd } from './limits';
+import { AUTO_MAX_OPEN_CHILDREN } from './limits';
 import type { AutoRefusalCode } from './refusals';
-import type { AutoDelegationRole } from './roles';
 
 export type DiagnoseResumeParams = Readonly<{
   snapshot: AdmissionSnapshot;
-  role: AutoDelegationRole;
 }>;
 
 export type ResumeVerdict =
-  | Readonly<{ kind: 'ok'; ceilingUsd: number }>
-  | Readonly<{ kind: 'refused'; code: AutoRefusalCode }>;
+  Readonly<{ kind: 'ok' }> | Readonly<{ kind: 'refused'; code: AutoRefusalCode }>;
 
-export const diagnoseResume = ({ snapshot, role }: DiagnoseResumeParams): ResumeVerdict => {
+export const diagnoseResume = ({ snapshot }: DiagnoseResumeParams): ResumeVerdict => {
   const tree = snapshot.tree;
   if (tree === null) {
     return { kind: 'refused', code: 'not_owner' };
@@ -44,9 +41,8 @@ export const diagnoseResume = ({ snapshot, role }: DiagnoseResumeParams): Resume
   if (snapshot.openCount + 1 > AUTO_MAX_OPEN_CHILDREN) {
     return { kind: 'refused', code: 'breadth_cap' };
   }
-  const ceilingUsd = attemptCeilingUsd({ role, remainingUsd: snapshot.remainingUsd });
-  if (ceilingUsd <= AUTO_USD_EPSILON) {
+  if (snapshot.remainingUsd <= AUTO_USD_EPSILON) {
     return { kind: 'refused', code: 'budget' };
   }
-  return { kind: 'ok', ceilingUsd };
+  return { kind: 'ok' };
 };

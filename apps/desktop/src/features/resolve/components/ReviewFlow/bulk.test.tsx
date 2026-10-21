@@ -163,7 +163,7 @@ describe('answers in bulk', () => {
   it('offers the recommended answers in the run status line when two or more questions are open', async () => {
     await mount({ stage: 'answers' });
 
-    const status = screen.getByRole('region', { name: 'Fix run' });
+    const status = screen.getByRole('region', { name: 'Fix run status' });
     expect(within(status).getByRole('button', { name: 'Use the recommended answers (2)' })).toBe(
       answersButton(),
     );
@@ -435,7 +435,7 @@ describe('retry in bulk', () => {
     stub({ retryCouldntFix });
     await mount({ stage: 'retry' });
 
-    const status = screen.getByRole('region', { name: 'Fix run' });
+    const status = screen.getByRole('region', { name: 'Fix run status' });
     fireEvent.click(within(status).getByRole('button', { name: "Retry 1 that couldn't fix" }));
 
     await waitFor(() => expect(retryCouldntFix).toHaveBeenCalledOnce());

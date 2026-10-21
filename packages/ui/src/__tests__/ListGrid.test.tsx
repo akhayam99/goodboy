@@ -55,6 +55,24 @@ describe('ListGrid', () => {
     }
   });
 
+  it('caps a shrinkable column at its width and lets it give way in a narrow column', () => {
+    render(
+      <ListGrid
+        label="Branches"
+        columns={[
+          { key: 'branch', width: 232, isTitle: true, isShrinkable: true },
+          { key: 'track', width: 80 },
+          { key: 'detail', width: 'fill' },
+        ]}
+      >
+        <ListGridRow cells={['hl/feat-center-home-page', 'track', 'Ready to merge']} />
+      </ListGrid>,
+    );
+    expect(screen.getByRole('list', { name: 'Branches' }).style.gridTemplateColumns).toBe(
+      '0px minmax(0,232px) 80px minmax(0,1fr) 0px',
+    );
+  });
+
   it('starts the first cell after the edge track and right aligns numbers in tabular figures', () => {
     renderGrid({ onSelect: () => undefined });
     const [first] = screen.getAllByRole('button');

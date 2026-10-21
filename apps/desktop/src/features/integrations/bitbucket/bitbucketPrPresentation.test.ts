@@ -19,7 +19,7 @@ describe('describeBitbucketPrState', () => {
     const declined = describeBitbucketPrState({ state: 'DECLINED' });
 
     expect(merged.tone).toBe('merged');
-    expect(declined.tone).toBe('danger');
+    expect(declined.tone).toBe('neutral');
     expect(merged.icon).not.toBe(declined.icon);
   });
 

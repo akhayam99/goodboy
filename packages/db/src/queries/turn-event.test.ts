@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { countUserTextEvents, insertTurnEvent, listTurnEventsForAgent } from './turn-event';
+import {
+  countUserTextEvents,
+  insertTurnEvent,
+  listTurnEventsForAgent,
+  readFirstUserText,
+} from './turn-event';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
 const sessionId = 'session-1' as SessionId;
@@ -71,6 +76,60 @@ describe('turn event queries', () => {
 
     await expect(countUserTextEvents({ db, agentId })).resolves.toBe(2);
     await expect(countUserTextEvents({ db, agentId: otherAgentId })).resolves.toBe(1);
+  });
+
+  it('reads the first user_text of one agent, or null when it has none', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-1',
+      sessionId,
+      agentId,
+      event: { kind: 'assistant_text', runId, delta: 'reply', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-2',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'Fix the ledger-core retry', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-3',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'second', at },
+    });
+
+    await expect(readFirstUserText({ db, agentId })).resolves.toBe('Fix the ledger-core retry');
+    await expect(readFirstUserText({ db, agentId: otherAgentId })).resolves.toBeNull();
+  });
+
+  it('reads the operator ask before any user_text, and never a delivery Auto sent', async () => {
+    await insertTurnEvent(db, {
+      id: 'event-delivered',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'Artifacts in this tree', deliveredBy: 'auto', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-legacy',
+      sessionId,
+      agentId,
+      event: { kind: 'user_text', runId, text: 'legacy text', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-ask',
+      sessionId,
+      agentId,
+      event: { kind: 'operator_text', runId, text: 'Add refunds to payments-api', at },
+    });
+    await insertTurnEvent(db, {
+      id: 'event-delivered-only',
+      sessionId,
+      agentId: otherAgentId,
+      event: { kind: 'user_text', runId, text: 'Artifacts in this tree', deliveredBy: 'auto', at },
+    });
+
+    await expect(readFirstUserText({ db, agentId })).resolves.toBe('Add refunds to payments-api');
+    await expect(readFirstUserText({ db, agentId: otherAgentId })).resolves.toBeNull();
   });
 
   it('keeps who delivered a user_text, and never counts the operator echo as a turn', async () => {

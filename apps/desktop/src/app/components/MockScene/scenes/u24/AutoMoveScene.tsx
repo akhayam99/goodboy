@@ -87,6 +87,7 @@ const movedViewOf = (): AutoTreeView => ({
   budget: null,
   pendingRefusal: null,
   deliveredResults: [],
+  rootAsk: null,
 });
 
 export const AutoMoveScene = ({ state }: Props) => {

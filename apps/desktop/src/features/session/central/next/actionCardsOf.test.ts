@@ -181,10 +181,32 @@ describe('actionCardsOf', () => {
       id: 'auto:agent-fixer:neverStarted',
       band: 0,
       kind: 'neverStarted',
-      title: 'Fixer never started',
-      detail: 'Auto created it at 10:21, no first message reached it.',
+      title: 'Auto is stuck',
+      detail: '"Fixer" never started. Auto created it at 10:21, no first message reached it.',
     });
     expect(cards).toHaveLength(3);
+  });
+
+  it('keeps a blocked Auto child apart from a failed one, with its own words', () => {
+    const cards = actionCardsOf({
+      ...NONE,
+      autoTargets: [
+        {
+          ...NEVER_STARTED,
+          agentId: brandId<AgentId>({ value: 'agent-scout' }),
+          role: 'Map the center page routes',
+          kind: 'childBlocked',
+          reason: 'The design notes are not in harbor-portal.',
+        },
+      ],
+    });
+
+    expect(cards[0]).toMatchObject({
+      id: 'auto:agent-scout:childBlocked',
+      kind: 'childBlocked',
+      title: 'Auto is stuck',
+      detail: '"Map the center page routes" is blocked. The design notes are not in harbor-portal.',
+    });
   });
 
   it('breaks a tie by priority and then by id', () => {

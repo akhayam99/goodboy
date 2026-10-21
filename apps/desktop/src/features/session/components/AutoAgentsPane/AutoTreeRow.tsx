@@ -5,29 +5,36 @@ import { useTranscript } from '../../../../store';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { RailRow } from '../../../auto/chat/railRowsOf';
-import { agentHeadingOf } from '../AgentDetailPane/agentHeadingOf';
-import { briefLineOf } from '../AgentDetailPane/briefLineOf';
+import { autoRootTitleOf } from './autoRootTitleOf';
 import { AUTO_TREE_GRID_COLUMNS } from './autoTreeGridColumns';
 
 type Props = {
   readonly agent: Agent;
   readonly row: RailRow;
+  readonly ask: string | null;
   readonly onOpen: () => void;
 };
 
-export const AutoTreeRow = ({ agent, row, onOpen }: Props) => {
+export const AutoTreeRow = ({ agent, row, ask, onOpen }: Props) => {
   const events = useTranscript(agent.id);
   const title = useMemo(
-    () => agentHeadingOf({ name: agent.name, kind: 'auto', brief: briefLineOf({ events }) }),
-    [agent.name, events],
+    () => autoRootTitleOf({ name: agent.name, ask, events }),
+    [agent.name, ask, events],
   );
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'agent', sessionId: agent.sessionId, agentId: agent.id },
+    anchorKey: `auto-tree:${agent.id}`,
+  });
   return (
     <li>
       <button
         type="button"
         data-auto-tree-row={agent.id}
         onClick={onOpen}
+        onContextMenu={menu.onContextMenu}
+        onKeyDown={menu.onKeyDown}
         className={cn(
           'grid min-h-8 w-full items-center gap-x-3 rounded-md px-2 text-left text-label text-foreground',
           ROW_INTERACTIVE,

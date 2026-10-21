@@ -98,6 +98,7 @@ export const SourceView = ({ text, path, isWrapped, line: targetLine }: Props) =
   const rows = (
     <div
       data-source-view=""
+      data-reading-region=""
       className={cn(
         'flex flex-col [counter-reset:source-line]',
         isWrapped ? 'w-full' : 'w-max min-w-full',

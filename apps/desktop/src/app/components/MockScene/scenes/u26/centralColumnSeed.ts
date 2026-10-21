@@ -35,7 +35,8 @@ import { centralAutoSeedOf } from './centralAutoSeed';
 
 export const COLUMN_SESSION_ID = SESSION_ID;
 
-export type ColumnKind = 'mid' | 'finished' | 'stuck' | 'orchestrated' | 'agent' | 'branches';
+export type ColumnKind =
+  'mid' | 'finished' | 'stuck' | 'blocked' | 'orchestrated' | 'agent' | 'branches';
 
 type SeedParams = {
   readonly kind: ColumnKind;
@@ -576,7 +577,7 @@ type AutoParts = {
 };
 
 type AutoPartsParams = {
-  readonly variant: 'working' | 'stuck';
+  readonly variant: 'working' | 'stuck' | 'blocked';
 };
 
 const autoPartsOf = ({ variant }: AutoPartsParams): AutoParts => {
@@ -668,8 +669,9 @@ const partsOf = ({ kind }: SeedParams): Parts => {
         pr: prOf({ checks: 'success' }),
         checks: PASSED,
       };
-    case 'stuck': {
-      const auto = autoPartsOf({ variant: 'stuck' });
+    case 'stuck':
+    case 'blocked': {
+      const auto = autoPartsOf({ variant: kind });
       return {
         ...NO_PARTS,
         agents: auto.agents,

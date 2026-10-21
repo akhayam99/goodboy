@@ -259,6 +259,23 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(result.getByRole('list', { name: 'Left' })).toBeDefined();
   });
 
+  it('keeps the step tree top down: the first step on top, the newest at the foot', async () => {
+    await mount('c09-orch-done');
+    const section = nodeOf('section[aria-label="Plan and progress"]');
+    const text = section.textContent ?? '';
+    const steps = [
+      'Find where the export spends its time',
+      'Batch the row reads',
+      'Run the 12k export benchmark',
+      'Write the export notes',
+    ];
+    const positions = steps.map((step) => text.indexOf(step));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect([...positions].sort((left, right) => left - right)).toEqual(positions);
+    expect(section.querySelectorAll('[class*="-reverse"]')).toHaveLength(0);
+    expect(section.querySelector('[data-spawned-launch]')).toBeNull();
+  });
+
   it('Recap Left items join the checklist while the run lives', async () => {
     await mount('c09-orch-running');
     expect(checklist().getByText('Prove the batching on 12,000 rows')).toBeDefined();

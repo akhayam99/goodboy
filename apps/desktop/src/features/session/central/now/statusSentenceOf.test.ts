@@ -87,8 +87,38 @@ const orchestratedGroups = ({
 const autoGroups = ({
   state,
 }: {
-  readonly state: 'running' | 'neverStarted';
+  readonly state: 'running' | 'neverStarted' | 'twoRunning' | 'blocked';
 }): ReadonlyArray<LiveGroupModel> => {
+  const isRunning = state !== 'neverStarted';
+  const fixer =
+    state === 'blocked'
+      ? {
+          ...aDelegation({
+            key: 'fixer',
+            role: 'scout',
+            state: 'settled',
+            outcome: 'blocked',
+            result: { declared: { summary: 'The payout notes are not in ledger-core.' } },
+          }),
+          reason: 'declared_blocked',
+        }
+      : {
+          ...aDelegation({
+            key: 'fixer',
+            role: 'implementer',
+            state: isRunning ? 'running' : 'accepted',
+          }),
+          createdAt: isRunning ? FIXTURE_NOW : FIXTURE_NOW - 120_000,
+        };
+  const second =
+    state === 'twoRunning'
+      ? [
+          {
+            ...aDelegation({ key: 'scout', role: 'scout', state: 'running' }),
+            createdAt: FIXTURE_NOW,
+          },
+        ]
+      : [];
   const root = anAgent({
     id: FIXTURE_ROOT,
     sessionId: NOW_SESSION,
@@ -100,16 +130,7 @@ const autoGroups = ({
   const agents = [root];
   const view = aView({
     phase: 'waiting',
-    delegations: [
-      {
-        ...aDelegation({
-          key: 'fixer',
-          role: 'implementer',
-          state: state === 'running' ? 'running' : 'accepted',
-        }),
-        createdAt: state === 'running' ? FIXTURE_NOW : FIXTURE_NOW - 120_000,
-      },
-    ],
+    delegations: [fixer, ...second],
   });
   return liveGroupsOf({
     model: nowModelOf({ agents, autoTrees: [view] }),
@@ -189,13 +210,23 @@ describe('statusSentenceOf', () => {
     );
   });
 
-  it('reads the Auto word, and names a child that never started', () => {
+  it('quotes the open child Auto waits for, and the child that never started', () => {
     expect(sentence({ groups: autoGroups({ state: 'running' }) })).toBe(
-      'Auto is waiting for Implementer.',
+      'Waiting for "work for fixer".',
     );
     expect(sentence({ groups: autoGroups({ state: 'neverStarted' }) })).toBe(
-      'Auto is stuck: Implementer never started.',
+      'Auto is stuck: "work for fixer" never started.',
     );
+  });
+
+  it('says a blocked child is blocked, not stopped, and never prints its code', () => {
+    const said = sentence({ groups: autoGroups({ state: 'blocked' }) });
+    expect(said).toBe('Auto is stuck: "work for fixer" is blocked.');
+    expect(said).not.toContain('declared_blocked');
+  });
+
+  it('counts the open children when Auto waits for more than one', () => {
+    expect(sentence({ groups: autoGroups({ state: 'twoRunning' }) })).toBe('Waiting for 2 agents.');
   });
 
   it('names a single agent and what it works on', () => {
@@ -210,39 +241,39 @@ describe('statusSentenceOf', () => {
     );
   });
 
-  it('adds the first urgent card as a second sentence', () => {
-    expect(
-      sentence({
-        groups: buildGroups(),
-        cards: [aQuestionCard({ where: 'Review' })],
-      }),
-    ).toBe('Build is on step 3 of 6, Implement. Review waits on one answer from you.');
-  });
-
-  it('counts several urgent cards instead of naming them', () => {
+  it('leaves urgent cards to the header count while a group runs', () => {
     expect(
       sentence({
         groups: buildGroups(),
         cards: [aQuestionCard({ where: 'Review' }), aQuestionCard({ where: 'Docs' })],
       }),
-    ).toBe('Build is on step 3 of 6, Implement. 2 things wait on you.');
+    ).toBe('Build is on step 3 of 6, Implement.');
+  });
+
+  it('names the first urgent card without a count when no group runs', () => {
+    expect(
+      sentence({
+        groups: [],
+        cards: [aQuestionCard({ where: 'Review' }), aQuestionCard({ where: 'Docs' })],
+      }),
+    ).toBe('Review waits on one answer from you.');
   });
 
   it('does not say a never started child twice', () => {
     const target = {
       agentId: brandId<AgentId>({ value: 'agent-fixer' }),
       rootAgentId: FIXTURE_ROOT,
-      role: 'Implementer',
+      role: 'work for fixer',
       kind: 'neverStarted',
       reason: 'No first message reached it.',
       canRetry: true,
     } satisfies AutoActionTarget;
     expect(
       sentence({ groups: autoGroups({ state: 'neverStarted' }), cards: [anAutoCard({ target })] }),
-    ).toBe('Auto is stuck: Implementer never started.');
+    ).toBe('Auto is stuck: "work for fixer" never started.');
   });
 
-  it('names two groups and counts the rest', () => {
+  it('names the first two groups in list order and never counts the rest', () => {
     const [first] = buildGroups();
     const [second] = autoGroups({ state: 'running' });
     const [third] = agentGroups({ status: 'running' });
@@ -250,7 +281,7 @@ describe('statusSentenceOf', () => {
       throw new Error('fixture groups missing');
     }
     expect(sentence({ groups: [first, second, third, third, third] })).toBe(
-      'Build is on step 3 of 6, Implement, Auto is waiting for Implementer, and 3 more.',
+      'Build is on step 3 of 6, Implement. Auto is waiting for "work for fixer".',
     );
   });
 

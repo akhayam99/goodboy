@@ -5727,11 +5727,6 @@
       "count": 14
     }
   },
-  "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineRowLabel.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 2
-    }
-  },
   "apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineRowMarker.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 8

@@ -341,6 +341,7 @@ export const SessionDiffPane = ({
       kindsOf={review.kindsOf}
       isReadOnly={isReadOnly}
       onToggleViewed={toggleViewed}
+      fileActions={fileActions}
       onNextUnviewed={nextUnviewed}
       onLeave={leaveTree}
       onFold={rail.fold}

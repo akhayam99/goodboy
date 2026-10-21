@@ -26,6 +26,14 @@ file holds those explanations. Everything below has been "fixed" at least once a
   menu row for Undo: Edit > Undo stays the predefined item, because a custom
   one would steal the press from the text field, the terminal and the Commits
   page that own it. Do not add a second listener for `goodboy://menu`.
+- On macOS a right click first selects the word under the pointer, then fires
+  `contextmenu`. A policy that reads `window.getSelection()` at that moment
+  sees a selection on every row with selectable text and hands the click to the
+  webview menu (Look Up, Translate, Services). So `useNativeMenuPolicy` reads
+  the selection at the press (`mousedown`, capture) and only a selection held
+  before it counts, and only inside `data-reading-region`. Do not move the
+  check back into `useObjectMenuTrigger` with the live selection, and do not
+  drop `select-none` from `ROW_HOVER`.
 - `worktree::foreign` Rust tests (and the origin fetch behind them) read git's
   error text. Under a non-English git locale that text is translated, so the
   fetch runs with `LC_ALL=C` (`git_english`); a test that shells out to git for
@@ -479,6 +487,12 @@ fails silently at runtime.
   an id minted at admission. The attempt row does not exist until
   `startAttempt`, so find that reservation by owner id, never by joining
   `auto_attempts`.
+- Never bring back a dollar ceiling per child or hold money for one at admission.
+  A held amount refuses children and pauses the tree on money nobody spent, and a
+  ceiling charged for an unknown cost bills the user for nothing. A child's money is
+  its telemetry while it runs (`autoLiveUsdSql`) and its reconciled cost after;
+  `autoReservedUsdSql` skips `owner_kind = 'attempt'` so old rows with an amount
+  hold nothing.
 - Never add a fixed count of agents, runs or turns as a hard stop of an Auto tree.
   The spend cap, the no progress streak and the time limit already guard it, and a
   count ends a useful tree with no way forward. `delegations_used`, `attempts_used`

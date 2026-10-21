@@ -154,6 +154,7 @@ export const prepareRetry = async ({
   }
   const synthetic: DelegateChildSpec = {
     role: revises === null ? role : null,
+    title: textOf({ source: original.request, key: 'title' }),
     task: textOf({ source: original.request, key: 'task' }) ?? '',
     reason: child.reason,
     provider: child.provider ?? textOf({ source: original.routing, key: 'provider' }),

@@ -4,6 +4,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ViewedRing } from '../../../../shared/components/ViewedRing';
 import type { TreeRow } from '../../lib/changeTree';
 import { rowHeightOf } from '../../lib/rowHeightOf';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { Delta } from './Delta';
 import { TREE_BASE_PX, TREE_INDENT_PX } from './treeMetrics';
 
@@ -32,6 +33,13 @@ export const FolderRow = ({
   hasDelta,
   onToggle,
 }: Props) => {
+  const menu = useObjectMenuTrigger({
+    target: {
+      kind: 'item',
+      facts: { name: row.label, openLabel: isOpen ? 'Collapse' : 'Expand', onOpen: onToggle },
+    },
+    anchorKey: `tree-folder:${row.id}`,
+  });
   return (
     <li
       id={domId}
@@ -40,6 +48,7 @@ export const FolderRow = ({
       aria-expanded={isOpen}
       aria-selected={isCursor}
       data-tree-row={row.id}
+      onContextMenu={menu.onContextMenu}
       className={cn(
         'relative list-none rounded-sm',
         isCursor && isTreeFocused && 'ring-2 ring-inset ring-focus-ring',

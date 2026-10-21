@@ -19,6 +19,9 @@ import { MOCK_SCENES } from '../..';
 import { U26_P11_SCENES } from './p11';
 
 const WAIT = { timeout: 15_000 };
+const FIRST_REVIEW = 'Review the retry fix in payments-api';
+const SECOND_REVIEW = 'Review the ledger-core side of the retry fix';
+const TESTS = 'Run the retry tests in payments-api';
 
 beforeAll(async () => {
   await importStore();
@@ -70,16 +73,16 @@ describe('the u26 p11 Auto result scenes', () => {
     const named = within(cards)
       .getAllByRole('article')
       .map((card) => card.getAttribute('aria-label'));
-    expect(named).toEqual(['Reviewer 1, Done', 'Reviewer 2, Done', 'Tester, Failed']);
+    expect(named).toEqual([`${FIRST_REVIEW}, Done`, `${SECOND_REVIEW}, Done`, `${TESTS}, Failed`]);
     const delivery = screen.getByTestId('auto-delivery-row');
     const synthesis = screen.getByText(/agree the retry fix is right/);
     expect(isBefore(delivery, cards)).toBe(true);
     expect(isBefore(cards, synthesis)).toBe(true);
-    const first = within(cards).getByRole('article', { name: 'Reviewer 1, Done' });
+    const first = within(cards).getByRole('article', { name: `${FIRST_REVIEW}, Done` });
     expect(within(first).getByText(/built once per credit/)).toBeDefined();
-    const second = within(cards).getByRole('article', { name: 'Reviewer 2, Done' });
+    const second = within(cards).getByRole('article', { name: `${SECOND_REVIEW}, Done` });
     expect(within(second).getByRole('button', { name: 'Show more' })).toBeDefined();
-    const tester = within(cards).getByRole('article', { name: 'Tester, Failed' });
+    const tester = within(cards).getByRole('article', { name: `${TESTS}, Failed` });
     expect(tester.querySelector('[data-clamped]')).toBeNull();
     expect(tester.textContent).not.toContain('Show more');
   });
@@ -88,15 +91,25 @@ describe('the u26 p11 Auto result scenes', () => {
     mount({ id: 'u26-auto-results-light' });
 
     const tree = await screen.findByRole('tree', { name: 'Auto agents' }, WAIT);
-    expect(within(tree).getByRole('treeitem', { name: /^Reviewer 1, / })).toBeDefined();
-    expect(within(tree).getByRole('treeitem', { name: /^Reviewer 2, / })).toBeDefined();
+    const [root] = within(tree).getAllByRole('treeitem');
+    if (root === undefined) {
+      throw new Error('the tree has no root');
+    }
+    expect(root.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.keyDown(root, { key: 'ArrowRight' });
+    expect(
+      within(tree).getByRole('treeitem', { name: `Reviewer, ${FIRST_REVIEW}, Done` }),
+    ).toBeDefined();
+    expect(
+      within(tree).getByRole('treeitem', { name: `Reviewer, ${SECOND_REVIEW}, Done` }),
+    ).toBeDefined();
   });
 
   it('opens the child that wrote a report from its card', async () => {
     mount({ id: 'u26-auto-results-dark' });
 
     const cards = await screen.findByRole('list', { name: 'What the agents reported' }, WAIT);
-    fireEvent.click(within(cards).getByRole('button', { name: 'Open Reviewer 2' }));
+    fireEvent.click(within(cards).getByRole('button', { name: `Open ${SECOND_REVIEW}` }));
 
     expect(useAppStore.getState().drawer).toMatchObject({
       kind: 'auto-child',

@@ -188,6 +188,7 @@ export {
   insertTurnEvent,
   insertTurnEventsBatch,
   countUserTextEvents,
+  readFirstUserText,
   listTurnEventsForAgent,
   listTurnEventsForSession,
   listAgentRunIdsForSession,
@@ -705,6 +706,8 @@ export {
   type DetachAdoptionStatementsParams,
 } from './queries/auto-adoption';
 export { readRunCostUsd } from './queries/auto-cost';
+export { readAgentLastEventAt } from './queries/agent-last-event';
+export { hasAgentOpenToolCall } from './queries/agent-open-tool-call';
 export { readRunLedgerOutcome, type RunLedgerOutcome } from './queries/auto-run-outcome';
 export {
   AUTO_DELEGATION_STATES,

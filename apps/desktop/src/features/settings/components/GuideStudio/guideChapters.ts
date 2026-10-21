@@ -327,7 +327,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Agents panel',
-        desc: 'Agents, or ⌘⌥L, shows what a run or Auto started as a tree. An agent opens its transcript; Back to agents returns.',
+        desc: 'Agents, or ⌘⌥L, shows what a run or Auto started as a folding tree. An agent opens its transcript; Back to agents returns.',
       },
       {
         term: 'Session tools',

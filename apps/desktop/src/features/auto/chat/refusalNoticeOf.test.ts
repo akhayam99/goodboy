@@ -24,7 +24,9 @@ describe('the notice of a refused hand over', () => {
           roles: ['implementer', 'tester', 'implementer'],
         },
       }),
-    ).toContain('Auto tried to start Implementer and Tester. Not started: the limit left');
+    ).toContain(
+      'Auto tried to start Implementer and Tester. Not started: the conversation reached its limit',
+    );
     expect(
       refusalNoticeOf({ refusal: { action: 'block', code: 'spec_invalid', roles: [] } }),
     ).toContain('Auto tried to start an agent. Not started: the request was not valid.');

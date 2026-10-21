@@ -15,6 +15,7 @@ const REVIEW_BATCH = {
   children: [
     {
       role: 'implementer',
+      title: 'Fix the ledger-core retry',
       task: 'Fix the retry in ledger-core.',
       reason: 'a change',
       mount: 'mount-ledger-core',
@@ -114,9 +115,9 @@ describe('the results each Auto turn read, as the chat draws them', () => {
 
     const text = world.state.ports.autoTurns[1]?.text ?? '';
 
-    expect(text).toContain('- Implementer 1 (implementer ');
-    expect(text).toContain('- Implementer 2 (implementer ');
-    expect(text).toContain('- Scout (scout ');
+    expect(text).toContain('- Fix the ledger-core retry (implementer ');
+    expect(text).toContain('- Fix the webhook in notify-relay (implementer ');
+    expect(text).toContain('- Find why the webhook fires twice (scout ');
   });
 
   it('reads the same cards again from the database, as a reload or a second window does', async () => {

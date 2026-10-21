@@ -241,6 +241,7 @@ export const FixCommentsDrawer = ({
                           >
                             {entry.isFixable && (
                               <FixCommentRow
+                                sessionId={sessionId}
                                 entry={entry}
                                 isIncluded={picked.has(entry.threadId)}
                                 isSourceShown={isSourceMixed}

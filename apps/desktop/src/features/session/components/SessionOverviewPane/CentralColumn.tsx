@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -36,6 +36,7 @@ const chipOf = ({ branchLabelOf, mountId }: ChipParams) => {
 
 export const CentralColumn = ({ session, onLeadChange }: Props) => {
   const sessionId = session.id;
+  const columnRef = useRef<HTMLDivElement>(null);
   const isArchived = session.archivedAt != null;
   const model = useSessionWorkModel({ session });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -54,14 +55,22 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     onLeadChange({ hasLead });
   }, [hasLead, onLeadChange]);
 
+  const showNext = useCallback(() => {
+    columnRef.current
+      ?.querySelector('[data-next-stack]')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
   return (
-    <div data-central-column className={PANE_RHYTHM.stack}>
+    <div ref={columnRef} data-central-column className={PANE_RHYTHM.stack}>
       {isArchived ? null : (
         <NowBlock
           sessionId={sessionId}
           model={model}
           cards={cards}
           doneOutcome={doneOutcome}
+          actionsFor={actionsFor}
+          onShowNext={showNext}
           chipFor={({ group }) => chipOf({ branchLabelOf, mountId: group.mountId })}
         />
       )}

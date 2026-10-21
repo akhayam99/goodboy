@@ -51,7 +51,7 @@ const buildGet = ({ agents, views }: BuildParams) => {
 };
 
 describe('continueStoppedAgent on an Auto child', () => {
-  it('asks Auto to retry the child and never sends the child a plain turn', async () => {
+  it('asks Auto to continue the same child and never sends it a plain turn', async () => {
     const { get, sendTurn } = buildGet({
       agents: [ROOT_AGENT, CHILD_AGENT],
       views: [aView({ phase: 'stopped', delegations: [CHILD] })],
@@ -63,7 +63,7 @@ describe('continueStoppedAgent on an Auto child', () => {
     expect(sendTurn).toHaveBeenCalledWith({
       sessionId: FIXTURE_SESSION,
       agentId: FIXTURE_ROOT,
-      content: 'Retry the Implementer that stopped: work for implementer',
+      content: `Continue the Implementer that stopped (delegation ${CHILD.id}) from where it left off: work for implementer`,
       origin: 'operator',
     });
   });
@@ -74,7 +74,10 @@ describe('continueStoppedAgent on an Auto child', () => {
     await continueStoppedAgent(get)({ sessionId: FIXTURE_SESSION, agentId: CHILD_AGENT.id });
 
     expect(sendTurn).toHaveBeenCalledWith(
-      expect.objectContaining({ agentId: FIXTURE_ROOT, content: 'Retry the agent that stopped.' }),
+      expect.objectContaining({
+        agentId: FIXTURE_ROOT,
+        content: 'Continue the agent that stopped from where it left off.',
+      }),
     );
   });
 

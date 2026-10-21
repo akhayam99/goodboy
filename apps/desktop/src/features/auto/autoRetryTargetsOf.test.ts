@@ -13,6 +13,13 @@ import { autoRetryTargetsOf } from './autoRetryTargetsOf';
 
 const ROOT = anAgent({ id: FIXTURE_ROOT, kind: 'auto' });
 const OUTCOMES: ReadonlyArray<AutoOutcome> = ['failed', 'timed_out', 'blocked'];
+const REASON_CODE: Readonly<Record<AutoOutcome, string>> = {
+  completed: 'completed',
+  failed: 'process_error',
+  timed_out: 'deadline_passed',
+  blocked: 'declared_blocked',
+  stopped: 'stopped',
+};
 const LATE = FIXTURE_NOW + 61_000;
 const LINKED = anAgent({
   id: brandId<AgentId>({ value: 'agent-linked' }),
@@ -32,7 +39,7 @@ describe('autoRetryTargetsOf', () => {
       {
         agentId: 'agent-fixer',
         rootAgentId: FIXTURE_ROOT,
-        role: 'Implementer',
+        role: 'work for fixer',
         kind: 'neverStarted',
         reason: null,
         canRetry: true,
@@ -62,16 +69,16 @@ describe('autoRetryTargetsOf', () => {
           outcome,
         }),
         slot,
-        reason: `reason ${outcome}`,
+        reason: REASON_CODE[outcome],
       })),
     });
 
     const targets = autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW });
 
     expect(targets.map((target) => [target.kind, target.reason])).toEqual([
-      ['failed', 'reason failed'],
-      ['failed', 'reason timed_out'],
-      ['failed', 'reason blocked'],
+      ['failed', 'The agent ended with an error.'],
+      ['timedOut', 'It ran out of time.'],
+      ['childBlocked', 'It reported that it is blocked.'],
     ]);
   });
 

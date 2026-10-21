@@ -9,6 +9,7 @@ import { shortcutGlyphs, type ShortcutId } from '../../../../shared/keyboard/reg
 import { useWorkspaceWindowState } from './useWorkspaceWindowState';
 import { useNow } from '../../../../shared/hooks/useNow';
 import { WorkspaceTile } from './WorkspaceTile';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 type Props = {
   readonly workspace: Workspace;
@@ -39,9 +40,16 @@ export const OtherWorkspaceRow = ({
       ? 'In another window'
       : `${projectsLabel} · ${lastSeen === '' ? 'never opened' : lastSeen}`;
 
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'workspace', facts: { name: workspace.name, onOpen, onOpenNewWindow } },
+    anchorKey: `workspace-row:${workspace.id}`,
+  });
+
   return (
     <div
       data-workspace-row={workspace.name}
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
       className={cn(
         'flex min-w-0 items-center gap-1 rounded-md pr-1',
         highlighted ? 'bg-hover' : 'hover:bg-hover',

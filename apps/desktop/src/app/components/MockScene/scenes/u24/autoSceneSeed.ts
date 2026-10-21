@@ -415,6 +415,7 @@ const viewOf = ({
 }: ViewParams): AutoTreeView => ({
   pendingRefusal,
   deliveredResults: [],
+  rootAsk: null,
   tree: {
     ...aTree({ phase, capUsd: 10 }),
     id: TREE_ID,
@@ -424,7 +425,13 @@ const viewOf = ({
   delegations,
   artifacts,
   budget: autoBudgetOf({
-    spend: autoTreeSpendOf({ capUsd: 10, settledUsd: spentUsd, reservedUsd, estimatedUsd: 0 }),
+    spend: autoTreeSpendOf({
+      capUsd: 10,
+      settledUsd: spentUsd,
+      liveUsd: 0,
+      reservedUsd,
+      estimatedUsd: 0,
+    }),
   }),
 });
 

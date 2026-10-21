@@ -16,20 +16,21 @@ type Params = {
   readonly agentId: AgentId;
 };
 
-const GENERIC_MESSAGE = 'Retry the agent that stopped.';
+const GENERIC_MESSAGE = 'Continue the agent that stopped from where it left off.';
 
 type MessageParams = {
+  readonly delegationId: string;
   readonly role: string;
   readonly task: unknown;
 };
 
-const messageOf = ({ role, task }: MessageParams): string => {
+const messageOf = ({ delegationId, role, task }: MessageParams): string => {
   const parsed = parseAutoDelegationRole({ role });
   if (parsed === null) {
     return GENERIC_MESSAGE;
   }
   const noun = AGENT_KIND_META[kindForRole({ role: parsed })].noun;
-  const lead = `Retry the ${noun} that stopped`;
+  const lead = `Continue the ${noun} that stopped (delegation ${delegationId}) from where it left off`;
   return typeof task === 'string' && task !== '' ? `${lead}: ${task}` : `${lead}.`;
 };
 
@@ -38,7 +39,11 @@ export const autoRetryRouteOf = ({ views, runs, agentId }: Params): AutoRetryRou
   if (tree?.kind === 'child') {
     return {
       rootAgentId: tree.view.tree.rootAgentId,
-      message: messageOf({ role: tree.delegation.role, task: tree.delegation.request.task }),
+      message: messageOf({
+        delegationId: tree.delegation.id,
+        role: tree.delegation.role,
+        task: tree.delegation.request.task,
+      }),
     };
   }
   if (tree?.kind === 'root') {

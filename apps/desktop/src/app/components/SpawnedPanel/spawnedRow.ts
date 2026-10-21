@@ -14,3 +14,9 @@ export type SpawnedRow = Readonly<{
   word: string;
   isLive: boolean;
 }>;
+
+export type SpawnedRowFold = Readonly<{
+  isExpanded: boolean;
+  count: number;
+  onToggle: () => void;
+}>;

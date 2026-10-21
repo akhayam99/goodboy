@@ -259,8 +259,7 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     const failure = failures.get(key) ?? null;
     const open = verbOf({ label: 'Open Auto', run: () => openAuto({ target }) });
     const review = verbOf({ label: 'Review plan', run: () => openAuto({ target }) });
-    const canRetry =
-      target.canRetry && (target.kind === 'neverStarted' || target.kind === 'failed');
+    const canRetry = target.canRetry && target.kind !== 'approve' && target.kind !== 'blocked';
     if (!canRetry) {
       return {
         main: target.kind === 'approve' ? review : open,
@@ -272,11 +271,10 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
         foldedTarget: null,
       };
     }
-    const label = failure === null ? `Retry ${target.role}` : RETRY_LABEL;
     return {
       main: verbOf({
-        label,
-        ariaLabel: failure === null ? undefined : `Retry ${target.role}`,
+        label: RETRY_LABEL,
+        ariaLabel: `${RETRY_LABEL} "${target.role}"`,
         isBusy,
         run: () => void runOnce({ key, task: () => retryAuto({ card, target }) }),
       }),

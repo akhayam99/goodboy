@@ -284,8 +284,14 @@ describe('action cards in a stack', () => {
       'action-card-auto:agent-fixer:neverStarted',
       'action-card-owner:question-cap',
     ]);
-    const retry = within(cardAt({ index: 0, cards })).getByRole('button', { name: 'Retry Fixer' });
+    const stuck = within(cardAt({ index: 0, cards }));
+    stuck.getByText('Auto is stuck');
+    stuck.getByText(
+      '"Fixer" never started. Auto created it at 10:21, no first message reached it.',
+    );
+    const retry = stuck.getByRole('button', { name: 'Retry "Fixer"' });
     expect(retry.dataset.variant).toBe('primary');
+    expect(retry.textContent).toBe('Retry');
     within(cardAt({ index: 0, cards })).getByRole('button', { name: 'Open Auto' });
     const answer = within(cardAt({ index: 1, cards })).getByRole('button', { name: 'Answer' });
     expect(answer.dataset.variant).toBe('secondary');

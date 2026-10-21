@@ -304,6 +304,8 @@ export { StatusRailItem } from './components/StatusRailItem';
 export type { StatusRailItemProps } from './components/StatusRailItem';
 export { StatusDot } from './components/StatusDot';
 export type { StatusDotProps } from './components/StatusDot';
+export { StageTrack } from './components/StageTrack';
+export type { StageTrackProps, StageTrackStage, StageTrackState } from './components/StageTrack';
 export { StateDot } from './components/StateDot';
 export type { DotState, StateDotProps } from './components/StateDot';
 export { ListGrid } from './components/ListGrid/ListGrid';

@@ -8,6 +8,9 @@ import { STATUS_LETTER, STATUS_TONE, STATUS_WORD } from '../../lib/fileStatus';
 import type { TreeRow } from '../../lib/changeTree';
 import type { ViewedState } from '../../lib/reviewedFiles';
 import { rowHeightOf } from '../../lib/rowHeightOf';
+import type { DiffFileActions } from '../DiffView/types';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { diffFileFactsOf } from './diffFileFactsOf';
 import { Delta } from './Delta';
 import { TREE_BASE_PX, TREE_INDENT_PX } from './treeMetrics';
 
@@ -24,6 +27,7 @@ type Props = {
   readonly nameLength: number | null;
   readonly hasDelta: boolean;
   readonly canToggleViewed: boolean;
+  readonly fileActions: DiffFileActions | null;
   readonly onPick: () => void;
   readonly onToggleViewed: () => void;
 };
@@ -54,9 +58,14 @@ export const FileRow = ({
   nameLength,
   hasDelta,
   canToggleViewed,
+  fileActions,
   onPick,
   onToggleViewed,
 }: Props) => {
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'diffFile', facts: diffFileFactsOf({ file: row.file, fileActions }) },
+    anchorKey: `tree-file:${row.id}`,
+  });
   const indent = TREE_BASE_PX + row.depth * TREE_INDENT_PX;
   const isViewed = state === 'viewed';
   const count = kinds.notes + kinds.host;
@@ -71,6 +80,7 @@ export const FileRow = ({
       aria-selected={isCursor}
       aria-current={isActive ? 'true' : undefined}
       data-tree-row={row.id}
+      onContextMenu={menu.onContextMenu}
       className={cn(
         'relative list-none rounded-sm',
         isCursor && isTreeFocused && 'ring-2 ring-inset ring-focus-ring',

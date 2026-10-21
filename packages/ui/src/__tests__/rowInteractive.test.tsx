@@ -48,6 +48,17 @@ describe('ROW_INTERACTIVE', () => {
     expect(tokensOf({ value: ROW_INTERACTIVE }).every((token) => classes.has(token))).toBe(true);
   });
 
+  it('keeps the label unselectable, so a macOS right click never selects a word', () => {
+    expect(tokensOf({ value: ROW_HOVER })).toContain('select-none');
+    render(
+      <InteractiveRow label="Open the comment" isSelected={false} onOpen={() => undefined}>
+        <span>Cap the attempts.</span>
+      </InteractiveRow>,
+    );
+    const open = screen.getByRole('button', { name: 'Open the comment' });
+    expect(open.parentElement?.classList.contains('select-none')).toBe(true);
+  });
+
   it('keeps the hover layer off the overlay button so it never doubles', () => {
     render(
       <InteractiveRow label="Open the comment" isSelected={false} onOpen={() => undefined}>

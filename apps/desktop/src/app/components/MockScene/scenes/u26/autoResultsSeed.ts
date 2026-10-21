@@ -158,10 +158,17 @@ export const RESULTS_VIEW: AutoTreeView = {
   delegations: CHILDREN.map((child) => delegationOf(child)),
   artifacts: [],
   budget: autoBudgetOf({
-    spend: autoTreeSpendOf({ capUsd: 10, settledUsd: 0.41, reservedUsd: 0, estimatedUsd: 0 }),
+    spend: autoTreeSpendOf({
+      capUsd: 10,
+      settledUsd: 0.41,
+      liveUsd: 0,
+      reservedUsd: 0,
+      estimatedUsd: 0,
+    }),
   }),
   pendingRefusal: null,
   deliveredResults: CHILDREN.map((child) => deliveredOf(child)),
+  rootAsk: null,
 };
 
 type AgentParams = {
@@ -195,13 +202,13 @@ export const RESULTS_AGENTS: ReadonlyArray<Agent> = [
 const DELIVERY_TEXT = [
   'RESULTS FROM YOUR AGENTS',
   'Results of batch mock-results-batch:',
-  `- Reviewer 1 (reviewer ${FIRST_REVIEWER}): completed`,
-  `- Reviewer 2 (reviewer ${SECOND_REVIEWER}): completed`,
-  `- Tester (tester ${TESTER}): failed, process_error`,
+  `- Review the retry fix in payments-api (reviewer ${FIRST_REVIEWER}): completed`,
+  `- Review the ledger-core side of the retry fix (reviewer ${SECOND_REVIEWER}): completed`,
+  `- Run the retry tests in payments-api (tester ${TESTER}): failed, process_error`,
 ].join('\n');
 
 const SYNTHESIS =
-  'Reviewer 1 and Reviewer 2 agree the retry fix is right in payments-api. Reviewer 2 found one race left in ledger-core, so I would hand that to an Implementer. The Tester ended with an error before it ran anything, so the retry path is still untested. Should I start the Implementer for the race and run the Tester again?';
+  'Both reviews agree the retry fix is right in payments-api. The ledger-core review found one race left, so I would hand that to an Implementer. The retry tests ended with an error before they ran anything, so the retry path is still untested. Should I start the Implementer for the race and run the tests again?';
 
 export const RESULTS_EVENTS: ReadonlyArray<TurnEvent> = [
   {

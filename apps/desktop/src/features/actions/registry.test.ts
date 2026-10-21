@@ -4,6 +4,11 @@ import { AGENT_KIND } from './kinds/agent';
 import { ARTIFACT_KIND } from './kinds/artifact';
 import { DIFF_KIND } from './kinds/diff';
 import { LINK_KIND } from './kinds/link';
+import { CHECK_RUN_KIND } from './kinds/checkRun';
+import { DECISION_KIND } from './kinds/decision';
+import { WORKSPACE_KIND } from './kinds/workspace';
+import { ISSUE_CANDIDATE_KIND } from './kinds/issueCandidate';
+import { ITEM_KIND } from './kinds/item';
 import { PLAN_PART_KIND } from './kinds/planPart';
 import { PORT_KIND } from './kinds/port';
 import { TERMINAL_TAB_KIND } from './kinds/terminalTab';
@@ -75,6 +80,11 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['branch', BRANCH_KIND.actions],
   ['projectAsk', PROJECT_ASK_KIND.actions],
   ['link', LINK_KIND.actions],
+  ['checkRun', CHECK_RUN_KIND.actions],
+  ['decision', DECISION_KIND.actions],
+  ['workspace', WORKSPACE_KIND.actions],
+  ['issueCandidate', ISSUE_CANDIDATE_KIND.actions],
+  ['item', ITEM_KIND.actions],
   ['review', REVIEW_KIND.actions],
   ['reviewComment', REVIEW_COMMENT_KIND.actions],
   ['writeReview', WRITE_REVIEW_KIND.actions],

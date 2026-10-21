@@ -44,6 +44,7 @@ export type CentralNowVariant =
   | 'story'
   | 'story-many'
   | 'story-skipped'
+  | 'story-one-project'
   | 'finished';
 
 export type CentralNowSeed = Readonly<{
@@ -186,6 +187,7 @@ const autoSeed = (): Pick<CentralNowSeed, 'model' | 'agents' | 'cards' | 'source
       {
         ...aDelegation({ key: 'fixer', role: 'implementer', state: 'accepted' }),
         childAgentId: fixerId,
+        request: { title: 'Fix the ledger-core retry', task: 'Fix the ledger-core retry.' },
         createdAt: NOW_CLOCK - 2 * MINUTE_MS,
       },
     ],
@@ -199,7 +201,7 @@ const autoSeed = (): Pick<CentralNowSeed, 'model' | 'agents' | 'cards' | 'source
         target: {
           agentId: fixerId,
           rootAgentId: FIXTURE_ROOT,
-          role: 'Implementer',
+          role: 'Fix the ledger-core retry',
           kind: 'neverStarted',
           reason: 'Auto created it, no first message reached it.',
           canRetry: true,
@@ -313,6 +315,7 @@ const BY_VARIANT: Record<
   story: runSeed,
   'story-many': runSeed,
   'story-skipped': runSeed,
+  'story-one-project': runSeed,
   finished: finishedSeed,
 };
 
@@ -320,11 +323,18 @@ const STORY_COUNT: Partial<Record<CentralNowVariant, 7 | 9 | 20>> = {
   'story-skipped': 7,
   story: 9,
   'story-many': 20,
+  'story-one-project': 9,
 };
 
 export const centralNowSeedOf = ({ variant }: SeedParams): CentralNowSeed => {
   const storyCount = STORY_COUNT[variant];
-  const story = storyCount === undefined ? null : centralStorySeedOf({ count: storyCount });
+  const story =
+    storyCount === undefined
+      ? null
+      : centralStorySeedOf({
+          count: storyCount,
+          repo: variant === 'story-one-project' ? 'payments-api' : null,
+        });
   return {
     ...BY_VARIANT[variant]({ variant }),
     facts: story === null ? factsOf({ variant }) : story.facts,

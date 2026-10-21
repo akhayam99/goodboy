@@ -35,12 +35,20 @@ describe('autoGroupOf', () => {
     expect(group?.title).toBe('Harden retries in payments-api');
   });
 
-  it('prefers the delivered summary, then the agent output summary', () => {
+  it('gives a done child its declared result, then the delivered summary, never its working line', () => {
     const view = aView({
       phase: 'waiting',
       delegations: [
+        aDelegation({
+          key: 'declared',
+          role: 'reviewer',
+          state: 'settled',
+          outcome: 'completed',
+          result: { declared: { summary: 'Clean, one nit on the empty state.' } },
+        }),
         aDelegation({ key: 'reviewer', role: 'reviewer', state: 'settled', outcome: 'completed' }),
         aDelegation({ key: 'docs', role: 'docs', state: 'settled', outcome: 'completed' }),
+        aDelegation({ key: 'fixer', role: 'implementer', state: 'running' }),
       ],
       deliveredResults: [
         {
@@ -57,19 +65,59 @@ describe('autoGroupOf', () => {
     });
     const agents = [
       ROOT,
+      anAgent({ id: childId('declared'), outputSummary: 'I will now read the home page' }),
       anAgent({ id: childId('reviewer'), outputSummary: 'agent side summary' }),
       anAgent({ id: childId('docs'), outputSummary: 'Updated the retry notes' }),
+      anAgent({ id: childId('fixer'), outputSummary: 'Reading the retry helper' }),
     ];
 
     const group = autoGroupOf({ view, agents, now: FIXTURE_NOW });
 
     expect(group?.children.map((child) => child.outcome)).toEqual([
+      'Clean, one nit on the empty state.',
       'Found 2 doc mismatches',
-      'Updated the retry notes',
+      null,
+      'Reading the retry helper',
     ]);
   });
 
-  it('numbers two children of the same role', () => {
+  it('reads a blocked child its own words, else a sentence, never a reason code', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...aDelegation({
+            key: 'scout',
+            role: 'scout',
+            state: 'settled',
+            outcome: 'blocked',
+            result: { declared: { summary: 'The design notes are not in harbor-portal.' } },
+          }),
+          reason: 'declared_blocked',
+        },
+        {
+          ...aDelegation({ key: 'quiet', role: 'scout', state: 'settled', outcome: 'blocked' }),
+          reason: 'declared_blocked',
+          slot: 1,
+        },
+        {
+          ...aDelegation({ key: 'odd', role: 'tester', state: 'settled', outcome: 'failed' }),
+          reason: 'some_new_code',
+          slot: 2,
+        },
+      ],
+    });
+
+    const group = autoGroupOf({ view, agents: [ROOT], now: FIXTURE_NOW });
+
+    expect(group?.children.map((child) => child.reason)).toEqual([
+      'The design notes are not in harbor-portal.',
+      'It reported that it is blocked.',
+      null,
+    ]);
+  });
+
+  it('names two children of the same role by their task', () => {
     const view = aView({
       phase: 'waiting',
       delegations: [
@@ -80,7 +128,7 @@ describe('autoGroupOf', () => {
 
     const group = autoGroupOf({ view, agents: [ROOT], now: FIXTURE_NOW });
 
-    expect(group?.children.map((child) => child.label)).toEqual(['Reviewer 1', 'Reviewer 2']);
+    expect(group?.children.map((child) => child.label)).toEqual(['work for one', 'work for two']);
   });
 
   it('folds a delegation that another one retries', () => {
@@ -112,7 +160,7 @@ describe('autoGroupOf', () => {
         {
           ...aDelegation({ key: 'b', role: 'tester', state: 'settled', outcome: 'timed_out' }),
           slot: 1,
-          reason: 'Ran past its deadline.',
+          reason: 'deadline_passed',
         },
         {
           ...aDelegation({ key: 'c', role: 'docs', state: 'settled', outcome: 'blocked' }),
@@ -128,7 +176,7 @@ describe('autoGroupOf', () => {
       'timedOut',
       'blocked',
     ]);
-    expect(group?.children[1]?.reason).toBe('Ran past its deadline.');
+    expect(group?.children[1]?.reason).toBe('It ran out of time.');
   });
 
   it('nests an agent linked by parentAgentId without a delegation', () => {

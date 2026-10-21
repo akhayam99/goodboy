@@ -716,14 +716,22 @@ const MarkdownImpl = ({ text, className, variant = 'document', fresh }: Markdown
 
   if (variant === 'preview') {
     return (
-      <div className={cn('flex flex-col gap-1 text-body text-foreground', className)}>
+      <div
+        data-reading-region=""
+        className={cn('flex flex-col gap-1 text-body text-foreground', className)}
+      >
         {content}
       </div>
     );
   }
 
   return (
-    <div className={cn('flex flex-col gap-4 text-body text-foreground', className)}>{content}</div>
+    <div
+      data-reading-region=""
+      className={cn('flex flex-col gap-4 text-body text-foreground', className)}
+    >
+      {content}
+    </div>
   );
 };
 

@@ -7,6 +7,8 @@ import {
   cn,
   TruncatedText,
 } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { joinFacts } from '../../../../shared/utils/joinFacts';
 import { useNow } from '../../../../shared/hooks/useNow';
@@ -23,6 +25,7 @@ type RowSelection = {
 };
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly entry: ReviewEntry;
   readonly isSelected: boolean;
   readonly isSourceShown: boolean;
@@ -39,8 +42,19 @@ const GROUP_WORDS: ReadonlySet<string> = new Set([
   'Left open',
 ]);
 
-export const ReviewListRow = ({ entry, isSelected, isSourceShown, onSelect, selection }: Props) => {
+export const ReviewListRow = ({
+  sessionId,
+  entry,
+  isSelected,
+  isSourceShown,
+  onSelect,
+  selection,
+}: Props) => {
   const now = useNow(60_000);
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'reviewComment', sessionId, threadId: entry.threadId },
+    anchorKey: `review-row:${entry.threadId}`,
+  });
   const note = entry.row.reviewerNote;
   const body = entryBodyOf({ entry });
   const title = entryTitleOf({ entry });
@@ -61,7 +75,11 @@ export const ReviewListRow = ({ entry, isSelected, isSourceShown, onSelect, sele
       ? null
       : `${note.path}${note.line == null ? '' : `:${note.line}`}`;
   return (
-    <div className="group/review-row group/select-row relative min-w-0">
+    <div
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
+      className="group/review-row group/select-row relative min-w-0"
+    >
       <button
         type="button"
         data-thread-id={entry.threadId}

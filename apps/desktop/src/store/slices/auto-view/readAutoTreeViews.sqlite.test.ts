@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { brandId, type SessionId } from '@goodboy/types';
+import { brandId, type IsoDateTime, type ProviderRunId, type SessionId } from '@goodboy/types';
+import { insertTurnEvent } from '@goodboy/db';
 import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
 import { batchInput, childInput, makeAutoWorld } from '../auto/testing/autoWorld';
 import { addOutboxRow } from '../auto/testing/deliveryWorld';
@@ -23,7 +24,69 @@ describe('readAutoTreeViews', () => {
       'scout',
       'planner',
     ]);
-    expect(views[0]?.budget).toMatchObject({ capUsd: 5, reservedUsd: 1.25, remainingUsd: 3.75 });
+    expect(views[0]?.budget).toMatchObject({ capUsd: 5, reservedUsd: 0, remainingUsd: 5 });
+  });
+
+  it('carries the first ask the root was started with, without its transcript', async () => {
+    const world = await makeAutoWorld();
+    const before = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+    const rootAgentId = before[0]?.tree.rootAgentId;
+    if (rootAgentId === undefined) {
+      throw new Error('no tree');
+    }
+    expect(before[0]?.rootAsk).toBeNull();
+    const at = brandId<IsoDateTime>({ value: new Date(world.clock.now()).toISOString() });
+    const runId = brandId<ProviderRunId>({ value: 'mock-run-ask' });
+    await insertTurnEvent(world.db, {
+      id: 'ask-1',
+      sessionId: AUTO_SEED_SESSION,
+      agentId: rootAgentId,
+      event: { kind: 'user_text', runId, text: 'Fix the ledger-core retry\nwith tests', at },
+    });
+    await insertTurnEvent(world.db, {
+      id: 'ask-2',
+      sessionId: AUTO_SEED_SESSION,
+      agentId: rootAgentId,
+      event: { kind: 'user_text', runId, text: 'Results from the scout', at },
+    });
+
+    const after = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+
+    expect(after[0]?.rootAsk).toBe('Fix the ledger-core retry\nwith tests');
+    expect(sameAutoTreeViews({ first: before, second: after })).toBe(false);
+  });
+
+  it('titles an Auto root by the operator ask, never by the delivery Auto sent its root', async () => {
+    const world = await makeAutoWorld();
+    const before = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+    const rootAgentId = before[0]?.tree.rootAgentId;
+    if (rootAgentId === undefined) {
+      throw new Error('no tree');
+    }
+    const at = brandId<IsoDateTime>({ value: new Date(world.clock.now()).toISOString() });
+    const runId = brandId<ProviderRunId>({ value: 'mock-run-delivery' });
+    await insertTurnEvent(world.db, {
+      id: 'delivery-1',
+      sessionId: AUTO_SEED_SESSION,
+      agentId: rootAgentId,
+      event: {
+        kind: 'user_text',
+        runId,
+        text: 'Artifacts in this tree, as of 2026-10-21T10:00:00.000Z, generation 1.',
+        deliveredBy: 'auto',
+        at,
+      },
+    });
+    await insertTurnEvent(world.db, {
+      id: 'operator-1',
+      sessionId: AUTO_SEED_SESSION,
+      agentId: rootAgentId,
+      event: { kind: 'operator_text', runId, text: 'Add refunds to payments-api', at },
+    });
+
+    const views = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+
+    expect(views[0]?.rootAsk).toBe('Add refunds to payments-api');
   });
 
   it('reads the newest pending refusal of the current generation, and drops it once delivered', async () => {

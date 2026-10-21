@@ -209,10 +209,21 @@ writing to it reopens it to **Deciding**.
 - **The tree in the Agents panel.** What Auto spawned lives in the Agents
   panel of the session tools ([navigation.md](navigation.md#the-session-tools)):
   opening Auto agents or an Auto agent opens it, and it follows an Auto agent
-  or one of its children in the center. Auto comes first, then one row per
-  child under it, all expanded and with no group row. A row is one line: state
-  node, role glyph, name and the time; its accessible name says the name and
-  the state word, and its fact card (`railRowCardOf`) gives the name, the
+  or one of its children in the center. The tree sits on the Activity rail
+  with Auto at the bottom and one row per child above it, ordered by when Auto
+  started them, newest on top, in the list of launches and in a focused launch
+  alike (one `SpawnedAutoGroup`); a child that starts while you read lower
+  moves in at the top without moving your scroll or focus; a live tree opens, a
+  settled one folds to Auto with its count of children
+  ([navigation.md](navigation.md#the-session-tools)). Auto is titled by the
+  first line of the ask it started with (`autoRootTitleOf`), which the tree
+  view carries (`AutoTreeView.rootAsk`, `readFirstUserText`) so no transcript
+  has to load. The ask is the root's first `operator_text`, else its first
+  `user_text` not marked `deliveredBy: 'auto'`, never the delivery Auto builds
+  (whose first line is the artifact ledger header); then the transcript brief,
+  then "Auto". A row is one line: state node, role glyph, name
+  and the time; its accessible name says the role, the name and the state
+  word, and its fact card (`railRowCardOf`) gives the name, the
   state, the task Auto gave, the provider, the model and the effort as rows.
   While Auto has no child it shows Auto alone ("Idle"
   before a tree exists) and "No agents started yet". Every state word is gray beside its toned node and comes from
@@ -239,8 +250,8 @@ writing to it reopens it to **Deciding**.
   and no **Left**, and the prompt line says "no cap" and
   never prints a left. The root turn claim and child admission pass a NULL cap
   (`autoBudgetCoversSql`), and the gates read it as unbounded
-  (`autoRemainingForGates`); the per attempt ceilings still apply, so one child
-  never runs unbounded. While a session budget exists, No limit is off and says the
+  (`autoRemainingForGates`). A child has no dollar ceiling of its own, with or
+  without a limit: it runs until it is done. While a session budget exists, No limit is off and says the
   session budget sets the limit. A tree is only created with a number; NULL
   comes only from this choice.
 - **The page.** The header is the goal as the title and the provider mark, with
@@ -252,7 +263,7 @@ writing to it reopens it to **Deciding**.
   (`AutoDelegationLines`): its role chip, the task Auto gave and **Open**; the
   lines after one reply share one list (`mergedBatchesOf`). A revision is the same producer with "revising v2", then "v2
   ready". The child's state word is on its rail row, never on the line; its
-  reason, model, reserved amount and result are in its pane. Lines read the
+  reason, model and result are in its pane. Lines read the
   delegation, attempt and agent rows, never the message text, so a reload draws
   the same lines. A revise that waits for an OK carries **Confirm** and
   **Cancel** under its line ("Revise <plan> to v2?"), and a plan that waits for approval carries the
@@ -262,12 +273,37 @@ writing to it reopens it to **Deciding**.
   settles to one quiet line, "Plan v1 · changes asked".
 - **Where a line sits.** A batch goes before the first message sent after it
   settled, and an open batch goes at the end.
-- **Names.** Children of the same role are numbered in the order Auto started
-  them, **Reviewer 1** and **Reviewer 2**, and a role with one child keeps its
-  bare noun (`autoChildLabelsOf`, adopted agents left out of the numbers). The
-  rail row, the delegation line chip, the result card and the delivery text Auto
-  reads all take the name from that one function, so Auto and the screen say the
-  same name.
+- **Names.** A child is named by what it does. Auto gives each child an
+  optional `title` of at most eight words in the delegate block
+  (`DelegateChildSpec.title`, cut to `DELEGATE_TITLE_WORDS`, stored as
+  `request.title`, part of the request hash only when set, and a retry keeps the
+  title of the work it repeats). Without one the name is the first sentence of
+  `request.task`, heading lines skipped and cut at a word end near 60
+  characters (`taskTitleOf`). An old row with neither falls back to the role
+  noun, numbered in the order Auto started them when a role has two or more,
+  **Reviewer 1** and **Reviewer 2** (`autoChildLabelsOf`, adopted agents left out
+  of the numbers). The role stays visible as its glyph, with the noun in its
+  tooltip and accessible name. The rail row, the Agents drawer, the delegation
+  line, the result card and the delivery text Auto reads all take the name from
+  that one function, so Auto and the screen say the same name. The overview
+  quotes that name instead of gluing a verb onto it: a stuck child is a Next
+  card headed "Auto is stuck" that reads `"<name>" never started.` (or
+  `stopped.`, `timed out.`, `is blocked.`, one verb per child state from
+  `autoStuckKindOf` and `autoStuckLineOf`; a blocked child stays a
+  `childBlocked` target, never folded into failed), its verb reads **Retry**
+  with the accessible name `Retry "<name>"`, and the Now sentence of a waiting
+  tree reads `Waiting for "<name>"`, or "Waiting for N agents" when more than
+  one is open ("Auto is waiting for" when another group leads the sentence).
+- **Why a child stopped, and what a done child said.** The second line of a
+  stuck child, and the Next card after its quoted line, is its reason in
+  words, never a code like `declared_blocked`: a blocked child's own summary
+  from `delegation.result.declared.summary`, else the sentence the reason code
+  maps to (`delegationReasonTextOf`, shared with the result card), else
+  nothing. A done child shows the result it declared in `delegation.result`,
+  then the summary Auto accepted, never the working `outputSummary`, and no
+  "Auto asked:" line (`autoGroupOf`, `autoChildCopyOf`). While a child is stuck
+  and Auto is live, the Auto row reads **Stuck**, the same word as the Now
+  header (`AutoGroup.isStuck`), not Auto's own phase.
 - **What the agents reported.** Each child result Auto read for a turn is that
   child's card, right after the **What Auto was told** row of that turn and
   before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing
@@ -288,10 +324,11 @@ writing to it reopens it to **Deciding**.
   Implementer and Tester** with **Change approach** and **Stop Auto and its
   agents** (just **Stop** while no child exists), **Starting agents**, **Reading the results**, **Deciding what to do
   next**, a refused hand over in the user voice, **Paused at the limit: $4.80
-  of $5.00** with **Raise to $10** and **Change limit** (opens the limit
-  popover of the rail foot), **Blocked: <reason>** with **Retry** and **View
-  transcript** (a block at the budget offers **Raise limit** and **Change limit**
-  instead, one at the time limit only **View transcript**). Only `deciding` reads
+  of $5.00** with **Raise to $10**, **Change limit** (opens the limit
+  popover of the rail foot) and **Stop**, plus a line on the agents still
+  running when there are any, **Blocked: <reason>** with **Retry** and **View
+  transcript** (a block at the budget offers **Raise limit**, **Change limit**
+  and **Stop** instead, one at the time limit only **View transcript**). Only `deciding` reads
   **Deciding what to do next**: a resting tree (`answering`, `done`, `finished`)
   whose turn ended draws no tail and no Stop, the rail says Idle or Done and
   **Mark finished** is in the header. A Stop or a Retry that fails says why on the
@@ -306,7 +343,7 @@ writing to it reopens it to **Deciding**.
   view; another child swaps in place, the Auto row of the rail closes it, Esc
   closes it, and its rail row is the selected one. The pane title is the task
   Auto gave it (the role when the task is missing); on top, why Auto chose that role, the model it runs on with its
-  provider, **Reserved up to** while it works and the note when the app changed
+  provider (no dollar amount: a child holds no money) and the note when the app changed
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
   `DelegationResult`; the summary is markdown through the shared `Markdown`,
@@ -328,9 +365,10 @@ writing to it reopens it to **Deciding**.
   one, and a send or a Queue or Send now reaches the child (a stopped or done
   one takes the turn through the normal resume path). The store's selected
   agent of the session is Auto's root and is not the drawer's target.
-  **Retry through Auto** asks Auto to retry
-  a stopped child; it never runs a plain turn on it (`docs/turns.md`, resume
-  rules).
+  **Retry through Auto** asks Auto to continue
+  a stopped child, naming its delegation so Auto sends `retryOf` and the same
+  agent goes on in its worktree; it never runs a plain turn on it
+  (`docs/turns.md`, resume rules).
 - **No permission picker in the tree.** The composer of Auto and of its
   children hides the session's permission mode picker: a tree member runs
   with its role's access, not the session mode.
@@ -401,13 +439,55 @@ that already delegated 12 agents, ran 20 attempts or took 30 turns keeps going. 
 stops it is a guard that protects the user:
 
 - the spend cap of the tree (`AUTO_DEFAULT_TREE_CAP_USD` or the limit the user set
-  and raises), with a per attempt ceiling per role (`AUTO_ATTEMPT_CEILING_USD`);
+  and raises), checked against real spend: settled cost plus what running children
+  spent so far (`autoLiveUsdSql`, their telemetry). No money is held for a child and
+  no child has a ceiling per role: a child is admitted while the limit has money
+  left (or there is no limit) and runs until it is done. Only Auto's own answer
+  holds `AUTO_TURN_CEILING_USD` (and an aux job `AUTO_AUX_RESERVATION_USD`), so
+  Auto's turn never starts with less than that left. A child that reports no cost
+  settles at 0 with its cost marked unknown, never at a ceiling; its result says
+  "cost unknown". Old attempt reservations from before this rule are read as
+  holding nothing;
 - `AUTO_TREE_LIMITS`: delegate calls per turn, refused hand overs, question cycles
   per delegation, the no progress streak and the wall clock hours;
 - four open children and four per batch.
 
-At the spend cap the tail reads **Paused at the limit** with **Raise to ...** and
-**Change limit**; raising it drives the tree again, nothing else to do. The counters
+The limit never throws away work. At the limit no new child is admitted and
+Auto's next turn waits (`turnGate`, blocked with the budget reason), but nothing
+running is stopped: a child that runs keeps running, finishes its turn and settles
+as usual, with its commits, files and result kept (pending in the outbox). Its
+spend can go past the limit; the tail says so ("No new agent starts. The 2 agents
+still running finish their work and can spend past the limit."). A child paused on
+a question is never timed out while the tree is blocked (`enforceDeadlines`), and
+leaving the block gives every paused child a fresh delegation deadline
+(`pausedDeadlineStatement`), so Auto can still answer it. Raising the limit drives
+the tree: the waiting results reach Auto in one turn and the tree goes on where it
+paused; a raise that still does not cover Auto's turn keeps it paused with the
+results kept. With no limit the tree never pauses on money.
+
+A child that ended stopped, timed out, failed or blocked keeps its worktree and
+its partial output. Auto's prompt tells it to continue such a child with
+`retryOf`: the retry runs on the same agent and the same mount, its kickoff says
+the work so far is in the worktree and to continue, not start over
+(`retryNoteOf`), and its first attempt carries the baseline of the stopped one
+(`carriedSnapshot`), so its result counts the commits made before the stop. Only a
+retry of a completed child starts the task again from the start.
+
+Time never cuts a child that works. A running child has no wall clock deadline: it
+is stopped only when its agent shows no output and no tool activity for
+`AUTO_CHILD_IDLE_MINUTES` (30 minutes, a hung CLI), read from the `turn_events` the
+app records for that agent (`enforceDeadlines`, `readAgentLastEventAt`). The quiet
+time counts from the last event, the attempt start or the start of the app,
+whichever is latest, so an old row whose `deadline_at` passed while the app was
+closed is never expired on load. A tool call that started and has not ended
+(`hasAgentOpenToolCall`, a long build or test run) counts as activity, bounded by
+the CLI's own tool timeout. Such a child settles `timed_out` with the reason
+`no_activity` ("It showed no activity for 30 minutes and was stopped. Its work is
+kept.") and Auto continues it with `retryOf` as above. A child paused on a question
+keeps its delegation deadline.
+
+At the spend cap the tail reads **Paused at the limit** with **Raise to ...**,
+**Change limit** and **Stop**; raising it drives the tree again, nothing else to do. The counters
 `delegations_used`, `attempts_used`, `turns_used` and `grants` stay in `auto_trees`
 (no migration): the first three only count and show, `grants` is no longer written
 or read. An old tree with its counts at the old cap resumes as it is. The prompt
@@ -792,6 +872,6 @@ admission use, so they agree. What is left has one SQL formula
 check) and one JS formula (`autoTreeSpendOf` in core, used by seeds, fixtures
 and the delivery line); nothing else subtracts. The budget line of a delivery
 is built before the claim reserves the turn's 0.50 USD, so it counts that
-reservation itself and names it ("Reserved 0.50 USD, of which 0.50 USD for this
-answer. Left 0.68 USD."): the Left Auto reads equals the rail's Left while that
-turn runs. A delivery retried after a failed start reuses its stored text.
+hold itself and names it ("Held 0.50 USD for this answer. Left 0.68 USD."): the
+Left Auto reads equals the rail's Left while that turn runs. The line never
+speaks of money reserved for agents, since none is. A delivery retried after a failed start reuses its stored text.

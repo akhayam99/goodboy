@@ -135,13 +135,28 @@ describe('autoTreeLive', () => {
     expect(idsOf(facts)).toEqual(['retry', 'viewTranscript']);
   });
 
-  it('offers the limit, not Retry, for a tree blocked at the budget', () => {
+  it('offers the limit or Stop, not Retry, for a tree blocked at the budget', () => {
     const view = aView({ phase: 'blocked' });
     const blocked = { ...view, tree: { ...view.tree, blockedReason: AUTO_BLOCK_TEXT.budget } };
     expect(idsOf(autoTreeLive({ ...base, view: blocked, rootTurn: null }))).toEqual([
       'raiseLimit',
       'changeLimit',
+      'stopAuto',
     ]);
+  });
+
+  it('says the agents still running finish past the limit on a budget block', () => {
+    const view = aView({
+      phase: 'blocked',
+      delegations: [
+        aDelegation({ key: 'a', role: 'implementer', state: 'running' }),
+        aDelegation({ key: 'b', role: 'tester', state: 'running' }),
+      ],
+    });
+    const blocked = { ...view, tree: { ...view.tree, blockedReason: AUTO_BLOCK_TEXT.budget } };
+    expect(autoTreeLive({ ...base, view: blocked, rootTurn: null })?.phrase).toBe(
+      `Blocked: ${AUTO_BLOCK_TEXT.budget} No new agent starts. The 2 agents still running finish their work and can spend past the limit.`,
+    );
   });
 
   it('names the roles Auto waits for', () => {
@@ -180,7 +195,19 @@ describe('autoTreeLive', () => {
     const facts = autoTreeLive({ ...base, view, rootTurn: null });
     expect(facts?.state).toBe('paused');
     expect(facts?.phrase).toBe('Paused at the limit: $5.00 of $5.00');
-    expect(idsOf(facts)).toEqual(['raiseLimit', 'changeLimit']);
+    expect(idsOf(facts)).toEqual(['raiseLimit', 'changeLimit', 'stopAuto']);
+  });
+
+  it('says the one agent still running finishes its work at the limit', () => {
+    const view = aView({
+      phase: 'waiting',
+      spentUsd: 5,
+      capUsd: 5,
+      delegations: [aDelegation({ key: 'a', role: 'implementer', state: 'running' })],
+    });
+    expect(autoTreeLive({ ...base, view, rootTurn: null })?.phrase).toBe(
+      'Paused at the limit: $5.00 of $5.00. No new agent starts. The agent still running finishes its work and can spend past the limit.',
+    );
   });
 
   it('never pauses a tree that has no limit', () => {

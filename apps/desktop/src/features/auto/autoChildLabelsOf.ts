@@ -2,16 +2,18 @@ import { parseAutoDelegationRole } from '@goodboy/core';
 import type { AutoDelegation } from '@goodboy/db';
 import type { AgentId } from '@goodboy/types';
 import { AGENT_KIND_META, kindForRole, type AgentKind } from '../session/agent-kind';
+import { taskTitleOf } from './taskTitleOf';
 
 type Params = {
   readonly delegations: ReadonlyArray<
-    Pick<AutoDelegation, 'childAgentId' | 'role' | 'createdAt' | 'isAdopted'>
+    Pick<AutoDelegation, 'childAgentId' | 'role' | 'createdAt' | 'isAdopted' | 'request'>
   >;
 };
 
 type Child = Readonly<{
   childAgentId: AgentId;
   noun: string;
+  title: string | null;
   createdAt: number;
 }>;
 
@@ -38,6 +40,7 @@ export const autoChildLabelsOf = ({ delegations }: Params): ReadonlyMap<AgentId,
     firstByChild.set(delegation.childAgentId, {
       childAgentId: delegation.childAgentId,
       noun: nounOf({ role: delegation.role }),
+      title: taskTitleOf({ request: delegation.request }),
       createdAt: delegation.createdAt,
     });
   }
@@ -54,11 +57,15 @@ export const autoChildLabelsOf = ({ delegations }: Params): ReadonlyMap<AgentId,
     const ordinal = (seenByNoun.get(child.noun) ?? 0) + 1;
     seenByNoun.set(child.noun, ordinal);
     const isAlone = (countByNoun.get(child.noun) ?? 0) < 2;
-    labels.set(child.childAgentId, isAlone ? child.noun : `${child.noun} ${ordinal}`);
+    const numbered = isAlone ? child.noun : `${child.noun} ${ordinal}`;
+    labels.set(child.childAgentId, child.title ?? numbered);
   }
   for (const delegation of delegations) {
     if (delegation.isAdopted && !labels.has(delegation.childAgentId)) {
-      labels.set(delegation.childAgentId, nounOf({ role: delegation.role }));
+      labels.set(
+        delegation.childAgentId,
+        taskTitleOf({ request: delegation.request }) ?? nounOf({ role: delegation.role }),
+      );
     }
   }
   return labels;

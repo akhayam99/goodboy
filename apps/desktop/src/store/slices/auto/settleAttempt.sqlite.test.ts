@@ -76,12 +76,12 @@ describe('settling an attempt', () => {
     });
     expect(await readAutoTreeSpend({ db: world.db, treeId: WORLD_TREE })).toMatchObject({
       settledUsd: 0.2,
-      reservedUsd: 0.75,
+      reservedUsd: 0,
       estimatedUsd: 0,
     });
   });
 
-  it('settles an unknown cost at the reserved ceiling and marks it estimated', async () => {
+  it('settles an unknown cost at nothing, never at a ceiling, and marks it unknown', async () => {
     const world = await runningWorld();
     await world.scheduler.settleAttempt({
       attemptId: attemptB,
@@ -89,13 +89,13 @@ describe('settling an attempt', () => {
       ending: completed(null),
     });
     expect(await readAutoTreeSpend({ db: world.db, treeId: WORLD_TREE })).toMatchObject({
-      settledUsd: 0.75,
-      estimatedUsd: 0.75,
+      settledUsd: 0,
+      estimatedUsd: 0,
     });
     const reservations = await listAutoReservations({ db: world.db, treeId: WORLD_TREE });
     expect(reservations.find((row) => row.ownerId === 'attempt-b')).toMatchObject({
       state: 'reconciled',
-      actualUsd: 0.75,
+      actualUsd: 0,
       isCostKnown: false,
     });
   });
@@ -272,7 +272,7 @@ describe('settling is one step', () => {
       state: 'running',
     });
     const spend = await readAutoTreeSpend({ db: world.db, treeId: WORLD_TREE });
-    expect(spend).toMatchObject({ settledUsd: 0, reservedUsd: 1.25 });
+    expect(spend).toMatchObject({ settledUsd: 0, reservedUsd: 0 });
     expect(await getAutoAttempt({ db: world.db, attemptId: attemptB })).toMatchObject({
       state: 'running',
     });

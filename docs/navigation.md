@@ -440,11 +440,9 @@ never exists on one surface only.
   same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
   flight), Autopilot, Start an agent, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is
-  `select-none`: on macOS WebKit selects the word under the pointer before the
-  contextmenu event, and a selection inside the row keeps the native menu
-  (`keepsNativeMenu`), so the row never offers text to select. The Board card
-  (`StageBoardCard`) and every clickable `ListGridRow` (the Sessions list
-  rows among them) are `select-none` for the same reason.
+  `select-none`, like every row that carries `ROW_HOVER` or `ROW_INTERACTIVE`
+  (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the Board card): see
+  Where the webview menu stays.
 - **One order.** The registry and right click list Open, Act, Copy, then
   lifecycle and destructive verbs, with a rule between groups. Menus and
   visible controls use the same definitions and availability rules.
@@ -593,11 +591,33 @@ never exists on one surface only.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
   does not apply to the state is not shown.
-- **Where the webview menu stays.** Text selected inside the clicked element,
-  editable fields, the composer and the terminal keep the native menu
-  (`useNativeMenuPolicy`). A link in rendered text gets Open link and Copy
-  link. Everywhere else the webview menu, and its Reload, is suppressed, and a
-  blank area opens nothing.
+- **Where the webview menu stays.** Every object row answers right click with
+  its object menu from `features/actions`, never the webview one. A row whose
+  object has verbs elsewhere gets that object's kind and the same verbs: a
+  changed file in the tree takes `diffFile` like the diff file header, a review
+  or fix comment row `reviewComment`, a Context question card `question`, a
+  check run `checkRun`, a decision change `decision`, a workspace in the
+  switcher `workspace`, an issue to start from `issueCandidate`, and a central
+  branch row the rail branch's `mount` target from `useMountMenuTarget` (one
+  source for both, so the worktree status and host verbs match). A row with no
+  verbs of its own reuses the nearest object's kind (a GitHub issue row takes
+  `link`, a worktree page row its branch's `mount`), and a row with no object
+  at all (a Done row, a folder in the changed file tree, an Activity decision
+  or history batch row) takes the generic `item` kind: Open with the row's own
+  open label, and Copy name. `object-rows-open-our-menu.test.tsx` right clicks
+  every row type in its scenes and fails on a row that opens no menu. The native
+  menu stays in three places only (`useNativeMenuPolicy`, `keepsNativeMenu`):
+  editable text fields and the composer (a checkbox or radio is a row, not a
+  field), the terminal, and text the user selected
+  before the right click inside a reading region. A reading region is any
+  element marked `data-reading-region`: `Markdown`, the transcript card shell
+  (`TranscriptShell`), the workspace chat thread, `SourceView`, the diff body
+  (`DiffView`) and `ArtifactDocument`. A selection the right click made itself
+  never counts (the policy reads the selection at the press), and chrome never
+  counts: rows are `select-none` through `ROW_HOVER`, so the press cannot even
+  select their label. A link in rendered text gets Open link and Copy link.
+  Everywhere else the webview menu, and its Reload, is suppressed, and a blank
+  area opens nothing.
 
 ## Surfaces
 
@@ -890,8 +910,9 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   request state glyph in its color (`pullRequestStateToneOf`, next to
   `pullRequestStateWordOf`, whose words are the labels of
   `PULL_REQUEST_PRESENTATION` so an open pull request reads Open everywhere;
-  draft gray, open or approved green, in the merge queue the warning amber,
-  merged violet, closed red, no pull request a neutral branch glyph), the title,
+  draft gray, open blue, approved green, in the merge queue the primary teal,
+  merged violet, closed gray, no pull request a neutral branch glyph, the
+  state table in DESIGN-SYSTEM.md), the title,
   and at most one chip. One function, `features/branch/branchRowFactsOf`,
   holds a row's title (the pull request title, else the branch name, drawn in
   mono), state word, number, host key, finished flag, order rank (queued,
@@ -1535,13 +1556,36 @@ Folding the rail leaves the column in place, and a drill never moves it.
   lists every live and recent launch of the session newest first
   (`launchesOf`: preset runs that are not archived and Auto roots), each with
   its agents under it; picking a launch opens it in the center and keeps the
-  panel open (`openSpawned` passes the panel as the navigation's drawer). A
-  row is one 28px line: state glyph, role glyph, title, the active time
-  (`DelegationClock`, the clock every work row reads); settled sub agents of a
-  run fold into one row like the run page's (`useFoldedRunTree`). The rows
-  are a `tree` with `treeitem`s and `aria-level` (`SpawnedTree`): one tab
-  stop, Up and Down, Home and End, Left to the parent, Right to the first
-  child or to open a fold, Enter or Space to open (`treeKeyTargetOf`).
+  panel open (`openSpawned` passes the panel as the navigation's drawer). The
+  tree is drawn on the Activity rail, in the Activity orientation: a **Now**
+  marker on top (`SpawnedNowRow`), the spine running down to the oldest
+  launch, and inside each launch the children above their parent, newest on
+  top, each joined to its parent's lane by the same branch curve
+  (`spawnedRailOf` lays the rows out with `layoutTimelineRail`, `SpawnedRailCell`
+  draws them with `TimelineRail`; a queued child dashes its lane). The DOM keeps
+  each launch parent first for assistive tech and reverses it on screen
+  (`flex-col-reverse` on `[data-spawned-launch]`); every reader of the screen
+  order goes through `spawnedTreeItemsOf`. A focused Auto launch is the same
+  `SpawnedAutoGroup` as the list, so it reads the same way: Now, the newest
+  child, down to the oldest, Auto at the foot, then the limit foot. A child
+  that starts while you read lower in the list moves in at the top and the rows
+  you read stay where they are (`useSpawnedScrollHold` keeps the first visible
+  row's offset across the change; at the top, on Now, the new row simply shows).
+  Focus stays on its row. The run page's step tree (`OrchestratedChecklist`)
+  stays top down, the first step on top. A row is one 28px line: the
+  state node on the rail, role glyph (the noun in its tooltip), title, the
+  active time (`DelegationClock`, the clock every work row reads). An Auto
+  root is titled by the ask it started with, loaded with the tree view, not
+  its transcript (`autoRootTitleOf`, the same title as the Auto agents list) and a child by `autoChildLabelsOf`
+  ([auto.md](auto.md#the-chat)). Every Auto parent folds on its row (chevron,
+  Right opens, Left folds, `foldSpawnedRowsOf`): a tree live when it first
+  loads opens, a settled one folds, and a folded row keeps its state and says
+  its count of children ("3 agents"); settled sub agents of a run fold into one
+  row like the run page's (`useFoldedRunTree`). The rows are a `tree` with
+  `treeitem`s and `aria-level` (`SpawnedTree`): one tab stop on the newest
+  root, Up and Down and Home and End in screen order, Left to the parent
+  (below), Right to the nearest child (above) or to open a fold, Enter or
+  Space to open (`treeKeyTargetOf`).
 - **A row opens its transcript in the drawer.** A run agent opens the
   `run-step` drawer, an Auto child the `auto-child` drawer, both with `from:
 'spawned'`, so Agents stays lit (`openPaneOf`) and the drawer shows **Back

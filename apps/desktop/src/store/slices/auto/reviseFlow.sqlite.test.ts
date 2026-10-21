@@ -434,6 +434,7 @@ describe('retrying a revise', () => {
       tree,
       child: {
         role: null,
+        title: null,
         task: '',
         reason: 'again',
         provider: null,

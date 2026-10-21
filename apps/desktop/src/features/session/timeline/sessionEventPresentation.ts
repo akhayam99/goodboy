@@ -8,7 +8,7 @@ import {
   type PullRequestPresentationState,
 } from '../../../shared/pullRequestPresentation';
 
-export type SessionEventEmphasis = 'plain' | 'muted' | 'success' | 'merged' | 'danger';
+export type SessionEventEmphasis = 'plain' | 'muted' | 'success' | 'info' | 'merged' | 'neutral';
 
 export const SESSION_ARCHIVED_TITLE = 'Session archived';
 

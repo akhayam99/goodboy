@@ -84,13 +84,6 @@ type Params = {
   readonly now: number;
 };
 
-const STATE_RANK: Record<LiveGroupState, number> = {
-  stuck: 0,
-  waiting: 1,
-  working: 2,
-  deciding: 2,
-};
-
 type TimeParams = {
   readonly value: string | undefined;
 };
@@ -265,18 +258,11 @@ type AutoParams = {
   readonly agents: ReadonlyArray<Agent>;
 };
 
-const STUCK_CHILD_STATES: ReadonlySet<string> = new Set([
-  'neverStarted',
-  'failed',
-  'timedOut',
-  'blocked',
-]);
-
 const autoStateOf = ({ group }: Pick<AutoParams, 'group'>): LiveGroupState | null => {
   if (group.phase !== 'running' && group.phase !== 'waiting') {
     return null;
   }
-  if (group.children.some((child) => STUCK_CHILD_STATES.has(child.state))) {
+  if (group.isStuck) {
     return 'stuck';
   }
   return group.phase === 'waiting' ? 'waiting' : 'working';
@@ -350,7 +336,7 @@ const groupOfEntry = ({ entry, rowState, model }: EntryParams): LiveGroupModel |
 };
 
 const compareGroups = (first: LiveGroupModel, second: LiveGroupModel): number =>
-  STATE_RANK[first.state] - STATE_RANK[second.state] || first.startedAt - second.startedAt;
+  first.startedAt - second.startedAt;
 
 export const liveGroupsOf = ({ model, agents, now }: Params): ReadonlyArray<LiveGroupModel> => {
   const rowStates = rowStatesOf({ model });

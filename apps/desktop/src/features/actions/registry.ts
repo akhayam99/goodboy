@@ -9,6 +9,11 @@ import { DIFF_KIND } from './kinds/diff';
 import { DIFF_FILE_KIND } from './kinds/diffFile';
 import { EXPLORE_FILE_KIND } from './kinds/exploreFile';
 import { LINK_KIND } from './kinds/link';
+import { CHECK_RUN_KIND } from './kinds/checkRun';
+import { DECISION_KIND } from './kinds/decision';
+import { WORKSPACE_KIND } from './kinds/workspace';
+import { ISSUE_CANDIDATE_KIND } from './kinds/issueCandidate';
+import { ITEM_KIND } from './kinds/item';
 import { PLAN_PART_KIND } from './kinds/planPart';
 import { QUESTION_KIND } from './kinds/question';
 import { PORT_KIND } from './kinds/port';
@@ -182,6 +187,16 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: PROJECT_ASK_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
+    case 'checkRun':
+      return bind({ definition: CHECK_RUN_KIND, state, target });
+    case 'decision':
+      return bind({ definition: DECISION_KIND, state, target });
+    case 'workspace':
+      return bind({ definition: WORKSPACE_KIND, state, target });
+    case 'issueCandidate':
+      return bind({ definition: ISSUE_CANDIDATE_KIND, state, target });
+    case 'item':
+      return bind({ definition: ITEM_KIND, state, target });
     case 'review':
       return bind({ definition: REVIEW_KIND, state, target });
     case 'reviewComment':

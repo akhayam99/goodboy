@@ -5,6 +5,7 @@ import {
   listAutoOutbox,
   listAutoTreesOfSession,
   readAutoTreeSpend,
+  readFirstUserText,
   type AutoOutboxRow,
   type AutoTree,
   type Database,
@@ -45,12 +46,13 @@ export const readAutoTreeViews = async ({
   const trees = await listAutoTreesOfSession({ db, sessionId });
   return Promise.all(
     trees.map(async (tree): Promise<AutoTreeView> => {
-      const [delegations, artifacts, spend, pending, accepted] = await Promise.all([
+      const [delegations, artifacts, spend, pending, accepted, rootAsk] = await Promise.all([
         listAutoDelegations({ db, treeId: tree.id }),
         listAutoArtifactLedger({ db, treeId: tree.id }),
         readAutoTreeSpend({ db, treeId: tree.id }),
         listAutoOutbox({ db, treeId: tree.id, states: ['pending'] }),
         listAutoOutbox({ db, treeId: tree.id, states: ['accepted'], kinds: ['results'] }),
+        readFirstUserText({ db, agentId: tree.rootAgentId }),
       ]);
       return {
         tree,
@@ -59,6 +61,7 @@ export const readAutoTreeViews = async ({
         budget: spend === null ? null : autoBudgetOf({ spend }),
         pendingRefusal: pendingRefusalOf({ tree, pending }),
         deliveredResults: deliveredResultsOf({ accepted }),
+        rootAsk,
       };
     }),
   );

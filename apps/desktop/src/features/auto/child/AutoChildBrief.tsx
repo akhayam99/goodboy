@@ -1,5 +1,5 @@
 import type { MessageAttachment } from '@goodboy/types';
-import { Chip, formatUsd } from '@goodboy/ui';
+import { Chip } from '@goodboy/ui';
 import { RoutingLabel } from '../../../shared/components/RoutingLabel';
 import type { DelegationCardModel } from '../chat/delegationCardOf';
 import type { ShownRouting } from '../executedRoutingOf';
@@ -25,11 +25,6 @@ export const AutoChildBrief = ({ card, routing, images }: Props) => (
         effort={routing.effort}
         muted
       />
-      {card.isOpen && card.ceilingUsd !== null ? (
-        <span className="shrink-0 whitespace-pre tabular-nums">
-          {` · Reserved up to ${formatUsd(card.ceilingUsd)}`}
-        </span>
-      ) : null}
     </p>
     {card.routingNote === null ? null : <p className="text-faint-foreground">{card.routingNote}</p>}
     {images.length === 0 ? null : (

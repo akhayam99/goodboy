@@ -2,9 +2,10 @@ import type { Agent, AgentId } from '@goodboy/types';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { autoRetryRouteOf } from '../../store/slices/turn/autoRetryRouteOf';
 import { autoGroupOf, type AutoGroupChild } from './autoGroupOf';
+import { autoStuckKindOf, type AutoStuckKind } from './autoStuckKindOf';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 
-type AutoRetryTargetKind = 'neverStarted' | 'failed' | 'approve' | 'blocked';
+type AutoRetryTargetKind = AutoStuckKind | 'approve' | 'blocked';
 
 export type AutoRetryTarget = Readonly<{
   agentId: AgentId;
@@ -34,19 +35,15 @@ const targetOfChild = ({
   rootAgentId,
   child,
 }: ChildParams): AutoRetryTarget | null => {
-  const isBroken =
-    child.state === 'neverStarted' ||
-    child.state === 'failed' ||
-    child.state === 'timedOut' ||
-    child.state === 'blocked';
-  if (!isBroken) {
+  const kind = autoStuckKindOf({ state: child.state });
+  if (kind === null) {
     return null;
   }
   return {
     agentId: child.agentId,
     rootAgentId,
-    role: child.noun,
-    kind: child.state === 'neverStarted' ? 'neverStarted' : 'failed',
+    role: child.label,
+    kind,
     reason: child.reason,
     canRetry: autoRetryRouteOf({ views, runs: agents, agentId: child.agentId }) !== null,
   };

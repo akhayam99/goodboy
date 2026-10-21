@@ -7,7 +7,7 @@ type Props = {
 };
 
 const SEGMENT_FILL: Record<RunStepState, string> = {
-  done: 'bg-success',
+  done: 'bg-muted-foreground',
   running: 'bg-info',
   waiting: 'bg-warning',
   failed: 'bg-danger',

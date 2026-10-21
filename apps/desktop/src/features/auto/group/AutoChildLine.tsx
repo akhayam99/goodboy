@@ -1,6 +1,7 @@
 import { ROW_INTERACTIVE, WorkNode, cn } from '@goodboy/ui';
 import { AgentKindChip } from '../../../shared/components/AgentKindChip';
 import { useAppStore } from '../../../store';
+import { useObjectMenuTrigger } from '../../actions/useObjectMenuTrigger';
 import { DelegationClock } from '../chat/DelegationClock';
 import type { AutoGroup, AutoGroupChild } from '../autoGroupOf';
 import { autoChildCopyOf } from './autoChildCopyOf';
@@ -14,11 +15,17 @@ export const AutoChildLine = ({ group, child }: Props) => {
   const openDrawer = useAppStore((state) => state.openDrawer);
   const copy = autoChildCopyOf({ child });
   const name = `${child.label}, ${copy.word.toLowerCase()}`;
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'agent', sessionId: group.sessionId, agentId: child.agentId },
+    anchorKey: `auto-child:${child.agentId}`,
+  });
   return (
     <li data-auto-child={child.state} className="relative">
       <button
         type="button"
         aria-label={name}
+        onContextMenu={menu.onContextMenu}
+        onKeyDown={menu.onKeyDown}
         onClick={() =>
           openDrawer({
             kind: 'auto-child',

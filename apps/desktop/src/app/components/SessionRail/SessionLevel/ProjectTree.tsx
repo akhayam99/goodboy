@@ -8,6 +8,7 @@ import type {
   MountRowView,
 } from '../../../../store/slices/project-mounts/mountRowModel';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
 import type { EntryDiffStat } from '../../../../features/branch/worktreeEntryFacts';
 import type { RailTreeNode, RailTreeOpen } from './useRailTreeOpen';
 import { FinishedFold } from './FinishedFold';
@@ -45,6 +46,10 @@ export const ProjectTree = ({
   const total = live.length + finished.length;
   const node: RailTreeNode = { kind: 'project', id: group.projectId, isOpenByDefault: true };
   const isOpen = tree.isOpen(node);
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'project', sessionId, projectId: group.projectId },
+    anchorKey: `rail-project:${group.projectId}`,
+  });
   const branchWord = total === 1 ? 'branch' : 'branches';
   const provider = [...live, ...finished].find((row) => row.request !== null)?.request?.provider;
   const hostSuffix = provider === undefined ? '' : `, on ${REVIEW_SOURCE_LABEL[provider]}`;
@@ -73,7 +78,12 @@ export const ProjectTree = ({
 
   return (
     <div data-card-project={group.projectName} className="flex flex-col">
-      <div data-project-row="" className="group/project-row flex min-w-0 items-center">
+      <div
+        data-project-row=""
+        onContextMenu={menu.onContextMenu}
+        onKeyDown={menu.onKeyDown}
+        className="group/project-row flex min-w-0 items-center"
+      >
         <SelectableRow
           selected={false}
           isExpanded={isOpen}

@@ -44,17 +44,19 @@ const show = ({ name }: Params) => {
   return render(<Scene />);
 };
 
+const BRANCH_ROW = 'section[aria-label="Branches"] [data-list-grid-row]';
+
 const sentenceOf = (): string => document.querySelector('[data-now-sentence]')?.textContent ?? '';
 
 describe('central now scenes', () => {
-  it('says the step of the run and what waits on you', () => {
+  it('says the step of the run, and what waits on you once, in the header', () => {
     show({ name: 'u26-central-now-run-light' });
-    expect(sentenceOf()).toBe(
-      'Build is on step 3 of 6, Implement. Build step 4 waits on one answer from you.',
-    );
+    expect(sentenceOf()).toBe('Build is on step 3 of 6, Implement.');
     expect(document.querySelector('[data-now-state]')?.getAttribute('data-now-state')).toBe(
       'waiting',
     );
+    screen.getByRole('button', { name: '1 thing waits on you, go to Next' });
+    expect(document.querySelectorAll('[data-testid="tone-bar"]')).toHaveLength(0);
     screen.getByRole('img', {
       name: 'Step 3 of 6, Implement running, step 4 waits on you',
     });
@@ -68,7 +70,7 @@ describe('central now scenes', () => {
 
   it('is Stuck when a child of Auto never started', () => {
     show({ name: 'u26-central-now-auto-light' });
-    expect(sentenceOf()).toBe('Auto is stuck: Implementer never started.');
+    expect(sentenceOf()).toBe('Auto is stuck: "Fix the ledger-core retry" never started.');
     expect(document.querySelector('[data-now-state]')?.getAttribute('data-now-state')).toBe(
       'stuck',
     );
@@ -91,19 +93,41 @@ describe('central now scenes', () => {
     expect(sentenceOf()).toBe('Checks passed on #309. Ready for review.');
   });
 
-  it('lists two branches with their host nouns and no button', () => {
+  it('lists two branches of two projects with a project column and their host nouns', () => {
     show({ name: 'u26-central-now-branches-light' });
     const list = screen.getByRole('region', { name: 'Branches' });
     expect(list.textContent).toContain('ak/eng-1190-tenant-limits');
-    expect(list.textContent).toContain('payments-api · #309');
-    expect(list.textContent).toContain('ledger-core · !42');
-    expect(document.querySelectorAll('[data-branch-row]')).toHaveLength(2);
+    const cellsOf = ({ key }: { readonly key: string }) =>
+      [...list.querySelectorAll(`[data-list-grid-cell="${key}"]`)].map((cell) => cell.textContent);
+    expect(cellsOf({ key: 'project' })).toEqual(['payments-api', 'ledger-core']);
+    expect(cellsOf({ key: 'request' })).toEqual(['#309', '!42']);
+    expect(document.querySelectorAll(BRANCH_ROW)).toHaveLength(2);
     expect(document.querySelectorAll('button[data-variant]')).toHaveLength(0);
+  });
+
+  it('lays the rows of one project on the planned grid, no project column', () => {
+    show({ name: 'u26-central-now-story-one-project-light' });
+    const grid = document.querySelector('section[aria-label="Branches"] [data-list-grid]');
+    expect(grid?.getAttribute('style')).toContain(
+      '0px minmax(0,232px) 48px 80px minmax(0,124px) minmax(0,1fr) 16px',
+    );
+    expect(grid?.querySelector('[data-list-grid-cell="project"]')).toBeNull();
+    const details = [...(grid?.querySelectorAll('[data-list-grid-cell="detail"]') ?? [])].map(
+      (cell) => cell.textContent ?? '',
+    );
+    expect(details).toHaveLength(9);
+    expect(details.every((detail) => detail.length <= 24)).toBe(true);
+  });
+
+  it('adds the project column once the branches span two projects', () => {
+    show({ name: 'u26-central-now-story-light' });
+    const grid = document.querySelector('section[aria-label="Branches"] [data-list-grid]');
+    expect(grid?.getAttribute('style')).toContain('minmax(0,232px) minmax(0,112px) 48px');
   });
 
   it('names the branch first, never only the folder', () => {
     show({ name: 'u26-central-now-branches-light' });
-    const labels = [...document.querySelectorAll('[data-branch-row]')].map((row) =>
+    const labels = [...document.querySelectorAll(BRANCH_ROW)].map((row) =>
       row.getAttribute('aria-label'),
     );
     expect(labels.every((label) => label?.startsWith('ak/eng-1190-') === true)).toBe(true);
@@ -111,32 +135,35 @@ describe('central now scenes', () => {
 
   it('says when a stale read was checked and drops the checks word', () => {
     show({ name: 'u26-central-now-stale-light' });
-    const row = document.querySelector('[data-branch-row]');
+    const row = document.querySelector(BRANCH_ROW);
     expect(row?.textContent).toContain('checked 12m ago');
     expect(row?.textContent).not.toContain('Checks failing');
   });
 
   it('draws nine branches ranked by whose move, the merged one last', () => {
     show({ name: 'u26-central-now-story-light' });
-    const rows = [...document.querySelectorAll('[data-branch-row]')];
+    const rows = [...document.querySelectorAll(BRANCH_ROW)];
     expect(rows).toHaveLength(9);
     expect(rows[0]?.textContent).toContain('Checks failing');
-    expect(rows[0]?.textContent).toContain('in Next');
+    expect(rows.some((row) => row.textContent?.includes('in Next') === true)).toBe(false);
     expect(rows[8]?.textContent).toContain('Merged');
     expect(document.querySelector('[data-branch-fold]')).toBeNull();
     expect(document.querySelectorAll('button[data-variant]')).toHaveLength(0);
   });
 
-  it('draws a track of seven dots per branch', () => {
+  it('draws one connected track of six stages per branch', () => {
     show({ name: 'u26-central-now-story-light' });
-    const tracks = document.querySelectorAll('[data-branch-track]');
+    const tracks = document.querySelectorAll('[data-stage-track]');
     expect(tracks).toHaveLength(9);
-    expect(tracks[0]?.children).toHaveLength(7);
+    expect(tracks[0]?.querySelectorAll('[data-stage]')).toHaveLength(6);
+    expect(tracks[0]?.querySelectorAll('[data-stage-line]')).toHaveLength(5);
+    expect(tracks[0]?.querySelectorAll('[data-stage-state="current"]')).toHaveLength(1);
+    expect(tracks[0]?.getAttribute('aria-label')).toMatch(/^Commit done, Push done, /);
   });
 
   it('folds twenty branches to eight rows and one line that counts what it hides', () => {
     show({ name: 'u26-central-now-story-many-dark' });
-    expect(document.querySelectorAll('[data-branch-row]')).toHaveLength(8);
+    expect(document.querySelectorAll(BRANCH_ROW)).toHaveLength(8);
     const fold = document.querySelector('[data-branch-fold]');
     expect(fold?.textContent).toMatch(/^12 more branches, \d+ merged$/);
     expect(fold?.getAttribute('aria-expanded')).toBe('false');
@@ -146,41 +173,41 @@ describe('central now scenes', () => {
     show({ name: 'u26-central-now-story-many-light' });
     const fold = screen.getByRole('button', { name: /more branches/ });
     fireEvent.click(fold);
-    expect(document.querySelectorAll('[data-branch-row]')).toHaveLength(20);
+    expect(document.querySelectorAll(BRANCH_ROW)).toHaveLength(20);
     const closer = screen.getByRole('button', { name: 'Show fewer branches' });
     expect(closer.getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(closer);
-    expect(document.querySelectorAll('[data-branch-row]')).toHaveLength(8);
+    expect(document.querySelectorAll(BRANCH_ROW)).toHaveLength(8);
   });
 
   it('draws a dash where a step does not apply and names it on the row', () => {
     show({ name: 'u26-central-now-story-skipped-light' });
-    const rows = [...document.querySelectorAll('[data-branch-row]')];
+    const rows = [...document.querySelectorAll(BRANCH_ROW)];
     expect(rows).toHaveLength(7);
     const rowOf = ({ branch }: { readonly branch: string }) =>
       rows.find((row) => row.getAttribute('aria-label')?.startsWith(`${branch},`) === true);
     const noCi = rowOf({ branch: 'ak/eng-1210-cache-warmup' });
-    expect(noCi?.querySelector('[data-step="checks"]')?.getAttribute('data-step-state')).toBe(
+    expect(noCi?.querySelector('[data-stage="checks"]')?.getAttribute('data-stage-state')).toBe(
       'skipped',
     );
-    expect(noCi?.querySelector('[data-step="review"]')?.getAttribute('data-step-state')).toBe(
+    expect(noCi?.querySelector('[data-stage="review"]')?.getAttribute('data-stage-state')).toBe(
       'skipped',
     );
     expect(noCi?.getAttribute('aria-label')).toContain('Checks skipped, Review skipped.');
     const unread = rowOf({ branch: 'ak/eng-1214-retry-jitter' });
-    expect(unread?.querySelector('[data-step="checks"]')?.getAttribute('data-step-state')).toBe(
+    expect(unread?.querySelector('[data-stage="checks"]')?.getAttribute('data-stage-state')).toBe(
       'todo',
     );
     expect(unread?.getAttribute('aria-label')).not.toContain('skipped');
   });
 
-  it('shows Queued on the Merged step of a queued pull request', () => {
+  it('shows In merge queue on the Merged step of a queued pull request', () => {
     show({ name: 'u26-central-now-story-skipped-dark' });
-    const queued = [...document.querySelectorAll('[data-branch-row]')].find(
+    const queued = [...document.querySelectorAll(BRANCH_ROW)].find(
       (row) => row.getAttribute('aria-label')?.startsWith('ak/eng-1213-limit-export,') === true,
     );
-    expect(queued?.textContent).toContain('Queued');
-    expect(queued?.querySelector('[data-step="merged"]')?.getAttribute('data-step-state')).toBe(
+    expect(queued?.textContent).toContain('In merge queue');
+    expect(queued?.querySelector('[data-stage="merged"]')?.getAttribute('data-stage-state')).toBe(
       'current',
     );
   });
@@ -204,6 +231,8 @@ describe('central now scenes', () => {
       'u26-central-now-story-light',
       'u26-central-now-story-many-dark',
       'u26-central-now-story-many-light',
+      'u26-central-now-story-one-project-dark',
+      'u26-central-now-story-one-project-light',
       'u26-central-now-story-skipped-dark',
       'u26-central-now-story-skipped-light',
     ]);

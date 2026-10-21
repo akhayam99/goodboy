@@ -118,29 +118,29 @@ const statesOf = ({ fact }: StoryParams): string =>
     .join('');
 
 describe('branchStoryOf, no pull request', () => {
-  it('says Nothing committed with a ring on Commits', () => {
+  it('says Nothing committed on the current Commit stage', () => {
     const fact = factOf({
       status: status({ ahead: 0, push: { kind: 'not-pushed', commits: 0 }, changedFiles: 4 }),
     });
     const story = storyOf({ fact });
     expect(story.word).toBe('Nothing committed');
     expect(story.blocker).toBe('4 files changed');
-    expect(statesOf({ fact })).toBe('drttttt');
+    expect(statesOf({ fact })).toBe('cttttt');
   });
 
-  it('says Not pushed with the commits that are only local', () => {
+  it('says Not pushed with the commits to push', () => {
     const fact = factOf({ status: status({ push: { kind: 'not-pushed', commits: 3 } }) });
     const story = storyOf({ fact });
     expect(story.word).toBe('Not pushed');
-    expect(story.blocker).toBe('3 commits only on this Mac');
+    expect(story.blocker).toBe('3 commits to push');
     expect(story.rank).toBe(4);
   });
 
-  it('says No PR yet once pushed', () => {
+  it('says No pull request once pushed, in a neutral tone', () => {
     const story = storyOf({ fact: factOf({ status: status({ ahead: 2 }) }) });
-    expect(story.word).toBe('No PR yet');
+    expect(story.word).toBe('No pull request');
     expect(story.blocker).toBe('2 commits pushed');
-    expect(story.tone).toBe('warning');
+    expect(story.tone).toBe('neutral');
   });
 
   it('says what is unknown when the status is not read yet', () => {
@@ -153,18 +153,18 @@ describe('branchStoryOf, no pull request', () => {
 describe('branchStoryOf, pull request', () => {
   it('fails on checks first and names them when the detail is read', () => {
     const fact = factOf({ request: { checks: 'failure' }, status: status({}) });
-    expect(storyOf({ fact }).blocker).toBe('Checks failed on the last push');
+    expect(storyOf({ fact }).blocker).toBe('Failed on the last push');
     const named = storyOf({
       fact,
       detail: { failingChecks: ['static-analysis'], openThreads: 0 },
     });
     expect(named.word).toBe('Checks failing');
-    expect(named.blocker).toBe('static-analysis failed on the last push');
+    expect(named.blocker).toBe('static-analysis failed');
     expect(named.rank).toBe(0);
     expect(named.tone).toBe('danger');
   });
 
-  it('counts open conversations when changes are requested', () => {
+  it('counts threads to answer when changes are requested', () => {
     const fact = factOf({
       request: { checks: 'success', reviewDecision: 'changes_requested' },
       status: status({}),
@@ -172,15 +172,16 @@ describe('branchStoryOf, pull request', () => {
     expect(storyOf({ fact }).blocker).toBe('A reviewer asked for changes');
     const named = storyOf({ fact, detail: { failingChecks: [], openThreads: 2 } });
     expect(named.word).toBe('Changes requested');
-    expect(named.blocker).toBe('2 open conversations to resolve');
+    expect(named.tone).toBe('warning');
+    expect(named.blocker).toBe('2 threads to answer');
   });
 
-  it('says Draft, then Checks running, then Review required', () => {
-    expect(
-      storyOf({
-        fact: factOf({ request: { isDraft: true, checks: 'success' }, status: status({}) }),
-      }).word,
-    ).toBe('Draft');
+  it('says Draft, then Checks running, then In review', () => {
+    const draft = storyOf({
+      fact: factOf({ request: { isDraft: true, checks: 'success' }, status: status({}) }),
+    });
+    expect(draft.word).toBe('Draft');
+    expect(draft.tone).toBe('neutral');
     expect(
       storyOf({ fact: factOf({ request: { checks: 'pending' }, status: status({}) }) }).word,
     ).toBe('Checks running');
@@ -190,23 +191,24 @@ describe('branchStoryOf, pull request', () => {
         status: status({}),
       }),
     });
-    expect(review.word).toBe('Review required');
-    expect(review.tone).toBe('warning');
+    expect(review.word).toBe('In review');
+    expect(review.tone).toBe('info');
   });
 
-  it('says Ready to merge when approved and green', () => {
+  it('says Approved in green when approved and green', () => {
     const story = storyOf({
       fact: factOf({
         request: { checks: 'success', reviewDecision: 'approved' },
         status: status({}),
       }),
     });
-    expect(story.word).toBe('Ready to merge');
+    expect(story.word).toBe('Approved');
+    expect(story.tone).toBe('success');
     expect(story.rank).toBe(1);
     expect(story.steps.at(-1)?.state).toBe('current');
   });
 
-  it('says why an approved branch cannot merge', () => {
+  it('says Conflicts in amber when an approved branch cannot merge', () => {
     const story = storyOf({
       fact: factOf({
         request: { checks: 'success', reviewDecision: 'approved', isMergeable: false },
@@ -214,8 +216,9 @@ describe('branchStoryOf, pull request', () => {
         behind: 6,
       }),
     });
-    expect(story.word).toBe('Approved');
-    expect(story.blocker).toBe('6 behind main, so it cannot merge yet');
+    expect(story.word).toBe('Conflicts');
+    expect(story.tone).toBe('warning');
+    expect(story.blocker).toBe('6 behind main');
   });
 
   it('ends the story on Merged and keeps it last', () => {
@@ -224,17 +227,18 @@ describe('branchStoryOf, pull request', () => {
       hasCard: true,
     });
     expect(story.word).toBe('Merged');
-    expect(story.blocker).toBe('Merged into main');
+    expect(story.tone).toBe('merged');
+    expect(story.blocker).toBe('Into main');
     expect(story.rank).toBe(5);
     expect(story.steps.every((step) => step.state !== 'todo')).toBe(true);
   });
 
-  it('turns the checks dot into a ring and says when it was checked when stale', () => {
+  it('stands on Checks and says when it was checked when stale', () => {
     const fact = factOf({ request: { checks: 'failure' }, status: status({}), isStale: true });
     const story = storyOf({ fact });
     expect(story.word).toBe('Open');
     expect(story.blocker).toBe('Checked 12m ago');
-    expect(story.steps[4]?.state).toBe('ring');
+    expect(story.steps[3]?.state).toBe('current');
   });
 
   it('says who works on the branch and keeps a failing branch first', () => {
@@ -249,11 +253,50 @@ describe('branchStoryOf, pull request', () => {
     expect(failing.rank).toBe(0);
   });
 
-  it('adds how far behind main it is when nothing else blocks', () => {
+  it.each([
+    {
+      name: 'not pushed',
+      fact: () => factOf({ status: status({ push: { kind: 'not-pushed', commits: 2 } }) }),
+      states: 'dctttt',
+    },
+    {
+      name: 'draft',
+      fact: () => factOf({ request: { isDraft: true }, status: status({}) }),
+      states: 'ddcttt',
+    },
+    {
+      name: 'in review',
+      fact: () =>
+        factOf({
+          request: { checks: 'success', reviewDecision: 'review_required' },
+          status: status({}),
+        }),
+      states: 'ddddct',
+    },
+    {
+      name: 'approved',
+      fact: () =>
+        factOf({ request: { checks: 'success', reviewDecision: 'approved' }, status: status({}) }),
+      states: 'dddddc',
+    },
+  ])('stands a $name branch on six stages, $states', ({ fact, states }) => {
+    const story = storyOf({ fact: fact() });
+    expect(story.steps.map((step) => step.label)).toEqual([
+      'Commit',
+      'Push',
+      'Pull request',
+      'Checks',
+      'Review',
+      'Merge',
+    ]);
+    expect(story.steps.map((step) => step.state[0]).join('')).toBe(states);
+  });
+
+  it('says one fact and leaves how far behind main out of the detail', () => {
     const story = storyOf({
       fact: factOf({ request: { checks: 'pending' }, status: status({}), behind: 4 }),
     });
-    expect(story.blocker).toBe('Then a review from the team, 4 behind main');
+    expect(story.blocker).toBe('Review comes next');
   });
 });
 
@@ -282,7 +325,6 @@ describe('branchEntriesOf and branchFoldOf', () => {
       'ak/eng-1190-local',
       'ak/eng-1190-merged',
     ]);
-    expect(entries[1]?.hasCard).toBe(true);
   });
 
   it('lifts a local branch with a card above one without', () => {
@@ -320,7 +362,37 @@ describe('branchEntriesOf and branchFoldOf', () => {
     expect(fold.label).toBe('3 more branches, 2 merged');
   });
 
-  it('writes the row name as a sentence that starts with the branch', () => {
+  it('says one short fact per branch', () => {
+    const details = [
+      storyOf({ fact: factOf({ status: status({ push: { kind: 'ahead', ahead: 24 } }) }) }),
+      storyOf({
+        fact: factOf({ request: { isDraft: true, checks: 'success' }, status: status({}) }),
+      }),
+      storyOf({ fact: factOf({ request: { checks: 'pending' }, status: status({}) }) }),
+      storyOf({
+        fact: factOf({
+          request: { checks: 'success', reviewDecision: 'review_required' },
+          status: status({}),
+        }),
+      }),
+      storyOf({
+        fact: factOf({
+          request: { checks: 'success', reviewDecision: 'approved' },
+          status: status({}),
+        }),
+      }),
+    ].map((story) => story.blocker);
+    expect(details).toEqual([
+      '24 commits to push',
+      'Checks passed',
+      'Review comes next',
+      'Waiting for a reviewer',
+      'Ready to merge',
+    ]);
+    expect(details.every((detail) => detail.length <= 24 && !detail.includes(','))).toBe(true);
+  });
+
+  it('writes the row name as a sentence that starts with the branch, without the card', () => {
     const [entry] = branchEntriesOf({
       facts: [failing],
       cardOrderByMountId: new Map([[failing.mountId, 0]]),
@@ -330,7 +402,7 @@ describe('branchEntriesOf and branchFoldOf', () => {
       throw new Error('One fact gives one entry.');
     }
     expect(branchSentenceOf(entry)).toBe(
-      'ak/eng-1190-failing, payments-api, #309: Checks failing, Checks failed on the last push. Has a card in Next.',
+      'ak/eng-1190-failing, payments-api, #309: Checks failing, Failed on the last push.',
     );
   });
 });
@@ -350,9 +422,9 @@ const sentenceOf = ({ fact }: StoryParams): string => {
 describe('branchStoryOf, steps that do not apply', () => {
   it('draws a dash on Checks when the host reports no checks after a fresh read', () => {
     const fact = factOf({ request: { checks: null, isChecksAbsent: true } });
-    expect(statesOf({ fact })).toBe('dddcstt');
+    expect(statesOf({ fact })).toBe('ddcstt');
     expect(storyOf({ fact }).blocker).toBe('No checks on this repo');
-    expect(storyOf({ fact }).steps[4]?.name).toBe('Checks skipped');
+    expect(storyOf({ fact }).steps[3]?.name).toBe('Checks skipped');
   });
 
   it('keeps the circle before the first fresh read', () => {
@@ -365,21 +437,21 @@ describe('branchStoryOf, steps that do not apply', () => {
 
   it('keeps the circle when the host cannot say whether there are checks', () => {
     const fact = factOf({ request: { checks: null } });
-    expect(statesOf({ fact })).toBe('dddcttt');
+    expect(statesOf({ fact })).toBe('ddcttt');
   });
 
   it('draws a dash on Review when no review is required', () => {
     const fact = factOf({
       request: { checks: 'success', reviewDecision: null, isReviewOptional: true },
     });
-    expect(statesOf({ fact })).toBe('dddddsc');
-    expect(storyOf({ fact }).blocker).toBe('Every check passed, no review required');
+    expect(statesOf({ fact })).toBe('ddddsc');
+    expect(storyOf({ fact }).blocker).toBe('No review required');
   });
 
   it('keeps the circle on Review when the host cannot say review is optional', () => {
     const fact = factOf({ request: { checks: 'success', reviewDecision: null } });
-    expect(storyOf({ fact }).steps[5]?.state).toBe('done');
-    expect(storyOf({ fact }).steps[5]?.name).toBe('Review');
+    expect(storyOf({ fact }).steps[4]?.state).toBe('done');
+    expect(storyOf({ fact }).steps[4]?.name).toBe('Review');
   });
 
   it('is ready to merge with both dashes on a repo with neither', () => {
@@ -389,27 +461,27 @@ describe('branchStoryOf, steps that do not apply', () => {
     const story = storyOf({ fact });
     expect(story.word).toBe('Ready to merge');
     expect(story.blocker).toBe('No checks or review required');
-    expect(statesOf({ fact })).toBe('ddddssc');
+    expect(statesOf({ fact })).toBe('dddssc');
   });
 
   it('never skips a failing check', () => {
     const fact = factOf({
       request: { checks: 'failure', isChecksAbsent: true, isReviewOptional: true },
     });
-    expect(statesOf({ fact })).toBe('ddddcst');
+    expect(statesOf({ fact })).toBe('dddcst');
   });
 
-  it('shows the Queued word on the Merged step', () => {
+  it('shows In merge queue on the Merged step', () => {
     const fact = factOf({ request: { state: 'queued', checks: 'success' } });
     const story = storyOf({ fact });
-    expect(story.word).toBe('Queued');
-    expect(story.steps[6]?.state).toBe('current');
-    expect(story.tone).toBe('info');
+    expect(story.word).toBe('In merge queue');
+    expect(story.steps[5]?.state).toBe('current');
+    expect(story.tone).toBe('primary');
   });
 
   it('keeps the circle on a queued PR that was not read lately', () => {
     const fact = factOf({ request: { state: 'queued' }, isStale: true });
-    expect(storyOf({ fact }).word).not.toBe('Queued');
+    expect(storyOf({ fact }).word).not.toBe('In merge queue');
   });
 
   it.each(['github', 'gitlab', 'bitbucket'] as const)(

@@ -22,9 +22,10 @@ describe('pull request presentation', () => {
     expect(merged.icon).not.toBe(closed.icon);
   });
 
-  it('keeps an approval distinct from a state the user must repair', () => {
+  it('keeps green for an approval and never for an open or closed pull request', () => {
     expect(PULL_REQUEST_PRESENTATION.approved.tone).toBe('success');
-    expect(PULL_REQUEST_PRESENTATION.closed.tone).toBe('danger');
+    expect(PULL_REQUEST_PRESENTATION.open.tone).toBe('info');
+    expect(PULL_REQUEST_PRESENTATION.closed.tone).toBe('neutral');
     expect(PULL_REQUEST_PRESENTATION.approved.icon).not.toBe(PULL_REQUEST_PRESENTATION.closed.icon);
   });
 

@@ -6,6 +6,9 @@ import { AGENT_KIND_META, classifyAgent, kindForRole, type AgentKind } from '../
 import type { RowPhase } from '../workTreeModel/rowState';
 import { autoChildLabelsOf } from './autoChildLabelsOf';
 import { autoRowFacts } from './autoRowFacts';
+import { autoStuckKindOf } from './autoStuckKindOf';
+import { recordField, textField } from './chat/readJson';
+import { delegationReasonTextOf } from './delegationReasonTextOf';
 import { isAutoChildNeverStarted } from './isAutoChildNeverStarted';
 
 export type AutoChildState =
@@ -32,8 +35,11 @@ export type AutoGroup = Readonly<{
   title: string | null;
   word: string;
   phase: RowPhase;
+  isStuck: boolean;
   children: ReadonlyArray<AutoGroupChild>;
 }>;
+
+const STUCK_WORD = 'Stuck';
 
 type Params = {
   readonly view: AutoTreeView;
@@ -64,15 +70,39 @@ type OutcomeParams = {
   readonly results: ReadonlyArray<AutoDeliveredResult>;
   readonly agent: Agent | null;
   readonly agentId: AgentId;
+  readonly declared: string | null;
+  readonly state: AutoChildState;
 };
 
-const outcomeOf = ({ results, agent, agentId }: OutcomeParams): string | null => {
+const outcomeOf = ({ results, agent, agentId, declared, state }: OutcomeParams): string | null => {
   const delivered = results
     .filter((result) => result.childAgentId === agentId)
     .map((result) => textOf({ value: result.summary }))
     .filter((summary) => summary !== null)
     .at(-1);
+  if (state === 'done') {
+    return declared ?? delivered ?? null;
+  }
   return delivered ?? textOf({ value: agent?.outputSummary });
+};
+
+type DeclaredParams = {
+  readonly delegation: AutoDelegation;
+};
+
+const declaredSummaryOf = ({ delegation }: DeclaredParams): string | null =>
+  textField({
+    source: recordField({ source: delegation.result, key: 'declared' }),
+    key: 'summary',
+  });
+
+type ReasonParams = DeclaredParams & {
+  readonly declared: string | null;
+};
+
+const reasonOf = ({ delegation, declared }: ReasonParams): string | null => {
+  const text = delegationReasonTextOf({ reason: delegation.reason });
+  return delegation.outcome === 'blocked' ? (declared ?? text) : text;
 };
 
 type SettledParams = {
@@ -138,6 +168,8 @@ const childOfDelegation = (params: DelegationChildParams): AutoGroupChild => {
   const { delegation, agent, results, labels } = params;
   const role = parseAutoDelegationRole({ role: delegation.role });
   const kind: AgentKind = role === null ? 'generic' : kindForRole({ role });
+  const state = stateOf(params);
+  const declared = declaredSummaryOf({ delegation });
   return {
     agentId: delegation.childAgentId,
     delegationId: delegation.id,
@@ -145,9 +177,9 @@ const childOfDelegation = (params: DelegationChildParams): AutoGroupChild => {
     noun: AGENT_KIND_META[kind].noun,
     label: labels.get(delegation.childAgentId) ?? AGENT_KIND_META[kind].noun,
     asked: textOf({ value: delegation.request.task }),
-    state: stateOf(params),
-    reason: delegation.reason,
-    outcome: outcomeOf({ results, agent, agentId: delegation.childAgentId }),
+    state,
+    reason: reasonOf({ delegation, declared }),
+    outcome: outcomeOf({ results, agent, agentId: delegation.childAgentId, declared, state }),
     createdAt: delegation.createdAt,
     startedAt: timeOf({ value: agent?.startedAt }),
     finishedAt: delegation.settledAt,
@@ -186,6 +218,7 @@ type LinkedParams = {
 
 const childOfLinkedAgent = ({ agent, results }: LinkedParams): AutoGroupChild => {
   const kind = classifyAgent({ agent, override: null });
+  const state = linkedStateOf({ agent });
   return {
     agentId: agent.id,
     delegationId: null,
@@ -193,9 +226,9 @@ const childOfLinkedAgent = ({ agent, results }: LinkedParams): AutoGroupChild =>
     noun: AGENT_KIND_META[kind].noun,
     label: AGENT_KIND_META[kind].noun,
     asked: null,
-    state: linkedStateOf({ agent }),
+    state,
     reason: null,
-    outcome: outcomeOf({ results, agent, agentId: agent.id }),
+    outcome: outcomeOf({ results, agent, agentId: agent.id, declared: null, state }),
     createdAt: null,
     startedAt: timeOf({ value: agent.startedAt }),
     finishedAt: timeOf({ value: agent.completedAt }),
@@ -232,12 +265,17 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
   const fromLinks = agents
     .filter((agent) => agent.parentAgentId === rootAgentId && !known.has(agent.id))
     .map((agent) => childOfLinkedAgent({ agent, results: view.deliveredResults }));
+  const children = [...fromDelegations, ...fromLinks];
+  const isLive = facts.phase === 'running' || facts.phase === 'waiting';
+  const isStuck =
+    isLive && children.some((child) => autoStuckKindOf({ state: child.state }) !== null);
   return {
     sessionId: view.tree.sessionId,
     rootAgentId,
     title: textOf({ value: byId.get(rootAgentId)?.name }),
-    word: facts.word,
+    word: isStuck ? STUCK_WORD : facts.word,
     phase: facts.phase,
-    children: [...fromDelegations, ...fromLinks],
+    isStuck,
+    children,
   };
 };

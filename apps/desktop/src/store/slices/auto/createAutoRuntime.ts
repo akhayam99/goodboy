@@ -69,6 +69,7 @@ export const createAutoRuntime = ({
 }: AutoRuntimeOptions): AutoRuntime => {
   const queue = createKeyedQueue();
   const inflight = new Set<Promise<void>>();
+  const watchedSinceMs = ctx.now();
   const track = (work: Promise<void>): void => {
     const tracked = work.catch(onError).finally(() => {
       inflight.delete(tracked);
@@ -76,7 +77,7 @@ export const createAutoRuntime = ({
     inflight.add(tracked);
   };
   const driveOnce = async (treeId: AutoTree['id']): Promise<boolean> => {
-    const hasExpired = await enforceDeadlines({ ctx, treeId });
+    const hasExpired = await enforceDeadlines({ ctx, treeId, watchedSinceMs });
     const hasStaleDecide = await expireStaleDecide({ ctx, treeId });
     const joined = await joinReady({ ctx, treeId });
     const hasAdvanced = await advancePhase({ ctx, treeId });

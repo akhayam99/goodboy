@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getAutoTree, listAutoTreesToRecover, setAutoTreeCapIfUnchanged } from '@goodboy/db';
+import {
+  getAutoTree,
+  listAutoReservations,
+  listAutoTreesToRecover,
+  setAutoTreeCapIfUnchanged,
+} from '@goodboy/db';
+import { brandId, type AutoAttemptId, type AutoDelegationId } from '@goodboy/types';
 import { createAutoScheduler } from './scheduler';
 import {
   batchInput,
@@ -105,7 +111,7 @@ describe('a restart keeps what the tree counted', () => {
     const toRecover = await listAutoTreesToRecover({ db: world.db });
     expect(toRecover.map((tree) => tree.id)).toEqual([WORLD_TREE]);
     const budget = await restarted.budget({ treeId: WORLD_TREE });
-    expect(budget?.facts).toMatchObject({ reservedUsd: 1, remainingUsd: 4 });
+    expect(budget?.facts).toMatchObject({ reservedUsd: 0, remainingUsd: 5 });
   });
 
   it('does not reset the lifetime counters when a new turn starts or a user message arrives', async () => {
@@ -148,13 +154,39 @@ describe('the budget cap changes only from the value that was seen', () => {
     expect((await getAutoTree({ db: world.db, treeId: WORLD_TREE }))?.capUsd).toBe(8);
   });
 
-  it('refuses a cap under what is spent and reserved, checked in the same write', async () => {
+  it('refuses a cap under what is spent, checked in the same write', async () => {
     const world = await makeAutoWorld({ capUsd: 5 });
     const seenCap = (await getAutoTree({ db: world.db, treeId: WORLD_TREE }))?.capUsd;
     const admitted = await world.scheduler.admit(
       batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
     );
     expect(admitted.kind).toBe('accepted');
+    const attemptId = brandId<AutoAttemptId>({ value: 'attempt-a' });
+    const delegationId = brandId<AutoDelegationId>({ value: 'delegation-a' });
+    await world.scheduler.startAttempt({
+      treeId: WORLD_TREE,
+      delegationId,
+      generation: 1,
+      baseline: null,
+      writeSet: null,
+    });
+    await world.scheduler.markAttemptRunning({
+      attemptId,
+      delegationId,
+      generation: 1,
+      runId: 'run-a',
+    });
+    await world.scheduler.settleAttempt({
+      attemptId,
+      generation: 1,
+      ending: {
+        kind: 'ended',
+        outcome: 'completed',
+        endReason: 'ok',
+        costUsd: 3,
+        resultSnapshot: null,
+      },
+    });
     const lowered = await setAutoTreeCapIfUnchanged({
       db: world.db,
       treeId: WORLD_TREE,
@@ -213,8 +245,7 @@ describe('the budget cap changes only from the value that was seen', () => {
       batchInput({ children: [childInput({ key: 'a', role: 'implementer' })] }),
     );
     expect(admitted.kind).toBe('accepted');
-    expect(admitted.kind === 'accepted' ? admitted.receipt.delegations[0]?.ceilingUsd : null).toBe(
-      3,
-    );
+    const reservations = await listAutoReservations({ db: world.db, treeId: WORLD_TREE });
+    expect(reservations.map((row) => row.reservedUsd)).toEqual([0]);
   });
 });

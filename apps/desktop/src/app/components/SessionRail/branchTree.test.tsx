@@ -1294,9 +1294,9 @@ describe('the Projects tree', () => {
       .querySelector('[data-pr-state]');
 
     expect(prMarkOf('payments-api')?.getAttribute('data-pr-state')).toBe('queued');
-    expect(prMarkOf('payments-api')?.getAttribute('data-pr-tone')).toBe('warning');
+    expect(prMarkOf('payments-api')?.getAttribute('data-pr-tone')).toBe('primary');
     expect(closed?.getAttribute('data-pr-state')).toBe('closed');
-    expect(closed?.getAttribute('data-pr-tone')).toBe('danger');
+    expect(closed?.getAttribute('data-pr-tone')).toBe('neutral');
   });
 
   it('draws a draft pull request gray and a branch with none as a neutral branch glyph', async () => {

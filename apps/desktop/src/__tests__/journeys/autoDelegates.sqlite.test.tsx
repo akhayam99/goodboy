@@ -24,6 +24,7 @@ import type {
 import { railRowsOf } from '../../features/auto/chat/railRowsOf';
 import { autoSpawnedRowsOf } from '../../app/components/SpawnedPanel/autoSpawnedRowsOf';
 import type { SpawnedRow } from '../../app/components/SpawnedPanel/spawnedRow';
+import { spawnedRailOf } from '../../app/components/SpawnedPanel/spawnedRailOf';
 import { SpawnedTree } from '../../app/components/SpawnedPanel/SpawnedTree';
 import { SpawnedTreeRow } from '../../app/components/SpawnedPanel/SpawnedTreeRow';
 import { brandedId } from '../../features/history/testing/brandedId';
@@ -276,26 +277,38 @@ type WorkTreeParams = {
   readonly rows: ReadonlyArray<SpawnedRow>;
 };
 
-const workTree = ({ rows }: WorkTreeParams) => (
-  <SpawnedTree label="Work">
-    {rows.map((row) => (
-      <SpawnedTreeRow
-        key={row.id}
-        id={row.id}
-        level={row.level}
-        hasChildren={row.hasChildren}
-        glyph={null}
-        role={row.role}
-        title={row.title}
-        card={row.card}
-        word={row.word}
-        time={null}
-        isSelected={false}
-        onOpen={() => undefined}
-      />
-    ))}
-  </SpawnedTree>
-);
+const workTree = ({ rows }: WorkTreeParams) => {
+  const rail = spawnedRailOf({
+    nodes: rows.map((row) => ({ id: row.id, level: row.level, isPending: false })),
+  });
+  return (
+    <SpawnedTree label="Work">
+      {rows
+        .flatMap((row) => {
+          const rowRail = rail.railById.get(row.id);
+          return rowRail === undefined ? [] : [{ row, rowRail }];
+        })
+        .map(({ row, rowRail }) => (
+          <SpawnedTreeRow
+            key={row.id}
+            id={row.id}
+            level={row.level}
+            hasChildren={row.hasChildren}
+            rail={rowRail}
+            railWidth={rail.width}
+            glyph={null}
+            role={row.role}
+            title={row.title}
+            card={row.card}
+            word={row.word}
+            time={null}
+            isSelected={false}
+            onOpen={() => undefined}
+          />
+        ))}
+    </SpawnedTree>
+  );
+};
 
 const showRail = async (view: RenderResult) => {
   await useAppStore.getState().loadAutoTrees({ sessionId });
@@ -354,7 +367,7 @@ describe('journey: Auto delegates and a child finishes', () => {
     expect(attempts.map((attempt) => attempt.state)).toEqual(['running']);
     const reserved = await attemptReservations();
     expect(reserved.map((reservation) => reservation.state)).toEqual(['reserved']);
-    expect((await readAutoTreeSpend({ db, treeId }))?.reservedUsd).toBeGreaterThan(0);
+    expect((await readAutoTreeSpend({ db, treeId }))?.reservedUsd).toBe(0);
     const childId = delegation?.childAgentId ?? '';
     expect(useAppStore.getState().sessionPhaseRuns[sessionId]?.map((agent) => agent.id)).toContain(
       childId,

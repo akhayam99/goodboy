@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { MountId, ProjectId, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 import { useAppStore, useCurrentSession } from '../../../../../store';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
@@ -198,9 +198,10 @@ const openFiles = (): void => {
 
 type Props = {
   readonly config: WorktreeSceneConfig;
+  readonly children?: ReactNode;
 };
 
-export const WorktreeScene = ({ config }: Props) => {
+export const WorktreeScene = ({ config, children = null }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const session = useCurrentSession();
   useSceneRailFold({ isFolded: config.isFolded === true });
@@ -254,7 +255,10 @@ export const WorktreeScene = ({ config }: Props) => {
           {config.level === 'worktree' ? (
             <BranchPage session={session ?? SESSION} workingDir={PR_PAGE_WORKTREE} />
           ) : (
-            <h1 className="p-6 text-title text-foreground">{SESSION.goal}</h1>
+            <div className="flex flex-col gap-4 p-6">
+              <h1 className="text-title text-foreground">{SESSION.goal}</h1>
+              {children}
+            </div>
           )}
         </SessionFrame>
       </main>

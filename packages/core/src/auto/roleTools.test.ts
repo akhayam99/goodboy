@@ -97,7 +97,6 @@ const blockedBy = (summary: string): BuildResultParams => ({
   isArtifactExpected: false,
   openQuestions: [],
   costUsd: 0.1,
-  reservedCeilingUsd: 1,
 });
 
 describe('a child blocked for a missing shell', () => {

@@ -34,7 +34,7 @@ describe('branchRowCardOf', () => {
 
     expect(card.title).toBe('hl/export-batch');
     expect(card.sub).toBe('#318');
-    expect(card.state).toEqual({ tone: 'ok', words: 'Open' });
+    expect(card.state).toEqual({ tone: 'info', words: 'Open' });
     expect(card.facts).toEqual([]);
     expect(card.footnote).toBeUndefined();
   });

@@ -1,4 +1,5 @@
-import { StatusDot, type Tone } from '@goodboy/ui';
+import { Check } from 'lucide-react';
+import { ICON_SIZE, StatusDot, type Tone } from '@goodboy/ui';
 import { AgentKindChip } from '../../../../shared/components/AgentKindChip';
 import type { RowPhase } from '../../../workTreeModel/rowState';
 import { DelegationClock } from '../../../auto/chat/DelegationClock';
@@ -14,14 +15,25 @@ const PHASE_TONE: Record<RowPhase, Tone> = {
   running: 'info',
   waiting: 'warning',
   failed: 'danger',
-  done: 'success',
+  done: 'neutral',
   closed: 'neutral',
   skipped: 'neutral',
 };
 
 export const LiveChildLine = ({ child }: Props) => (
   <li data-live-child={child.phase} className="flex min-w-0 items-center gap-2 pl-6">
-    <StatusDot tone={PHASE_TONE[child.phase]} size="sm" />
+    <span className="flex w-2.5 shrink-0 items-center justify-center">
+      {child.phase === 'done' ? (
+        <Check
+          size={ICON_SIZE.mark}
+          aria-hidden
+          data-live-child-done=""
+          className="text-muted-foreground"
+        />
+      ) : (
+        <StatusDot tone={PHASE_TONE[child.phase]} size="sm" />
+      )}
+    </span>
     <AgentKindChip kind={child.agentKind} density="glyph" isDecorative />
     <span className="shrink-0 text-label text-foreground">
       {AGENT_KIND_META[child.agentKind].noun}

@@ -1,4 +1,5 @@
 import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import type { SessionId } from '@goodboy/types';
 import { TEXT_ROLE, cn } from '@goodboy/ui';
 import { countSlotText } from '../../../../shared/utils/countSlotText';
 import {
@@ -11,6 +12,7 @@ import { ReviewListRow } from './ReviewListRow';
 import type { ReviewEntry, ReviewGroup } from './useReviewEntries';
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly groups: ReadonlyArray<ReviewGroup>;
   readonly focusedThreadId: string | null;
   readonly onSelect: (threadId: string) => void;
@@ -41,7 +43,14 @@ const isMixedOf = ({ groups }: MixedParams): boolean => {
   return notes > 0 && notes < entries.length;
 };
 
-export const ReviewList = ({ groups, focusedThreadId, onSelect, checked, onToggle }: Props) => {
+export const ReviewList = ({
+  sessionId,
+  groups,
+  focusedThreadId,
+  onSelect,
+  checked,
+  onToggle,
+}: Props) => {
   const isSourceShown = isMixedOf({ groups });
   return (
     <nav
@@ -73,6 +82,7 @@ export const ReviewList = ({ groups, focusedThreadId, onSelect, checked, onToggl
               {entries.map((entry) => (
                 <li key={entry.threadId} className="min-w-0 list-none">
                   <ReviewListRow
+                    sessionId={sessionId}
                     entry={entry}
                     isSelected={entry.threadId === focusedThreadId}
                     isSourceShown={isSourceShown}

@@ -12,16 +12,36 @@ type Params = {
   }) => void;
 };
 
+const isMenuPress = (event: MouseEvent): boolean =>
+  event.button === 2 || (event.button === 0 && event.ctrlKey);
+
+const hasSelectedText = (): boolean => {
+  const selection = window.getSelection();
+  return selection !== null && !selection.isCollapsed && selection.toString().trim() !== '';
+};
+
 export const useNativeMenuPolicy = ({ onLink }: Params): void => {
   const onLinkRef = useRef(onLink);
   onLinkRef.current = onLink;
 
   useEffect(() => {
-    const onContextMenu = (event: MouseEvent) => {
-      if (event.defaultPrevented) {
+    let isSelectionHeld: boolean | null = null;
+    const onMouseDown = (event: MouseEvent) => {
+      if (!isMenuPress(event)) {
         return;
       }
-      if (keepsNativeMenu({ target: event.target, selection: window.getSelection() })) {
+      isSelectionHeld = hasSelectedText();
+    };
+    const onContextMenuCapture = (event: MouseEvent) => {
+      const wasHeld = isSelectionHeld;
+      isSelectionHeld = null;
+      const selection = wasHeld === false ? null : window.getSelection();
+      if (keepsNativeMenu({ target: event.target, selection })) {
+        event.stopPropagation();
+      }
+    };
+    const onContextMenu = (event: MouseEvent) => {
+      if (event.defaultPrevented) {
         return;
       }
       event.preventDefault();
@@ -35,7 +55,13 @@ export const useNativeMenuPolicy = ({ onLink }: Params): void => {
         onLinkRef.current({ href, point: { x: event.clientX, y: event.clientY }, opener: link });
       }
     };
+    document.addEventListener('mousedown', onMouseDown, true);
+    document.addEventListener('contextmenu', onContextMenuCapture, true);
     document.addEventListener('contextmenu', onContextMenu);
-    return () => document.removeEventListener('contextmenu', onContextMenu);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown, true);
+      document.removeEventListener('contextmenu', onContextMenuCapture, true);
+      document.removeEventListener('contextmenu', onContextMenu);
+    };
   }, []);
 };

@@ -26,6 +26,12 @@ export const U26_CENTRAL_NOW_SCENES: Readonly<Record<string, ComponentType>> = {
   'u26-central-now-story-skipped-dark': () => (
     <CentralNowScene theme="dark" variant="story-skipped" />
   ),
+  'u26-central-now-story-one-project-light': () => (
+    <CentralNowScene theme="light" variant="story-one-project" />
+  ),
+  'u26-central-now-story-one-project-dark': () => (
+    <CentralNowScene theme="dark" variant="story-one-project" />
+  ),
   'u26-central-now-finished-light': () => <CentralNowScene theme="light" variant="finished" />,
   'u26-central-now-finished-dark': () => <CentralNowScene theme="dark" variant="finished" />,
   'u26-central-now-stale-light': () => <CentralNowScene theme="light" variant="stale" />,

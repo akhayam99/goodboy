@@ -8,6 +8,7 @@ export const DELEGATE_TASK_CHARS = 8_000;
 export const DELEGATE_FIELD_CHARS = 1_000;
 export const DELEGATE_REASON_CHARS = 240;
 export const DELEGATE_LIST_MAX = 8;
+export const DELEGATE_TITLE_WORDS = 8;
 
 export type DelegateRevise = Readonly<{
   artifactId: string;
@@ -16,6 +17,7 @@ export type DelegateRevise = Readonly<{
 
 export type DelegateChildSpec = Readonly<{
   role: AutoDelegationRole | null;
+  title: string | null;
   task: string;
   reason: string;
   provider: string | null;
@@ -67,6 +69,18 @@ const textOf = ({ value, max }: TextParams): string | null => {
   }
   const trimmed = value.trim();
   return trimmed === '' ? null : trimmed.slice(0, max);
+};
+
+type TitleParams = {
+  readonly value: unknown;
+};
+
+const titleOf = ({ value }: TitleParams): string | null => {
+  const text = textOf({ value, max: DELEGATE_FIELD_CHARS });
+  if (text === null) {
+    return null;
+  }
+  return text.split(/\s+/).slice(0, DELEGATE_TITLE_WORDS).join(' ');
 };
 
 type ListParams = {
@@ -122,6 +136,7 @@ const refuse = ({ slot, code, message }: DelegateChildRefusal): ChildOutcome => 
 
 const RETRY_EXCLUSIVE_KEYS = [
   'role',
+  'title',
   'task',
   'doneWhen',
   'expected',
@@ -167,6 +182,7 @@ const retryChild = ({ raw, slot, retryOf }: RetryChildParams): ChildOutcome => {
     kind: 'ok',
     child: {
       role: null,
+      title: null,
       task: '',
       reason,
       provider: textOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
@@ -242,6 +258,7 @@ const parseChild = ({ raw, slot }: ChildParams): ChildOutcome => {
     kind: 'ok',
     child: {
       role,
+      title: titleOf({ value: raw['title'] }),
       task: task ?? '',
       reason,
       provider: textOf({ value: raw['provider'], max: DELEGATE_FIELD_CHARS }),
@@ -315,6 +332,7 @@ export const hashDelegateChildren = ({ children }: HashParams): string =>
         ...(child.facts.length > 0 ? [child.facts] : []),
         ...(child.decisions.length > 0 ? [child.decisions] : []),
         ...(child.forQuestion === null ? [] : [['forQuestion', child.forQuestion]]),
+        ...(child.title === null ? [] : [['title', child.title]]),
       ]),
     ),
   );
