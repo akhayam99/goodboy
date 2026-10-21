@@ -86,6 +86,7 @@ export const StudioFrame = ({
 
   const meta = STUDIO_META[kind];
   const isInSlot = useContext(StudioSlotContext);
+  const isOuterUnderTrail = useContext(UnderTrailContext);
   const isDrawerHost =
     isInSlot && placement === 'content' && 'canHostDrawer' in meta && meta.canHostDrawer;
   const handle = useMemo<StudioFrameHandle>(
@@ -109,6 +110,7 @@ export const StudioFrame = ({
     <HeaderCloseButton label={closeLabel} onClose={requestClose} onClaim={headerCloseClaim.claim} />
   ) : null;
   const isBandDrawn = hasBand && (isBandClose || trailClaims > 0 || accessory !== null);
+  const isUnderTrail = isBandDrawn || isOuterUnderTrail;
 
   const isSplit = meta.page !== null && PAGE_FRAME[meta.page] === 'split';
   const isSkeletonUnderBand = hasBand && isClosable && meta.close === 'band';
@@ -152,11 +154,9 @@ export const StudioFrame = ({
         >
           <StudioBandContext.Provider value={isSplit ? bandNode : null}>
             <PaneActionsContext.Provider value={headerClose}>
-              {isBandDrawn ? (
-                <UnderTrailContext.Provider value>{children}</UnderTrailContext.Provider>
-              ) : (
-                children
-              )}
+              <UnderTrailContext.Provider value={isUnderTrail}>
+                {children}
+              </UnderTrailContext.Provider>
             </PaneActionsContext.Provider>
           </StudioBandContext.Provider>
         </Suspense>
@@ -184,10 +184,10 @@ export const StudioFrame = ({
             frame="sheet"
             main={framed}
             drawer={
-              drawerSpec?.node == null ? null : isBandDrawn ? (
-                <UnderTrailContext.Provider value>{drawerSpec.node}</UnderTrailContext.Provider>
-              ) : (
-                drawerSpec.node
+              drawerSpec?.node == null ? null : (
+                <UnderTrailContext.Provider value={isUnderTrail}>
+                  {drawerSpec.node}
+                </UnderTrailContext.Provider>
               )
             }
             ariaLabel={drawerSpec?.ariaLabel ?? 'Side panel'}

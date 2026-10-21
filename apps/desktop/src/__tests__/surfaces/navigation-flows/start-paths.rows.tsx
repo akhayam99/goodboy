@@ -160,6 +160,18 @@ const inboxRowButton = (identifier: string): HTMLElement => {
   return button;
 };
 
+const fullRecordTrail = (): HTMLElement | null =>
+  screen
+    .queryAllByRole('navigation', { name: 'Breadcrumb' })
+    .find((trail) => within(trail).queryByText('#318') !== null) ?? null;
+
+const openFullRecord = async (): Promise<void> => {
+  await clickButton('Tasks');
+  await waitFor(() => inboxRowButton('#318'), WAIT);
+  fireEvent.click(inboxRowButton('#318'));
+  fireEvent.click(await screen.findByRole('button', { name: 'Open full' }, WAIT));
+};
+
 const openTasksAndStart = async (ctx: Ctx): Promise<void> => {
   installFakes(ctx);
   clicks = 0;
@@ -311,6 +323,19 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       await branchTab('pr')({ sessionId: newSessionId });
       expect(await screen.findAllByText('Review started', {}, WAIT)).toHaveLength(1);
       expect(clicks).toBeLessThanOrEqual(2);
+    },
+  },
+  {
+    name: 'Open full on a Tasks record stays on the record once its trail claims the band',
+    covers: [],
+    open: async (ctx) => {
+      installFakes(ctx);
+      await openFullRecord();
+      await settle(6);
+    },
+    lands: async () => {
+      await waitFor(() => expect(fullRecordTrail()).not.toBeNull(), WAIT);
+      expect(screen.queryByRole('option', { name: /^#318 / })).toBeNull();
     },
   },
 ];
