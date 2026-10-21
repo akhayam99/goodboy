@@ -145,7 +145,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
       'features/bootstrap/MoveReport/index.tsx',
     ],
   },
-  SessionCrumbs: { kind: 'helper', files: [] },
+  SessionTrail: { kind: 'helper', files: [] },
   Pane: { kind: 'helper', files: [] },
   LinkIssueAction: { kind: 'helper', files: [] },
   EmptyState: { kind: 'helper', files: [] },
@@ -453,6 +453,7 @@ describe('content column contract', () => {
           name !== '' &&
           name !== 'UnderTrailContext' &&
           name !== 'PaneBannerContext' &&
+          name !== 'PageTrailContext' &&
           name !== 'PaneActionsContext',
       );
     const unknown = [...new Set(mounted)].filter((name) => LENS_ROOTS[name] === undefined);

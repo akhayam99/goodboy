@@ -1,5 +1,5 @@
-import { ArrowLeft, X } from 'lucide-react';
-import { IconButton, PANE_RHYTHM, cn, type DrawerBack } from '@goodboy/ui';
+import { X } from 'lucide-react';
+import { DrawerBackLink, IconButton, PANE_RHYTHM, cn, type DrawerBack } from '@goodboy/ui';
 import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
@@ -40,27 +40,22 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, back, onClose }: Prop
       onClick={onClose}
     />
   );
-  const backButton =
-    back === undefined ? null : (
-      <IconButton
-        icon={ArrowLeft}
-        label={back.label}
-        variant="ghost"
-        iconSize={ICON_SIZE.control}
-        onClick={back.onBack}
-      />
-    );
+  const backLink = back === undefined ? null : <DrawerBackLink back={back} />;
 
   if (session === null || agent === null || run === null || workflow === null) {
     return (
       <section
         aria-label={ORCHESTRATED_COPY.stepPane}
         data-run-step-pane=""
-        className={cn('flex items-center gap-2', PANE_RHYTHM.body)}
+        className="flex flex-col"
       >
-        <p className="min-w-0 flex-1 text-ui text-muted-foreground">{ORCHESTRATED_COPY.stepGone}</p>
-        {backButton}
-        {close}
+        {backLink}
+        <div className={cn('flex items-center gap-2', PANE_RHYTHM.body)}>
+          <p className="min-w-0 flex-1 text-ui text-muted-foreground">
+            {ORCHESTRATED_COPY.stepGone}
+          </p>
+          {close}
+        </div>
       </section>
     );
   }
@@ -81,6 +76,7 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, back, onClose }: Prop
         data-run-step-pane={agent.id}
         className="flex h-full min-h-0 min-w-0 flex-col"
       >
+        {backLink}
         <AgentDetailPane
           session={session}
           agent={agent}
@@ -98,7 +94,6 @@ export const RunStepDrawer = ({ sessionId, runId, agentId, back, onClose }: Prop
             heading: <RunStepHeading agent={agent} stepAgent={stepAgent} workflow={workflow} />,
             actions: (
               <>
-                {backButton}
                 <RunStepMenu facts={{ sessionId, agentId, onLeave: onClose }} />
                 {close}
               </>

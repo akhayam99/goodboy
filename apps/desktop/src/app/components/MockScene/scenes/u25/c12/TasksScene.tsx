@@ -253,7 +253,10 @@ export const TasksScene = ({ state }: Props) => {
           records={WORKSPACE_TASKS}
           scope="for-me"
           groupBy="source"
-          full={<IssueScenePane record={LEDGER_RECORD} isFull />}
+          full={{
+            identifier: LEDGER_RECORD.identifier,
+            page: <IssueScenePane record={LEDGER_RECORD} isFull />,
+          }}
           onSeed={seed}
         />
       );

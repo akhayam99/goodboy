@@ -9,6 +9,7 @@ import { PageHeader } from './PageHeader';
 import { pageWidthOf } from './pageWidthOf';
 import { PaneActionsContext } from './paneActionsContext';
 import { PaneBannerContext } from './paneBannerContext';
+import { PageTrailContext } from './pageTrailContext';
 
 type BaseProps = {
   readonly animationClassName?: string;
@@ -64,7 +65,9 @@ export const PaneShell = (props: Props) => {
     );
   const children = (
     <PaneActionsContext.Provider value={null}>
-      <PaneBannerContext.Provider value={null}>{content}</PaneBannerContext.Provider>
+      <PaneBannerContext.Provider value={null}>
+        <PageTrailContext.Provider value={null}>{content}</PageTrailContext.Provider>
+      </PaneBannerContext.Provider>
     </PaneActionsContext.Provider>
   );
   const header =

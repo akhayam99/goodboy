@@ -11,7 +11,6 @@ import type { PaneFrame } from '../../../../shared/types/paneFrame';
 
 type Props = {
   readonly frame: PaneFrame;
-  readonly onBack: () => void;
   readonly sessionId: SessionId;
   readonly goal: string;
   readonly isCurrent: boolean;
@@ -27,7 +26,6 @@ type Props = {
 
 export const SessionPanel = ({
   frame,
-  onBack,
   sessionId,
   goal,
   isCurrent,
@@ -48,7 +46,6 @@ export const SessionPanel = ({
         actions={
           <OpenSessionButton sessionId={sessionId} onOpened={onOpened} variant="secondary" />
         }
-        onBack={onBack}
       />
       <ErrorStrip
         label="session telemetry"

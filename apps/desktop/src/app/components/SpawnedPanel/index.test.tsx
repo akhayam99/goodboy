@@ -102,10 +102,13 @@ describe('the Agents panel', () => {
     expect(drawer?.kind).toBe('run-step');
     expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to agents' }));
+    const back = screen.getByRole('button', { name: 'Back to agents' });
+    expect(back.closest('[data-drawer-back]')).not.toBeNull();
+    fireEvent.click(back);
     await settle();
 
     expect(useAppStore.getState().drawer?.kind).toBe('spawned');
+    expect(screen.getByRole('region', { name: 'Agents' })).toBeDefined();
     expect(panelMode()).toBe('run');
   });
 

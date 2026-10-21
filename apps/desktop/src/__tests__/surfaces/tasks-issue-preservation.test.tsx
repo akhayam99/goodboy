@@ -126,7 +126,9 @@ describe('SPEC3 9.7 issues and Tasks rows reachable from the new issue pane', ()
   it('goes back from the full page to Tasks', async () => {
     await mount({ name: 'c12-issue-full' });
 
-    expect(screen.getByRole('button', { name: 'Back to Tasks' })).toBeDefined();
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(trail).getByRole('button', { name: 'Tasks' })).toBeDefined();
+    expect(within(trail).getByText('HBL-412')).toBeDefined();
   });
 
   it('keeps the move of an in-session issue in its Links group', async () => {

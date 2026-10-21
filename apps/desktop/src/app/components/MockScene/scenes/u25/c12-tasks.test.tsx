@@ -168,7 +168,9 @@ describe('c12 task scenes', () => {
   it('opens the issue full page with a way back to Tasks and no Open full', async () => {
     await mount('c12-issue-full');
 
-    expect(screen.getByRole('button', { name: 'Back to Tasks' })).toBeDefined();
+    const trail = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(trail).getByRole('button', { name: 'Tasks' })).toBeDefined();
+    expect(within(trail).getByText('HBL-412')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Open full' })).toBeNull();
     expect(
       screen.getByRole('heading', { name: 'Ledger export times out over 10k rows' }),

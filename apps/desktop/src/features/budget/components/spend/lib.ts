@@ -2,7 +2,6 @@ import type { SessionId, TelemetryRecord } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import { costCoverage, type CostCoverage } from '@goodboy/core';
-import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 
 export type SortKey = 'recent' | 'expensive';
 
@@ -53,15 +52,6 @@ type Expect<T extends true> = T;
 type ProviderIdsAreTotal =
   Exclude<ProviderId, (typeof PROVIDER_IDS)[number]> extends never ? true : false;
 type _ProviderIdsTotalCheck = Expect<ProviderIdsAreTotal>;
-
-type ProviderLabelParams = {
-  readonly provider: string;
-};
-
-export const providerLabel = ({ provider }: ProviderLabelParams): string => {
-  const id = PROVIDER_IDS.find((candidate) => candidate === provider);
-  return id === undefined ? provider : PROVIDER_LABEL[id];
-};
 
 type SpendToneParams = {
   readonly pct: number;

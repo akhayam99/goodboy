@@ -110,6 +110,7 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 import { parseIntegrationTaskUrl } from './parseIntegrationTaskUrl';
+import { sessionPlace } from '../../../../../../store/slices/navigation/place';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -303,7 +304,7 @@ describe('IntegrationPane', () => {
       );
 
       expect(screen.getByText(detailText)).toBeDefined();
-      expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+      expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
     },
   );
 
@@ -345,7 +346,7 @@ describe('IntegrationPane', () => {
     expect(screen.queryByText('Linear')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Unlink GB-42' })).toBeNull();
     expect(within(actions).getByRole('button', { name: 'More actions for GB-42' })).toBeDefined();
-    expect(within(actions).getByRole('button', { name: 'All issues' })).toBeDefined();
+    expect(within(actions).queryByRole('button', { name: 'All issues' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Link/ })).toBeNull();
   });
 
@@ -443,7 +444,28 @@ describe('IntegrationPane', () => {
     fireEvent.click(screen.getByRole('button', { name: 'View GB-43' }));
 
     expect(screen.getByText('Linear detail GB-43')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+    expect(useAppStore.getState().focusedExternalTask[SESSION_ID]).toEqual({
+      provider: 'linear',
+      externalId: SECOND_TASK.externalId,
+      projectId: SECOND_TASK.projectId ?? null,
+    });
+  });
+
+  it.each(['back', 'up'] as const)('returns to the list when %s leaves the issue', (move) => {
+    act(() =>
+      useAppStore
+        .getState()
+        .navigate({ to: sessionPlace({ sessionId: SESSION_ID, lens: 'linear' }) }),
+    );
+    render(<IntegrationPane sessionId={SESSION_ID} workspaceId={WORKSPACE_ID} provider="linear" />);
+    fireEvent.click(screen.getByRole('button', { name: 'View GB-42' }));
+
+    expect(screen.getByText('Linear detail GB-42')).toBeDefined();
+
+    act(() => useAppStore.getState()[move]());
+
+    expect(useAppStore.getState().focusedExternalTask[SESSION_ID] ?? null).toBeNull();
+    expect(screen.getByRole('button', { name: 'View GB-42' })).toBeDefined();
   });
 
   it('folds a merged work item behind a completed count until expanded', () => {
@@ -495,6 +517,7 @@ describe('IntegrationPane', () => {
     expect(useAppStore.getState().sessionExternalTasks[SESSION_ID]).toEqual([]);
     expect(screen.queryByRole('group', { name: /Unlink/ })).toBeNull();
     expect(screen.getByText('Unlinked GB-42')).toBeDefined();
+    expect(useAppStore.getState().focusedExternalTask[SESSION_ID] ?? null).toBeNull();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     });

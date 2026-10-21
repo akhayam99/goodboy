@@ -84,10 +84,13 @@ describe('the navigation scenes', () => {
     expect(MOCK_SCENES.railorder).toBe(U24_P_NAV_SCENES.railorder);
   });
 
-  it('integration-issue-focused holds All issues, keeps Unlink in the menu, and no link action', async () => {
+  it('integration-issue-focused ends the trail in Issue, keeps Unlink in the menu, and no link action', async () => {
     await mount('integration-issue-focused');
 
-    expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByText('Issue'),
+    ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Unlink NW-142' })).toBeNull();
     expect(screen.getByRole('button', { name: 'More actions for NW-142' })).toBeDefined();
     const pageLinks = within(mainPane())

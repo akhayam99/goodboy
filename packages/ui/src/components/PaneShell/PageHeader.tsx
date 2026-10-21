@@ -4,6 +4,7 @@ import type { FramePage } from '../../frameGeometry';
 import { PANE_RHYTHM } from '../../paneRhythm';
 import { PageColumn, type PageColumnWidth } from '../PageColumn';
 import { PaneTitleRow } from './PaneTitleRow';
+import { PageTrailContext } from './pageTrailContext';
 import { UnderTrailContext } from './underTrailContext';
 import { useInheritedPaneActions } from './paneActionsContext';
 import { pageWidthOf } from './pageWidthOf';
@@ -45,6 +46,7 @@ export const PageHeader = (props: PageHeaderProps) => {
     animationClassName = 'motion-safe:animate-studio-in',
   } = props;
   const isUnderTrail = useContext(UnderTrailContext);
+  const trail = useContext(PageTrailContext);
   const inheritedActions = useInheritedPaneActions();
   const titleActions =
     inheritedActions == null ? (
@@ -69,6 +71,11 @@ export const PageHeader = (props: PageHeaderProps) => {
       )}
     >
       <div className={cn('flex min-w-0 flex-col gap-2', animationClassName)}>
+        {trail == null ? null : (
+          <div data-slot="page-trail" className="flex h-6 min-w-0 items-center">
+            {trail}
+          </div>
+        )}
         {props.row !== undefined ? (
           props.row
         ) : (

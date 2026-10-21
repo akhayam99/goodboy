@@ -6,6 +6,7 @@ import { navigate } from './navigate';
 import { restoreLocation } from './restoreLocation';
 import { amendStudio, closeStudio, openStudio, switchStudio } from './studioMoves';
 import { up } from './up';
+import { upTo } from './upTo';
 import type { SliceDeps } from '../../slice-types';
 
 export const createNavigationSlice = ({ set, get }: SliceDeps) => {
@@ -15,6 +16,7 @@ export const createNavigationSlice = ({ set, get }: SliceDeps) => {
     forward: forward(set, get),
     goToHistory: goToHistory(set, get),
     up: up(set, get),
+    upTo: upTo(set, get),
     amendFocus: amendFocus(set, get),
     openStudio: openStudio(set, get),
     amendStudio: amendStudio(set, get),

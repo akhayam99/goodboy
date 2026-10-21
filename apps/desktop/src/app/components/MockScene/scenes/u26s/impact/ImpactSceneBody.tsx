@@ -72,7 +72,6 @@ export const ImpactSceneBody = ({ mode }: Props) => {
             <ProviderPanel
               frame={frame}
               rangeLabel={RANGE_LABEL}
-              onBack={noop}
               provider={PROVIDER}
               entry={spend.providers.find((entry) => entry.provider === PROVIDER) ?? null}
               turns={spend.turns}

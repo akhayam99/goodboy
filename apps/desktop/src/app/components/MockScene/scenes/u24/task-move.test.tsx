@@ -86,7 +86,10 @@ describe('the task move scenes', () => {
     expect(
       screen.getByRole('button', { name: 'Move NW-142 from api · feat/create-orders-endpoint' }),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'All issues' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'All issues' })).toBeNull();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByText('Issue'),
+    ).toBeDefined();
   });
 
   it.each(Object.keys(U24_TASK_MOVE_SCENES))(

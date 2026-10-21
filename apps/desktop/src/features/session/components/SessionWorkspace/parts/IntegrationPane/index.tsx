@@ -1,19 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, Unlink } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Check, Unlink } from 'lucide-react';
 import type {
   SessionExternalTask,
   SessionExternalTaskProvider,
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import {
-  cn,
-  CountToggle,
-  formatError,
-  PaneShell,
-  PaneActionsContext,
-  useInheritedPaneActions,
-} from '@goodboy/ui';
+import { cn, CountToggle, formatError, PaneShell } from '@goodboy/ui';
 import { EmptyState } from '@goodboy/ui';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../../store';
 import { selectSessionById } from '../../../../../../store/slices/sessions/selectSessionById';
@@ -22,7 +15,6 @@ import { ConnectIntegrationEmptyState } from '../../../../../integrations/Connec
 import { resolveIntegrationConnection } from '../../../../../integrations/connection';
 import { useGithubConnection } from '../../../../../integrations/github/useGithubConnection';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../../shared/components/conceptIcons';
-import { GhostActionButton } from '@goodboy/ui';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { useSessionRepo } from '../../../../../../store/slices/worktrees/useSessionRepo';
 import { branchRequests } from '../../../../branchRequests';
@@ -34,6 +26,8 @@ import { RecordFrameContext } from '../../../../../../shared/components/StudioDe
 import type { RecordFrame } from '../../../../../../shared/components/StudioDetail/RecordActions/types';
 import { WorkItemList } from './WorkItemList';
 import { useSessionProjectScope } from '../../../../hooks/useSessionProjectScope';
+import { PROVIDER_LENS } from '../../../../../integrations/providerLens';
+import { sessionPlace } from '../../../../../../store/slices/navigation/place';
 import { LinkIssueAction } from '../../../SessionOverviewPane/LinkIssueAction';
 
 type Props = {
@@ -50,6 +44,10 @@ type ProviderMeta = Readonly<{
 
 type UnlinkParams = {
   readonly task: SessionExternalTask;
+};
+
+type OpenTaskParams = {
+  readonly taskKey: string;
 };
 
 const PROVIDER_META: Record<SessionExternalTaskProvider, ProviderMeta> = {
@@ -94,20 +92,12 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const [unlinkError, setUnlinkError] = useState<string | null>(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const inheritedActions = useInheritedPaneActions();
   const externalTasks = useAppStore(
     (state) => state.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY,
   );
   const openedTask = useAppStore((state) => state.focusedExternalTask[sessionId] ?? null);
-  const openedTaskKey =
-    openedTask?.provider === provider ? integrationTaskKey({ task: openedTask }) : null;
-  const [focusedTaskKey, setFocusedTaskKey] = useState<string | null>(openedTaskKey);
-  useEffect(() => {
-    if (openedTaskKey == null) {
-      return;
-    }
-    setFocusedTaskKey(openedTaskKey);
-  }, [openedTaskKey]);
+  const openExternalTaskLens = useAppStore((state) => state.openExternalTaskLens);
+  const navigate = useAppStore((state) => state.navigate);
   const unlinkSessionExternalTask = useAppStore((state) => state.unlinkSessionExternalTask);
   const integrations = useAppStore(
     (state) => state.workspaceIntegrations[workspaceId] ?? EMPTY_ARRAY,
@@ -133,20 +123,21 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
   const session = useAppStore((state) => selectSessionById(state, sessionId));
   const linkAction =
     session === null ? undefined : <LinkIssueAction session={session} initialSource={provider} />;
-  const lastFocused = useRef<SessionExternalTask | null>(null);
-  const anchor = lastFocused.current ?? (openedTask?.provider === provider ? openedTask : null);
   const focusedTask =
-    tasks.find((task) => integrationTaskKey({ task }) === focusedTaskKey) ??
-    (focusedTaskKey === null || anchor === null
+    openedTask === null || openedTask.provider !== provider
       ? null
       : (tasks.find(
           (task) =>
-            task.externalId === anchor.externalId &&
-            (task.projectId ?? null) === (anchor.projectId ?? null),
-        ) ?? null));
-  useEffect(() => {
-    lastFocused.current = focusedTask;
-  }, [focusedTask]);
+            task.externalId === openedTask.externalId &&
+            (task.projectId ?? null) === openedTask.projectId,
+        ) ?? null);
+  const openTask = ({ taskKey }: OpenTaskParams) => {
+    const task = tasks.find((candidate) => integrationTaskKey({ task: candidate }) === taskKey);
+    if (task === undefined) {
+      return;
+    }
+    openExternalTaskLens(sessionId, task);
+  };
   const workItems = buildWorkItems({
     tasks,
     currentBranch: sessionBranch,
@@ -158,7 +149,15 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     setIsUnlinking(true);
     try {
       await unlinkSessionExternalTask(sessionId, provider, task.externalId, task.projectId);
-      setFocusedTaskKey(null);
+      const stillOpen = useAppStore.getState().focusedExternalTask[sessionId] ?? null;
+      if (
+        stillOpen === null ||
+        stillOpen.provider !== provider ||
+        stillOpen.externalId !== task.externalId
+      ) {
+        return;
+      }
+      navigate({ to: sessionPlace({ sessionId, lens: PROVIDER_LENS[provider] }), mode: 'replace' });
     } catch (error) {
       setUnlinkError(formatError(error));
     } finally {
@@ -197,36 +196,23 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       ],
     };
     return (
-      <PaneActionsContext.Provider
-        value={
-          <div className="flex items-center gap-2">
-            <GhostActionButton
-              icon={ArrowLeft}
-              label={`All ${meta.nounPlural}`}
-              onClick={() => setFocusedTaskKey(null)}
-            />
-            {inheritedActions}
-          </div>
-        }
-      >
-        <RecordFrameContext.Provider value={frame}>
-          <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
-            {unlinkError != null ? (
-              <p className={cn('shrink-0 pt-3 text-label text-danger', PANE_RHYTHM.inset)}>
-                {unlinkError}
-              </p>
-            ) : null}
-            <FocusedTaskBody
-              provider={provider}
-              sessionId={sessionId}
-              workspaceId={workspaceId}
-              task={focusedTask}
-              projectId={focusedTask.projectId ?? projectScope}
-              isConnected={connection.isConnected}
-            />
-          </div>
-        </RecordFrameContext.Provider>
-      </PaneActionsContext.Provider>
+      <RecordFrameContext.Provider value={frame}>
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+          {unlinkError != null ? (
+            <p className={cn('shrink-0 pt-3 text-label text-danger', PANE_RHYTHM.inset)}>
+              {unlinkError}
+            </p>
+          ) : null}
+          <FocusedTaskBody
+            provider={provider}
+            sessionId={sessionId}
+            workspaceId={workspaceId}
+            task={focusedTask}
+            projectId={focusedTask.projectId ?? projectScope}
+            isConnected={connection.isConnected}
+          />
+        </div>
+      </RecordFrameContext.Provider>
     );
   }
 
@@ -251,7 +237,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       <WorkItemList
         items={workItems.current}
         providerLabel={meta.label}
-        onSelect={setFocusedTaskKey}
+        onSelect={(taskKey) => openTask({ taskKey })}
       />
       <div className="flex justify-center">
         <CountToggle
@@ -266,7 +252,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
         <WorkItemList
           items={workItems.history}
           providerLabel={meta.label}
-          onSelect={setFocusedTaskKey}
+          onSelect={(taskKey) => openTask({ taskKey })}
         />
       ) : null}
       {unlinkError != null ? <p className="text-label text-danger">{unlinkError}</p> : null}

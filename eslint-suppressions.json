@@ -3129,16 +3129,6 @@
       "count": 10
     }
   },
-  "apps/desktop/src/features/impact/components/ImpactStudio/index.tsx": {
-    "react-hooks/exhaustive-deps": {
-      "count": 3
-    }
-  },
-  "apps/desktop/src/features/impact/components/ImpactStudio/spend.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 11
-    }
-  },
   "apps/desktop/src/features/impact/hooks/useImpactMetrics/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 1

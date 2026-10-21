@@ -37,13 +37,11 @@ export const seedLinearIssue = (): void => {
     identifier: 'NW-143',
     title: 'Surface retry counts in the delivery log',
   });
+  const { navigate, openExternalTaskLens } = useAppStore.getInitialState();
   useAppStore.setState((state) => ({
+    navigate,
+    openExternalTaskLens,
     sessionExternalTasks: { ...state.sessionExternalTasks, [sessionId]: [first, second] },
-    activeLens: { ...state.activeLens, [sessionId]: 'linear' },
-    focusedExternalTask: {
-      ...state.focusedExternalTask,
-      [sessionId]: { provider: 'linear', externalId: first.externalId, projectId: null },
-    },
     workspaceIntegrations: {
       ...state.workspaceIntegrations,
       [SESSION.workspaceId]: [
@@ -64,6 +62,7 @@ export const seedLinearIssue = (): void => {
       ],
     },
   }));
+  openExternalTaskLens(sessionId, first);
 };
 
 const IssueFocused = () => {
