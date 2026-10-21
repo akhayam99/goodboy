@@ -21,6 +21,7 @@ import { branchRequests } from '../../../../branchRequests';
 import { buildWorkItems } from '../../../../workItems';
 import { FocusedTaskBody } from './FocusedTaskBody';
 import { integrationTaskKey } from './integrationTaskKey';
+import { isTaskOnScreen } from './isTaskOnScreen';
 import { TaskPlacementMenu } from './TaskPlacementMenu';
 import { RecordFrameContext } from '../../../../../../shared/components/StudioDetail/RecordFrameContext';
 import type { RecordFrame } from '../../../../../../shared/components/StudioDetail/RecordActions/types';
@@ -149,12 +150,8 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
     setIsUnlinking(true);
     try {
       await unlinkSessionExternalTask(sessionId, provider, task.externalId, task.projectId);
-      const stillOpen = useAppStore.getState().focusedExternalTask[sessionId] ?? null;
-      if (
-        stillOpen === null ||
-        stillOpen.provider !== provider ||
-        stillOpen.externalId !== task.externalId
-      ) {
+      const state = useAppStore.getState();
+      if (!isTaskOnScreen({ state, workspaceId, sessionId, provider, task })) {
         return;
       }
       navigate({ to: sessionPlace({ sessionId, lens: PROVIDER_LENS[provider] }), mode: 'replace' });
