@@ -53,7 +53,7 @@ export const ResolveRunStatus = ({
   };
   const isLive = run.isLive || lane !== null;
   return (
-    <section aria-label="Fix run" data-testid="resolve-run-status" className="min-w-0">
+    <section aria-label="Fix run status" data-testid="resolve-run-status" className="min-w-0">
       <TailLine
         facts={factsOf({ run, lane, noun, onOpenTranscript })}
         onAction={onAction}
