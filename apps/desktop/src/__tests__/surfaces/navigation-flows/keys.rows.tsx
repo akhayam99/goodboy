@@ -745,6 +745,37 @@ export const MORE_KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
+    id: 'nav.up',
+    note: 'from Impact, Spend and a provider goes up to Spend, as the trail shows',
+    open: async () => {
+      useAppStore.getState().openStudio({
+        studio: { kind: 'impact', scope: { kind: 'provider', provider: 'anthropic' } },
+      });
+      await settle();
+      await pressed('nav.up', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => {
+        expect(useAppStore.getState().appStudio).toEqual({
+          kind: 'impact',
+          scope: { kind: 'spend' },
+        });
+      }, WAIT);
+    },
+  }),
+  keyRow({
+    id: 'nav.up',
+    note: 'at the root of a page with no trail closes the page',
+    open: async () => {
+      useAppStore.getState().openStudio({ studio: { kind: 'impact', scope: { kind: 'spend' } } });
+      await settle();
+      await pressed('nav.up', document.body);
+    },
+    lands: async () => {
+      await waitFor(() => expect(useAppStore.getState().appStudio).toBeNull(), WAIT);
+    },
+  }),
+  keyRow({
     id: 'ask.reset',
     note: 'inside the Ask panel the new chord resets the chat, not a session',
     open: async (ctx) => {

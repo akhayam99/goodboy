@@ -12,6 +12,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { IssueBriefEntry } from '../../../store/slices/issue-briefs/types';
+import { pressShortcut } from '../../helpers/pressKey';
 import {
   type BridgeArgs,
   type Ctx,
@@ -336,6 +337,22 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
     lands: async () => {
       await waitFor(() => expect(fullRecordTrail()).not.toBeNull(), WAIT);
       expect(screen.queryByRole('option', { name: /^#318 / })).toBeNull();
+    },
+  },
+  {
+    name: 'The up key on a full Tasks record goes up to the Tasks list and keeps Tasks open',
+    covers: ['key:nav.up'],
+    open: async (ctx) => {
+      installFakes(ctx);
+      await openFullRecord();
+      await waitFor(() => expect(fullRecordTrail()).not.toBeNull(), WAIT);
+      pressShortcut({ id: 'nav.up', target: document.body });
+      await settle();
+    },
+    lands: async () => {
+      await waitFor(() => expect(fullRecordTrail()).toBeNull(), WAIT);
+      await waitFor(() => inboxRowButton('#318'), WAIT);
+      expect(useAppStore.getState().appStudio?.kind).toBe('inbox');
     },
   },
 ];

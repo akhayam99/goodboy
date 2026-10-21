@@ -401,8 +401,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 - **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
   back and forward buttons walk the stack. ⌘↑ (`nav.up`, `goUp`) is Up; on a
   session's Overview, which has no parent, it goes to the board, while ⌘W
-  there keeps walking history. ⌘↑ yields to a text field, where it moves the
-  caret to the top.
+  there keeps walking history. In a studio, ⌘↑ runs the parent crumb of the
+  `StudioTrail` on screen (`studioUpSlot`), so Impact › Spend › a provider goes
+  to Spend and a full Tasks record goes to the list; a studio with no trail
+  parent closes. ⌘↑ yields to a text field, where it moves the caret to the top.
 - **A window comes back where it was.** `captureWindowLocation` reads the
   current entry, focus included, and `restoreLocation({ location })` replaces
   the top entry with it and applies it as a restore (a session that is gone
