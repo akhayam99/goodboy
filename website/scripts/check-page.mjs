@@ -113,6 +113,7 @@ const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
 const CHROME_START_TIMEOUT_MS = 30000;
 const CHROME_POLL_MS = 100;
+const CHROME_TARGET_READ_MS = 1000;
 const CHROME_LAUNCH_ATTEMPTS = 3;
 const CHROME_STDERR_TAIL_LINES = 20;
 
@@ -125,9 +126,15 @@ const readDebugPort = ({ profile }) => {
   }
 };
 
-const readTargets = async ({ port }) => {
+const readTargets = async ({ port, deadline }) => {
+  const timeoutMs = Math.min(CHROME_TARGET_READ_MS, deadline - Date.now());
+  if (timeoutMs <= 0) {
+    return null;
+  }
   try {
-    const response = await fetch(`http://127.0.0.1:${port}/json/list`);
+    const response = await fetch(`http://127.0.0.1:${port}/json/list`, {
+      signal: AbortSignal.timeout(timeoutMs),
+    });
     return await response.json();
   } catch {
     return null;
@@ -177,7 +184,7 @@ const startChrome = async () => {
       throw new Error(`Chrome exited before it opened a debugging port (${exit})\n${stderr}`);
     }
     const port = readDebugPort({ profile });
-    const targets = port === null ? null : await readTargets({ port });
+    const targets = port === null ? null : await readTargets({ port, deadline });
     const page = targets?.find((target) => target.type === 'page');
     if (page !== undefined) {
       return { close, socketUrl: page.webSocketDebuggerUrl };
