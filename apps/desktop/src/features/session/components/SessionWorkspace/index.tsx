@@ -113,7 +113,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           inert={!showLens}
         >
           <PaneBannerContext.Provider value={showAgentOverlay ? null : banner}>
-            <PageTrailContext.Provider value={showLens ? trail : null}>
+            <PageTrailContext.Provider value={showLens && surface !== 'overview' ? trail : null}>
               {surface === 'overview' ? (
                 isOverviewLoaded ? (
                   <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
