@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () =>
 vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type AgentId, type PlanId, type SessionId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -19,6 +19,8 @@ import { ToastProvider } from '../../../../shared/components/Toast';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import type { SessionSuggestion } from '../../types';
 import type { SuggestionActions } from '../../useSuggestionActions';
+import { startRunDetailOf } from '../../../session/startRun/startRunDetailOf';
+import { startRunEventName } from '../../../session/startRun/startRunEventName';
 import { NextStepRow } from './NextStepRow';
 
 let useAppStore: StoryStore;
@@ -93,10 +95,15 @@ const primaryOf = (overrides: Partial<NonNullable<SuggestionActions['primary']>>
 });
 
 describe('Talk it through with Auto in the more menu of a Next card', () => {
-  it('is the last entry after the other roles, and opens the talk with the card as context', () => {
+  it('is the last entry after the other roles, and opens the talk with the card as context', async () => {
     const openDrawer = vi.fn();
-    const setNewDrawerAutoGoal = vi.fn();
-    useAppStore.setState({ openDrawer, setNewDrawerAutoGoal });
+    const navigate = vi.fn();
+    const texts: Array<string> = [];
+    const listen = (event: Event): void => {
+      texts.push(startRunDetailOf({ event }));
+    };
+    window.addEventListener(startRunEventName({ sessionId: SESSION_ID }), listen);
+    useAppStore.setState({ openDrawer, navigate });
     renderRow({
       suggestion: CHECK_CHANGES,
       actions: { primary: primaryOf({ agentKind: 'reviewer' }), onDismiss: null },
@@ -108,20 +115,15 @@ describe('Talk it through with Auto in the more menu of a Next card', () => {
     const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
 
     expect(items.map((item) => item.textContent)).toEqual([
-      expect.stringContaining('Start tester instead'),
-      expect.stringContaining('Start implementer instead'),
+      expect.stringContaining('Continue with Tester'),
+      expect.stringContaining('Continue with Implementer'),
       expect.stringContaining('Talk it through with Auto'),
     ]);
     fireEvent.click(items[2]!);
-    expect(setNewDrawerAutoGoal).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      goal: expect.stringContaining('Implement the retry guard\nThe plan is approved'),
-    });
-    expect(openDrawer).toHaveBeenCalledWith({
-      kind: 'new',
-      sessionId: SESSION_ID,
-      payload: { form: 'auto' },
-    });
+    await waitFor(() => expect(texts).toHaveLength(1));
+    window.removeEventListener(startRunEventName({ sessionId: SESSION_ID }), listen);
+    expect(texts[0]).toContain('Implement the retry guard\nThe plan is approved');
+    expect(openDrawer).not.toHaveBeenCalled();
   });
 
   it('draws no menu for a role card with nothing else to offer, as an overflow needs two', () => {

@@ -143,6 +143,58 @@ describe('runRouteOf, row 2: a preset matches the ask', () => {
 
     expect(result.preset?.id).toBe(LAYOUT_AUDIT.id);
   });
+
+  it('matches the description and step titles when the name is not in the ask', () => {
+    const relay = {
+      ...aPreset({
+        key: 'relay',
+        name: 'Webhook hygiene',
+        stepNames: ['Trace duplicate deliveries', 'Add idempotency keys'],
+      }),
+      description: 'Stop retried webhooks from posting twice.',
+    };
+
+    const result = routeOf({
+      text: 'notify-relay posts duplicate credits when webhooks are retried',
+      presets: [FIX_A_LAYOUT, relay],
+    });
+
+    expect(result.route).toMatchObject({
+      row: 2,
+      closeness: 'adapt',
+      presetName: 'Webhook hygiene',
+    });
+  });
+
+  it('needs two words of the description or steps, so one shared word is not a match', () => {
+    const relay = {
+      ...aPreset({ key: 'relay', name: 'Webhook hygiene', stepNames: ['Trace deliveries'] }),
+      description: 'Stop retried webhooks from posting twice.',
+    };
+
+    const result = routeOf({ text: 'rename the webhooks folder', presets: [relay] });
+
+    expect(result.route.row).not.toBe(2);
+  });
+
+  it('prefers a preset whose name the ask holds over one that only shares step words', () => {
+    const scan = {
+      ...aPreset({
+        key: 'scan',
+        name: 'Page scan',
+        stepNames: ['Center billing', 'Center profile'],
+      }),
+      description: '',
+    };
+
+    const result = routeOf({
+      text: 'fix the layout: center billing and profile',
+      presets: [scan, FIX_A_LAYOUT],
+      lastPresetId: scan.id,
+    });
+
+    expect(result.preset?.id).toBe(FIX_A_LAYOUT.id);
+  });
 });
 
 describe('runRouteOf, row 3: a task with an end', () => {

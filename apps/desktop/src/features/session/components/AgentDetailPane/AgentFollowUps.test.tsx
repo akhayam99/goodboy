@@ -2,8 +2,9 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { Agent, AgentId, OpenQuestion, PlanId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, OpenQuestion, SessionId } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';
+import type { ContinueOutcome } from '../../startRun/continueWithRole';
 
 const state = vi.hoisted(() => {
   const autoTreeViews: Record<string, ReadonlyArray<unknown>> = {};
@@ -12,7 +13,6 @@ const state = vi.hoisted(() => {
     agentWriterWait: {},
     autoTreeViews,
     openQuestions: [] as ReadonlyArray<OpenQuestion>,
-    startFollowUp: vi.fn(async (_params: unknown) => 'agent-2' as AgentId),
     navigate: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
     providers: [],
@@ -22,7 +22,12 @@ const state = vi.hoisted(() => {
   };
 });
 
-const announce = vi.hoisted(() => vi.fn());
+const continueWithRole = vi.hoisted(() =>
+  vi.fn(async (_params: unknown): Promise<ContinueOutcome> => ({
+    kind: 'handed',
+    agentId: 'agent-auto' as AgentId,
+  })),
+);
 
 vi.mock('../../../../store', async () => ({
   ...(await import('../../../../store/slices/navigation/place')),
@@ -35,9 +40,7 @@ vi.mock('../../../../store/slices/transcripts/selectors', () => ({
   useTranscript: () => [],
 }));
 
-vi.mock('../../../../shared/hooks/useFollowToast', () => ({
-  useFollowToast: () => announce,
-}));
+vi.mock('../../startRun/continueWithRole', () => ({ continueWithRole }));
 
 import { AgentFollowUps } from './AgentFollowUps';
 import type { FollowUpChild } from './followUpChildren';
@@ -71,15 +74,28 @@ const makeChild = (over: Partial<Agent>): FollowUpChild => {
   };
 };
 
+type RenderParams = {
+  readonly followUps?: ReadonlyArray<FollowUpChild>;
+};
+
+const renderFollowUps = ({ followUps = [] }: RenderParams = {}) =>
+  render(
+    <AgentFollowUps
+      sourceAgent={source}
+      sourceKind="reviewer"
+      sessionId={sessionId}
+      followUps={followUps}
+    />,
+  );
+
 afterEach(cleanup);
 
 beforeEach(() => {
   state.agentTurnState = {};
   state.autoTreeViews = {};
   state.openQuestions = [];
-  state.startFollowUp.mockClear();
   state.navigate.mockClear();
-  announce.mockClear();
+  continueWithRole.mockClear();
 });
 
 describe('AgentFollowUps inside an Auto tree', () => {
@@ -93,21 +109,12 @@ describe('AgentFollowUps inside an Auto tree', () => {
       ],
     };
 
-    const { container } = render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[]}
-        activePlanId={null}
-      />,
-    );
+    const { container } = renderFollowUps();
 
     expect(container.firstChild).toBeNull();
   });
 
-  it('offers nothing on an agent that was moved to Auto either', () => {
+  it('offers nothing on an agent Auto already took from here either', () => {
     state.autoTreeViews = {
       [sessionId]: [
         {
@@ -117,146 +124,61 @@ describe('AgentFollowUps inside an Auto tree', () => {
       ],
     };
 
-    const { container } = render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[]}
-        activePlanId={null}
-      />,
-    );
+    const { container } = renderFollowUps();
 
     expect(container.firstChild).toBeNull();
   });
 });
 
-describe('AgentFollowUps suggestions', () => {
-  it('names the kind about to be spawned on every suggestion', () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[]}
-        activePlanId={null}
-      />,
-    );
+describe('AgentFollowUps continue the same run', () => {
+  it('names the role each card continues with', () => {
+    renderFollowUps();
 
     expect(screen.getByText('Planner')).toBeDefined();
     expect(screen.getByText('Implementer')).toBeDefined();
-    expect(screen.getByText('Turn the review findings into a plan')).toBeDefined();
-  });
-
-  it('links the spawned agent to the agent it continues', async () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[]}
-        activePlanId={null}
-      />,
-    );
-
-    screen.getByText('Turn the review findings into a plan').click();
-    await vi.waitFor(() => expect(state.startFollowUp).toHaveBeenCalledTimes(1));
-
-    expect(state.startFollowUp).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId, kind: 'planner', sourceAgentId: sourceId }),
-    );
-  });
-
-  it('offers Follow to the spawned agent, keyed by its id, with the default label', async () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[]}
-        activePlanId={null}
-      />,
-    );
-
-    screen.getByText('Turn the review findings into a plan').click();
-    await vi.waitFor(() => expect(announce).toHaveBeenCalledTimes(1));
-
-    const call = announce.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(call).toMatchObject({
-      title: 'Plan started',
-      target: { place: { at: 'agent', sessionId, agentId: 'agent-2' } },
-      startKey: 'agent-2',
-    });
-    expect(call).not.toHaveProperty('label');
-  });
-
-  it('hands the active plan to an implementer instead of a seed so it can fan out', async () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[]}
-        activePlanId={'plan-1' as PlanId}
-      />,
-    );
-
-    screen.getByText('Fix these review findings').click();
-    await vi.waitFor(() => expect(state.startFollowUp).toHaveBeenCalledTimes(1));
-
-    expect(state.startFollowUp).toHaveBeenCalledWith(
-      expect.objectContaining({
-        kind: 'implementer',
-        triggeredPlanId: 'plan-1',
-        sourceAgentId: sourceId,
+    expect(
+      screen.getByRole('button', {
+        name: 'Continue with Planner: Turn the review findings into a plan',
       }),
-    );
-    expect(state.startFollowUp).toHaveBeenCalledWith(
-      expect.not.objectContaining({ seed: expect.anything() }),
-    );
+    ).toBeDefined();
   });
 
-  it('keeps the seed on an implementer when no plan exists', async () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[]}
-        activePlanId={null}
-      />,
-    );
+  it('sends the card to Auto with this agent as the source, and opens what answers it', async () => {
+    renderFollowUps();
+
+    screen.getByText('Turn the review findings into a plan').click();
+    await vi.waitFor(() => expect(state.navigate).toHaveBeenCalledTimes(1));
+
+    expect(continueWithRole).toHaveBeenCalledWith({
+      sessionId,
+      role: 'planner',
+      work: 'Turn the review findings into a plan',
+      sourceAgentId: sourceId,
+    });
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: { at: 'agent', sessionId, agentId: 'agent-auto' },
+    });
+  });
+
+  it('keeps the cards and shows the error when Auto cannot take it, so a click retries', async () => {
+    continueWithRole.mockRejectedValueOnce(new Error('Wait for the turn to end first.'));
+    renderFollowUps();
 
     screen.getByText('Fix these review findings').click();
-    await vi.waitFor(() => expect(state.startFollowUp).toHaveBeenCalledTimes(1));
 
-    expect(state.startFollowUp).toHaveBeenCalledWith(
-      expect.not.objectContaining({ triggeredPlanId: expect.anything() }),
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Wait for the turn to end first.',
     );
-    expect(state.startFollowUp).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'implementer', summary: 'two findings' }),
-    );
+    expect(state.navigate).not.toHaveBeenCalled();
+    screen.getByText('Fix these review findings').click();
+    await vi.waitFor(() => expect(continueWithRole).toHaveBeenCalledTimes(2));
   });
 });
 
 describe('AgentFollowUps after a spawn', () => {
   it('replaces the suggestion of a spawned kind with its live status', () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[makeChild({})]}
-        activePlanId={null}
-      />,
-    );
+    renderFollowUps({ followUps: [makeChild({})] });
 
     expect(screen.getByText('Plan the store split')).toBeDefined();
     expect(screen.queryByText('Turn the review findings into a plan')).toBeNull();
@@ -264,31 +186,13 @@ describe('AgentFollowUps after a spawn', () => {
   });
 
   it('reads a spawned child that finished as done', () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[makeChild({ status: 'completed' })]}
-        activePlanId={null}
-      />,
-    );
+    renderFollowUps({ followUps: [makeChild({ status: 'completed' })] });
 
     expect(screen.getByText('done')).toBeDefined();
   });
 
   it('reads a spawned child that was stopped as stopped, not ready', () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[makeChild({ status: 'stopped' })]}
-        activePlanId={null}
-      />,
-    );
+    renderFollowUps({ followUps: [makeChild({ status: 'stopped' })] });
 
     expect(screen.getByText('stopped')).toBeDefined();
     expect(screen.queryByText('ready')).toBeNull();
@@ -305,31 +209,13 @@ describe('AgentFollowUps after a spawn', () => {
       } as OpenQuestion,
     ];
 
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[makeChild({})]}
-        activePlanId={null}
-      />,
-    );
+    renderFollowUps({ followUps: [makeChild({})] });
 
     expect(screen.getByText('question')).toBeDefined();
   });
 
   it('opens the spawned child from its row', async () => {
-    render(
-      <AgentFollowUps
-        sourceAgent={source}
-        sourceKind="reviewer"
-        summary="two findings"
-        sessionId={sessionId}
-        followUps={[makeChild({})]}
-        activePlanId={null}
-      />,
-    );
+    renderFollowUps({ followUps: [makeChild({})] });
 
     screen.getByRole('button', { name: 'Go to chat' }).click();
     await vi.waitFor(() => expect(state.navigate).toHaveBeenCalledTimes(1));

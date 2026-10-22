@@ -24,7 +24,7 @@ const suggestionState = vi.hoisted((): SuggestionState => ({ list: [] }));
 const outcomes = vi.hoisted(() => ({ record: vi.fn(async () => null) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   brandId,
   type AgentId,
@@ -32,7 +32,7 @@ import {
   type ProjectId,
   type SessionId,
 } from '@goodboy/types';
-import { aSession } from '@goodboy/types/testing';
+import { aSession, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -42,6 +42,8 @@ import {
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { AutoReleaseContext } from '../../../auto/autoReleaseContext';
 import type { SessionSuggestion } from '../../types';
+import { startRunDetailOf } from '../../../session/startRun/startRunDetailOf';
+import { startRunEventName } from '../../../session/startRun/startRunEventName';
 import { NextStepSlot } from './index';
 
 let useAppStore: StoryStore;
@@ -136,17 +138,15 @@ const spies = () => {
   const spawnAgent = vi.fn(async () => brandId<AgentId>({ value: 'agent-new' }));
   const openRewriteHistory = vi.fn();
   const openDrawer = vi.fn();
-  const setNewDrawerAutoGoal = vi.fn();
   const reportError = vi.fn(async () => undefined);
   useAppStore.setState({
     sessions: [SESSION],
     spawnAgent,
     openRewriteHistory,
     openDrawer,
-    setNewDrawerAutoGoal,
     reportError,
   });
-  return { spawnAgent, openRewriteHistory, openDrawer, setNewDrawerAutoGoal, reportError };
+  return { spawnAgent, openRewriteHistory, openDrawer, reportError };
 };
 
 type MountParams = {
@@ -189,8 +189,8 @@ describe('the more menu of a Next card on the real store', () => {
     const menu = openMenu(CHECK_CHANGES.title);
 
     expect(menuLabels(menu)).toEqual([
-      'Start tester insteadWrites tests for the changes',
-      'Start implementer insteadMakes the changes itself',
+      'Continue with TesterWrites tests for the changes',
+      'Continue with ImplementerMakes the changes itself',
       'Talk it through with Auto',
     ]);
   });
@@ -202,24 +202,34 @@ describe('the more menu of a Next card on the real store', () => {
     const menu = openMenu(CHECK_CHANGES.title);
 
     expect(menuLabels(menu)).toEqual([
-      'Start tester insteadWrites tests for the changes',
-      'Start implementer insteadMakes the changes itself',
+      'Continue with TesterWrites tests for the changes',
+      'Continue with ImplementerMakes the changes itself',
     ]);
   });
 
-  it('starts the chosen role without a focus change, records it once and closes the menu', async () => {
+  it('sends the chosen role to the Auto run of the session, records it once and closes the menu', async () => {
     const { spawnAgent } = spies();
+    const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+    const root = brandId<AgentId>({ value: 'agent-auto-root' });
+    useAppStore.setState({
+      sendTurn,
+      sessionPhaseRuns: {
+        [SESSION_ID]: [anAgent({ id: root, sessionId: SESSION_ID, kind: 'auto' })],
+      },
+    });
     mountSlot({ isAutoOn: false, suggestion: CHECK_CHANGES });
     openMenu(CHECK_CHANGES.title);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: /Start implementer instead/ }));
+      fireEvent.click(screen.getByRole('menuitem', { name: /Continue with Implementer/ }));
     });
 
-    expect(spawnAgent).toHaveBeenCalledTimes(1);
-    expect(spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
-      kindOverride: 'implementer',
-      focus: 'none',
+    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: root,
+      content: 'Continue with Implementer: Makes the changes itself',
     });
     expect(outcomes.record).toHaveBeenCalledTimes(1);
     expect(outcomes.record).toHaveBeenCalledWith({
@@ -237,13 +247,13 @@ describe('the more menu of a Next card on the real store', () => {
     expect(tileKind(CHECK_CHANGES)).toBe('reviewer');
     openMenu(CHECK_CHANGES.title);
 
-    const tester = screen.getByRole('menuitem', { name: /Start tester instead/ });
+    const tester = screen.getByRole('menuitem', { name: /Continue with Tester/ });
     fireEvent.mouseEnter(tester);
     expect(tileKind(CHECK_CHANGES)).toBe('tester');
     fireEvent.mouseLeave(tester);
     expect(tileKind(CHECK_CHANGES)).toBe('reviewer');
 
-    fireEvent.focus(screen.getByRole('menuitem', { name: /Start implementer instead/ }));
+    fireEvent.focus(screen.getByRole('menuitem', { name: /Continue with Implementer/ }));
     expect(tileKind(CHECK_CHANGES)).toBe('implementer');
 
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
@@ -263,11 +273,13 @@ describe('the more menu of a Next card on the real store', () => {
     openMenu(CHECK_CHANGES.title);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: /Start tester instead/ }));
+      fireEvent.click(screen.getByRole('menuitem', { name: /Continue with Tester/ }));
     });
 
     expect(
-      screen.getByRole('button', { name: 'Start reviewer', hidden: true }).hasAttribute('disabled'),
+      screen
+        .getByRole('button', { name: 'Continue with Reviewer', hidden: true })
+        .hasAttribute('disabled'),
     ).toBe(true);
     expect(
       screen
@@ -283,29 +295,30 @@ describe('the more menu of a Next card on the real store', () => {
       error: new Error('provider unavailable'),
       sessionId: SESSION_ID,
     });
-    expect(screen.getByRole('button', { name: 'Start reviewer' }).hasAttribute('disabled')).toBe(
-      false,
-    );
+    expect(
+      screen.getByRole('button', { name: 'Continue with Reviewer' }).hasAttribute('disabled'),
+    ).toBe(false);
   });
 
-  it('opens the Agent tab with the card as context from Talk it through, and starts nothing', () => {
-    const { spawnAgent, openDrawer, setNewDrawerAutoGoal } = spies();
+  it('opens Start a run with the card as its text from Talk it through, and starts nothing', async () => {
+    const { spawnAgent, openDrawer } = spies();
+    const texts: Array<string> = [];
+    const listen = (event: Event): void => {
+      texts.push(startRunDetailOf({ event }));
+    };
+    window.addEventListener(startRunEventName({ sessionId: SESSION_ID }), listen);
+    useAppStore.setState({ navigate: vi.fn() });
     mountSlot({ isAutoOn: true, suggestion: CHECK_CHANGES });
     openMenu(CHECK_CHANGES.title);
 
     fireEvent.click(screen.getByRole('menuitem', { name: /Talk it through with Auto/ }));
 
-    expect(setNewDrawerAutoGoal).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      goal: expect.stringContaining(
-        'Check the changes before you push\nThe implementer finished the ledger export',
-      ),
-    });
-    expect(openDrawer).toHaveBeenCalledWith({
-      kind: 'new',
-      sessionId: SESSION_ID,
-      payload: { form: 'auto' },
-    });
+    await waitFor(() => expect(texts).toHaveLength(1));
+    window.removeEventListener(startRunEventName({ sessionId: SESSION_ID }), listen);
+    expect(texts[0]).toContain(
+      'Check the changes before you push\nThe implementer finished the ledger export',
+    );
+    expect(openDrawer).not.toHaveBeenCalled();
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 

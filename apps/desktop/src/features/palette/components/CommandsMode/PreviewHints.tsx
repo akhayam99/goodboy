@@ -13,7 +13,7 @@ const enterLabel = (entry: PaletteEntry): string => {
     return 'Unavailable';
   }
   if (entry.level !== undefined) {
-    return entry.level.kind === 'confirm-run' ? 'Review' : 'Open';
+    return 'Open';
   }
   if (
     entry.kind === 'verb' ||

@@ -259,15 +259,11 @@ describe('the shell chapter', () => {
 });
 
 describe('the start, agent and workflow chapters', () => {
-  it('names Start a run, the four ways to start a session and the folder picker', () => {
-    const start = pointOf('kickoff', 'Start a run');
-    [
-      'a plan, a preset or one agent',
-      'Pick up a task',
-      NAMES.startRun,
-      NAMES.startOrchestrator,
-      NAMES.startAgent,
-    ].forEach((choice) => expect(start).toContain(choice));
+  it('names the one way to start a session and the folder picker', () => {
+    expect(pointOf('kickoff', NAMES.startARun)).toContain(
+      'Auto picks a plan, one agent or a preset',
+    );
+    expect(pointOf('kickoff', 'Start on a task')).toContain('Start a run');
     expect(pointOf('kickoff', NAMES.folders)).toContain('Suggested');
     expect(pointOf('kickoff', NAMES.folders)).toContain('All folders');
   });
@@ -283,7 +279,7 @@ describe('the start, agent and workflow chapters', () => {
     expect(orchestrated).toContain('Hint the orchestrator');
     expect(orchestrated).toContain('Send now');
     const auto = pointOf('agents', 'Auto');
-    expect(auto).toContain('experimental');
+    expect(auto).toContain('Start a run');
     expect(auto).toContain('under a limit');
     expect(auto).toContain('child agents');
     const both = pointOf('workflows', 'Orchestrated or Auto');

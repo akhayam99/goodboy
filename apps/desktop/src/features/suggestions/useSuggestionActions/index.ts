@@ -27,6 +27,9 @@ import { useMountProposalActions } from '../useMountProposalActions';
 import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
 import { projectById } from '../../../store/slices/projects/projectIndex';
+import { continueWithRole } from '../../session/startRun/continueWithRole';
+
+const REVIEW_THE_CHANGES = 'Review the changes';
 
 const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
   window.dispatchEvent(
@@ -362,19 +365,18 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'check-changes') {
       return {
         primary: {
-          label: 'Start reviewer',
-          shortLabel: 'Start',
+          label: 'Continue with Reviewer',
+          shortLabel: 'Continue',
           agentKind: 'reviewer',
           isDisabled: false,
           failureTitle: "Couldn't start the reviewer",
           run: async () => {
-            await spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none' });
-          },
-          runsOn: {
-            kind: 'reviewer',
-            runWith: async (routing) => {
-              await spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none', ...routing });
-            },
+            await continueWithRole({
+              sessionId,
+              role: 'reviewer',
+              work: REVIEW_THE_CHANGES,
+              sourceAgentId: null,
+            });
           },
         },
         onDismiss: null,

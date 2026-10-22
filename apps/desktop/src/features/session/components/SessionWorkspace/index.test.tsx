@@ -197,13 +197,6 @@ vi.mock('./parts/WorkflowsPane', () => ({
     );
   },
 }));
-vi.mock('../CreateAgentPopover', () => ({
-  CreateAgentPopover: () => (
-    <button type="button" data-testid="create-agent">
-      Create agent
-    </button>
-  ),
-}));
 vi.mock('../SessionOverviewPane', () => ({
   SessionOverviewPane: () => <div role="region" aria-label="Session overview" />,
 }));

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { Session, Workspace } from '@goodboy/types';
 import { openPlanAnywhere } from '../../../features/plans/openPlanAnywhere';
+import { openStartRun } from '../../../features/session/startRun/openStartRun';
 import { sessionPlace, useAppStore } from '../../../store';
 import { eventSessionId, eventValue, isPlanId } from './eventDetail';
 
@@ -22,21 +23,13 @@ export const useSessionSurfaceEvents = ({
   pinSessionSidebar,
 }: Params) => {
   useEffect(() => {
-    const openNewDrawer = (event: Event) => {
+    const openStartRunField = (event: Event) => {
       const sessionId = eventSessionId(event) ?? useAppStore.getState().currentSessionId;
       if (sessionId === null) {
         return;
       }
       close();
-      const state = useAppStore.getState();
-      if (state.currentSessionId !== sessionId) {
-        state.navigate({
-          to: sessionPlace({ sessionId, lens: state.activeLens[sessionId] ?? null }),
-        });
-      }
-      const requested = eventValue({ event, key: 'form' });
-      const form = requested === 'orchestrate' || requested === 'auto' ? requested : 'run';
-      useAppStore.getState().openDrawer({ kind: 'new', sessionId, payload: { form } });
+      openStartRun({ sessionId });
     };
     const openPlanStudio = (event: Event) => {
       const sessionId = eventSessionId(event);
@@ -56,7 +49,7 @@ export const useSessionSurfaceEvents = ({
     const listeners: ReadonlyArray<Listener> = [
       ['goodboy:open-plan-studio', openPlanStudio],
       ['goodboy:reveal-chat', () => close()],
-      ['goodboy:open-workflow-builder', openNewDrawer],
+      ['goodboy:open-workflow-builder', openStartRunField],
     ];
     listeners.forEach(([name, listener]) => window.addEventListener(name, listener));
     return () =>

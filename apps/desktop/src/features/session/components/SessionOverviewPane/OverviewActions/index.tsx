@@ -6,7 +6,6 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { selectOpenDrawer } from '../../../../../store/slices/drawer/selectOpenDrawer';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useShortcut } from '../../../../../shared/keyboard/useShortcut';
-import { useIsAutoOn } from '../../../../auto/useIsAutoOn';
 import { NewFormMenuList } from '../../../../actions/NewFormMenuList';
 import { isSessionIdle } from '../../../isSessionIdle';
 
@@ -17,7 +16,6 @@ type Props = {
 
 export const OverviewActions = ({ session, hasNextLead = false }: Props) => {
   const sessionId = session.id;
-  const isAutoOn = useIsAutoOn();
   const isAskOpen = useAppStore((state) => selectOpenDrawer(state)?.kind === 'ask');
   const isStudioOpen = useAppStore((state) => state.appStudio !== null);
   const agents = useAppStore(
@@ -57,7 +55,7 @@ export const OverviewActions = ({ session, hasNextLead = false }: Props) => {
         </Tooltip>
       }
     >
-      <NewFormMenuList facts={{ sessionId, isAutoOn }} onClose={dropdown.close} />
+      <NewFormMenuList facts={{ sessionId }} onClose={dropdown.close} />
     </AnchoredPopover>
   );
 };

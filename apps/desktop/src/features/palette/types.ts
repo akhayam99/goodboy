@@ -55,10 +55,7 @@ export type PaletteKind =
   | 'level'
   | 'help';
 
-type PaletteLevelRequest =
-  | { readonly kind: 'actions'; readonly target: ObjectTarget }
-  | { readonly kind: 'start-run' }
-  | { readonly kind: 'confirm-run'; readonly workflowId: string };
+type PaletteLevelRequest = { readonly kind: 'actions'; readonly target: ObjectTarget };
 
 export type PaletteEntry = RankCandidate & {
   readonly kind: PaletteKind;

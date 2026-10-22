@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { InlineConfirm } from '../InlineConfirm';
 import { MenuChoicePanel } from './MenuChoicePanel';
+import { MenuRadioGroup } from './MenuRadioGroup';
 import { MenuRow } from './MenuRow';
 import {
   focusFirstMenuItem,
@@ -211,6 +212,18 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
             >
               {entry.label}
             </div>
+          );
+        }
+        if (entry.kind === 'radio') {
+          return (
+            <MenuRadioGroup
+              key={entry.key}
+              entry={entry}
+              onChoose={(choice) => {
+                onClose();
+                void entry.onSelect(choice);
+              }}
+            />
           );
         }
         return (

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import type { PlanChange } from '@goodboy/types';
 import { TruncatedText, cn } from '@goodboy/ui';
+import { PRESET_CHANGE_COPY } from '../../../../store/slices/workflows/presetChangeCopy';
 import { agentKindPalette } from '../../../session/agent-kind';
 import type { TimelineAgentEntry } from '../../../session/timeline/buildTimelineGroups';
 import type { RowPhase } from '../../../workTreeModel/rowState';
@@ -10,9 +12,17 @@ type Props = {
   readonly duration: ReactNode;
   readonly phase: RowPhase;
   readonly isNested: boolean;
+  readonly change?: PlanChange | null;
 };
 
-export const RunTreeChecklistCells = ({ entry, glyph, duration, phase, isNested }: Props) => {
+export const RunTreeChecklistCells = ({
+  entry,
+  glyph,
+  duration,
+  phase,
+  isNested,
+  change = null,
+}: Props) => {
   const step =
     entry.stepLabel == null ? '' : isNested ? entry.stepLabel : `Step ${entry.stepLabel}`;
   return (
@@ -38,6 +48,11 @@ export const RunTreeChecklistCells = ({ entry, glyph, duration, phase, isNested 
       >
         {entry.agent.name}
       </TruncatedText>
+      {change === null ? null : (
+        <span data-plan-change={change.kind} className="shrink-0 text-label text-info">
+          {PRESET_CHANGE_COPY.tag[change.kind]}
+        </span>
+      )}
       <span data-checklist-cell="duration" className="flex shrink-0 justify-end">
         {duration}
       </span>

@@ -34,9 +34,6 @@
   "apps/desktop/src/features/diff/components/ChangeTree/KeyHints.tsx": {
     "keys hint at the end of the change tree toolbar": 1
   },
-  "apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.tsx": {
-    "trailing action of an Explore row": 1
-  },
   "apps/desktop/src/features/history/JobBanner/JobBannerDetails.tsx": {
     "details action at the end of the job banner": 1
   },
@@ -57,9 +54,6 @@
   },
   "apps/desktop/src/features/session/components/AgentDetailPane/AgentUsageFooter.tsx": {
     "detail button at the end of the usage footer": 1
-  },
-  "apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx": {
-    "the create agent card centres under its plus": 1
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/LinkIssueAction.tsx": {
     "trailing action of the Linked label row": 1

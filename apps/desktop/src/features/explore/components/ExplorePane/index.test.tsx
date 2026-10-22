@@ -40,6 +40,8 @@ import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDraw
 import { CommandError } from '../../../../shared/lib/invokeCommand';
 import { ExploreFileDrawer } from '../ExploreFileDrawer';
 import { EXPLORE_ROW_PX } from '../../exploreRows';
+import { startRunEventName } from '../../../session/startRun/startRunEventName';
+import { startRunFileOf, type StartRunFile } from '../../../session/startRun/startRunFileOf';
 import { ExplorePane } from '.';
 
 let useAppStore: StoryStore;
@@ -746,7 +748,7 @@ describe('ExplorePane row actions', () => {
     expect(await openRowMenu({ row })).toEqual([
       'Open',
       'Show in Finder',
-      'Start an agent on this file',
+      'Ask about this file',
       'Copy path',
     ]);
   });
@@ -759,89 +761,27 @@ describe('ExplorePane row actions', () => {
     expect(container.querySelectorAll('[title]')).toHaveLength(0);
   });
 
-  it('mounts the ask popover only for the row you asked about', async () => {
-    list({ relPath: '', entries: [entry({ relPath: 'a.txt' }), entry({ relPath: 'b.txt' })] });
-    mount();
-    await rowNamed('a.txt');
-    expect(screen.queryByRole('dialog')).toBeNull();
-
-    await pickRowAction({ row: await rowNamed('b.txt'), item: /Start an agent/ });
-
-    const dialog = await screen.findByRole('dialog', { name: 'Start an agent on b.txt' });
-    expect(dialog).toBeDefined();
-    expect(screen.getAllByRole('dialog')).toHaveLength(1);
-  });
-
-  it('shows no tooltip over the ask button while its popover is open', async () => {
-    listOne('notes.txt');
-    mount();
-    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Start an agent/ });
-    const open = await screen.findByRole('button', { name: 'Start an agent on notes.txt' });
-    fireEvent.mouseEnter(open);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    expect(screen.getByRole('dialog', { name: 'Start an agent on notes.txt' })).toBeDefined();
-    expect(screen.queryByRole('tooltip')).toBeNull();
-  });
-
-  it('puts the row menu back when the ask popover closes', async () => {
-    listOne('notes.txt');
-    mount();
-
-    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Start an agent/ });
-    await screen.findByRole('dialog', { name: 'Start an agent on notes.txt' });
-    fireEvent.mouseDown(document.body);
-
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    fireEvent.contextMenu(await rowNamed('notes.txt'));
-    expect(await screen.findByRole('menuitem', { name: /Start an agent/ })).toBeDefined();
-  });
-
-  it('spawns from a file with the selected model and a prompt that includes ask and path', async () => {
-    const agentId = anAgent().id;
-    const spawnAgent = vi.fn<AppState['spawnAgent']>(async () => agentId);
+  it('opens Start a run with the file attached from Ask about this file, and starts nothing', async () => {
+    const spawnAgent = vi.fn<AppState['spawnAgent']>(async () => anAgent().id);
     const navigate = vi.fn();
     useAppStore.setState({ spawnAgent, navigate });
+    const files: Array<StartRunFile | null> = [];
+    const listen = (event: Event): void => {
+      files.push(startRunFileOf({ event }));
+    };
+    window.addEventListener(startRunEventName({ sessionId: SESSION_ID }), listen);
     listOne('budget.xlsx');
-    h.reads.push({ type: 'binary', size: 4096 }, { type: 'binary', size: 4096 });
     mount();
-    await pickRowAction({ row: await rowNamed('budget.xlsx'), item: /Start an agent/ });
-    fireEvent.change(
-      await screen.findByRole('textbox', { name: 'What should the agent do with this file?' }),
-      { target: { value: 'Analyze this spreadsheet and summarize trends.' } },
-    );
-    fireEvent.click(screen.getByRole('button', { name: /^Agent routing:/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Opus' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start an agent' }));
 
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalled());
-    const args = spawnAgent.mock.calls.at(-1)?.[1];
-    expect(args?.focus).toBe('none');
-    expect(args?.model).toBe('claude-opus-5-5');
-    expect(args?.initialPrompt).toContain('Analyze this spreadsheet and summarize trends.');
-    expect(args?.initialPrompt).toContain('- budget.xlsx');
-    expect(
-      (args?.initialPrompt?.indexOf('Analyze this spreadsheet and summarize trends.') ?? 0) <
-        (args?.initialPrompt?.indexOf('- budget.xlsx') ?? 0),
-    ).toBe(true);
-    expect(navigate).not.toHaveBeenCalled();
+    await pickRowAction({ row: await rowNamed('budget.xlsx'), item: /Ask about this file/ });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Follow' }));
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith({
-        to: { at: 'agent', sessionId: SESSION_ID, agentId },
-      }),
-    );
-  });
-
-  it('keeps spawn disabled when the ask is empty', async () => {
-    listOne('notes.txt');
-    mount();
-    await pickRowAction({ row: await rowNamed('notes.txt'), item: /Start an agent/ });
-
-    expect(
-      (await screen.findByRole('button', { name: 'Start an agent' })).hasAttribute('disabled'),
-    ).toBe(true);
+    await waitFor(() => expect(files).toHaveLength(1));
+    window.removeEventListener(startRunEventName({ sessionId: SESSION_ID }), listen);
+    expect(files[0]?.relPath).toBe('budget.xlsx');
+    expect(files[0]?.absolutePath.endsWith('/budget.xlsx')).toBe(true);
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(spawnAgent).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('loads the detected editors when none are known yet', async () => {
@@ -859,7 +799,7 @@ describe('ExplorePane row actions', () => {
 
     const labels = await openRowMenu({ row });
 
-    expect(labels.some((label) => label.startsWith('Start an agent'))).toBe(false);
+    expect(labels.some((label) => label.startsWith('Ask about'))).toBe(false);
     expect(labels).toContain('Show in Finder');
   });
 });
@@ -1008,7 +948,7 @@ describe('ExplorePane context menu', () => {
     expect(menuLabels()).toEqual([
       'Open in editor',
       'Show in Finder',
-      'Start an agent on this file',
+      'Ask about this file',
       'Copy path',
     ]);
   });

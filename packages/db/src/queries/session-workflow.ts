@@ -551,6 +551,52 @@ export const updateWorkflowRunRulesSnapshot = async ({
   ]);
 };
 
+type StoredRulesParams = {
+  readonly db: Database;
+  readonly workflowRunId: WorkflowRunId;
+};
+
+type StoredWorkflowRunRules = Readonly<{
+  text: string | null;
+}>;
+
+export const getWorkflowRunRulesText = async ({
+  db,
+  workflowRunId,
+}: StoredRulesParams): Promise<StoredWorkflowRunRules | null> => {
+  const rows = await db.select<{ rules_snapshot: string | null }>(
+    'SELECT rules_snapshot FROM session_workflows WHERE workflow_run_id = ?',
+    [workflowRunId],
+  );
+  const row = rows[0];
+  return row === undefined ? null : { text: row.rules_snapshot };
+};
+
+type ReplaceRulesParams = {
+  readonly db: Database;
+  readonly workflowRunId: WorkflowRunId;
+  readonly expected: string | null;
+  readonly rulesSnapshot: WorkflowRules;
+  readonly shouldClearStop?: boolean;
+};
+
+export const replaceWorkflowRunRulesIfUnchanged = async ({
+  db,
+  workflowRunId,
+  expected,
+  rulesSnapshot,
+  shouldClearStop = false,
+}: ReplaceRulesParams): Promise<boolean> => {
+  const stopColumns = shouldClearStop
+    ? ", orchestration_error = NULL, orchestration_stop_kind = 'failure'"
+    : '';
+  const { rowsAffected } = await db.execute(
+    `UPDATE session_workflows SET rules_snapshot = ?${stopColumns} WHERE workflow_run_id = ? AND rules_snapshot IS ?`,
+    [JSON.stringify(rulesSnapshot), workflowRunId, expected],
+  );
+  return rowsAffected === 1;
+};
+
 type WorkflowRunTitleParams = {
   readonly db: Database;
   readonly workflowRunId: WorkflowRunId;

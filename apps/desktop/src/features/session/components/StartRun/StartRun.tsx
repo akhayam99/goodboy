@@ -8,19 +8,23 @@ import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
 import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import { startRunDetailOf } from '../../startRun/startRunDetailOf';
 import { startRunEventName } from '../../startRun/startRunEventName';
+import { startRunFileOf } from '../../startRun/startRunFileOf';
+import { StartRunFileChip } from './StartRunFileChip';
+import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { useStartRun } from './useStartRun';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId | null;
+  readonly mount?: SessionDraftMount | null;
 };
 
-export const StartRun = ({ workspaceId, sessionId }: Props) => {
+export const StartRun = ({ workspaceId, sessionId, mount = null }: Props) => {
   const limit = useAutoTreeLimit({ workspaceId, sessionId });
-  const run = useStartRun({ workspaceId, sessionId, prepare: limit.persist });
+  const run = useStartRun({ workspaceId, sessionId, mount, prepare: limit.persist });
   const sectionRef = useRef<HTMLElement | null>(null);
   const hasText = run.text.trim() !== '';
-  const { setText } = run;
+  const { setText, setFile } = run;
 
   useEffect(() => {
     const onOpen = (event: Event): void => {
@@ -28,12 +32,16 @@ export const StartRun = ({ workspaceId, sessionId }: Props) => {
       if (text !== '') {
         setText(text);
       }
+      const file = startRunFileOf({ event });
+      if (file !== null) {
+        setFile(file);
+      }
       sectionRef.current?.querySelector<HTMLTextAreaElement>('textarea')?.focus();
     };
     const name = startRunEventName({ sessionId });
     window.addEventListener(name, onOpen);
     return () => window.removeEventListener(name, onOpen);
-  }, [sessionId, setText]);
+  }, [sessionId, setFile, setText]);
 
   return (
     <section
@@ -41,6 +49,13 @@ export const StartRun = ({ workspaceId, sessionId }: Props) => {
       aria-label={RUN_ROUTE_COPY.label}
       className="flex min-w-0 flex-col gap-2"
     >
+      {run.file === null ? null : (
+        <StartRunFileChip
+          file={run.file}
+          isDisabled={run.isStarting}
+          onRemove={() => setFile(null)}
+        />
+      )}
       <PromptField
         kind="message"
         label={RUN_ROUTE_COPY.label}
@@ -67,7 +82,7 @@ export const StartRun = ({ workspaceId, sessionId }: Props) => {
         error={run.error}
       >
         {hasText && !run.isStarting ? (
-          <Button variant="ghost" size="sm" onClick={() => run.setText('')}>
+          <Button variant="ghost" size="sm" onClick={run.discard}>
             {RUN_ROUTE_COPY.discard}
           </Button>
         ) : null}

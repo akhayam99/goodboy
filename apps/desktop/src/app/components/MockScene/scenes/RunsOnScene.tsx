@@ -64,7 +64,7 @@ const CARDS: ReadonlyArray<CardSeed> = [
     kind: 'check-changes',
     title: 'Check the changes before you push',
     detail: 'Reviewer is pinned to Claude in this workspace',
-    label: 'Start reviewer',
+    label: 'Continue with Reviewer',
     shortLabel: 'Start',
     startsKind: 'reviewer',
     runsOnKind: 'reviewer',

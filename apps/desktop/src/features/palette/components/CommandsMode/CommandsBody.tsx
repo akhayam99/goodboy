@@ -24,12 +24,11 @@ import { ASK_KEYS, askEntries } from '../../sources/askEntries';
 import { askAboutSession } from '../../../session/ask/askAboutSession';
 import { choiceEntries } from '../../sources/choiceEntries';
 import { askInChat } from '../../../workspace-chat/askInChat';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { readFrecency, recordPaletteUse } from '../../frecencyStorage';
 import { useCommandEntries } from '../../hooks/useCommandEntries';
 import { useNeedsYouEntries } from '../../hooks/useNeedsYouEntries';
 import type { SessionPalette } from '../../hooks/useSessionPalette';
-import { useStartRun } from '../../hooks/useStartRun';
 import { runObjectAction } from '../../../actions/registry';
 import {
   ALL_CHOICES_ID,
@@ -39,34 +38,25 @@ import {
 } from '../../../actions/types';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
-import { sessionTitle } from '../../../session/sessionTitle';
 import type { PaletteModeProps } from '../../paletteModeTypes';
 import { verbEntries, type VerbSelectParams } from '../../sources/verbEntries';
 import { hasOwnPreviewOf, paletteBodyLayoutOf } from './paletteBodyLayout';
 import { liveAgentVerbs, sessionOwnFirst } from '../../sources/liveAgentEntries';
 import { runRow, runSection } from '../../sources/runEntries';
-import {
-  runConfirmFacts,
-  startRunEntry,
-  workflowChoiceEntries,
-} from '../../sources/workflowEntries';
 import type { PaletteEntry, PaletteScope } from '../../types';
 import { PaletteInputRow } from '../PaletteOverlay/PaletteInputRow';
 import { ScopeChip } from '../PaletteOverlay/ScopeChip';
 import { CommandRowView } from './CommandRowView';
 import { EntryPreview } from './EntryPreview';
 import { PreviewHints } from './PreviewHints';
-import { StartRunConfirm } from './StartRunConfirm';
 import { useScopeInfo } from './useScopeInfo';
 import { VerbConfirm } from './VerbConfirm';
-import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Level = {
   readonly target: ObjectTarget | null;
   readonly title: string;
   readonly key: string;
   readonly choicesOf: ResolvedAction | null;
-  readonly isStartRun: boolean;
 };
 
 type RunVerbParams = {
@@ -120,7 +110,6 @@ export const CommandsBody = ({
   const [level, setLevel] = useState<Level | null>(null);
   const [filter, setFilter] = useState('');
   const [confirming, setConfirming] = useState<PaletteEntry | null>(null);
-  const [confirmingRun, setConfirmingRun] = useState<PaletteEntry | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const scopeInfo = useScopeInfo(scope);
@@ -139,7 +128,6 @@ export const CommandsBody = ({
   const levelActions = useObjectActions({ target: level?.target ?? null, env });
   const entries = useCommandEntries();
   const needsYou = useNeedsYouEntries();
-  const { workflows, start: startRun } = useStartRun();
   const hasWorkspace = useAppStore((state) => state.currentWorkspaceId !== null);
   const activePalette = scopeSessionId === null ? null : palette;
   const runTarget = scope?.kind === 'workflowRun' ? null : (activePalette?.run?.target ?? null);
@@ -151,14 +139,6 @@ export const CommandsBody = ({
   const runActions = useObjectActions({ target: runTarget, env });
   const liveActions = useObjectActions({ target: liveTarget, env });
   const pullRequestActions = useObjectActions({ target: pullRequestTarget, env });
-  const runSession = useAppStore((state) =>
-    palette === null ? null : sessionById(state.sessions, palette.sessionId),
-  );
-  const runMounts = useAppStore((state) =>
-    palette === null ? EMPTY_ARRAY : (state.sessionProjectMounts[palette.sessionId] ?? EMPTY_ARRAY),
-  );
-  const runSessionTitle = runSession === null ? '' : sessionTitle({ session: runSession });
-  const projectNames = runMounts.map((mount) => mount.mountName);
 
   const runVerb = useCallback(
     ({ target, actionId }: RunVerbParams) => {
@@ -227,11 +207,6 @@ export const CommandsBody = ({
           },
         });
   }, [level, env]);
-
-  const levelWorkflows = useMemo(
-    () => (level?.isStartRun === true ? workflowChoiceEntries({ workflows, start: startRun }) : []),
-    [level?.isStartRun, workflows, startRun],
-  );
 
   const liveVerbs = useMemo(
     () =>
@@ -332,20 +307,15 @@ export const CommandsBody = ({
         runVerb({ target, actionId: 'workflowRun.open' });
       }
     };
-    const startRunLevel = startRunEntry({ workflows });
-    if (activePalette.run === null && startRunLevel === null) {
+    if (activePalette.run === null) {
       return [];
     }
     return runSection({
-      row:
-        activePalette.run === null || scope?.kind === 'workflowRun'
-          ? null
-          : runRow({ facts: activePalette.run.facts, open }),
+      row: scope?.kind === 'workflowRun' ? null : runRow({ facts: activePalette.run.facts, open }),
       verbs: runVerbs,
-      startRun: startRunLevel,
       openRuns: entries.find((entry) => entry.key === 'lens:workflows') ?? null,
     });
-  }, [activePalette, scope?.kind, runVerbs, workflows, entries, runVerb]);
+  }, [activePalette, scope?.kind, runVerbs, entries, runVerb]);
 
   const extra = useMemo(() => {
     const taken = new Set([...sessionList, ...parentList].map((entry) => entry.label));
@@ -413,23 +383,15 @@ export const CommandsBody = ({
             needsYou: scope?.kind === 'workspace' ? needsYou : [],
             extra,
           })
-        : level.isStartRun
+        : level.choicesOf !== null
           ? buildChoiceList({
               query: filter,
-              title: 'From a workflow',
-              choices: levelWorkflows,
+              title: level.choicesOf.label,
+              choices: levelChoices,
               frecency,
               now,
             })
-          : level.choicesOf !== null
-            ? buildChoiceList({
-                query: filter,
-                title: level.choicesOf.label,
-                choices: levelChoices,
-                frecency,
-                now,
-              })
-            : buildActionList({ query: filter, verbs: levelVerbs, frecency, now }),
+          : buildActionList({ query: filter, verbs: levelVerbs, frecency, now }),
     [
       level,
       query,
@@ -450,7 +412,6 @@ export const CommandsBody = ({
       filter,
       levelVerbs,
       levelChoices,
-      levelWorkflows,
     ],
   );
   const sections = useMemo(
@@ -478,7 +439,7 @@ export const CommandsBody = ({
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, [level, confirming, confirmingRun]);
+  }, [level, confirming]);
 
   useEffect(() => {
     if (selected === null) {
@@ -510,16 +471,11 @@ export const CommandsBody = ({
     if (request === undefined) {
       return;
     }
-    if (request.kind === 'confirm-run') {
-      setConfirmingRun(entry);
-      return;
-    }
     setLevel({
-      target: request.kind === 'actions' ? request.target : null,
+      target: request.target,
       title: entry.label,
       key: entry.key,
       choicesOf: null,
-      isStartRun: request.kind === 'start-run',
     });
     setFilter('');
   };
@@ -546,7 +502,6 @@ export const CommandsBody = ({
         title: entry.label,
         key: level?.key ?? scopeInfo?.key ?? entry.key,
         choicesOf: entry.action,
-        isStartRun: false,
       });
       setFilter('');
       return;
@@ -555,7 +510,7 @@ export const CommandsBody = ({
   };
 
   const openActions = (entry: PaletteEntry): void => {
-    if (entry.level !== undefined && entry.level.kind !== 'confirm-run') {
+    if (entry.level !== undefined) {
       openLevel(entry);
       return;
     }
@@ -567,7 +522,6 @@ export const CommandsBody = ({
       title: entry.label,
       key: entry.key,
       choicesOf: null,
-      isStartRun: false,
     });
     setFilter('');
   };
@@ -606,10 +560,6 @@ export const CommandsBody = ({
         return;
       case 'Enter':
         event.preventDefault();
-        if (confirmingRun !== null) {
-          finish(confirmingRun);
-          return;
-        }
         if (confirming !== null) {
           finish(confirming);
           return;
@@ -625,10 +575,6 @@ export const CommandsBody = ({
       case 'Escape':
         event.preventDefault();
         event.stopPropagation();
-        if (confirmingRun !== null) {
-          setConfirmingRun(null);
-          return;
-        }
         if (confirming !== null) {
           setConfirming(null);
           return;
@@ -640,14 +586,13 @@ export const CommandsBody = ({
         onClose();
         return;
       case 'ArrowRight': {
-        if (level !== null || confirmingRun !== null || selected === null) {
+        if (level !== null || selected === null) {
           return;
         }
         if (!isCaretAtEnd(event.currentTarget)) {
           return;
         }
-        const opensLevel =
-          selected.item.level !== undefined && selected.item.level.kind !== 'confirm-run';
+        const opensLevel = selected.item.level !== undefined;
         if (!opensLevel && (selected.item.target === undefined || selected.item.kind === 'verb')) {
           return;
         }
@@ -656,11 +601,6 @@ export const CommandsBody = ({
         return;
       }
       case 'ArrowLeft':
-        if (confirmingRun !== null) {
-          event.preventDefault();
-          setConfirmingRun(null);
-          return;
-        }
         if (level === null || value !== '') {
           return;
         }
@@ -683,7 +623,7 @@ export const CommandsBody = ({
         return;
       case 'Tab':
         event.preventDefault();
-        if (confirming === null && confirmingRun === null && level === null) {
+        if (confirming === null && level === null) {
           onSwitchMode();
         }
         return;
@@ -695,9 +635,7 @@ export const CommandsBody = ({
   const prefix = parseQuery(query).prefix;
   const placeholder =
     level !== null
-      ? level.isStartRun
-        ? 'Pick a workflow'
-        : 'Filter actions…'
+      ? 'Filter actions…'
       : prefix !== null
         ? `Search ${prefix.hint}…`
         : DEFAULT_PLACEHOLDER;
@@ -709,11 +647,6 @@ export const CommandsBody = ({
     ) : null;
   const alt = confirming === null ? null : altOf(confirming);
   const pendingConfirm = confirming === null ? null : confirmOf(confirming);
-  const runLevel = confirmingRun?.level ?? null;
-  const confirmingRunWorkflow =
-    runLevel?.kind === 'confirm-run'
-      ? (workflows.find((workflow) => workflow.id === runLevel.workflowId) ?? null)
-      : null;
 
   return (
     <>
@@ -730,19 +663,7 @@ export const CommandsBody = ({
         onKeyDown={onKeyDown}
       />
       <Divider />
-      {confirmingRun !== null && confirmingRunWorkflow !== null ? (
-        <StartRunConfirm
-          entry={confirmingRun}
-          workflowName={confirmingRunWorkflow.name}
-          facts={runConfirmFacts({
-            workflow: confirmingRunWorkflow,
-            sessionTitle: runSessionTitle,
-            projectNames,
-          })}
-          onConfirm={() => finish(confirmingRun)}
-          onCancel={() => setConfirmingRun(null)}
-        />
-      ) : confirming !== null && pendingConfirm !== null ? (
+      {confirming !== null && pendingConfirm !== null ? (
         <VerbConfirm
           entry={confirming}
           confirm={pendingConfirm}

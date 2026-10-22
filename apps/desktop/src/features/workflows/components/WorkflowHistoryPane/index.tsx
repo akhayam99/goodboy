@@ -4,6 +4,7 @@ import { Button, DrawerFrame, EmptyLine, Notice, Skeleton } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import type { WorkflowRunHistoryLoad } from '../../../../store/slices/workflowStudio/types';
 import { workflowRunsOf } from '../../workflowRunsOf';
+import { RUN_ROUTE_COPY } from '../../../session/startRun/runRouteCopy';
 import { WorkflowHistoryList } from './WorkflowHistoryList';
 
 type Props = {
@@ -66,7 +67,7 @@ export const WorkflowHistoryPane = ({
           <EmptyLine
             action={
               <Button size="xs" variant="secondary" onClick={onStartRun}>
-                Run this workflow
+                {RUN_ROUTE_COPY.fromThisPreset}
               </Button>
             }
           >

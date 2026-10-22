@@ -8,8 +8,10 @@ import type {
   ChatMessageId,
   ChatSummary,
   IsoDateTime,
+  SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 
 const PROJECTS = vi.hoisted(() => [
   { id: 'project-payments', workspaceId: 'ws-harborline', name: 'payments-api' },
@@ -61,6 +63,7 @@ const { store, summarize } = vi.hoisted(() => ({
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     agentDraft: {} as Record<string, string>,
     navigate: vi.fn(),
+    setFocusedWorkflowRun: vi.fn(),
     openStudio: vi.fn(),
   },
 }));
@@ -85,6 +88,8 @@ vi.mock('../../activeChatBackend', () => ({
 
 import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { NAMES } from '../../../../shared/names';
+import { startRunDetailOf } from '../../../session/startRun/startRunDetailOf';
+import { startRunEventName } from '../../../session/startRun/startRunEventName';
 import { ChatRoom } from './index';
 
 const startWork = (): HTMLElement => {
@@ -107,6 +112,7 @@ const renderRoom = ({ chat, onCreated = vi.fn() }: RoomParams) =>
   );
 
 const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
+const REFUNDS = brandId<SessionId>({ value: 'session-refunds' });
 const CHAT_ID = 'chat-consent' as ChatId;
 const AT = '2026-09-28T10:00:00.000Z' as IsoDateTime;
 
@@ -454,7 +460,7 @@ describe('ChatRoom', () => {
     );
   });
 
-  it('adds to a session by opening it with the brief as an unsent draft', async () => {
+  it('adds to a session by opening Start a run there with the brief, starting nothing', async () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     store.sessions = [
       {
@@ -465,6 +471,11 @@ describe('ChatRoom', () => {
       },
     ];
     store.sessionPhaseRuns = { 'session-refunds': [{ id: 'agent-refunds', ordinal: 1 }] };
+    const texts: Array<string> = [];
+    const listen = (event: Event): void => {
+      texts.push(startRunDetailOf({ event }));
+    };
+    window.addEventListener(startRunEventName({ sessionId: REFUNDS }), listen);
     renderRoom({ chat: CHAT });
 
     fireEvent.click(startWork());
@@ -481,10 +492,13 @@ describe('ChatRoom', () => {
     expect(store.queueChatLink).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: 'session-refunds' }),
     );
-    expect(store.setAgentDraft).toHaveBeenCalledWith(
-      'agent-refunds',
-      expect.stringMatching(/^Ask for consent again when the policy changes\n\nAsk for consent/),
-    );
+    await waitFor(() => expect(texts).toHaveLength(1));
+    window.removeEventListener(startRunEventName({ sessionId: REFUNDS }), listen);
+    expect(texts[0]).toMatch(/^Ask for consent again when the policy changes\n\nAsk for consent/);
+    expect(store.navigate).toHaveBeenCalledWith({
+      to: expect.objectContaining({ at: 'session', sessionId: 'session-refunds' }),
+    });
+    expect(store.setAgentDraft).not.toHaveBeenCalled();
   });
 
   it('drafts the brief with the chat model and shows it under the title', async () => {
@@ -545,7 +559,7 @@ describe('ChatRoom', () => {
     );
   });
 
-  it('puts Start as first and hides Runs on when adding to a session', async () => {
+  it('puts Start as first and leaves the model to Start a run', async () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
@@ -555,29 +569,11 @@ describe('ChatRoom', () => {
     const startAs = screen.getByRole('tablist', { name: 'Start as' });
     const title = screen.getByDisplayValue('Ask for consent again when the policy changes');
     expect(startAs.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByText('Runs on')).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Add to a session' }));
     expect(screen.queryByText('Runs on')).toBeNull();
-  });
-
-  it('sets the new session default model and effort when Runs on is changed', async () => {
-    store.chatMessages = { [CHAT_ID]: ANSWERED };
-    renderRoom({ chat: CHAT });
-
-    fireEvent.click(startWork());
-    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
-    fireEvent.click(screen.getByRole('button', { name: /^Runs on: / }));
-    const effort = screen.getByRole('group', { name: 'Effort' });
-    fireEvent.click(within(effort).getByRole('button', { name: /Low/ }));
-    fireEvent.keyDown(document.body, { key: 'Escape' });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
     });
-
-    expect(store.setSessionConfig).toHaveBeenCalledWith(
-      'session-new',
-      expect.objectContaining({ effort: 'low', providerOverride: expect.any(String) }),
-    );
+    expect(store.setSessionConfig).not.toHaveBeenCalled();
   });
 
   it('starts from the keyboard with command and enter', async () => {

@@ -2,38 +2,21 @@
 
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
-### Workflow builder
+### Start a workflow
 
-Set up a run before it starts: a name, a goal and a mode, with the plan previewed as a recipe, step 1 on top. **Starts** and **Limit** sit under the plan.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-light.webp" alt="The New session page on Run an orchestrator: the goal in a Write and Preview editor, Projects, the Orchestrator row on Auto, Add guidance, the Autonomy, Starts and Limit controls and the Run an orchestrator button">
-</picture>
-
-<sub>Screenshot from Goodboy 0.27.1</sub>
+A workflow run starts from **Start a run** like any other: write the ask, and Auto picks a plan when it has steps, or type `~` and a preset name to follow that preset. There is no separate Run a workflow or Run an orchestrator form; a preset's steps, roles and models are edited in the Workflows studio.
 
 ### Orchestrated
 
-Give a goal and let a model pick each next step, with its role, model, effort and a reason, until it reports done or blocked. The **Orchestrator** row has its own model and an optional **Guidance** box.
+Give a goal and let a model pick each next step, with its role, model, effort and a reason, until it reports done or blocked.
+
+### A preset as the plan a run starts from
+
+A run started from a preset in **Start a run** follows that preset as a plan, and the line under its title says "Plan from Fix a layout, 4 steps · Adapt as it goes · 1 change". **Adapt as it goes** may add a step when a finding asks for it, skip one whose work is done, or move one that has not started; each change is tagged **Added**, **Skipped** or **Moved** in the checklist with its reason as the step's Why. **Follow the preset** never changes a step on its own: when one does not fit, the run stops and asks, with **Add it**, **Skip** and **Switch to adapt**. A pinned step runs as written and is never skipped or moved. Your goal, guidance and hints always rank above the preset.
 
 ### Preset and Custom
 
-In **Run a workflow**, pick a ready sequence from the **Preset** list and change the model of any step before it starts. A step you changed carries a dot, and **Reset to the preset** in the list brings the sequence back. Each preset in the **Preset** list shows one role glyph per step in run order (the same agent kind glyphs the run page uses, from `presetStepMarksOf`), and a "+2" after the fifth when the preset has more. Hover a glyph, or focus it, and its fact card (`presetStepCardOf`) names the step ("Step 2 of 3"), the role, then the model, its effort, the start of the step's instruction and what the step hands on as rows; the "+2" opens a fact card that lists the steps it hides (`presetMoreCardOf`). The model and effort come from the same routing the run rail reads (`resolveStepRouting`); a step whose provider the start still picks reads Auto. In the open list, ArrowRight moves from the active row onto its glyphs, ArrowLeft and ArrowRight walk them, and ArrowLeft before the first, ArrowUp or ArrowDown return to the list. The row itself keeps its description line and carries no card of its own. The step lane under the picked preset reads the same function through `draftStepRoutingOf`, so a lane step and its mark never name two providers; a provider you pin in the lane wins over the decided one.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-custom-light.webp" alt="The Run a workflow form with the Trace and fix preset picked: its four steps Trace the failing path, Agree the fix, Apply the fix and Cover the regression with a model on each, a pause for plan approval after step 2, Guidance, and the Autonomy, Starts and Limit controls beside Run a workflow">
-</picture>
-
-<sub>Screenshot from Goodboy 0.27.1</sub>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-builder-preset-light.webp" alt="The New session page on Run a workflow with the Pick a preset list open: Trace and fix, Harden an endpoint and Migrate a contract, each with a description and its step marks">
-</picture>
-
-<sub>Screenshot from Goodboy 0.27.1</sub>
+A preset is a ready sequence of steps, each with its role and model, kept in the Workflows studio. A run started from it follows it as a plan, as above; a run you like can be saved as a preset from its page with **Save as preset**.
 
 ### Built-in workflows
 
@@ -41,7 +24,7 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
 
 ### Runs of a workflow
 
-The Workflows list is one grid: name, **Built in** or **Edited** in gray, the roles of its steps in gray ("Scout, Implementer +1"), the step count, when it last ran, and a link with its run count ("3 runs", "No runs"). The row opens the workflow. The run count link opens the runs of that workflow beside the list, newest first, each a state dot, its session, its spend and its age; a row opens that run in its session. **Import workflows…** and **Restore built-in workflows…** sit in the page menu. A workflow that never ran offers **Run a workflow with this workflow**. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
+The Workflows list is one grid: name, **Built in** or **Edited** in gray, the roles of its steps in gray ("Scout, Implementer +1"), the step count, when it last ran, and a link with its run count ("3 runs", "No runs"). The row opens the workflow. A workflow with no runs offers **Start a run from this preset**, which opens the New session field with `~` and its name. The run count link opens the runs of that workflow beside the list, newest first, each a state dot, its session, its spend and its age; a row opens that run in its session. **Import workflows…** and **Restore built-in workflows…** sit in the page menu. A workflow that never ran offers **Run a workflow with this workflow**. Past ten runs, **All**, **Running** and **Failed** narrow the list. If the runs cannot load, the pane says so with **Retry**.
 
 ### Saved steps
 
@@ -57,13 +40,6 @@ Reuse steps across workflows. The built-in steps are read-only, and **Save a cop
 ### Model per step
 
 Put a light model on a scout and a strong one on the planner. A step follows its role by default, and **Pin a model** gives it its own provider, model and effort, with the same compact provider row as the model picker. Goodboy records what actually ran.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-model-dark.webp">
-  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-model-light.webp" alt="The model popover of a workflow step in the Run a workflow form, opened on Opus 5.5 High with Follow role and Pin a model: it follows the Planner role and Auto picks Opus 5.5 High from the providers you can use now">
-</picture>
-
-<sub>Screenshot from Goodboy 0.27.1</sub>
 
 ### Autonomy
 

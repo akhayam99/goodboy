@@ -16,7 +16,6 @@ vi.mock('../../../auto/useAutoTreeLimit', () => ({
   }),
 }));
 
-import { PROVIDER_CAPABILITIES } from '@goodboy/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type {
@@ -37,13 +36,11 @@ import {
 } from '../../../../store/storyHarness';
 import type { AppStore } from '../../../../store/store';
 import { ToastProvider } from '../../../../shared/components/Toast';
-import { WritePanel } from '../../../artifacts/components/WritePanel';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import {
   WORKSPACE_ID,
   seedBoardScene,
 } from '../../../../app/components/MockScene/scenes/BoardScene';
-import { NewDrawer } from '../NewDrawer';
 import { SessionDraftPane } from '.';
 
 let useAppStore: StoryStore;
@@ -129,18 +126,12 @@ const settle = async (): Promise<void> => {
   });
 };
 
-type OpenPageParams = {
-  readonly choice: 'task' | 'workflow' | 'orchestrate' | 'scout';
-  readonly isAuto?: boolean;
-};
-
-const openPage = async ({ choice, isAuto }: OpenPageParams): Promise<void> => {
+const openPage = async (): Promise<void> => {
   useAppStore.getState().navigate({ to: sessionPlace({ sessionId: cameFrom.id }) });
   useAppStore.getState().openSessionDraft();
-  useAppStore.getState().patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { choice } });
   render(
     <ToastProvider>
-      <SessionDraftPane workspaceId={WORKSPACE_ID} {...(isAuto !== undefined && { isAuto })} />
+      <SessionDraftPane workspaceId={WORKSPACE_ID} />
     </ToastProvider>,
   );
   await settle();
@@ -155,235 +146,76 @@ const textBox = (name: string): HTMLTextAreaElement => {
 };
 
 const startButton = (): HTMLButtonElement => {
-  const element = screen.getByRole('button', { name: /^(run a workflow|run an orchestrator)$/i });
+  const element = screen.getByRole('button', { name: 'Start' });
   if (!(element instanceof HTMLButtonElement)) {
     throw new Error('Expected a button');
   }
   return element;
 };
 
-const kickoffTab = (name: string) =>
-  within(screen.getByRole('tablist', { name: 'How do you want to start?' })).getByRole('tab', {
-    name,
-  });
+const noSetting: AppStore['loadSetting'] = async () => null;
 
-describe('New session page, selector', () => {
-  it('is one compact selector with the line right after the selection, none under each option', async () => {
-    await openPage({ choice: 'workflow' });
+const startThenRun: AppStore['startSessionFromDraft'] = async ({ start }) => {
+  if (start.kind === 'workflow-run') {
+    await start.run(cameFrom);
+  }
+  return cameFrom;
+};
 
-    const tabs = within(screen.getByRole('tablist', { name: 'How do you want to start?' }));
-    expect(tabs.getAllByRole('tab').map((node) => node.textContent)).toEqual([
-      'Pick up a task',
-      'Run a workflow',
-      'Run an orchestrator',
-      'Start an agent',
-    ]);
-    expect(screen.getByText('Several agents work through your goal, step by step.')).toBeDefined();
-    expect(screen.queryByText('An issue from your tracker.')).toBeNull();
+describe('New session page', () => {
+  it('is the Start a run field with Folders above it, and no start tabs', async () => {
+    await openPage();
 
-    fireEvent.click(kickoffTab('Start an agent'));
-    expect(screen.getByText('One agent in the role you pick.')).toBeDefined();
-    expect(screen.queryByText('Several agents work through your goal, step by step.')).toBeNull();
-
-    fireEvent.click(kickoffTab('Pick up a task'));
-    expect(screen.getByText('Start from an issue in your tracker.')).toBeDefined();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    const kickoff = within(screen.getByRole('region', { name: 'Kickoff' }));
+    expect(kickoff.getByRole('textbox', { name: 'Start a run' })).toBeDefined();
+    expect(kickoff.queryByRole('button', { name: 'Start an agent' })).toBeNull();
+    expect(kickoff.queryByRole('button', { name: 'Run a workflow' })).toBeNull();
   });
 
   it('keeps Start blank in the header and Discard in the actions row once something is written', async () => {
-    await openPage({ choice: 'workflow' });
+    await openPage();
 
     expect(screen.getByRole('button', { name: /start blank/i })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
 
-    fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
+    fireEvent.change(textBox('Start a run'), { target: { value: GOAL } });
 
     expect(screen.getAllByRole('button', { name: 'Discard' })).toHaveLength(1);
   });
-});
 
-describe('New session page, Run lane', () => {
-  it('starts the same run from the page as from the drawer', async () => {
-    const drawer = render(
-      <ToastProvider>
-        <NewDrawer
-          sessionId={cameFrom.id}
-          payload={{ form: 'orchestrate' }}
-          writePanel={WritePanel}
-          onClose={vi.fn()}
-        />
-      </ToastProvider>,
+  it('creates the session and starts one agent with the ask Auto could not place', async () => {
+    useAppStore.setState({ startSessionFromDraft: startThenRun, loadSetting: noSetting });
+    await openPage();
+
+    fireEvent.change(textBox('Start a run'), { target: { value: GOAL } });
+    fireEvent.click(startButton());
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent).toHaveBeenCalledWith(
+      cameFrom.id,
+      expect.objectContaining({ kindOverride: 'auto', initialPrompt: GOAL }),
     );
-    fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
-    fireEvent.click(startButton());
-    await waitFor(() => expect(attach).toHaveBeenCalledOnce());
-    const fromDrawer = attach.mock.calls[0];
-    drawer.unmount();
-    attach.mockClear();
-    await settle();
-
-    await openPage({ choice: 'orchestrate' });
-    fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
-    fireEvent.click(startButton());
-    await waitFor(() => expect(attach).toHaveBeenCalledOnce());
-    const fromPage = attach.mock.calls[0];
-
-    expect(createSession).toHaveBeenCalledOnce();
-    expect(fromPage?.[0]).toBe(cameFrom.id);
-    expect(fromPage?.[2]).toEqual(fromDrawer?.[2]);
-    expect(fromPage?.[2]).toMatchObject({ goal: GOAL, executionMode: 'dynamic', navigate: true });
-  });
-
-  it('blocks the start with Preset when the spend cap is switched on and left empty', async () => {
-    await openPage({ choice: 'workflow' });
-    fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
-    fireEvent.click(screen.getByRole('button', { name: /^preset:/i }));
-    fireEvent.click(screen.getByRole('option', { name: /scout, plan, build/i }));
-    expect(startButton().disabled).toBe(false);
-
-    fireEvent.click(screen.getByRole('button', { name: /^limit:/i }));
-    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
-
-    expect(startButton().disabled).toBe(true);
-    expect(screen.getByText('Enter a valid limit to start')).toBeDefined();
-    fireEvent.click(startButton());
-    await settle();
-    expect(createSession).not.toHaveBeenCalled();
     expect(attach).not.toHaveBeenCalled();
   });
 
-  it('carries a valid spend cap onto a started preset', async () => {
-    await openPage({ choice: 'workflow' });
-    fireEvent.change(textBox('Goal'), { target: { value: GOAL } });
-    fireEvent.click(screen.getByRole('button', { name: /^preset:/i }));
-    fireEvent.click(screen.getByRole('option', { name: /scout, plan, build/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^limit:/i }));
-    fireEvent.click(screen.getByRole('switch', { name: /^limit$/i }));
-    fireEvent.change(screen.getByLabelText('Limit in dollars'), { target: { value: '9' } });
+  it('starts a plan from the preset named with ~ after creating the session', async () => {
+    useAppStore.setState({
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+    });
+    await openPage();
 
+    fireEvent.change(textBox('Start a run'), { target: { value: `~Scout, plan, build ${GOAL}` } });
     fireEvent.click(startButton());
 
-    await waitFor(() => expect(attach).toHaveBeenCalledOnce());
-    expect(attach.mock.calls[0]?.[2]).toMatchObject({ spendLimitUsd: 9 });
-  });
-});
-
-describe('New session page, Start an agent', () => {
-  it('opens the role start with Auto always available, with the role and no Auto', async () => {
-    await openPage({ choice: 'scout' });
-
-    expect(textBox('Scout focus')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start Scout on the whole folder' })).toBeDefined();
-    expect(screen.queryByRole('region', { name: 'Auto' })).toBeNull();
-  });
-
-  it('moves the goal written for Auto into the instructions of the legacy form, never dropping it', async () => {
-    useAppStore.getState().openSessionDraft();
-    useAppStore
-      .getState()
-      .patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { autoGoal: GOAL } });
-
-    await openPage({ choice: 'scout' });
-
-    expect(textBox('Scout focus').value).toBe(GOAL);
-    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.autoGoal).toBe('');
-  });
-});
-
-describe('New session page, Start an agent drawn as the Auto composer', () => {
-  beforeEach(() => {
-    useAppStore.setState({
-      providers: [
-        {
-          id: 'anthropic',
-          binary: 'anthropic',
-          capabilities: PROVIDER_CAPABILITIES.anthropic,
-          connection: 'connected',
-          version: null,
-          identity: null,
-          label: 'anthropic',
-          error: null,
-          docsUrl: '',
-        },
-      ],
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[0]).toBe(cameFrom.id);
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({
+      executionMode: 'dynamic',
+      rulesSnapshot: { route: { row: 1, presetName: 'Scout, plan, build', closeness: 'follow' } },
     });
-  });
-
-  it('moves the instructions written for the legacy form into the Auto goal', async () => {
-    useAppStore.getState().openSessionDraft();
-    useAppStore
-      .getState()
-      .patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { agentPrompt: GOAL } });
-
-    await openPage({ choice: 'scout', isAuto: true });
-
-    expect(textBox('Describe the work').value).toBe(GOAL);
-    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.agentPrompt).toBe('');
-  });
-
-  it('is the Auto composer: one goal, Projects, one model chip and no roles', async () => {
-    await openPage({ choice: 'scout', isAuto: true });
-
-    expect(
-      screen.getByText('Auto answers, or hands the work to the roles it picks.'),
-    ).toBeDefined();
-    expect(screen.getByRole('region', { name: 'Auto' })).toBeDefined();
-    expect(screen.getByText('Experimental')).toBeDefined();
-    expect(screen.queryByText('It may not work well yet.')).toBeNull();
-    expect(screen.getAllByRole('button', { name: /^Model:/ })).toHaveLength(1);
-    expect(screen.getByRole('combobox', { name: 'Folder' })).toBeDefined();
-    expect(screen.queryByText(/guidance/i)).toBeNull();
-  });
-
-  it('keeps Start an auto disabled until the work is described', async () => {
-    await openPage({ choice: 'scout', isAuto: true });
-
-    const start = screen.getByRole('button', { name: 'Start an auto' });
-    expect(start).toHaveProperty('disabled', true);
-    fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
-    expect(screen.getByRole('button', { name: 'Start an auto' })).toHaveProperty('disabled', false);
-  });
-
-  it('creates the session and starts Auto with the goal on the auto agent', async () => {
-    await openPage({ choice: 'scout', isAuto: true });
-    fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
-
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-    expect(createSession).toHaveBeenCalledOnce();
-    expect(spawnAgent.mock.calls[0]?.[0]).toBe(cameFrom.id);
-    expect(spawnAgent.mock.calls[0]?.[1]).toMatchObject({
-      kindOverride: 'auto',
-      initialPrompt: GOAL,
-    });
-    await waitFor(() =>
-      expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.autoGoal ?? '').toBe(''),
-    );
-  });
-
-  it('keeps the goal and shows the error when the start fails', async () => {
-    createSession.mockRejectedValueOnce(new Error('disk full'));
-    await openPage({ choice: 'scout', isAuto: true });
-    fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
-
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('disk full'));
     expect(spawnAgent).not.toHaveBeenCalled();
-    expect(textBox('Describe the work').value).toBe(GOAL);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
-  });
-
-  it('counts the Auto goal as a draft, so Discard draft appears and clears it', async () => {
-    await openPage({ choice: 'scout', isAuto: true });
-    expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
-
-    fireEvent.change(textBox('Describe the work'), { target: { value: GOAL } });
-    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
-    await settle();
-
-    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toBeUndefined();
   });
 });

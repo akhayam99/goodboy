@@ -92,6 +92,10 @@ Keep Goodboy's own folder out of your commits with one click. The card shows up 
 
 Choose how new session branches are named: a **Branch prefix**, with or without the task id, or a **Custom** template. Each choice shows the name it would give your last session, and existing branches keep their names.
 
+### New runs start as
+
+Choose how **Start a run** handles a new ask in this workspace: **Let Auto pick**, **A plan with steps** or **One agent**. A session default set from a run's **Change** menu wins over it. Each change shows a toast with **Undo**.
+
 ### Monitoring
 
 See which ports are taken and by whom, in four groups: **Pinned** (ports you pin, with your own description), **Run by Goodboy**, **From workspace** and **Listening on this Mac**. Every group shares one column grid under one sticky header (Port, Label, Opened by, Process, Up, CPU, Memory), a process on many ports is one expandable row, and a group's header carries its count and its free ports (`3 · 2 free`); the free count opens the free ports under the ports in use. Expanded rows sit one step in. A terminal or script with no port says "no port" in faint text and shows its process. A port also open in another worktree shows the warning dot and "+2" after its owner, the worktrees in the tooltip. Leftovers sit on the same grid with their age under Up.

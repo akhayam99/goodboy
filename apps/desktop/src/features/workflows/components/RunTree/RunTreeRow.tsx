@@ -203,6 +203,13 @@ export const RunTreeRow = ({
                     duration={time}
                     phase={item.rowState.phase}
                     isNested={isNested}
+                    change={
+                      isNested
+                        ? null
+                        : (routing.run?.rulesSnapshot?.planChanges?.find(
+                            (candidate) => candidate.agentId === agent.id,
+                          ) ?? null)
+                    }
                   />
                 ) : (
                   <>

@@ -170,6 +170,8 @@ export {
   updateWorkflowRunOrchestratorSummary,
   updateWorkflowRunSpendLimit,
   updateWorkflowRunRulesSnapshot,
+  getWorkflowRunRulesText,
+  replaceWorkflowRunRulesIfUnchanged,
   updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './queries/session-workflow';
@@ -234,6 +236,7 @@ export { listProviderLimits, upsertProviderLimits } from './queries/provider-lim
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export {
   deleteSetting,
+  deleteSettingIfUnchanged,
   getSetting,
   insertSettingIfAbsent,
   listSettingsWithPrefix,

@@ -4,7 +4,7 @@ import type {
   WorkflowTaskDifficulty,
   WorkflowTaskType,
 } from '@goodboy/types';
-import { PROVIDER_IDS } from '@goodboy/types';
+import { PROVIDER_IDS, parsePlanChangeRequest } from '@goodboy/types';
 import { resolvedStoredModelId } from '../providers/resolvedStoredModelId';
 import { resolveStoredModelSelection } from '../providers/resolveStoredModelSelection';
 import { normalizeWorkflowRole } from '../roles';
@@ -183,6 +183,9 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
         id: emittedModel,
       });
   const effort = requestedEffort(nonEmptyString(step['effort']));
+  const presetStep = step['presetStep'];
+  const isPresetStep =
+    typeof presetStep === 'number' && Number.isInteger(presetStep) && presetStep > 0;
   return {
     name,
     role: normalizeWorkflowRole({ role: role ?? 'custom' }),
@@ -194,6 +197,7 @@ const parseStep = ({ value, provider }: StepParams): OrchestratorStep | null => 
     ...(selectedTaskType !== null && { taskType: selectedTaskType }),
     ...(selectedDifficulty !== null && { difficulty: selectedDifficulty }),
     ...(modelReason !== null && { modelReason }),
+    ...(isPresetStep && { presetStep }),
   };
 };
 
@@ -218,8 +222,13 @@ export const parseOrchestratorDecision = ({
   const reason = nonEmptyString(decision['reason']) ?? '';
   const summary = parseRunSummary(raw);
   const runSummary = summary === null ? {} : { runSummary: summary };
-  if (action === 'done' || action === 'blocked') {
+  const requested = parsePlanChangeRequest({ value: decision['change'] });
+  const change = requested === null ? {} : { change: requested };
+  if (action === 'blocked') {
     return { action, reason, ...runSummary };
+  }
+  if (action === 'done') {
+    return { action, reason, ...runSummary, ...change };
   }
   if (action !== 'next') {
     return null;
@@ -228,5 +237,5 @@ export const parseOrchestratorDecision = ({
   if (step === null) {
     return null;
   }
-  return { action, reason, ...runSummary, step };
+  return { action, reason, ...runSummary, ...change, step };
 };

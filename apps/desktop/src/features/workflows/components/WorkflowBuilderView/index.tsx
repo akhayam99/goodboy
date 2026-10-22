@@ -79,7 +79,7 @@ import { draftStepRoutingOf } from '../../draftStepRoutingOf';
 import { useRoutingScope } from '../../../../shared/hooks/useRoutingScope';
 import { NAMES } from '../../../../shared/names';
 
-export type BuilderKickoff = {
+type BuilderKickoff = {
   readonly workspaceId: WorkspaceId;
   readonly lane?: KickoffLane;
   readonly goal: string;

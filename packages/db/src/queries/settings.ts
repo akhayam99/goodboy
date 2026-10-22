@@ -59,6 +59,24 @@ export const insertSettingIfAbsent = async ({ db, key, value }: InsertParams): P
   return result.rowsAffected === 1;
 };
 
+type DeleteParams = {
+  readonly db: Database;
+  readonly key: string;
+  readonly expected: string;
+};
+
+export const deleteSettingIfUnchanged = async ({
+  db,
+  key,
+  expected,
+}: DeleteParams): Promise<boolean> => {
+  const result = await db.execute('DELETE FROM settings WHERE key = ? AND value = ?', [
+    key,
+    expected,
+  ]);
+  return result.rowsAffected === 1;
+};
+
 export const deleteSetting = async (db: Database, key: string): Promise<void> => {
   await db.execute('DELETE FROM settings WHERE key = ?', [key]);
 };

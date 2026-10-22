@@ -87,6 +87,11 @@ import { sessionById } from '../sessions/sessionIndex';
 import { selectHiddenModels } from '../settings/selectHiddenModels';
 import { resolveWorkflowHeadroom } from './resolveWorkflowHeadroom';
 import { orchestratorProcessText } from './standingGuidance';
+import { pinnedStepOf } from './pinnedStepOf';
+import { planChangeVerdictOf } from './planChangeVerdictOf';
+import { PRESET_CHANGE_COPY } from './presetChangeCopy';
+import { presetInputOf } from './presetInputOf';
+import { recordPlanChange } from './recordPlanChange';
 import { landingLiveKey } from '../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry';
 
@@ -431,7 +436,7 @@ const appendStep = async ({
     ...(step.modelOverride != null && { modelOverride: step.modelOverride }),
     ...(step.effort != null && { effort: step.effort }),
     ...(step.orchestratorReason != null && { orchestratorReason: step.orchestratorReason }),
-    routingLock: null,
+    routingLock: step.routingLock ?? null,
     routingDecision: step.routingDecision ?? null,
     taskProfile: step.taskProfile ?? null,
   };
@@ -664,6 +669,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         roleModels: workspaceRoleModels,
         menu: modelMenu,
       });
+      const presetInput = presetInputOf({ rules: run.rulesSnapshot });
       const wastedReplies: Array<OrchestratorClientResult> = [];
       const decideInput: OrchestratorInput = {
         goal: run.goal ?? workflow.goal ?? session.goal,
@@ -681,6 +687,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           spendLimitUsd: run.spendLimitUsd,
           spentUsd: spentUsdForRun({ get, sessionId, run }),
         }),
+        ...(presetInput !== undefined && { preset: presetInput }),
       };
       const chain = await runHelperTask({
         set,
@@ -806,6 +813,29 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         await discardWithUsage();
         return;
       }
+      const change = decision.action === 'blocked' ? undefined : decision.change;
+      const verdict =
+        change === undefined ? 'apply' : planChangeVerdictOf({ rules: run.rulesSnapshot, change });
+      if (change !== undefined && verdict !== 'apply') {
+        await get().updateWorkflowRunRules(sessionId, workflowRunId, (rules) => ({
+          ...rules,
+          pendingChange: change,
+        }));
+        await persistOrchestrationStop({
+          set,
+          sessionId,
+          workflowRunId,
+          stop: {
+            kind: 'preset-change',
+            message:
+              verdict === 'pinned'
+                ? PRESET_CHANGE_COPY.pinned({ change })
+                : PRESET_CHANGE_COPY.asked({ change }),
+          },
+        });
+        await discardWithUsage();
+        return;
+      }
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
       if (readHintIds.size > 0) {
         await updateOrchestratorHints({
@@ -828,8 +858,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         devWarn(`[workflow] run summary could not be saved: ${formatError(error)}`);
       }
       if (decision.action === 'next') {
-        const proposed = decision.step;
+        const pinned = pinnedStepOf({ step: decision.step, preset: run.rulesSnapshot?.preset });
+        const proposed = pinned.step;
         const { routingProposal, resolution } = resolveProposedRouting({
+          stepLock: pinned.routingLock,
           state: get(),
           sessionId,
           session,
@@ -875,7 +907,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         }
         const routingDecision = resolution.decision;
         const selected = routingDecision.selected;
-        const reason = decision.reason.trim();
+        const reason =
+          change === undefined || change.kind === 'skipped'
+            ? decision.reason.trim()
+            : `${PRESET_CHANGE_COPY.why[change.kind]}: ${change.reason}`;
         if (isDecisionDiscarded()) {
           await discardWithUsage();
           return;
@@ -899,6 +934,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             modelOverride: selected.model,
             ...(selected.effort != null && { effort: selected.effort }),
             ...(reason !== '' && { orchestratorReason: reason }),
+            routingLock: pinned.routingLock,
             routingDecision,
             taskProfile: emittedTaskProfile({
               decision: routingDecision,
@@ -940,6 +976,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
           return;
         }
         const agent = created.agent;
+        if (change !== undefined) {
+          await recordPlanChange({ get, sessionId, workflowRunId, change, agentId: agent.id });
+        }
         emitDecision({
           get,
           sessionId,
@@ -985,6 +1024,9 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         outcome: decision.action,
         reason: decision.reason,
       });
+      if (change !== undefined) {
+        await recordPlanChange({ get, sessionId, workflowRunId, change, agentId: null });
+      }
       const terminalAgentId = emitDecision({
         get,
         sessionId,

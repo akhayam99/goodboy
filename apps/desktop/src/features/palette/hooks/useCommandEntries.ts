@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { CircleArrowUp, PanelLeft, Plus, RotateCcw, Smartphone } from 'lucide-react';
 import { useCurrentInnerColumn } from '@goodboy/ui';
-import type { AgentId, Project, ProjectScript, SessionId } from '@goodboy/types';
+import type { AgentId, Project, ProjectScript, SessionId, Workflow } from '@goodboy/types';
 import {
   BOARD_PLACE,
   EMPTY_ARRAY,
@@ -53,7 +53,6 @@ import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
 import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
 import { artifactEntries } from '../sources/artifactEntries';
 import { sessionEntries } from '../sources/sessionEntries';
-import { workflowEntries } from '../sources/workflowEntries';
 import { scriptPinEntries, type PinnedScriptTarget } from '../sources/scriptPinEntries';
 import { useScriptPins } from '../../scripts';
 import { runPinnedScript } from '../../scripts/runPinnedScript';
@@ -63,7 +62,6 @@ import { repoEntries } from '../sources/repoEntries';
 import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
 import { useSessionsEverywhere } from './useSessionsEverywhere';
-import { useStartRun } from './useStartRun';
 import { projectById } from '../../../store/slices/projects/projectIndex';
 
 const PAIR_SEPARATOR = '\u0000';
@@ -115,7 +113,9 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const scripts = useAppStore((s) =>
     currentWorkspace ? (s.projectScripts[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
   ) as ReadonlyArray<ProjectScript>;
-  const { workflows, start: startRun } = useStartRun();
+  const workflows: ReadonlyArray<Workflow> = useAppStore((s) =>
+    currentWorkspace ? (s.phaseTemplates[currentWorkspace.id] ?? EMPTY_ARRAY) : EMPTY_ARRAY,
+  );
   const agents = useAppStore((s) =>
     sessionId === null ? EMPTY_ARRAY : (s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY),
   );
@@ -199,7 +199,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
             classifyAgent({ agent, override: agentKindOverride[agent.id as AgentId] ?? null }),
           open: ({ agentId }) => navigate({ to: agentPlace({ sessionId, agentId }) }),
         }),
-        ...workflowEntries({ workflows, start: startRun }),
         ...startRunFromPresetEntries({ sessionId, workflows, open: openStartRun }),
         ...artifactEntries({
           sessionId,
@@ -621,7 +620,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     artifacts,
     plans,
     workflows,
-    startRun,
     scripts,
     scriptPins,
     workspaceProjects,

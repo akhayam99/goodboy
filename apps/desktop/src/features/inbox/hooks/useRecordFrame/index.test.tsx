@@ -251,7 +251,7 @@ afterEach(() => {
 });
 
 describe('useRecordFrame', () => {
-  it('starts an issue in the New session draft: picked, its brief requested, one verb', () => {
+  it('starts an issue in the New session draft: picked and attached to Start a run, one verb', () => {
     const onLaunched = vi.fn();
     const onNewSession = vi.fn();
     window.addEventListener('goodboy:new-session', onNewSession);
@@ -267,23 +267,11 @@ describe('useRecordFrame', () => {
     expect(h.patchSessionDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
       patch: {
-        choice: 'task',
         pickedIssues: [expect.objectContaining({ identifier: '#42', externalId: '42' })],
-        hasPickedStep: true,
+        workflowGoal: expect.any(String),
       },
     });
-    expect(h.requestIssueBrief).toHaveBeenCalledWith({
-      sources: [
-        expect.objectContaining({
-          provider: 'github',
-          externalId: '42',
-          body: 'Keep one dock.',
-          noun: 'issue',
-        }),
-      ],
-      workspaceId: WORKSPACE_ID,
-      sessionId: null,
-    });
+    expect(h.requestIssueBrief).not.toHaveBeenCalled();
     expect(onNewSession).toHaveBeenCalledOnce();
     expect(onLaunched).toHaveBeenCalledOnce();
     expect(h.createSession).not.toHaveBeenCalled();

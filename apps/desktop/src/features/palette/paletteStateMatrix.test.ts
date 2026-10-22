@@ -157,7 +157,6 @@ describe('palette verbs follow the session state', () => {
       'Refresh session',
       'Turn on Autopilot',
       'Start a run',
-      'Start an agent',
       'Link work',
       'Copy title',
       'Copy worktree path',
@@ -185,7 +184,6 @@ describe('palette verbs follow the session state', () => {
       'Refresh session',
       'Turn on Autopilot',
       'Start a run',
-      'Start an agent',
       'Link work',
       'Copy title',
       'Archive',
@@ -446,7 +444,7 @@ describe('the empty palette ranks the session verbs by state', () => {
 
     expect(titles(screen)).toEqual(['For this session', 'Go to', 'App', 'Help']);
     expect(labelsOf(screen, 'For this session')).toEqual([
-      'Start an agent',
+      'Start a run',
       'Link work',
       'Open ledger-core in terminal',
       'Open in editor',
@@ -462,7 +460,7 @@ describe('the empty palette ranks the session verbs by state', () => {
     expect(labelsOf(emptyScreen({ tier: 'needs' }), 'For this session').slice(0, 4)).toEqual([
       'Message Implementer',
       'Open comments',
-      'Start an agent',
+      'Start a run',
       'Open ledger-core in terminal',
     ]);
   });
@@ -475,7 +473,7 @@ describe('the empty palette ranks the session verbs by state', () => {
       'Message Implementer',
       'Open files',
       'Open ledger-core in terminal',
-      'Start an agent',
+      'Start a run',
     ]);
   });
 

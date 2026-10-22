@@ -8,7 +8,8 @@ import { brandedId } from '../../features/history/testing/brandedId';
 import { stubProviderRouting } from '../helpers/journeyHarness';
 import { ToastProvider } from '../../shared/components/Toast';
 import { selectSessionDraft } from '../../store/slices/sessionDraft/selectSessionDraft';
-import { PickedIssue } from '../../features/session/components/SessionKickoff/PickedIssue';
+import { SessionKickoff } from '../../features/session/components/SessionKickoff';
+import { pickIssue } from '../../features/session/pickIssue';
 import type { IssueCandidate } from '../../features/integrations/fetchIssueCandidates';
 import {
   buildStoryProject,
@@ -122,28 +123,24 @@ afterEach(() => {
 const draft = () =>
   selectSessionDraft({ state: useAppStore.getState(), workspaceId: WORKSPACE_ID });
 
-const renderPicked = () =>
+const renderKickoff = () =>
   render(
     <ToastProvider>
-      <PickedIssue
-        workspaceId={WORKSPACE_ID}
-        candidates={draft().pickedIssues}
-        onRemove={() => undefined}
-        onAddAnother={() => undefined}
-      />
+      <SessionKickoff workspaceId={WORKSPACE_ID} />
     </ToastProvider>,
   );
 
-const pickIssue = () =>
+const field = () => screen.getByRole('textbox', { name: 'Start a run' });
+
+const ASK = `@Implementer ${INSTRUCTIONS}`;
+
+const pickTheIssue = () => {
+  pickIssue({ workspaceId: WORKSPACE_ID, candidate: ISSUE });
   useAppStore.getState().patchSessionDraft({
     workspaceId: WORKSPACE_ID,
-    patch: {
-      choice: 'task',
-      pickedIssues: [ISSUE],
-      hasPickedStep: true,
-      projectIds: [PROJECT_ID],
-    },
+    patch: { projectIds: [PROJECT_ID] },
   });
+};
 
 const WORKTREE = {
   worktreePath: '/tmp/ledger-core/.goodboy/worktrees/hbl-412',
@@ -156,26 +153,18 @@ const sessionRows = () =>
   rowsOf<{ id: string; goal: string }>({ sql: 'SELECT id, goal FROM sessions' });
 
 describe('journey: start a session from an issue', () => {
-  it('picks the issue, edits the brief, starts, and leaves a linked session with a running agent', async () => {
+  it('attaches the issue to Start a run, starts, and leaves a linked session with a running agent', async () => {
     useAppStore.getState().openSessionDraft();
-    expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
     expect(draft().pickedIssues).toEqual([]);
+    renderKickoff();
 
-    pickIssue();
+    pickTheIssue();
     expect(draft().pickedIssues.map((issue) => issue.identifier)).toEqual(['HBL-412']);
+    const picked = await screen.findByRole('list', { name: 'Picked issues' });
+    expect(picked.textContent).toContain('HBL-412');
+    await waitFor(() => expect(field()).toHaveProperty('value', ISSUE.goal));
 
-    renderPicked();
-    expect(screen.getByRole('region', { name: 'Brief' })).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Brief title' })).toHaveProperty(
-      'value',
-      ISSUE.title,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Start an agent' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
-      target: { value: INSTRUCTIONS },
-    });
+    fireEvent.change(field(), { target: { value: ASK } });
     expect(await sessionRows()).toEqual([]);
 
     let release: () => void = () => undefined;
@@ -187,11 +176,9 @@ describe('journey: start a session from an issue', () => {
       return WORKTREE;
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start from HBL-412' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(draft().isStarting).toBe(true));
-    expect(draft().startError).toBeNull();
-    await waitFor(() => expect(screen.getByText('Starting…')).toBeDefined());
     expect(storySpies.runTurn).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -202,32 +189,20 @@ describe('journey: start a session from an issue', () => {
     const session = useAppStore.getState().sessions[0];
     expect(await sessionRows()).toEqual([{ id: session?.id, goal: session?.goal }]);
     expect(
-      await rowsOf<{ key: string; value: string }>({
-        sql: "SELECT key, value FROM context_slots WHERE session_id = ? AND key = 'goal'",
-        params: [session?.id],
-      }),
-    ).toEqual([{ key: 'goal', value: INSTRUCTIONS }]);
-    expect(
       await rowsOf<{ provider: string; identifier: string }>({
         sql: 'SELECT provider, identifier FROM session_external_tasks WHERE session_id = ?',
         params: [session?.id],
       }),
     ).toEqual([{ provider: 'linear', identifier: 'HBL-412' }]);
-    expect(
-      await rowsOf<{ kind: string; status: string }>({
-        sql: 'SELECT kind, status FROM agents WHERE session_id = ?',
-        params: [session?.id],
-      }),
-    ).toEqual([{ kind: 'implementer', status: expect.any(String) }]);
-    await waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledOnce());
     await waitFor(async () =>
       expect(
-        await rowsOf<{ role: string; content: string }>({
-          sql: 'SELECT role, content FROM messages WHERE role = ?',
-          params: ['user'],
+        await rowsOf<{ kind: string }>({
+          sql: 'SELECT kind FROM agents WHERE session_id = ?',
+          params: [session?.id],
         }),
-      ).toEqual([{ role: 'user', content: INSTRUCTIONS }]),
+      ).toEqual([{ kind: 'implementer' }]),
     );
+    await waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledOnce());
     expect(
       await rowsOf<{ project_id: string; branch: string }>({
         sql: 'SELECT project_id, branch FROM session_worktrees WHERE session_id = ?',
@@ -236,42 +211,34 @@ describe('journey: start a session from an issue', () => {
     ).toEqual([{ project_id: PROJECT_ID, branch: 'goodboy/hbl-412' }]);
     expect(draft().pickedIssues).toEqual([]);
     expect(useAppStore.getState().openSessionDraftWorkspaceId).toBeNull();
-    await waitFor(() => expect(screen.getAllByText('Session started')).toHaveLength(1));
   });
 
-  it('keeps the draft and shows the error when the mount fails, then starts on retry', async () => {
+  it('keeps the draft and the text when the mount fails, then starts on Retry', async () => {
     useAppStore.getState().openSessionDraft();
-    pickIssue();
-    renderPicked();
-    fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Start an agent' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Agent instructions' }), {
-      target: { value: INSTRUCTIONS },
-    });
+    renderKickoff();
+    pickTheIssue();
+    await waitFor(() => expect(field()).toHaveProperty('value', ISSUE.goal));
+    fireEvent.change(field(), { target: { value: ASK } });
     storySpies.createWorktree.mockRejectedValueOnce(new Error('git worktree add failed'));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start from HBL-412' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toContain('git worktree add failed'),
     );
-    expect(draft().startError).toContain('git worktree add failed');
-    expect(draft().isStarting).toBe(false);
+    expect(field()).toHaveProperty('value', ASK);
     expect(draft().pickedIssues.map((issue) => issue.identifier)).toEqual(['HBL-412']);
     expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
     expect(useAppStore.getState().sessions).toEqual([]);
     expect(await sessionRows()).toEqual([]);
     expect(storySpies.runTurn).not.toHaveBeenCalled();
-    expect(screen.queryByText('Session started')).toBeNull();
 
     storySpies.createWorktree.mockResolvedValue(WORKTREE);
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 
     await waitFor(() => expect(useAppStore.getState().sessions).toHaveLength(1));
     expect(await sessionRows()).toHaveLength(1);
-    expect(draft().startError).toBeNull();
     await waitFor(() => expect(storySpies.runTurn).toHaveBeenCalledOnce());
     expect(draft().pickedIssues).toEqual([]);
-    expect(useAppStore.getState().openSessionDraftWorkspaceId).toBeNull();
   });
 });

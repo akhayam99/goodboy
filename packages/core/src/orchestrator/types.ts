@@ -2,7 +2,9 @@ import type {
   AgentRole,
   EffortLevel,
   ModelPrice,
+  PlanChangeRequest,
   ProviderId,
+  RunRouteCloseness,
   WorkflowTaskDifficulty,
   WorkflowTaskType,
 } from '@goodboy/types';
@@ -18,6 +20,16 @@ export type OrchestratorStep = {
   readonly taskType?: WorkflowTaskType;
   readonly difficulty?: WorkflowTaskDifficulty;
   readonly modelReason?: string;
+  readonly presetStep?: number;
+};
+
+type OrchestratorPresetInput = {
+  readonly name: string;
+  readonly closeness: RunRouteCloseness;
+  readonly steps: ReadonlyArray<
+    Readonly<{ name: string; role: string | null; instructions: string; isPinned: boolean }>
+  >;
+  readonly changes: ReadonlyArray<PlanChangeRequest>;
 };
 
 export type RunSummary =
@@ -37,12 +49,14 @@ export type OrchestratorDecision =
       readonly action: 'next';
       readonly reason: string;
       readonly runSummary?: RunSummary;
+      readonly change?: PlanChangeRequest;
       readonly step: OrchestratorStep;
     }
   | {
       readonly action: 'done';
       readonly reason: string;
       readonly runSummary?: RunSummary;
+      readonly change?: PlanChangeRequest;
     }
   | {
       readonly action: 'blocked';
@@ -89,4 +103,5 @@ export type OrchestratorInput = {
   readonly isModelPickEnabled?: boolean;
   readonly spendLimitUsd?: number;
   readonly spentUsd?: number;
+  readonly preset?: OrchestratorPresetInput;
 };

@@ -1521,11 +1521,18 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
 - **One submenu level**: `choices` open a second panel beside the row (right,
   or left when there is no room), with a check on the current value. Nothing
   nests deeper.
+- **Radio group**: a `kind: 'radio'` entry is a named set of choices drawn in
+  the menu itself (`MenuRadioGroup`): a `role="group"` with the label as an
+  eyebrow, one `menuitemradio` row per choice with `aria-checked`, and a
+  primary check in the leading slot of the current one. Choosing closes the
+  menu and runs `onSelect` with the choice id. A disabled group stays
+  visible and `aria-disabled`. It is the one place a menu shows a header,
+  because the label names what the choices set (the run route Change menu).
 - **Confirm in place**: a verb with a confirm swaps the menu body for
   `InlineConfirm`, the menu swap placement below; Escape
   cancels the confirm first, then closes.
 - **Keyboard and ARIA**: `role="menu"` with `menuitem` rows (`menuitemradio` in
-  a submenu). The first row takes focus on open; the arrows, Home and End move;
+  a submenu and a radio group). The first row takes focus on open; the arrows, Home and End move;
   letters run typeahead; Enter and Space run; ArrowRight opens the submenu and
   ArrowLeft or Escape leaves it; Tab and a click outside close. Every
   `AnchoredPopover` with `role="menu"` gets the same arrow keys and typeahead

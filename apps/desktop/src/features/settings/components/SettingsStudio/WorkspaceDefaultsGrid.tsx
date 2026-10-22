@@ -8,6 +8,7 @@ import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overri
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { isAttributionEnabled } from '../../../../shared/utils/attribution';
 import { BranchTemplateField } from './BranchTemplateField';
+import { RunDefaultField } from './RunDefaultField';
 import { WorkspaceFieldRow } from './WorkspaceFieldRow';
 
 type Props = {
@@ -181,6 +182,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
             disabled={busy}
           />
         </WorkspaceFieldRow>
+        <RunDefaultField workspaceId={workspaceId} />
       </Band>
     </>
   );

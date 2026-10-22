@@ -7,10 +7,9 @@ import { useSessionDraftClose } from './useSessionDraftClose';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
-  readonly isAuto?: boolean;
 };
 
-export const SessionDraftPane = ({ workspaceId, isAuto }: Props) => {
+export const SessionDraftPane = ({ workspaceId }: Props) => {
   const { isAsking, keepDraft } = useSessionDraftClose({ workspaceId });
   return (
     <div className="@container relative flex h-full w-full min-w-0 flex-col">
@@ -25,7 +24,6 @@ export const SessionDraftPane = ({ workspaceId, isAuto }: Props) => {
           key={workspaceId}
           workspaceId={workspaceId}
           notice={isAsking ? <KeepDraftNotice onKeep={keepDraft} /> : null}
-          {...(isAuto !== undefined && { isAuto })}
         />
       </PaneShell>
     </div>

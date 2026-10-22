@@ -5,6 +5,7 @@ import { MOVE_TO_AUTO_EVENT, moveToAutoDetail } from '../../../auto/adopt/moveTo
 import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { HandoffCardShell } from './HandoffCardShell';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly reason: string;
@@ -34,7 +35,7 @@ export const AutoHandoffChip = ({ reason, agentId }: Props) => {
           )}
         >
           <ArrowRight size={ICON_SIZE.mark} aria-hidden />
-          <span>Move to Auto</span>
+          <span>{NAMES.letAutoTakeIt}</span>
         </button>
       </div>
     </HandoffCardShell>

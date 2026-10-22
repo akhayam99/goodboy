@@ -7,7 +7,7 @@ import { railColumnX } from '../../../workTreeModel/railGeometry';
 import { agentKindPalette, kindForRole } from '../../agent-kind';
 
 type Props = {
-  readonly kind: 'hint' | 'next' | 'left';
+  readonly kind: 'hint' | 'next' | 'left' | 'skipped';
   readonly label: string;
   readonly role?: AgentRole | null;
   readonly slotWidth: number;

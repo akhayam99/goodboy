@@ -1,8 +1,8 @@
-import type { RunRoute, RunRouteShape, Workflow } from '@goodboy/types';
+import type { RunRoute, Workflow } from '@goodboy/types';
 import type { AgentKind } from '../agent-kind';
+import { presetRouteOf, shapeRouteOf } from './routeChoiceOf';
+import type { RunDefault } from './runDefaultSetting';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
-
-type RunDefault = 'auto' | RunRouteShape;
 
 type RunRouteRole = Readonly<{
   kind: AgentKind;
@@ -33,6 +33,35 @@ type Params = {
 };
 
 const WORD_MIN = 4;
+
+const DETAIL_WORD_MIN = 5;
+
+const DETAIL_HITS_MIN = 2;
+
+const NAME_MATCH_SCORE = 100;
+
+const GENERIC_WORDS: ReadonlySet<string> = new Set([
+  'about',
+  'after',
+  'agent',
+  'before',
+  'change',
+  'changes',
+  'every',
+  'files',
+  'first',
+  'other',
+  'pages',
+  'their',
+  'there',
+  'these',
+  'thing',
+  'things',
+  'where',
+  'which',
+  'while',
+  'write',
+]);
 
 const SPREAD_WORDS: ReadonlySet<string> = new Set(['every', 'all', 'each', 'across', 'everywhere']);
 
@@ -110,55 +139,22 @@ type MatchParams = {
   readonly preset: Workflow;
 };
 
-const isPresetMatch = ({ words, preset }: MatchParams): boolean => {
+const presetScoreOf = ({ words, preset }: MatchParams): number => {
   const named = wordsOf({ text: preset.name }).filter((word) => word.length >= WORD_MIN);
-  if (named.length === 0) {
-    return false;
+  if (named.length > 0 && named.every((word) => words.includes(word))) {
+    return NAME_MATCH_SCORE;
   }
-  return named.every((word) => words.includes(word));
+  const detail = new Set(
+    wordsOf({
+      text: [
+        preset.description,
+        ...preset.steps.filter((step) => step.deletedAt == null).map((step) => step.name),
+      ].join(' '),
+    }).filter((word) => word.length >= DETAIL_WORD_MIN && !GENERIC_WORDS.has(word)),
+  );
+  const hits = [...detail].filter((word) => words.includes(word)).length;
+  return hits >= DETAIL_HITS_MIN ? hits : 0;
 };
-
-type CountParams = {
-  readonly count: number;
-};
-
-const stepsWord = ({ count }: CountParams): string => `${count} ${count === 1 ? 'step' : 'steps'}`;
-
-type PresetRouteParams = {
-  readonly preset: Workflow;
-  readonly closeness: 'follow' | 'adapt';
-  readonly row: number;
-  readonly why: string;
-};
-
-const presetRouteOf = ({ preset, closeness, row, why }: PresetRouteParams): RunRoute => {
-  const steps = preset.steps.filter((step) => step.deletedAt == null).length;
-  return {
-    shape: 'plan',
-    row,
-    presetName: preset.name,
-    closeness,
-    role: null,
-    choice: `Plan from ${preset.name}, ${stepsWord({ count: steps })} · ${RUN_ROUTE_COPY.closeness[closeness]}`,
-    why,
-  };
-};
-
-type ShapeRouteParams = {
-  readonly shape: RunRouteShape;
-  readonly row: number;
-  readonly why: string;
-};
-
-const shapeRouteOf = ({ shape, row, why }: ShapeRouteParams): RunRoute => ({
-  shape,
-  row,
-  presetName: null,
-  closeness: null,
-  role: null,
-  choice: RUN_ROUTE_COPY.shapes[shape],
-  why,
-});
 
 const isQuestionOrCheck = ({ text }: TextParams): boolean => {
   const words = wordsOf({ text });
@@ -230,7 +226,11 @@ export const runRouteOf = ({ facts }: Params): RunRouteResult => {
     };
   }
   const words = wordsOf({ text });
-  const matches = facts.presets.filter((preset) => isPresetMatch({ words, preset }));
+  const scored = facts.presets
+    .map((preset) => ({ preset, score: presetScoreOf({ words, preset }) }))
+    .filter((entry) => entry.score > 0);
+  const best = Math.max(0, ...scored.map((entry) => entry.score));
+  const matches = scored.filter((entry) => entry.score === best).map((entry) => entry.preset);
   const matched = matches.find((preset) => preset.id === facts.lastPresetId) ?? matches[0] ?? null;
   if (matched !== null) {
     return {

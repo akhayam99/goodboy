@@ -43,6 +43,7 @@ import {
 import { OnboardingWizard } from '../../features/onboarding/OnboardingWizard';
 import { openWizardStep } from '../../features/onboarding/onboarding-store';
 import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
+import { autoTreeLimitKey } from '../../features/auto/autoTreeLimit';
 import { InboxDetail } from '../../features/inbox/components/InboxStudio/InboxDetail';
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
@@ -165,21 +166,23 @@ describe('main flows on the real store', () => {
   it('starts a session from the new session draft', async () => {
     seedBoardScene();
     const startSessionFromDraft = vi.fn(async () => ({ id: 'session-started' }) as Session);
-    stubActions({ startSessionFromDraft });
+    stubActions({ startSessionFromDraft, loadSetting: vi.fn(async () => null) });
+    useAppStore.setState((state) => ({
+      settings: { ...state.settings, [autoTreeLimitKey({ workspaceId: WORKSPACE_ID })]: '5' },
+    }));
 
-    await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} isAuto={false} />);
-    fireEvent.click(screen.getByRole('tab', { name: /Start an agent/ }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
-      target: { value: 'the ledger-core importer' },
+    await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Start a run' }), {
+      target: { value: 'Read the ledger-core importer' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     await waitFor(() => expect(startSessionFromDraft).toHaveBeenCalledOnce());
     expect(startSessionFromDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
       start: expect.objectContaining({
-        kind: 'scout',
-        prompt: expect.stringContaining('the ledger-core importer'),
+        kind: 'workflow-run',
+        goal: 'Read the ledger-core importer',
       }),
     });
     expectNoRenderLoop();
@@ -213,12 +216,10 @@ describe('main flows on the real store', () => {
 
     await waitFor(() =>
       expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toMatchObject({
-        choice: 'task',
         pickedIssues: [expect.objectContaining({ provider: 'github', identifier: '#412' })],
-        hasPickedStep: true,
       }),
     );
-    expect(requestIssueBrief).toHaveBeenCalledOnce();
+    expect(requestIssueBrief).not.toHaveBeenCalled();
     expect(onNewSession).toHaveBeenCalledOnce();
     expect(screen.queryByRole('region', { name: /^Start from/ })).toBeNull();
     window.removeEventListener('goodboy:new-session', onNewSession);

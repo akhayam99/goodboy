@@ -17,6 +17,7 @@ import { WorkflowRulesPanel } from '../WorkflowRulesPanel';
 import { useRemovedBuiltins } from '../../hooks/useRemovedBuiltins';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { isPresetWorkflow } from '../../isPresetWorkflow';
+import { openNewRunDraft } from '../../../session/startRun/openNewRunDraft';
 import { useWorkflowEditor } from './useWorkflowEditor';
 
 type Props = { readonly workspaceId: WorkspaceId };
@@ -88,8 +89,6 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   }, [loadPhaseTemplates, loadStepLibrary, workspaceId]);
 
   const navigate = useAppStore((state) => state.navigate);
-  const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
-  const openSessionDraft = useAppStore((state) => state.openSessionDraft);
   const history = useWorkflowRunHistory({ workspaceId });
   const [historyWorkflowId, setHistoryWorkflowId] = useState<WorkflowId | null>(null);
   const historyWorkflow = presets.find((preset) => preset.id === historyWorkflowId) ?? null;
@@ -117,13 +116,7 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
             }),
           })
         }
-        onStartRun={() => {
-          patchSessionDraft({
-            workspaceId,
-            patch: { choice: 'workflow', workflowId: historyWorkflow.id },
-          });
-          openSessionDraft();
-        }}
+        onStartRun={() => openNewRunDraft({ text: `~${historyWorkflow.name} ` })}
       />
     );
   const isPaneHosted = useStudioDrawer({

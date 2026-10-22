@@ -170,6 +170,61 @@ const modelPickLines = ({
   return lines;
 };
 
+const PRESET_CLOSENESS_LABEL = {
+  follow: 'Follow the preset',
+  adapt: 'Adapt as it goes',
+} as const;
+
+const PRESET_RULES = {
+  follow: [
+    'Do not add, skip or move a step on your own. When a finding asks for a step the preset lacks, a step\'s work is already done, or a step should come earlier, still emit that decision and name the change in "change": the operator is asked before anything changes, and an approved change comes back as a hint.',
+  ],
+  adapt: [
+    'Add a step when a finding asks for it, skip a step whose work is already done, and move a step that has not started. Name every such change in "change" with its reason.',
+  ],
+} as const;
+
+type OneLineParams = {
+  readonly text: string;
+};
+
+const oneLineOf = ({ text }: OneLineParams): string =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .join(' ');
+
+type PresetLinesParams = {
+  readonly preset: NonNullable<OrchestratorInput['preset']>;
+};
+
+const presetLines = ({ preset }: PresetLinesParams): ReadonlyArray<string> => [
+  `Preset: ${preset.name}, ${PRESET_CLOSENESS_LABEL[preset.closeness]}. Its steps, in order (put the number of the step you run in "presetStep"):`,
+  ...preset.steps.flatMap((step, index) => {
+    const instructions = oneLineOf({ text: step.instructions });
+    return [
+      `${index + 1}. ${step.role ?? 'agent'}: ${step.name}${step.isPinned ? ' (pinned: run it as written, never skip or move it)' : ''}`,
+      ...(instructions === '' ? [] : [`   Instructions: ${instructions}`]),
+    ];
+  }),
+  '',
+  'Rules for the preset:',
+  '- Run the steps in order, writing each brief from the step, its instructions and the goal.',
+  ...PRESET_RULES[preset.closeness].map((rule) => `- ${rule}`),
+  '- The goal, the operator process and the hints rank above the preset. Never change a pinned step.',
+  '- Never start work past the spend limit, push, open or merge a pull request.',
+  '- A change is one field on the decision: "change":{"kind":"added|skipped|reordered","step":"<the step\'s name>","reason":"<one sentence for the operator>"}. Leave it out when the decision runs the preset as written.',
+  ...(preset.changes.length > 0
+    ? [
+        '',
+        'Changes made so far:',
+        ...preset.changes.map((change) => `- ${change.kind}: ${change.step} (${change.reason})`),
+      ]
+    : []),
+  '',
+];
+
 export const buildOrchestratorUserPrompt = ({
   goal,
   processText,
@@ -184,6 +239,7 @@ export const buildOrchestratorUserPrompt = ({
   isModelPickEnabled,
   spendLimitUsd,
   spentUsd,
+  preset,
 }: OrchestratorInput): string => {
   const process = processText.trim();
   const lines = [
@@ -191,6 +247,7 @@ export const buildOrchestratorUserPrompt = ({
     goal.trim(),
     '',
     ...(process.length > 0 ? ['Operator process:', process, ''] : []),
+    ...(preset === undefined ? [] : presetLines({ preset })),
     `Open questions: ${openQuestionCount}`,
     '',
     `Steps used: ${stepsUsed}`,

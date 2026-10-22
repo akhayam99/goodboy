@@ -25,6 +25,7 @@ import { useAppStore } from '../../../store';
 import type { AppStore } from '../../../store/store';
 import { adoptAgent } from '../../../store/slices/auto/adoptAgent';
 import { MOVE_TO_AUTO_EVENT } from '../../auto/adopt/moveToAutoEvent';
+import { runRoutesKey } from '../../session/startRun/runRoutesSetting';
 import { resolveActions } from '../resolveActions';
 import type { ActionEnv } from '../types';
 import { AGENT_KIND, type AgentFacts } from './agent';
@@ -88,7 +89,7 @@ describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
     const found = resolveActions({ definitions: AGENT_KIND.actions, facts }).find(
       (action) => action.id === 'agent.moveToAuto',
     );
-    expect(found).toMatchObject({ label: 'Move to Auto', blockedReason: null });
+    expect(found).toMatchObject({ label: 'Let Auto take it from here', blockedReason: null });
   });
 
   it('blocks it with a reason while a turn is running', () => {
@@ -118,6 +119,26 @@ describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
     useAppStore.setState({
       sessionPhaseRuns: { [AUTO_SEED_SESSION]: [{ ...sourceAgent(), kind: 'resolver' }] },
     });
+    expect(factsOf({ isAutoOn: true }).canMoveToAuto).toBe(false);
+  });
+
+  it('is offered on old rows only, never on an agent Start a run routed', () => {
+    useAppStore.setState({
+      settings: {
+        [runRoutesKey({ sessionId: AUTO_SEED_SESSION })]: JSON.stringify({
+          [SOURCE]: {
+            shape: 'lead',
+            row: 1,
+            presetName: null,
+            closeness: null,
+            role: 'implementer',
+            choice: 'One agent that starts what it needs',
+            why: 'you picked it',
+          },
+        }),
+      },
+    });
+
     expect(factsOf({ isAutoOn: true }).canMoveToAuto).toBe(false);
   });
 

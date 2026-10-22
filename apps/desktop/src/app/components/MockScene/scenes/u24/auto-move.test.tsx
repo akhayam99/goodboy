@@ -64,7 +64,7 @@ describe('the Move to Auto scenes', () => {
     expect(
       await screen.findByRole('textbox', { name: 'What should Auto do next?' }, WAIT),
     ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Move to Auto' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Let Auto take it from here' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined();
     expect(screen.getByText(/The cap is in postCredit/)).toBeDefined();
   });

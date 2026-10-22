@@ -67,23 +67,6 @@ const mountScene = async ({ name }: SceneParams): Promise<void> => {
   expect(screen.queryByText('Something went wrong')).toBeNull();
 };
 
-type ClickParams = {
-  readonly name: string | RegExp;
-};
-
-const clickNamed = async ({ name }: ClickParams): Promise<void> => {
-  fireEvent.click(screen.getByRole('button', { name }));
-  await settle();
-};
-
-const startChoices = () =>
-  within(screen.getByRole('tablist', { name: 'How do you want to start?' }));
-
-const selectedChoice = () =>
-  startChoices()
-    .getAllByRole('tab')
-    .find((tab) => tab.getAttribute('aria-selected') === 'true')?.textContent;
-
 const env: ActionEnv = {
   getState: () => useAppStore.getState(),
   showToast: vi.fn(),
@@ -93,26 +76,22 @@ const env: ActionEnv = {
   viewing: null,
 };
 
-describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and drawer', () => {
-  it('offers four start choices with one line under the selected one', async () => {
-    await mountScene({ name: 'c10-start-orchestrate' });
+describe('SPEC3 9.2 New session draft and the New forms, after one flow unit 5', () => {
+  it('is one Start a run field with Folders above it, and no start tabs', async () => {
+    await mountScene({ name: 'c10-start-workflow' });
 
-    expect(
-      startChoices()
-        .getAllByRole('tab')
-        .map((tab) => tab.textContent),
-    ).toEqual(['Pick up a task', 'Run a workflow', 'Run an orchestrator', 'Start an agent']);
-    screen.getByText('The orchestrator picks each next step until the goal is done.');
+    expect(screen.queryByRole('tablist', { name: 'How do you want to start?' })).toBeNull();
+    const kickoff = within(screen.getByRole('region', { name: 'Kickoff' }));
+    kickoff.getByRole('region', { name: 'Folders' });
+    expect(kickoff.getByRole('textbox', { name: 'Start a run' })).toHaveProperty(
+      'value',
+      'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
+    );
+    expect(kickoff.queryByRole('button', { name: 'Run a workflow' })).toBeNull();
+    expect(kickoff.queryByRole('button', { name: /^Start (Scout|an agent|an auto)$/ })).toBeNull();
   });
 
-  it('preselects Run a workflow when no tracker has candidates', async () => {
-    window.history.replaceState(null, '', '/?open=1');
-    await mountScene({ name: 'session-start' });
-
-    expect(selectedChoice()).toBe('Run a workflow');
-  });
-
-  it('keeps Discard in the actions row and asks Keep this draft? on Esc', async () => {
+  it('keeps Discard beside Start and asks Keep this draft? on Esc', async () => {
     await mountScene({ name: 'c10-start-orchestrate' });
     screen.getByRole('button', { name: 'Discard' });
 
@@ -122,82 +101,6 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByText('Keep this draft?');
   });
 
-  it('keeps the tracker issues with a search that looks an issue code up, with the miss reason', async () => {
-    await mountScene({ name: 'start-multiselect' });
-
-    const search = screen.getByRole('textbox', { name: 'Search issues' });
-    fireEvent.change(search, { target: { value: 'HBL-999' } });
-    await settle();
-
-    screen.getByText('Not in Tasks');
-    screen.getByText("Couldn't reach Linear. Retry");
-  });
-
-  it('keeps the pasted pull request link as one Review pull request row', async () => {
-    await mountScene({ name: 'start-paste-pr-url' });
-
-    screen.getByRole('textbox', { name: 'Search issues' });
-  });
-
-  it('keeps starred issues on top of the task list', async () => {
-    await mountScene({ name: 'start-multiselect' });
-
-    screen.getByText('Starred');
-  });
-
-  it('keeps the picked issue brief block with Use the issue text and its remove', async () => {
-    await mountScene({ name: 'start-pick-one-block' });
-
-    expect(screen.getByRole('textbox', { name: 'Brief title' })).toHaveProperty(
-      'value',
-      'Stop retried webhooks posting a second credit',
-    );
-    screen.getByRole('button', { name: 'Use the issue text' });
-    screen.getByRole('button', { name: 'Remove HBL-412' });
-  });
-
-  it('keeps up to five issues and the will close line', async () => {
-    await mountScene({ name: 'start-picked3' });
-
-    screen.getByText('Will close HBL-412, HBL-398, HBL-405 when merged');
-  });
-
-  it('offers three ways to work on a picked issue, Run an orchestrator included', async () => {
-    await mountScene({ name: 'start-pick-one-block' });
-
-    fireEvent.click(screen.getByRole('button', { name: /^Runs as:/ }));
-    const ways = within(screen.getByRole('menu', { name: 'Runs as' }));
-    expect(ways.getAllByRole('menuitemradio').map((way) => way.textContent)).toEqual([
-      'Run an orchestrator',
-      'Run a workflow',
-      'Start an agent',
-    ]);
-  });
-
-  it('prefills the project picker from the launch project line and names the project', async () => {
-    await mountScene({ name: 'start-crossproject' });
-
-    screen.getByRole('button', { name: 'Remove payments-api' });
-    screen.getByText('In payments-api, from GitHub repo harborline/payments-api.');
-  });
-
-  it('starts from HBL-412 in one gesture and raises the Run started toast', async () => {
-    await mountScene({ name: 'start-pick-one-block' });
-
-    await clickNamed({ name: 'Start from HBL-412' });
-
-    screen.getByText('Run started');
-    expect(useAppStore.getState().openSessionDraftWorkspaceId).toBeNull();
-  });
-
-  it('keeps Run a workflow as the full builder at page width', async () => {
-    await mountScene({ name: 'c10-start-workflow' });
-
-    screen.getByRole('button', { name: 'Model for Scout the retry path' });
-    screen.getByRole('button', { name: 'Model for Build the guard' });
-    screen.getByRole('button', { name: 'Run a workflow' });
-  });
-
   it('puts optional projects up front in a searchable picker with chips', async () => {
     await mountScene({ name: 'c10-start-projects' });
 
@@ -205,36 +108,6 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     expect(screen.getByRole('combobox', { name: 'Search folders' })).toHaveProperty('value', 'pay');
     screen.getByRole('button', { name: 'Remove payments-api' });
     screen.getByRole('button', { name: 'Remove ledger-core' });
-  });
-
-  it('keeps Start an agent with Scout by default, the model and the project it works in', async () => {
-    await mountScene({ name: 'c10-start-agent' });
-
-    screen.getByRole('button', { name: 'Role: Scout' });
-    screen.getByRole('textbox', { name: 'Scout focus' });
-    expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
-    fireEvent.click(screen.getByRole('combobox', { name: 'Folder' }));
-    fireEvent.click(screen.getByRole('option', { name: 'ledger-core' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Remove payments-api' }));
-    fireEvent.click(screen.getByRole('option', { name: 'payments-api' }));
-    await settle();
-
-    screen.getByRole('button', { name: 'Remove ledger-core' });
-    expect(
-      useAppStore
-        .getState()
-        .sessionDrafts[WORKSPACE_ID]?.projectIds.map(
-          (id) => useAppStore.getState().projects.filter((project) => project.id === id)[0]?.name,
-        ),
-    ).toEqual(['ledger-core', 'payments-api']);
-  });
-
-  it('keeps Start an agent with Auto on: Experimental and Start an auto', async () => {
-    await mountScene({ name: 'c10-start-auto' });
-
-    screen.getByRole('region', { name: 'Auto' });
-    screen.getByText('Experimental');
-    screen.getByRole('button', { name: 'Start an auto' });
   });
 
   it('marks a title Goodboy wrote as Named by Goodboy on the session hover card', async () => {
@@ -255,97 +128,19 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     screen.getByText(/Named by Goodboy/);
   });
 
-  it('makes Run an orchestrator its own choice and keeps no mode switch in Run a workflow', async () => {
-    await mountScene({ name: 'c10-start-workflow' });
-
-    expect(screen.queryByRole('tablist', { name: 'Mode' })).toBeNull();
-    fireEvent.click(startChoices().getByRole('tab', { name: 'Run an orchestrator' }));
-    await settle();
-
-    screen.getByRole('button', { name: 'Run an orchestrator' });
-  });
-
-  it('keeps the orchestrator row and Guidance in the Run an orchestrator choice and drawer form', async () => {
-    await mountScene({ name: 'c10-new-orchestrate' });
-
-    const form = within(screen.getByRole('region', { name: 'Run an orchestrator' }));
-    form.getByText('Orchestrator');
-    form.getByRole('button', { name: /guidance/i });
-  });
-
-  it('keeps every preset step editable before the start, with its pause point', async () => {
-    await mountScene({ name: 'c10-start-workflow' });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Model for Plan the guard' }));
-    await settle();
-
-    screen.getByText('Waits for you to approve the plan');
-    expect(screen.getAllByRole('dialog').length).toBeGreaterThan(0);
-  });
-
-  it('keeps the preset list with its description', async () => {
-    await mountScene({ name: 'c10-start-workflow' });
-
-    screen.getByText('Scout, plan, build');
-    screen.getByText('Read the code, plan the change, then build it.');
-  });
-
-  it('keeps a model per step in the plan preview', async () => {
-    await mountScene({ name: 'c10-start-workflow' });
-
-    screen.getByRole('button', { name: 'Model for Plan the guard' });
-  });
-
-  it('keeps Autonomy, Starts and Limit in the actions row', async () => {
-    await mountScene({ name: 'c10-start-orchestrate' });
-
-    screen.getByRole('button', { name: /^Autonomy:/ });
-    screen.getByRole('button', { name: /^Starts/ });
-    screen.getByRole('button', { name: /^Limit:/ });
-  });
-
-  it('marks the control that leaves your rules and resets it from its own popover', async () => {
-    await mountScene({ name: 'c10-start-workflow' });
-
-    const autonomy = screen.getByRole('button', { name: /^Autonomy:/ });
-    within(autonomy).getByRole('img', { name: /^Run defaults:/ });
-    fireEvent.click(autonomy);
-    screen.getByRole('button', { name: /Reset to your rule/ });
-  });
-
-  it('keeps the start gate reason when the goal is empty', async () => {
-    await mountScene({ name: 'c10-start-orchestrate' });
-
-    fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), { target: { value: '' } });
-    await settle();
-
-    expect(screen.getByRole('button', { name: 'Run an orchestrator' })).toHaveProperty(
-      'disabled',
-      true,
-    );
-    screen.getByText('Set a goal to start');
-  });
-
-  it('keeps the estimate in its reserved slot', async () => {
-    await mountScene({ name: 'c10-start-workflow' });
-
-    screen.getByTestId('plan-estimate');
-  });
-
-  it('opens one drawer form per item of the Overview New menu', async () => {
+  it('opens Start a run on Runs from the Overview New menu, with no drawer form', async () => {
     await mountScene({ name: 'c10-new-menu' });
 
-    fireEvent.click(
-      within(screen.getByRole('menu', { name: 'New' })).getByRole('menuitem', {
-        name: 'Run an orchestrator',
-      }),
-    );
+    const menu = within(screen.getByRole('menu', { name: 'New' }));
+    expect(menu.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Start a run',
+      'Write a report',
+      'Draw a wireframe',
+    ]);
+    fireEvent.click(menu.getByRole('menuitem', { name: 'Start a run' }));
     await settle();
 
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'new',
-      payload: { form: 'orchestrate' },
-    });
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 
   it('keeps the Overview New button filled only while Next holds no primary', async () => {
@@ -357,7 +152,7 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
     );
   });
 
-  it('opens the Start an auto form with the context from Talk it through with Auto', async () => {
+  it('opens Start a run with the card from Talk it through with Auto, and no drawer', async () => {
     const session = aSession({ id: brandedId<SessionId>({ value: 'mock-c10-talk' }) });
     useAppStore.setState({ sessions: [session] });
 
@@ -384,11 +179,8 @@ describe('SPEC3 9.2 New session draft and the New forms, from the c10 page and d
       env,
     });
 
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'new',
-      sessionId: session.id,
-      payload: { form: 'auto' },
-    });
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().activeLens[session.id]).toBe('workflows');
   });
 
   it('moves the Write tab to the Report and Wireframe drawer forms', async () => {

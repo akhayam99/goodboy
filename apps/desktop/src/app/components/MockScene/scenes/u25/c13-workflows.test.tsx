@@ -138,21 +138,20 @@ describe('c13 workflows scenes', () => {
     expect(screen.queryByRole('region', { name: 'Fix flaky tests' })).toBeNull();
   });
 
-  it('offers a first run for a workflow never run', async () => {
-    const patchSessionDraft = vi.fn();
+  it('offers a first run for a workflow never run, as Start a run with the preset named', async () => {
     const openSessionDraft = vi.fn();
-    store.setState({ patchSessionDraft, openSessionDraft });
+    store.setState({ openSessionDraft });
     await renderScene('c13-workflows-history-empty');
 
     const empty = screen.getByRole('region', { name: 'Lint and type check' });
     expect(within(empty).getByText('No runs yet')).toBeDefined();
-    fireEvent.click(within(empty).getByRole('button', { name: 'Run this workflow' }));
+    fireEvent.click(within(empty).getByRole('button', { name: 'Start a run from this preset' }));
 
-    expect(patchSessionDraft).toHaveBeenCalledWith({
-      workspaceId: 'mock-c13-workspace-harborline',
-      patch: { choice: 'workflow', workflowId: 'mock-c13-workflow-lint-and-type-check' },
-    });
     expect(openSessionDraft).toHaveBeenCalledOnce();
+    const workspaceId = store.getState().currentWorkspaceId;
+    expect(
+      workspaceId === null ? null : store.getState().sessionDrafts[workspaceId]?.workflowGoal,
+    ).toBe('~Lint and type check ');
   });
 
   it('says the runs could not load and retries on Retry', async () => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   deleteSetting,
+  deleteSettingIfUnchanged,
   getSetting,
   insertSettingIfAbsent,
   listSettingsWithPrefix,
@@ -64,5 +65,19 @@ describe('settings queries', () => {
     await setSetting(db, 'restart.reason', 'x');
     await deleteSetting(db, 'restart.reason');
     expect(await getSetting(db, 'restart.reason')).toBeNull();
+  });
+
+  it('deletes a key only while it still holds the expected value', async () => {
+    const db = await makeMigratedTestDatabase();
+    await setSetting(db, 'runs.defaultShape.session.s1', 'lead');
+
+    expect(
+      await deleteSettingIfUnchanged({ db, key: 'runs.defaultShape.session.s1', expected: 'plan' }),
+    ).toBe(false);
+    expect(await getSetting(db, 'runs.defaultShape.session.s1')).toBe('lead');
+    expect(
+      await deleteSettingIfUnchanged({ db, key: 'runs.defaultShape.session.s1', expected: 'lead' }),
+    ).toBe(true);
+    expect(await getSetting(db, 'runs.defaultShape.session.s1')).toBeNull();
   });
 });

@@ -27,11 +27,9 @@ import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
 import { runningAgentCountOf } from '../../../store/slices/live-work/runningAgentCountOf';
-import { createAgentEventName } from '../../session/createAgentEventName';
 import { openStartRun } from '../../session/startRun/openStartRun';
 import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
 import { refreshSession } from '../../session/refreshSession';
-import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
 import { requestSelect } from '../selectRequest';
 import { ALL_CHOICES_ID } from '../types';
@@ -47,6 +45,7 @@ import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { linkedIssueSources } from '../../../store/slices/issue-briefs/linkedIssueSources';
 import { writeGoalFromWorkEvent } from '../../../store/slices/issue-briefs/writeGoalFromWorkEvent';
 import { NAMES } from '../../../shared/names';
+import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
 import { behindBranchesOf } from '../../history/behindBranchesOf';
 import { SESSION_REBASE_ACTIONS } from './sessionRebaseActions';
@@ -401,17 +400,6 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     group: 'act',
     when: isLive,
     run: ({ facts }) => openStartRun({ sessionId: facts.sessionId }),
-  },
-  {
-    id: 'session.startAgent',
-    label: NAMES.startAgent,
-    icon: CONCEPT_ICONS.agents,
-    group: 'act',
-    when: isLive,
-    run: ({ facts, env }) => {
-      openLens({ env, sessionId: facts.sessionId, lens: 'agents' });
-      dispatchAfterNavigation({ name: createAgentEventName(facts.sessionId) });
-    },
   },
   {
     id: 'session.linkIssue',

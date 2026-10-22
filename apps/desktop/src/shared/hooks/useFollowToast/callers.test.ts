@@ -7,8 +7,6 @@ const SRC = join(__dirname, '..', '..', '..');
 const CALLERS: ReadonlyArray<string> = [
   'features/chat/components/ChatInput/hooks/useComposerSuggestions/index.ts',
   'features/chat/components/HandoffChip/index.tsx',
-  'features/explore/components/ExplorePane/ExploreSpawnPopover.tsx',
-  'features/session/components/AgentDetailPane/AgentFollowUps.tsx',
   'features/workflows/components/WorkflowFollowToastBridge/index.tsx',
   'features/integrations/components/LaunchSessionPanel/index.tsx',
   'features/session/components/AgentTree/WorkflowRunStartButton.tsx',

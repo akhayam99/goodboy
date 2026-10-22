@@ -16,7 +16,7 @@ export type ContextDrawerTab = 'goal' | 'decisions' | 'summary' | 'learned';
 
 export type ContextDrawerView = 'current' | 'versions';
 
-export type NewDrawerForm = 'run' | 'orchestrate' | 'agent' | 'auto' | 'report' | 'wireframe';
+export type NewDrawerForm = 'report' | 'wireframe';
 
 export type NewDrawerPayload = {
   readonly form: NewDrawerForm;

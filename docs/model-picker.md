@@ -21,8 +21,8 @@ together differently. It never grows its own model list, its own effort
 control, or a native `select`.
 
 The body lives in `RoutingPickerBody`. `RoutingPicker` wraps it in a trigger
-and a popover, or mounts it inline. Start an agent and Resolve mount the body
-straight inside their own popovers, so both list every connected provider and
+and a popover, or mounts it inline. Resolve mounts the body
+straight inside its own popover, so it lists every connected provider and
 the same Model, Version, Variant and Effort rows. A launching popover seeds it
 from its role: Resolve from `resolver`, Explore from `scout`.
 
@@ -46,7 +46,7 @@ The row above the provider chips is one component with two meanings.
   2.1.293 keeps them on Haiku 4.5. The background
   rows are named for the agent they drive: **History rewriter** (history
   clean-up) and **Scribe** (the title and body of a pull or merge request)
-- **Launching popovers** (Start an agent, Resolve) call it **Suggested**. It fixes a
+- **Launching popovers** (Resolve) call it **Suggested**. It fixes a
   concrete model at launch and says why in one line, from the ladder step that
   decided (`suggestedRouting`): the role default on the default provider, a pin
   from Models, a CLI too old for the first choice, or the next provider in the

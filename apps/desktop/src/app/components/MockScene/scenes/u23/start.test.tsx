@@ -40,28 +40,23 @@ const draw = ({ name }: { readonly name: SceneName }) => {
 };
 
 describe('the start scenes', () => {
-  it('registers the five scenes of the plan', () => {
+  it('registers the four scenes left after one flow unit 5', () => {
     expect(Object.keys(U23_START_SCENES).sort()).toEqual([
       'start-from-inbox',
       'start-panel-slack',
-      'start-paste-pr-url',
       'start-pick-one-block',
       'start-review-row',
     ]);
   });
 
-  it('shows one block after the pick: brief title, how to work on it, and the one start', async () => {
+  it('shows the picked issue above Start a run, with one Start and no issue search', async () => {
     draw({ name: 'start-pick-one-block' });
 
-    const start = await screen.findByRole('button', { name: 'Start from HBL-412' });
-    expect(start).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Brief title' })).toHaveProperty(
-      'value',
-      'Stop retried webhooks posting a second credit',
-    );
-    expect(screen.getByRole('button', { name: 'Runs as: Run an orchestrator' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Use the issue text' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
+    const picked = await screen.findByRole('list', { name: 'Picked issues' });
+    expect(picked.textContent).toContain('HBL-412');
+    expect(screen.getByRole('textbox', { name: 'Start a run' })).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Start' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Search issues' })).toBeNull();
   });
 
@@ -97,41 +92,5 @@ describe('the start scenes', () => {
       within(panel).getByRole('button', { name: /Start from #payments-alerts/ }),
     ).toBeDefined();
     expect(within(panel).getByRole('textbox', { name: 'Session goal' })).toBeDefined();
-  });
-
-  it('turns a pasted pull request link into one Review pull request row', async () => {
-    const raw = {
-      number: 318,
-      title: 'Stop retried webhooks posting a second credit',
-      url: 'https://github.com/harborline/payments-api/pull/318',
-      state: 'OPEN',
-      isDraft: false,
-      mergeable: 'MERGEABLE',
-      baseRefName: 'main',
-      headRefName: 'nadia-p/single-credit',
-      reviewDecision: null,
-      statusCheckRollup: [],
-      updatedAt: '2026-10-07T09:00:00.000Z',
-      body: '',
-      autoMergeRequest: null,
-      headRefOid: null,
-      mergedAt: null,
-      author: { login: 'nadia-p' },
-    };
-    vi.mocked(invoke).mockImplementation(async (command: string) => {
-      if (command === 'gh_run') {
-        return { stdout: JSON.stringify(raw), stderr: '', exitCode: 0 };
-      }
-      if (command === 'linear_fetch_assigned_issues') {
-        return [];
-      }
-      return new Promise<never>(() => undefined);
-    });
-    draw({ name: 'start-paste-pr-url' });
-
-    const row = await screen.findByRole('button', { name: /Review pull request #318/ });
-    expect(row.textContent).toContain('Stop retried webhooks posting a second credit');
-    expect(screen.getAllByRole('button', { name: /Review pull request/ })).toHaveLength(1);
-    expect(screen.queryByRole('list', { name: 'Issues' })).toBeNull();
   });
 });

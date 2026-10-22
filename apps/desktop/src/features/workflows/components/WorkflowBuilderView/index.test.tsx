@@ -173,7 +173,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
   },
 }));
 
-import { WorkflowBuilderView, type BuilderKickoff } from './index';
+import { WorkflowBuilderView } from './index';
 
 let currentMode: Mode = 'dynamic';
 
@@ -1165,7 +1165,7 @@ describe('WorkflowBuilderView (suggested title)', () => {
 });
 
 type KickoffHarnessProps = {
-  readonly start: BuilderKickoff['start'];
+  readonly start: (run: (target: Session) => Promise<void>) => Promise<void>;
   readonly startError?: string | null;
   readonly mode?: Mode;
 };

@@ -28,7 +28,6 @@ export const AgentConversationEnd = ({ session, agent }: Props) => {
     (state) => state.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY,
   );
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
-  const plans = useAppStore((state) => state.sessionPlans[session.id] ?? EMPTY_ARRAY);
   const turnStates = useAppStore(
     useShallow((state) => {
       const states: Record<string, TurnState> = {};
@@ -87,13 +86,8 @@ export const AgentConversationEnd = ({ session, agent }: Props) => {
       <AgentFollowUps
         sourceAgent={agent}
         sourceKind={kind}
-        summary={outcome.raw}
         sessionId={session.id}
         followUps={followUps}
-        activePlanId={
-          [...plans].reverse().find((plan) => plan.agentId === agent.id && plan.status === 'active')
-            ?.id ?? null
-        }
       />
     </div>
   );

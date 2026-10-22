@@ -1,7 +1,7 @@
 import { Copy, ExternalLink, FolderOpen } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { ExploreFileActionTarget, ObjectKindDefinition } from '../types';
-import { NAMES } from '../../../shared/names';
+import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
 
 export type ExploreFileFacts = {
   readonly name: string;
@@ -50,8 +50,8 @@ export const EXPLORE_FILE_KIND: ObjectKindDefinition<ExploreFileActionTarget, Ex
     },
     {
       id: 'exploreFile.ask',
-      label: `${NAMES.startAgent} on this file`,
-      shortLabel: () => NAMES.startAgent,
+      label: RUN_ROUTE_COPY.askAboutFile,
+      shortLabel: () => 'Ask',
       icon: CONCEPT_ICONS.agents,
       group: 'act',
       slot: () => 'hover',

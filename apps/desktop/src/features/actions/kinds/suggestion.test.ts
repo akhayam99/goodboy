@@ -22,6 +22,9 @@ import { bindTarget, runObjectActionWithOutcome } from '../registry';
 import { isSameFacts } from '../isSameFacts';
 import type { ActionEnv, SuggestionActionTarget } from '../types';
 import type { SessionSuggestion } from '../../suggestions/types';
+import { startRunDetailOf } from '../../session/startRun/startRunDetailOf';
+import { startRunEventName } from '../../session/startRun/startRunEventName';
+import { anAgent } from '@goodboy/types/testing';
 
 let useAppStore: StoryStore;
 
@@ -32,15 +35,18 @@ beforeAll(async () => {
 const spawnAgent = vi.fn(async () => brandId<AgentId>({ value: 'agent-new' }));
 const openRewriteHistory = vi.fn();
 const openDrawer = vi.fn();
-const setNewDrawerAutoGoal = vi.fn();
+const navigate = vi.fn();
+const sendTurn = vi.fn(async () => ({ blockedOverBudget: false }));
+const AUTO_ROOT = brandId<AgentId>({ value: 'agent-auto-root' });
 
 beforeEach(async () => {
   await resetStoryStore();
   spawnAgent.mockClear();
   openRewriteHistory.mockClear();
   openDrawer.mockClear();
-  setNewDrawerAutoGoal.mockClear();
-  useAppStore.setState({ spawnAgent, openRewriteHistory, openDrawer, setNewDrawerAutoGoal });
+  navigate.mockClear();
+  sendTurn.mockClear();
+  useAppStore.setState({ spawnAgent, openRewriteHistory, openDrawer, navigate, sendTurn });
 });
 
 const env = (): ActionEnv => ({
@@ -79,16 +85,34 @@ const run = ({ target, actionId }: RunParams) =>
   runObjectActionWithOutcome({ target, actionId, env: env(), choice: null });
 
 describe('suggestion actions', () => {
-  it('starts a tester or an implementer on the session without taking focus', async () => {
+  it('sends Continue with Tester or Implementer to the Auto run of the session', async () => {
+    useAppStore.setState({
+      sessionPhaseRuns: {
+        [SESSION]: [anAgent({ id: AUTO_ROOT, sessionId: SESSION, kind: 'auto' })],
+      },
+    });
     const target = targetOf({ suggestion: checkChangesSuggestion(), startsRole: 'reviewer' });
 
     await run({ target, actionId: 'suggestion.startTester' });
     await run({ target, actionId: 'suggestion.startImplementer' });
 
-    expect(spawnAgent.mock.calls).toEqual([
-      [SESSION, { kindOverride: 'tester', focus: 'none' }],
-      [SESSION, { kindOverride: 'implementer', focus: 'none' }],
+    expect(sendTurn.mock.calls).toEqual([
+      [
+        {
+          sessionId: SESSION,
+          agentId: AUTO_ROOT,
+          content: 'Continue with Tester: Writes tests for the changes',
+        },
+      ],
+      [
+        {
+          sessionId: SESSION,
+          agentId: AUTO_ROOT,
+          content: 'Continue with Implementer: Makes the changes itself',
+        },
+      ],
     ]);
+    expect(spawnAgent).not.toHaveBeenCalled();
   });
 
   it('opens the rewrite history of the target that was picked', async () => {
@@ -101,7 +125,12 @@ describe('suggestion actions', () => {
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('opens the Auto form with the card as context from the talk, and starts nothing', async () => {
+  it('opens Start a run with the card as its text from the talk, and starts nothing', async () => {
+    const texts: Array<string> = [];
+    const listen = (event: Event): void => {
+      texts.push(startRunDetailOf({ event }));
+    };
+    window.addEventListener(startRunEventName({ sessionId: SESSION }), listen);
     const target = targetOf({
       suggestion: checkChangesSuggestion(),
       startsRole: 'reviewer',
@@ -110,17 +139,12 @@ describe('suggestion actions', () => {
 
     await run({ target, actionId: 'suggestion.talkWithAuto' });
 
-    expect(setNewDrawerAutoGoal).toHaveBeenCalledWith({
-      sessionId: SESSION,
-      goal: expect.stringContaining(
-        'Check the changes before you push\nMaya finished the payout export',
-      ),
-    });
-    expect(openDrawer).toHaveBeenCalledWith({
-      kind: 'new',
-      sessionId: SESSION,
-      payload: { form: 'auto' },
-    });
+    await vi.waitFor(() => expect(texts).toHaveLength(1));
+    window.removeEventListener(startRunEventName({ sessionId: SESSION }), listen);
+    expect(texts[0]).toContain(
+      'Check the changes before you push\nMaya finished the payout export',
+    );
+    expect(openDrawer).not.toHaveBeenCalled();
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 
@@ -130,7 +154,7 @@ describe('suggestion actions', () => {
 
     expect(await run({ target: off, actionId: 'suggestion.talkWithAuto' })).toBe('unchanged');
     expect(await run({ target: noRole, actionId: 'suggestion.talkWithAuto' })).toBe('unchanged');
-    expect(openDrawer).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('never starts a role or a rebase on a card that does not offer it', async () => {

@@ -171,6 +171,15 @@ export {
   type WorkflowRules,
 } from './workflow-rules';
 export {
+  PLAN_CHANGE_KINDS,
+  parsePlanChangeRequest,
+  type PlanChange,
+  type PlanChangeKind,
+  type PlanChangeRequest,
+  type RunPreset,
+  type RunPresetStep,
+} from './run-preset';
+export {
   parseRunRoute,
   type RunRoute,
   type RunRouteCloseness,

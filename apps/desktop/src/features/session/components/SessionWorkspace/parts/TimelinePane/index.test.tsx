@@ -117,9 +117,6 @@ vi.mock('../../../../../../store', async () => {
 vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
   useSessionRoleModels: () => null,
 }));
-vi.mock('../../../CreateAgentPopover', () => ({
-  CreateAgentPopover: () => <button type="button">Start an agent</button>,
-}));
 vi.mock('../../../../../auto/useAutoTrees', () => ({ useAutoTrees: () => [] }));
 vi.mock('../../../../hooks/useResolveActivity', () => ({
   useResolveActivity: () => resolveActivity.current,

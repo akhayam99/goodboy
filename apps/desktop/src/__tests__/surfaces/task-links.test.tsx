@@ -485,12 +485,12 @@ describe('tasks and sessions on the real store', () => {
       fireEvent.click(within(inboxRegion).getByRole('button', { name: 'Start session' }));
 
       const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID];
-      expect(draft).toMatchObject({ choice: 'task' });
+      expect(draft?.choice).toBeNull();
       expect(draft?.pickedIssues[0]).toMatchObject({
         provider: entry.provider,
         externalId: entry.externalId,
       });
-      expect(requestIssueBrief).toHaveBeenCalledOnce();
+      expect(requestIssueBrief).not.toHaveBeenCalled();
       expect(createSession).not.toHaveBeenCalled();
       const picked = draft?.pickedIssues[0];
       if (picked === undefined) {

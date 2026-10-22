@@ -71,7 +71,7 @@ const CHAT = {
 } as const;
 
 describe('turn a chat into work', () => {
-  it('creates a session with the goal and no agent or kickoff', async () => {
+  it('creates a session with the goal, no agent and no model, and hands the ask on', async () => {
     const summarize = vi.fn(async () => FAKE_SUMMARY);
     const backend = createMemoryChatBackend({
       respond: async () => ({ status: 'done' }),
@@ -86,18 +86,24 @@ describe('turn a chat into work', () => {
     const createSession = vi.fn(async () => ({
       session: aSession({ id: 'session-new' as SessionId }),
     }));
-    const setSessionConfig = vi.fn<AppStore['setSessionConfig']>();
+    const goal = [
+      'Stop notify-relay from sending a message twice when a send fails.',
+      '',
+      'What we know:',
+      '- worker.ts:52 sets maxAttempts: 2 on the job.',
+      '',
+      'Files:',
+      '- notify-relay/src/queue/worker.ts:52',
+    ].join('\n');
 
     const started = await startWorkFromChat({
       workspaceId: WORKSPACE_ID,
       brief,
       target: { kind: 'new', projectIds: [PROJECT_ID] },
-      routing: null,
       createSession,
-      setSessionConfig,
     });
 
-    expect(started).toEqual({ sessionId: 'session-new', draft: null });
+    expect(started).toEqual({ sessionId: 'session-new', ask: goal });
     expect(summarize).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'anthropic', model: 'sonnet-5' }),
     );
@@ -105,60 +111,25 @@ describe('turn a chat into work', () => {
       workspaceId: WORKSPACE_ID,
       projectId: PROJECT_ID,
       title: 'Send notify-relay messages once on a failure',
-      goal: [
-        'Stop notify-relay from sending a message twice when a send fails.',
-        '',
-        'What we know:',
-        '- worker.ts:52 sets maxAttempts: 2 on the job.',
-        '',
-        'Files:',
-        '- notify-relay/src/queue/worker.ts:52',
-      ].join('\n'),
-    });
-    expect(setSessionConfig).not.toHaveBeenCalled();
-  });
-
-  it('sets the session default model and effort after creating it', async () => {
-    const createSession = vi.fn(async () => ({
-      session: aSession({ id: 'session-new' as SessionId }),
-    }));
-    const setSessionConfig = vi.fn<AppStore['setSessionConfig']>();
-
-    await startWorkFromChat({
-      workspaceId: WORKSPACE_ID,
-      brief: BRIEF,
-      target: { kind: 'new', projectIds: [] },
-      routing: { provider: 'anthropic', model: 'opus-5-5', effort: 'high' },
-      createSession,
-      setSessionConfig,
-    });
-
-    expect(setSessionConfig).toHaveBeenCalledWith('session-new', {
-      providerOverride: 'anthropic',
-      modelOverride: 'opus-5-5',
-      effort: 'high',
+      goal,
     });
   });
 
-  it('hands back the brief as a draft for an existing session and creates nothing', async () => {
+  it('hands back the brief as the ask for an existing session and creates nothing', async () => {
     const createSession = vi.fn<AppStore['createSession']>();
-    const setSessionConfig = vi.fn<AppStore['setSessionConfig']>();
 
     const started = await startWorkFromChat({
       workspaceId: WORKSPACE_ID,
       brief: BRIEF,
       target: { kind: 'add', sessionId: 'session-205' as SessionId },
-      routing: { provider: 'anthropic', model: 'opus-5-5', effort: 'high' },
       createSession,
-      setSessionConfig,
     });
 
     expect(started.sessionId).toBe('session-205');
-    expect(started.draft).toMatch(
+    expect(started.ask).toMatch(
       /^Send notify-relay messages once on a failure\n\nStop notify-relay/,
     );
     expect(createSession).not.toHaveBeenCalled();
-    expect(setSessionConfig).not.toHaveBeenCalled();
   });
 
   it('drafts the brief from the answer when the summary fails', async () => {
@@ -221,9 +192,7 @@ describe('turn a chat into work', () => {
         workspaceId: WORKSPACE_ID,
         brief,
         target: { kind: 'new', projectIds },
-        routing: null,
         createSession,
-        setSessionConfig: vi.fn<AppStore['setSessionConfig']>(),
       });
 
     await start([]);

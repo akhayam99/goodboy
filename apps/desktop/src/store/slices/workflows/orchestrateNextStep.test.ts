@@ -14,13 +14,15 @@ import type {
   TelemetryRecord,
   Workflow,
   WorkflowId,
+  WorkflowRoutingLock,
+  WorkflowRules,
   WorkflowRun,
   WorkflowRunId,
   WorkflowSpendLimitMode,
   WorkspaceId,
 } from '@goodboy/types';
 
-import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
+import { DEFAULT_WORKFLOW_RULES, parseWorkflowRulesText } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -40,8 +42,10 @@ const {
   summarizeWorkspaceSpy,
   repointWorkflowRunTemplateSpy,
   updateHintsSpy,
+  updateRulesSpy,
 } = vi.hoisted(() => ({
   decideSpy: vi.fn(),
+  updateRulesSpy: vi.fn(async () => undefined),
   repointWorkflowRunTemplateSpy: vi.fn(async () => undefined),
   updateHintsSpy: vi.fn(async () => undefined),
   invokeWorkflowUpsertSpy: vi.fn(),
@@ -91,6 +95,8 @@ vi.mock('@goodboy/db', async () =>
     updateWorkflowRunOrchestrationStop: updateStopSpy,
     updateWorkflowRunOrchestratorSummary: updateSummarySpy,
     updateWorkflowRunOrchestratorHints: updateHintsSpy,
+    updateWorkflowRunRulesSnapshot: updateRulesSpy,
+    getWorkflowRunRulesText: vi.fn(async () => null),
     insertProviderRun: insertProviderRunSpy,
     updateProviderRunStatus: updateProviderRunStatusSpy,
     insertTelemetry: insertTelemetrySpy,
@@ -113,6 +119,8 @@ import { requestDecisionRestart } from './decisionRestart';
 import { addStepToWorkflowRun } from './addStepToWorkflowRun';
 import { continueWorkflowRun } from './continueWorkflowRun';
 import { maybeAutoAdvanceWorkflow } from './maybeAutoAdvanceWorkflow';
+import { resolvePresetChange } from './resolvePresetChange';
+import { updateWorkflowRunRules } from './updateWorkflowRunRules';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;
@@ -2242,5 +2250,382 @@ describe('orchestrateNextStep and the runs chained behind it', () => {
 
     expect(state['maybeAutoAdvanceWorkflow']).not.toHaveBeenCalled();
     expect(state['startWorkflowRun']).not.toHaveBeenCalled();
+  });
+});
+
+type PresetStateParams = {
+  readonly closeness: 'follow' | 'adapt';
+  readonly isPinned?: boolean;
+  readonly approvedChange?: WorkflowRules['approvedChange'];
+  readonly routingLock?: WorkflowRoutingLock;
+};
+
+const presetRules = ({
+  closeness,
+  isPinned = false,
+  approvedChange,
+  routingLock,
+}: PresetStateParams): WorkflowRules => ({
+  ...DEFAULT_WORKFLOW_RULES,
+  spreadByHeadroom: false,
+  route: {
+    shape: 'plan',
+    row: 1,
+    presetName: 'Fix a layout',
+    closeness,
+    role: null,
+    choice: `Plan from Fix a layout, 2 steps · ${closeness === 'follow' ? 'Follow the preset' : 'Adapt as it goes'}`,
+    why: 'you picked it',
+  },
+  preset: {
+    workflowId: 'workflow-layout',
+    name: 'Fix a layout',
+    steps: [
+      {
+        name: 'Find',
+        role: 'scout',
+        promptPrefix: 'Find the widths.',
+        isPinned: false,
+        routingLock: null,
+      },
+      {
+        name: 'Center the pages',
+        role: 'implementer',
+        promptPrefix: 'Center every page exactly so.',
+        isPinned,
+        routingLock: routingLock ?? null,
+      },
+    ],
+  },
+  ...(approvedChange !== undefined && { approvedChange }),
+});
+
+const presetState = (params: PresetStateParams) => {
+  const state = baseState();
+  const base = session();
+  state['sessions'] = [
+    {
+      ...base,
+      workflowRuns: [{ ...base.workflowRuns[0]!, rulesSnapshot: presetRules(params) }],
+    },
+  ];
+  const deps = harness(state);
+  state['updateWorkflowRunRules'] = updateWorkflowRunRules(deps.set, deps.get);
+  return { state, ...deps };
+};
+
+const sessionsOf = (state: State): ReadonlyArray<Session> => {
+  const value: unknown = state['sessions'];
+  return Array.isArray(value) ? value : [];
+};
+
+const presetRunOf = (state: State): WorkflowRun => sessionsOf(state)[0]!.workflowRuns[0]!;
+
+const ADDED = {
+  kind: 'added',
+  step: 'Fix the billing table',
+  reason: 'The scout found the billing table scrolls sideways at 390px',
+} as const;
+
+const addDecision = () => ({
+  usage: NO_USAGE,
+  decision: {
+    action: 'next',
+    reason: 'The table needs its own step.',
+    change: ADDED,
+    step: {
+      name: 'Fix the billing table',
+      role: 'implementer',
+      promptPrefix: 'Fix the billing table at 390px.',
+    },
+  },
+});
+
+describe('orchestrateNextStep with a preset', () => {
+  it('hands the preset and its closeness to the orchestrator', async () => {
+    decideSpy.mockResolvedValue({ usage: NO_USAGE, decision: { action: 'done', reason: 'Done.' } });
+    const { set, get } = presetState({ closeness: 'follow' });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(decideSpy.mock.calls[0]![0].preset).toMatchObject({
+      name: 'Fix a layout',
+      closeness: 'follow',
+      steps: [
+        { name: 'Find', instructions: 'Find the widths.' },
+        { name: 'Center the pages', instructions: 'Center every page exactly so.' },
+      ],
+    });
+  });
+
+  it('under Follow never adds a step: it stops and asks', async () => {
+    decideSpy.mockResolvedValue(addDecision());
+    const { state, set, get } = presetState({ closeness: 'follow' });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeWorkflowUpsertSpy).not.toHaveBeenCalled();
+    expect(presetRunOf(state).orchestrationStop?.kind).toBe('preset-change');
+    expect(presetRunOf(state).rulesSnapshot?.pendingChange).toMatchObject(ADDED);
+  });
+
+  it('under Follow never skips a step either, even to end the run', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'done',
+        reason: 'Centered already.',
+        change: { kind: 'skipped', step: 'Center the pages', reason: 'Nothing is off center' },
+      },
+    });
+    const { state, set, get } = presetState({ closeness: 'follow' });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateOutcomeSpy).not.toHaveBeenCalled();
+    expect(presetRunOf(state).orchestrationStop?.kind).toBe('preset-change');
+  });
+
+  it('under Adapt adds the step, tagged, with its reason as the Why', async () => {
+    decideSpy.mockResolvedValue(addDecision());
+    const { state, set, get } = presetState({ closeness: 'adapt' });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep()).toMatchObject({
+      name: 'Fix the billing table',
+      orchestratorReason: `Added to the preset: ${ADDED.reason}`,
+    });
+    expect(presetRunOf(state).rulesSnapshot?.planChanges).toEqual([
+      { ...ADDED, agentId: 'agent-2' },
+    ]);
+    expect(presetRunOf(state).orchestrationStop).toBeUndefined();
+  });
+
+  it('applies a change the operator approved under Follow, once', async () => {
+    decideSpy.mockResolvedValue(addDecision());
+    const { state, set, get } = presetState({ closeness: 'follow', approvedChange: ADDED });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(invokeWorkflowUpsertSpy).toHaveBeenCalledTimes(1);
+    expect(presetRunOf(state).rulesSnapshot?.approvedChange).toBeUndefined();
+    expect(presetRunOf(state).rulesSnapshot?.planChanges).toHaveLength(1);
+  });
+
+  it('never skips a pinned step, even under Adapt', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'done',
+        reason: 'Centered already.',
+        change: { kind: 'skipped', step: 'Center the pages', reason: 'Nothing is off center' },
+      },
+    });
+    const { state, set, get } = presetState({ closeness: 'adapt', isPinned: true });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(updateOutcomeSpy).not.toHaveBeenCalled();
+    expect(presetRunOf(state).orchestrationStop).toMatchObject({
+      kind: 'preset-change',
+      message: expect.stringContaining('Center the pages is pinned'),
+    });
+  });
+
+  it('runs a pinned step as the preset wrote it', async () => {
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'Now center.',
+        step: {
+          name: 'Center a few pages',
+          role: 'implementer',
+          promptPrefix: 'Center two pages.',
+          presetStep: 2,
+        },
+      },
+    });
+    const { set, get } = presetState({ closeness: 'adapt', isPinned: true });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep()).toMatchObject({
+      name: 'Center the pages',
+      promptPrefix: 'Center every page exactly so.',
+    });
+  });
+
+  it('runs a pinned step on the model the preset pinned', async () => {
+    const routingLock: WorkflowRoutingLock = {
+      version: 1,
+      pick: { provider: 'anthropic', model: 'haiku-4.5', effort: null },
+      origin: 'user',
+    };
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'Now center.',
+        step: {
+          name: 'Center the pages',
+          role: 'implementer',
+          promptPrefix: 'Center two pages.',
+          presetStep: 2,
+        },
+      },
+    });
+    const { set, get } = presetState({ closeness: 'adapt', isPinned: true, routingLock });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep()).toMatchObject({
+      providerOverride: 'anthropic',
+      modelOverride: 'haiku-4.5',
+      routingLock,
+    });
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ providerOverride: 'anthropic', modelOverride: 'haiku-4.5' }),
+    );
+  });
+
+  it('keeps the pinned model when the rules are saved and read back', () => {
+    const routingLock: WorkflowRoutingLock = {
+      version: 1,
+      pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      origin: 'user',
+    };
+    const text = JSON.stringify(presetRules({ closeness: 'follow', isPinned: true, routingLock }));
+
+    expect(parseWorkflowRulesText({ text })?.preset?.steps[1]?.routingLock).toEqual(routingLock);
+  });
+});
+
+describe('resolvePresetChange', () => {
+  type AnswerParams = {
+    readonly isPinned?: boolean;
+  };
+
+  const askedState = ({ isPinned = false }: AnswerParams = {}) => {
+    const deps = presetState({ closeness: 'follow', isPinned });
+    const sessions = sessionsOf(deps.state);
+    const run = sessions[0]!.workflowRuns[0]!;
+    deps.state['sessions'] = [
+      {
+        ...sessions[0]!,
+        workflowRuns: [
+          {
+            ...run,
+            orchestrationStop: { kind: 'preset-change', message: 'Auto wants to add a step' },
+            rulesSnapshot: { ...run.rulesSnapshot!, pendingChange: ADDED },
+          },
+        ],
+      },
+    ];
+    deps.state['addWorkflowOrchestratorHint'] = vi.fn(async () => null);
+    deps.state['orchestrateNextStep'] = vi.fn(async () => undefined);
+    return deps;
+  };
+
+  it('Add it approves the change, tells Auto and asks again', async () => {
+    const { state, set, get } = askedState();
+
+    expect(await resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'apply')).toBe(true);
+
+    expect(presetRunOf(state).rulesSnapshot?.approvedChange).toMatchObject(ADDED);
+    expect(presetRunOf(state).rulesSnapshot?.pendingChange).toBeUndefined();
+    expect(presetRunOf(state).orchestrationStop).toBeUndefined();
+    expect(state['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(
+      SESSION_ID,
+      WORKFLOW_RUN_ID,
+      expect.objectContaining({ text: expect.stringContaining('approved'), delivery: 'queue' }),
+    );
+    expect(state['orchestrateNextStep']).toHaveBeenCalledWith(SESSION_ID, WORKFLOW_RUN_ID, {
+      bypassGate: true,
+    });
+  });
+
+  it('Skip keeps the preset and approves nothing', async () => {
+    const { state, set, get } = askedState();
+
+    await resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'decline');
+
+    expect(presetRunOf(state).rulesSnapshot?.approvedChange).toBeUndefined();
+    expect(state['addWorkflowOrchestratorHint']).toHaveBeenCalledWith(
+      SESSION_ID,
+      WORKFLOW_RUN_ID,
+      expect.objectContaining({ text: expect.stringContaining('keeps the preset') }),
+    );
+  });
+
+  it('Switch to adapt turns the run to Adapt as it goes', async () => {
+    const { state, set, get } = askedState();
+
+    await resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'adapt');
+
+    expect(presetRunOf(state).rulesSnapshot?.route).toMatchObject({
+      closeness: 'adapt',
+      choice: 'Plan from Fix a layout, 2 steps · Adapt as it goes',
+    });
+  });
+
+  it('does nothing when the question was already answered in another window', async () => {
+    const { state, set, get } = presetState({ closeness: 'follow' });
+    state['orchestrateNextStep'] = vi.fn(async () => undefined);
+
+    expect(await resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'apply')).toBe(false);
+
+    expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+  });
+
+  it('refuses to change a pinned step', async () => {
+    const { state, set, get } = askedState({ isPinned: true });
+    const pinnedRun = presetRunOf(state);
+    state['sessions'] = [
+      {
+        ...sessionsOf(state)[0]!,
+        workflowRuns: [
+          {
+            ...pinnedRun,
+            rulesSnapshot: {
+              ...pinnedRun.rulesSnapshot!,
+              pendingChange: { kind: 'skipped', step: 'Center the pages', reason: 'x' },
+            },
+          },
+        ],
+      },
+    ];
+
+    expect(await resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'apply')).toBe(false);
+    expect(await resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'decline')).toBe(true);
+  });
+
+  it('keeps the question when the hint cannot be saved', async () => {
+    const { state, set, get } = askedState();
+    state['addWorkflowOrchestratorHint'] = vi.fn(async () => {
+      throw new Error('database is locked');
+    });
+
+    await expect(
+      resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'apply'),
+    ).rejects.toThrow('database is locked');
+
+    expect(presetRunOf(state).orchestrationStop?.kind).toBe('preset-change');
+    expect(presetRunOf(state).rulesSnapshot?.pendingChange).toMatchObject(ADDED);
+    expect(presetRunOf(state).rulesSnapshot?.approvedChange).toBeUndefined();
+    expect(state['orchestrateNextStep']).not.toHaveBeenCalled();
+  });
+
+  it('keeps the question when the rules cannot be saved after the hint', async () => {
+    const { state, set, get } = askedState();
+    updateRulesSpy.mockRejectedValueOnce(new Error('database is locked'));
+
+    await expect(
+      resolvePresetChange(set, get)(SESSION_ID, WORKFLOW_RUN_ID, 'apply'),
+    ).rejects.toThrow('database is locked');
+
+    expect(presetRunOf(state).rulesSnapshot?.pendingChange).toMatchObject(ADDED);
+    expect(presetRunOf(state).orchestrationStop?.kind).toBe('preset-change');
   });
 });
