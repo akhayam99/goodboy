@@ -246,6 +246,7 @@ const viewOf = ({ tree }: TreeParams): AutoTreeView => {
     }),
     pendingRefusal: null,
     deliveredResults: [],
+    hiddenChildIds: [],
     rootAsk: tree.brief,
   };
 };

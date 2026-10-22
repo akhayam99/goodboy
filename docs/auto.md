@@ -331,6 +331,9 @@ writing to it reopens it to **Deciding**.
   Auto trees leaves its delegation out, together with the failed attempts its
   retry or a later same-role, same-branch delegation replaced
   (`listGoneAutoChildIds`, `presentDelegationsOf`, in `readAutoTreeViews`).
+  The agents of those left out attempts go into `hiddenChildIds`, so an
+  earlier attempt whose agent is still in the session does not come back as a
+  linked child (`autoGroupOf`).
   Every reader of `autoTreeViews` (Next, the Now Stuck state, What was done,
   the rail, the Agents drawer, the counts) sees the same list, so none of them
   shows a card for it, and a moved child belongs to the session that holds it

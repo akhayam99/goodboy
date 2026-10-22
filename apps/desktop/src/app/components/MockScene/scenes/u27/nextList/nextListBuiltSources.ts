@@ -21,6 +21,7 @@ import {
   segmentsToText,
   sessionEventLabel,
 } from '../../../../../../features/session/timeline/sessionEventPresentation';
+import { hiddenChildIdsOf } from '../../../../../../store/slices/auto-view/hiddenChildIdsOf';
 import { presentDelegationsOf } from '../../../../../../store/slices/auto-view/presentDelegationsOf';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
 import { SESSION_ID } from '../../resolveSeed';
@@ -197,6 +198,13 @@ const LEFT_CHILD_IDS: ReadonlySet<AgentId> = new Set(
   LEFT_CHILDREN.map((delegation) => delegation.childAgentId),
 );
 
+const ROLLOUT_DELEGATIONS = [...ROLLOUT_CHILDREN, ...LEFT_CHILDREN];
+
+const ROLLOUT_PRESENT = presentDelegationsOf({
+  delegations: ROLLOUT_DELEGATIONS,
+  goneChildIds: LEFT_CHILD_IDS,
+});
+
 const VIEWS: ReadonlyArray<AutoTreeView> = [
   {
     ...aView({
@@ -204,9 +212,10 @@ const VIEWS: ReadonlyArray<AutoTreeView> = [
       artifacts: [aPlanRow({ title: 'Center pages rollout', revision: 3 })],
     }),
     tree: ROLLOUT,
-    delegations: presentDelegationsOf({
-      delegations: [...ROLLOUT_CHILDREN, ...LEFT_CHILDREN],
-      goneChildIds: LEFT_CHILD_IDS,
+    delegations: ROLLOUT_PRESENT,
+    hiddenChildIds: hiddenChildIdsOf({
+      delegations: ROLLOUT_DELEGATIONS,
+      present: ROLLOUT_PRESENT,
     }),
   },
   {

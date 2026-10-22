@@ -289,7 +289,10 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
     ),
   );
   const labels = autoChildLabelsOf({ delegations: view.delegations });
-  const known = new Set<string>(view.delegations.map((delegation) => delegation.childAgentId));
+  const known = new Set<string>([
+    ...view.delegations.map((delegation) => delegation.childAgentId),
+    ...view.hiddenChildIds,
+  ]);
   const fromDelegations = view.delegations
     .filter((delegation) => !delegation.isAdopted)
     .sort((first, second) => first.slot - second.slot || first.createdAt - second.createdAt)

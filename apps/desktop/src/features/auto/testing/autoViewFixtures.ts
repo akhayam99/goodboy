@@ -174,6 +174,7 @@ export const aView = ({
   deliveredResults = [],
   rootAsk = null,
 }: ViewParams = {}): AutoTreeView => ({
+  hiddenChildIds: [],
   pendingRefusal,
   deliveredResults,
   rootAsk,

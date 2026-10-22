@@ -434,6 +434,7 @@ const autoViewOf = (): AutoTreeView => ({
   }),
   pendingRefusal: null,
   deliveredResults: [],
+  hiddenChildIds: [],
   rootAsk: AUTO_ASK,
 });
 

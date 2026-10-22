@@ -13,6 +13,7 @@ import {
 } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { deliveredResultsOf } from './deliveredResultsOf';
+import { hiddenChildIdsOf } from './hiddenChildIdsOf';
 import { presentDelegationsOf } from './presentDelegationsOf';
 import type { AutoPendingRefusal, AutoTreeView } from './state';
 
@@ -58,9 +59,11 @@ export const readAutoTreeViews = async ({
           listAutoOutbox({ db, treeId: tree.id, states: ['accepted'], kinds: ['results'] }),
           readFirstUserText({ db, agentId: tree.rootAgentId }),
         ]);
+      const present = presentDelegationsOf({ delegations, goneChildIds: new Set(goneChildIds) });
       return {
         tree,
-        delegations: presentDelegationsOf({ delegations, goneChildIds: new Set(goneChildIds) }),
+        delegations: present,
+        hiddenChildIds: hiddenChildIdsOf({ delegations, present }),
         artifacts,
         budget: spend === null ? null : autoBudgetOf({ spend }),
         pendingRefusal: pendingRefusalOf({ tree, pending }),

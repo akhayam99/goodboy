@@ -16,6 +16,7 @@ const signatureOf = (view: AutoTreeView): string =>
       delegation.isStopping,
       delegation.questionCycles,
     ]),
+    view.hiddenChildIds,
     view.artifacts.map((row) => [
       row.artifact.artifactId,
       row.artifact.rev,

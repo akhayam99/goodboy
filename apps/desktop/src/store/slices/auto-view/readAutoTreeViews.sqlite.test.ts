@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { brandId, type IsoDateTime, type ProviderRunId, type SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+} from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import { insertTurnEvent } from '@goodboy/db';
 import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
+import { autoGroupOf } from '../../../features/auto/autoGroupOf';
+import { autoRetryTargetsOf } from '../../../features/auto/autoRetryTargetsOf';
 import { batchInput, childInput, makeAutoWorld, type AutoWorld } from '../auto/testing/autoWorld';
 import { addOutboxRow } from '../auto/testing/deliveryWorld';
 import { readAutoTreeViews } from './readAutoTreeViews';
@@ -189,6 +198,49 @@ describe('readAutoTreeViews', () => {
       'agent-kept',
       'agent-unborn',
     ]);
+  });
+
+  it('keeps a failed attempt out of Next and Now once the attempt after it is gone', async () => {
+    const world = await makeAutoWorld({ agentIds: ['agent-first', 'agent-again'] });
+    await world.scheduler.admit(
+      batchInput({
+        children: [
+          childInput({ key: 'first', role: 'implementer' }),
+          childInput({ key: 'again', role: 'implementer' }),
+        ],
+      }),
+    );
+    await world.db.execute(
+      "UPDATE auto_delegations SET state = 'settled', outcome = 'failed', settled_at = ?, created_at = created_at - 1 WHERE id = ?",
+      [world.clock.now(), 'delegation-first'],
+    );
+    await world.db.execute('UPDATE agents SET deleted_at = ? WHERE id = ?', [
+      world.clock.now(),
+      'agent-again',
+    ]);
+    const agents = [
+      anAgent({ id: AUTO_SEED_ROOT, kind: 'auto', status: 'running' }),
+      anAgent({
+        id: brandId<AgentId>({ value: 'agent-first' }),
+        kind: 'implementer',
+        status: 'failed',
+        parentAgentId: AUTO_SEED_ROOT,
+      }),
+    ];
+
+    const views = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+    const view = views[0];
+    if (view === undefined) {
+      throw new Error('no tree');
+    }
+    const now = world.clock.now();
+    const group = autoGroupOf({ view, agents, now });
+
+    expect(view.delegations).toEqual([]);
+    expect(view.hiddenChildIds).toEqual(['agent-first', 'agent-again']);
+    expect(group?.children).toEqual([]);
+    expect(group?.isStuck).toBe(false);
+    expect(autoRetryTargetsOf({ views, agents, now })).toEqual([]);
   });
 
   it('shows a moved child in the session that holds it now', async () => {
