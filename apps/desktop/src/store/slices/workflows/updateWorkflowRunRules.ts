@@ -1,6 +1,7 @@
 import {
   getWorkflowRunRulesText,
   replaceWorkflowRunRulesIfUnchanged,
+  updateWorkflowRunOrchestrationStop,
   updateWorkflowRunRulesSnapshot,
 } from '@goodboy/db';
 import {
@@ -13,10 +14,14 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import { findWorkflowRun } from './findWorkflowRun';
-import { patchWorkflowRun } from './patchWorkflowRun';
+import { patchWorkflowRun, withoutKeys } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 
-export type WorkflowRulesPatch = (rules: WorkflowRules) => WorkflowRules;
+export type WorkflowRulesPatch = (rules: WorkflowRules) => WorkflowRules | null;
+
+type WorkflowRulesWriteOptions = {
+  readonly shouldClearStop?: boolean;
+};
 
 const MAX_ATTEMPTS = 3;
 
@@ -30,6 +35,7 @@ type ApplyParams = {
   readonly sessionId: SessionId;
   readonly workflowRunId: WorkflowRunId;
   readonly patch: WorkflowRulesPatch;
+  readonly shouldClearStop: boolean;
 };
 
 type BaseParams = {
@@ -44,6 +50,7 @@ const writeRules = async ({
   workflowRunId,
   patch,
   sessionId,
+  shouldClearStop,
 }: ApplyParams): Promise<WorkflowRules | null> => {
   for (let tries = 0; tries < MAX_ATTEMPTS; tries += 1) {
     const run = findWorkflowRun({ get, sessionId, workflowRunId });
@@ -53,17 +60,27 @@ const writeRules = async ({
     const stored = await getWorkflowRunRulesText({ db: tauriDatabase, workflowRunId });
     if (stored === null) {
       const rulesSnapshot = patch(baseRulesOf({ rules: run.rulesSnapshot }));
+      if (rulesSnapshot === null) {
+        return null;
+      }
       await updateWorkflowRunRulesSnapshot({ db: tauriDatabase, workflowRunId, rulesSnapshot });
+      if (shouldClearStop) {
+        await updateWorkflowRunOrchestrationStop(tauriDatabase, workflowRunId, null);
+      }
       return rulesSnapshot;
     }
     const rulesSnapshot = patch(
       baseRulesOf({ rules: parseWorkflowRulesText({ text: stored.text }) ?? run.rulesSnapshot }),
     );
+    if (rulesSnapshot === null) {
+      return null;
+    }
     const isWritten = await replaceWorkflowRunRulesIfUnchanged({
       db: tauriDatabase,
       workflowRunId,
       expected: stored.text,
       rulesSnapshot,
+      shouldClearStop,
     });
     if (isWritten) {
       return rulesSnapshot;
@@ -81,7 +98,10 @@ const applyPatch = async (params: ApplyParams): Promise<WorkflowRules | null> =>
     set: params.set,
     sessionId: params.sessionId,
     workflowRunId: params.workflowRunId,
-    patch: (current) => ({ ...current, rulesSnapshot }),
+    patch: (current) =>
+      params.shouldClearStop
+        ? { ...withoutKeys(current, ['orchestrationStop']), rulesSnapshot }
+        : { ...current, rulesSnapshot },
   });
   return rulesSnapshot;
 };
@@ -91,9 +111,18 @@ export const updateWorkflowRunRules = (set: SetFn, get: GetFn) => {
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
     patch: WorkflowRulesPatch,
+    options?: WorkflowRulesWriteOptions,
   ): Promise<WorkflowRules | null> =>
     writes.run({
       key: workflowRunId,
-      task: () => applyPatch({ set, get, sessionId, workflowRunId, patch }),
+      task: () =>
+        applyPatch({
+          set,
+          get,
+          sessionId,
+          workflowRunId,
+          patch,
+          shouldClearStop: options?.shouldClearStop === true,
+        }),
     });
 };

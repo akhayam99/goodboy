@@ -577,6 +577,7 @@ type ReplaceRulesParams = {
   readonly workflowRunId: WorkflowRunId;
   readonly expected: string | null;
   readonly rulesSnapshot: WorkflowRules;
+  readonly shouldClearStop?: boolean;
 };
 
 export const replaceWorkflowRunRulesIfUnchanged = async ({
@@ -584,9 +585,13 @@ export const replaceWorkflowRunRulesIfUnchanged = async ({
   workflowRunId,
   expected,
   rulesSnapshot,
+  shouldClearStop = false,
 }: ReplaceRulesParams): Promise<boolean> => {
+  const stopColumns = shouldClearStop
+    ? ", orchestration_error = NULL, orchestration_stop_kind = 'failure'"
+    : '';
   const { rowsAffected } = await db.execute(
-    'UPDATE session_workflows SET rules_snapshot = ? WHERE workflow_run_id = ? AND rules_snapshot IS ?',
+    `UPDATE session_workflows SET rules_snapshot = ?${stopColumns} WHERE workflow_run_id = ? AND rules_snapshot IS ?`,
     [JSON.stringify(rulesSnapshot), workflowRunId, expected],
   );
   return rowsAffected === 1;

@@ -435,10 +435,13 @@ and records it in `rules.planChanges` (the agent id tags the checklist row,
 the reason becomes the step's Why); Follow never applies it, but stores it as
 `rules.pendingChange` with the stop kind `preset-change`, and
 `PresetChangeAsk` offers Add it (or Skip it, Move it), Skip (or Keep it) and
-Switch to adapt. `resolvePresetChange` queues a hint first, then writes
-`approvedChange` (applied once by the next matching decision), clears the
-stop and asks again; an answer to a question another window already answered
-does nothing. A change on a pinned step is never applied, under either
+Switch to adapt. `resolvePresetChange` queues a hint first (skipped when the
+same hint is still queued, so a retry adds none), then writes `approvedChange`
+(applied once by the next matching decision) and clears the stop in one
+statement (`updateWorkflowRunRules` with `shouldClearStop`), and asks again. A
+failed write leaves the question, its pending change and the stop as they
+were, so the same answer can be retried; an answer to a question another
+window already answered does nothing. A change on a pinned step is never applied, under either
 closeness, and a decision that runs a pinned step gets its name, role and
 instruction from the preset (`pinnedStepOf`), and its routing resolves from the
 pinned lock (`stepLock`), so it runs on the provider, model and effort the
