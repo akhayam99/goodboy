@@ -86,7 +86,9 @@ Below, `X` is the new version and `X-1` is the current latest.
    [CONVENTIONS.md](../CONVENTIONS.md). Commit
    `chore(repo): bump version to X`, push, open PR.
 3. Wait until ALL CI checks are green (`gh pr checks`). Then merge on the
-   server (`gh pr merge --squash`). Never advance, check out or pull local
+   server (`gh pr merge --squash --admin`). `main` asks collaborator PRs for
+   one approving review and the owner bypasses only that rule, so `--admin`
+   never skips the required checks. Never advance, check out or pull local
    `main` ([AGENTS.md](../AGENTS.md) → Forbidden patterns). Use
    `git fetch origin main` to get the merge SHA, then tag that SHA directly.
 4. rc dry-run (a practice release):
