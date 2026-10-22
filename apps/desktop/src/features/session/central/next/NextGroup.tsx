@@ -40,19 +40,17 @@ export const NextGroup = ({
     ({ actions }) => actions.menu !== null || actions.foldedTarget !== null,
   );
   const bulk = nextBulkOf({ group });
-  const retryRows =
-    bulk?.kind === 'retry'
-      ? shown.filter(({ card }) => bulk.rows.some((row) => row.id === card.id))
-      : [];
+  const retries =
+    bulk?.kind === 'retry' ? bulk.cards.map((card) => actionsFor({ card, isNarrow })) : [];
   const bulkButton =
     bulk === null ? undefined : bulk.kind === 'retry' ? (
       <Button
         size="sm"
         variant="secondary"
-        aria-label={`Retry the ${bulk.rows.length} stuck agents`}
-        isBusy={retryRows.some(({ actions }) => actions.isBusy)}
+        aria-label={`Retry the ${bulk.cards.length} stuck agents`}
+        isBusy={retries.some((actions) => actions.isBusy)}
         onClick={() => {
-          for (const { actions } of retryRows) {
+          for (const actions of retries) {
             actions.main?.run();
           }
         }}

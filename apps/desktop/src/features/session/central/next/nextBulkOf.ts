@@ -4,7 +4,7 @@ import type { ActionCardModel } from './actionCardsOf';
 import type { NextGroupModel } from './nextGroupsOf';
 
 export type NextBulk =
-  | Readonly<{ kind: 'retry'; label: string; rows: ReadonlyArray<ActionCardModel> }>
+  | Readonly<{ kind: 'retry'; label: string; cards: ReadonlyArray<ActionCardModel> }>
   | Readonly<{
       kind: 'rebase';
       label: string;
@@ -34,8 +34,12 @@ const isRetryable = ({ card }: CardParams): boolean => {
 
 export const nextBulkOf = ({ group }: Params): NextBulk | null => {
   if (group.id === 'fix') {
-    const rows = group.rows.filter((card) => isRetryable({ card }));
-    return rows.length < MIN_BULK ? null : { kind: 'retry', label: `Retry ${rows.length}`, rows };
+    const cards = group.rows
+      .flatMap((row) => [row, ...row.folded])
+      .filter((card) => isRetryable({ card }));
+    return cards.length < MIN_BULK
+      ? null
+      : { kind: 'retry', label: `Retry ${cards.length}`, cards };
   }
   if (group.id !== 'update') {
     return null;
