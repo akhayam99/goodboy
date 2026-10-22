@@ -1,14 +1,6 @@
-import { updateWorkflowRunRulesSnapshot } from '@goodboy/db';
-import {
-  DEFAULT_WORKFLOW_RULES,
-  type SessionId,
-  type WorkflowAutonomy,
-  type WorkflowRunId,
-} from '@goodboy/types';
-import { tauriDatabase } from '../../../shared/lib/db';
+import type { SessionId, WorkflowAutonomy, WorkflowRunId } from '@goodboy/types';
 import { findWorkflowRun } from './findWorkflowRun';
 import { persistOrchestrationStop } from './orchestrateNextStep';
-import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 import { isRunHeldForPlan } from './workflowPlanApproval';
 
@@ -22,17 +14,10 @@ export const setWorkflowRunAutonomy = (set: SetFn, get: GetFn) => {
     if (run == null) {
       return;
     }
-    const rulesSnapshot = {
-      ...(run.rulesSnapshot ?? { ...DEFAULT_WORKFLOW_RULES, spreadByHeadroom: false }),
+    await get().updateWorkflowRunRules(sessionId, workflowRunId, (rules) => ({
+      ...rules,
       autonomy,
-    };
-    await updateWorkflowRunRulesSnapshot({ db: tauriDatabase, workflowRunId, rulesSnapshot });
-    patchWorkflowRun({
-      set,
-      sessionId,
-      workflowRunId,
-      patch: (current) => ({ ...current, rulesSnapshot }),
-    });
+    }));
     if (autonomy !== 'plan' && isRunHeldForPlan({ run })) {
       await persistOrchestrationStop({ set, sessionId, workflowRunId, stop: null });
     }

@@ -170,6 +170,8 @@ export {
   updateWorkflowRunOrchestratorSummary,
   updateWorkflowRunSpendLimit,
   updateWorkflowRunRulesSnapshot,
+  getWorkflowRunRulesText,
+  replaceWorkflowRunRulesIfUnchanged,
   updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
 } from './queries/session-workflow';

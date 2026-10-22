@@ -96,6 +96,7 @@ vi.mock('@goodboy/db', async () =>
     updateWorkflowRunOrchestratorSummary: updateSummarySpy,
     updateWorkflowRunOrchestratorHints: updateHintsSpy,
     updateWorkflowRunRulesSnapshot: updateRulesSpy,
+    getWorkflowRunRulesText: vi.fn(async () => null),
     insertProviderRun: insertProviderRunSpy,
     updateProviderRunStatus: updateProviderRunStatusSpy,
     insertTelemetry: insertTelemetrySpy,

@@ -455,6 +455,11 @@ on the orchestrated document and on an agent's page, with the count of
 line then leaves the preset out, so it is said once. Change calls
 `changeRunRoute`. Follow or Adapt, and a new preset before the first step, only
 rewrite `rules.route` (`updateWorkflowRunRules`) and the run's `processText`.
+Every rules write (route, plan changes, the preset answer, autonomy) goes
+through `updateWorkflowRunRules`: one queue per run in this window, and a
+compare and swap on the stored `rules_snapshot` text
+(`replaceWorkflowRunRulesIfUnchanged`) that re-reads and re-applies the patch
+when another window saved first, so no write drops another.
 A change after work started calls `startRoutedRun` with the findings
 (`runFindingsOf`: the run summary's done entries and the settled steps'
 summaries), then `stopWorkflowRunNow` on the first run and writes
