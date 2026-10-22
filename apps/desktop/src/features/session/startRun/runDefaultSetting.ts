@@ -1,5 +1,4 @@
 import {
-  deleteSettingIfUnchanged,
   getSetting,
   insertSettingIfAbsent,
   replaceSettingIfUnchanged,
@@ -32,28 +31,10 @@ export const parseRunDefault = ({ raw }: RawParams): RunDefault | null =>
 type WriteParams = {
   readonly db: Database;
   readonly scope: RunDefaultScope;
-  readonly shape: RunDefault | null;
-};
-
-type StepParams = {
-  readonly db: Database;
-  readonly key: string;
-  readonly raw: string | null;
-  readonly shape: RunDefault | null;
+  readonly shape: RunDefault;
 };
 
 const MAX_ATTEMPTS = 2;
-
-const writeStep = ({ db, key, raw, shape }: StepParams): Promise<boolean> => {
-  if (shape === null) {
-    return raw === null
-      ? Promise.resolve(true)
-      : deleteSettingIfUnchanged({ db, key, expected: raw });
-  }
-  return raw === null
-    ? insertSettingIfAbsent({ db, key, value: shape })
-    : replaceSettingIfUnchanged(db, { key, expected: raw, value: shape });
-};
 
 export const writeRunDefault = async ({ db, scope, shape }: WriteParams): Promise<void> => {
   const key = runDefaultKey({ scope });
@@ -62,7 +43,10 @@ export const writeRunDefault = async ({ db, scope, shape }: WriteParams): Promis
     if (raw === shape) {
       return;
     }
-    const isWritten = await writeStep({ db, key, raw, shape });
+    const isWritten =
+      raw === null
+        ? await insertSettingIfAbsent({ db, key, value: shape })
+        : await replaceSettingIfUnchanged(db, { key, expected: raw, value: shape });
     if (isWritten) {
       return;
     }

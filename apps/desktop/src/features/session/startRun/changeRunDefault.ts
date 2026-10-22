@@ -18,9 +18,23 @@ type ReadParams = {
   readonly key: string;
 };
 
-const storedDefaultOf = async ({ key }: ReadParams): Promise<RunDefault | null> => {
+const storedDefaultOf = async ({ key }: ReadParams): Promise<RunDefault | null> =>
+  parseRunDefault({ raw: await useAppStore.getState().loadSetting(key) });
+
+type RestoreParams = {
+  readonly key: string;
+  readonly scope: RunDefaultScope;
+  readonly shape: RunDefault;
+  readonly previous: RunDefault | null;
+};
+
+const restoreDefault = async ({ key, scope, shape, previous }: RestoreParams): Promise<boolean> => {
+  if (previous === null) {
+    return useAppStore.getState().removeSettingIfUnchanged({ key, expected: shape });
+  }
+  await writeRunDefault({ db: tauriDatabase, scope, shape: previous });
   await useAppStore.getState().loadSetting(key);
-  return parseRunDefault({ raw: useAppStore.getState().settings[key] });
+  return true;
 };
 
 export const changeRunDefault = async ({ scope, shape }: Params): Promise<void> => {
@@ -39,9 +53,7 @@ export const changeRunDefault = async ({ scope, shape }: Params): Promise<void> 
       if ((await storedDefaultOf({ key })) !== shape) {
         return false;
       }
-      await writeRunDefault({ db: tauriDatabase, scope, shape: previous });
-      await useAppStore.getState().loadSetting(key);
-      return true;
+      return restoreDefault({ key, scope, shape, previous });
     },
   });
 };

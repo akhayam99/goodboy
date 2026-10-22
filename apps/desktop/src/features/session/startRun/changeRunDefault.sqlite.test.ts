@@ -16,6 +16,7 @@ import { aSession, aWorkspace } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
+  injectDbFault,
   openStorySqlite,
   resetStoryStore,
   storySqlite,
@@ -117,6 +118,7 @@ describe('changeRunDefault', () => {
   });
 
   it('undo whose reload fails still leaves the earlier default written', async () => {
+    await setSetting(storySqlite(), runDefaultKey({ scope: SESSION_SCOPE }), 'lead');
     await changeRunDefault({ scope: SESSION_SCOPE, shape: 'plan' });
     const reportError = vi.fn(async () => undefined);
     const loadSetting = useAppStore.getState().loadSetting;
@@ -135,7 +137,20 @@ describe('changeRunDefault', () => {
     expect(await useAppStore.getState().undoLastOperation()).toBe(false);
 
     expect(reportError).toHaveBeenCalled();
-    expect(await stored(SESSION_SCOPE)).toBeNull();
+    expect(await stored(SESSION_SCOPE)).toBe('lead');
+  });
+
+  it('undo of a first session default changes nothing when the delete fails', async () => {
+    await changeRunDefault({ scope: SESSION_SCOPE, shape: 'plan' });
+    injectDbFault({ match: /^DELETE FROM settings/, message: 'database is locked' });
+    const reportError = vi.fn(async () => undefined);
+    useAppStore.setState({ reportError });
+
+    expect(await useAppStore.getState().undoLastOperation()).toBe(false);
+
+    expect(reportError).toHaveBeenCalled();
+    expect(await stored(SESSION_SCOPE)).toBe('plan');
+    expect(defaultNow()).toBe('plan');
   });
 
   it('writes nothing and offers no undo when the default is already set', async () => {
