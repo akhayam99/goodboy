@@ -51,7 +51,10 @@ export const OneFlowRunDocument = ({ session, route, run, workflow }: Props) => 
           aria-label={view.name}
           className="flex min-w-0 flex-col gap-6"
         >
-          <OneFlowRouteLine route={route} />
+          <OneFlowRouteLine
+            route={route}
+            changeCount={run.rulesSnapshot?.planChanges?.length ?? 0}
+          />
           <OrchestratedGoal session={session} view={view} />
           <RunWriteDestination sessionId={sessionId} />
           <OrchestratedChecklist session={session} view={view} />

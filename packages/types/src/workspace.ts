@@ -114,7 +114,8 @@ export type WorkflowOrchestrationStopKind =
   | 'closed'
   | 'needs-approval'
   | 'plan-approval'
-  | 'paused';
+  | 'paused'
+  | 'preset-change';
 
 export type WorkflowOrchestrationStop = Readonly<{
   kind: WorkflowOrchestrationStopKind;

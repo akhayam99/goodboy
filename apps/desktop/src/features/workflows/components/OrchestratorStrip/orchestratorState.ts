@@ -122,6 +122,12 @@ const STOP_PRESENTATION: Record<WorkflowOrchestrationStopKind, StopPresentation>
     sentence: 'Paused by you',
     showsMessage: false,
   },
+  'preset-change': {
+    phase: 'needs-approval',
+    tone: 'warning',
+    sentence: 'Paused · the preset needs your call',
+    showsMessage: true,
+  },
 };
 
 type PausedParams = {

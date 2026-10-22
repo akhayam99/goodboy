@@ -50,6 +50,9 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     isDeciding: view.orchestrator.state.phase === 'deciding',
     isDone,
   });
+  const skipped = (run.rulesSnapshot?.planChanges ?? []).filter(
+    (change) => change.kind === 'skipped',
+  );
 
   const beforeRow = ({ agentId, slotWidth }: RunTreeInsert) => {
     const steps = agentId === null ? [] : (checklist.readHintsBefore.get(agentId) ?? []);
@@ -76,6 +79,14 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
       {checklist.isNextShown ? (
         <OrchestratedPlanRow kind="next" label={ORCHESTRATED_COPY.nextStep} slotWidth={slotWidth} />
       ) : null}
+      {skipped.map((change) => (
+        <OrchestratedPlanRow
+          key={`skipped-${change.step}`}
+          kind="skipped"
+          label={ORCHESTRATED_COPY.skippedStep({ step: change.step, reason: change.reason })}
+          slotWidth={slotWidth}
+        />
+      ))}
       {checklist.left.map((item) => (
         <OrchestratedPlanRow
           key={`left-${item.text}`}
@@ -88,7 +99,12 @@ export const OrchestratedChecklist = ({ session, view }: Props) => {
     </>
   );
 
-  if (agents.length === 0 && checklist.left.length === 0 && !checklist.isNextShown) {
+  if (
+    agents.length === 0 &&
+    checklist.left.length === 0 &&
+    skipped.length === 0 &&
+    !checklist.isNextShown
+  ) {
     return null;
   }
 

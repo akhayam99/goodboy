@@ -6,6 +6,8 @@ import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { RunSpendLimitPopover } from '../../../workflows/components/RunSpendLimitPopover';
 import { RunTimeLeftLabel } from '../../../workflows/components/RunTimeLeftLabel';
 import { useRunTimeLeft } from '../../../workflows/hooks/useRunTimeLeft';
+import { ORCHESTRATED_COPY } from '../../../workflows/orchestratedCopy';
+import { RUN_ROUTE_COPY } from '../../startRun/runRouteCopy';
 import type { RunView } from '../AgentTree/useRunView';
 import { OrchestratedAutonomyMenu } from './OrchestratedAutonomyMenu';
 
@@ -35,12 +37,29 @@ export const OrchestratedFacts = ({ session, view }: Props) => {
   });
   const isOpen = !view.isDiscarded && !view.isCompleted;
   const pool = run.providerPool ?? [];
+  const hasRouteLine = run.rulesSnapshot?.route !== undefined && !view.isDiscarded;
+  const preset = hasRouteLine ? undefined : run.rulesSnapshot?.preset;
+  const closeness = run.rulesSnapshot?.route?.closeness ?? 'follow';
+  const changeCount = run.rulesSnapshot?.planChanges?.length ?? 0;
 
   return (
     <div
       data-orchestrated-facts=""
       className="flex min-w-0 flex-wrap items-center gap-x-2 text-ui text-muted-foreground"
     >
+      {preset === undefined ? null : (
+        <span data-preset-facts="">
+          {ORCHESTRATED_COPY.fromPreset({
+            name: preset.name,
+            closeness: RUN_ROUTE_COPY.closeness[closeness],
+          })}
+        </span>
+      )}
+      {preset === undefined || changeCount === 0 ? null : DOT}
+      {preset === undefined || changeCount === 0 ? null : (
+        <span>{ORCHESTRATED_COPY.changes({ count: changeCount })}</span>
+      )}
+      {preset === undefined ? null : DOT}
       {isOpen ? <OrchestratedAutonomyMenu sessionId={session.id} run={run} /> : null}
       {isOpen && pool.length > 0 ? DOT : null}
       {pool.length > 0 ? (

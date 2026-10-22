@@ -29,7 +29,7 @@ const ADAPTED: OneFlowCenter = {
   route: {
     shape: 'plan',
     closeness: 'adapt',
-    choice: `Plan from ${PRESET_NAME}, 4 steps · Adapt as it goes · 1 change`,
+    choice: `Plan from ${PRESET_NAME}, 4 steps · Adapt as it goes`,
     why: 'Step 3 added for the billing table',
   },
 };

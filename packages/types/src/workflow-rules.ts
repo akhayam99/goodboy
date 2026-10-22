@@ -1,3 +1,11 @@
+import {
+  parsePlanChangeRequest,
+  parsePlanChanges,
+  parseRunPreset,
+  type PlanChange,
+  type PlanChangeRequest,
+  type RunPreset,
+} from './run-preset';
 import { parseRunRoute, type RunRoute } from './run-route';
 import type { AgentRole } from './workflow';
 
@@ -8,6 +16,30 @@ type RouteParams = {
 const routeOf = ({ value }: RouteParams): Readonly<{ route: RunRoute }> | null => {
   const route = parseRunRoute({ value });
   return route === null ? null : { route };
+};
+
+type PresetPartsParams = {
+  readonly value: Readonly<Record<string, unknown>>;
+};
+
+type PresetParts = Readonly<{
+  preset?: RunPreset;
+  planChanges?: ReadonlyArray<PlanChange>;
+  pendingChange?: PlanChangeRequest;
+  approvedChange?: PlanChangeRequest;
+}>;
+
+const presetPartsOf = ({ value }: PresetPartsParams): PresetParts => {
+  const preset = parseRunPreset({ value: value.preset });
+  const planChanges = parsePlanChanges({ value: value.planChanges });
+  const pendingChange = parsePlanChangeRequest({ value: value.pendingChange });
+  const approvedChange = parsePlanChangeRequest({ value: value.approvedChange });
+  return {
+    ...(preset !== null && { preset }),
+    ...(planChanges.length > 0 && { planChanges }),
+    ...(pendingChange !== null && { pendingChange }),
+    ...(approvedChange !== null && { approvedChange }),
+  };
 };
 
 export const WORKFLOW_AUTONOMY_VALUES = ['step', 'plan', 'run'] as const;
@@ -26,6 +58,10 @@ export type WorkflowRules = Readonly<{
   planApproved?: boolean;
   canOrchestratorPickModel?: boolean;
   route?: RunRoute;
+  preset?: RunPreset;
+  planChanges?: ReadonlyArray<PlanChange>;
+  pendingChange?: PlanChangeRequest;
+  approvedChange?: PlanChangeRequest;
 }>;
 
 export const DEFAULT_WORKFLOW_RULES: WorkflowRules = {
@@ -96,6 +132,7 @@ export const parseWorkflowRules = ({
     ...(value.planApproved === true && { planApproved: true }),
     ...(value.canOrchestratorPickModel === true && { canOrchestratorPickModel: true }),
     ...(routeOf({ value: value.route }) ?? {}),
+    ...presetPartsOf({ value }),
   };
 };
 

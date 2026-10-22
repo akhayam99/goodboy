@@ -12,7 +12,7 @@ export const OneFlowLeadCenter = ({ session, route }: Props) => (
   <div className="@container flex h-full min-h-0 flex-col">
     <div data-one-flow-route="" className="flex shrink-0 pt-3">
       <PageColumn>
-        <OneFlowRouteLine route={route} />
+        <OneFlowRouteLine route={route} changeCount={0} />
       </PageColumn>
     </div>
     <div className="relative min-h-0 flex-1">
