@@ -5,7 +5,6 @@ type Params = {
 };
 
 export const hasSessionDraftContent = ({ draft }: Params): boolean =>
-  draft.runText.trim() !== '' ||
   draft.issueQuery.trim() !== '' ||
   draft.pickedIssues.length > 0 ||
   draft.focusedIssueKey !== null ||

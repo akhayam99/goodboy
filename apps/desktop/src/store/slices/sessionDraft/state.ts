@@ -5,7 +5,6 @@ import type { AgentKind, AgentKindRouting } from '../../../features/session/agen
 export type StartChoice = 'task' | 'workflow' | 'orchestrate' | 'scout';
 
 export type SessionDraft = {
-  readonly runText: string;
   readonly choice: StartChoice | null;
   readonly issueQuery: string;
   readonly pickedIssues: ReadonlyArray<IssueCandidate>;
@@ -24,7 +23,6 @@ export type SessionDraft = {
 };
 
 export const EMPTY_SESSION_DRAFT: SessionDraft = {
-  runText: '',
   choice: null,
   issueQuery: '',
   pickedIssues: [],

@@ -12,6 +12,40 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.11
+
+Start a run is the one way to start work, each run shows how Auto runs it and why, and a preset is the plan a run starts from.
+
+### New
+
+#### Change how Auto runs each run
+<!-- gb area=sessions -->
+
+Under a run that Start a run routed, one line shows what Auto chose and why, such as a plan from your preset because your ask matches it. Change runs it as a plan with steps or as one agent, starts it from another preset or none, and switches between Follow the preset and Adapt as it goes.
+
+A run that already started work starts again as what you picked, with what the first one found, and the first shows what it became. Start every run in this session like this keeps your choice for the session, and New runs start as, in Settings, Workspace, sets it for new runs.
+
+#### Presets as the plan a run starts from
+<!-- gb area=workflows -->
+
+A run from a preset keeps the preset's steps as its plan. With Adapt as it goes, Auto can add, move or skip a step: the checklist tags it Added or Moved, or lists it as Skipped, each with its reason, and the route line counts the changes.
+
+With Follow the preset, Auto stops and asks before any change, with Add it, Skip or Switch to adapt. A pinned step always runs as the preset wrote it.
+
+### Improved
+
+#### Start a run replaces the other ways to start work
+<!-- gb area=sessions -->
+
+The separate start forms, the New session tabs and the Start an agent popover are gone. New session is your folders above the Start a run field, and the New menu keeps Start a run, Write a report and Draw a wireframe. Type @Scout or another role to start that role at once.
+
+Continue cards, Ask about this file in Explore, workspace chat, a preset in Studio and Start on a task in Tasks open Start a run with the text or file already in it. Agents you started before open as they did, and only they offer Let Auto take it from here, the new name of Move to Auto.
+
+#### Start a run matches presets by what they do
+<!-- gb area=workflows -->
+
+Start a run picks a preset when your ask shares words with its description or step titles, not only its name. A name match still ranks first, and among equal matches the preset you used last in the session wins.
+
 ## Goodboy v0.27.10
 
 Next groups its rows by what you do, every run of a session sits under Runs, and Start a run picks how to run what you write.

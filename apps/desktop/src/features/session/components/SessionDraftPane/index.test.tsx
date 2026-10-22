@@ -180,16 +180,10 @@ describe('closing the New session page', () => {
       'Reconcile the Northwind ledger',
     );
 
-    const draftDiscard = screen
-      .getAllByRole('button', { name: 'Discard' })
-      .find((button) => button.closest('section[aria-label="Start a run"]') === null);
-    if (draftDiscard === undefined) {
-      throw new Error('no draft Discard');
-    }
-    fireEvent.click(draftDiscard);
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     await settle();
 
-    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.runText ?? '').toBe('');
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowGoal ?? '').toBe('');
   });
 
   it('lets up() leave the page from a written draft', async () => {
