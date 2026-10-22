@@ -10,7 +10,6 @@ export const FRAME_SCENES = [
   { scene: 'runs-list-empty', rail: FRAME_RAIL_QUERY },
   { scene: 'step-rows-runs', rail: FRAME_RAIL_QUERY },
   { scene: 'run-header-failed', rail: FRAME_RAIL_QUERY },
-  { scene: 'agents-list-empty', rail: FRAME_RAIL_QUERY },
   { scene: 'agentlead', rail: FRAME_RAIL_QUERY },
   { scene: 'frame-questions', rail: null },
   { scene: 'tasks-rail', rail: null, isBare: true },
