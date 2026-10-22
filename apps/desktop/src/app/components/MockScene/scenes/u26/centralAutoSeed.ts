@@ -387,6 +387,7 @@ export const centralAutoSeedOf = ({ variant }: SeedParams): CentralAutoSeed => (
     }),
     pendingRefusal: null,
     deliveredResults: DELIVERED_BY_VARIANT[variant],
+    hiddenChildIds: [],
     rootAsk: null,
   },
   agents: [ROOT_AGENT, reviewerAgentOf({ variant }), fixerAgentOf({ variant })],

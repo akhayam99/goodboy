@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AgentsPane } from '../../../../../features/session/components/SessionWorkspace/parts/AgentsPane';
+import { WorkflowsPane } from '../../../../../features/session/components/SessionWorkspace/parts/WorkflowsPane';
 import { PageSheet } from '../PageSheet';
 import { C06_SESSION, seedC06Agents } from './c06ConversationSeed';
 
@@ -22,7 +22,7 @@ export const C06AgentsScene = ({ isEmpty }: Props) => {
   return (
     <main className="flex h-screen bg-background text-foreground">
       <PageSheet>
-        <AgentsPane session={C06_SESSION} />
+        <WorkflowsPane session={C06_SESSION} />
       </PageSheet>
     </main>
   );

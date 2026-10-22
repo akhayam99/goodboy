@@ -95,6 +95,6 @@ describe('useAskChipOpen', () => {
 
     const state = useAppStore.getState();
     expect(selectOpenDrawer(state)?.kind).toBe('ask');
-    expect(state.activeLens[SESSION]).toBe('agents');
+    expect(state.activeLens[SESSION]).toBe('workflows');
   });
 });

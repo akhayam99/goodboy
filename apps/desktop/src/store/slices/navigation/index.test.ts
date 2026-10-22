@@ -1,17 +1,19 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
-import type {
-  Agent,
-  AgentId,
-  ArtifactId,
-  MountId,
-  ResolveAttempt,
-  SessionId,
-  SessionProjectMount,
-  WorkspaceId,
+import {
+  brandId,
+  type Agent,
+  type AgentId,
+  type ArtifactId,
+  type MountId,
+  type ResolveAttempt,
+  type SessionId,
+  type SessionProjectMount,
+  type WorkflowRunId,
+  type WorkspaceId,
 } from '@goodboy/types';
-import { anAgent, aSession } from '@goodboy/types/testing';
+import { anAgent, aSession, aWorkflowRun } from '@goodboy/types/testing';
 import { useAppStore, type AppStore } from '../../store';
 import type { SessionGithubState } from '../../types';
 import { createDrawerSlice } from '../drawer';
@@ -27,7 +29,7 @@ import {
   fixRunTranscript,
   sessionPlace,
 } from './place';
-import { HISTORY_LIMIT } from './types';
+import { EMPTY_FOCUS, HISTORY_LIMIT } from './types';
 import { captureWindowLocation } from './captureWindowLocation';
 import { parseLocation } from '../../../features/workspace/windowLayout';
 
@@ -181,6 +183,23 @@ describe('restoring a saved window location', () => {
     const stack = state.navigation[WS];
     expect(stack?.entries[stack.index]?.focus.scroll).toEqual({ plans: 320 });
   });
+
+  it.each(['orchestrated', 'agents', 'auto'] as const)(
+    'opens Runs for a saved %s address',
+    (lens) => {
+      const store = makeStore();
+      store.getState().restoreLocation({
+        location: {
+          workspaceId: WS,
+          place: { at: 'session', sessionId: S1, view: { lens, agentId: null, target: null } },
+          studio: null,
+          focus: EMPTY_FOCUS,
+        },
+      });
+
+      expect(store.getState().activeLens[S1]).toBe('workflows');
+    },
+  );
 
   it('falls back to the board when the saved session is gone', () => {
     const store = makeStore();
@@ -516,7 +535,7 @@ describe('navigation slice', () => {
       .getState()
       .navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT, pane: 'transcript' }) });
     expect(store.getState().agentPane[S1]).toBe('transcript');
-    expect(keyOf(store)).toBe(`s/${S1}/agents/pane/transcript/agent/${AGENT}`);
+    expect(keyOf(store)).toBe(`s/${S1}/workflows/pane/transcript/agent/${AGENT}`);
 
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     expect(store.getState().agentPane[S1]).toBeNull();
@@ -596,7 +615,7 @@ describe('navigation slice', () => {
     store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
     store.getState().up();
-    expect(keyOf(store)).toBe(`s/${S1}/agents`);
+    expect(keyOf(store)).toBe(`s/${S1}/workflows`);
     expect(store.getState().navigation[WS]?.entries).toHaveLength(4);
   });
 
@@ -728,13 +747,43 @@ describe('navigation slice', () => {
     expect(store.getState().currentSessionId).toBeNull();
   });
 
+  it.each(['orchestrated', 'agents', 'auto'] as const)(
+    'opens Runs for the old %s address and keeps one history key',
+    (lens) => {
+      const store = makeStore();
+      store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens }) });
+
+      expect(store.getState().activeLens[S1]).toBe('workflows');
+      expect(keyOf(store)).toBe(`s/${S1}/workflows`);
+    },
+  );
+
+  it('goes up from a run to the Runs list, not back into the run', () => {
+    const store = makeStore();
+    const runId = brandId<WorkflowRunId>({ value: 'run-plan' });
+    store.setState({
+      sessions: [
+        aSession({ id: S1, workflowRuns: [aWorkflowRun({ id: runId, executionMode: 'dynamic' })] }),
+      ],
+    });
+    store.getState().navigate({
+      to: sessionPlace({ sessionId: S1, lens: 'workflows', target: { kind: 'run', runId } }),
+    });
+    expect(store.getState().focusedWorkflowRunId[S1]).toBe(runId);
+
+    store.getState().up();
+
+    expect(store.getState().activeLens[S1]).toBe('workflows');
+    expect(store.getState().focusedWorkflowRunId[S1]).toBeNull();
+  });
+
   it('goes up out of an app studio before it leaves the page', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
     store.getState().openStudio({ studio: { kind: 'changelog' } });
     store.getState().up();
     expect(store.getState().appStudio).toBeNull();
-    expect(store.getState().activeLens[S1]).toBe('agents');
+    expect(store.getState().activeLens[S1]).toBe('workflows');
   });
 
   it('closes the drawer on a forward move and brings it back on back', () => {

@@ -72,7 +72,11 @@ const TARGET: AutoActionTarget = {
   rootAgentId: FIXTURE_ROOT,
   role: 'Fixer',
   kind: 'neverStarted',
+  noun: 'Fixer',
   reason: 'Auto created it at 10:21, no first message reached it.',
+  reasonCode: null,
+  mountId: null,
+  plan: null,
   canRetry: true,
 };
 
@@ -208,6 +212,81 @@ describe('Auto retry on a never started child', () => {
     expect(wide.second?.label).toBe('Open Auto');
     expect(narrow.second).toBeNull();
     expect(narrow.foldedTarget?.verbs.map((verb) => verb.label)).toEqual(['Open Auto']);
+  });
+});
+
+describe('Auto retry on a child that left the session after the card drew', () => {
+  const GONE = 'This agent is no longer in this session. It was deleted or moved.';
+
+  it('sends nothing and says why when a fresh load no longer holds the child', async () => {
+    loadAutoTrees.mockImplementation(async () => {
+      useAppStore.setState({
+        autoTreeViews: { [FIXTURE_SESSION]: [aView({ phase: 'answering', delegations: [] })] },
+      });
+    });
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = autoCard();
+
+    await act(async () => {
+      result.current.actionsFor({ card }).main?.run();
+    });
+
+    expect(continueStoppedAgent).not.toHaveBeenCalled();
+    expect(result.current.actionsFor({ card }).failure).toBe(GONE);
+    expect(result.current.isHidden({ card })).toBe(false);
+  });
+
+  it('still retries a failed child that never got an agent row', async () => {
+    useAppStore.setState({
+      sessionPhaseRuns: { [FIXTURE_SESSION]: [ROOT_AGENT] },
+      autoTreeViews: {
+        [FIXTURE_SESSION]: [
+          aView({
+            phase: 'answering',
+            delegations: [{ ...CHILD, state: 'settled', outcome: 'failed' }],
+          }),
+        ],
+      },
+    });
+    const [card] = actionCardsOf({
+      owners: [],
+      suggestions: [],
+      autoTargets: [{ ...TARGET, kind: 'failed' }],
+    });
+    if (card === undefined) {
+      throw new Error('Expected the Auto card');
+    }
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+
+    await act(async () => {
+      result.current.actionsFor({ card }).main?.run();
+    });
+
+    expect(continueStoppedAgent).toHaveBeenCalledWith({
+      sessionId: FIXTURE_SESSION,
+      agentId: CHILD.childAgentId,
+    });
+    expect(result.current.actionsFor({ card }).failure).toBeNull();
+  });
+});
+
+describe('a card that holds folded cards', () => {
+  it('lists each folded card in its menu and shows a folded failure on the row', async () => {
+    continueStoppedAgent.mockRejectedValueOnce(new Error('Auto is not running'));
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = { ...suggestionCard(), folded: [autoCard()] };
+
+    const verbs = result.current.actionsFor({ card }).menu?.target.foldedVerbs ?? [];
+    expect(verbs.map((verb) => [verb.id, verb.label])).toEqual([
+      [`folded:${autoCard().id}`, 'Auto is stuck'],
+    ]);
+
+    await act(async () => {
+      verbs[0]?.run();
+    });
+
+    expect(result.current.actionsFor({ card }).failure).toBe('Auto is not running');
+    expect(continueStoppedAgent).toHaveBeenCalledTimes(1);
   });
 });
 

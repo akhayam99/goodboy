@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NextStackView } from '../../../../../features/session/central/next/NextStackView';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
-import { seedResolveScene } from '../resolveSeed';
+import { SESSION_ID, seedResolveScene } from '../resolveSeed';
 import { centralNextActionsFor, centralNextCards, type CentralNextMoment } from './centralNextSeed';
 
 type Props = {
@@ -26,7 +26,7 @@ export const CentralNextScene = ({ theme, moment, width = DEFAULT_WIDTH }: Props
   return (
     <div data-shot className="p-6">
       <div data-central-column style={{ width }} className="max-w-full">
-        <NextStackView cards={cards} actionsFor={centralNextActionsFor} />
+        <NextStackView sessionId={SESSION_ID} cards={cards} actionsFor={centralNextActionsFor} />
       </div>
     </div>
   );

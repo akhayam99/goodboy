@@ -180,14 +180,8 @@ vi.mock('../AgentDetailPane', () => ({
 }));
 vi.mock('../../../artifacts/components/ArtifactStudio', () => ({ ArtifactStudio: () => null }));
 vi.mock('../../../worktree/worktree', () => ({ worktreeStatus: vi.fn() }));
-vi.mock('../AgentsGrid', () => ({
-  AgentsGrid: ({
-    session,
-    onInspectAgent,
-  }: {
-    session: Session;
-    onInspectAgent?: (agentId: string) => void;
-  }) => {
+vi.mock('./parts/WorkflowsPane', () => ({
+  WorkflowsPane: ({ session }: { session: Session }) => {
     useEffect(() => {
       hooks.agentsLaneMounts += 1;
       return () => {
@@ -197,12 +191,7 @@ vi.mock('../AgentsGrid', () => ({
     return (
       <div data-testid="agents-lane">
         {(store.sessionPhaseRuns[session.id] ?? []).map((agent) => (
-          <button
-            key={agent.id}
-            type="button"
-            onClick={() => onInspectAgent?.(agent.id)}
-            aria-label={`inspect ${agent.id}`}
-          />
+          <button key={agent.id} type="button" aria-label={`open ${agent.id}`} />
         ))}
       </div>
     );

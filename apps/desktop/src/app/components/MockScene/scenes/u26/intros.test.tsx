@@ -10,10 +10,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
-import {
-  SESSION_PAGE_INTRO,
-  SESSION_PAGE_MARKER_WHY,
-} from '../../../../../features/session/sessionPageIntro';
+import { SESSION_PAGE_INTRO } from '../../../../../features/session/sessionPageIntro';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -92,33 +89,12 @@ const CASES: ReadonlyArray<Case> = [
     emptyTitle: 'No runs yet',
     emptyAction: 'Run a workflow',
   },
-  {
-    page: 'orchestrated',
-    title: 'Orchestrated',
-    content: 'u26-intros-orchestrated',
-    empty: 'u26-intros-orchestrated-empty',
-    row: 'Speed up the export end to end',
-    emptyTitle: 'No orchestrated runs yet',
-    emptyAction: 'Run an orchestrator',
-  },
-  {
-    page: 'agents',
-    title: 'Agents',
-    content: 'u26-intros-agents',
-    empty: 'u26-intros-agents-empty',
-    row: 'Add the retry header to notify-relay',
-    emptyTitle: 'No agents in this session yet.',
-    emptyAction: null,
-  },
-  {
-    page: 'auto',
-    title: 'Auto agents',
-    content: 'u26-intros-auto',
-    empty: 'u26-intros-auto-empty',
-    row: 'Why does payments-api retry a settled webhook?',
-    emptyTitle: 'No Auto agents yet',
-    emptyAction: 'Start an auto',
-  },
+];
+
+const FOLDED_ROWS = [
+  'Speed up the export end to end',
+  'Add the retry header to notify-relay',
+  'Why does payments-api retry a settled webhook?',
 ];
 
 const RETIRED_EMPTY_LINES = [
@@ -155,6 +131,9 @@ describe('the u26 session page intro scenes', () => {
 
     expectIntro({ page: entry.page, title: entry.title });
     expect(screen.getAllByText(entry.row).length).toBeGreaterThan(0);
+    for (const row of FOLDED_ROWS) {
+      expect(screen.getAllByText(row).length, row).toBeGreaterThan(0);
+    }
   });
 
   it.each(CASES)(
@@ -172,16 +151,4 @@ describe('the u26 session page intro scenes', () => {
       }
     },
   );
-
-  it.each([
-    ['u26-rail-marker-auto-light', SESSION_PAGE_MARKER_WHY.auto],
-    ['u26-rail-marker-auto-dark', SESSION_PAGE_MARKER_WHY.auto],
-  ] as const)('%s opens the marker tooltip with its words', async (name, why) => {
-    await mount({ name });
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
-
-    expect(screen.getByRole('tooltip').textContent).toBe(why);
-  });
 });

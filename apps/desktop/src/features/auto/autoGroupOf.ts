@@ -12,7 +12,15 @@ import { delegationReasonTextOf } from './delegationReasonTextOf';
 import { isAutoChildNeverStarted } from './isAutoChildNeverStarted';
 
 export type AutoChildState =
-  'running' | 'done' | 'failed' | 'timedOut' | 'blocked' | 'neverStarted' | 'retried' | 'queued';
+  | 'running'
+  | 'done'
+  | 'failed'
+  | 'stopped'
+  | 'timedOut'
+  | 'blocked'
+  | 'neverStarted'
+  | 'retried'
+  | 'queued';
 
 export type AutoGroupChild = Readonly<{
   agentId: AgentId;
@@ -21,8 +29,10 @@ export type AutoGroupChild = Readonly<{
   noun: string;
   label: string;
   asked: string | null;
+  mountId: string | null;
   state: AutoChildState;
   reason: string | null;
+  reasonCode: string | null;
   outcome: string | null;
   createdAt: number | null;
   startedAt: number | null;
@@ -109,6 +119,31 @@ type SettledParams = {
   readonly delegation: AutoDelegation;
 };
 
+const mountIdOf = ({ delegation }: SettledParams): string | null =>
+  textField({ source: delegation.target, key: 'mountId' });
+
+type SupersedeParams = SettledParams & {
+  readonly delegations: ReadonlyArray<AutoDelegation>;
+};
+
+const isSuperseded = ({ delegation, delegations }: SupersedeParams): boolean => {
+  if (delegation.state !== 'settled' || delegation.outcome === 'completed') {
+    return false;
+  }
+  const mountId = mountIdOf({ delegation });
+  if (mountId === null) {
+    return false;
+  }
+  return delegations.some(
+    (later) =>
+      later.id !== delegation.id &&
+      !later.isAdopted &&
+      later.role === delegation.role &&
+      later.createdAt > delegation.createdAt &&
+      mountIdOf({ delegation: later }) === mountId,
+  );
+};
+
 const settledStateOf = ({ delegation }: SettledParams): AutoChildState => {
   switch (delegation.outcome) {
     case 'completed':
@@ -117,8 +152,9 @@ const settledStateOf = ({ delegation }: SettledParams): AutoChildState => {
       return 'timedOut';
     case 'blocked':
       return 'blocked';
-    case 'failed':
     case 'stopped':
+      return 'stopped';
+    case 'failed':
     case null:
       return 'failed';
     default: {
@@ -177,8 +213,10 @@ const childOfDelegation = (params: DelegationChildParams): AutoGroupChild => {
     noun: AGENT_KIND_META[kind].noun,
     label: labels.get(delegation.childAgentId) ?? AGENT_KIND_META[kind].noun,
     asked: textOf({ value: delegation.request.task }),
+    mountId: mountIdOf({ delegation }),
     state,
     reason: reasonOf({ delegation, declared }),
+    reasonCode: delegation.reason,
     outcome: outcomeOf({ results, agent, agentId: delegation.childAgentId, declared, state }),
     createdAt: delegation.createdAt,
     startedAt: timeOf({ value: agent?.startedAt }),
@@ -200,8 +238,9 @@ const linkedStateOf = ({ agent }: LinkedStateParams): AutoChildState => {
     case 'blocked':
       return 'blocked';
     case 'failed':
-    case 'stopped':
       return 'failed';
+    case 'stopped':
+      return 'stopped';
     case 'pending':
       return 'queued';
     default: {
@@ -226,8 +265,10 @@ const childOfLinkedAgent = ({ agent, results }: LinkedParams): AutoGroupChild =>
     noun: AGENT_KIND_META[kind].noun,
     label: AGENT_KIND_META[kind].noun,
     asked: null,
+    mountId: agent.mountId ?? null,
     state,
     reason: null,
+    reasonCode: null,
     outcome: outcomeOf({ results, agent, agentId: agent.id, declared: null, state }),
     createdAt: null,
     startedAt: timeOf({ value: agent.startedAt }),
@@ -248,7 +289,10 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
     ),
   );
   const labels = autoChildLabelsOf({ delegations: view.delegations });
-  const known = new Set<string>(view.delegations.map((delegation) => delegation.childAgentId));
+  const known = new Set<string>([
+    ...view.delegations.map((delegation) => delegation.childAgentId),
+    ...view.hiddenChildIds,
+  ]);
   const fromDelegations = view.delegations
     .filter((delegation) => !delegation.isAdopted)
     .sort((first, second) => first.slot - second.slot || first.createdAt - second.createdAt)
@@ -256,7 +300,9 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
       childOfDelegation({
         delegation,
         agent: byId.get(delegation.childAgentId) ?? null,
-        isRetried: retriedIds.has(delegation.id),
+        isRetried:
+          retriedIds.has(delegation.id) ||
+          isSuperseded({ delegation, delegations: view.delegations }),
         now,
         results: view.deliveredResults,
         labels,

@@ -223,10 +223,8 @@ describe('the shell chapter', () => {
 
   it('lists every page of the session rail by its registry label', () => {
     const rail = pointOf('shell', 'Session rail');
-    columnPagesOf({ isBranchless: false, hasAutoAgents: true }).forEach((page) =>
-      expect(rail).toContain(page.label),
-    );
-    [NAMES.projects, 'Linked', 'Experimental'].forEach((word) => expect(rail).toContain(word));
+    columnPagesOf({ isBranchless: false }).forEach((page) => expect(rail).toContain(page.label));
+    [NAMES.projects, 'Linked'].forEach((word) => expect(rail).toContain(word));
   });
 
   it('puts both adds on the rows they act on and the spend on one line with Archive and Delete', () => {
@@ -261,11 +259,15 @@ describe('the shell chapter', () => {
 });
 
 describe('the start, agent and workflow chapters', () => {
-  it('names the four ways to start a session and the folder picker', () => {
-    const start = pointOf('kickoff', 'Four ways to start');
-    ['Pick up a task', NAMES.startRun, NAMES.startOrchestrator, NAMES.startAgent].forEach(
-      (choice) => expect(start).toContain(choice),
-    );
+  it('names Start a run, the four ways to start a session and the folder picker', () => {
+    const start = pointOf('kickoff', 'Start a run');
+    [
+      'a plan, a preset or one agent',
+      'Pick up a task',
+      NAMES.startRun,
+      NAMES.startOrchestrator,
+      NAMES.startAgent,
+    ].forEach((choice) => expect(start).toContain(choice));
     expect(pointOf('kickoff', NAMES.folders)).toContain('Suggested');
     expect(pointOf('kickoff', NAMES.folders)).toContain('All folders');
   });

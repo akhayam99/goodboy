@@ -171,6 +171,12 @@ export {
   type WorkflowRules,
 } from './workflow-rules';
 export {
+  parseRunRoute,
+  type RunRoute,
+  type RunRouteCloseness,
+  type RunRouteShape,
+} from './run-route';
+export {
   EXTERNAL_TASK_RELATIONS,
   EXTERNAL_TASK_SCOPES,
   isIntegrationBindingProvider,

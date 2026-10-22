@@ -16,7 +16,6 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
-import { SESSION_PAGE_MARKER_WHY } from '../../../../../features/session/sessionPageIntro';
 import { MOCK_SCENES } from '../..';
 import { U25_C02_LEVEL_SCENES } from './c02-levels';
 
@@ -105,9 +104,6 @@ describe('the c02 sidebar and session rail scenes', () => {
     expect(pages.getAllByRole('button').map((row) => row.textContent)).toEqual([
       'Overview',
       'Runs1',
-      'Orchestrated',
-      'Agents3',
-      'Auto agentsExperimental',
       'Artifacts3',
       'Questions1',
     ]);
@@ -130,31 +126,11 @@ describe('the c02 sidebar and session rail scenes', () => {
     }
   });
 
-  it('c02-level-session-agents marks Agents as the one current entry', async () => {
+  it('c02-level-session-agents marks Runs, where agents now live, as the one current entry', async () => {
     await mount('c02-level-session-agents');
 
     const current = Array.from(sessionLayer().querySelectorAll('[aria-current="page"]'));
-    expect(current.map((row) => row.textContent)).toEqual(['Agents3']);
-  });
-
-  it('c02-level-session sets the Experimental marker beside the count, with the why on hover', async () => {
-    await mount('c02-level-session');
-
-    const pages = within(sessionLayer()).getByTestId('session-pages');
-    const agents = within(pages).getByRole('button', { name: /^Agents/ });
-    const auto = within(pages).getByRole('button', { name: /^Auto agents/ });
-    expect(within(agents).queryByTestId('page-marker-agents')).toBeNull();
-    const experimental = within(auto).getByTestId('page-marker-auto');
-    expect(experimental.textContent).toBe('Experimental');
-    const experimentalTrigger = experimental.parentElement;
-    expect(experimentalTrigger).not.toBeNull();
-    expect(experimentalTrigger?.nextElementSibling?.hasAttribute('data-page-value')).toBe(true);
-
-    fireEvent.mouseEnter(experimentalTrigger ?? auto);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(SETTLE_MS);
-    });
-    expect(screen.getByRole('tooltip').textContent).toContain(SESSION_PAGE_MARKER_WHY.auto);
+    expect(current.map((row) => row.textContent)).toEqual(['Runs1']);
   });
 
   it('c02-level-branchless shows Changes and no Projects', async () => {
@@ -182,7 +158,7 @@ describe('the c02 sidebar and session rail scenes', () => {
     const rail = document.querySelector<HTMLElement>('[data-session-rail]');
     expect(rail?.hasAttribute('data-rail-folded')).toBe(true);
     expect(rail?.querySelector('[data-rail-level="session"]')).not.toBeNull();
-    expect(within(rail ?? document.body).getByRole('button', { name: /^Agents/ })).toBeDefined();
+    expect(within(rail ?? document.body).getByRole('button', { name: /^Runs/ })).toBeDefined();
     expect(document.querySelector('[data-column-layer="nav"]')).not.toBeNull();
   });
 

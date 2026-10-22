@@ -2,6 +2,19 @@
 
 Begin from an issue, a workflow or a question. Everything starts as one draft, and it becomes a session only when you press Start, so empty sessions do not pile up.
 
+### Start a run
+
+Write what you want done and press Start; Goodboy picks how to run it. The **Start a run** field sits at the top of a session's Runs page and of the **New session** page, with the Limit and Start under it. ↵ starts, ⇧↵ adds a line. The pick is a rule table in the app, with no model call, read top to bottom until a row holds:
+
+1. You said it: `~Fix a layout` follows that preset, `@Scout` starts that role at once.
+2. The ask names a preset of the workspace (the one last used in the session wins a tie): a plan from that preset that adapts as it goes.
+3. A task is linked, or the ask is a list or names many places ("every page"): a plan with steps.
+4. The session's open pull request fails its checks or has changes requested, and the ask is about it: one agent.
+5. A question, a check or one file: one agent that starts what it needs.
+6. Nothing above: one agent first.
+
+A plan starts an orchestrated run; a preset seeds that run with its steps, in order; one agent starts Auto (or the role you named). The reason is kept with the run. If the start fails, the field keeps your text and Start becomes **Retry**. Moving to another session while a start is on its way drops the late answer, so its text or error never lands on the other session. **Start a run** in the New menu and in ⌘K opens the field, and ⌘K offers **Start a run from** each preset, which opens it with `~` and the preset name.
+
 ### How do you want to start?
 
 The **New session** draft has one compact selector with four choices: **Pick up a task**, **Run a workflow**, **Run an orchestrator** and **Start an agent**, and a line under it that says what the selected one does. **Start blank** sits in the page header, and **Discard** sits next to the start button at the end of every form, once you wrote something. Run a workflow, Run an orchestrator and Start an agent are the same forms as in the **New** menu of a session, at page width, and a limit that is switched on needs an amount with a preset too. Every option is a labelled select in the row that ends the form, and the goal field starts the work with ⌘↵ in every form, while ↵ adds a line. Esc closes the page and takes you back to where you were. If you wrote something, Esc asks whether to keep the draft or discard it, and keeping it leaves **New session** ready with your text. **Discard** throws it away.
@@ -53,11 +66,11 @@ Map an unfamiliar repo before you plan. **Scout** is the default role and only r
 
 **New** in a session opens a menu: **Run a workflow**, **Run an orchestrator**, **Start an agent**, **Start an auto**, **Write a report** and **Draw a wireframe**. Each opens its own form in the drawer. Run a workflow and Run an orchestrator end with Autonomy (**Ask me**, **Balanced** or **Autopilot**), Starts and Limit. Start an agent takes a goal, a **Role** and a **Model** and starts that role; with no goal you write its first message in its chat; Start an auto starts Auto, which picks the roles itself. Report and Wireframe draft one from the session. The button is filled when nothing is running, blocked or waiting on a question, and neutral otherwise. A run you like can be kept from its page with **Save as preset**. The tools you reach from anywhere in the session sit as icons in a thin column at the right of the page, before any open panel, and stay put while the rail steps into a branch: **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C), **Agents** (⌘⌥L) and **Scripts** (⌘⌥S). Hover one to read its name and key; the one whose panel is open shows pressed. **Agents** lists what a run or Auto started as a tree that follows the run or Auto you have open, or every launch of the session when nothing is open; click an agent, or press Enter on it, to read its conversation in the panel, then **Back to agents**. On a narrow window the panel lies over the page, and Esc closes it. While a run lives, **Pause run** (then **Resume run** in its place) and **Stop run** sit as buttons in its header.
 
-Each session page that holds work says what it runs in two lines under its title, whether it is empty or full, so the four ways to run work read apart: **Runs** runs a workflow you or Goodboy saved, the same steps every time, and stops for you where the workflow says; **Orchestrated** takes a goal and lets the orchestrator plan the whole run, picking each next step and its agent and asking you when it is unsure; **Agents** runs one agent in the role you pick and says that Auto now picks the role for you; **Auto agents** reads your request and starts the right agent, or answers itself, under a limit. The lines live in one map, `SESSION_PAGE_INTRO` (`apps/desktop/src/features/session/sessionPageIntro.ts`), drawn by `SessionPageIntro` in the page header, and agree with the **Experimental** marker in the rail. An empty page keeps only its title and its start button, such as **No runs yet** with **Run a workflow**.
+All the work of a session lives in one rail entry, **Runs**: preset runs, orchestrated runs, Auto conversations and the agents you started, one row per request, newest first, each saying what it was ("Was a preset run · Fix a layout", "Was an orchestrated run", "Was an Auto conversation", "Was an agent · Scout"). An old Orchestrated, Agents or Auto agents link opens Runs. The page says what it holds in two lines under its title, whether it is empty or full; the lines live in `SESSION_PAGE_INTRO` (`apps/desktop/src/features/session/sessionPageIntro.ts`), drawn by `SessionPageIntro` in the page header. An empty page keeps only its title and its start button, such as **No runs yet** with **Run a workflow**.
 
 ### Start blank
 
-Start from the goal instead. **Start blank** opens the session straight on its Overview, where you add the goal, projects and work. The Overview is as wide as Runs, Agents, Artifacts and the branch pages, so nothing shifts as you move between them. Once you link an issue, **Write** drafts a title and goal from it for you to review.
+Start from the goal instead. **Start blank** opens the session straight on its Overview, where you add the goal, projects and work. The Overview is as wide as Runs, Artifacts and the branch pages, so nothing shifts as you move between them. Once you link an issue, **Write** drafts a title and goal from it for you to review.
 
 ### Named by Goodboy
 

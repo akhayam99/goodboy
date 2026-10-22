@@ -1,28 +1,60 @@
-import { useCallback, useState, type ReactNode } from 'react';
-import { Button, SectionHeader } from '@goodboy/ui';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { SectionHeader } from '@goodboy/ui';
+import type { SessionId } from '@goodboy/types';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import type { NextGroupChoice } from '../../../../store/slices/next-view/state';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
-import { ActionCard } from './ActionCard';
 import type { ActionCardModel } from './actionCardsOf';
+import { NextGroup } from './NextGroup';
+import { nextGroupsOf, type NextGroupModel } from './nextGroupsOf';
+import { nextRowCopyOf, type NextBranchName } from './nextRowCopyOf';
+import { nextSeenKeyOf } from './nextSeenKeyOf';
 import type { ActionCardActions } from './useActionCardActions';
 
 const NARROW_COLUMN_PX = 560;
 
-const SHOWN_CARDS = 5;
+const NO_CHOICE: NextGroupChoice = {};
 
-type NextChipParams = {
+type NextCardParams = {
   readonly card: ActionCardModel;
 };
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly actionsFor: ActionCardActions['actionsFor'];
-  readonly chipFor?: (params: NextChipParams) => ReactNode;
+  readonly openFor?: ActionCardActions['openFor'];
+  readonly chipFor?: (params: NextCardParams) => ReactNode;
+  readonly nameFor?: (params: NextCardParams) => string | null;
+  readonly branchFor?: (params: NextCardParams) => NextBranchName | null;
 };
 
-export const NextStackView = ({ cards, actionsFor, chipFor }: Props) => {
+type GroupParams = {
+  readonly group: NextGroupModel;
+};
+
+type HintParams = GroupParams & {
+  readonly nameFor: Props['nameFor'];
+};
+
+const hintOf = ({ group, nameFor }: HintParams): string =>
+  Array.from(new Set(group.rows.map((card) => nameFor?.({ card }) ?? card.title))).join(', ');
+
+export const NextStackView = ({
+  sessionId,
+  cards,
+  actionsFor,
+  openFor,
+  chipFor,
+  nameFor,
+  branchFor,
+}: Props) => {
   const { ref: observe, width: observedWidth } = useElementWidth();
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const choice = useAppStore((state) => state.nextGroupChoice[sessionId]) ?? NO_CHOICE;
+  const seen = useAppStore((state) => state.nextSeenSubjects[sessionId] ?? EMPTY_ARRAY);
+  const chooseNextGroup = useAppStore((state) => state.chooseNextGroup);
+  const noteNextSubjects = useAppStore((state) => state.noteNextSubjects);
   const ref = useCallback(
     (node: HTMLElement | null) => {
       observe(node);
@@ -31,19 +63,33 @@ export const NextStackView = ({ cards, actionsFor, chipFor }: Props) => {
     },
     [observe],
   );
+  const groups = useMemo(
+    () =>
+      nextGroupsOf({ cards, seen }).map((group) => ({
+        ...group,
+        rows: group.rows.map((row) =>
+          nextRowCopyOf({ row, group: group.id, branch: branchFor?.({ card: row }) ?? null }),
+        ),
+      })),
+    [branchFor, cards, seen],
+  );
+  useEffect(() => {
+    noteNextSubjects({
+      sessionId,
+      keys: groups.flatMap((group) =>
+        group.rows.map((card) => nextSeenKeyOf({ group: group.id, card })),
+      ),
+    });
+  }, [groups, noteNextSubjects, sessionId]);
   const width = observedWidth ?? measuredWidth;
   const isNarrow = width !== null && width < NARROW_COLUMN_PX;
-  if (cards.length === 0) {
+  if (groups.length === 0) {
     return null;
   }
-  const isFolded = cards.length > SHOWN_CARDS && !isExpanded;
-  const shown = (isFolded ? cards.slice(0, SHOWN_CARDS) : cards).map((card) => ({
-    card,
-    actions: actionsFor({ card, isNarrow }),
-  }));
-  const hasOverflowColumn = shown.some(
-    ({ actions }) => actions.menu !== null || actions.foldedTarget !== null,
-  );
+  const firstId = groups[0]?.id;
+  const isOpenOf = ({ group }: GroupParams): boolean => choice[group.id] ?? group.id === firstId;
+  const leadId = groups.find((group) => isOpenOf({ group }))?.id ?? null;
+  const total = groups.reduce((sum, group) => sum + group.rows.length, 0);
   return (
     <section
       ref={ref}
@@ -54,26 +100,26 @@ export const NextStackView = ({ cards, actionsFor, chipFor }: Props) => {
       <SectionHeader
         label="Next"
         headingLevel={2}
-        meta={<span className="text-label text-faint-foreground">{cards.length}</span>}
-        action={
-          isFolded ? (
-            <Button size="sm" variant="secondary" onClick={() => setIsExpanded(true)}>
-              {`Show ${cards.length - SHOWN_CARDS} more`}
-            </Button>
-          ) : null
-        }
+        meta={<span className="text-label text-faint-foreground">{total}</span>}
       />
-      <div className="flex flex-col gap-1">
-        {shown.map(({ card, actions }, index) => (
-          <ActionCard
-            key={card.id}
-            card={card}
-            actions={actions}
-            isFirst={index === 0}
-            hasOverflowColumn={hasOverflowColumn}
-            chip={chipFor?.({ card })}
-          />
-        ))}
+      <div className="flex min-w-0 flex-col gap-1">
+        {groups.map((group) => {
+          const isOpen = isOpenOf({ group });
+          return (
+            <NextGroup
+              key={group.id}
+              group={group}
+              isOpen={isOpen}
+              isLead={group.id === leadId}
+              isNarrow={isNarrow}
+              hint={hintOf({ group, nameFor })}
+              onToggle={() => chooseNextGroup({ sessionId, groupId: group.id, isOpen: !isOpen })}
+              actionsFor={actionsFor}
+              openFor={openFor}
+              chipFor={chipFor}
+            />
+          );
+        })}
       </div>
     </section>
   );

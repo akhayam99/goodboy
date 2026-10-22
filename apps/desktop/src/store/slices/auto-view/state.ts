@@ -5,6 +5,7 @@ import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 export type AutoTreeView = Readonly<{
   tree: AutoTree;
   delegations: ReadonlyArray<AutoDelegation>;
+  hiddenChildIds: ReadonlyArray<AgentId>;
   artifacts: ReadonlyArray<AutoArtifactLedgerRow>;
   budget: AutoBudgetFacts | null;
   pendingRefusal: AutoPendingRefusal | null;

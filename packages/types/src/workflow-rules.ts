@@ -1,4 +1,14 @@
+import { parseRunRoute, type RunRoute } from './run-route';
 import type { AgentRole } from './workflow';
+
+type RouteParams = {
+  readonly value: unknown;
+};
+
+const routeOf = ({ value }: RouteParams): Readonly<{ route: RunRoute }> | null => {
+  const route = parseRunRoute({ value });
+  return route === null ? null : { route };
+};
 
 export const WORKFLOW_AUTONOMY_VALUES = ['step', 'plan', 'run'] as const;
 
@@ -15,6 +25,7 @@ export type WorkflowRules = Readonly<{
   guidanceRoles: ReadonlyArray<AgentRole>;
   planApproved?: boolean;
   canOrchestratorPickModel?: boolean;
+  route?: RunRoute;
 }>;
 
 export const DEFAULT_WORKFLOW_RULES: WorkflowRules = {
@@ -84,6 +95,7 @@ export const parseWorkflowRules = ({
     guidanceRoles: rolesOf(value.guidanceRoles),
     ...(value.planApproved === true && { planApproved: true }),
     ...(value.canOrchestratorPickModel === true && { canOrchestratorPickModel: true }),
+    ...(routeOf({ value: value.route }) ?? {}),
   };
 };
 

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { CircleAlert } from 'lucide-react';
-import { Button, ConfirmPopover, HeaderActions, ICON_SIZE } from '@goodboy/ui';
+import { Button, ConfirmPopover, FOCUS_RING, HeaderActions, ICON_SIZE, cn } from '@goodboy/ui';
 import { BAND_TONE } from '../../../suggestions/bandTone';
 import { NextStepMenu } from '../../../suggestions/NextStepMenu';
 import { NextStepRebasePicker } from '../../../suggestions/NextStepRebasePicker';
@@ -17,6 +17,7 @@ type Props = {
   readonly isFirst: boolean;
   readonly hasOverflowColumn?: boolean;
   readonly chip?: ReactNode;
+  readonly onOpen?: (() => void) | null;
 };
 
 type VerbButtonParams = {
@@ -40,7 +41,14 @@ const verbButton = ({ verb, variant, isPickerOpen, onClick }: VerbButtonParams) 
   </Button>
 );
 
-export const ActionCard = ({ card, actions, isFirst, hasOverflowColumn = false, chip }: Props) => {
+export const ActionCard = ({
+  card,
+  actions,
+  isFirst,
+  hasOverflowColumn = false,
+  chip,
+  onOpen = null,
+}: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [previewKind, setPreviewKind] = useState<AgentKind | null>(null);
@@ -140,9 +148,33 @@ export const ActionCard = ({ card, actions, isFirst, hasOverflowColumn = false, 
           fallbackIcon={Icon}
           tone={BAND_TONE[card.band]}
         />
-        <div className="flex min-w-0 flex-col">
+        <div
+          data-opens-place={onOpen === null ? undefined : ''}
+          onClick={onOpen ?? undefined}
+          className={cn('flex min-w-0 flex-col', onOpen !== null && 'cursor-pointer')}
+        >
           <div className="flex min-h-7 min-w-0 items-center gap-2">
-            <span className="truncate text-row text-foreground">{card.title}</span>
+            {onOpen === null ? (
+              <span className="truncate text-row text-foreground">{card.title}</span>
+            ) : (
+              <span
+                role="link"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') {
+                    return;
+                  }
+                  event.preventDefault();
+                  onOpen();
+                }}
+                className={cn(
+                  'min-w-0 truncate rounded-sm text-row text-foreground hover:underline',
+                  FOCUS_RING,
+                )}
+              >
+                {card.title}
+              </span>
+            )}
             {chip}
           </div>
           {card.detail === null ? null : (

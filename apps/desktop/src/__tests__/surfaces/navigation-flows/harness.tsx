@@ -529,9 +529,6 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },
   { label: 'Branch', lens: 'branch', lands: branchTab('pr') },
   { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
-  { label: 'Orchestrated', lens: 'orchestrated', lands: () => heading('Orchestrated') },
-  { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
-  { label: 'Auto agents', lens: 'auto', lands: () => heading('Auto agents') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
   {
     label: 'Questions',
@@ -548,7 +545,6 @@ export const CRUMB_ROWS: ReadonlyArray<LensRow> = [
 export const LENS_ROWS: ReadonlyArray<LensRow> = [
   { label: 'Overview', lens: null, lands: overviewLands },
   { label: 'Runs', lens: 'workflows', lands: () => heading('Runs') },
-  { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
   { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
   { label: 'Comments', lens: 'branch', lands: branchTab('comments') },

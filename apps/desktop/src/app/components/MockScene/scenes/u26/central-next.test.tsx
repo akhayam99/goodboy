@@ -55,8 +55,22 @@ const titlesOf = (): ReadonlyArray<string> =>
   ].map((card) => card.querySelector('.text-row')?.textContent ?? '');
 
 describe('central next scenes', () => {
-  it('lists an answer, a failing check and a rebase in urgency order', () => {
+  it('groups an answer, a failing check and a rebase in Decide, Fix and Update', () => {
     show({ name: 'u26-central-next-mid-light' });
+    const stack = screen.getByRole('region', { name: 'Next steps' });
+    expect(
+      [...stack.querySelectorAll<HTMLElement>('[data-next-group]')].map(
+        (group) => group.dataset.nextGroup,
+      ),
+    ).toEqual(['decide', 'fix', 'update']);
+    expect(titlesOf()).toEqual(['Cap per day or per payout?']);
+    for (const name of ['Fix', 'Update']) {
+      fireEvent.click(
+        within(within(stack).getByRole('region', { name })).getByRole('button', {
+          expanded: false,
+        }),
+      );
+    }
     expect(titlesOf()).toEqual([
       'Cap per day or per payout?',
       'Fix the failing static-analysis check',

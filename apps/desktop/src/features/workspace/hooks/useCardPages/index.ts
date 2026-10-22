@@ -5,7 +5,6 @@ import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSessio
 import { usePageCountFacts } from '../../../session/hooks/usePageCountFacts';
 import type { PageCountFacts } from '../../../session/pageCountWord';
 import { columnPagesOf, pagesOf, type Page } from '../../../session/pageRegistry';
-import { useIsAutoOn } from '../../../auto/useIsAutoOn';
 
 type Params = {
   readonly session: Session;
@@ -24,18 +23,16 @@ export const useCardPages = ({ session }: Params): CardPages => {
     isBranchlessSession({ branch: state.sessionBranches[sessionId] }),
   );
   const facts = usePageCountFacts({ session });
-  const isAutoOn = useIsAutoOn();
-  const hasAutoAgents = isAutoOn || facts.autoAgents > 0;
   const pages = useMemo(
     () => [
-      ...columnPagesOf({ isBranchless, hasAutoAgents }),
+      ...columnPagesOf({ isBranchless }),
       ...pagesOf({
         isBranchless,
         destinations: QUESTION_DESTINATION,
         hasOpenQuestions: true,
       }).filter((page) => page.id === 'questions'),
     ],
-    [hasAutoAgents, isBranchless],
+    [isBranchless],
   );
   return { pages, facts };
 };

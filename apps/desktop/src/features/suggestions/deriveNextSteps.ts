@@ -209,6 +209,7 @@ type Params = {
   readonly consumedPlanIds: ReadonlySet<PlanId>;
   readonly openQuestionCount: number;
   readonly firstOpenQuestion?: SuggestionQuestion | null;
+  readonly questionsRootAgentId?: AgentId | null;
   readonly hasPullRequest: boolean;
   readonly eligibleThreadCount: number;
   readonly projects: ReadonlyArray<SuggestionProject>;
@@ -233,6 +234,7 @@ export const deriveNextSteps = ({
   consumedPlanIds,
   openQuestionCount,
   firstOpenQuestion = null,
+  questionsRootAgentId = null,
   hasPullRequest,
   eligibleThreadCount,
   projects,
@@ -281,7 +283,11 @@ export const deriveNextSteps = ({
       sessionId,
       targetKey: null,
       fingerprint: `answer-questions:${sessionId}:${openQuestionCount}`,
-      payload: { count: openQuestionCount, firstQuestion: firstOpenQuestion },
+      payload: {
+        count: openQuestionCount,
+        firstQuestion: firstOpenQuestion,
+        rootAgentId: questionsRootAgentId,
+      },
     });
   }
   for (const agent of agents) {

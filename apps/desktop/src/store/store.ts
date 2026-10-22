@@ -53,6 +53,7 @@ import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
+import { createNextViewSlice } from './slices/next-view';
 import {
   checkFixCommitsInitialState,
   createCheckFixCommitsSlice,
@@ -170,6 +171,7 @@ import { overridesInitialState } from './slices/overrides/state';
 import { sidebarInitialState } from './slices/sidebar/state';
 import { settingsLastPageInitialState } from './slices/settings-last-page/state';
 import { chatLastOpenInitialState } from './slices/chat-last-open/state';
+import { nextViewInitialState } from './slices/next-view/state';
 import { turnInitialState } from './slices/turn/state';
 import { workflowsInitialState } from './slices/workflows/state';
 import { agentsInitialState } from './slices/agents/state';
@@ -258,6 +260,7 @@ export type AppStore = AppState &
   ReturnType<typeof createSidebarSlice> &
   ReturnType<typeof createSettingsLastPageSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
+  ReturnType<typeof createNextViewSlice> &
   ReturnType<typeof createCheckFixCommitsSlice> &
   ReturnType<typeof createSessionFiltersSlice> &
   ReturnType<typeof createSettingsSlice> &
@@ -375,6 +378,7 @@ export const initialState: AppState = {
   ...sidebarInitialState,
   ...settingsLastPageInitialState,
   ...chatLastOpenInitialState,
+  ...nextViewInitialState,
   ...checkFixCommitsInitialState,
   ...githubInitialState,
   ...initialGitlabMrState,
@@ -441,6 +445,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSidebarSlice({ set, get }),
   ...createSettingsLastPageSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
+  ...createNextViewSlice({ set, get }),
   ...createCheckFixCommitsSlice({ set, get }),
   ...createSessionViewSlice({ set, get }),
   ...createSavedProjectModelsSlice({ set, get }),

@@ -249,6 +249,18 @@ mod tests {
     }
 
     #[cfg(unix)]
+    fn runnable(path: &std::path::Path) {
+        for _ in 0..500 {
+            match std::process::Command::new(path).arg("--version").output() {
+                Err(error) if error.raw_os_error() == Some(libc::ETXTBSY) => {
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                _ => return,
+            }
+        }
+    }
+
+    #[cfg(unix)]
     fn script_cli(dir: &std::path::Path, version: &str, help: &str) -> String {
         use std::os::unix::fs::PermissionsExt;
         let path = dir.join("claude");
@@ -257,6 +269,7 @@ mod tests {
         );
         std::fs::write(&path, body).expect("write the script");
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        runnable(&path);
         path.to_string_lossy().into_owned()
     }
 
@@ -271,7 +284,7 @@ mod tests {
             "--disallowedTools --permission-mode",
         );
         let refusal = ensure_confinement(&old, "scout").expect_err("refused");
-        assert!(refusal.contains("does not list --tools"));
+        assert!(refusal.contains("does not list --tools"), "{refusal}");
         assert_eq!(ensure_confinement(&old, "scout"), Err(refusal));
         assert!(ensure_confinement(&old, "implementer").is_err());
         let current = script_cli(
@@ -294,6 +307,7 @@ mod tests {
         );
         std::fs::write(&path, body).expect("write the script");
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        runnable(&path);
         path.to_string_lossy().into_owned()
     }
 

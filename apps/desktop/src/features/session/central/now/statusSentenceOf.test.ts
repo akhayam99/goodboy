@@ -265,7 +265,11 @@ describe('statusSentenceOf', () => {
       rootAgentId: FIXTURE_ROOT,
       role: 'work for fixer',
       kind: 'neverStarted',
+      noun: 'Fixer',
       reason: 'No first message reached it.',
+      reasonCode: null,
+      mountId: null,
+      plan: null,
       canRetry: true,
     } satisfies AutoActionTarget;
     expect(

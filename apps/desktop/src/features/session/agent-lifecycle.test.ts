@@ -8,12 +8,7 @@ import type {
   SessionId,
   WorkflowRunId,
 } from '@goodboy/types';
-import {
-  isAgentClosable,
-  isAgentClosedByUser,
-  isAgentFinished,
-  isTurnStateLive,
-} from './agent-lifecycle';
+import { isAgentClosable, isAgentClosedByUser, isTurnStateLive } from './agent-lifecycle';
 
 const DONE_AT = '2026-09-24T10:00:00.000Z' as IsoDateTime;
 
@@ -24,40 +19,6 @@ const buildAgent = (fields: Partial<Agent> = {}): Agent => ({
   name: 'agent',
   status: 'completed',
   ...fields,
-});
-
-const QUIET = { hasOpenQuestion: false, isTurnLive: false, hasActiveChild: false };
-
-describe('isAgentFinished', () => {
-  it('finishes an agent whose last turn succeeded with nothing waiting on it', () => {
-    expect(isAgentFinished({ agent: buildAgent(), ...QUIET })).toBe(true);
-  });
-
-  it('keeps it open while it asks, a turn is live or a child still works', () => {
-    const agent = buildAgent();
-    expect(isAgentFinished({ agent, ...QUIET, hasOpenQuestion: true })).toBe(false);
-    expect(isAgentFinished({ agent, ...QUIET, isTurnLive: true })).toBe(false);
-    expect(isAgentFinished({ agent, ...QUIET, hasActiveChild: true })).toBe(false);
-  });
-
-  it('never finishes a failed, running or queued agent on its own', () => {
-    expect(isAgentFinished({ agent: buildAgent({ status: 'failed' }), ...QUIET })).toBe(false);
-    expect(isAgentFinished({ agent: buildAgent({ status: 'running' }), ...QUIET })).toBe(false);
-    expect(isAgentFinished({ agent: buildAgent({ status: 'pending' }), ...QUIET })).toBe(false);
-  });
-
-  it('finishes an agent you closed and a resolver whose work settled', () => {
-    expect(
-      isAgentFinished({ agent: buildAgent({ status: 'failed', doneAt: DONE_AT }), ...QUIET }),
-    ).toBe(true);
-    expect(
-      isAgentFinished({
-        agent: buildAgent({ status: 'failed' }),
-        ...QUIET,
-        isResolverSettled: true,
-      }),
-    ).toBe(true);
-  });
 });
 
 describe('isAgentClosable', () => {

@@ -68,18 +68,18 @@ export const LENS_ENTRY_ROWS: ReadonlyArray<Row> = [
     name: 'right click agent row: Open agent',
     covers: ['navigate', 'rightclick:agent:Open agent'],
     open: async (ctx) => {
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Runs/);
       const agent = (useAppStore.getState().sessionPhaseRuns[ctx.sessionId] ?? []).find(
         (candidate) => candidate.workflowRunId == null && candidate.deletedAt == null,
       );
       if (agent === undefined) {
         throw new Error('the seeded session has no standalone agent');
       }
-      const [name] = await screen.findAllByText(agent.name, undefined, WAIT);
-      const card = name?.closest('[data-agent-row]');
-      if (card === null || card === undefined) {
-        throw new Error('the agents lens shows no agent row');
-      }
+      const card = await screen.findByRole(
+        'button',
+        { name: new RegExp(`^Open ${agent.name}, `) },
+        WAIT,
+      );
       await openObjectMenu(card);
       await runMenuItem(/^Open agent/);
     },

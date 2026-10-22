@@ -345,7 +345,11 @@ describe('SessionKickoff', () => {
   it('feeds one goal field into the builder and starts the session with the run', async () => {
     renderKickoff();
 
-    expect(screen.getAllByRole('textbox')).toHaveLength(1);
+    expect(
+      screen
+        .getAllByRole('textbox')
+        .filter((box) => box.closest('[aria-label="Start a run"]') === null),
+    ).toHaveLength(1);
     fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: '  Round once per batch  ' },
     });

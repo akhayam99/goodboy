@@ -10,9 +10,11 @@
 Auto is an agent that answers questions itself and hands the work it cannot do
 alone to agents of the right role, with a model it picks for each. It waits for
 their results, reads them and goes on. It is always on and stays labelled
-**Experimental**: the **Auto agents** entry of the session rail carries the
-marker beside its count, the marker's tooltip says why, and there is no switch to turn
-it off. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
+**Experimental**: the **Start an auto** item of the New menu and of the New
+session page carries the marker, and there is no switch to turn it off. Since
+ux27 one flow unit 1 an Auto conversation is a row of the one **Runs** entry of
+the session rail ("Was an Auto conversation"), so the rail has no Auto entry
+to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
 agents started by hand keep working.
 
 ## Status
@@ -31,7 +33,7 @@ words again reuses it; the main window remembers each id for 10 minutes and
 answers a repeat with the first answer instead of queuing the message twice
 (a message main itself lost is sent again). An old
 `agents.autoExperiment` row left in the database is never read, so a stored `false` hides nothing:
-`useIsAutoOn`, the agent menu facts, `isAutoAgentsShown` and `moveToAuto` read only the gate.
+`useIsAutoOn`, the agent menu facts and `moveToAuto` read only the gate.
 
 **Live proof before the flip.** The real CLIs were launched with the exact argv and prompt
 Goodboy builds for an Auto turn:
@@ -51,21 +53,26 @@ accept. Neither tried to write a file or run a shell command, and the work tree 
   the gate false hides the Auto start and every Auto control and keeps the role
   start of before.
 - Settings, App, General has no Experiments band. The **Experimental** marker
-  stays on the **Auto agents** entry of the session rail (`pageMarkerOf`).
+  stays on the Auto start (`NewDrawerBody`, `SessionKickoff`).
 
 ## Starting
 
 Auto is always available, and it is its own start: **Start an auto** in the
 session **New** menu opens the **Start an auto** form of the New drawer
-(`form: 'auto'`). The Auto agents page opens the same form: **Start an auto**
-sits in its header once it has rows and in its `EmptyState` before
-(`openAutoForm`), and the page holds no composer of its own. There is no role list, no project field and no guidance: Auto
+(`form: 'auto'`). Every Auto conversation is a row of the session's **Runs**
+page (`sessionRunsOf`), which opens it in the Auto chat. There is no role list, no project field and no guidance: Auto
 picks the mount and asks when it is ambiguous. **Start an agent** stays the role
-start: the **Agent** form of the New drawer, the **Start an agent** popover of the
-Agents page and **Start an agent** on the New session page open the role list
+start: the **Agent** form of the New drawer, the **Start an agent** popover in
+the Runs header and **Start an agent** on the New session page open the role list
 (Generalist as default, Routing), whatever the gate says (`CreateAgentPopover`,
 `NewDrawerBody`, `SessionKickoff` with `isAuto` false by default).
 
+- The **Start a run** field (`StartRun`) starts Auto when its router picks one
+  agent (rows 4 to 6 of `runRouteOf`, see
+  [Start a run](features/start.md#start-a-run)): `spawnAgent` with the `auto`
+  kind and the ask as its first message, or the role named with `@`. The field
+  carries the same **Limit** chip (`useAutoTreeLimit`), persisted before the
+  start. The route is kept per agent in `runs.routes.<sessionId>`.
 - A start never rereads a setting at the click: there is no mode another window
   can change, so the form on screen is the mode that starts.
 - The goal is the first message of the Auto agent. It is not a plain turn: the
@@ -285,17 +292,22 @@ writing to it reopens it to **Deciding**.
   of the numbers). The role stays visible as its glyph, with the noun in its
   tooltip and accessible name. The rail row, the Agents drawer, the delegation
   line, the result card and the delivery text Auto reads all take the name from
-  that one function, so Auto and the screen say the same name. The overview
-  quotes that name instead of gluing a verb onto it: a stuck child is a Next
-  card headed "Auto is stuck" that reads `"<name>" never started.` (or
-  `stopped.`, `timed out.`, `is blocked.`, one verb per child state from
-  `autoStuckKindOf` and `autoStuckLineOf`; a blocked child stays a
-  `childBlocked` target, never folded into failed), its verb reads **Retry**
+  that one function, so Auto and the screen say the same name. The Now
+  sentence quotes that name instead of gluing a verb onto it
+  (`autoStuckLineOf`). A stuck child is a Next card headed by its branch and
+  pull request ("Auto is stuck" only when its branch is unknown) whose
+  sentence names the role, never the quoted ask: `The scout never started.` (or
+  `failed.`, `timed out.`, `is blocked.`, one verb per child state from
+  `autoStuckKindOf` and `autoStuckVerbOf`; a blocked child stays a
+  `childBlocked` target, never folded into failed), then the sentence its
+  reason code maps to (`delegationReasonTextOf`), never a blocked child's own
+  words, which can be in another language, until the agent text plan gives
+  each child a one-line summary in your language. Its verb reads **Retry**
   with the accessible name `Retry "<name>"`, and the Now sentence of a waiting
   tree reads `Waiting for "<name>"`, or "Waiting for N agents" when more than
   one is open ("Auto is waiting for" when another group leads the sentence).
 - **Why a child stopped, and what a done child said.** The second line of a
-  stuck child, and the Next card after its quoted line, is its reason in
+  stuck child on the rail and in Now is its reason in
   words, never a code like `declared_blocked`: a blocked child's own summary
   from `delegation.result.declared.summary`, else the sentence the reason code
   maps to (`delegationReasonTextOf`, shared with the result card), else
@@ -304,6 +316,31 @@ writing to it reopens it to **Deciding**.
   "Auto asked:" line (`autoGroupOf`, `autoChildCopyOf`). While a child is stuck
   and Auto is live, the Auto row reads **Stuck**, the same word as the Now
   header (`AutoGroup.isStuck`), not Auto's own phase.
+- **Stopped and replaced children are not stuck.** A delegation that settled
+  `stopped` (you or Auto stopped it, or you declined its start, reason
+  `declined`) is the child state `stopped`, which `autoStuckKindOf` does not
+  count: it leaves Next and the Now Stuck state, reads **Stopped** on the rail,
+  and shows in **What was done** as "You stopped the reviewer" (or "You
+  declined the implementer"), by Auto, with **Retry** in its detail
+  (`doneRowsOf`, `DoneRetry`, the same continue as the Next retry). A settled
+  child that did not complete is superseded, state `retried`, when a later
+  delegation takes the same role on the same branch (`target.mountId`), with or
+  without `retryOf` (`autoGroupOf`).
+- **A child that left the session is not stuck.** When a child's agent row is
+  deleted (`deleted_at`) or now belongs to another session, the read of the
+  Auto trees leaves its delegation out, together with the failed attempts its
+  retry or a later same-role, same-branch delegation replaced
+  (`listGoneAutoChildIds`, `presentDelegationsOf`, in `readAutoTreeViews`).
+  The agents of those left out attempts go into `hiddenChildIds`, so an
+  earlier attempt whose agent is still in the session does not come back as a
+  linked child (`autoGroupOf`).
+  Every reader of `autoTreeViews` (Next, the Now Stuck state, What was done,
+  the rail, the Agents drawer, the counts) sees the same list, so none of them
+  shows a card for it, and a moved child belongs to the session that holds it
+  now. A child whose agent row does not exist yet (accepted, not started) stays.
+  A **Retry** clicked after the child left reloads the trees, sends nothing and
+  shows "This agent is no longer in this session. It was deleted or moved." on
+  the card (`useActionCardActions`).
 - **What the agents reported.** Each child result Auto read for a turn is that
   child's card, right after the **What Auto was told** row of that turn and
   before Auto's reply (`AutoDeliveryResults` under the delivery row, drawing

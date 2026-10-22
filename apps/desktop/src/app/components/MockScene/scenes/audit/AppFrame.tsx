@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppTopBar } from '../../../AppTopBar';
 import { KeepAliveWorkSurface } from '../../../KeepAliveWorkSurface';
@@ -28,6 +28,7 @@ type Props = {
   readonly isRailCollapsed: boolean;
   readonly hasPane?: boolean;
   readonly hasLiveToggle?: boolean;
+  readonly center?: ReactNode;
 };
 
 export const AppFrame = ({
@@ -35,6 +36,7 @@ export const AppFrame = ({
   isRailCollapsed,
   hasPane = false,
   hasLiveToggle = false,
+  center,
 }: Props) => {
   const [isFoldPicked, setIsFoldPicked] = useState(isRailCollapsed);
   const isMainCollapsed = hasLiveToggle ? isFoldPicked : isRailCollapsed;
@@ -94,7 +96,7 @@ export const AppFrame = ({
   const main =
     currentSession !== null ? (
       <SessionFrame session={currentSession}>
-        <KeepAliveWorkSurface sessionId={currentSession.id} isActive />
+        {center ?? <KeepAliveWorkSurface sessionId={currentSession.id} isActive />}
       </SessionFrame>
     ) : currentWorkspace !== null ? (
       <StageBoard workspaceId={currentWorkspace.id} sessions={sessions} />

@@ -54,6 +54,7 @@ import { shouldDemote } from '../nextStepGates';
 import { scribeRequestStateOf } from '../scribeRequestStateOf';
 import { SUGGESTION_KINDS, type SuggestionKind } from '../types';
 import { projectById } from '../../../store/slices/projects/projectIndex';
+import { askingAutoRootOf } from '../../auto/askingAutoRootOf';
 
 type Params = {
   readonly session: Session;
@@ -142,6 +143,7 @@ export const useSessionSuggestionsFrom = ({
   const effectiveAgents = agents ?? storedAgents;
   const plans = useSessionPlans(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
+  const autoTreeViews = useAppStore((state) => state.autoTreeViews[sessionId] ?? EMPTY_ARRAY);
   const { active, agentsByRunId } = useMemo(
     () => splitWorkflowRuns({ attachedRuns, agents: effectiveAgents }),
     [attachedRuns, effectiveAgents],
@@ -382,6 +384,10 @@ export const useSessionSuggestionsFrom = ({
         firstOffScreen == null
           ? null
           : { id: firstOffScreen.id, createdByAgentId: firstOffScreen.createdByAgentId ?? null },
+      questionsRootAgentId: askingAutoRootOf({
+        views: autoTreeViews,
+        questions: offScreenQuestions,
+      }),
       hasPullRequest: github?.pr != null,
       eligibleThreadCount: fixableCount,
       mountEvents: toMountEvents({ events }),
@@ -477,6 +483,7 @@ export const useSessionSuggestionsFrom = ({
     active,
     advanceByRunId,
     agentKindOverride,
+    autoTreeViews,
     agentsByRunId,
     attachedRuns,
     blockedTranscripts,

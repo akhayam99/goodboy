@@ -2495,6 +2495,9 @@ never a typed `pl-5`, `pl-7` or `pl-9`). A body that sits under a control
 measures its indent the same way, from that control's own padding, width and
 gap. The ratchet `hand-indent.test.ts` counts `pl-5`, `pl-7` and `pl-9` in
 `features/` and only falls.
+Its optional `actions` sit beside the toggle on the same line, never inside
+it, so a group header can carry a bulk button (Next's **Retry 3**) without
+nesting a button in a button.
 
 A theme switch is one paint, a class swap on `<html>` and nothing else:
 `applyDocumentTheme` writes the `light` or `dark` class, `data-theme` and

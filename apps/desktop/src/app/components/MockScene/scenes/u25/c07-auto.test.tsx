@@ -353,13 +353,12 @@ describe('c07 Auto scenes', () => {
     expect(await screen.findByRole('menuitem', { name: 'View transcript' }, WAIT)).toBeDefined();
   });
 
-  it('closes the Agents panel and opens it again from the tools column, Auto agents stays selected', async () => {
+  it('closes the Agents panel and opens it again from the tools column, Runs stays selected', async () => {
     mount({ id: 'c07-auto-working' });
 
     await autoTree();
-    const entry = within(shownLayer()).getByRole('button', { name: /Auto agents/ });
+    const entry = within(shownLayer()).getByRole('button', { name: /^Runs/ });
     expect(entry.getAttribute('aria-current')).toBe('page');
-    expect(within(entry).getByText('Experimental')).toBeDefined();
 
     fireEvent.click(screen.getByTestId('pane-toggle-spawned'));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull(), WAIT);
@@ -463,16 +462,15 @@ describe('c07 Auto scenes', () => {
   it('c07-auto-list lists every Auto conversation on one grid and opens one', async () => {
     mount({ id: 'c07-auto-list' });
 
-    const list = await screen.findByRole('list', { name: 'Auto agents' }, WAIT);
+    const list = await screen.findByRole('list', { name: 'Runs' }, WAIT);
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
-    expect(screen.queryByText('No Auto agents yet')).toBeNull();
+    expect(screen.queryByText('No runs yet')).toBeNull();
     const header = screen.getByRole('button', { name: 'Start an auto' });
     expect(header.dataset['variant']).toBe('secondary');
-    const rows = within(list).getAllByRole('button');
+    const rows = within(list).getAllByRole('button', { name: /, One agent, / });
     expect(rows).toHaveLength(2);
     expect(within(list).getByText('Idle')).toBeDefined();
     expect(within(list).getByText('Done')).toBeDefined();
-    expect(within(list).queryByText('Finished')).toBeNull();
     expect(levelStack().dataset.levelStack).toBe('session');
 
     fireEvent.click(rows[0] ?? list);
@@ -485,7 +483,7 @@ describe('c07 Auto scenes', () => {
 
     const form = await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
     expect(within(form).getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
-    expect(screen.getByText(/^Limit \$/)).toBeDefined();
+    expect(within(form).getByText(/^Limit \$/)).toBeDefined();
   });
 
   it('c07-auto-start-open at 1100 ends the drawer at the tools column, with Close and the primary in it', async () => {
@@ -523,10 +521,10 @@ describe('c07 Auto scenes', () => {
     rects.mockRestore();
   });
 
-  it('c07-auto-start offers Start an auto in the empty state, which opens the Auto form', async () => {
+  it('c07-auto-start offers Start an auto on the Runs page, which opens the Auto form', async () => {
     mount({ id: 'c07-auto-start' });
 
-    expect(await screen.findByText('No Auto agents yet', undefined, WAIT)).toBeDefined();
+    expect(await screen.findByRole('button', { name: 'Start an auto' }, WAIT)).toBeDefined();
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Start an auto' })).toBeNull();
 
@@ -534,7 +532,7 @@ describe('c07 Auto scenes', () => {
 
     const form = await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
     expect(within(form).getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
-    expect(screen.getByText(/^Limit \$/)).toBeDefined();
+    expect(within(form).getByText(/^Limit \$/)).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Start an auto' }).length).toBeGreaterThan(0);
   });
 });

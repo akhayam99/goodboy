@@ -16,6 +16,7 @@ export const autoStuckKindOf = ({ state }: Params): AutoStuckKind | null => {
       return 'childBlocked';
     case 'running':
     case 'done':
+    case 'stopped':
     case 'retried':
     case 'queued':
       return null;

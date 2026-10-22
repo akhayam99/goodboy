@@ -1,11 +1,10 @@
-import { Chip, SelectableRow, StatusDot, Tooltip } from '@goodboy/ui';
+import { SelectableRow, StatusDot, Tooltip } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import { openSessionPage } from '../../../session/openSessionPage';
 import type { PageCountFacts } from '../../../session/pageCountWord';
 import type { Page } from '../../../session/pageRegistry';
-import { pageMarkerOf } from '../../../session/pageMarkerOf';
 import { pageSlotOf } from '../../../session/pageSlot';
 import type { CurrentSign } from './currentSign';
 
@@ -31,7 +30,6 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
         const Icon = page.icon;
         const isCurrent = sign === page.id;
         const slot = pageSlotOf({ page: page.count, facts });
-        const marker = pageMarkerOf({ pageId: page.id });
         const count = (
           <span
             data-page-value={page.id}
@@ -53,20 +51,6 @@ export const SessionPages = ({ session, pages, facts, sign, onOpened }: Props) =
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
               <span className="min-w-0 flex-1 truncate">{page.label}</span>
-              {marker === null ? null : (
-                <Tooltip content={marker.why} side="right">
-                  <span className="flex shrink-0">
-                    <Chip
-                      tone="warning"
-                      kind="state"
-                      emphasis="subtle"
-                      bordered={false}
-                      label={marker.label}
-                      testId={`page-marker-${page.id}`}
-                    />
-                  </span>
-                </Tooltip>
-              )}
               {slot.fact === null ? (
                 count
               ) : (

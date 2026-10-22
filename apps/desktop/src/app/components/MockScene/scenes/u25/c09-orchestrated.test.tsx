@@ -18,6 +18,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { SESSION_PAGE_INTRO } from '../../../../../features/session/sessionPageIntro';
 import { MOCK_SCENES } from '../..';
 import { U25_C09_ORCHESTRATED_SCENES } from './c09-orchestrated';
 
@@ -76,33 +77,30 @@ describe('the c09 orchestrated scenes', () => {
     }
   });
 
-  it('c09-orchestrated-list lists only orchestrated runs on the run grid', async () => {
+  it('c09-orchestrated-list lists the orchestrated run as a plan row of Runs', async () => {
     await mount('c09-orchestrated-list');
 
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
 
-    expect(currentPage()).toBe('Orchestrated1');
-    const grid = screen.getByRole('list', { name: 'Orchestrated' });
+    expect(currentPage()).toBe('Runs1');
+    const grid = screen.getByRole('list', { name: 'Runs' });
     expect(
       within(grid).getByRole('button', { name: /^Open Speed up the export end to end/ }),
     ).toBeDefined();
-    expect(within(grid).queryByText('Fix flaky tests in the ledger export')).toBeNull();
+    expect(within(grid).getByText('Was an orchestrated run')).toBeDefined();
   });
 
-  it('c09-orchestrated-empty offers Run an orchestrator under the page intro', async () => {
+  it('c09-orchestrated-empty lands on Runs under its intro, with no orchestrated row', async () => {
     await mount('c09-orchestrated-empty');
 
-    expect(screen.getByText('No orchestrated runs yet')).toBeDefined();
-    expect(
-      screen.getByText('You give a goal, and the orchestrator plans the whole run from it.'),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Run an orchestrator' })).toBeDefined();
+    expect(screen.getByText(SESSION_PAGE_INTRO.runs[0])).toBeDefined();
+    expect(screen.queryByText('Was an orchestrated run')).toBeNull();
   });
 
-  it('c09-orch-running reads as one document with the sidebar on Orchestrated', async () => {
+  it('c09-orch-running reads as one document with the sidebar on Runs', async () => {
     await mount('c09-orch-running');
 
-    expect(currentPage()).toBe('Orchestrated1');
+    expect(currentPage()).toBe('Runs1');
     expect(screen.getByRole('heading', { name: 'Speed up the export end to end' })).toBeDefined();
     expect(screen.getByText(/times out over 10k rows/)).toBeDefined();
     const facts = nodeOf('[data-orchestrated-facts]');

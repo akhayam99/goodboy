@@ -83,7 +83,7 @@ const SEARCH_JUMPS: ReadonlyArray<{
   {
     kind: 'message',
     overrides: () => ({ kind: 'message', agentId: 'agent-gone' as AgentId, status: 'user' }),
-    lands: lens('agents'),
+    lands: lens('workflows'),
   },
   {
     kind: 'plan',

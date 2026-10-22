@@ -12,6 +12,7 @@ import { ReportedError } from '../../../../../store/slices/notifications/reporte
 import type {
   ActionCardActionTarget,
   ActionTrack,
+  FoldedVerb,
   SuggestionActionTarget,
 } from '../../../../actions/types';
 import { autoTreeOfAgent } from '../../../../auto/autoTreeOfAgent';
@@ -24,6 +25,8 @@ import { useTimelineOpen } from '../../../hooks/useTimelineOpen';
 import type { NeedsYouOwner } from '../../../timeline/needsYou';
 import type { ActionCardModel, AutoActionTarget } from '../actionCardsOf';
 import { foldSecondVerb } from '../foldSecondVerb';
+import { foldVerbs } from '../foldVerbs';
+import { suggestionPlaceOf } from '../suggestionPlaceOf';
 import { useOpenNeedsYou } from '../useOpenNeedsYou';
 
 type Params = {
@@ -61,6 +64,7 @@ export type CardActions = {
 export type ActionCardActions = {
   readonly actionsFor: (params: ActionsParams) => CardActions;
   readonly isHidden: (params: CardParams) => boolean;
+  readonly openFor: (params: CardParams) => (() => void) | null;
 };
 
 type OwnerParams = {
@@ -132,6 +136,10 @@ const messageOf = ({ error }: ErrorParams): string =>
   error instanceof Error ? error.message : String(error);
 
 const RETRY_LABEL = 'Retry';
+
+const GONE_REASON = 'This agent is no longer in this session. It was deleted or moved.';
+
+const foldedLabelOf = ({ card }: CardParams): string => card.title;
 
 const CONFIRM_ROLE: Partial<Record<SessionSuggestion['kind'], ConfirmRole>> = {
   'close-worktree': 'danger',
@@ -216,17 +224,20 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
 
   const retryAuto = async ({ card, target }: CardParams & AutoParams): Promise<void> => {
     await loadAutoTrees({ sessionId });
+    const state = useAppStore.getState();
+    const found = autoTreeOfAgent({
+      views: state.autoTreeViews[sessionId] ?? EMPTY_ARRAY,
+      agentId: target.agentId,
+    });
+    const child = (state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).find(
+      (agent) => agent.id === target.agentId,
+    );
+    if (found?.kind !== 'child') {
+      setFailure({ key: card.id, message: GONE_REASON });
+      return;
+    }
     if (target.kind === 'neverStarted') {
-      const state = useAppStore.getState();
-      const found = autoTreeOfAgent({
-        views: state.autoTreeViews[sessionId] ?? EMPTY_ARRAY,
-        agentId: target.agentId,
-      });
-      const child = (state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).find(
-        (agent) => agent.id === target.agentId,
-      );
       const isQueued =
-        found?.kind === 'child' &&
         (found.delegation.state === 'accepted' || found.delegation.state === 'starting') &&
         found.delegation.settledAt === null;
       if (!isQueued || child?.startedAt !== undefined) {
@@ -380,13 +391,71 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
   };
 
   const actionsFor = ({ card, isNarrow = false }: ActionsParams): CardActions => {
-    const actions = baseActionsFor({ card });
-    return isNarrow ? foldSecondVerb({ actions, sessionId }) : actions;
+    const base = baseActionsFor({ card });
+    const actions = isNarrow ? foldSecondVerb({ actions: base, sessionId }) : base;
+    const inner = card.folded.map((folded) => ({
+      folded,
+      folds: baseActionsFor({ card: folded }),
+    }));
+    const verbs = inner.flatMap(({ folded, folds }): ReadonlyArray<FoldedVerb> =>
+      folds.main === null
+        ? []
+        : [
+            {
+              id: `folded:${folded.id}`,
+              label: foldedLabelOf({ card: folded }),
+              run: folds.main.run,
+            },
+          ],
+    );
+    const innerFailure = inner.find(({ folds }) => folds.failure !== null)?.folds.failure ?? null;
+    return foldVerbs({
+      actions: {
+        ...actions,
+        failure: actions.failure ?? innerFailure,
+        isBusy: actions.isBusy || inner.some(({ folds }) => folds.isBusy),
+      },
+      sessionId,
+      verbs,
+    });
   };
 
   const isHidden = ({ card }: CardParams): boolean =>
     droppedIds.has(card.id) ||
     (card.source.kind === 'suggestion' && runner.notNowIds.has(card.source.suggestion.id));
 
-  return { actionsFor, isHidden };
+  const openFor = ({ card }: CardParams): (() => void) | null => {
+    const { source } = card;
+    if (source.kind === 'owner') {
+      return () => openNeedsYou({ owner: source.owner });
+    }
+    if (source.kind === 'auto') {
+      const { target } = source;
+      const agentId =
+        target.kind === 'approve' || target.kind === 'blocked'
+          ? target.rootAgentId
+          : target.agentId;
+      return () => navigate({ to: agentPlace({ sessionId, agentId }) });
+    }
+    const place = suggestionPlaceOf({ suggestion: source.suggestion, mountId: card.mountId });
+    if (place === null) {
+      return null;
+    }
+    return () => {
+      const mountPath =
+        place.kind === 'branch'
+          ? ((useAppStore.getState().sessionProjectMounts[sessionId] ?? EMPTY_ARRAY).find(
+              (mount) => mount.mountId === place.mountId,
+            )?.worktreePath ?? null)
+          : null;
+      navigate({
+        to:
+          place.kind === 'questions'
+            ? sessionPlace({ sessionId, lens: 'questions' })
+            : branchPlace({ sessionId, mountPath, tab: place.tab }),
+      });
+    };
+  };
+
+  return { actionsFor, isHidden, openFor };
 };

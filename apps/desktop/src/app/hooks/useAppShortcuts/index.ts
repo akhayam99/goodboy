@@ -13,6 +13,7 @@ import {
   type LensKind,
 } from '../../../store';
 import { doorMountPath } from '../../../store/slices/navigation/doorMountPath';
+import { foldedLensOf } from '../../../store/slices/navigation/foldedLensOf';
 import { branchTabOf } from '../../../store/slices/session-view/branchTabOf';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { toggleSessionTerminal } from '../../../features/terminal/toggleSessionTerminal';
@@ -31,8 +32,6 @@ import { goUp } from './goUp';
 import { useGoToBoard } from '../useGoToBoard';
 import { useSessionNavigation } from '../useSessionNavigation';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { isAutoAgentsShown } from '../../../features/auto/isAutoAgentsShown';
-import { openAutoAgents } from '../../../features/auto/openAutoAgents';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
@@ -122,18 +121,12 @@ export const useAppShortcuts = ({
     if (sessionId == null || !isLensReachable({ state, sessionId, lens: kind })) {
       return;
     }
-    const active = state.activeLens[sessionId] ?? null;
+    const active = foldedLensOf({ lens: state.activeLens[sessionId] ?? null });
     const isBranchDoor =
       active === 'branch' &&
       (kind === 'review' || kind === 'pr' || kind === 'files') &&
       branchTabOf({ state, sessionId, mountPath: null }) === doorTabOf({ kind });
-    if (kind === 'workflows' && active === 'workflows') {
-      openLens({ sessionId, lens: 'orchestrated' });
-      return;
-    }
-    const isLeaving =
-      kind != null &&
-      (active === kind || isBranchDoor || (kind === 'workflows' && active === 'orchestrated'));
+    const isLeaving = kind != null && (active === kind || isBranchDoor);
     if (kind === 'review' && !isLeaving) {
       state.navigate({
         to: branchPlace({
@@ -147,16 +140,7 @@ export const useAppShortcuts = ({
     openLens({ sessionId, lens: isLeaving ? null : kind });
   }, []);
 
-  const goToAgents = useCallback(() => {
-    const state = useAppStore.getState();
-    const sessionId = state.currentSessionId;
-    const active = sessionId === null ? null : (state.activeLens[sessionId] ?? null);
-    if (sessionId === null || active !== 'agents' || !isAutoAgentsShown({ state, sessionId })) {
-      goToLens({ kind: active === 'auto' ? null : 'agents' });
-      return;
-    }
-    openAutoAgents({ sessionId });
-  }, [goToLens]);
+  const goToRuns = useCallback(() => goToLens({ kind: 'workflows' }), [goToLens]);
 
   const isExploreSession = useAppStore((state) => {
     const sessionId = state.currentSessionId;
@@ -244,7 +228,7 @@ export const useAppShortcuts = ({
   useShortcut('lens.decisions', () => toggleContext({ tab: 'decisions' }));
   useShortcut('lens.summary', () => toggleContext({ tab: 'summary' }));
   useShortcut('lens.workflows', () => goToLens({ kind: 'workflows' }));
-  useShortcut('lens.agents', goToAgents);
+  useShortcut('lens.agents', goToRuns);
   useShortcut('lens.review', () => goToLens({ kind: 'review' }));
   useShortcut('lens.questions', () => goToLens({ kind: 'questions' }));
   useShortcut('lens.files', () => goToLens({ kind: 'files' }), !isExploreSession);

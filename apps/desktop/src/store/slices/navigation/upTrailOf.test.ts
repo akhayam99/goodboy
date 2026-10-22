@@ -66,7 +66,7 @@ describe('upTrailOf', () => {
   it.each<readonly [string, Place, ReadonlyArray<string>]>([
     ['the board', BOARD_PLACE, ['Sessions']],
     ['the Overview', sessionPlace({ sessionId: S1 }), [TITLE]],
-    ['a page', sessionPlace({ sessionId: S1, lens: 'agents' }), [TITLE, 'Agents']],
+    ['an old Agents address', sessionPlace({ sessionId: S1, lens: 'agents' }), [TITLE, 'Runs']],
     [
       'an orchestrated run',
       sessionPlace({
@@ -74,7 +74,7 @@ describe('upTrailOf', () => {
         lens: 'workflows',
         target: { kind: 'run', runId: DYNAMIC_RUN },
       }),
-      [TITLE, 'Orchestrated', 'Run'],
+      [TITLE, 'Runs', 'Run'],
     ],
     [
       'a preset run',
@@ -85,8 +85,8 @@ describe('upTrailOf', () => {
       }),
       [TITLE, 'Runs', 'Run'],
     ],
-    ['a run step', agentAt({ agentId: STEP }), [TITLE, 'Orchestrated', 'Run', 'Agent']],
-    ['an agent', agentAt({ agentId: SCOUT }), [TITLE, 'Agents', 'Agent']],
+    ['a run step', agentAt({ agentId: STEP }), [TITLE, 'Runs', 'Run', 'Agent']],
+    ['an agent', agentAt({ agentId: SCOUT }), [TITLE, 'Runs', 'Agent']],
     ['a resolver', agentAt({ agentId: RESOLVER }), [TITLE, 'Comments', 'Agent']],
     [
       'an artifact',

@@ -291,15 +291,14 @@ describe('App lens shortcuts on darwin', () => {
     });
   });
 
-  it('moves from Agents to Auto agents on the second press, whatever an old setting says', () => {
-    state.activeLens = { 'session-1': 'agents' };
-    state.settings = { 'agents.autoExperiment': 'false' };
+  it('opens Runs from the Agents chord, where every agent now lives', () => {
+    state.activeLens = { 'session-1': null };
     render(<App />);
 
     press({ code: 'KeyA', key: 'a', metaKey: true, altKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
-      to: expect.objectContaining({ view: expect.objectContaining({ lens: 'auto' }) }),
+      to: expect.objectContaining({ view: expect.objectContaining({ lens: 'workflows' }) }),
     });
   });
 

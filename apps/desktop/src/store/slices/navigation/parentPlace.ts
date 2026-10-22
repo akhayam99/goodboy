@@ -1,6 +1,5 @@
 import type { AppState } from '../../types';
 import { agentHomeFor } from './agentHomeFor';
-import { isOrchestratedRun } from './isOrchestratedRun';
 import { sessionPlace } from './place';
 import { placeBeforeDraft } from './placeBeforeDraft';
 import type { Place } from './types';
@@ -46,12 +45,6 @@ export const parentPlace = ({ state, place }: Params): Place | null => {
       lens: home,
       target: runId === null ? null : { kind: 'run', runId },
     });
-  }
-  if (
-    view.target?.kind === 'run' &&
-    isOrchestratedRun({ state, sessionId, runId: view.target.runId })
-  ) {
-    return sessionPlace({ sessionId, lens: 'orchestrated' });
   }
   if (
     view.target !== null &&

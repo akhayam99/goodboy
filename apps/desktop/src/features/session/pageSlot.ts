@@ -22,12 +22,6 @@ const countOf = ({ page, facts }: CountParams): number => {
       return facts.changedFiles;
     case 'runs':
       return facts.runs;
-    case 'orchestrated':
-      return facts.orchestratedRuns;
-    case 'agents':
-      return facts.agents;
-    case 'auto':
-      return facts.autoAgents;
     case 'artifacts':
       return facts.artifacts;
     case 'questions':
@@ -51,12 +45,6 @@ const liveCountOf = ({ page, facts }: CountParams): LiveCount | null => {
       { tone: 'warning', count: facts.waitingRuns },
       { tone: 'info', count: facts.runningRuns },
     ],
-    orchestrated: [
-      { tone: 'warning', count: facts.waitingOrchestratedRuns },
-      { tone: 'info', count: facts.runningOrchestratedRuns },
-    ],
-    agents: [{ tone: 'info', count: facts.runningAgents }],
-    auto: [{ tone: 'info', count: facts.workingAutoAgents }],
     artifacts: [],
     questions: [{ tone: 'warning', count: facts.openQuestions }],
   };

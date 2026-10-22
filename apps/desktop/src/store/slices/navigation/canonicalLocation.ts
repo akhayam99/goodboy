@@ -3,6 +3,7 @@ import type { AppState } from '../../types';
 import type { LensKind } from '../session-view/types';
 import { agentHomeFor } from './agentHomeFor';
 import { doorMountPath } from './doorMountPath';
+import { foldedLensOf } from './foldedLensOf';
 import { branchPlace, fixRunTranscript, sessionPlace } from './place';
 import { resolverThread } from './resolverThread';
 import { CONTEXT_LENS_TAB } from './contextLensTab';
@@ -33,7 +34,7 @@ const canonicalAgent = ({
     return {
       place: sessionPlace({
         sessionId,
-        lens: home ?? 'agents',
+        lens: home ?? 'workflows',
         agentId,
         ...(pane !== undefined && { target: { kind: 'agent', pane } }),
       }),
@@ -190,7 +191,10 @@ const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
   if (asked.at === 'board' || asked.at === 'session-draft') {
     return asked;
   }
-  const request = unavailableBranchTab({ state, request: asked });
+  const request = unavailableBranchTab({
+    state,
+    request: { ...asked, view: { ...asked.view, lens: foldedLensOf({ lens: asked.view.lens }) } },
+  });
   const { view, sessionId } = request;
   const branch = formerBranchPlace({ state, request });
   if (branch !== null) {

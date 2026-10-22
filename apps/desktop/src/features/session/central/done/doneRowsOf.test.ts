@@ -168,6 +168,51 @@ describe('doneRowsOf', () => {
     expect(rowsOf(modelOf({ agents: [root], autoTrees: [view] }))).toEqual([]);
   });
 
+  it('lists a child you stopped or declined in a live Auto tree, with its retry target', () => {
+    const settledAt = NOW.getTime() - 60_000;
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...aDelegation({
+            key: 'billing',
+            role: 'reviewer',
+            state: 'settled',
+            outcome: 'stopped',
+          }),
+          reason: 'stopped',
+          settledAt,
+          target: { mountId: 'mount-billing' },
+        },
+        {
+          ...aDelegation({
+            key: 'settings',
+            role: 'implementer',
+            state: 'settled',
+            outcome: 'stopped',
+          }),
+          slot: 1,
+          reason: 'declined',
+          settledAt,
+        },
+        {
+          ...aDelegation({ key: 'tester', role: 'tester', state: 'settled', outcome: 'failed' }),
+          slot: 2,
+          settledAt,
+        },
+      ],
+    });
+    const root = done({ id: FIXTURE_ROOT, kind: 'auto', name: 'Keep the retries green' });
+
+    const rows = rowsOf(modelOf({ agents: [root], autoTrees: [view] }));
+
+    expect(rows.map((row) => [row.title, row.by, row.retryAgentId, row.mountId])).toEqual([
+      ['You stopped the reviewer', 'Auto', 'agent-billing', 'mount-billing'],
+      ['You declined the implementer', 'Auto', 'agent-settings', null],
+    ]);
+    expect(rows[0]?.entryId).toBe(`agent:${FIXTURE_ROOT}`);
+  });
+
   it('turns a rebase event into a row unless its agent already has one', () => {
     const lone = modelOf({
       events: [eventOf({ id: 'r1', kind: 'history_rewritten', payload: { origin: 'rebase' } })],

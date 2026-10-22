@@ -168,6 +168,7 @@ export const RESULTS_VIEW: AutoTreeView = {
   }),
   pendingRefusal: null,
   deliveredResults: CHILDREN.map((child) => deliveredOf(child)),
+  hiddenChildIds: [],
   rootAsk: null,
 };
 

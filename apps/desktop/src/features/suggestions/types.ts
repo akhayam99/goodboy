@@ -120,6 +120,7 @@ export type SessionSuggestion =
       readonly payload: {
         readonly count: number;
         readonly firstQuestion: SuggestionQuestion | null;
+        readonly rootAgentId: AgentId | null;
       };
     })
   | (SuggestionBase & {

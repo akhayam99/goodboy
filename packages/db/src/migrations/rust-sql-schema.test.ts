@@ -132,6 +132,12 @@ const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
     reason:
       'a run delete counts only the agents it newly tombstones, filtering on deleted_at itself',
   },
+  {
+    file: 'auto-delegations.ts',
+    contains: ['JOIN agents a ON a.id = d.child_agent_id', 'a.deleted_at IS NOT NULL'],
+    reason:
+      'an auto tree lists the children that left it: a deleted child is what it looks for, so it has to see the tombstone',
+  },
 ];
 
 const RUST_TEST_MODULE = '#[cfg(test)]';

@@ -40,8 +40,12 @@ describe('autoRetryTargetsOf', () => {
         agentId: 'agent-fixer',
         rootAgentId: FIXTURE_ROOT,
         role: 'work for fixer',
+        noun: 'Implementer',
         kind: 'neverStarted',
         reason: null,
+        reasonCode: null,
+        mountId: null,
+        plan: null,
         canRetry: true,
       },
     ]);
@@ -104,6 +108,39 @@ describe('autoRetryTargetsOf', () => {
     expect(autoRetryTargetsOf({ views: [view], agents: [ROOT], now: LATE })).toEqual([]);
   });
 
+  it('skips a child you stopped or declined', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: ['stopped', 'declined'].map((reason, slot) => ({
+        ...aDelegation({ key: reason, role: 'reviewer', state: 'settled', outcome: 'stopped' }),
+        slot,
+        reason,
+      })),
+    });
+
+    expect(autoRetryTargetsOf({ views: [view], agents: [ROOT], now: LATE })).toEqual([]);
+  });
+
+  it('skips a child a later one replaced on the same branch', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...aDelegation({ key: 'old', role: 'implementer', state: 'settled', outcome: 'failed' }),
+          target: { mountId: 'mount-home' },
+        },
+        {
+          ...aDelegation({ key: 'new', role: 'implementer', state: 'running' }),
+          target: { mountId: 'mount-home' },
+          slot: 1,
+          createdAt: FIXTURE_NOW + 1_000,
+        },
+      ],
+    });
+
+    expect(autoRetryTargetsOf({ views: [view], agents: [ROOT], now: LATE })).toEqual([]);
+  });
+
   it('skips finished and stopped trees', () => {
     const delegations = [
       aDelegation({ key: 'fixer', role: 'implementer', state: 'settled', outcome: 'failed' }),
@@ -145,19 +182,70 @@ describe('autoRetryTargetsOf', () => {
     expect(targets.map((target) => target.canRetry)).toEqual([true]);
   });
 
-  it('adds an approve target when the plan waits on you', () => {
-    const view = aView({ phase: 'waiting', artifacts: [aPlanRow()] });
+  it('adds an approve target named by the plan, its version and its branches when the plan waits on you', () => {
+    const view = aView({
+      phase: 'waiting',
+      artifacts: [aPlanRow({ title: 'Center pages rollout', revision: 3 })],
+      delegations: ['home', 'billing', 'home'].map((page, index) => ({
+        ...aDelegation({ key: `${page}-${index}`, role: 'implementer', state: 'accepted' }),
+        target: { mountId: `mount-${page}` },
+      })),
+    });
 
     expect(autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW })).toEqual([
       {
         agentId: FIXTURE_ROOT,
         rootAgentId: FIXTURE_ROOT,
         role: 'Auto',
+        noun: 'Auto',
         kind: 'approve',
         reason: null,
+        reasonCode: null,
+        mountId: null,
+        plan: { name: 'Center pages rollout', version: 3, branchCount: 2 },
         canRetry: false,
       },
     ]);
+  });
+
+  it('gives an approve target no plan facts while the plan is being revised', () => {
+    const view = aView({
+      phase: 'waiting',
+      artifacts: [aPlanRow({ openRevise: 'delegation-reviser' }), aPlanRow({ title: '  ' })],
+    });
+
+    expect(
+      autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW }).map((target) => [
+        target.kind,
+        target.plan,
+      ]),
+    ).toEqual([['approve', null]]);
+  });
+
+  it('carries the branch and the reason code of a stuck child', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...aDelegation({
+            key: 'fixer',
+            role: 'implementer',
+            state: 'settled',
+            outcome: 'blocked',
+          }),
+          target: { mountId: 'mount-home' },
+          reason: 'declared_blocked',
+        },
+      ],
+    });
+
+    expect(
+      autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW }).map((target) => [
+        target.noun,
+        target.mountId,
+        target.reasonCode,
+      ]),
+    ).toEqual([['Implementer', 'mount-home', 'declared_blocked']]);
   });
 
   it('adds a blocked target for a blocked tree', () => {

@@ -2,6 +2,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import type { DiffFocus, LensKind } from '../session-view/types';
 import { noteIdOfThread } from '../../../features/resolve/notes/noteThread';
 import type { OpenDrawer } from '../drawer/state';
+import { foldedLensOf } from './foldedLensOf';
 import type { AgentPane, BranchTab, Place, PlaceRequest, SessionTarget } from './types';
 
 type SessionPlaceParams = {
@@ -29,7 +30,7 @@ export const sessionPlace = ({
 }: SessionPlaceParams): Place => ({
   at: 'session',
   sessionId,
-  view: { lens, agentId, target },
+  view: { lens: foldedLensOf({ lens }), agentId, target },
 });
 
 type BranchPlaceParams = {

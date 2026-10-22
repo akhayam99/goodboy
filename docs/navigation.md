@@ -469,7 +469,7 @@ never exists on one surface only.
   (one choice per worktree), Open in
   editor; Rename (inline, in the row that opened the menu), Turn on Autopilot or
   Turn off Autopilot (the session's autorun, the default of a run started
-  without its own setting and of agents outside a workflow; the Agents page
+  without its own setting and of agents outside a workflow; the Runs page
   header has no switch), Start an agent, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with its
   confirm and Undo, and Delete with its confirm (Restore once archived). Several sessions: Copy
@@ -862,22 +862,33 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   to another place. Only one level shows, so a session never carries a nested
   card in the workspace list.
 - **The pages** come from one registry (`features/session/pageRegistry.ts`):
-  Overview, Changes (with the count of changed files) in a branchless session only, Runs, Agents, Auto
-  agents (Auto is always on, so it always shows), Artifacts, and Questions last, always there like Artifacts: its slot
+  Overview, Changes (with the count of changed files) in a branchless session only, Runs,
+  Artifacts, and Questions last, always there like Artifacts: its slot
   is the open count with the warning dot while a question waits on you.
-  One entry carries a marker: **Auto agents** reads **Experimental** ("Auto
-  starts agents on its own. Its choices are still being tuned."). The marker
-  is a `Chip` in the `warning` tone (the attention yellow, through
-  `tintClasses`), right of the label, beside the count, from `pageMarkerOf`
-  (`features/session/pageMarkerOf.ts`). Its words live in
-  `SESSION_PAGE_MARKER_WHY` next to `SESSION_PAGE_INTRO`
-  (`features/session/sessionPageIntro.ts`), which share the sentence about
-  Auto's tuning. Agents carries no marker. The marker has its own shared
-  `Tooltip` with those words only, and the count has a separate one ("1
-  agent"); a row never carries a native `title`. Start an agent stays
-  available.
-  Agents lists standalone agents only; an Auto agent lives under Auto agents
-  (`isAgentsPageKind`, `agentHomeLens` sends it to the `auto` lens). A page row ends in one
+  **Runs is the one entry for work** (ux27 one flow, unit 1): it folds the
+  former Orchestrated, Agents and Auto agents entries. Its page lists every
+  run of the session, one row per request, from `sessionRunsOf`
+  (`features/session/sessionRunsOf.ts`): workflow runs (preset and
+  orchestrated), Auto conversations and the agents you started by hand, newest
+  first, In progress above Finished, archived runs folded. A row draws its
+  state dot, a shape glyph (Plan or One agent), the title, where it came from
+  ("Was a preset run · Fix a layout", "Was an orchestrated run", "Was an Auto
+  conversation", "Was an agent · Scout"), its state word, progress, cost and
+  age (`RunsGrid`). Opening a row opens the page it always had: a workflow run
+  on its run page, an Auto conversation in the Auto chat, an agent in its
+  overlay; an agent or Auto row keeps its right click menu. The old
+  `orchestrated`, `agents` and `auto` lenses fold into `workflows`
+  (`foldedLensOf`, applied by `sessionPlace`, `canonicalLocation`,
+  `applyLocation` and the workspace), so an old address, a saved window or a
+  door that still names them lands on Runs, and the trail of an old agent or
+  run reads Session, Runs, then the agent or run. A row never carries a native
+  `title`. The Runs page opens on the Start a run field (`StartRun`), and
+  **Start a run** in the New menu (`newForm.startRun`), in a session's ⌘K
+  verbs (`session.startRun`) and ⌘K **Start a run from** a preset
+  (`startRunFromPresetEntries`) all call `openStartRun`: it navigates to Runs,
+  clears the run focus and, after navigation, sends the text to the field
+  (`startRunEventName`). Start an agent stays in the Runs header beside it. A
+  page row ends in one
   right-aligned slot as wide as its content, so a label never truncates for an
   empty slot: the count in tabular gray (`countSlotText`), at rest the total;
   while something runs the number beside the 6px info dot is the running
@@ -885,11 +896,13 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   its own count (the dot of `runRowFactsOf`, the one the Runs row draws); a
   warning dot on Questions. The count word
   ("1 running", "4 artifacts") is the row's tooltip. A list page repeats no
-  count under its title: Orchestrated, Agents, Artifacts and a tracker list
+  count under its title: Runs, Artifacts and a tracker list
   (Linear, Jira and the rest) carry their counts on their group rows or filter
-  tabs only, and Agents has no "N running, N done" subtitle. Every number comes from
+  tabs only. Every number comes from
   one function, `pageSlotOf` over `usePageCountFacts`, and the folded rail and
-  its flyout read the same function; the Artifacts count is
+  its flyout read the same function; the Runs count is `sessionRunCountsOf`
+  over the same `sessionRunsOf` rows the page lists, and a test pins it to the
+  Now card (`sessionRunsOf.test.ts`); the Artifacts count is
   `liveArtifactCountOf`, pinned equal to the page's All tab.
 - **Projects and Linked are cards** (`SessionLevel/LevelCard`): a rounded
   `bg-subtle` surface (`rounded-lg`) whose edges sit on the page row
@@ -1071,25 +1084,18 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   the run Overview calls `leaveRunLevel`: the Runs list, a new history entry.
   An orchestrated run shows its document with **Orchestrated** selected
   ([The orchestrated document](workflows.md#the-orchestrated-document)).
-- **Orchestrated** is its own session page (lens `orchestrated`, after Runs,
-  ⌘⌥W pressed again; Runs counts preset runs only). It lists the orchestrated
-  runs on the Runs grid, or offers **Run an orchestrator** when there are none. The
-  entry stays selected while an orchestrated run is open (`pageLensOf`, read by
-  `useSessionPageLens` in the open, folded and flyout session levels). Back, Esc
-  and `parentPlace` from an orchestrated run land on this list. A step row of
-  the document opens the step in the pane (drawer kind `run-step`), never the
-  center.
-- **Auto keeps the rail on the session.** Auto agents opens the session's only
-  Auto conversation with the Agents panel open (`openAutoAgents`, through
-  `openSpawned`); with none or several it opens the Auto agents page
-  (`AutoAgentsPane`: one grid row per conversation with its state word and
-  **Start an auto** in the header; with none, the shared `EmptyState` "No Auto
-  agents yet" with **Start an auto**; both open the Auto form of the New drawer
-  through `openAutoForm`, and the page has no composer of its own), and a row
-  there opens that conversation with the Agents panel open. Auto agents stays
-  selected on the rail while an Auto agent is in the center. The Agents key (`lens.agents`) pressed again on Agents opens Auto
-  agents while it shows (`isAutoAgentsShown`), and pressed on Auto agents goes
-  back to the Overview.
+- **An orchestrated run opens from Runs.** Runs stays selected while any run,
+  agent or Auto conversation is in the center (the Runs page lists every
+  current lens, `pageLensOf` read by `useSessionPageLens` in the open, folded
+  and flyout session levels). Esc on an orchestrated run (`leaveRunLevel`) and
+  going up to Runs from a run (`upTo` clears the run focus when it lands on
+  the Runs list) land on the list. A step row of the document opens the step
+  in the pane (drawer kind `run-step`), never the center.
+- **Auto keeps the rail on the session.** An Auto row of Runs opens that
+  conversation with the Agents panel open (`openSpawned`), and Runs stays
+  selected on the rail while an Auto agent is in the center. ⌘⌥W and the
+  Agents key (`lens.agents`, ⌘⌥A) both open Runs, and pressed on Runs go back
+  to the Overview.
 
 The tools (Ask, Terminal, Explore, Context, Agents, Scripts) are panes, not pages:
 they open from the session tools column at the right of the content (see The
@@ -1321,7 +1327,9 @@ dot with `Draft in progress` while a written draft waits. The header has no
 `Esc` label and no X: Esc closes the page (`closeSessionDraft`) and lands on
 the place before it, or the board when there was none, which is also the
 parent `up()` goes to (`placeBeforeDraft`). With nothing written Esc leaves at
-once. With text Esc raises `Keep this draft?` under the line that describes the
+once. Text in **Start a run** counts as written: the draft holds it
+(`runText`, read by `useStartRun` while no session exists yet). With text Esc
+raises `Keep this draft?` under the line that describes the
 selected choice, inline and without a modal. It floats over the page, aligned
 to the column, so nothing below it moves (`SessionKickoff` takes it as its
 `notice`). It holds one action: `Keep draft` (or a second Esc) leaves and keeps
@@ -1818,8 +1826,8 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   The first segment of a studio has no menu because studios change from the
   column. It is a button only when that studio has a start to return to.
 - **Every menu row has five slots**: lead, label with a faint second part,
-  meta, a state that is always a word (the same reading `isAgentFinished`
-  makes), and a check on the current row, which is there even
+  meta, a state that is always a word (the same reading the Runs list
+  makes in `sessionRunsOf`), and a check on the current row, which is there even
   when it is the only row. The last segment opens its menu from the whole
   segment and always shows the chevron; an ancestor goes up by its name and
   opens its menu from a chevron that is always visible, faint, and doubles as
@@ -2189,8 +2197,9 @@ exists. Old checklist ids map to the four on hydrate.
 ## Auto in the shell
 
 Auto is described in [auto.md](auto.md); this is where it sits. Auto is always
-on: Settings has no Auto switch, and the **Experimental** marker sits beside
-the count of the **Auto agents** entry of the session rail. The tree of an Auto agent, and of each
+on: Settings has no Auto switch, and the **Experimental** marker sits on the
+Auto start of the New menu. An Auto conversation is a row of the one **Runs**
+entry of the session rail. The tree of an Auto agent, and of each
 child of an Auto tree, is the Agents panel of the session tools (see The session
 tools), never a second rail beside the chat. The chat of an Auto agent gets its delegation lines and its
 tail through the `insertions` prop of `ChatView` (`useAutoChat`). The

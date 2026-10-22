@@ -22,6 +22,7 @@ const STATE_COPY: Readonly<Record<AutoChildState, StateCopy>> = {
   running: { node: 'running', word: 'Working', isDanger: false, fallback: 'Working' },
   done: { node: 'done', word: 'Done', isDanger: false, fallback: 'Done' },
   failed: { node: 'failed', word: 'Failed', isDanger: true, fallback: 'Failed' },
+  stopped: { node: 'skipped', word: 'Stopped', isDanger: false, fallback: 'Stopped' },
   timedOut: { node: 'failed', word: 'Timed out', isDanger: true, fallback: 'Timed out' },
   blocked: { node: 'failed', word: 'Blocked', isDanger: true, fallback: 'Blocked' },
   neverStarted: {

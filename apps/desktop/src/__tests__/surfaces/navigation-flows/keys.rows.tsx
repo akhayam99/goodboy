@@ -175,7 +175,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'app.undo',
     open: async (ctx) => {
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Artifacts/);
       useAppStore.getState().undoable({
         message: 'Opened agents',
         undo: async () => {
@@ -311,7 +311,7 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'nav.back',
     open: async () => {
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Artifacts/);
       await press('nav.back')();
     },
     lands: lens(null),
@@ -319,17 +319,17 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'nav.forward',
     open: async () => {
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Artifacts/);
       await press('nav.back')();
       await press('nav.forward')();
     },
-    lands: lens('agents'),
+    lands: lens('plans'),
   }),
   keyRow({
     id: 'nav.up',
     note: 'goes up to the parent and reuses the entry below when it is the parent',
     open: async () => {
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Artifacts/);
       upIndexes.push(currentStack(useAppStore.getState()).index);
       await press('nav.up')();
     },
@@ -348,14 +348,14 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     id: 'nav.up',
     note: 'yields to a text field, where it moves the caret',
     open: async () => {
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Artifacts/);
       const field = document.createElement('textarea');
       document.body.append(field);
       field.focus();
       await pressed('nav.up', field);
       field.remove();
     },
-    lands: lens('agents'),
+    lands: lens('plans'),
   }),
   keyRow({
     id: 'session.next',
@@ -438,39 +438,13 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
   keyRow({
     id: 'lens.overview',
     open: async () => {
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Artifacts/);
       await press('lens.overview')();
     },
     lands: lens(null),
   }),
   pressRow({ id: 'lens.workflows', lands: both(lens('workflows'), () => heading('Runs')) }),
-  pressRow({ id: 'lens.agents', lands: both(lens('agents'), () => heading('Agents')) }),
-  keyRow({
-    id: 'lens.agents',
-    note: 'again on Agents opens Auto agents while the session has Auto',
-    open: async (ctx) => {
-      useAppStore.setState((state) => ({
-        sessionPhaseRuns: {
-          ...state.sessionPhaseRuns,
-          [ctx.sessionId]: [
-            ...(state.sessionPhaseRuns[ctx.sessionId] ?? []),
-            {
-              id: brandedId({ value: 'agent-auto-keys' }),
-              sessionId: ctx.sessionId,
-              ordinal: 99,
-              name: 'Why does the ledger retry post a second credit?',
-              status: 'completed',
-              kind: 'auto',
-            },
-          ],
-        },
-      }));
-      await press('lens.agents')();
-      await lens('agents')(ctx);
-      await press('lens.agents')();
-    },
-    lands: both(lens('auto'), () => heading('Why does the ledger retry post a second credit?')),
-  }),
+  pressRow({ id: 'lens.agents', lands: both(lens('workflows'), () => heading('Runs')) }),
   pressRow({ id: 'lens.review', lands: branchTab('comments') }),
   pressRow({ id: 'lens.questions', lands: both(lens('questions'), () => heading('Questions')) }),
   pressRow({ id: 'lens.files', lands: branchTab('files') }),

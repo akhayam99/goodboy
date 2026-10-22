@@ -25,7 +25,7 @@ vi.mock('../../../shared/hooks/useElementWidth', async () => {
 
 import type { ComponentType } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../shared/components/Toast';
 import {
   importStore,
@@ -96,6 +96,11 @@ const buttonsOf = ({ root }: RootParams): ReadonlyArray<HTMLElement> =>
 
 const isOverflowTrigger = ({ button }: ButtonParams): boolean =>
   button.closest('[data-slot="header-actions-overflow"]') !== null;
+
+const openFix = () =>
+  fireEvent.click(
+    within(screen.getByRole('region', { name: 'Fix' })).getByRole('button', { expanded: false }),
+  );
 
 const cases = COLUMN_SCENES.flatMap((scenes) =>
   Object.keys(scenes).map((name) => ({ scenes, name })),
@@ -172,6 +177,7 @@ describe('the CTA rule of the central column', () => {
 
   it('folds the second secondary into the overflow below 560 px and keeps the primary word', () => {
     const { container } = show({ scenes: U26_CENTRAL_NEXT_SCENES, name: NARROW_SCENE });
+    openFix();
 
     expect(screen.queryByRole('button', { name: 'Open check' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Answer' }).dataset.variant).toBe('primary');
@@ -186,6 +192,7 @@ describe('the CTA rule of the central column', () => {
 
   it('keeps the second secondary visible at 560 px and up', () => {
     show({ scenes: U26_CENTRAL_NEXT_SCENES, name: 'u26-central-next-mid-light' });
+    openFix();
 
     screen.getByRole('button', { name: 'Open check' });
   });

@@ -6,8 +6,10 @@ import { useNow } from '../../../../shared/hooks/useNow';
 import { autoRetryTargetsOf } from '../../../auto/autoRetryTargetsOf';
 import { BranchChip } from '../../central/branches/BranchChip';
 import { useBranchLabels, type BranchLabelOf } from '../../central/branches/useBranchLabels';
+import { useBranchNames } from '../../central/branches/useBranchNames';
 import { DoneSection } from '../../central/done/DoneSection';
 import { useDoneRows } from '../../central/done/useDoneRows';
+import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import { NextStackView } from '../../central/next/NextStackView';
 import { useNextCards } from '../../central/next/useNextCards';
 import { NowBlock } from '../../central/now/NowBlock';
@@ -29,6 +31,22 @@ type ChipParams = {
 
 const AUTO_CLOCK_MS = 15_000;
 
+type CardParams = {
+  readonly card: ActionCardModel;
+};
+
+type NameParams = CardParams & {
+  readonly branchLabelOf: BranchLabelOf;
+};
+
+const nameOf = ({ branchLabelOf, card }: NameParams): string | null => {
+  const { source } = card;
+  if (source.kind === 'auto' && source.target.plan !== null) {
+    return source.target.plan.name;
+  }
+  return branchLabelOf({ mountId: card.mountId })?.branch ?? null;
+};
+
 const chipOf = ({ branchLabelOf, mountId }: ChipParams) => {
   const label = branchLabelOf({ mountId });
   return label === null ? null : <BranchChip label={label} />;
@@ -45,9 +63,14 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     () => autoRetryTargetsOf({ views: model.autoTrees, agents, now: clock }),
     [agents, clock, model.autoTrees],
   );
-  const { cards, actionsFor } = useNextCards({ session, model, autoTargets });
+  const { cards, actionsFor, openFor } = useNextCards({ session, model, autoTargets });
   const days = useDoneRows({ session, model });
   const branchLabelOf = useBranchLabels({ sessionId });
+  const branchNameOf = useBranchNames({ sessionId });
+  const branchFor = useCallback(
+    ({ card }: CardParams) => branchNameOf({ mountId: card.mountId }),
+    [branchNameOf],
+  );
   const doneOutcome = days[0]?.rows[0]?.title ?? null;
   const hasLead = !isArchived && cards.length > 0;
 
@@ -76,9 +99,13 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
       )}
       {isArchived ? null : (
         <NextStackView
+          sessionId={sessionId}
           cards={cards}
           actionsFor={actionsFor}
+          openFor={openFor}
           chipFor={({ card }) => chipOf({ branchLabelOf, mountId: card.mountId })}
+          nameFor={({ card }) => nameOf({ branchLabelOf, card })}
+          branchFor={branchFor}
         />
       )}
       <DoneSection

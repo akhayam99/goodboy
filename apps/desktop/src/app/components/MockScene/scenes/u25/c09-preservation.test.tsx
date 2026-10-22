@@ -18,6 +18,7 @@ import {
   resetStoryStore,
 } from '../../../../../store/storyHarness';
 import { clearSceneInvoke } from '../../../../../test/sceneInvoke';
+import { NEW_DRAWER_FORMS } from '../../../../../features/session/newDrawerForms';
 import { U25_C09_ORCHESTRATED_SCENES } from './c09-orchestrated';
 import {
   C09_IMPLEMENTER_ID,
@@ -148,10 +149,10 @@ const mountOf = ({ index }: MountParams): SessionProjectMount => {
 };
 
 describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated document', () => {
-  it('Orchestrated entry: its own list, the empty state starts an orchestration', async () => {
+  it('Orchestrated runs: listed in Runs, and the New menu still starts an orchestration', async () => {
     await mount('c09-orchestrated-empty');
-    expect(screen.getByRole('button', { name: 'Run an orchestrator' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Orchestrated/ })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^Runs/ })).toBeDefined();
+    expect(NEW_DRAWER_FORMS.orchestrate.title).toBe('Run an orchestrator');
   });
 
   it('Run header: Pause run and Stop run confirmed; overflow: Step routing, View diff, Save as preset, Copy run summary, Archive, Delete', async () => {

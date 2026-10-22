@@ -570,6 +570,7 @@ describe('useSuggestionActions', () => {
         payload: {
           count: 2,
           firstQuestion: { id: 'question-1' as OpenQuestionId, createdByAgentId: AGENT_ID },
+          rootAgentId: null,
         },
       },
     });
@@ -589,6 +590,7 @@ describe('useSuggestionActions', () => {
         payload: {
           count: 1,
           firstQuestion: { id: 'question-1' as OpenQuestionId, createdByAgentId: AGENT_ID },
+          rootAgentId: null,
         },
       },
     });
@@ -998,7 +1000,7 @@ const EVERY_KIND = {
     ...suggestionBase,
     id: 'answer-questions:session-1',
     kind: 'answer-questions',
-    payload: { count: 1, firstQuestion: null },
+    payload: { count: 1, firstQuestion: null, rootAgentId: null },
   },
   'mount-project': {
     ...suggestionBase,

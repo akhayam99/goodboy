@@ -76,24 +76,13 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/WorkflowsPane.tsx'],
   },
-  OrchestratedPane: {
+  OrchestratedRunPage: {
     kind: 'shell',
-    files: [
-      'features/session/components/SessionWorkspace/parts/OrchestratedPane.tsx',
-      'features/session/components/OrchestratedRun/index.tsx',
-    ],
+    files: ['features/session/components/OrchestratedRun/index.tsx'],
   },
   IntegrationPane: {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/IntegrationPane/index.tsx'],
-  },
-  AgentsPane: {
-    kind: 'shell',
-    files: ['features/session/components/SessionWorkspace/parts/AgentsPane.tsx'],
-  },
-  AutoAgentsPane: {
-    kind: 'shell',
-    files: ['features/session/components/AutoAgentsPane/index.tsx'],
   },
   FilesPane: {
     kind: 'shell',

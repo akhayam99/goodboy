@@ -273,7 +273,7 @@ const openAndWorkThePlan = async (ctx: Ctx): Promise<void> => {
   );
 
   await click(screen.getByRole('button', { name: 'Edit' }));
-  fireEvent.change(await screen.findByRole('textbox', undefined, WAIT), {
+  fireEvent.change(await screen.findByRole('textbox', { name: /^Edit / }, WAIT), {
     target: { value: EDITED_SOURCE },
   });
   await click(screen.getByRole('button', { name: 'Save' }));

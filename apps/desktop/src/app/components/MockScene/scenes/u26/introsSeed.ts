@@ -8,9 +8,6 @@ export type IntroPage = keyof typeof SESSION_PAGE_INTRO;
 
 const LENS_OF: Readonly<Record<IntroPage, LensKind>> = {
   runs: 'workflows',
-  orchestrated: 'orchestrated',
-  agents: 'agents',
-  auto: 'auto',
 };
 
 const clock = sceneClock({ anchor: '2026-10-16T15:12:00.000Z' });

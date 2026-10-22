@@ -499,7 +499,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     name: 'palette verb: Start an agent',
     covers: ['navigate', 'palette:Start an agent'],
     open: () => openPalette(/^Start an agent$/),
-    lands: both(lens('agents'), () => heading('Agents')),
+    lands: both(lens('workflows'), () => heading('Runs')),
   },
   {
     name: 'palette verb: Link work',

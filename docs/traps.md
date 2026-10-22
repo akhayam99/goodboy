@@ -675,6 +675,12 @@ fails silently at runtime.
   `boot-shell-paints-the-chrome.test.ts` fails until `index.html` follows. The
   window is created hidden and shown by `useRevealWindow` after first paint;
   never show it in Rust setup again, or light users see dark first.
+- A Rust test that writes a script and then runs it can fail on Linux with
+  `Text file busy`: another test forks while the script is still open for
+  writing, and the child holds that handle until it execs. The probe then
+  reads "did not start" instead of the help it was meant to judge. Wait until
+  the script runs before the assertion, as `runnable` in
+  `providers/cli_probe.rs` does.
 
 ## History stashes are shared across worktrees
 

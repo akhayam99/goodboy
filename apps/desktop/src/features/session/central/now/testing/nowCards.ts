@@ -18,6 +18,7 @@ export const aQuestionCard = ({ where }: QuestionParams): ActionCardModel => {
     questionIds: ['question-1'],
     prNumber: null,
     owed: null,
+    mountId: null,
   };
   return {
     id: 'owner:question-1',
@@ -28,6 +29,7 @@ export const aQuestionCard = ({ where }: QuestionParams): ActionCardModel => {
     detail: where,
     mountId: null,
     source: { kind: 'owner', owner },
+    folded: [],
   };
 };
 
@@ -44,6 +46,7 @@ export const anAutoCard = ({ target }: AutoParams): ActionCardModel => ({
   detail: `"${target.role}" never started.`,
   mountId: null,
   source: { kind: 'auto', target },
+  folded: [],
 });
 
 type BandParams = {

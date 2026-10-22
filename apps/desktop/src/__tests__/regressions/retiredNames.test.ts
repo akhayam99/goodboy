@@ -32,12 +32,12 @@ describe('retired names match whatever the casing', () => {
     ['Start Auto', 'start-auto'],
     ['Orchestrate', 'orchestrate-verb'],
     ['Start another run', 'start-a-run'],
-    ['Start a run', 'start-a-run'],
   ])('flags the old start label %s', (text, id) => {
     expect(retiredIdsIn({ text })).toContain(id);
   });
 
   it.each([
+    'Start a run',
     'Run a workflow',
     'Run an orchestrator',
     'Start an agent',

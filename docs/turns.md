@@ -700,8 +700,8 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
   row reads too, so the two always show one value; without that source it
   draws no clock. The step's own thinking line on a run step page or pane
   names the step the same way (`RunStepFrame` sets `clockStepAgentId`), and
-  the Auto rail and Auto agents rows (`DelegationClock`) and the Agents list
-  (`AgentsGridRow`) read `agentActiveClock` too, inside a `WorkTimeProvider`. A tail that waits for your answer (`blocked`, a run step
+  the Auto rail rows (`DelegationClock`) read `agentActiveClock` too, inside a
+  `WorkTimeProvider`. A tail that waits for your answer (`blocked`, a run step
   waiting on you) draws no clock. A running turn and an operation with no wait
   in it count from their real start (`startedAt`). Every clock reads like every
   other duration (`formatDuration`: "42s", "2m 37s", "1h 12m"), nothing in the

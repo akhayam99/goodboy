@@ -74,7 +74,7 @@ type StackProps = {
 
 const Stack = (props: StackProps) => {
   const { cards, actionsFor } = useNextCards(props);
-  return <NextStackView cards={cards} actionsFor={actionsFor} />;
+  return <NextStackView sessionId={props.session.id} cards={cards} actionsFor={actionsFor} />;
 };
 
 const SESSION = aSession();
@@ -137,6 +137,7 @@ const QUESTION_OWNER: NeedsYouOwner = {
   questionIds: ['question-cap'],
   prNumber: null,
   owed: null,
+  mountId: null,
 };
 
 const NEVER_STARTED: AutoActionTarget = {
@@ -144,7 +145,11 @@ const NEVER_STARTED: AutoActionTarget = {
   rootAgentId: brandId<AgentId>({ value: 'agent-auto' }),
   role: 'Fixer',
   kind: 'neverStarted',
+  noun: 'Fixer',
   reason: 'Auto created it at 10:21, no first message reached it.',
+  reasonCode: null,
+  mountId: null,
+  plan: null,
   canRetry: true,
 };
 
@@ -203,8 +208,8 @@ describe('action cards in a stack', () => {
     setup();
 
     const region = screen.getByRole('region', { name: 'Next steps' });
-    within(region).getByRole('heading', { level: 2, name: 'Next' });
-    within(region).getByText('2');
+    const heading = within(region).getByRole('heading', { level: 2, name: 'Next' });
+    expect(heading.parentElement?.textContent).toBe('Next2');
     const titles = [...region.querySelectorAll('[data-action-card]')].map(
       (card) => card.getAttribute('data-testid') ?? '',
     );
@@ -265,7 +270,7 @@ describe('action cards in a stack', () => {
     expect(calls).toBe(2);
   });
 
-  it('leads with a never started Auto child, then the owner question, each with its own verb', () => {
+  it('leads with the question in Decide and keeps the stuck Auto child in Fix, each with its verb', () => {
     suggestionState.list = [];
     render(
       <ToastProvider>
@@ -277,24 +282,29 @@ describe('action cards in a stack', () => {
       </ToastProvider>,
     );
 
-    const cards = [
-      ...screen.getByRole('region', { name: 'Next steps' }).querySelectorAll('[data-action-card]'),
-    ];
-    expect(cards.map((card) => card.getAttribute('data-testid'))).toEqual([
-      'action-card-auto:agent-fixer:neverStarted',
+    const region = screen.getByRole('region', { name: 'Next steps' });
+    const cardsNow = () => [...region.querySelectorAll('[data-action-card]')];
+    expect(cardsNow().map((card) => card.getAttribute('data-testid'))).toEqual([
       'action-card-owner:question-cap',
     ]);
-    const stuck = within(cardAt({ index: 0, cards }));
+    const answer = within(cardAt({ index: 0, cards: cardsNow() })).getByRole('button', {
+      name: 'Answer',
+    });
+    expect(answer.dataset.variant).toBe('primary');
+
+    const fix = within(region).getByRole('region', { name: 'Fix' });
+    fireEvent.click(within(fix).getByRole('button', { expanded: false }));
+
+    const stuck = within(within(fix).getByTestId('action-card-auto:agent-fixer:neverStarted'));
     stuck.getByText('Auto is stuck');
     stuck.getByText(
-      '"Fixer" never started. Auto created it at 10:21, no first message reached it.',
+      'The fixer never started. Auto created it at 10:21, no first message reached it.',
     );
     const retry = stuck.getByRole('button', { name: 'Retry "Fixer"' });
-    expect(retry.dataset.variant).toBe('primary');
+    expect(retry.dataset.variant).toBe('secondary');
     expect(retry.textContent).toBe('Retry');
-    within(cardAt({ index: 0, cards })).getByRole('button', { name: 'Open Auto' });
-    const answer = within(cardAt({ index: 1, cards })).getByRole('button', { name: 'Answer' });
-    expect(answer.dataset.variant).toBe('secondary');
+    stuck.getByRole('button', { name: 'Open Auto' });
+    expect(region.querySelectorAll('[data-variant="primary"]')).toHaveLength(1);
   });
 
   it('runs the task once on a double click', async () => {

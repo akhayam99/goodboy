@@ -228,6 +228,7 @@ describe('r4 session rail scenes', () => {
       .filter((button) => button.getAttribute('aria-pressed') === 'true')
       .map((button) => button.getAttribute('aria-label'));
     expect(pressed).toEqual(['Context']);
+    expect(document.querySelector('[data-slot="page-trail"]')).toBeNull();
   });
 
   it('r4-rail-folded folds the rail with no foot and keeps the tools column', async () => {

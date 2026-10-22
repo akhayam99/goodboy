@@ -686,7 +686,7 @@ turn or on its own question. It means "stop waiting on this agent": the agent
 reads "Closed by you" with a neutral check, not a success, and **Reopen** takes
 it back. A workflow step never has Close. A stuck step is unblocked with Skip
 step in its next action, because closing it would leave the run blocked with
-no instruction. `isAgentFinished` and `isAgentClosable` in
+no instruction. `isAgentClosable` and `isAgentClosedByUser` in
 `apps/desktop/src/features/session/agent-lifecycle.ts` hold both rules.
 
 ### Auto
@@ -699,7 +699,7 @@ time. A child that waits on a question can ask Auto for a scout or an investigat
 two at most. It is always available and labelled **Experimental** on its
 session entry; there is no switch in Settings. **Start an auto** starts it, and
 **Start an agent** keeps the role start. A person sees an Auto tree as one row in the
-Overview, under **Auto agents** in the session, and as one chat with one
+Overview, as a row of **Runs** in the session, and as one chat with one
 line for each delegation, its tree in the Agents panel of the session tools
 ([auto.md](auto.md)).
 

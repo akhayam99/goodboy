@@ -213,6 +213,7 @@ describe('the c10 New session scenes', () => {
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
     ).toEqual([
+      'Start a run',
       'Run a workflow',
       'Run an orchestrator',
       'Start an agent',
