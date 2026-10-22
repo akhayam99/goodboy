@@ -1360,7 +1360,9 @@ title, the trail names it (a screen reader heading stays, drawn by
 
 A task comes in from Tasks: **Start** on an issue calls `pickIssue`, which puts
 the issue in the draft's `pickedIssues` and fills the field with the issue goal
-(the `goodboy:start-run:new` event). The picked issues show as rows above the
+(`issueGoalOf`, the title when the goal is empty; the `goodboy:start-run:new`
+event). Setup's issue handoff (`handOffFirstSession`) seeds the same field the
+same way, so its draft can start at once. The picked issues show as rows above the
 field (`PickedIssueRow`, removable). Start then runs `startSessionFromDraft`
 with kind `task` and a `then` of kind `workflow-run`: the session is created
 with the issues linked, and `startRoutedRun` starts the run the router picked

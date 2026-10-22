@@ -1,6 +1,7 @@
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { IssueCandidate } from '../../integrations/fetchIssueCandidates';
+import { issueGoalOf } from '../../session/issueGoalOf';
 import { scoutKickoffPrompt } from './scoutKickoffPrompt';
 
 type ScoutParams = {
@@ -39,6 +40,7 @@ export const handOffFirstSession = ({ workspaceId, projectId, issue }: HandOffPa
     workspaceId,
     patch: {
       pickedIssues: [issue],
+      workflowGoal: issueGoalOf({ candidate: issue }),
       projectIds: projectId === null ? [] : [projectId],
     },
   });

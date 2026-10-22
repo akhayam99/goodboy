@@ -1,6 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../store';
 import type { IssueCandidate } from '../integrations/fetchIssueCandidates';
+import { issueGoalOf } from './issueGoalOf';
 
 type PickParams = {
   readonly workspaceId: WorkspaceId;
@@ -8,9 +9,8 @@ type PickParams = {
 };
 
 export const pickIssue = ({ workspaceId, candidate }: PickParams): void => {
-  const goal = candidate.goal.trim();
   useAppStore.getState().patchSessionDraft({
     workspaceId,
-    patch: { pickedIssues: [candidate], workflowGoal: goal === '' ? candidate.title : goal },
+    patch: { pickedIssues: [candidate], workflowGoal: issueGoalOf({ candidate }) },
   });
 };

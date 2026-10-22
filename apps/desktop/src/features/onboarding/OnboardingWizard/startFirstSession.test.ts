@@ -90,12 +90,26 @@ describe('handOffFirstSession', () => {
       choice: draft?.choice,
       projectIds: draft?.projectIds,
       picked: draft?.pickedIssues.map((issue) => issue.identifier),
+      goal: draft?.workflowGoal,
     }).toEqual({
       choice: null,
       projectIds: [PROJECT_ID],
       picked: ['ACM-112'],
+      goal: 'Checkout submits twice on a slow network',
     });
     expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
+  });
+
+  it('seeds the ask from the issue title when the issue has no goal', () => {
+    handOffFirstSession({
+      workspaceId: WORKSPACE_ID,
+      projectId: null,
+      issue: { ...ISSUE, goal: '  ', title: 'Refund totals drift in payments-api' },
+    });
+
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowGoal).toBe(
+      'Refund totals drift in payments-api',
+    );
   });
 });
 
