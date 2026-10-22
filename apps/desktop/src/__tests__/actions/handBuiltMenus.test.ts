@@ -32,6 +32,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'artifact files from deleted sessions: storage keep and delete',
   'features/session/components/TaskPlacement/PutOnBranchPopover.tsx':
     'task picker: chooses a linked task for a branch, a value picker',
+  'app/components/MockScene/scenes/u27/oneFlow/OneFlowRouteLine.tsx':
+    'route picker in a design mock: chooses the run shape, preset and closeness, a value picker',
 };
 
 const isSource = (path: string): boolean =>
