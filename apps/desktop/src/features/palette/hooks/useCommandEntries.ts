@@ -45,6 +45,8 @@ import { useToast } from '../../../shared/components/Toast';
 import { overviewLayoutEntries } from '../../session/overviewLayout/overviewLayoutEntries';
 import { useSwitchOverviewLayout } from '../../session/overviewLayout/useSwitchOverviewLayout';
 import { agentEntries } from '../sources/agentEntries';
+import { startRunFromPresetEntries } from '../sources/startRunFromPresetEntries';
+import { openStartRun } from '../../session/startRun/openStartRun';
 import { openPlanAnywhere } from '../../plans/openPlanAnywhere';
 import { requestAskReset } from '../../session/ask/requestAskReset';
 import { isAskStreaming } from '../../../store/slices/ask/isAskStreaming';
@@ -198,6 +200,7 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           open: ({ agentId }) => navigate({ to: agentPlace({ sessionId, agentId }) }),
         }),
         ...workflowEntries({ workflows, start: startRun }),
+        ...startRunFromPresetEntries({ sessionId, workflows, open: openStartRun }),
         ...artifactEntries({
           sessionId,
           plans,

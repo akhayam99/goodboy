@@ -8,12 +8,10 @@ import { columnPagesOf, pagesOf } from './pageRegistry';
 const ALL_TOOLS: ConnectedLensTools = { linear: true, gitlab: true, jira: true, slack: true };
 
 describe('the session level pages', () => {
-  it('read Overview, Runs, Orchestrated, Agents, Artifacts in a session with a worktree', () => {
+  it('read Overview, Runs, Artifacts in a session with a worktree', () => {
     expect(columnPagesOf({ isBranchless: false }).map((page) => page.label)).toEqual([
       'Overview',
       'Runs',
-      'Orchestrated',
-      'Agents',
       'Artifacts',
     ]);
   });
@@ -23,20 +21,14 @@ describe('the session level pages', () => {
       'Overview',
       'Changes',
       'Runs',
-      'Orchestrated',
-      'Agents',
       'Artifacts',
     ]);
   });
 
-  it('add Auto agents after Agents only while Auto is on or the session has one', () => {
-    expect(
-      columnPagesOf({ isBranchless: false, hasAutoAgents: true }).map((page) => page.label),
-    ).toEqual(['Overview', 'Runs', 'Orchestrated', 'Agents', 'Auto agents', 'Artifacts']);
-    const auto = columnPagesOf({ isBranchless: false, hasAutoAgents: true }).find(
-      (page) => page.id === 'auto',
-    );
-    expect(auto).toMatchObject({ lens: 'auto', count: 'auto', shortcut: 'lens.agents' });
+  it('fold Orchestrated, Agents and Auto agents into the one Runs entry', () => {
+    const runs = columnPagesOf({ isBranchless: false }).find((page) => page.id === 'runs');
+    expect(runs).toMatchObject({ lens: 'workflows', count: 'runs', shortcut: 'lens.workflows' });
+    expect(runs?.currentLenses).toEqual(['workflows', 'orchestrated', 'agents', 'auto']);
   });
 
   it('leave the branch entries to the worktree rows', () => {
@@ -52,11 +44,9 @@ describe('the session level pages', () => {
     const open = pagesOf({ isBranchless: false, destinations, hasOpenQuestions: true });
 
     expect(closed.map((page) => page.id)).not.toContain('questions');
-    expect(open.map((page) => page.id).slice(0, 6)).toEqual([
+    expect(open.map((page) => page.id).slice(0, 4)).toEqual([
       'overview',
       'runs',
-      'orchestrated',
-      'agents',
       'artifacts',
       'questions',
     ]);
@@ -71,16 +61,9 @@ describe('the page registry', () => {
   });
 
   it('names every page after its shortcut except the linked records', () => {
-    for (const page of every.filter(
-      (candidate) => candidate.group !== 'linked' && candidate.id !== 'orchestrated',
-    )) {
+    for (const page of every.filter((candidate) => candidate.group !== 'linked')) {
       expect(SHORTCUTS[page.shortcut].label, page.id).toBe(page.label);
     }
-  });
-
-  it('reaches Orchestrated with the Runs chord pressed again', () => {
-    const orchestrated = every.find((page) => page.id === 'orchestrated');
-    expect(orchestrated?.shortcut).toBe('lens.workflows');
   });
 
   it('binds every page to a chord the registry owns', () => {
@@ -100,8 +83,6 @@ describe('the page registry', () => {
   it('counts exactly the pages that the count grammar names', () => {
     expect(every.filter((page) => page.count !== null).map((page) => page.id)).toEqual([
       'runs',
-      'orchestrated',
-      'agents',
       'artifacts',
       'questions',
     ]);

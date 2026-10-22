@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
 import { selectActiveMount, selectWritableMounts } from '../project-mounts/selectors';
+import { foldedLensOf } from './foldedLensOf';
 import type { AgentPane, BranchTab, GetFn, Location, SessionView, SetFn } from './types';
 
 type TabsParams = {
@@ -163,7 +164,8 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
     view.agentId !== null &&
     runs !== undefined &&
     !runs.some((run) => run.id === view.agentId);
-  const resolved: SessionView = isAgentGone ? { ...view, agentId: null } : view;
+  const folded: SessionView = { ...view, lens: foldedLensOf({ lens: view.lens }) };
+  const resolved: SessionView = isAgentGone ? { ...folded, agentId: null } : folded;
   set((state) => ({
     ...surfaceChanges({ state, sessionId, view: resolved, isRestore }),
     drawer,

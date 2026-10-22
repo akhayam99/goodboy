@@ -150,7 +150,6 @@ const seedShipAFix = (): void => {
 const SESSION_PAGES: ReadonlyArray<readonly [string, string | null]> = [
   ['Branch', 'branch'],
   ['Runs', 'workflows'],
-  ['Agents', 'agents'],
   ['Artifacts', 'plans'],
   ['Overview', null],
 ];
@@ -390,7 +389,7 @@ const currentSession = (sessionId: SessionId): Session => {
 const CHIP_LENS: Readonly<Record<string, string>> = {
   question: 'questions',
   run: 'workflows',
-  agent: 'agents',
+  agent: 'workflows',
 };
 
 type AskChipTarget = {
@@ -514,8 +513,6 @@ describe('moving across every place keeps one frame', () => {
       expect(useAppStore.getState().currentSessionId).toBe(sessionId);
       expect(currentDoors()).toEqual([]);
 
-      await openCrumb(/^Agents/);
-      expect(lensOf()).toBe('agents');
       await press('lens.workflows');
       await press('lens.plans');
       await press('lens.review');
@@ -537,7 +534,7 @@ describe('moving across every place keeps one frame', () => {
     'opens every studio beside the column from a session page and lands back on that page',
     async () => {
       await boot({ seed: 'pr' });
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Artifacts/);
 
       const doors: ReadonlyArray<readonly [() => HTMLElement, string]> = [
         [() => door('inbox'), 'inbox'],
@@ -551,7 +548,7 @@ describe('moving across every place keeps one frame', () => {
         expectColumnBesideStudio();
         await escape();
         expect(studio()).toBeNull();
-        expect(lensOf()).toBe('agents');
+        expect(lensOf()).toBe('plans');
       }
 
       await openPalette(/^Notifications$/, 'Notifications');
@@ -559,7 +556,7 @@ describe('moving across every place keeps one frame', () => {
       expectColumnBesideStudio();
       expect(currentDoors()).toEqual([]);
       await escape();
-      expect(lensOf()).toBe('agents');
+      expect(lensOf()).toBe('plans');
       expectHealthy();
     },
     JOURNEY_MS,
@@ -569,7 +566,7 @@ describe('moving across every place keeps one frame', () => {
     'swaps the column for Settings, and Back to app, Esc and Back all land on the same page',
     async () => {
       await boot({ seed: 'pr' });
-      await openCrumb(/^Agents/);
+      await openCrumb(/^Artifacts/);
 
       const exits: ReadonlyArray<readonly [() => Promise<void>, () => HTMLElement]> = [
         [
@@ -606,7 +603,7 @@ describe('moving across every place keeps one frame', () => {
         await exit();
 
         expect(studio()).toBeNull();
-        expect(lensOf()).toBe('agents');
+        expect(lensOf()).toBe('plans');
         expect(document.querySelector('[data-column-layer="nav"]')?.hasAttribute('inert')).toBe(
           false,
         );
@@ -718,13 +715,13 @@ describe('moving across every place keeps one frame', () => {
   );
 
   it(
-    'keeps the centred column at the same x across Overview, Runs, Agents, Artifacts and Settings, drawer or not',
+    'keeps the centred column at the same x across Overview, Runs, Artifacts and Settings, drawer or not',
     async () => {
       const { sessionId } = await boot({ seed: 'pr' });
       seedShipAFix();
       await click(sessionRow(sessionId));
 
-      const PAGES = ['Overview', 'Runs', 'Agents', 'Artifacts'] as const;
+      const PAGES = ['Overview', 'Runs', 'Artifacts'] as const;
       const trailColumn = (): string =>
         shown('[data-slot="pane-header"]')?.closest('[data-page-column]')?.className ?? '';
       const columnTiers = (): ReadonlySet<string> =>
@@ -993,16 +990,16 @@ describe('moving across every place keeps one frame', () => {
       expect(
         (await within(page).findAllByText(/Ship a fix/, undefined, WAIT)).length,
       ).toBeGreaterThan(0);
-      expect(pageRow('Runs').textContent).toBe('Runs1');
+      expect(pageRow('Runs').textContent).toBe('Runs2');
       expect(screen.queryByText(/workflow run/i)).toBeNull();
 
       const startedRun = currentSession(sessionId).workflowRuns.at(-1)?.id ?? null;
       expect(startedRun).not.toBeNull();
       act(() => useAppStore.getState().setFocusedWorkflowRun(sessionId, startedRun));
       await settle();
-      await press('lens.agents');
+      await press('lens.overview');
       await settle();
-      expectPlace({ session: sessionId, lens: 'agents', studio: null, doors: [] });
+      expectPlace({ session: sessionId, lens: null, studio: null, doors: [] });
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
@@ -1013,7 +1010,7 @@ describe('moving across every place keeps one frame', () => {
       expect(useAppStore.getState().focusedWorkflowRunId[sessionId] ?? null).toBeNull();
       act(() => useAppStore.getState().setFocusedArtifactId(sessionId, JOURNEY_ARTIFACT));
       await settle();
-      await openPage('Agents');
+      await openPage('Overview');
       expect(useAppStore.getState().focusedArtifactId[sessionId] ?? null).toBeNull();
       await click(historyButton('Back'));
       expectPlace({ session: sessionId, lens: 'plans', studio: null, doors: [] });

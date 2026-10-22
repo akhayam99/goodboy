@@ -154,10 +154,10 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
     expect(screen.getAllByRole('button', { name: /Allow|Deny/ }).length).toBeGreaterThan(0);
   });
 
-  it('Agents page list and counts: the grid lists running and finished agents', async () => {
+  it('Agents list and counts: the Runs grid lists running and finished agents', async () => {
     await mount({ name: 'c06-agents-list' });
 
-    const list = screen.getByRole('list', { name: 'Agents' });
+    const list = screen.getByRole('list', { name: 'Runs' });
     expect(within(list).getAllByText('Done').length).toBeGreaterThan(0);
     expect(within(list).getAllByText('Running').length).toBeGreaterThan(0);
     expect(screen.queryByText('Completed')).toBeNull();
@@ -177,8 +177,8 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
   it('Rename, close and delete from a list row: the row right click menu keeps them', async () => {
     await mount({ name: 'c06-agents-list' });
 
-    const row = document.querySelector<HTMLElement>(`[data-agent-row="${C06_AGENT_ID}"]`);
-    expect(row).not.toBeNull();
+    const [row] = screen.getAllByRole('button', { name: /, One agent, Running$/ });
+    expect(row).toBeDefined();
     await act(async () => {
       fireEvent.contextMenu(row!);
       await vi.advanceTimersByTimeAsync(50);

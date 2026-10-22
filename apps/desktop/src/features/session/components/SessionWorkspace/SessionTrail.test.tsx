@@ -118,7 +118,7 @@ describe('SessionTrail', () => {
     walk({ places: [OVERVIEW, STEP_PLACE] });
     render(<SessionTrail sessionId={S1} />);
 
-    expect(crumbNames()).toEqual([TITLE, 'Orchestrated', 'Run', 'Agent']);
+    expect(crumbNames()).toEqual([TITLE, 'Runs', 'Run', 'Agent']);
     expect(screen.getByText('Agent').getAttribute('aria-current')).toBe('page');
     expect(screen.queryByRole('button', { name: 'Agent' })).toBeNull();
   });
@@ -144,7 +144,7 @@ describe('SessionTrail', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Run' }));
     expect(hereKey()).toBe(locationKey({ place: RUN_PLACE }));
-    expect(crumbNames()).toEqual([TITLE, 'Orchestrated', 'Run']);
+    expect(crumbNames()).toEqual([TITLE, 'Runs', 'Run']);
 
     act(() => useAppStore.getState().back());
     expect(hereKey()).toBe(step);

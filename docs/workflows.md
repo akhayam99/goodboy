@@ -402,30 +402,43 @@ pauses at its own limit says `Paused at the $3.00 limit for this run.` and
 notifies "Run is over its limit" (`budgetBlock.ts`, `orchestrateNextStep.ts`). Single
 agents are never stopped by it.
 
-## The Runs and Orchestrated lists
+## The Runs list
 
-The Runs page (`WorkflowsPane`) lists the session's preset runs on one
-`ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`): state dot, title,
-state word, progress ("Step 2 of 3", "3 steps" once all ran), cost and age, every row
-the same columns. The state word shows only when it needs reading ("Plan ready",
-"Paused at the limit", "Failed", "After ..."); Running, Done, Archived and
-Waits to start are the dot alone, named in its tooltip (`isWordRead`). Groups:
-**In progress**, **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button
-and carries no action; an archived run is restored from its page. The state
-word and the dot come from `runRowFactsOf`, the same function the identity row
-of the Agents panel reads. The header holds **Run a workflow**; a session with no run shows
-today's start card. Opening a preset run shows its page; the session rail stays
+The Runs page (`WorkflowsPane`) lists every run of the session on one
+`ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`), one row per request
+from `sessionRunsOf`: preset runs, orchestrated runs, Auto conversations and
+the agents you started by hand, newest first. The columns: state dot, shape
+glyph (Plan or One agent), title, origin ("Was a preset run · Fix a layout",
+"Was an orchestrated run", "Was an Auto conversation", "Was an agent ·
+Scout"), state word, progress ("Step 2 of 3", "3 steps" once all ran, "2
+agents"), cost and age, every row the same columns. Groups:
+**In progress** (running, waiting on you or failed), **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button;
+an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
+word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
+of the Agents panel reads. The page opens on the **Start a run** field (`StartRun`, see
+[Start a run](features/start.md#start-a-run)); the header holds **Run a workflow**, **Start an auto** and **Start an agent**; a session with no run shows
+today's start card under the field.
+
+A routed start (`startRoutedRun` in `features/session/startRun/`) uses today's
+engines. `runRouteOf` picks the row; a plan creates an `origin: 'orchestrated'`
+workflow with no steps and attaches it with `executionMode: 'dynamic'`; a
+preset does the same, its live steps written in order into `processText` so
+the orchestrator starts from them, with the name "Plan from <preset>". The
+route (`RunRoute`: shape, row, preset, Follow or Adapt, the line's words)
+rides in the run's rules snapshot as `rules.route`, parsed by
+`parseWorkflowRules`, so no migration. One agent goes to `spawnAgent` and keeps
+its route in the settings key `runs.routes.<sessionId>`, one entry per agent,
+written compare and swap (`writeRunRoute`) so two windows starting at once both
+keep theirs. Opening a preset run shows its page; the session rail stays
 on the session and the run's agents are in the Agents panel.
 
-The Orchestrated page (`OrchestratedPane`, lens `orchestrated`, ⌘⌥W pressed
-again) lists the orchestrated runs on the same `RunsGrid`, its counts on the
-group rows (In progress, Finished, Archived) and none under the title. With
-rows, the header holds **Run an orchestrator**. With none it says
-"No orchestrated runs yet. The orchestrator picks each next step from your
-goal." with **Run an orchestrator**, which opens the launch form on its orchestrated
-mode (`OrchestrateStart`). Opening a row shows
-[the orchestrated document](#the-orchestrated-document); Esc or Back returns
-to the list (`parentPlace`).
+Orchestrated runs have no page of their own since ux27 one flow unit 1: they
+are rows of the one Runs page, beside preset runs, Auto conversations and the
+agents you started (`sessionRunsOf`, read by `RunsGrid`), each with its shape
+glyph and "Was an orchestrated run" or "Was a preset run · <preset>". The old
+`orchestrated` lens opens Runs (`foldedLensOf`). Opening a row shows
+[the orchestrated document](#the-orchestrated-document); Esc returns
+to the list (`leaveRunLevel`), and so does going up (`upTo`).
 
 ## The preset run page
 
@@ -691,7 +704,7 @@ clicking. You can turn it on for one run, or for the whole session with
 **Turn on Autopilot** in the session `⋯` (the registry verbs
 `session.autopilotOn` and `session.autopilotOff` in
 `features/actions/kinds/session.ts`, also in the right click and the palette;
-the Agents page header has no switch). A run without its own setting follows
+the Runs page header has no switch). A run without its own setting follows
 the session.
 
 - The session's autorun also covers agents running outside a workflow

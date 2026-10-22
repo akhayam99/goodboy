@@ -1,18 +1,10 @@
-export type CountedPageId =
-  'files' | 'runs' | 'orchestrated' | 'agents' | 'auto' | 'artifacts' | 'questions';
+export type CountedPageId = 'files' | 'runs' | 'artifacts' | 'questions';
 
 export type PageCountFacts = {
   readonly changedFiles: number;
   readonly runs: number;
   readonly runningRuns: number;
   readonly waitingRuns: number;
-  readonly orchestratedRuns: number;
-  readonly runningOrchestratedRuns: number;
-  readonly waitingOrchestratedRuns: number;
-  readonly agents: number;
-  readonly runningAgents: number;
-  readonly autoAgents: number;
-  readonly workingAutoAgents: number;
   readonly artifacts: number;
   readonly openQuestions: number;
 };
@@ -53,21 +45,6 @@ const COUNT_WORD: Readonly<Record<CountedPageId, (facts: PageCountFacts) => stri
       noun: 'run',
       waiting: facts.waitingRuns,
     }),
-  orchestrated: (facts) =>
-    runningOr({
-      running: facts.runningOrchestratedRuns,
-      total: facts.orchestratedRuns,
-      noun: 'run',
-      waiting: facts.waitingOrchestratedRuns,
-    }),
-  agents: (facts) =>
-    runningOr({ running: facts.runningAgents, total: facts.agents, noun: 'agent' }),
-  auto: (facts) => {
-    if (facts.workingAutoAgents > 0) {
-      return `${facts.workingAutoAgents} working`;
-    }
-    return facts.autoAgents > 0 ? nounOf({ count: facts.autoAgents, noun: 'conversation' }) : null;
-  },
   artifacts: (facts) =>
     facts.artifacts > 0 ? nounOf({ count: facts.artifacts, noun: 'artifact' }) : null,
   questions: (facts) => (facts.openQuestions > 0 ? `${facts.openQuestions} open` : null),

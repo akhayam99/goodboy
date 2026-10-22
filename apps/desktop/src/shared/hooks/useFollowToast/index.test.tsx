@@ -155,7 +155,7 @@ describe('useFollowToast', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Follow' }));
 
-    expect(currentKey()).toBe(`s/${sessionId}/agents/agent/agent-follow`);
+    expect(currentKey()).toBe(`s/${sessionId}/workflows/agent/agent-follow`);
   });
 
   it('opens the drawer the target names', () => {

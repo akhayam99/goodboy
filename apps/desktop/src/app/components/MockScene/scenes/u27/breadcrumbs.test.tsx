@@ -59,9 +59,9 @@ describe('breadcrumbs scenes', () => {
   });
 
   it.each<readonly [string, BreadcrumbPlaceId, ReadonlyArray<string>]>([
-    ['run', 'run', ['Orchestrated', 'Run']],
-    ['step', 'step', ['Orchestrated', 'Run', 'Agent']],
-    ['agent', 'agent', ['Agents', 'Agent']],
+    ['run', 'run', ['Runs', 'Run']],
+    ['step', 'step', ['Runs', 'Run', 'Agent']],
+    ['agent', 'agent', ['Runs', 'Agent']],
     ['artifact', 'artifact', ['Artifacts', 'Artifact']],
     ['branch-file', 'branchFile', ['Branch', 'File']],
   ])('draws the real session trail on the %s page', async (slug, placeId, tail) => {

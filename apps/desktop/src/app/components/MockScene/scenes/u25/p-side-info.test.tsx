@@ -86,7 +86,6 @@ describe('the side column signal scenes', () => {
     const runs = screen.getByRole('button', { name: /^Runs/ });
     expect(runs.textContent).toBe('Runs1');
     expect(runs.querySelector('[data-tone="info"]')).not.toBeNull();
-    expect(screen.getByRole('button', { name: /^Agents/ }).textContent).toBe('Agents3');
     expect(screen.getByRole('button', { name: /^Artifacts/ }).textContent).toBe('Artifacts3');
   });
 

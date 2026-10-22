@@ -265,11 +265,11 @@ row. `validate-scenes --only header-line` measures all four on
 A page root names its kind (`page="overview"`, `page="terminal"`) and
 `PAGE_MEASURE` in `packages/ui/src/frameGeometry.ts` gives the column it sits on:
 
-| Measure | Pages                                                                                                                                                                                        |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| column  | Overview, Runs, a run, Orchestrated, Agents, an agent, Auto agents, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
-| measure | the chat room (header, thread, composer)                                                                                                                                                     |
-| full    | the Sessions board, the Terminal                                                                                                                                                             |
+| Measure | Pages                                                                                                                                                     |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| column  | Overview, Runs, a run, an agent, Artifacts, a plan or report, Questions, the worktree pages, Tasks, Workflows, Settings, Monitoring, Notifications, Guide |
+| measure | the chat room (header, thread, composer)                                                                                                                  |
+| full    | the Sessions board, the Terminal                                                                                                                          |
 
 A loading page draws `PageSkeleton` with the same kind, so its title bar and
 body start where the page will: `STUDIO_META[kind].skeleton` names the body shape

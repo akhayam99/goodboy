@@ -78,6 +78,12 @@
           "also": "about you"
         },
         {
+          "title": "Start a run",
+          "text": "Write what you want done and press Start. Goodboy picks a plan, one agent or one of your presets, and says why.",
+          "group": "Start a task",
+          "main": true
+        },
+        {
           "title": "How do you want to start?",
           "text": "A new session draft asks how you want to start: pick up a task, run a workflow, orchestrate or ask an agent. It becomes a session only when you press Start.",
           "group": "Start a task",
@@ -100,7 +106,8 @@
           "title": "Run a workflow",
           "text": "Write a goal, choose how steps are picked and read the plan before you run it. One press creates the session and starts the run.",
           "group": "Start a task",
-          "main": true
+          "also": "run a workflow",
+          "shown": true
         },
         {
           "title": "Start an agent",

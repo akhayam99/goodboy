@@ -140,13 +140,13 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
   {
     name: 'sidebar: on a page the session level marks that page and no other row',
     covers: ['navigate', 'sidebar:current-sign'],
-    open: async () => openCrumb(/^Agents/),
+    open: async () => openCrumb(/^Artifacts/),
     lands: async () => {
-      await heading('Agents');
+      await heading('Artifacts');
       await waitFor(() => {
         const signs = levelSigns();
         expect(signs).toHaveLength(1);
-        expect(signs[0]?.textContent ?? '').toMatch(/^Agents/);
+        expect(signs[0]?.textContent ?? '').toMatch(/^Artifacts/);
       }, WAIT);
     },
   },

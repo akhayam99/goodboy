@@ -231,8 +231,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'A session is one task: a goal, its agents and a branch per folder they edit. It stays a draft until you press Start or Start blank.',
     points: [
       {
-        term: 'Four ways to start',
-        desc: 'One selector holds Pick up a task, Run a workflow, Run an orchestrator and Start an agent. Esc closes the draft, asking first if you wrote something.',
+        term: 'Start a run',
+        desc: 'Write what you want: Goodboy picks a plan, a preset or one agent. The selector also holds Pick up a task, Run a workflow, Run an orchestrator and Start an agent.',
       },
       {
         term: 'Pick up a task',
@@ -319,7 +319,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session rail',
-        desc: 'Overview, Runs, Orchestrated, Agents, Auto agents, Artifacts and Questions, with counts; Auto agents reads Experimental. Then the Projects card, one tree of folders and branches, and the Linked card.',
+        desc: 'Overview, Runs, Artifacts and Questions, with counts; Runs holds plans, presets, Auto and agents. Then the Projects card, one tree of folders and branches, and the Linked card.',
       },
       {
         term: 'Rail foot and +',
@@ -351,12 +351,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Enter queues your message for the next turn, and ⌘Enter sends it now. Stop keeps what the agent wrote and offers Continue, and a queued message waits until the provider takes it.',
       },
       {
-        term: 'Agents page',
-        desc: 'One grid of the agents you started, with role, state, model and time. A row opens the agent, whose menu holds Rename, Change model, Move to Auto and Delete agent.',
+        term: 'Runs page',
+        desc: "Every run, newest first: presets, orchestrated runs, Auto and your agents. An agent's menu holds Rename, Change model, Move to Auto and Delete agent.",
       },
       {
         term: 'Auto',
-        desc: 'An experimental agent behind Start an auto. It answers what it can, hands the rest to child agents of the roles it picks and goes on under a limit, listed under Auto agents.',
+        desc: 'An experimental agent behind Start an auto. It answers what it can, hands the rest to child agents of the roles it picks and goes on under a limit.',
       },
       {
         term: 'Move to Auto',

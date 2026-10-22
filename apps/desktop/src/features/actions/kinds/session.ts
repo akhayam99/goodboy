@@ -28,6 +28,8 @@ import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
 import { runningAgentCountOf } from '../../../store/slices/live-work/runningAgentCountOf';
 import { createAgentEventName } from '../../session/createAgentEventName';
+import { openStartRun } from '../../session/startRun/openStartRun';
+import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
 import { refreshSession } from '../../session/refreshSession';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
@@ -391,6 +393,14 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     when: ({ facts }) => isLive({ facts }) && facts.isPinned && facts.canMovePinDown,
     run: ({ facts, env }) =>
       env.getState().moveSessionPin({ sessionId: facts.sessionId, direction: 'down' }),
+  },
+  {
+    id: 'session.startRun',
+    label: RUN_ROUTE_COPY.label,
+    icon: CONCEPT_ICONS.workflows,
+    group: 'act',
+    when: isLive,
+    run: ({ facts }) => openStartRun({ sessionId: facts.sessionId }),
   },
   {
     id: 'session.startAgent',

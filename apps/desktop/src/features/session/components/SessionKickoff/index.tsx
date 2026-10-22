@@ -9,6 +9,7 @@ import { TaskStart } from './TaskStart';
 import { WorkflowStart } from './WorkflowStart';
 import { AgentStart } from './AgentStart';
 import { AutoStart } from './AutoStart';
+import { StartRun } from '../StartRun/StartRun';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -43,6 +44,7 @@ export const SessionKickoff = ({ workspaceId, isAuto = false, notice }: Props) =
 
   return (
     <section ref={sectionRef} aria-label="Kickoff" className="flex flex-col gap-6">
+      <StartRun workspaceId={workspaceId} sessionId={null} />
       <div className="flex flex-col gap-2">
         <StartChoiceTabs ariaLabel={KICKOFF_QUESTION} value={choice} onChange={pick} />
         <div className="relative">

@@ -65,6 +65,7 @@ describe('OverviewActions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New' }));
 
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Start a run',
       'Run a workflow',
       'Run an orchestrator',
       'Start an agent',

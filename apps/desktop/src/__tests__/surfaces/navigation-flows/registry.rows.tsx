@@ -14,7 +14,7 @@ import {
   sectionLabels,
 } from './harness';
 
-const PAGES = ['Overview', 'Runs', 'Agents', 'Artifacts'];
+const PAGES = ['Overview', 'Runs', 'Artifacts'];
 
 const pageLabels = async (): Promise<ReadonlyArray<string>> => {
   const list = await waitFor(() => {
@@ -42,7 +42,7 @@ const startsWithInOrder = (texts: ReadonlyArray<string>, labels: ReadonlyArray<s
 
 export const REGISTRY_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'session level: the pages read Overview, Runs, Agents, Artifacts, with no branch entry',
+    name: 'session level: the pages read Overview, Runs, Artifacts, with no branch entry',
     covers: ['sidebar:session-pages'],
     open: () => settle(),
     lands: async () => {

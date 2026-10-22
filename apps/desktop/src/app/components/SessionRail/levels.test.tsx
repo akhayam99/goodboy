@@ -186,15 +186,7 @@ describe('the main sidebar beside the session rail', () => {
       pages()
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual([
-      'Overview',
-      'Runs',
-      'Orchestrated',
-      'Agents',
-      'Auto agentsExperimental',
-      'Artifacts',
-      'Questions',
-    ]);
+    ).toEqual(['Overview', 'Runs', 'Artifacts', 'Questions']);
   });
 
   it('opens another session from its row without changing the main sidebar level', () => {
@@ -246,12 +238,12 @@ describe('the session level pages', () => {
     seed();
     mountColumn();
 
-    fireEvent.click(pages().getByRole('button', { name: /^Agents/ }));
+    fireEvent.click(pages().getByRole('button', { name: /^Artifacts/ }));
 
-    expect(useAppStore.getState().activeLens[openId]).toBe('agents');
+    expect(useAppStore.getState().activeLens[openId]).toBe('plans');
     expect(
       pages()
-        .getByRole('button', { name: /^Agents/ })
+        .getByRole('button', { name: /^Artifacts/ })
         .getAttribute('aria-current'),
     ).toBe('page');
     expect(
@@ -793,7 +785,7 @@ describe('the folded session rail', () => {
 
     expect(rail().hasAttribute('data-rail-folded')).toBe(true);
     expect(rail().querySelector('[data-rail-level="session"]')).not.toBeNull();
-    expect(within(rail()).getByRole('button', { name: 'Agents' })).toBeDefined();
+    expect(within(rail()).getByRole('button', { name: 'Artifacts' })).toBeDefined();
     expect(within(rail()).queryByRole('button', { name: /^Back to/ })).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.sessionRailCollapsed)).toBe('1');
     expect(nav().querySelector('[data-column-door="board"]')).not.toBeNull();
@@ -812,8 +804,8 @@ describe('the folded session rail', () => {
     localStorage.setItem(STORAGE_KEYS.sessionRailCollapsed, '1');
     mountColumn();
 
-    fireEvent.click(within(rail()).getByRole('button', { name: 'Agents' }));
+    fireEvent.click(within(rail()).getByRole('button', { name: 'Artifacts' }));
 
-    expect(useAppStore.getState().activeLens[openId]).toBe('agents');
+    expect(useAppStore.getState().activeLens[openId]).toBe('plans');
   });
 });

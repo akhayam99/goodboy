@@ -20,22 +20,14 @@ import {
 } from '../../../../store/storyHarness';
 import type { PageCountFacts } from '../../../session/pageCountWord';
 import { columnPagesOf } from '../../../session/pageRegistry';
-import { SESSION_PAGE_MARKER_WHY } from '../../../session/sessionPageIntro';
 import { sessionOf } from '../../testing/sessionColumn';
 import { SessionPages } from './SessionPages';
 
 const FACTS: PageCountFacts = {
   changedFiles: 0,
-  runs: 0,
-  runningRuns: 0,
+  runs: 2,
+  runningRuns: 1,
   waitingRuns: 0,
-  orchestratedRuns: 0,
-  runningOrchestratedRuns: 0,
-  waitingOrchestratedRuns: 0,
-  agents: 1,
-  runningAgents: 0,
-  autoAgents: 0,
-  workingAutoAgents: 0,
   artifacts: 0,
   openQuestions: 0,
 };
@@ -54,38 +46,30 @@ const renderPages = () =>
   render(
     <SessionPages
       session={sessionOf({ goal: 'Reconcile the ledger export' })}
-      pages={columnPagesOf({ isBranchless: false, hasAutoAgents: true })}
+      pages={columnPagesOf({ isBranchless: false })}
       facts={FACTS}
       sign="overview"
     />,
   );
 
 describe('the session rail page row tooltips', () => {
-  it('opens the Experimental tooltip on the marker alone, with no count in it', async () => {
-    renderPages();
-    fireEvent.mouseEnter(screen.getByTestId('page-marker-auto'));
-
-    const tooltip = await screen.findByRole('tooltip');
-    expect(tooltip.textContent).toBe(SESSION_PAGE_MARKER_WHY.auto);
-    expect(tooltip.textContent).not.toMatch(/\d/);
-  });
-
-  it('marks Auto agents Experimental and leaves Agents unmarked', () => {
+  it('shows one Runs entry for every kind of run', () => {
     renderPages();
 
-    expect(screen.getByTestId('page-marker-auto').textContent).toBe('Experimental');
-    expect(screen.queryByTestId('page-marker-agents')).toBeNull();
+    const labels = screen.getAllByRole('button').map((row) => row.textContent ?? '');
+    expect(labels.filter((label) => /Orchestrated|Agents|Auto/.test(label))).toEqual([]);
+    expect(labels.filter((label) => label.startsWith('Runs'))).toHaveLength(1);
   });
 
   it('keeps the count on its own short tooltip', async () => {
     const { container } = renderPages();
-    const count = container.querySelector('[data-page-value="agents"]');
+    const count = container.querySelector('[data-page-value="runs"]');
     if (count === null) {
-      throw new Error('the Agents count is missing');
+      throw new Error('the Runs count is missing');
     }
     fireEvent.mouseEnter(count);
 
-    expect((await screen.findByRole('tooltip')).textContent).toBe('1 agent');
+    expect((await screen.findByRole('tooltip')).textContent).toBe('1 running');
   });
 
   it('uses no native title on any row', () => {

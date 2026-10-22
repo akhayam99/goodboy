@@ -188,14 +188,14 @@ describe('the c06 conversation scenes', () => {
     expect(within(pane).queryByRole('button', { name: 'Ran 2 commands' })).toBeNull();
   });
 
-  it('c06-agents-list draws one grid with no actions on the rows, and a row opens the agent', async () => {
+  it('c06-agents-list lists the agents as rows of Runs, and a row opens the agent', async () => {
     await mount({ name: 'c06-agents-list' });
 
-    const rows = document.querySelectorAll<HTMLElement>('[data-agent-row]');
+    const rows = screen.getAllByRole('button', { name: /^Open .+, One agent, / });
     expect(rows.length).toBe(2);
     const first = rows[0]!;
-    expect(within(first).getByText('Implementer')).toBeDefined();
-    expect(within(first).getByText('Running')).toBeDefined();
+    expect(within(first).getByText('Was an agent · Implementer')).toBeDefined();
+    expect(within(first).getAllByText('Running').length).toBeGreaterThan(0);
     expect(within(first).queryAllByRole('button')).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Start an agent' })).toBeDefined();
     expect(screen.queryByRole('switch', { name: 'Autopilot' })).toBeNull();
@@ -243,16 +243,6 @@ describe('the c06 conversation scenes', () => {
     expect(tail.textContent).toMatch(/^[A-Z]/);
   });
 
-  it('c06-agents-list shows a model on every row', async () => {
-    await mount({ name: 'c06-agents-list' });
-
-    const models = document.querySelectorAll<HTMLElement>('[data-agent-model]');
-    expect(models.length).toBe(2);
-    for (const cell of models) {
-      expect((cell.textContent ?? '').length).toBeGreaterThan(0);
-    }
-  });
-
   it('c06-agent-finished folds the brief to one Asked line after the first answer', async () => {
     await mount({ name: 'c06-agent-finished' });
 
@@ -288,10 +278,10 @@ describe('the c06 conversation scenes', () => {
     expect(useAppStore.getState().drawer).toBeNull();
   });
 
-  it('c06-agents-empty says it in one line with the header Start an agent', async () => {
+  it('c06-agents-empty shows the empty Runs page with the header Start an agent', async () => {
     await mount({ name: 'c06-agents-empty' });
 
-    expect(screen.getByText('No agents in this session yet.')).toBeDefined();
+    expect(screen.getByText('No runs yet')).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Start an agent' })).toHaveLength(1);
   });
 });

@@ -8,13 +8,6 @@ const QUIET: PageCountFacts = {
   runs: 0,
   runningRuns: 0,
   waitingRuns: 0,
-  orchestratedRuns: 0,
-  runningOrchestratedRuns: 0,
-  waitingOrchestratedRuns: 0,
-  agents: 0,
-  runningAgents: 0,
-  autoAgents: 0,
-  workingAutoAgents: 0,
   artifacts: 0,
   openQuestions: 0,
 };
@@ -35,10 +28,10 @@ describe('pageSlotOf', () => {
       tone: 'info',
       fact: '1 running',
     });
-    expect(pageSlotOf({ page: 'agents', facts: { ...QUIET, agents: 2 } })).toEqual({
+    expect(pageSlotOf({ page: 'artifacts', facts: { ...QUIET, artifacts: 2 } })).toEqual({
       text: '2',
       tone: null,
-      fact: '2 agents',
+      fact: '2 artifacts',
     });
   });
 
@@ -49,16 +42,6 @@ describe('pageSlotOf', () => {
       tone: 'warning',
       fact: '1 needs you',
     });
-  });
-
-  it('counts orchestrated runs apart from preset runs', () => {
-    const facts = { ...QUIET, runs: 2, orchestratedRuns: 1, runningOrchestratedRuns: 1 };
-    expect(pageSlotOf({ page: 'orchestrated', facts })).toEqual({
-      text: '1',
-      tone: 'info',
-      fact: '1 running',
-    });
-    expect(pageSlotOf({ page: 'runs', facts }).tone).toBeNull();
   });
 
   it('marks open questions with the warning dot', () => {

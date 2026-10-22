@@ -130,7 +130,7 @@ describe('the session rail fold', () => {
     expect(openLayer()?.getAttribute('aria-hidden')).toBe('true');
     expect(openLayer()?.hasAttribute('inert')).toBe(true);
     expect(
-      within(elementOf('[data-fold-layer="folded"]')).getByRole('button', { name: 'Agents' }),
+      within(elementOf('[data-fold-layer="folded"]')).getByRole('button', { name: 'Runs' }),
     ).toBeDefined();
 
     advance(FOLD_MS);
@@ -167,15 +167,7 @@ describe('the session rail fold', () => {
       within(level)
         .getAllByRole('button')
         .map((button) => button.getAttribute('aria-label')),
-    ).toEqual([
-      'Overview',
-      'Runs',
-      'Orchestrated',
-      'Agents',
-      'Auto agents',
-      'Artifacts',
-      'Questions',
-    ]);
+    ).toEqual(['Overview', 'Runs', 'Artifacts', 'Questions']);
   });
 
   it('swaps at once under reduced motion', () => {

@@ -163,14 +163,6 @@ export const FRAME_ROWS: ReadonlyArray<Row> = [
     lands: landsOnSessionPage({ page: 'runs', title: 'Runs' }),
   },
   {
-    name: 'frame: the Agents title sits on the grid',
-    covers: ['navigate'],
-    open: async () => {
-      await openCrumb(/^Agents/);
-    },
-    lands: landsOnSessionPage({ page: 'agents', title: 'Agents' }),
-  },
-  {
     name: 'frame: the Questions title sits on the grid',
     covers: ['navigate'],
     open: async (ctx) => {

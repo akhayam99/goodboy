@@ -82,18 +82,12 @@ const SESSION_PAGES: ReadonlyArray<PageRoot> = [
     ],
   },
   {
-    page: 'orchestrated',
-    files: ['features/session/components/SessionWorkspace/parts/OrchestratedPane.tsx'],
-  },
-  { page: 'agents', files: ['features/session/components/SessionWorkspace/parts/AgentsPane.tsx'] },
-  {
     page: 'agent',
     files: [
       'features/session/components/AgentDetailPane/index.tsx',
       'features/session/components/SessionWorkspace/parts/AgentOverlay.tsx',
     ],
   },
-  { page: 'auto', files: ['features/session/components/AutoAgentsPane/index.tsx'] },
   { page: 'artifacts', files: ['features/artifacts/components/ArtifactList/index.tsx'] },
   {
     page: 'report',
@@ -128,10 +122,7 @@ const PAGE_KIND_MEASURE: Readonly<Record<string, PageColumnWidth>> = {
   overview: 'column',
   runs: 'column',
   run: 'column',
-  orchestrated: 'column',
-  agents: 'column',
   agent: 'column',
-  auto: 'column',
   artifacts: 'column',
   report: 'column',
   questions: 'column',

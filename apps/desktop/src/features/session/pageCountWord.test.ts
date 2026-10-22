@@ -5,9 +5,6 @@ import { pageCountWordOf, type CountedPageId, type PageCountFacts } from './page
 const COUNTED_PAGE_IDS = [
   'files',
   'runs',
-  'orchestrated',
-  'agents',
-  'auto',
   'artifacts',
   'questions',
 ] as const satisfies ReadonlyArray<CountedPageId>;
@@ -17,13 +14,6 @@ const QUIET: PageCountFacts = {
   runs: 0,
   runningRuns: 0,
   waitingRuns: 0,
-  orchestratedRuns: 0,
-  runningOrchestratedRuns: 0,
-  waitingOrchestratedRuns: 0,
-  agents: 0,
-  runningAgents: 0,
-  autoAgents: 0,
-  workingAutoAgents: 0,
   artifacts: 0,
   openQuestions: 0,
 };
@@ -47,30 +37,6 @@ describe('pageCountWordOf', () => {
   });
 
   it.each([
-    [{ orchestratedRuns: 2 }, '2 runs'],
-    [{ orchestratedRuns: 2, runningOrchestratedRuns: 1 }, '1 running'],
-    [{ runs: 3 }, null],
-  ])('reads Orchestrated for %j as %s', (facts, expected) => {
-    expect(wordOf('orchestrated', facts)).toBe(expected);
-  });
-
-  it.each([
-    [{ agents: 3 }, '3 agents'],
-    [{ agents: 1 }, '1 agent'],
-    [{ agents: 3, runningAgents: 1 }, '1 running'],
-  ])('reads Agents for %j as %s', (facts, expected) => {
-    expect(wordOf('agents', facts)).toBe(expected);
-  });
-
-  it.each([
-    [{ autoAgents: 2 }, '2 conversations'],
-    [{ autoAgents: 1 }, '1 conversation'],
-    [{ autoAgents: 2, workingAutoAgents: 1 }, '1 working'],
-  ])('reads Auto agents for %j as %s', (facts, expected) => {
-    expect(wordOf('auto', facts)).toBe(expected);
-  });
-
-  it.each([
     [{ artifacts: 4 }, '4 artifacts'],
     [{ artifacts: 1 }, '1 artifact'],
   ])('reads Artifacts for %j as %s', (facts, expected) => {
@@ -79,9 +45,7 @@ describe('pageCountWordOf', () => {
 
   it('names a run that waits on you before a running one', () => {
     expect(wordOf('runs', { runs: 3, runningRuns: 1, waitingRuns: 2 })).toBe('2 need you');
-    expect(wordOf('orchestrated', { orchestratedRuns: 1, waitingOrchestratedRuns: 1 })).toBe(
-      '1 needs you',
-    );
+    expect(wordOf('runs', { runs: 1, waitingRuns: 1 })).toBe('1 needs you');
   });
 
   it('reads Changes as the files changed in a plain folder', () => {
@@ -99,13 +63,6 @@ describe('pageCountWordOf', () => {
       runs: 4,
       runningRuns: 0,
       waitingRuns: 0,
-      orchestratedRuns: 1,
-      runningOrchestratedRuns: 0,
-      waitingOrchestratedRuns: 0,
-      agents: 3,
-      runningAgents: 0,
-      autoAgents: 2,
-      workingAutoAgents: 0,
       artifacts: 4,
       openQuestions: 2,
     };

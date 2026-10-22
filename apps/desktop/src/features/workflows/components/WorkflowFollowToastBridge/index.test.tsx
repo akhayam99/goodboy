@@ -106,7 +106,7 @@ describe('WorkflowFollowToastBridge', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Follow' }));
 
-    expect(currentKey()).toBe(`s/${SESSION_ID}/agents/agent/${AGENT_ID}`);
+    expect(currentKey()).toBe(`s/${SESSION_ID}/workflows/agent/${AGENT_ID}`);
   });
 
   it('raises nothing for a step whose run the user just started', () => {

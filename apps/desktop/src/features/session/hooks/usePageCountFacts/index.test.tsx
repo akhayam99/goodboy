@@ -105,19 +105,12 @@ describe('usePageCountFacts', () => {
       runs: 0,
       runningRuns: 0,
       waitingRuns: 0,
-      orchestratedRuns: 0,
-      runningOrchestratedRuns: 0,
-      waitingOrchestratedRuns: 0,
-      agents: 0,
-      runningAgents: 0,
-      autoAgents: 0,
-      workingAutoAgents: 0,
       artifacts: 0,
       openQuestions: 0,
     });
   });
 
-  it('counts an Auto agent under Auto agents, never under Agents', () => {
+  it('counts an Auto conversation and an agent you started as one run each', () => {
     seedColumn({ store: useAppStore, sessions: [base], currentSessionId: sessionId });
     useAppStore.setState({
       sessionPhaseRuns: {
@@ -138,7 +131,7 @@ describe('usePageCountFacts', () => {
       },
     });
 
-    expect(factsOf(base)).toMatchObject({ agents: 1, autoAgents: 1, workingAutoAgents: 1 });
+    expect(factsOf(base)).toMatchObject({ runs: 2, runningRuns: 1, waitingRuns: 0 });
   });
 
   it('counts the artifacts', () => {
@@ -190,7 +183,7 @@ describe('usePageCountFacts', () => {
     expect(factsOf(withRuns)).toMatchObject({ runs: 2, runningRuns: 1 });
   });
 
-  it('counts orchestrated runs apart from preset runs', () => {
+  it('counts orchestrated and preset runs in the one Runs count', () => {
     const preset = aWorkflowRun({ ordinal: 0, workflowId: WORKFLOW_ID });
     const orchestrated = aWorkflowRun({
       ordinal: 1,
@@ -212,12 +205,7 @@ describe('usePageCountFacts', () => {
       },
     });
 
-    expect(factsOf(withRuns)).toMatchObject({
-      runs: 1,
-      runningRuns: 0,
-      orchestratedRuns: 1,
-      runningOrchestratedRuns: 1,
-    });
+    expect(factsOf(withRuns)).toMatchObject({ runs: 2, runningRuns: 1 });
   });
 
   it('counts a run that waits on you or failed apart from a running one, the same dot the Runs row draws', () => {
@@ -247,7 +235,7 @@ describe('usePageCountFacts', () => {
     expect(factsOf(withRuns)).toMatchObject({ runs: 2, runningRuns: 1, waitingRuns: 1 });
   });
 
-  it('counts the standalone agents, and the ones running', () => {
+  it('counts the agents you started as runs, and the ones running', () => {
     seedColumn({ store: useAppStore, sessions: [base], currentSessionId: sessionId });
     useAppStore.setState({
       sessionPhaseRuns: {
@@ -257,7 +245,7 @@ describe('usePageCountFacts', () => {
         ],
       },
     });
-    expect(factsOf(base)).toMatchObject({ agents: 2, runningAgents: 0 });
+    expect(factsOf(base)).toMatchObject({ runs: 2, runningRuns: 0 });
 
     useAppStore.setState({
       sessionPhaseRuns: {
@@ -267,6 +255,6 @@ describe('usePageCountFacts', () => {
         ],
       },
     });
-    expect(factsOf(base)).toMatchObject({ agents: 2, runningAgents: 1 });
+    expect(factsOf(base)).toMatchObject({ runs: 2, runningRuns: 1 });
   });
 });

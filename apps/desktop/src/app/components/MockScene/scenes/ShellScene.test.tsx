@@ -59,11 +59,10 @@ describe('the shell scene mounts the real session workspace', () => {
     expect(useAppStore.getState().currentSessionId).toBe(SESSION.id);
   });
 
-  it('moves to Runs, Agents and Artifacts from the session level', async () => {
+  it('moves to Runs and Artifacts from the session level', async () => {
     await renderShell();
     const moves: ReadonlyArray<readonly [string, string]> = [
       ['Runs', 'workflows'],
-      ['Agents', 'agents'],
       ['Artifacts', 'plans'],
     ];
     for (const [label, lens] of moves) {

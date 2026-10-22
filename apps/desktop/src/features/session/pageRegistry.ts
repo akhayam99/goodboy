@@ -11,9 +11,6 @@ type PageId =
   | 'overview'
   | 'files'
   | 'runs'
-  | 'orchestrated'
-  | 'agents'
-  | 'auto'
   | 'artifacts'
   | 'questions'
   | 'explore'
@@ -82,37 +79,16 @@ const CHANGES_PAGE: Page = {
   currentLenses: ['files'],
 };
 
-const RUNS_PAGE = lensPage({
-  id: 'runs',
-  lens: 'workflows',
-  shortcut: 'lens.workflows',
-  group: 'work',
-  count: 'runs',
-});
-
-const ORCHESTRATED_PAGE = lensPage({
-  id: 'orchestrated',
-  lens: 'orchestrated',
-  shortcut: 'lens.workflows',
-  group: 'work',
-  count: 'orchestrated',
-});
-
-const AGENTS_PAGE = lensPage({
-  id: 'agents',
-  lens: 'agents',
-  shortcut: 'lens.agents',
-  group: 'work',
-  count: 'agents',
-});
-
-const AUTO_PAGE = lensPage({
-  id: 'auto',
-  lens: 'auto',
-  shortcut: 'lens.agents',
-  group: 'work',
-  count: 'auto',
-});
+const RUNS_PAGE: Page = {
+  ...lensPage({
+    id: 'runs',
+    lens: 'workflows',
+    shortcut: 'lens.workflows',
+    group: 'work',
+    count: 'runs',
+  }),
+  currentLenses: ['workflows', 'orchestrated', 'agents', 'auto'],
+};
 
 const ARTIFACTS_PAGE = lensPage({
   id: 'artifacts',
@@ -170,19 +146,12 @@ const REST: ReadonlyArray<Page> = [
 
 type ColumnParams = {
   readonly isBranchless: boolean;
-  readonly hasAutoAgents?: boolean;
 };
 
-export const columnPagesOf = ({
-  isBranchless,
-  hasAutoAgents = false,
-}: ColumnParams): ReadonlyArray<Page> => [
+export const columnPagesOf = ({ isBranchless }: ColumnParams): ReadonlyArray<Page> => [
   OVERVIEW_PAGE,
   ...(isBranchless ? [CHANGES_PAGE] : []),
   RUNS_PAGE,
-  ORCHESTRATED_PAGE,
-  AGENTS_PAGE,
-  ...(hasAutoAgents ? [AUTO_PAGE] : []),
   ARTIFACTS_PAGE,
 ];
 
@@ -193,11 +162,10 @@ type PagesParams = ColumnParams & {
 
 export const pagesOf = ({
   isBranchless,
-  hasAutoAgents = false,
   destinations,
   hasOpenQuestions,
 }: PagesParams): ReadonlyArray<Page> => [
-  ...columnPagesOf({ isBranchless, hasAutoAgents }),
+  ...columnPagesOf({ isBranchless }),
   ...REST.filter(
     (page) =>
       (page.id !== 'questions' || hasOpenQuestions) &&

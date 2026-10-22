@@ -52,25 +52,21 @@ const autoLevel = async (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: 'Agents' }, WAIT);
 
 describe('SPEC3 9.5 Auto: every capability keeps a home in the 0.27.0 Auto', () => {
-  it('Start an auto from the Auto agents entry, with the Limit of the workspace', async () => {
+  it('Start an auto from the Runs page, with the Limit of the workspace', async () => {
     mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start'] });
 
     fireEvent.click(await screen.findByRole('button', { name: 'Start an auto' }, WAIT));
     const start = await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
     expect(within(start).getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
-    expect(screen.getByText(/^Limit \$/)).toBeDefined();
+    expect(within(start).getByText(/^Limit \$/)).toBeDefined();
     expect(screen.queryByText(/Spend cap/)).toBeNull();
   });
 
-  it('Experimental marking: the chip on the Auto agents entry', async () => {
-    mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-session-level'] });
+  it('Experimental marking: the Auto start says it', async () => {
+    mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-start-open'] });
 
-    const buttons = await screen.findAllByRole('button', { name: /Auto agents/ }, WAIT);
-    const entry = buttons.find((button) => button.closest('[data-slot="trail"]') === null);
-    if (entry === undefined) {
-      throw new Error('no Auto agents entry outside the trail');
-    }
-    expect(within(entry).getByText('Experimental')).toBeDefined();
+    await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
+    expect(screen.getByText('Experimental', { exact: false })).toBeDefined();
   });
 
   it('Agents tree task, model and time: the task and the model in the row tooltip', async () => {

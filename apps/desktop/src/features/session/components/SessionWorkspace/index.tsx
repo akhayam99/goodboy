@@ -9,9 +9,6 @@ import { SessionOverviewPane } from '../SessionOverviewPane';
 import { FirstLapBanner } from '../../../bootstrap/FirstLapBanner';
 import { useAskOpenShortcut } from '../../ask/useAskOpenShortcut';
 import { AgentOverlay } from './parts/AgentOverlay';
-import { AgentsPane } from './parts/AgentsPane';
-import { AutoAgentsPane } from '../AutoAgentsPane';
-import { Pane } from './parts/Pane';
 import { QuestionsPane } from './parts/QuestionsPane';
 import { FilesPane } from './parts/FilesPane';
 import { useSessionBranchSync } from '../../hooks/useSessionBranchSync';
@@ -19,7 +16,6 @@ import { openLens } from '../../openLens';
 import { resolveSessionSurfaceLayer } from '../../resolveSessionSurfaceLayer';
 import { resolveDiffMount } from './parts/resolveDiffMount';
 import { WorkflowsPane } from './parts/WorkflowsPane';
-import { OrchestratedPane } from './parts/OrchestratedPane';
 import { PresetRunPage } from '../PresetRun';
 import { usePresetRunFocus } from '../../hooks/usePresetRunFocus';
 import { IntegrationPane } from './parts/IntegrationPane';
@@ -35,6 +31,7 @@ import { resolveLensSurface } from '../../lens-surface';
 import { EmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { SessionTrail } from './SessionTrail';
+import { foldedLensOf } from '../../../../store/slices/navigation/foldedLensOf';
 
 type SessionWorkspaceProps = {
   readonly session: Session;
@@ -72,7 +69,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
   const loadPhaseRunsForSession = useAppStore((s) => s.loadPhaseRunsForSession);
   const loadSessionPlans = useAppStore((s) => s.loadSessionPlans);
 
-  const lens: LensKind | null = activeLens ?? null;
+  const lens: LensKind | null = foldedLensOf({ lens: activeLens ?? null });
   const surface = resolveLensSurface({ lens });
   const isOverviewLoaded = areAgentsLoaded && arePlansLoaded;
   const isFreshOverviewLayout = session.workflowRuns.every((run) => run.discardedAt != null);
@@ -116,7 +113,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
           inert={!showLens}
         >
           <PaneBannerContext.Provider value={showAgentOverlay ? null : banner}>
-            <PageTrailContext.Provider value={showLens && lens !== 'agents' ? trail : null}>
+            <PageTrailContext.Provider value={showLens ? trail : null}>
               {surface === 'overview' ? (
                 isOverviewLoaded ? (
                   <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
@@ -132,7 +129,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
               {lens === 'workflows' ? (
                 <WorkflowsPane session={session} isActive={isActive && showLens} />
               ) : null}
-              {lens === 'orchestrated' ? <OrchestratedPane session={session} /> : null}
               {lens === 'branch' ? (
                 <BranchPage session={session} workingDir={workingDir} isActive={isActive} />
               ) : null}
@@ -192,17 +188,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
                   onClose={onSelectOverview}
                 />
               ) : null}
-              {lens === 'auto' ? <AutoAgentsPane session={session} /> : null}
             </PageTrailContext.Provider>
-            <Pane visible={lens === 'agents'}>
-              <PaneBannerContext.Provider
-                value={lens === 'agents' && !showAgentOverlay ? banner : null}
-              >
-                <PageTrailContext.Provider value={lens === 'agents' && showLens ? trail : null}>
-                  <AgentsPane session={session} />
-                </PageTrailContext.Provider>
-              </PaneBannerContext.Provider>
-            </Pane>
           </PaneBannerContext.Provider>
         </div>
 
