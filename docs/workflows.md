@@ -424,8 +424,8 @@ engines. `runRouteOf` picks the row; a plan creates an `origin: 'orchestrated'`
 workflow with no steps and attaches it with `executionMode: 'dynamic'`; a
 preset does the same with the name "Plan from <preset>", the preset's own
 process as `processText`, and a snapshot of its live steps in
-`rules.preset` (`presetSnapshotOf`: name, role, instruction, and `isPinned`
-for a step with a routing lock). The orchestrator prompt gets the preset, the
+`rules.preset` (`presetSnapshotOf`: name, role, instruction, `isPinned` for a
+step with a routing lock, and that `routingLock` itself). The orchestrator prompt gets the preset, the
 closeness and the rules table (`presetLines` in
 `packages/core/src/orchestrator/prompt.ts`); a decision may carry
 `change` (`added`, `skipped`, `reordered`, with a reason) and a step its
@@ -439,7 +439,9 @@ Switch to adapt. `resolvePresetChange` queues a hint first, then writes
 stop and asks again; an answer to a question another window already answered
 does nothing. A change on a pinned step is never applied, under either
 closeness, and a decision that runs a pinned step gets its name, role and
-instruction from the preset (`pinnedStepOf`). The
+instruction from the preset (`pinnedStepOf`), and its routing resolves from the
+pinned lock (`stepLock`), so it runs on the provider, model and effort the
+preset pinned and the created step keeps that lock. The
 route (`RunRoute`: shape, row, preset, Follow or Adapt, the line's words)
 rides in the run's rules snapshot as `rules.route`, parsed by
 `parseWorkflowRules`, so no migration. One agent goes to `spawnAgent` and keeps

@@ -15,5 +15,6 @@ export const presetSnapshotOf = ({ preset }: Params): RunPreset => ({
       role: step.role ?? null,
       promptPrefix: step.promptPrefix,
       isPinned: step.routingLock != null,
+      routingLock: step.routingLock ?? null,
     })),
 });

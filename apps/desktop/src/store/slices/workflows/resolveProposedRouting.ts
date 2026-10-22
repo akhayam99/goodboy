@@ -5,6 +5,7 @@ import type {
   Session,
   SessionId,
   WorkflowModelPick,
+  WorkflowRoutingLock,
 } from '@goodboy/types';
 import {
   hintedRoutingOutcome,
@@ -35,6 +36,7 @@ export type ResolveProposedRoutingParams = Readonly<{
   roleModels: RoleModelPreferences | null;
   providerPool: ReadonlyArray<ProviderId> | null;
   availability: WorkflowRoutingAvailabilitySnapshot;
+  stepLock?: WorkflowRoutingLock | null;
 }>;
 
 export type ProposedRouting = Readonly<{
@@ -89,6 +91,7 @@ export const resolveProposedRouting = ({
   roleModels,
   providerPool,
   availability,
+  stepLock = null,
 }: ResolveProposedRoutingParams): ProposedRouting => {
   const parsedProposal = parseWorkflowRoutingProposal({
     fields: wireFieldsOf({ fields, isModelPickEnabled }),
@@ -108,7 +111,7 @@ export const resolveProposedRouting = ({
   });
   const resolution = resolveWorkflowRouting({
     agentLock: null,
-    stepLock: null,
+    stepLock,
     proposal: routingProposal,
     roleDefault: picks.roleDefault,
     sessionDefault: sessionDefaultOf({ session, defaultProvider }),

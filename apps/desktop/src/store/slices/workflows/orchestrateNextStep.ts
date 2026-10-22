@@ -436,7 +436,7 @@ const appendStep = async ({
     ...(step.modelOverride != null && { modelOverride: step.modelOverride }),
     ...(step.effort != null && { effort: step.effort }),
     ...(step.orchestratorReason != null && { orchestratorReason: step.orchestratorReason }),
-    routingLock: null,
+    routingLock: step.routingLock ?? null,
     routingDecision: step.routingDecision ?? null,
     taskProfile: step.taskProfile ?? null,
   };
@@ -858,8 +858,10 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
         devWarn(`[workflow] run summary could not be saved: ${formatError(error)}`);
       }
       if (decision.action === 'next') {
-        const proposed = pinnedStepOf({ step: decision.step, preset: run.rulesSnapshot?.preset });
+        const pinned = pinnedStepOf({ step: decision.step, preset: run.rulesSnapshot?.preset });
+        const proposed = pinned.step;
         const { routingProposal, resolution } = resolveProposedRouting({
+          stepLock: pinned.routingLock,
           state: get(),
           sessionId,
           session,
@@ -932,6 +934,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
             modelOverride: selected.model,
             ...(selected.effort != null && { effort: selected.effort }),
             ...(reason !== '' && { orchestratorReason: reason }),
+            routingLock: pinned.routingLock,
             routingDecision,
             taskProfile: emittedTaskProfile({
               decision: routingDecision,

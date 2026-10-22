@@ -52,7 +52,9 @@ const askedRun = ({ change, isPinned = false }: RunParams): WorkflowRun =>
       preset: {
         workflowId: 'workflow-review',
         name: 'Review a change',
-        steps: [{ name: 'Review', role: 'reviewer', promptPrefix: '', isPinned }],
+        steps: [
+          { name: 'Review', role: 'reviewer', promptPrefix: '', isPinned, routingLock: null },
+        ],
       },
       pendingChange: change,
     },

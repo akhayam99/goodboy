@@ -14,6 +14,7 @@ import type {
   TelemetryRecord,
   Workflow,
   WorkflowId,
+  WorkflowRoutingLock,
   WorkflowRules,
   WorkflowRun,
   WorkflowRunId,
@@ -21,7 +22,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-import { DEFAULT_WORKFLOW_RULES } from '@goodboy/types';
+import { DEFAULT_WORKFLOW_RULES, parseWorkflowRulesText } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -2255,12 +2256,14 @@ type PresetStateParams = {
   readonly closeness: 'follow' | 'adapt';
   readonly isPinned?: boolean;
   readonly approvedChange?: WorkflowRules['approvedChange'];
+  readonly routingLock?: WorkflowRoutingLock;
 };
 
 const presetRules = ({
   closeness,
   isPinned = false,
   approvedChange,
+  routingLock,
 }: PresetStateParams): WorkflowRules => ({
   ...DEFAULT_WORKFLOW_RULES,
   spreadByHeadroom: false,
@@ -2277,12 +2280,19 @@ const presetRules = ({
     workflowId: 'workflow-layout',
     name: 'Fix a layout',
     steps: [
-      { name: 'Find', role: 'scout', promptPrefix: 'Find the widths.', isPinned: false },
+      {
+        name: 'Find',
+        role: 'scout',
+        promptPrefix: 'Find the widths.',
+        isPinned: false,
+        routingLock: null,
+      },
       {
         name: 'Center the pages',
         role: 'implementer',
         promptPrefix: 'Center every page exactly so.',
         isPinned,
+        routingLock: routingLock ?? null,
       },
     ],
   },
@@ -2441,6 +2451,50 @@ describe('orchestrateNextStep with a preset', () => {
       name: 'Center the pages',
       promptPrefix: 'Center every page exactly so.',
     });
+  });
+
+  it('runs a pinned step on the model the preset pinned', async () => {
+    const routingLock: WorkflowRoutingLock = {
+      version: 1,
+      pick: { provider: 'anthropic', model: 'haiku-4.5', effort: null },
+      origin: 'user',
+    };
+    decideSpy.mockResolvedValue({
+      usage: NO_USAGE,
+      decision: {
+        action: 'next',
+        reason: 'Now center.',
+        step: {
+          name: 'Center the pages',
+          role: 'implementer',
+          promptPrefix: 'Center two pages.',
+          presetStep: 2,
+        },
+      },
+    });
+    const { set, get } = presetState({ closeness: 'adapt', isPinned: true, routingLock });
+
+    await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
+
+    expect(savedStep()).toMatchObject({
+      providerOverride: 'anthropic',
+      modelOverride: 'haiku-4.5',
+      routingLock,
+    });
+    expect(invokeAgentInsertSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ providerOverride: 'anthropic', modelOverride: 'haiku-4.5' }),
+    );
+  });
+
+  it('keeps the pinned model when the rules are saved and read back', () => {
+    const routingLock: WorkflowRoutingLock = {
+      version: 1,
+      pick: { provider: 'codex', model: 'gpt-5.6-sol', effort: 'high' },
+      origin: 'user',
+    };
+    const text = JSON.stringify(presetRules({ closeness: 'follow', isPinned: true, routingLock }));
+
+    expect(parseWorkflowRulesText({ text })?.preset?.steps[1]?.routingLock).toEqual(routingLock);
   });
 });
 
