@@ -1,12 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Button,
-  ICON_SIZE,
-  MenuItems,
-  useDropdown,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
+import { AnchoredPopover, Button, ICON_SIZE, useDropdown, type MenuEntry } from '@goodboy/ui';
+import { AppMenuList } from '../../../../../../features/actions/AppMenuList';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import { ONE_FLOW_COPY, type OneFlowCloseness, type OneFlowShape } from './oneFlowCopy';
 import { PRESET_NAME } from './oneFlowSeed';
@@ -30,11 +24,11 @@ type PickParams = {
   readonly isCurrent: boolean;
 };
 
-const pickOf = ({ key, label, isCurrent }: PickParams): OverflowMenuItem => ({
+const pickOf = ({ key, label, isCurrent }: PickParams): MenuEntry => ({
   kind: 'item',
   key,
   label,
-  onClick: noop,
+  onSelect: noop,
   ...(isCurrent ? { icon: Check, iconClassName: 'text-foreground' } : {}),
 });
 
@@ -42,7 +36,7 @@ type ItemsParams = {
   readonly route: OneFlowRoute;
 };
 
-const itemsOf = ({ route }: ItemsParams): ReadonlyArray<OverflowMenuItem> => {
+const entriesOf = ({ route }: ItemsParams): ReadonlyArray<MenuEntry> => {
   const hasPreset = route.closeness !== null;
   return [
     { kind: 'header', key: 'shape', label: ONE_FLOW_COPY.shapeHeader },
@@ -67,7 +61,7 @@ const itemsOf = ({ route }: ItemsParams): ReadonlyArray<OverflowMenuItem> => {
         ]
       : []),
     { kind: 'separator', key: 'end' },
-    { kind: 'item', key: 'remember', label: ONE_FLOW_COPY.remember, onClick: noop },
+    { kind: 'item', key: 'remember', label: ONE_FLOW_COPY.remember, onSelect: noop },
   ];
 };
 
@@ -89,9 +83,8 @@ export const OneFlowRouteLine = ({ route }: Props) => {
       <span data-one-flow-change="" className="flex">
         <AnchoredPopover
           dropdown={dropdown}
-          role="menu"
+          role="dialog"
           ariaLabel={ONE_FLOW_COPY.routeLabel}
-          className="py-1"
           trigger={
             <Button
               variant="ghost"
@@ -105,7 +98,11 @@ export const OneFlowRouteLine = ({ route }: Props) => {
             </Button>
           }
         >
-          <MenuItems items={itemsOf({ route })} onClose={dropdown.close} />
+          <AppMenuList
+            label={ONE_FLOW_COPY.routeLabel}
+            entries={entriesOf({ route })}
+            onClose={dropdown.close}
+          />
         </AnchoredPopover>
       </span>
     </div>
