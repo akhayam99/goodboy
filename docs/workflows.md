@@ -425,8 +425,9 @@ workflow with no steps and attaches it with `executionMode: 'dynamic'`; a
 preset does the same with the name "Plan from <preset>", the preset's own
 process as `processText`, and a snapshot of its live steps in
 `rules.preset` (`presetSnapshotOf`: name, role, instruction, `isPinned` for a
-step with a routing lock, and that `routingLock` itself). The orchestrator prompt gets the preset, the
-closeness and the rules table (`presetLines` in
+step with a routing lock, and that `routingLock` itself). The orchestrator prompt gets the preset with each
+step's instructions on one line (`presetInputOf` maps `promptPrefix` to
+`instructions`, so an unpinned step keeps its brief too), the closeness and the rules table (`presetLines` in
 `packages/core/src/orchestrator/prompt.ts`); a decision may carry
 `change` (`added`, `skipped`, `reordered`, with a reason) and a step its
 `presetStep` number. `planChangeVerdictOf` decides: Adapt applies the change

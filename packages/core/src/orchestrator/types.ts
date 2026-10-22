@@ -26,7 +26,9 @@ export type OrchestratorStep = {
 type OrchestratorPresetInput = {
   readonly name: string;
   readonly closeness: RunRouteCloseness;
-  readonly steps: ReadonlyArray<Readonly<{ name: string; role: string | null; isPinned: boolean }>>;
+  readonly steps: ReadonlyArray<
+    Readonly<{ name: string; role: string | null; instructions: string; isPinned: boolean }>
+  >;
   readonly changes: ReadonlyArray<PlanChangeRequest>;
 };
 

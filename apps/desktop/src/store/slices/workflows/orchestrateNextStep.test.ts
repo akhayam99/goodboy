@@ -2351,7 +2351,10 @@ describe('orchestrateNextStep with a preset', () => {
     expect(decideSpy.mock.calls[0]![0].preset).toMatchObject({
       name: 'Fix a layout',
       closeness: 'follow',
-      steps: [{ name: 'Find' }, { name: 'Center the pages' }],
+      steps: [
+        { name: 'Find', instructions: 'Find the widths.' },
+        { name: 'Center the pages', instructions: 'Center every page exactly so.' },
+      ],
     });
   });
 

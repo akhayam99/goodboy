@@ -184,19 +184,33 @@ const PRESET_RULES = {
   ],
 } as const;
 
+type OneLineParams = {
+  readonly text: string;
+};
+
+const oneLineOf = ({ text }: OneLineParams): string =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .join(' ');
+
 type PresetLinesParams = {
   readonly preset: NonNullable<OrchestratorInput['preset']>;
 };
 
 const presetLines = ({ preset }: PresetLinesParams): ReadonlyArray<string> => [
   `Preset: ${preset.name}, ${PRESET_CLOSENESS_LABEL[preset.closeness]}. Its steps, in order (put the number of the step you run in "presetStep"):`,
-  ...preset.steps.map(
-    (step, index) =>
+  ...preset.steps.flatMap((step, index) => {
+    const instructions = oneLineOf({ text: step.instructions });
+    return [
       `${index + 1}. ${step.role ?? 'agent'}: ${step.name}${step.isPinned ? ' (pinned: run it as written, never skip or move it)' : ''}`,
-  ),
+      ...(instructions === '' ? [] : [`   Instructions: ${instructions}`]),
+    ];
+  }),
   '',
   'Rules for the preset:',
-  '- Run the steps in order, writing each brief from the step and the goal.',
+  '- Run the steps in order, writing each brief from the step, its instructions and the goal.',
   ...PRESET_RULES[preset.closeness].map((rule) => `- ${rule}`),
   '- The goal, the operator process and the hints rank above the preset. Never change a pinned step.',
   '- Never start work past the spend limit, push, open or merge a pull request.',

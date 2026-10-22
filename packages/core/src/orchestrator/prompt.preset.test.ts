@@ -18,8 +18,13 @@ const PRESET: NonNullable<OrchestratorInput['preset']> = {
   name: 'Fix a layout',
   closeness: 'follow',
   steps: [
-    { name: 'Find the broken widths', role: 'scout', isPinned: false },
-    { name: 'Center the pages', role: 'implementer', isPinned: true },
+    { name: 'Find the broken widths', role: 'scout', instructions: '', isPinned: false },
+    {
+      name: 'Center the pages',
+      role: 'implementer',
+      instructions: 'Center every member page.\n\n  Keep the Harborline header fixed.',
+      isPinned: true,
+    },
   ],
   changes: [],
 };
@@ -34,6 +39,16 @@ describe('buildOrchestratorUserPrompt with a preset', () => {
       '2. implementer: Center the pages (pinned: run it as written, never skip or move it)',
     );
     expect(prompt).toContain('"presetStep"');
+  });
+
+  it('gives each step its saved instructions on one line, and none for an empty one', () => {
+    const prompt = buildOrchestratorUserPrompt(input({ preset: PRESET }));
+
+    expect(prompt).toContain(
+      '   Instructions: Center every member page. Keep the Harborline header fixed.',
+    );
+    expect(prompt.match(/Instructions:/g)).toHaveLength(1);
+    expect(prompt).toContain('writing each brief from the step, its instructions and the goal');
   });
 
   it('under Follow forbids adding or skipping on its own and asks for the change field', () => {

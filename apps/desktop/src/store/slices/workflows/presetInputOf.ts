@@ -16,6 +16,7 @@ export const presetInputOf = ({ rules }: Params): OrchestratorInput['preset'] =>
     steps: preset.steps.map((step) => ({
       name: step.name,
       role: step.role,
+      instructions: step.promptPrefix,
       isPinned: step.isPinned,
     })),
     changes: (rules?.planChanges ?? []).map((change) => ({
