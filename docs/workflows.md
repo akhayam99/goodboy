@@ -461,7 +461,10 @@ port and writes `changedTo` into `runs.routes.<sessionId>`. The defaults live in
 the settings keys `runs.defaultShape.session.<sessionId>` and
 `runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), read by row 1
 through `runDefaultOf`; `changeRunDefault` writes compare and swap and records
-an undo that refuses when the stored value moved. Opening a preset run shows its page; the session rail stays
+an undo that refuses when the stored value moved. A missing session key means
+the session inherits the workspace default, so undo of a first session default
+deletes the key (`deleteSettingIfUnchanged`) instead of writing `auto`, and
+`loadSetting` drops a key the database no longer holds. Opening a preset run shows its page; the session rail stays
 on the session and the run's agents are in the Agents panel.
 
 Orchestrated runs have no page of their own since ux27 one flow unit 1: they

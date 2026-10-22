@@ -22,7 +22,7 @@ Every run started from the field shows one quiet line under its title: what was 
 - Follow and Adapt switch in place at any time.
 - Before the first step starts, a new shape or preset applies to the same run, so nothing is spent twice. A plan with no step yet that becomes one agent is replaced by that agent.
 - Once work started, Change starts a second run with the same ask and what the first found, then stops the first and marks it **Changed to a plan** or **Changed to one agent**. Both stay in the list. If the second run fails to start, the first is left as it was.
-- Setting a default shows a toast with **Undo**. Undo changes nothing when another window changed the default since.
+- Setting a default shows a toast with **Undo**. Undo changes nothing when another window changed the default since. Undo of a session's first default lets the session follow the workspace default again.
 
 ### The New session page
 

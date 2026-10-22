@@ -18,15 +18,16 @@ type ReadParams = {
   readonly key: string;
 };
 
-const storedDefaultOf = async ({ key }: ReadParams): Promise<RunDefault> => {
+const storedDefaultOf = async ({ key }: ReadParams): Promise<RunDefault | null> => {
   await useAppStore.getState().loadSetting(key);
-  return parseRunDefault({ raw: useAppStore.getState().settings[key] }) ?? 'auto';
+  return parseRunDefault({ raw: useAppStore.getState().settings[key] });
 };
 
 export const changeRunDefault = async ({ scope, shape }: Params): Promise<void> => {
   const key = runDefaultKey({ scope });
   const previous = await storedDefaultOf({ key });
-  if (previous === shape) {
+  const isWorkspaceAuto = scope.kind === 'workspace' && previous === null && shape === 'auto';
+  if (previous === shape || isWorkspaceAuto) {
     return;
   }
   await writeRunDefault({ db: tauriDatabase, scope, shape });

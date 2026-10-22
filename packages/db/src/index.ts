@@ -234,6 +234,7 @@ export { listProviderLimits, upsertProviderLimits } from './queries/provider-lim
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export {
   deleteSetting,
+  deleteSettingIfUnchanged,
   getSetting,
   insertSettingIfAbsent,
   listSettingsWithPrefix,

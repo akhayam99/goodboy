@@ -67,6 +67,26 @@ describe('changeRunDefault', () => {
 
     expect(await useAppStore.getState().undoLastOperation()).toBe(true);
 
+    expect(await stored(SESSION_SCOPE)).toBeNull();
+    expect(defaultNow()).toBe('auto');
+  });
+
+  it('undo of a first session default lets the session inherit the workspace again', async () => {
+    await changeRunDefault({ scope: WORKSPACE_SCOPE, shape: 'lead' });
+    await changeRunDefault({ scope: SESSION_SCOPE, shape: 'plan' });
+    expect(defaultNow()).toBe('plan');
+
+    expect(await useAppStore.getState().undoLastOperation()).toBe(true);
+
+    expect(await stored(SESSION_SCOPE)).toBeNull();
+    expect(defaultNow()).toBe('lead');
+  });
+
+  it('an explicit session auto overrides an inherited workspace default', async () => {
+    await changeRunDefault({ scope: WORKSPACE_SCOPE, shape: 'lead' });
+
+    await changeRunDefault({ scope: SESSION_SCOPE, shape: 'auto' });
+
     expect(await stored(SESSION_SCOPE)).toBe('auto');
     expect(defaultNow()).toBe('auto');
   });
@@ -115,7 +135,7 @@ describe('changeRunDefault', () => {
     expect(await useAppStore.getState().undoLastOperation()).toBe(false);
 
     expect(reportError).toHaveBeenCalled();
-    expect(await stored(SESSION_SCOPE)).toBe('auto');
+    expect(await stored(SESSION_SCOPE)).toBeNull();
   });
 
   it('writes nothing and offers no undo when the default is already set', async () => {
