@@ -21,6 +21,7 @@ import {
   type WorkflowRunId,
 } from '@goodboy/types';
 import { aDelegation, aTree } from '../../../../../../features/auto/testing/autoViewFixtures';
+import { presetSnapshotOf } from '../../../../../../features/session/startRun/presetSnapshotOf';
 import type { AutoTreeView } from '../../../../../../store/slices/auto-view/state';
 import type { OpenDrawer } from '../../../../../../store/slices/drawer/state';
 import { useAppStore, type LensKind } from '../../../../../../store';
@@ -171,10 +172,7 @@ const planWorkflowOf = ({ era }: EraParams): Workflow => ({
   name: era === 'after' ? ONE_FLOW_GOAL : 'Center every member page',
   description: '',
   origin: 'orchestrated',
-  processText:
-    era === 'after'
-      ? `Start from the preset ${PRESET_NAME}. Adapt as it goes: add, skip or move a step when a finding asks for it, and say why.`
-      : 'Keep the 390px layout working on every page.',
+  processText: 'Keep the 390px layout working on every page.',
   steps: stepsOf({
     workflowId: PLAN_WORKFLOW_ID,
     steps: era === 'after' ? PLAN_STEPS_AFTER : PLAN_STEPS_BEFORE,
@@ -210,7 +208,31 @@ const planRunOf = ({ era }: EraParams): WorkflowRun => ({
   spendLimitUsd: 5,
   spendLimitMode: 'pause',
   providerPool: ['anthropic', 'codex'],
-  rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan' },
+  rulesSnapshot:
+    era === 'after'
+      ? {
+          ...DEFAULT_WORKFLOW_RULES,
+          autonomy: 'plan',
+          route: {
+            shape: 'plan',
+            row: 2,
+            presetName: PRESET_NAME,
+            closeness: 'adapt',
+            role: null,
+            choice: `Plan from ${PRESET_NAME}, 3 steps · Adapt as it goes`,
+            why: 'Your ask matches the preset',
+          },
+          preset: presetSnapshotOf({ preset: PRESET }),
+          planChanges: [
+            {
+              kind: 'added',
+              step: 'Stop the billing table scrolling sideways',
+              reason: 'The scout found the billing table scrolls sideways at 390px',
+              agentId: agentIdOf({ key: 'plan-billing' }),
+            },
+          ],
+        }
+      : { ...DEFAULT_WORKFLOW_RULES, autonomy: 'plan' },
   orchestratorHints: [],
   orchestratorSummary: JSON.stringify({
     done:
@@ -397,7 +419,7 @@ const AUTO_CHILDREN: ReadonlyArray<ChildSpec> = [
   },
 ];
 
-const AUTO_ROOT_ID = agentIdOf({ key: AUTO_KEY });
+export const AUTO_ROOT_ID = agentIdOf({ key: AUTO_KEY });
 
 const AUTO_TREE_ID = brandId<AutoTreeId>({ value: 'mock-one-flow-tree' });
 

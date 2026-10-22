@@ -10,6 +10,8 @@ export type RunRoute = Readonly<{
   role: string | null;
   choice: string;
   why: string;
+  ask?: string;
+  changedTo?: RunRouteShape;
 }>;
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
@@ -37,5 +39,9 @@ export const parseRunRoute = ({ value }: ParseParams): RunRoute | null => {
     role: textOrNull(value.role),
     choice: value.choice,
     why: value.why,
+    ...(typeof value.ask === 'string' && { ask: value.ask }),
+    ...((value.changedTo === 'plan' || value.changedTo === 'lead') && {
+      changedTo: value.changedTo,
+    }),
   };
 };

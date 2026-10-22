@@ -46,8 +46,18 @@ export type MenuItemEntry = {
   readonly onSelect: (choice: string | null) => void | Promise<void>;
 };
 
+export type MenuRadioEntry = {
+  readonly kind: 'radio';
+  readonly key: string;
+  readonly label: string;
+  readonly choices: ReadonlyArray<MenuChoice>;
+  readonly isDisabled?: boolean;
+  readonly onSelect: (choice: string) => void | Promise<void>;
+};
+
 export type MenuEntry =
   | MenuItemEntry
+  | MenuRadioEntry
   | { readonly kind: 'separator'; readonly key: string }
   | { readonly kind: 'header'; readonly key: string; readonly label: string };
 

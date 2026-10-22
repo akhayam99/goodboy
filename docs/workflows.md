@@ -416,20 +416,52 @@ agents"), cost and age, every row the same columns. Groups:
 an agent or Auto row also opens the agent's right click menu, and an archived run is restored from its page. The state
 word and the dot of a workflow run come from `runRowFactsOf`, the same function the identity row
 of the Agents panel reads. The page opens on the **Start a run** field (`StartRun`, see
-[Start a run](features/start.md#start-a-run)); the header holds **Run a workflow**, **Start an auto** and **Start an agent**; a session with no run shows
-today's start card under the field.
+[Start a run](features/start.md#start-a-run)), the one start on the page; a session with no run shows
+the field alone.
 
 A routed start (`startRoutedRun` in `features/session/startRun/`) uses today's
 engines. `runRouteOf` picks the row; a plan creates an `origin: 'orchestrated'`
 workflow with no steps and attaches it with `executionMode: 'dynamic'`; a
-preset does the same, its live steps written in order into `processText` so
-the orchestrator starts from them, with the name "Plan from <preset>". The
+preset does the same with the name "Plan from <preset>", the preset's own
+process as `processText`, and a snapshot of its live steps in
+`rules.preset` (`presetSnapshotOf`: name, role, instruction, and `isPinned`
+for a step with a routing lock). The orchestrator prompt gets the preset, the
+closeness and the rules table (`presetLines` in
+`packages/core/src/orchestrator/prompt.ts`); a decision may carry
+`change` (`added`, `skipped`, `reordered`, with a reason) and a step its
+`presetStep` number. `planChangeVerdictOf` decides: Adapt applies the change
+and records it in `rules.planChanges` (the agent id tags the checklist row,
+the reason becomes the step's Why); Follow never applies it, but stores it as
+`rules.pendingChange` with the stop kind `preset-change`, and
+`PresetChangeAsk` offers Add it (or Skip it, Move it), Skip (or Keep it) and
+Switch to adapt. `resolvePresetChange` queues a hint first, then writes
+`approvedChange` (applied once by the next matching decision), clears the
+stop and asks again; an answer to a question another window already answered
+does nothing. A change on a pinned step is never applied, under either
+closeness, and a decision that runs a pinned step gets its name, role and
+instruction from the preset (`pinnedStepOf`). The
 route (`RunRoute`: shape, row, preset, Follow or Adapt, the line's words)
 rides in the run's rules snapshot as `rules.route`, parsed by
 `parseWorkflowRules`, so no migration. One agent goes to `spawnAgent` and keeps
 its route in the settings key `runs.routes.<sessionId>`, one entry per agent,
 written compare and swap (`writeRunRoute`) so two windows starting at once both
-keep theirs. Opening a preset run shows its page; the session rail stays
+keep theirs. The route also keeps the ask, so Change can restart it.
+
+`RunRouteLine` (`features/session/components/RunRoute/`) shows the stored route
+on the orchestrated document and on an agent's page, with the count of
+`rules.planChanges` after the choice ("Adapt as it goes · 1 change"); the facts
+line then leaves the preset out, so it is said once. Change calls
+`changeRunRoute`. Follow or Adapt, and a new preset before the first step, only
+rewrite `rules.route` (`updateWorkflowRunRules`) and the run's `processText`.
+A change after work started calls `startRoutedRun` with the findings
+(`runFindingsOf`: the run summary's done entries and the settled steps'
+summaries), then `stopWorkflowRunNow` on the first run and writes
+`route.changedTo`; for one agent it stops the Auto tree through the tree stop
+port and writes `changedTo` into `runs.routes.<sessionId>`. The defaults live in
+the settings keys `runs.defaultShape.session.<sessionId>` and
+`runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), read by row 1
+through `runDefaultOf`; `changeRunDefault` writes compare and swap and records
+an undo that refuses when the stored value moved. Opening a preset run shows its page; the session rail stays
 on the session and the run's agents are in the Agents panel.
 
 Orchestrated runs have no page of their own since ux27 one flow unit 1: they

@@ -78,9 +78,9 @@ describe('the u27 one flow scenes', () => {
     fireEvent.click(within(route).getByRole('button', { name: /Change/ }));
     const menu = await screen.findByRole('menu', { name: 'How Auto runs this' }, WAIT);
     expect(
-      within(menu)
-        .getAllByRole('menuitem')
-        .map((item) => item.textContent),
+      [...menu.querySelectorAll('[role="menuitem"], [role="menuitemradio"]')].map(
+        (item) => item.textContent,
+      ),
     ).toEqual([
       'A plan with steps',
       'One agent that starts what it needs',
@@ -102,6 +102,12 @@ describe('the u27 one flow scenes', () => {
         WAIT,
       ),
     ).toBeDefined();
+    const route = screen.getByRole('group', { name: 'How Auto runs this' });
+    expect(route.textContent).toContain('Adapt as it goes·1 change');
+    expect(document.querySelector('[data-preset-facts]')).toBeNull();
+    expect(screen.getAllByText('1 change')).toHaveLength(1);
+    const tag = document.querySelector('[data-plan-change="added"]');
+    expect(tag?.textContent).toBe('Added');
   });
 
   it('lists every run of the session newest first, old kinds included', async () => {

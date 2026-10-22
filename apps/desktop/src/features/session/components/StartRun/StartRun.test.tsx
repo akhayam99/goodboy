@@ -12,7 +12,7 @@ vi.mock('../../../../shared/lib/db', async () =>
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { getSetting } from '@goodboy/db';
+import { getSetting, setSetting } from '@goodboy/db';
 import {
   brandId,
   type AgentId,
@@ -32,6 +32,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { runDefaultKey } from '../../startRun/runDefaultSetting';
 import { runRoutesKey } from '../../startRun/runRoutesSetting';
 import { StartRun } from './StartRun';
 
@@ -138,6 +139,25 @@ describe('StartRun', () => {
     expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 5, shape: 'lead' });
   });
 
+  it('starts one Scout at once for @Scout, with no Auto turn first', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    useAppStore.setState({ spawnAgent, attachWorkflowToSession });
+    renderField({ sessionId: SESSION.id });
+
+    ask({ text: `@Scout ${QUESTION}` });
+
+    await waitFor(() => expect(field()).toHaveProperty('value', ''));
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    expect(spawnAgent).toHaveBeenCalledWith(
+      SESSION.id,
+      expect.objectContaining({ kindOverride: 'scout', initialPrompt: QUESTION }),
+    );
+    expect(attachWorkflowToSession).not.toHaveBeenCalled();
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 1, shape: 'lead', role: 'scout' });
+  });
+
   it('starts an orchestrated run for a task with an end', async () => {
     const savePhaseTemplate = vi.fn<SaveFn>(async () => FIX_A_LAYOUT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
@@ -162,7 +182,7 @@ describe('StartRun', () => {
     });
   });
 
-  it('seeds a dynamic run with the steps of the preset the ask matches', async () => {
+  it('starts a plan from the preset the ask matches, its steps in the rules', async () => {
     const savePhaseTemplate = vi.fn<SaveFn>(async () => FIX_A_LAYOUT);
     const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
     useAppStore.setState({
@@ -175,13 +195,65 @@ describe('StartRun', () => {
     ask({ text: 'Fix the layout of the Harborline billing page' });
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
-    expect(savePhaseTemplate.mock.calls[0]?.[0]?.processText).toBe(
-      'Start from the preset Fix a layout. Its steps, in order:\n1. scout: Find\n2. agent: Center',
-    );
+    expect(savePhaseTemplate.mock.calls[0]?.[0]?.processText).toBeUndefined();
     expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
       executionMode: 'dynamic',
-      rulesSnapshot: { route: { row: 2, closeness: 'adapt', presetName: 'Fix a layout' } },
+      rulesSnapshot: {
+        route: { row: 2, closeness: 'adapt', presetName: 'Fix a layout' },
+        preset: {
+          workflowId: LAYOUT_ID,
+          name: 'Fix a layout',
+          steps: [
+            { name: 'Find', role: 'scout', isPinned: false },
+            { name: 'Center', role: null, isPinned: false },
+          ],
+        },
+      },
     });
+  });
+
+  it('reads the session default from the Change menu before any other row', async () => {
+    const attachWorkflowToSession = vi.fn<AttachFn>(async () => undefined);
+    useAppStore.setState({
+      savePhaseTemplate: vi.fn<SaveFn>(async () => FIX_A_LAYOUT),
+      attachWorkflowToSession,
+      generateWorkflowTitle: vi.fn(async () => undefined),
+    });
+    await setSetting(
+      storySqlite(),
+      runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } }),
+      'lead',
+    );
+    await setSetting(
+      storySqlite(),
+      runDefaultKey({ scope: { kind: 'session', sessionId: SESSION.id } }),
+      'plan',
+    );
+    renderField({ sessionId: SESSION.id });
+
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
+    expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({
+      rulesSnapshot: { route: { row: 1, shape: 'plan', why: 'your default', ask: QUESTION } },
+    });
+  });
+
+  it('reads the workspace default from Settings when the session has none', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    await setSetting(
+      storySqlite(),
+      runDefaultKey({ scope: { kind: 'workspace', workspaceId: WORKSPACE.id } }),
+      'lead',
+    );
+    renderField({ sessionId: SESSION.id });
+
+    ask({ text: 'center every member page' });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 1, why: 'your default' });
   });
 
   it('keeps the text and offers Retry when the start fails', async () => {
@@ -223,6 +295,51 @@ describe('StartRun', () => {
     await waitFor(() => expect(field()).toHaveProperty('value', ''));
     expect(screen.queryByText(/The provider is cooling down/)).toBeNull();
     expect(field()).toHaveProperty('disabled', false);
+  });
+
+  it('keeps the file Explore attached, routes it as one file and sends its path', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+
+    window.dispatchEvent(
+      new CustomEvent(`goodboy:start-run:${SESSION.id}`, {
+        detail: {
+          text: '',
+          file: { relPath: 'src/refunds.ts', absolutePath: '/work/ledger-core/src/refunds.ts' },
+        },
+      }),
+    );
+    const attached = await screen.findByRole('group', { name: 'Attached to this run' });
+    expect(attached.textContent).toContain('src/refunds.ts');
+    ask({ text: 'Tidy the retry loop' });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    const prompt = spawnAgent.mock.calls[0]?.[1]?.initialPrompt ?? '';
+    expect(prompt.startsWith('Tidy the retry loop')).toBe(true);
+    expect(prompt).toContain('- src/refunds.ts (/work/ledger-core/src/refunds.ts)');
+    const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
+    expect(JSON.parse(raw ?? '{}')[AGENT]).toMatchObject({ row: 5, why: 'One file to look at' });
+    await waitFor(() =>
+      expect(screen.queryByRole('group', { name: 'Attached to this run' })).toBeNull(),
+    );
+  });
+
+  it('drops the attached file on Remove and starts without it', async () => {
+    const spawnAgent = vi.fn<SpawnFn>(async () => AGENT);
+    useAppStore.setState({ spawnAgent });
+    renderField({ sessionId: SESSION.id });
+    window.dispatchEvent(
+      new CustomEvent(`goodboy:start-run:${SESSION.id}`, {
+        detail: { text: '', file: { relPath: 'a.ts', absolutePath: '/work/notify-relay/a.ts' } },
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove a.ts' }));
+    ask({ text: QUESTION });
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent.mock.calls[0]?.[1]?.initialPrompt).toBe(QUESTION);
   });
 
   it('opens with the text another door hands it', async () => {

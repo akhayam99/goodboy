@@ -16,7 +16,7 @@ type RawParams = {
   readonly raw: string | null | undefined;
 };
 
-const parseRunRoutes = ({ raw }: RawParams): Readonly<Record<string, RunRoute>> => {
+export const parseRunRoutes = ({ raw }: RawParams): Readonly<Record<string, RunRoute>> => {
   if (raw === null || raw === undefined || raw === '') {
     return {};
   }

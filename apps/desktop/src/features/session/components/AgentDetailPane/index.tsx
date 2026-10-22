@@ -24,6 +24,7 @@ import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRouting';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
+import { AgentRunRoute } from '../RunRoute/AgentRunRoute';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
 import { AgentConversationEnd } from './AgentConversationEnd';
 import { AgentHeader } from './AgentHeader';
@@ -183,6 +184,7 @@ export const AgentDetailPane = ({
   const lead = (
     <>
       {context}
+      {runStep === undefined ? <AgentRunRoute session={session} agentId={agent.id} /> : null}
       {isInWorkflowRun ? null : (
         <AgentStoppedNotice
           session={session}

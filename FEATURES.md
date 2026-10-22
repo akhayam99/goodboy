@@ -18,18 +18,15 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 [More on set up](docs/features/setup.md)
 
-<a id="start-a-run"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
+<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
 
 ## Start a task
 
 Begin from an issue, a workflow or a question. Everything starts as one draft, and it becomes a session only when you press Start, so empty sessions do not pile up.
 
 - Start a run
-- Pick up a task, with a drafted brief
+- Start on a task
 - Review a pull request
-- Run a workflow
-- Start an agent
-- Start one session from several issues
 
 [More on starting a task](docs/features/start.md)
 
@@ -72,7 +69,7 @@ Find any session, message, plan or action, and reach it from the keyboard. One s
 
 [More on search and navigation](docs/features/search.md)
 
-<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a>
+<a id="start-from-scratch"></a><a id="start-a-project-from-nothing"></a><a id="track-a-folder-with-git-later"></a><a id="workspace-with-several-folders"></a><a id="workspace-with-several-projects"></a><a id="starred-folders-descriptions-and-base-branch"></a><a id="starred-projects-descriptions-and-base-branch"></a><a id="worktrees"></a><a id="several-branches-per-repo"></a><a id="several-branches-per-project"></a><a id="workspace-switcher-and-reconnect"></a><a id="repo-status-across-folders"></a><a id="repo-status-across-projects"></a><a id="repository-status"></a><a id="locate-moved-folders"></a><a id="locate-moved-projects"></a><a id="keep-goodboy-out-of-git"></a><a id="branch-names"></a><a id="new-runs-start-as"></a><a id="copy-settings-from-another-workspace"></a><a id="monitoring"></a><a id="workspace-and-projects"></a>
 
 ## Workspaces and folders
 
@@ -122,13 +119,13 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 [More on the board](docs/features/board.md)
 
-<a id="workflow-builder"></a><a id="orchestrated"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="pause-resume-and-skip"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="start-a-workflow"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="pause-resume-and-skip"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 
 A workflow runs several agents in one session, each step with its own role, model and effort. Use it to split a job into steps such as scout, plan, implement and review, and to steer the run while it goes. You choose how much it asks you and how much it may spend.
 
-- Workflow builder
+- Start a workflow
 - Orchestrated
 - Run defaults
 - Workflow run
