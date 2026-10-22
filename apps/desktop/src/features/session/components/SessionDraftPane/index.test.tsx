@@ -159,6 +159,39 @@ describe('closing the New session page', () => {
     expect(goalOfDraft()).toBe('');
   });
 
+  it('asks on Esc with only Start a run written, keeps it on reopen and Discard clears it', async () => {
+    await openDraft();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Start a run' }), {
+      target: { value: 'Reconcile the Northwind ledger' },
+    });
+
+    await pressEscape();
+
+    expect(screen.getByText('Keep this draft?')).toBeDefined();
+    expect(isDraftShown()).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep draft' }));
+    await settle();
+    expect(isDraftShown()).toBe(false);
+    cleanup();
+
+    await openDraft();
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Start a run' }).value).toBe(
+      'Reconcile the Northwind ledger',
+    );
+
+    const draftDiscard = screen
+      .getAllByRole('button', { name: 'Discard' })
+      .find((button) => button.closest('section[aria-label="Start a run"]') === null);
+    if (draftDiscard === undefined) {
+      throw new Error('no draft Discard');
+    }
+    fireEvent.click(draftDiscard);
+    await settle();
+
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.runText ?? '').toBe('');
+  });
+
   it('lets up() leave the page from a written draft', async () => {
     await openDraft({ text: 'Round the ledger postings' });
 

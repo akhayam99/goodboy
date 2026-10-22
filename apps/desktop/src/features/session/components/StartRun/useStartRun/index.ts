@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { Session, SessionId, Workflow, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
+import { selectSessionDraft } from '../../../../../store/slices/sessionDraft/selectSessionDraft';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { createLatestOnly } from '../../../../../store/slices/state-writes/latestOnly';
 import { agentKindPalette, visibleAgentKinds } from '../../../agent-kind';
@@ -26,6 +27,10 @@ export type StartRunModel = Readonly<{
 const NO_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
 const DRAFT_KEY = 'draft';
+
+type AskedParams = {
+  readonly asked: string;
+};
 
 type FactsParams = {
   readonly text: string;
@@ -67,7 +72,23 @@ const factsOf = ({ text, workspaceId, session }: FactsParams): RunRouteFacts => 
 };
 
 export const useStartRun = ({ workspaceId, sessionId, prepare }: Params): StartRunModel => {
-  const [text, setText] = useState('');
+  const [localText, setLocalText] = useState('');
+  const draftText = useAppStore(
+    (state) =>
+      selectSessionDraft({ state, workspaceId: sessionId === null ? workspaceId : null }).runText,
+  );
+  const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
+  const text = sessionId === null ? draftText : localText;
+  const setText = useCallback(
+    (next: string) => {
+      if (sessionId === null) {
+        patchSessionDraft({ workspaceId, patch: { runText: next } });
+        return;
+      }
+      setLocalText(next);
+    },
+    [patchSessionDraft, sessionId, workspaceId],
+  );
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isStartingRef = useRef(false);
@@ -79,11 +100,25 @@ export const useStartRun = ({ workspaceId, sessionId, prepare }: Params): StartR
     return () => {
       latest.cancel({ key: DRAFT_KEY });
       isStartingRef.current = false;
-      setText('');
+      setLocalText('');
       setError(null);
       setIsStarting(false);
     };
   }, [sessionId, workspaceId]);
+
+  const clearAsked = useCallback(
+    ({ asked }: AskedParams) => {
+      if (sessionId !== null) {
+        setLocalText((current) => (current.trim() === asked ? '' : current));
+        return;
+      }
+      const drafts = useAppStore.getState().sessionDrafts;
+      if (drafts[workspaceId]?.runText.trim() === asked) {
+        patchSessionDraft({ workspaceId, patch: { runText: '' } });
+      }
+    },
+    [patchSessionDraft, sessionId, workspaceId],
+  );
 
   const start = useCallback(async (): Promise<void> => {
     const asked = text.trim();
@@ -112,7 +147,7 @@ export const useStartRun = ({ workspaceId, sessionId, prepare }: Params): StartR
           })
         : startRoutedRun({ sessionId, result }));
       if (claim.isCurrent()) {
-        setText((current) => (current.trim() === asked ? '' : current));
+        clearAsked({ asked });
       }
     } catch (cause) {
       if (claim.isCurrent()) {
@@ -124,7 +159,7 @@ export const useStartRun = ({ workspaceId, sessionId, prepare }: Params): StartR
         setIsStarting(false);
       }
     }
-  }, [prepare, sessionId, startFromDraft, text, workspaceId]);
+  }, [clearAsked, prepare, sessionId, startFromDraft, text, workspaceId]);
 
   return { text, setText, start, isStarting, error };
 };

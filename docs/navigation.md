@@ -1327,7 +1327,9 @@ dot with `Draft in progress` while a written draft waits. The header has no
 `Esc` label and no X: Esc closes the page (`closeSessionDraft`) and lands on
 the place before it, or the board when there was none, which is also the
 parent `up()` goes to (`placeBeforeDraft`). With nothing written Esc leaves at
-once. With text Esc raises `Keep this draft?` under the line that describes the
+once. Text in **Start a run** counts as written: the draft holds it
+(`runText`, read by `useStartRun` while no session exists yet). With text Esc
+raises `Keep this draft?` under the line that describes the
 selected choice, inline and without a modal. It floats over the page, aligned
 to the column, so nothing below it moves (`SessionKickoff` takes it as its
 `notice`). It holds one action: `Keep draft` (or a second Esc) leaves and keeps
