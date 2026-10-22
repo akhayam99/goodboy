@@ -1,6 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { startTalkItThrough } from '../../auto/startTalkItThrough';
+import { continueWithRole } from '../../session/startRun/continueWithRole';
 import { agentKindPalette, type AgentKind } from '../../session/agent-kind';
 import { commitsAheadLabel } from '../../suggestions/commitsAheadLabel';
 import { startRebaseTarget } from '../../suggestions/startRebaseTarget';
@@ -62,8 +63,13 @@ const roleAlternative = ({
     description: () => description,
     preview: () => ({ kind: 'role', agentKind: role }),
     when: ({ facts }) => facts.suggestion.kind === 'check-changes',
-    run: async ({ facts, env }) => {
-      await env.getState().spawnAgent(facts.sessionId, { kindOverride: role, focus: 'none' });
+    run: async ({ facts }) => {
+      await continueWithRole({
+        sessionId: facts.sessionId,
+        role,
+        work: description,
+        sourceAgentId: null,
+      });
     },
   };
 };
@@ -152,13 +158,13 @@ export const SUGGESTION_KIND: ObjectKindDefinition<SuggestionActionTarget, Sugge
     roleAlternative({
       id: 'suggestion.startTester',
       role: 'tester',
-      label: 'Start tester instead',
+      label: 'Continue with Tester',
       description: 'Writes tests for the changes',
     }),
     roleAlternative({
       id: 'suggestion.startImplementer',
       role: 'implementer',
-      label: 'Start implementer instead',
+      label: 'Continue with Implementer',
       description: 'Makes the changes itself',
     }),
     {
@@ -168,9 +174,8 @@ export const SUGGESTION_KIND: ObjectKindDefinition<SuggestionActionTarget, Sugge
       iconClassName: agentKindPalette({ kind: 'auto' }).fg,
       group: 'act',
       when: ({ facts }) => facts.isAutoOn && facts.startsRole !== null,
-      run: ({ facts, env }) =>
+      run: ({ facts }) =>
         startTalkItThrough({
-          state: env.getState(),
           sessionId: facts.sessionId,
           title: facts.suggestion.title,
           detail: facts.suggestion.detail ?? null,

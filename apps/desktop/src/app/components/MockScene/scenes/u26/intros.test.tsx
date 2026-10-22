@@ -86,8 +86,8 @@ const CASES: ReadonlyArray<Case> = [
     content: 'u26-intros-runs',
     empty: 'u26-intros-runs-empty',
     row: 'Fix flaky tests in the ledger export',
-    emptyTitle: 'No runs yet',
-    emptyAction: 'Run a workflow',
+    emptyTitle: 'Start a run',
+    emptyAction: null,
   },
 ];
 
@@ -137,12 +137,12 @@ describe('the u26 session page intro scenes', () => {
   });
 
   it.each(CASES)(
-    '$empty keeps the intro and an empty state with only its title and action',
+    '$empty keeps the intro and the Start a run field as its empty state',
     async (entry) => {
       await mount({ name: entry.empty });
 
       expectIntro({ page: entry.page, title: entry.title });
-      expect(screen.getByText(entry.emptyTitle)).toBeDefined();
+      expect(screen.getByRole('textbox', { name: entry.emptyTitle })).toBeDefined();
       if (entry.emptyAction !== null) {
         expect(screen.getByRole('button', { name: entry.emptyAction })).toBeDefined();
       }

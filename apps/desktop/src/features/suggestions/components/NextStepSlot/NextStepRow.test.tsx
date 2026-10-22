@@ -342,7 +342,7 @@ describe('NextStepRow', () => {
   it('holds the primary and the more menu while a choice runs', () => {
     const actions: SuggestionActions = {
       primary: {
-        label: 'Start reviewer',
+        label: 'Continue with Reviewer',
         shortLabel: 'Start',
         agentKind: 'reviewer',
         isDisabled: false,
@@ -362,9 +362,9 @@ describe('NextStepRow', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Start reviewer' }).hasAttribute('disabled')).toBe(
-      true,
-    );
+    expect(
+      screen.getByRole('button', { name: 'Continue with Reviewer' }).hasAttribute('disabled'),
+    ).toBe(true);
     expect(
       screen.getByRole('button', { name: /More options/, hidden: true }).hasAttribute('disabled'),
     ).toBe(true);
@@ -465,7 +465,7 @@ describe('NextStepRow', () => {
   it('previews the role of an alternative on the tile while it is hovered or focused', () => {
     const actions: SuggestionActions = {
       primary: {
-        label: 'Start reviewer',
+        label: 'Continue with Reviewer',
         shortLabel: 'Start',
         agentKind: 'reviewer',
         isDisabled: false,
@@ -491,13 +491,13 @@ describe('NextStepRow', () => {
     expect(tileKind()).toBe('reviewer');
 
     fireEvent.click(screen.getByRole('button', { name: /More options/ }));
-    const tester = screen.getByRole('menuitem', { name: /Start tester instead/ });
+    const tester = screen.getByRole('menuitem', { name: /Continue with Tester/ });
     fireEvent.mouseEnter(tester);
     expect(tileKind()).toBe('tester');
     fireEvent.mouseLeave(tester);
     expect(tileKind()).toBe('reviewer');
 
-    const implementer = screen.getByRole('menuitem', { name: /Start implementer instead/ });
+    const implementer = screen.getByRole('menuitem', { name: /Continue with Implementer/ });
     fireEvent.focus(implementer);
     expect(tileKind()).toBe('implementer');
   });
@@ -505,7 +505,7 @@ describe('NextStepRow', () => {
   it('fills no primary and gives every row the same columns', () => {
     const actions: SuggestionActions = {
       primary: {
-        label: 'Start reviewer',
+        label: 'Continue with Reviewer',
         shortLabel: 'Start',
         agentKind: 'reviewer',
         isDisabled: false,
@@ -537,7 +537,7 @@ describe('NextStepRow', () => {
       </>,
     );
 
-    const lead = screen.getByRole('button', { name: 'Start reviewer' });
+    const lead = screen.getByRole('button', { name: 'Continue with Reviewer' });
     const second = screen.getByRole('button', { name: 'Push' });
     expect(lead.getAttribute('data-variant')).toBe('secondary');
     expect(second.getAttribute('data-variant')).toBe('secondary');
@@ -593,7 +593,7 @@ describe('NextStepRow', () => {
     const runWith = vi.fn(async (_routing: AgentKindRouting) => undefined);
     const actions: SuggestionActions = {
       primary: {
-        label: 'Start reviewer',
+        label: 'Continue with Reviewer',
         isDisabled: false,
         failureTitle: 'Failed',
         run,
@@ -615,7 +615,7 @@ describe('NextStepRow', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Change/ }));
     fireEvent.click(await screen.findByRole('button', { name: 'Codex' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start reviewer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Reviewer' }));
 
     expect(run).not.toHaveBeenCalled();
     expect(runWith).toHaveBeenCalledTimes(1);
@@ -630,7 +630,7 @@ describe('NextStepRow', () => {
         suggestion={suggestion({ kind: 'check-changes' })}
         actions={{
           primary: {
-            label: 'Start reviewer',
+            label: 'Continue with Reviewer',
             isDisabled: false,
             failureTitle: 'Failed',
             run,
@@ -644,7 +644,7 @@ describe('NextStepRow', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start reviewer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Reviewer' }));
 
     expect(run).toHaveBeenCalledTimes(1);
     expect(runWith).not.toHaveBeenCalled();

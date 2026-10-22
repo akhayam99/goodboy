@@ -133,25 +133,6 @@ export const ghInboxPullRequests = async (
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<GithubInboxPullRequest>> =>
   listInboxPullRequests({ runner: tauriGhRunner, repoSlug: slug, now: new Date(), opts });
-
-type ViewPullRequestParams = {
-  readonly repo: string;
-  readonly number: number;
-  readonly workspaceId?: string;
-};
-
-export const ghViewPullRequest = async ({
-  repo,
-  number,
-  workspaceId,
-}: ViewPullRequestParams): Promise<PullRequestState | null> =>
-  viewPullRequest({
-    runner: tauriGhRunner,
-    repo,
-    number,
-    opts: workspaceId === undefined ? {} : { workspaceId },
-  });
-
 type OpenPrBranchesParams = {
   readonly cwd: string;
   readonly workspaceId?: string;

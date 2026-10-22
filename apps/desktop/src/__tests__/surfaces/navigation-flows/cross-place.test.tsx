@@ -975,10 +975,12 @@ describe('moving across every place keeps one frame', () => {
       }
 
       const runsBefore = sessionRuns(sessionId);
-      await openPalette(/^Run a workflow$/, 'Run a workflow');
-      fireEvent.mouseDown(await screen.findByRole('option', { name: /^Ship a fix/ }));
+      await act(async () => {
+        await useAppStore
+          .getState()
+          .attachWorkflowToSession(sessionId, SHIP_ID, { navigate: true });
+      });
       await settle();
-      await clickButton('Run');
       await waitFor(() => expect(sessionRuns(sessionId)).toBe(runsBefore + 1), WAIT);
       expectPlace({ session: sessionId, lens: 'workflows', studio: null, doors: [] });
       expect(document.querySelector('[data-session-rail]')?.getAttribute('data-session-rail')).toBe(

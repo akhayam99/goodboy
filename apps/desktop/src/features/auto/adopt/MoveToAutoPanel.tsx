@@ -7,6 +7,7 @@ import { useShowToast } from '../../../shared/components/Toast/useShowToast';
 import { detachFromAuto } from '../detachFromAuto';
 import { moveToAuto } from '../moveToAuto';
 import { useIsAutoReleased } from '../useIsAutoReleased';
+import { NAMES } from '../../../shared/names';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -41,7 +42,7 @@ export const MoveToAutoPanel = ({ sessionId, agent, onClose }: Props) => {
         if (outcome.kind === 'adopted') {
           undoable({
             showToast,
-            title: `${agent.name} moved to Auto`,
+            title: `Auto took ${agent.name} from here`,
             message: 'Auto reads its work and decides what comes next.',
             conflictMessage: UNDO_CONFLICT,
             undo: async () =>
@@ -103,7 +104,7 @@ export const MoveToAutoPanel = ({ sessionId, agent, onClose }: Props) => {
           disabled={isMoving}
           onClick={() => void submit()}
         >
-          Move to Auto
+          {NAMES.letAutoTakeIt}
         </Button>
       </FormActions>
     </div>

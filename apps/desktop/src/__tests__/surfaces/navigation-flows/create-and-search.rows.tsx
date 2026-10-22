@@ -201,16 +201,16 @@ export const CREATE_AND_SEARCH_ROWS: ReadonlyArray<Row> = [
     },
   })),
   {
-    name: 'overview: New opens its menu, and Run a workflow opens that form in the drawer',
+    name: 'overview: New opens its menu, and Start a run opens the field on Runs',
     covers: ['overview.new'],
     open: async () => {
       await clickButton(/^New$/);
-      fireEvent.click(await screen.findByRole('menuitem', { name: 'Run a workflow' }));
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Start a run' }));
       await settle();
     },
     lands: async () => {
-      const drawer = await screen.findByRole('region', { name: 'Run a workflow' });
-      expect(within(drawer).getByRole('textbox', { name: 'Goal' })).toBeDefined();
+      expect(await screen.findByRole('textbox', { name: 'Start a run' }, WAIT)).toBeDefined();
+      expect(screen.queryByRole('region', { name: 'Run a workflow' })).toBeNull();
     },
   },
   {

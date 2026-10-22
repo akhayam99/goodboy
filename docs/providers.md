@@ -219,10 +219,9 @@ rung (`isSizeMovingRung`). The background task rows (`TaskModelRow`) name the mo
 on their closed trigger. A **Choosing models** section holds two switches, off by default:
 **Models in workflows** (`canOrchestratorPickModel` in the workspace `workflowRules`, read
 from the run's `rulesSnapshot`) and **Typed requests** (the `models.classifyRequests`
-setting, read by `classifyTypedRequest` when Auto starts: a request is classified by the
-Agent naming task model, Haiku 5.5 Low on Claude, and a Scout, Planner, Debugger or Reviewer
-starts when it is sure, otherwise Auto; a model pinned for Auto is never overruled and
-nothing is asked while the switch is off). When
+setting). Typed requests is stored but no start reads it since the Start an auto form left;
+it used to classify a request with the Agent naming task model and start a Scout, Planner,
+Debugger or Reviewer when sure, otherwise Auto. When
 Parallel agents is off for the workspace, the split line says the role runs as one
 agent. Below it, **Models for planning** is the role's set: up to three models added
 with the same picker and its **Add** button, which adds the model in view once however
@@ -1025,8 +1024,8 @@ When a provider ships or retires a model, update these together:
   next step button, agent rows, the reference a turn starts from, pre-spawned step
   agents, the step estimate and the run time left. A provider set to Off is never
   offered or estimated there, even when it is the session default; the test also
-  fails on a step routing call without its scope. Resolve, its next-step card, Start an agent, the kickoff,
-  Explore and Start work from chat now follow the workspace default provider
+  fails on a step routing call without its scope. Resolve, its next-step card,
+  and Start work from chat now follow the workspace default provider
 - **Runs on.** A one-click start of an expensive role (Implementer, Resolver,
   Reviewer, PR reviewer, Debugger) shows `Runs on Sonnet 5.5 · Medium · Change`
   under the button (`shared/components/RunsOn`). Change opens the routing picker

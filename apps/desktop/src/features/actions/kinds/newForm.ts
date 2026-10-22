@@ -13,17 +13,9 @@ import type {
 
 export type NewFormFacts = {
   readonly sessionId: SessionId;
-  readonly isAutoOn: boolean;
 };
 
-const MENU_FORMS: ReadonlyArray<NewDrawerForm> = [
-  'run',
-  'orchestrate',
-  'agent',
-  'auto',
-  'report',
-  'wireframe',
-];
+const MENU_FORMS: ReadonlyArray<NewDrawerForm> = ['report', 'wireframe'];
 
 type OpenParams = {
   readonly env: ActionEnv;
@@ -32,12 +24,7 @@ type OpenParams = {
 };
 
 const openForm = ({ env, sessionId, form }: OpenParams): void => {
-  const state = env.getState();
-  if (form === 'report' || form === 'wireframe') {
-    state.openArtifactCreation({ sessionId, kind: form, workflowRunId: null });
-    return;
-  }
-  state.openDrawer({ kind: 'new', sessionId, payload: { form } });
+  env.getState().openArtifactCreation({ sessionId, kind: form, workflowRunId: null });
 };
 
 type FormParams = {
@@ -49,7 +36,7 @@ const formAction = ({ form }: FormParams): ActionDefinition<NewFormFacts> => ({
   label: NEW_DRAWER_FORMS[form].title,
   icon: NEW_DRAWER_FORMS[form].icon,
   group: 'act',
-  when: ({ facts }) => facts.isAutoOn || !NEW_DRAWER_FORMS[form].isAutoOnly,
+  when: () => true,
   run: ({ facts, env }) => openForm({ env, sessionId: facts.sessionId, form }),
 });
 

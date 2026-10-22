@@ -1,36 +1,33 @@
-import { Band } from '@goodboy/ui';
-import type { Agent, PlanId, SessionId } from '@goodboy/types';
+import { useRef, useState } from 'react';
+import { Band, formatError } from '@goodboy/ui';
+import type { Agent, SessionId } from '@goodboy/types';
 import { agentPlace, useAppStore } from '../../../../store';
-import { useFollowToast } from '../../../../shared/hooks/useFollowToast';
-import type { AgentKind, AgentKindRouting } from '../../agent-kind';
-import { AGENT_KIND_META } from '../../agent-kind';
+import type { AgentKind } from '../../agent-kind';
 import { useAutoMembership } from '../../../auto/useAutoMembership';
 import { agentFollowUpMoves } from '../../followUpMoves';
+import { continueWithRole } from '../../startRun/continueWithRole';
 import type { FollowUpChild } from './followUpChildren';
 import { AgentFollowUpChild } from './AgentFollowUpChild';
-import { routingShortText } from '../../../../shared/components/RoutingPicker/routingSummary';
 import { AgentFollowUpMove } from './AgentFollowUpMove';
 
 type Props = {
   readonly sourceAgent: Agent;
   readonly sourceKind: AgentKind;
-  readonly summary: string;
   readonly sessionId: SessionId;
   readonly followUps: ReadonlyArray<FollowUpChild>;
-  readonly activePlanId: PlanId | null;
 };
 
-export const AgentFollowUps = ({
-  sourceAgent,
-  sourceKind,
-  summary,
-  sessionId,
-  followUps,
-  activePlanId,
-}: Props) => {
-  const startFollowUp = useAppStore((state) => state.startFollowUp);
-  const followAgent = useFollowToast();
+type ContinueParams = {
+  readonly kind: AgentKind;
+  readonly hint: string;
+};
+
+export const AgentFollowUps = ({ sourceAgent, sourceKind, sessionId, followUps }: Props) => {
+  const navigate = useAppStore((state) => state.navigate);
   const membership = useAutoMembership({ sessionId, agentId: sourceAgent.id });
+  const [error, setError] = useState<string | null>(null);
+  const [busyKind, setBusyKind] = useState<AgentKind | null>(null);
+  const busyRef = useRef(false);
 
   const moves = agentFollowUpMoves({ sourceKind, isInAutoTree: membership.isMember });
   if (moves.length === 0) {
@@ -46,24 +43,27 @@ export const AgentFollowUps = ({
   const spawnedKinds = new Set(followUps.map((entry) => entry.kind));
   const pending = moves.filter((move) => !spawnedKinds.has(move.kind));
 
-  const onSpawn = (nextKind: AgentKind, routing: AgentKindRouting) => {
-    const planDriven = nextKind === 'implementer' && activePlanId != null;
-    void (async () => {
-      const agentId = await startFollowUp({
+  const onContinue = async ({ kind, hint }: ContinueParams): Promise<void> => {
+    if (busyRef.current) {
+      return;
+    }
+    busyRef.current = true;
+    setBusyKind(kind);
+    setError(null);
+    try {
+      const outcome = await continueWithRole({
         sessionId,
+        role: kind,
+        work: hint,
         sourceAgentId: sourceAgent.id,
-        kind: nextKind,
-        routing,
-        summary,
-        ...(planDriven && { triggeredPlanId: activePlanId }),
       });
-      followAgent({
-        title: `${AGENT_KIND_META[nextKind].label} started`,
-        message: `Picking up where ${sourceAgent.name} left off. Runs on ${routingShortText(routing)}.`,
-        target: { place: agentPlace({ sessionId, agentId }) },
-        startKey: agentId,
-      });
-    })();
+      navigate({ to: agentPlace({ sessionId, agentId: outcome.agentId }) });
+    } catch (cause) {
+      setError(formatError(cause));
+    } finally {
+      busyRef.current = false;
+      setBusyKind(null);
+    }
   };
 
   return (
@@ -72,7 +72,7 @@ export const AgentFollowUps = ({
       label="Continue"
       hint={
         pending.length > 0
-          ? "Start a follow-up seeded with this agent's output."
+          ? "Auto picks it up from this agent's work."
           : "Follow-ups already picked up this agent's output."
       }
     >
@@ -83,13 +83,19 @@ export const AgentFollowUps = ({
         {pending.map((move) => (
           <AgentFollowUpMove
             key={move.kind}
-            sessionId={sessionId}
             kind={move.kind}
             label={move.label}
             hint={move.hint}
-            onSpawn={(routing) => onSpawn(move.kind, routing)}
+            isBusy={busyKind === move.kind}
+            isDisabled={busyKind !== null}
+            onContinue={() => void onContinue({ kind: move.kind, hint: move.hint })}
           />
         ))}
+        {error === null ? null : (
+          <p role="alert" className="text-label text-danger">
+            {error}
+          </p>
+        )}
       </div>
     </Band>
   );

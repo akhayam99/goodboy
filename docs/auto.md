@@ -9,10 +9,8 @@
 
 Auto is an agent that answers questions itself and hands the work it cannot do
 alone to agents of the right role, with a model it picks for each. It waits for
-their results, reads them and goes on. It is always on and stays labelled
-**Experimental**: the **Start an auto** item of the New menu and of the New
-session page carries the marker, and there is no switch to turn it off. Since
-ux27 one flow unit 1 an Auto conversation is a row of the one **Runs** entry of
+their results, reads them and goes on. It is always on, and there is no switch
+to turn it off. Since ux27 one flow unit 1 an Auto conversation is a row of the one **Runs** entry of
 the session rail ("Was an Auto conversation"), so the rail has no Auto entry
 to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
 agents started by hand keep working.
@@ -57,15 +55,13 @@ accept. Neither tried to write a file or run a shell command, and the work tree 
 
 ## Starting
 
-Auto is always available, and it is its own start: **Start an auto** in the
-session **New** menu opens the **Start an auto** form of the New drawer
-(`form: 'auto'`). Every Auto conversation is a row of the session's **Runs**
-page (`sessionRunsOf`), which opens it in the Auto chat. There is no role list, no project field and no guidance: Auto
-picks the mount and asks when it is ambiguous. **Start an agent** stays the role
-start: the **Agent** form of the New drawer, the **Start an agent** popover in
-the Runs header and **Start an agent** on the New session page open the role list
-(Generalist as default, Routing), whatever the gate says (`CreateAgentPopover`,
-`NewDrawerBody`, `SessionKickoff` with `isAuto` false by default).
+Auto is always available and has no start of its own since ux27 one flow unit
+5: the **Start a run** field is the one door (the New menu's **Start a run**,
+⌘K, the Runs page and the New session page all open it). Every Auto
+conversation is a row of the session's **Runs** page (`sessionRunsOf`), which
+opens it in the Auto chat. There is no role list, no project field and no
+guidance: Auto picks the mount and asks when it is ambiguous. A role is named
+with `@` in the field, which starts that role at once with no Auto turn first.
 
 - The **Start a run** field (`StartRun`) starts Auto when its router picks one
   agent (rows 4 to 6 of `runRouteOf`, see
@@ -79,11 +75,9 @@ the Runs header and **Start an agent** on the New session page open the role lis
   tree is created at the start and the goal is queued in its outbox, so Auto's
   first turn is a delivery like every later one. A start that loses the message
   says "Auto didn't start" and the chat keeps no half-started turn.
-- The composer is one goal, files, one model chip and **Start an auto**. Auto runs
-  on any connected provider that can confine a read-only agent (`AUTO_OWN_PROVIDERS`: not the
-  opencode family, see Providers), with the route the workspace picks for the role.
-  **Start an auto** says why it is off when no such provider is connected, also when only
-  opencode, OpenRouter or Moonshot is.
+- Auto runs on any connected provider that can confine a read-only agent
+  (`AUTO_OWN_PROVIDERS`: not the opencode family, see Providers), with the route
+  the workspace picks for the role.
 - The **Limit** chip proposes 5 USD, or shows the budget of the session when
   there is one ("Limit for this Auto run" in its popover). The first start stores the cap for the workspace
   (`auto.treeLimitUsd.<workspace id>`, compare and swap), so the next start is
@@ -91,14 +85,16 @@ the Runs header and **Start an agent** on the New session page open the role lis
 - A Next card that starts a role gets **Talk it through with Auto** as the last
   entry of its more menu. It is the registry verb `suggestion.talkWithAuto`
   (`features/actions/kinds/suggestion.ts`), shown whenever the card starts a
-  role. It opens the Agent tab with the card as context
+  role. It opens **Start a run** on Runs with the card as its text
   (`startTalkItThrough`) and starts nothing.
 - **Generalist** keeps its name, with no mark of being old, and existing
   Generalist agents are not changed. Auto never appears in the manual role list.
 
 ## Moving an agent to Auto
 
-**Move to Auto** hands an agent you started yourself to Auto. It is in the menu
+**Let Auto take it from here** (once Move to Auto) hands an agent you started
+yourself to Auto. It shows on old rows only: an agent that **Start a run**
+started keeps a route in `runs.routes.<sessionId>` and never offers it. It is in the menu
 of an Implementer, Tester, Scout, Planner, Reviewer, Debugger or docs agent and
 of an old Generalist (the registry verbs `agent.moveToAuto` and
 `agent.detachFromAuto` in `features/actions/kinds/agent.ts`, so the header menu,

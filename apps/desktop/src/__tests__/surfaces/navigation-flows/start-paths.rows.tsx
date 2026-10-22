@@ -11,6 +11,7 @@ import type {
   WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+import { autoTreeLimitKey } from '../../../features/auto/autoTreeLimit';
 import type { IssueBriefEntry } from '../../../store/slices/issue-briefs/types';
 import { pressShortcut } from '../../helpers/pressKey';
 import {
@@ -86,6 +87,7 @@ const installFakes = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
   const workspaceId = state.currentWorkspaceId as WorkspaceId;
   useAppStore.setState({
+    settings: { ...state.settings, [autoTreeLimitKey({ workspaceId })]: '5' },
     starredIssues: { [workspaceId]: [starredIssue()] },
     requestIssueBrief: async (params) => {
       startCalls.briefs.push(params);
@@ -124,6 +126,7 @@ const installFakes = ({ sessionId }: Ctx): void => {
       return saved;
     },
     generateWorkflowTitle: async () => undefined,
+    loadSetting: async () => null,
     attachWorkflowToSession: async (sessionId, workflowId) => {
       startCalls.runs.push({ sessionId, workflowId });
       const run: WorkflowRun = {
@@ -184,9 +187,6 @@ const openTasksAndStart = async (ctx: Ctx): Promise<void> => {
   await settle(6);
 };
 
-const draftBlock = async (): Promise<HTMLElement> =>
-  screen.findByRole('region', { name: 'Brief' }, WAIT);
-
 const toastTitles = (title: string): ReadonlyArray<HTMLElement> => screen.queryAllByText(title);
 
 const REVIEW_REQUESTED_PR = {
@@ -237,36 +237,20 @@ export const startBridge = (
 
 export const START_PATHS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'Tasks issue: Start opens the New session draft with the issue picked and its brief loading',
+    name: 'Tasks issue: Start opens the New session draft with the issue attached to Start a run',
     covers: ['navigate'],
     open: openTasksAndStart,
     lands: async () => {
-      await draftBlock();
+      const picked = await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
+      expect(picked.textContent).toContain('HBL-415');
       const workspaceId = useAppStore.getState().currentWorkspaceId as WorkspaceId;
       const draft = useAppStore.getState().sessionDrafts[workspaceId];
-      expect(draft?.choice).toBe('task');
       expect(draft?.pickedIssues[0]?.identifier).toBe('HBL-415');
-      expect(startCalls.briefs).toHaveLength(1);
-      expect(screen.getByText('Writing a brief')).toBeDefined();
+      expect(screen.getByRole('textbox', { name: 'Start a run' })).toBeDefined();
+      expect(screen.getAllByRole('button', { name: 'Start' })).toHaveLength(1);
+      expect(startCalls.briefs).toHaveLength(0);
       expect(startCalls.sessions).toHaveLength(0);
       expect(screen.queryByRole('dialog', { name: 'Start a session' })).toBeNull();
-    },
-  },
-  {
-    name: 'The draft shows one block: the brief title, how to work on it and the one start',
-    covers: ['navigate'],
-    open: openTasksAndStart,
-    lands: async () => {
-      const block = await draftBlock();
-      expect(within(block).getByRole('textbox', { name: 'Brief title' })).toHaveProperty(
-        'value',
-        'Retried webhooks post a second credit',
-      );
-      expect(screen.getByRole('button', { name: 'Runs as: Run an orchestrator' })).toBeDefined();
-      expect(screen.getAllByRole('button', { name: 'Start from HBL-415' })).toHaveLength(1);
-      expect(screen.queryByRole('button', { name: 'Use brief' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
-      expect(screen.queryByRole('textbox', { name: 'Search issues' })).toBeNull();
     },
   },
   {
@@ -274,8 +258,8 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
     covers: ['navigate', 'toast:follow'],
     open: async (ctx) => {
       await openTasksAndStart(ctx);
-      await draftBlock();
-      counted(await screen.findByRole('button', { name: 'Start from HBL-415' }, WAIT));
+      await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
+      counted(await screen.findByRole('button', { name: 'Start' }, WAIT));
       await settle(6);
     },
     lands: async () => {

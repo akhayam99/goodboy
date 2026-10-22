@@ -57,8 +57,7 @@ afterEach(cleanup);
 const openedKind = () => useAppStore.getState().drawer?.kind ?? null;
 
 describe('OverviewActions', () => {
-  it('is a menu with one item per form, Start an auto always in it', () => {
-    useAppStore.setState({ settings: { 'agents.autoExperiment': 'false' } });
+  it('is a menu of Start a run, Write a report and Draw a wireframe, with no other start', () => {
     render(<OverviewActions session={SESSION} />);
 
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('aria-haspopup')).toBe('menu');
@@ -66,10 +65,6 @@ describe('OverviewActions', () => {
 
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Start a run',
-      'Run a workflow',
-      'Run an orchestrator',
-      'Start an agent',
-      'Start an auto',
       'Write a report',
       'Draw a wireframe',
     ]);
@@ -79,30 +74,24 @@ describe('OverviewActions', () => {
     render(<OverviewActions session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'New' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Run an orchestrator' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Write a report' }));
 
     expect(useAppStore.getState().drawer).toEqual({
       kind: 'new',
       sessionId: SESSION_ID,
-      payload: { form: 'orchestrate' },
+      payload: { form: 'report' },
     });
     expect(screen.queryByRole('menuitem')).toBeNull();
   });
 
-  it.each([
-    ['Start an agent', 'agent'],
-    ['Start an auto', 'auto'],
-  ] as const)('opens %s as its own form, the roles and Auto apart', (item, form) => {
+  it('opens Start a run on Runs from the menu, with no drawer', () => {
     render(<OverviewActions session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'New' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: item }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Start a run' }));
 
-    expect(useAppStore.getState().drawer).toEqual({
-      kind: 'new',
-      sessionId: SESSION_ID,
-      payload: { form },
-    });
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('workflows');
   });
 
   it('opens the menu with the contextual new chord, and the drawer only on a pick', async () => {
@@ -112,8 +101,8 @@ describe('OverviewActions', () => {
     expect(screen.getAllByRole('menuitem').length).toBeGreaterThan(0);
     expect(openedKind()).toBeNull();
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Run a workflow' }));
-    expect(useAppStore.getState().drawer).toMatchObject({ payload: { form: 'run' } });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Draw a wireframe' }));
+    expect(useAppStore.getState().drawer).toMatchObject({ payload: { form: 'wireframe' } });
   });
 
   it('leaves the chord to Reset chat while the Ask panel is open', async () => {

@@ -45,7 +45,7 @@ type HistoryEstimateParams = {
   readonly nowMs: number;
 };
 
-export const historyWorkEstimate = ({
+const historyWorkEstimate = ({
   key,
   unit,
   history,

@@ -18,7 +18,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../store/storyHarness';
-import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/AgentStart';
+import { scoutKickoffPrompt } from './scoutKickoffPrompt';
 import type { IssueCandidate } from '../../integrations/fetchIssueCandidates';
 import { handOffFirstSession, startFirstScout } from './startFirstSession';
 
@@ -91,7 +91,7 @@ describe('handOffFirstSession', () => {
       projectIds: draft?.projectIds,
       picked: draft?.pickedIssues.map((issue) => issue.identifier),
     }).toEqual({
-      choice: 'task',
+      choice: null,
       projectIds: [PROJECT_ID],
       picked: ['ACM-112'],
     });

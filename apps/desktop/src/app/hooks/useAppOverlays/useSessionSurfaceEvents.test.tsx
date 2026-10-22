@@ -6,6 +6,8 @@ import type { SessionId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { useAppStore } from '../../../store';
 import { PLAN_FIXTURE_ID, PLAN_FIXTURE_SESSION, aPlan } from '../../../test/planFixtures';
+import { startRunDetailOf } from '../../../features/session/startRun/startRunDetailOf';
+import { startRunEventName } from '../../../features/session/startRun/startRunEventName';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
 
 vi.mock('@tauri-apps/api/core', async () =>
@@ -59,38 +61,38 @@ const fireBuilder = ({ detail }: { readonly detail: Readonly<Record<string, stri
 };
 
 describe('the open workflow builder event', () => {
-  it('opens the New drawer on the Run a workflow form and leaves the page where it is', () => {
+  it('opens Start a run on the Runs page of the session it names, with no drawer', async () => {
+    const texts: Array<string> = [];
+    const listen = (event: Event): void => {
+      texts.push(startRunDetailOf({ event }));
+    };
+    window.addEventListener(startRunEventName({ sessionId: PLAN_FIXTURE_SESSION }), listen);
+
     fireBuilder({ detail: { sessionId: PLAN_FIXTURE_SESSION } });
 
     expect(close).toHaveBeenCalledTimes(1);
-    expect(useAppStore.getState().drawer).toEqual({
-      kind: 'new',
-      sessionId: PLAN_FIXTURE_SESSION,
-      payload: { form: 'run' },
-    });
-    expect(useAppStore.getState().activeLens[PLAN_FIXTURE_SESSION]).toBeNull();
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().activeLens[PLAN_FIXTURE_SESSION]).toBe('workflows');
+    await vi.waitFor(() => expect(texts).toEqual(['']));
+    window.removeEventListener(startRunEventName({ sessionId: PLAN_FIXTURE_SESSION }), listen);
   });
 
-  it('goes to the session the event names before it opens the drawer', () => {
+  it('goes to the session the event names', () => {
     const other = aSession({ id: brandedId<SessionId>({ value: 'session-other' }) });
     useAppStore.setState({ sessions: [aSession({ id: PLAN_FIXTURE_SESSION }), other] });
 
     fireBuilder({ detail: { sessionId: other.id } });
 
     expect(useAppStore.getState().currentSessionId).toBe(other.id);
-    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'new', sessionId: other.id });
+    expect(useAppStore.getState().drawer).toBeNull();
   });
 
-  it('opens the New drawer on the current session when the event names none', () => {
+  it('opens Start a run on the current session when the event names none', () => {
     fireBuilder({ detail: {} });
 
     expect(close).toHaveBeenCalledTimes(1);
-    expect(useAppStore.getState().drawer).toEqual({
-      kind: 'new',
-      sessionId: PLAN_FIXTURE_SESSION,
-      payload: { form: 'run' },
-    });
     expect(useAppStore.getState().currentSessionId).toBe(PLAN_FIXTURE_SESSION);
+    expect(useAppStore.getState().activeLens[PLAN_FIXTURE_SESSION]).toBe('workflows');
   });
 
   it('does nothing when the event names no session and no session is open', () => {

@@ -472,8 +472,8 @@ whoever owns the action (the first comment that waits on you, the exact
 question, the branch). A fix run's Activity row reads "Fix run · #318 · 9
 comments" with its tally, and there is one row per run, no per-agent burst. Push is
 never offered there. The block disappears when nothing waits, and there is no
-filter to switch on first. **Start an agent** is the one primary, and its menu
-starts a workflow, a report or a wireframe. Suggestions live in **Next steps**,
+filter to switch on first. **New** is the one primary, and its menu
+offers **Start a run**, a report or a wireframe. Suggestions live in **Next steps**,
 above Activity, not as a row inside the feed.
 
 An open question is asked once on screen. A question inside a launch belongs
@@ -515,7 +515,7 @@ whether you clicked it on the board or in the session overview.
   filled (filled buttons stay on forms). A busy row fades
   **Not now** and keeps its column. A short visible verb (`shortLabel`: Start,
   Fix, Rebase) sits over the full `label`, which stays the accessible name
-  ("Start reviewer").
+  ("Continue with Reviewer").
 - When the primary starts an agent, its `agentKind` picks the tile
   (`NextStepTile`): the role icon in the role color from `agentKindPalette`
   (the same source as the role picker), on a `bg-current/12` disc, and the
@@ -655,11 +655,10 @@ You do not need a workflow to start an agent. When you attach a workflow,
 Goodboy starts one agent per step. Those agents sit next to any you added
 yourself.
 
-**Start an agent** asks only for a role and its routing. The button says what
-happens next: an Implementer with an active plan starts on that plan right
-away, and every other role opens its chat with the cursor in the composer so
-you write the first message. Until you do, its row reads "Waiting for your
-first message" and does not count as needing you.
+An agent of a role you name starts from **Start a run** with `@` and the
+role: it starts at once with the rest of the ask as its first message. An
+agent with no first message yet reads "Waiting for your first message" and
+does not count as needing you.
 
 An agent finishes on its own. Once its last turn succeeded, it has no open
 question of its own, no turn is starting or running and no child still works,
@@ -696,9 +695,8 @@ do alone to agents of the right role, with a model it picks for each, then
 reads their results and goes on. Its children are agents of the roles Scout,
 Plan, Investigate, Review, Implement, Test and Docs, never more than four at a
 time. A child that waits on a question can ask Auto for a scout or an investigator, one more level and
-two at most. It is always available and labelled **Experimental** on its
-session entry; there is no switch in Settings. **Start an auto** starts it, and
-**Start an agent** keeps the role start. A person sees an Auto tree as one row in the
+two at most. It is always available; there is no switch in Settings. **Start a
+run** starts it when one agent fits the ask, and `@` names a role instead. A person sees an Auto tree as one row in the
 Overview, as a row of **Runs** in the session, and as one chat with one
 line for each delegation, its tree in the Agents panel of the session tools
 ([auto.md](auto.md)).
@@ -1463,28 +1461,20 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the new session draft, or pressing Start from HBL-412 on a
-tracker issue in Tasks, asks the **Issue briefs** task model for a brief: a title, a goal
-of one to three sentences and up to five "done when" criteria, in the issue's
-language. It reads the issue text, not its comments, and answers in checked
-JSON, so a reply with a preamble fails instead of leaking into the goal. The
-brief is only a proposal, and there is no gate to accept it. The draft opens one
-block (`PickedIssue`, `SessionKickoff/`) with the issue text as the title and goal, so
-Start is possible at once; when the brief lands it takes their place unless you
-already edited either, and Use the issue text or Use brief switches between the
-two. A failure stays inline with Retry. Under the title sits How to work on it
-(`HowToWorkOnIt`): Run a workflow (preselected, the full workflow builder with
-the goal filled in) or Start an agent, precompiled with that goal and editable. Its
-one action, Start from HBL-412, links the issue, mounts the project the issue
-maps to (the same rule as Start in Tasks), creates the session
-and starts the workflow or agent in the same gesture, and raises one Follow
-toast; nothing exists before that. In the
-one-step panel of a Slack thread, a merge request or a pull request of yours the
-brief fills the goal only while you have not edited it, and
-Start works with the issue text while the brief is still loading. Briefs are
-kept in memory per issue text, so the same issue is not briefed twice. With no
-connected provider free for the task, the block shows the issue text alone.
-Merge and pull requests start with their text as it is.
+Pressing Start on a tracker issue in Tasks (`pickIssue`) opens the New session
+page with the issue attached above **Start a run** and the issue goal written
+in the field; no brief is drafted on that path. Start links the issue, mounts
+the project the issue maps to (the same rule as Start in Tasks), creates the
+session and starts the run the router picks, in one gesture, and raises one
+Follow toast; nothing exists before that. In the one-step panel of a Slack
+thread, a merge request or a pull request of yours, the **Issue briefs** task
+model drafts a brief: a title, a goal of one to three sentences and up to five
+"done when" criteria, in the issue's language, read from the issue text and
+answered in checked JSON. The brief fills the goal only while you have not
+edited it, and Start works with the issue text while the brief is still
+loading. Briefs are kept in memory per issue text, so the same issue is not
+briefed twice. With no connected provider free for the task, the block shows
+the issue text alone. Merge and pull requests start with their text as it is.
 
 ### Each source
 

@@ -1,11 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { buildExploreSpawnPrompt } from './buildExploreSpawnPrompt';
+import { askWithFileOf } from './askWithFileOf';
 
-describe('buildExploreSpawnPrompt', () => {
+describe('askWithFileOf', () => {
   it('keeps the user ask first and appends the file attachment block after it', () => {
     expect(
-      buildExploreSpawnPrompt({
+      askWithFileOf({
         ask: 'Summarize what this file says.',
         relPath: 'docs/report.md',
         absolutePath: '/work/ledger-core/docs/report.md',
@@ -22,7 +22,7 @@ describe('buildExploreSpawnPrompt', () => {
 
   it('trims the ask before composing the kickoff', () => {
     expect(
-      buildExploreSpawnPrompt({
+      askWithFileOf({
         ask: '  Extract the key risks.  ',
         relPath: 'data/risks.csv',
         absolutePath: '/work/notify-relay/data/risks.csv',
@@ -31,7 +31,7 @@ describe('buildExploreSpawnPrompt', () => {
   });
 
   it('names the folder of the project the file was browsed in', () => {
-    const prompt = buildExploreSpawnPrompt({
+    const prompt = askWithFileOf({
       ask: 'What changed?',
       relPath: 'README.md',
       absolutePath: '/work/notify-relay/README.md',

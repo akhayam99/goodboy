@@ -197,7 +197,7 @@ describe('the c06 conversation scenes', () => {
     expect(within(first).getByText('Was an agent · Implementer')).toBeDefined();
     expect(within(first).getAllByText('Running').length).toBeGreaterThan(0);
     expect(within(first).queryAllByRole('button')).toHaveLength(0);
-    expect(screen.getByRole('button', { name: 'Start an agent' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Start an agent' })).toBeNull();
     expect(screen.queryByRole('switch', { name: 'Autopilot' })).toBeNull();
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
     act(() => useAppStore.setState({ selectedAgentId: {} }));
@@ -278,10 +278,10 @@ describe('the c06 conversation scenes', () => {
     expect(useAppStore.getState().drawer).toBeNull();
   });
 
-  it('c06-agents-empty shows the empty Runs page with the header Start an agent', async () => {
+  it('c06-agents-empty shows the empty Runs page as the Start a run field, no Start an agent', async () => {
     await mount({ name: 'c06-agents-empty' });
 
-    expect(screen.getByText('No runs yet')).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Start an agent' })).toHaveLength(1);
+    expect(screen.getByRole('textbox', { name: 'Start a run' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Start an agent' })).toBeNull();
   });
 });

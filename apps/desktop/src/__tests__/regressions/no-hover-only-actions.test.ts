@@ -61,10 +61,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason:
       'decorative: the "Add a description" hint text; the project name button opens the editor',
   },
-  'apps/desktop/src/features/session/components/SessionKickoff/IssueCandidateRow.tsx': {
-    count: 1,
-    reason: 'decorative: the aria-hidden tick inside the issue row button; the row picks the issue',
-  },
   'packages/ui/src/components/ResizeHandle.tsx': {
     count: 1,
     reason: 'decorative: the edge line of a resize handle; the handle itself is always there',

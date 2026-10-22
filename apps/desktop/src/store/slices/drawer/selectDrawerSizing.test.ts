@@ -74,7 +74,7 @@ const EVERY_KIND: ReadonlyArray<DrawerRequest> = [
   { kind: 'scriptRun', sessionId: SESSION_ID, payload: { scriptKey: 'test', mountId: null } },
   { kind: 'conversation', sessionId: SESSION_ID, payload: { threadId: 'thread-1' } },
   { kind: 'ask', sessionId: SESSION_ID, payload: null },
-  { kind: 'new', sessionId: SESSION_ID, payload: { form: 'run' } },
+  { kind: 'new', sessionId: SESSION_ID, payload: { form: 'report' } },
   { kind: 'transcript', sessionId: SESSION_ID, payload: { agentId: 'agent-1' as AgentId } },
   {
     kind: 'file-diff',

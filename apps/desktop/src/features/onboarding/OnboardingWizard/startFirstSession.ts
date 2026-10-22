@@ -1,7 +1,7 @@
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import type { IssueCandidate } from '../../integrations/fetchIssueCandidates';
-import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/AgentStart';
+import { scoutKickoffPrompt } from './scoutKickoffPrompt';
 
 type ScoutParams = {
   readonly workspaceId: WorkspaceId;
@@ -38,7 +38,6 @@ export const handOffFirstSession = ({ workspaceId, projectId, issue }: HandOffPa
   state.patchSessionDraft({
     workspaceId,
     patch: {
-      choice: 'task',
       pickedIssues: [issue],
       projectIds: projectId === null ? [] : [projectId],
     },

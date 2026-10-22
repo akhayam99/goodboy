@@ -46,11 +46,6 @@ const ROW_CASES: ReadonlyArray<RowCase> = [
   { row: 'decision change', scene: 'context-drawer', selector: 'button[data-change]' },
   { row: 'question card', scene: 'r4-questions-drawer', selector: '[data-oq-anchor]' },
   {
-    row: 'issue candidate',
-    scene: 'start-multiselect',
-    selector: 'ul[aria-label="Issues"] button[role="checkbox"]',
-  },
-  {
     row: 'other workspace',
     scene: 'r4-workspace-switcher',
     selector: '[data-workspace-row]',

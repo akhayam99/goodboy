@@ -23,12 +23,10 @@ type Props = {
   readonly now: number;
   readonly isActive: boolean;
   readonly isSelected: boolean;
-  readonly isAskOpen: boolean;
   readonly change: ChangedEntry | null;
   readonly folderChangeCount: number;
   readonly onToggle: (params: SetExpandedParams) => void;
   readonly onSelectFile: (params: SelectFileParams) => void;
-  readonly onAskClosed: () => void;
 };
 
 const EXTENSION = /\.[^./]*$/;
@@ -40,12 +38,10 @@ export const ExploreRow = ({
   now,
   isActive,
   isSelected,
-  isAskOpen,
   change,
   folderChangeCount,
   onToggle,
   onSelectFile,
-  onAskClosed,
 }: Props) => {
   const { entry } = row;
   const isDeleted = change?.status === 'deleted';
@@ -138,13 +134,7 @@ export const ExploreRow = ({
       >
         {age}
       </span>
-      <ExploreRowActions
-        sessionId={sessionId}
-        target={target}
-        isMenuShown={isSelected && !isDeleted}
-        isAskOpen={isAskOpen && !isDeleted}
-        onAskClosed={onAskClosed}
-      />
+      <ExploreRowActions target={target} isMenuShown={isSelected && !isDeleted} />
     </div>
   );
 };

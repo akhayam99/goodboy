@@ -447,7 +447,7 @@ never exists on one surface only.
   session kind's menu, the full set of session verbs: Open, the lenses, Rename,
   Pin session or Unpin session, **Refresh session** (`session.refresh`, the
   same `refreshSession` the `⌘⇧R` shortcut runs, blocked while a refresh is in
-  flight), Autopilot, Start an agent, Link work, the copies, Archive and Delete,
+  flight), Autopilot, Start a run, Link work, the copies, Archive and Delete,
   whose confirm still asks first. The palette lists the same verbs. The row is
   `select-none`, like every row that carries `ROW_HOVER` or `ROW_INTERACTIVE`
   (`SelectableRow`, `InteractiveRow`, `ListGridRow`, the Board card): see
@@ -470,7 +470,7 @@ never exists on one surface only.
   editor; Rename (inline, in the row that opened the menu), Turn on Autopilot or
   Turn off Autopilot (the session's autorun, the default of a run started
   without its own setting and of agents outside a workflow; the Runs page
-  header has no switch), Start an agent, Link
+  header has no switch), Start a run, Link
   work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with its
   confirm and Undo, and Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. Archive N asks once for all of them
@@ -481,7 +481,7 @@ never exists on one surface only.
   could not archive above the bar, with Retry for those only. Archive instead
   on the Delete N confirm archives at once, with no second ask. An agent: Open agent, Show its
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
-  Move to Auto on a standalone agent of a standard role,
+  Let Auto take it from here on an old standalone agent of a standard role,
   Detach from Auto on an agent that was moved, Change model (one submenu); copy the last reply
   and the name; Delete agent. A
   workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
@@ -497,10 +497,12 @@ never exists on one surface only.
   (`suggestion`, `kinds/suggestion.ts`): its target holds the suggestion as data
   (`suggestion`, the role the primary starts, whether Auto is on) and no
   closure, and its verbs are the other ways to answer that card, the
-  items of its **⋯** menu: Start tester instead and Start implementer instead
+  items of its **⋯** menu: Continue with Tester and Continue with Implementer (each a
+  message to the Auto run of the session through `continueWithRole`, or a role
+  started at once when there is none)
   on a check-changes card, one verb per project (`suggestion.rebase.<target id>`,
   built by `adapted`) on a rebase card with two or more, and Talk it through
-  with Auto (`suggestion.talkWithAuto`) on a card that starts a role. The run handlers live in the kind (`spawnAgent`,
+  with Auto (`suggestion.talkWithAuto`) on a card that starts a role. The run handlers live in the kind (`continueWithRole`,
   `startRebaseTarget`, `startTalkItThrough`); the row only adds the pending and
   accepted bookkeeping around them (`track`). One field says which available actions
   also get a visible control on their surface: `slot` (`primary`,
@@ -887,7 +889,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   verbs (`session.startRun`) and ⌘K **Start a run from** a preset
   (`startRunFromPresetEntries`) all call `openStartRun`: it navigates to Runs,
   clears the run focus and, after navigation, sends the text to the field
-  (`startRunEventName`). Start an agent stays in the Runs header beside it. A
+  (`startRunEventName`). The Runs header holds no other start; the field is also the empty state. A
   page row ends in one
   right-aligned slot as wide as its content, so a label never truncates for an
   empty slot: the count in tabular gray (`countSlotText`), at rest the total;
@@ -1327,172 +1329,44 @@ dot with `Draft in progress` while a written draft waits. The header has no
 `Esc` label and no X: Esc closes the page (`closeSessionDraft`) and lands on
 the place before it, or the board when there was none, which is also the
 parent `up()` goes to (`placeBeforeDraft`). With nothing written Esc leaves at
-once. Text in **Start a run** counts as written: the draft holds it
-(`runText`, read by `useStartRun` while no session exists yet). With text Esc
-raises `Keep this draft?` under the line that describes the
-selected choice, inline and without a modal. It floats over the page, aligned
-to the column, so nothing below it moves (`SessionKickoff` takes it as its
+once. Text in **Start a run** counts as written: while no session exists the
+draft holds it as `workflowGoal` (`useStartRun` reads and writes it, and a
+door that fills the page writes it: `openNewRunDraft`, `pickIssue`). With text Esc
+raises `Keep this draft?` under the field, inline and without a modal, in the
+column (`SessionKickoff` takes it as its
 `notice`). It holds one action: `Keep draft` (or a second Esc) leaves and keeps
-the draft. `Discard`, in the actions row at the end of every form
-(`useDraftDiscard`), shows only with content and empties it: `discardSessionDraft` clears the
-draft and both builder drafts of that workspace, then closes the page. Back
+the draft. The field text is the draft's `workflowGoal`, so leaving keeps it.
+`Discard`, next to Start in the field, shows only with text and runs
+`discardSessionDraft`: it clears the draft and both builder drafts of that
+workspace, then closes the page. Back
 returns to the draft like any other place. **Start blank** in the header (`startBlankSession`) is the way
 to start from the goal: it creates a session with no title and no goal slot
 and lands on its normal Overview (`Untitled session`, `Add a goal`), where
 the goal, projects and work are added from the usual controls. Nothing is
 required first, and the draft stays for the next New.
 
-The draft asks one question, "How do you want to start?", with four choices
-on one row as compact tabs (`StartChoiceTabs`, `SegmentedTabs` pill variant):
-Pick up a task, Run a workflow, Run an orchestrator and Start an agent. **Start blank** sits
-in the page header. Run a workflow, Run an orchestrator and Start an agent each hold
-**Folders** (`KickoffProjects` over the shared `ProjectPicker`): optional, a
-searchable multiple `Listbox` with the picked projects as removable chips under
-it, in two groups (`projectPickerGroups`): "Suggested" holds at most five (the
-picked issue's project, then the most recently used, then starred ones) and
+The draft asks no question first (`SessionKickoff`): **Folders** (`KickoffProjects`
+over the shared `ProjectPicker`) sits above the **Start a run** field
+(`StartRun` with `sessionId` null), and **Start blank** sits in the page
+header. Folders is optional, a searchable multiple `Listbox` with the picked
+projects as removable chips under it, in two groups (`projectPickerGroups`):
+"Suggested" holds at most five (the most recently used, then starred ones) and
 "All folders" lists the rest by name with the base branch at the right. The
-trigger reads `Add folder` with or without a pick (`emptyValueLabel`) and no
-line sits under it (mounts stay lazy). The draft keeps them as `projectIds`; the first is
-the session's project and the rest are added with it (`additionalProjectIds`).
-When a picked issue maps to a project, the picker starts with it and one line
-under it names the project and the reason
-(`In payments-api, from GitHub repo harborline/payments-api.`). One line under the row describes the selected choice (`startChoiceLine`, the
-copy in `shared/lib/startCopy.ts` that the New drawer reads too): none sits under
-the other options. The page has no visible title, the trail names it (a screen
-reader heading stays, drawn by `PaneTitleRow` inside `sr-only`). The Run lane and the Agent block are the New drawer's, at
-page width: the lane is `WorkflowBuilderView` with a `kickoff` target and the
-Auto state is `AutoComposerView`, which `AutoComposer` (drawer, bound to a session)
-and `AutoStart` (page, bound to the draft) both draw.
+trigger reads `Add folder` with or without a pick (`emptyValueLabel`). The
+draft keeps them as `projectIds`; the first is the session's project and the
+rest are added with it (`additionalProjectIds`). The page has no visible
+title, the trail names it (a screen reader heading stays, drawn by
+`PaneTitleRow` inside `sr-only`).
 
-- **Pick up a task** shows the open issues of the connected trackers with a
-  search field. Picking one with **Pick HBL-412** (or a double click, or Enter
-  in the search) replaces the list with one block (`PickedIssue`): the brief
-  title as an editable input over the brief flow in [concepts.md](concepts.md),
-  then **How to work on it** (`HowToWorkOnIt`): the same Run a workflow
-  or Start an agent choice as the other two tabs, precompiled with the goal,
-  Run a workflow preselected. There is no gate: the title and the goal start as
-  the issue text (`usePickedIssueText`) and the brief takes their place when it
-  lands, unless either was edited. **Use the issue text** and **Use brief**
-  switch between the two, **Dismiss** goes back to the list and clears the
-  pick. The goal is edited where the work is: the builder goal field or the
-  agent instructions. Run a workflow is the same embedded
-  `WorkflowBuilderView` as the Workflow tab (Orchestrated, Describe steps or Pick a workflow,
-  the plan, guidance, Can use, Starts, when to ask, Limit), with the issue as
-  its goal and its own draft under `kickoff-task:<workspace>`. When the issue
-  maps to a project (`launchMountFor`, the Tasks rule: a GitHub or GitLab repo
-  path, or a Sentry project linked or code-mapped to a project) a
-  `LaunchMountRow` above the choice says which project the session works in
-  and why. With one candidate project it is one plain line (`variant="line"`,
-  `In payments-api, from GitHub repo harborline/payments-api.`) with no chip;
-  with several it stays the project chip, which lets you pick another or none
-  (the Launch session panel always draws the chip). The way to start is one
-  `ControlChip` in the options row, `Runs as Run an orchestrator` (`RunsAsChip`, with
-  Run a workflow and Start an agent in its menu), never a second switch; the
-  brief card is headed `Brief` and drops the model, time and cost of the
-  brief. **Start from HBL-412**, on the
-  workflow side and on the agent side, links the issue, mounts that project, creates the session and
-  starts the run or agent in one gesture (`startSessionFromDraft`, kind
-  `task` with a `mount` and a `then`), and raises one **Follow** toast
-  (`useStartFromDraft`, **Session started** or **Run started**). Without a tracker
-  it shows the connect links. The search, like the Tasks search, reads an issue
-  code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
-  `owner/repo#482`, a tracker URL; anything else stays a local filter). When
-  no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
-  right tracker once (300 ms after typing, cached two minutes): a key goes to
-  Jira when it matches the Jira project, to Linear alone when the prefix
-  matches a Linear team key (`linear_fetch_team_keys`, fetched once per
-  connection and cached, so a recognized team no longer also fires a Jira
-  call that was always going to 404), otherwise to Linear and Jira; `#N` goes
-  to every GitHub or GitLab repo of the workspace's projects (four GitHub
-  calls at a time); a short id resolves across the Sentry organization
-  (`sentry_resolve_short_id`). While a lookup is in flight, the row names the
-  trackers it asked (`Looking up CAS-231 in Linear and Jira`). Hits sit in a
-  `Not in Tasks` group above the list (`InboxLookupGroup`) and open or
-  pick up like any other issue, with a second line showing `Assigned to
-<name>` for a Linear or Jira hit with a known assignee, the project/repo
-  context otherwise; a miss is one row in that group that says why (not
-  found or not visible, key rejected with `Sign in again`, missing
-  permission, tracker not connected, no repo for `#N`), and a rate limit
-  shows a live countdown and retries once on its own when it ends, alongside
-  the manual `Retry`. The mobile companion resolves Linear, Sentry and
-  GitLab issues through the same direct lookups instead of searching only
-  the issues assigned to you. A GitHub pull request link in the same search
-  (`parsePullRequestUrl`, GitHub only) shows one row, **Review pull request
-  #318**, instead of the list. Issues can be starred (`StarToggle`, the same
-  star as projects) from a Tasks row, a lookup hit or `s` on the selected
-  row. Stars live per workspace (`workspace_starred_issues`, keyed by
-  provider and external id; GitHub keys by `owner/repo#N`) with the last
-  copy of identifier, title and state, so the `Starred` group draws before
-  any tracker answers; a row not refreshed since app start opens the detail
-  panel from that snapshot (`placeholderRecordOf`), not the tool's URL, and
-  gets replaced once the refresh lands a real record. In Tasks it sits
-  under `Not in Tasks` and above the days, and a starred issue leaves
-  the days; open ones come first, closed ones at the bottom with `Unstar
-closed` and `Undo`, and one the tracker no longer returns reads `Can't
-reach NW-230 anymore`. Pick up a task shows only the open starred issues,
-  even ones a session already picked up. Opening Tasks or Pick up a task
-  refreshes the stars at most every five minutes (`refreshStarredIssues`):
-  one request per tracker for Linear and Jira, one per project for GitLab,
-  and one per issue for GitHub and Sentry, which have no batch endpoint for
-  fetching by id.
-- **Run a workflow** and **Run an orchestrator** are the workflow builder itself
-  (`WorkflowBuilderView` with a `kickoff` target and a fixed `mode`: `preset`
-  for Run a workflow, `dynamic` for Run an orchestrator; the choice is the mode, so
-  there is no mode switch and no remembered mode): goal card with the paperclip
-  and Polish (no title field: the run is named from the preset or the goal, and
-  renamed on its page), Folders, Can use (only with two or more providers), the
-  preset with its editable steps and a model per step or the orchestrator row
-  with its model right after the label, guidance, then one actions row with
-  Autonomy, Starts and Limit at the left and Discard, the estimate and the
-  primary (Run a workflow, Run an orchestrator) at the right, with the start gate
-  reason under it. No rules card: a control that leaves your rules carries the
-  rule dot and offers `Reset to your rule` in its popover. An edited preset reads
-  `edited` on the Preset select with `Reset to the preset` in its menu. Its goal field is the kickoff goal (`workflowGoal` in the
-  draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
-  in `workflowDrafts`, so it survives leaving the kickoff, and Discard
-  clears it with the rest. Run a workflow runs `startSessionFromDraft` with
-  kind `workflow-run`: the session is created first, then the builder saves
-  the workflow and attaches the run to it in the same action, and the view
-  lands on the run. A failure removes the half-created session and keeps the
-  draft, and the reason is stored on the draft (`startError`, with `isStarting`
-  while it runs), because the page that clicked Start is unmounted by then:
-  the reopened draft shows it under Run a workflow (the builder and the agent
-  starts both read it), and the next Start clears it. One start per workspace
-  runs at a time: a second click while one runs gets the same session, never a
-  second one. The estimate total (`PlanEstimateChip`, one `~` prefix) sits
-  between Discard and the primary and collapses when there is none
-  (`LaunchBar`), the primary stays at the right edge; a step's own estimate is
-  in its title tooltip. Before a session exists the builder leaves out Use session goal, the
-  title suggestion (the orchestrated title is generated after start, as in a
-  session) and the worktree as the planner's working folder.
-- **Start an agent** opens the role list (`AgentStart`, below): Auto being always
-  available does not make it the start here. `SessionKickoff` takes `isAuto`
-  (false by default, set only by a scene) to draw the Auto composer instead
-  (`AutoStart`): one goal with files, Folders, then one actions row with the
-  Model chip and the Auto limit chip at the left and Discard and **Start an auto**
-  at the right, no role list, no guidance; `Experimental` is a gray word after
-  the choice line, on the page and in the drawer. Its goal and
-  model live in the draft (`autoGoal`, `autoRouting`) and count as written for
-  Discard. Start runs `startSessionFromDraft` kind `scout` with an Auto agent
-  (`agentKind: 'auto'`), the goal as its prompt and the chosen routing.
-- **Start an agent** (`AgentStart`) is the goal field, then Folders, then one
-  actions row with Role and Model as `ControlChip`s (`AgentStartFields`,
-  `ModelControlChip`) and the primary, opening the same role list and model
-  picker the New drawer and the Start an agent popover use (`AgentStartBlock`:
-  goal, role and model; an empty goal starts the role and its chat takes the
-  first message). The role defaults to
-  Scout every time, never the last one picked, because a habitual Implementer
-  writes code you did not ask for. Scout alone can start with an empty field
-  ("Start Scout on the whole project", which reads the project and changes
-  nothing); every other role needs a prompt first. The Model chip shows the
-  resolved model with its provider mark, and `· pinned` once you pick one. The first picked project in `projectIds` is where the agent
-  works; there is no second project chip. With one repo project it is
-  preselected, with none the session starts with no project attached.
-
-Only the selected tab's panel, and only its primary, shows. The tabs
-preselect Pick up a task when a tracker has open issues and Run a workflow
-otherwise, and they never remember the last choice. Opening the draft puts
-focus on the selected tab.
+A task comes in from Tasks: **Start** on an issue calls `pickIssue`, which puts
+the issue in the draft's `pickedIssues` and fills the field with the issue goal
+(the `goodboy:start-run:new` event). The picked issues show as rows above the
+field (`PickedIssueRow`, removable). Start then runs `startSessionFromDraft`
+with kind `task` and a `then` of kind `workflow-run`: the session is created
+with the issues linked, and `startRoutedRun` starts the run the router picked
+(a linked task reads as row 3, a plan, unless the ask names a role or a preset).
+With no picked issue the kind is `workflow-run`. A failure keeps the draft, the
+issues and the text, and Start becomes **Retry**.
 
 **Start is the only way a session is born from the draft.** The primary
 creates the session and starts the work in one gesture
@@ -1779,7 +1653,7 @@ still running.` on Merge, reads in the meta line as well as in the tooltip) sits
   lists every step of its run in order, the ones not started switched off; an
   agent lists the agents of the same home grouped Needs you, Running, Done,
   newest first; an artifact lists the session's artifacts by kind. Actions
-  exist only where a real action backs them: `Start an agent`, `Run a workflow`
+  exist only where a real action backs them: `Start a run`
   and `New artifact` (opens the kind picker) on their pages, `Stop this step`
   while a step runs and `Retry step` when it failed or is blocked
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
@@ -1888,13 +1762,10 @@ covered.
   or more) has the first Ask row picked, a shorter one keeps the best match
   picked so Enter still jumps.
   Start session in a chat's Start work from chat panel creates the session and
-  navigates to `sessionPlace({ sessionId })`, the overview, as a new history
-  entry after the chat's own; Back returns to the same chat because
-  `captureLocation` keeps `appStudio`. Add to session navigates to that
-  session and, once its agents load, replaces the entry with the latest
-  top-level agent (`landOnSession.ts`) so the brief waits in that agent's
-  composer draft (`agentDraft`); a session without an agent opens on its
-  overview with nothing drafted.
+  Add to session picks one; both then call `openStartRun` with the brief, which
+  navigates to that session's Runs as a new history entry after the chat's own
+  and fills the **Start a run** field (nothing starts until Start); Back returns
+  to the same chat because `captureLocation` keeps `appStudio`.
 - Left of Back and Forward: the main sidebar toggle (`ColumnToggleButton`, ⌘B), the one
   toggle of the column; the column itself has no toggle row.
 - Right, in this order: the Now chip (running, scripts, each

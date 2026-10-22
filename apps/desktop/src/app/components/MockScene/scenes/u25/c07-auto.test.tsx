@@ -465,8 +465,7 @@ describe('c07 Auto scenes', () => {
     const list = await screen.findByRole('list', { name: 'Runs' }, WAIT);
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
     expect(screen.queryByText('No runs yet')).toBeNull();
-    const header = screen.getByRole('button', { name: 'Start an auto' });
-    expect(header.dataset['variant']).toBe('secondary');
+    expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
     const rows = within(list).getAllByRole('button', { name: /, One agent, / });
     expect(rows).toHaveLength(2);
     expect(within(list).getByText('Idle')).toBeDefined();
@@ -478,61 +477,11 @@ describe('c07 Auto scenes', () => {
     expect(levelStack().dataset.levelStack).toBe('session');
   });
 
-  it('c07-auto-start-open shows the Auto form of the New drawer with its files, model and limit', async () => {
-    mount({ id: 'c07-auto-start-open' });
-
-    const form = await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
-    expect(within(form).getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
-    expect(within(form).getByText(/^Limit \$/)).toBeDefined();
-  });
-
-  it('c07-auto-start-open at 1100 ends the drawer at the tools column, with Close and the primary in it', async () => {
-    const observers = installFakeResizeObserver();
-    const original = Element.prototype.getBoundingClientRect;
-    const rects = vi
-      .spyOn(Element.prototype, 'getBoundingClientRect')
-      .mockImplementation(function rectOf(this: Element) {
-        if (this.hasAttribute('data-drawer-edge')) {
-          return new DOMRect(1056, 37, 44, 763);
-        }
-        if (this.querySelector(':scope > [data-drawer-main]') !== null) {
-          return new DOMRect(246, 37, 854, 763);
-        }
-        return original.call(this);
-      });
-    mount({ id: 'c07-auto-start-open' });
-
-    await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
-    act(() => observers.resizeAll());
-
-    await waitFor(
-      () =>
-        expect(document.querySelector<HTMLElement>('aside[data-drawer-mode]')?.style.right).toBe(
-          '44px',
-        ),
-      WAIT,
-    );
-    const aside = document.querySelector<HTMLElement>('aside[data-drawer-mode]');
-    expect(aside?.dataset['drawerMode']).toBe('overlay');
-    expect(Number.parseFloat(aside?.style.width ?? '') + 44).toBeLessThanOrEqual(854);
-    const card = within(aside?.querySelector<HTMLElement>('[data-drawer-card]') ?? document.body);
-    expect(card.getByRole('button', { name: 'Close' })).toBeDefined();
-    expect(card.getByRole('button', { name: 'Start an auto' })).toBeDefined();
-    rects.mockRestore();
-  });
-
-  it('c07-auto-start offers Start an auto on the Runs page, which opens the Auto form', async () => {
+  it('c07-auto-start starts Auto from the Start a run field on the Runs page, with no Auto form', async () => {
     mount({ id: 'c07-auto-start' });
 
-    expect(await screen.findByRole('button', { name: 'Start an auto' }, WAIT)).toBeDefined();
-    expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
+    expect(await screen.findByRole('textbox', { name: 'Start a run' }, WAIT)).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
     expect(screen.queryByRole('region', { name: 'Start an auto' })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Start an auto' }));
-
-    const form = await screen.findByRole('region', { name: 'Start an auto' }, WAIT);
-    expect(within(form).getByRole('textbox', { name: 'Describe the work' })).toBeDefined();
-    expect(within(form).getByText(/^Limit \$/)).toBeDefined();
-    expect(screen.getAllByRole('button', { name: 'Start an auto' }).length).toBeGreaterThan(0);
   });
 });

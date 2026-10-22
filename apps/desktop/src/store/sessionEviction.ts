@@ -132,7 +132,6 @@ export const SESSION_EVICTION = [
   { key: 'sessionExternalTasks', keyedBy: 'session', evictOn: 'delete' },
   { key: 'sessionEvents', keyedBy: 'session', evictOn: 'delete' },
   { key: 'workflowDrafts', keyedBy: 'session', evictOn: 'delete' },
-  { key: 'newDrawerDrafts', keyedBy: 'session', evictOn: 'delete' },
   { key: 'startHints', keyedBy: 'session', evictOn: 'delete' },
   { key: 'rebaseAllRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'artifactDrafts', keyedBy: 'session', evictOn: 'delete' },

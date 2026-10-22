@@ -5,7 +5,7 @@ import { CreatePrPanel } from '../../../../../features/integrations/github/compo
 import { CreateMrForm } from '../../../../../features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm';
 import { NewWorkspaceForm } from '../../../../../shared/components/NewWorkspaceForm';
 import { SkillsPanel } from '../../../../../features/skills/components/SkillsPanel';
-import { CreateAgentPopover } from '../../../../../features/session/components/CreateAgentPopover';
+import { StartRun } from '../../../../../features/session/components/StartRun/StartRun';
 import { RunSpendLimitPopover } from '../../../../../features/workflows/components/RunSpendLimitPopover';
 import { SpendLimitEditor } from '../../../../../features/budget/components/SessionSpendPopover/SpendLimitEditor';
 import { ScriptEditor } from '../../../../../features/scripts/components/ScriptEditor';
@@ -122,7 +122,7 @@ const renderForm = ({ form }: { form: FormKey }): ReactNode => {
       return (
         <PageColumn className="flex flex-col gap-6 py-8">
           <div className="flex justify-center">
-            <CreateAgentPopover sessionId={SESSION_ID} />
+            <StartRun workspaceId={WORKSPACE_ID} sessionId={SESSION_ID} />
           </div>
         </PageColumn>
       );

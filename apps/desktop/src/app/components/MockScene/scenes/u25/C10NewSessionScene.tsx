@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { Project, ProjectId } from '@goodboy/types';
+import { autoTreeLimitKey } from '../../../../../features/auto/autoTreeLimit';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
@@ -104,11 +105,13 @@ const seedProjects = ({ state }: Props): void => {
     return;
   }
   const failure = state.startFailure;
-  useAppStore.setState({
+  useAppStore.setState((current) => ({
+    settings: { ...current.settings, [autoTreeLimitKey({ workspaceId: WORKSPACE_ID })]: '5' },
+    loadSetting: async () => null,
     createSession: async () => {
       throw new Error(failure);
     },
-  });
+  }));
 };
 
 export const C10NewSessionScene = ({ state }: Props) => {

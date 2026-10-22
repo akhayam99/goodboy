@@ -12,6 +12,8 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
+import { startRunEventName } from '../session/startRun/startRunEventName';
+import { startRunDetailOf } from '../session/startRun/startRunDetailOf';
 import { startTalkItThrough } from './startTalkItThrough';
 import { talkItThroughGoal } from './talkItThroughGoal';
 
@@ -25,25 +27,35 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetStoryStore();
-  useAppStore.setState({ newDrawerDrafts: {}, drawer: null });
+  useAppStore.setState({ drawer: null, navigate: vi.fn() });
 });
 
 describe('startTalkItThrough', () => {
-  it('seeds the Auto goal of the drawer with the card and opens the Start an auto form, without starting', () => {
+  it('opens Start a run with the card as its text, without starting', async () => {
+    const texts: Array<string> = [];
+    const listen = (event: Event): void => {
+      texts.push(startRunDetailOf({ event }));
+    };
+    window.addEventListener(startRunEventName({ sessionId: SESSION }), listen);
+
     startTalkItThrough({
-      state: useAppStore.getState(),
       sessionId: SESSION,
       title: 'Implement the retry guard',
       detail: 'The plan is approved',
     });
 
-    expect(useAppStore.getState().newDrawerDrafts[SESSION]?.autoGoal).toBe(
+    await vi.waitFor(() => expect(texts).toHaveLength(1));
+    window.removeEventListener(startRunEventName({ sessionId: SESSION }), listen);
+    expect(texts).toEqual([
       talkItThroughGoal({ title: 'Implement the retry guard', detail: 'The plan is approved' }),
-    );
-    expect(useAppStore.getState().drawer).toMatchObject({
-      kind: 'new',
-      sessionId: SESSION,
-      payload: { form: 'auto' },
+    ]);
+    expect(useAppStore.getState().drawer).toBeNull();
+    expect(useAppStore.getState().navigate).toHaveBeenCalledWith({
+      to: expect.objectContaining({
+        at: 'session',
+        sessionId: SESSION,
+        view: expect.objectContaining({ lens: 'workflows' }),
+      }),
     });
   });
 });

@@ -39,7 +39,7 @@ describe('the chip where an agent suggests Auto', () => {
 
     expect(await screen.findByText('Agent suggests: Auto')).toBeDefined();
     expect(screen.getByText('Needs a tester and a reviewer')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
     window.removeEventListener(MOVE_TO_AUTO_EVENT, listen);
 
     await waitFor(() => expect(heard).toEqual([{ agentId: AGENT }]));

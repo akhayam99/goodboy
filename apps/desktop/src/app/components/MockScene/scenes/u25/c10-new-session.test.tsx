@@ -24,7 +24,7 @@ import { U25_C10_NEW_SESSION_SCENES } from './c10-new-session';
 
 const SETTLE_MS = 2_000;
 
-const PresetsScene = U25_C10_NEW_SESSION_SCENES['c10-start-presets'];
+const WorkflowScene = U25_C10_NEW_SESSION_SCENES['c10-start-workflow'];
 
 let useAppStore: StoryStore;
 
@@ -68,10 +68,6 @@ const mount = async ({ id }: MountParams): Promise<void> => {
 };
 
 const FORM_SCENES: ReadonlyArray<readonly [SceneId, string]> = [
-  ['c10-new-run', 'Run a workflow'],
-  ['c10-new-orchestrate', 'Run an orchestrator'],
-  ['c10-new-agent', 'Start an agent'],
-  ['c10-new-auto', 'Start an auto'],
   ['c10-new-report', 'Write a report'],
   ['c10-new-wireframe', 'Draw a wireframe'],
 ];
@@ -84,18 +80,11 @@ const pickedNames = () =>
 describe('the c10 New session scenes', () => {
   it('registers one scene per state of the New session page and the New forms', () => {
     expect(Object.keys(U25_C10_NEW_SESSION_SCENES).sort()).toEqual([
-      'c10-new-agent',
-      'c10-new-auto',
       'c10-new-menu',
-      'c10-new-orchestrate',
       'c10-new-report',
-      'c10-new-run',
       'c10-new-wireframe',
-      'c10-start-agent',
-      'c10-start-auto',
       'c10-start-failed',
       'c10-start-orchestrate',
-      'c10-start-presets',
       'c10-start-projects',
       'c10-start-task',
       'c10-start-workflow',
@@ -105,73 +94,36 @@ describe('the c10 New session scenes', () => {
     }
   });
 
-  it('c10-start-task picks HBL-412 into one block with one Start from HBL-412', async () => {
+  it('c10-start-task attaches HBL-412 above Start a run with one Start', async () => {
     await mount({ id: 'c10-start-task' });
 
-    expect(screen.getByRole('button', { name: 'Runs as: Run an orchestrator' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start from HBL-412' })).toBeDefined();
+    expect(screen.getByRole('list', { name: 'Picked issues' }).textContent).toContain('HBL-412');
+    expect(screen.getAllByRole('button', { name: 'Start' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
   });
 
-  it('c10-start-workflow draws the preset steps, the two project chips and Run a workflow', async () => {
+  it('c10-start-workflow is the Start a run field with the goal and the two project chips', async () => {
     await mount({ id: 'c10-start-workflow' });
 
-    expect(screen.getByRole('button', { name: 'Model for Scout the retry path' })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: 'Start a run' })).toHaveProperty(
+      'value',
+      'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
+    );
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
-    expect(screen.getAllByRole('button', { name: 'Run a workflow' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
   });
 
-  it('c10-start-presets opens the Preset list with one role glyph per step', async () => {
-    await mount({ id: 'c10-start-presets' });
-
-    const list = screen.getByRole('listbox', { name: 'Presets' });
-    const options = within(list).getAllByRole('option');
-    expect(options.length).toBeGreaterThan(0);
-    for (const option of options) {
-      const glyphs = [...option.querySelectorAll('[data-preset-glyph]')];
-      expect(glyphs.length).toBeGreaterThan(0);
-      expect(glyphs[0]?.getAttribute('aria-label')).toMatch(/^Step 1 of \d+ /);
-      expect(option.querySelector('[data-step-mark]')).toBeNull();
-    }
-  });
-
-  it('c10-start-presets has no accessibility violation', async () => {
+  it('c10-start-workflow has no accessibility violation', async () => {
     const { container } = render(
       <ToastProvider>
-        <PresetsScene />
+        <WorkflowScene />
       </ToastProvider>,
     );
     await settle();
     vi.useRealTimers();
 
     const { violations } = await runA11yCheck(container);
-
     expect(violations.map((violation) => violation.id)).toEqual([]);
-  });
-
-  it('c10-start-orchestrate draws the goal, two project chips and one Run an orchestrator', async () => {
-    await mount({ id: 'c10-start-orchestrate' });
-
-    expect(screen.getByRole('textbox', { name: 'Goal' })).toBeDefined();
-    expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
-    expect(screen.getAllByRole('button', { name: 'Run an orchestrator' })).toHaveLength(1);
-    expect(screen.queryByText('Likely steps')).toBeNull();
-  });
-
-  it('c10-start-agent asks for Scout with the model, the first project is where it works', async () => {
-    await mount({ id: 'c10-start-agent' });
-
-    expect(screen.getByRole('textbox', { name: 'Scout focus' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Role: Scout' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /^Model:/ })).toBeDefined();
-    expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
-  });
-
-  it('c10-start-auto is the Auto form with its Experimental chip and Start an auto', async () => {
-    await mount({ id: 'c10-start-auto' });
-
-    expect(screen.getByRole('region', { name: 'Auto' })).toBeDefined();
-    expect(screen.getByText('Experimental')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Start an auto' })).toBeDefined();
   });
 
   it('c10-start-projects opens the picker over 50 projects, searched for pay', async () => {
@@ -190,13 +142,13 @@ describe('the c10 New session scenes', () => {
     expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
   });
 
-  it('c10-start-failed keeps the draft, says why and keeps the primary as the retry', async () => {
+  it('c10-start-failed keeps the draft, says why and turns Start into Retry', async () => {
     await mount({ id: 'c10-start-failed' });
 
     expect(
       screen.getByText(/The branch hl\/retry-guard already exists in payments-api/),
     ).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
+    expect(screen.getByRole('textbox', { name: 'Start a run' })).toHaveProperty(
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );
@@ -204,7 +156,7 @@ describe('the c10 New session scenes', () => {
     expect(useAppStore.getState().openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
   });
 
-  it('c10-new-menu opens the Overview New menu with one item per form', async () => {
+  it('c10-new-menu opens the Overview New menu: Start a run, a report or a wireframe', async () => {
     await mount({ id: 'c10-new-menu' });
 
     const menu = screen.getByRole('menu', { name: 'New' });
@@ -212,15 +164,7 @@ describe('the c10 New session scenes', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
-    ).toEqual([
-      'Start a run',
-      'Run a workflow',
-      'Run an orchestrator',
-      'Start an agent',
-      'Start an auto',
-      'Write a report',
-      'Draw a wireframe',
-    ]);
+    ).toEqual(['Start a run', 'Write a report', 'Draw a wireframe']);
   });
 
   it.each(FORM_SCENES)('%s opens the %s form in the drawer', async (id, form) => {

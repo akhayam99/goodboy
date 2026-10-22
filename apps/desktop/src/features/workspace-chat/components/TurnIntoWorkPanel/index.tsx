@@ -32,8 +32,8 @@ import { sessionTitle } from '../../../session/sessionTitle';
 import { useAppStore } from '../../../../store';
 import { activeChatBackend } from '../../activeChatBackend';
 import type { ChatHandoff } from '../../chatHandoff';
-import { landOnSession } from '../../landOnSession';
-import { startWorkFromChat, type WorkRouting } from '../../startWorkFromChat';
+import { startWorkFromChat } from '../../startWorkFromChat';
+import { openStartRun } from '../../../session/startRun/openStartRun';
 import { summarizeChatForWork } from '../../summarizeChatForWork';
 import type { WorkBrief } from '../../workBrief';
 import {
@@ -45,11 +45,9 @@ import {
 import { BriefItems } from './BriefItems';
 import { DraftedBy } from './DraftedBy';
 import { ProjectPicker } from '../../../../shared/components/ProjectPicker';
-import { RunsOnField } from './RunsOnField';
 import { SessionField } from './SessionField';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { isSubmitChord } from '../../../../shared/keyboard/isSubmitChord';
-import { useWorkspaceKindRouting } from '../../../../shared/hooks/useWorkspaceKindRouting';
 
 type Mode = 'new' | 'add';
 
@@ -69,11 +67,11 @@ const MODE_OPTIONS = [
 const MODE_COPY = {
   new: {
     action: 'Start session',
-    hint: 'Creates a session with this brief as its goal. Nothing runs yet.',
+    hint: 'Creates a session and opens Start a run with this brief.',
   },
   add: {
     action: 'Add to session',
-    hint: 'Puts this brief in that session as a message you send yourself.',
+    hint: 'Opens Start a run in that session with this brief.',
   },
 } satisfies Record<Mode, { readonly action: string; readonly hint: string }>;
 
@@ -91,7 +89,7 @@ export const TURN_INTO_WORK_LABEL = NAMES.startWorkFromChat;
 
 type Landed = {
   readonly sessionId: SessionId;
-  readonly draft: string | null;
+  readonly ask: string;
   readonly title: string;
   readonly label: string;
 };
@@ -100,12 +98,8 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   const allProjects = useAppStore((state) => state.projects);
   const allSessions = useAppStore((state) => state.sessions);
   const createSession = useAppStore((state) => state.createSession);
-  const setSessionConfig = useAppStore((state) => state.setSessionConfig);
   const recordChatLink = useAppStore((state) => state.recordChatLink);
   const queueChatLink = useAppStore((state) => state.queueChatLink);
-  const navigate = useAppStore((state) => state.navigate);
-  const loadPhaseRunsForSession = useAppStore((state) => state.loadPhaseRunsForSession);
-  const setAgentDraft = useAppStore((state) => state.setAgentDraft);
   const projects = useMemo(
     () =>
       allProjects.filter(
@@ -131,17 +125,12 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         .map((provider) => provider.id),
     ),
   );
-  const defaultRouting: WorkRouting = useWorkspaceKindRouting({
-    workspaceId: chat.workspaceId,
-    kind: 'generic',
-  });
   const loadSetting = useAppStore((state) => state.loadSetting);
   const saveSetting = useAppStore((state) => state.saveSetting);
   const drafterKey = workDrafterSettingKey({ workspaceId: chat.workspaceId });
   const [brief, setBrief] = useState<WorkBrief | null>(null);
   const [drafter, setDrafter] = useState<WorkDrafterChoice | null>(null);
   const [isDrafterPicked, setIsDrafterPicked] = useState(false);
-  const [runsOn, setRunsOn] = useState<WorkRouting | null>(null);
   const [pickedProjectIds, setProjectIds] = useState<ReadonlyArray<ProjectId> | null>(null);
   const [mode, setMode] = useState<Mode>('new');
   const [sessionId, setSessionId] = useState<SessionId | null>(null);
@@ -237,15 +226,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
       title: landed.title,
       sessionId: landed.sessionId,
     });
-    void landOnSession({
-      sessionId: landed.sessionId,
-      draft: landed.draft,
-      navigate,
-      loadPhaseRunsForSession,
-      readAgents: ({ sessionId: id }) => useAppStore.getState().sessionPhaseRuns[id] ?? [],
-      readDraft: ({ agentId }) => useAppStore.getState().agentDraft[agentId] ?? '',
-      setAgentDraft,
-    });
+    openStartRun({ sessionId: landed.sessionId, text: landed.ask });
   };
 
   const linkThenFinish = async (landed: Landed): Promise<void> => {
@@ -280,13 +261,11 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
           mode === 'add' && target !== null
             ? { kind: 'add', sessionId: target.id }
             : { kind: 'new', projectIds: pickedProjects.map((project) => project.id) },
-        routing: mode === 'new' ? runsOn : null,
         createSession,
-        setSessionConfig,
       });
       const landed: Landed = {
         sessionId: started.sessionId,
-        draft: started.draft,
+        ask: started.ask,
         title,
         label:
           mode === 'add' && target !== null
@@ -408,12 +387,6 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
                       onChange={setProjectIds}
                     />
                   </div>
-                  <RunsOnField
-                    connectedProviders={connectedProviders}
-                    defaultRouting={defaultRouting}
-                    value={runsOn}
-                    onChange={setRunsOn}
-                  />
                 </>
               ) : null}
             </>

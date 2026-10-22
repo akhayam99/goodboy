@@ -84,15 +84,20 @@
           "main": true
         },
         {
-          "title": "How do you want to start?",
-          "text": "A new session draft asks how you want to start: pick up a task, run a workflow, orchestrate or ask an agent. It becomes a session only when you press Start.",
+          "title": "What Auto chose, and Change",
+          "text": "Each run says what Auto chose and why. Change switches its shape or preset without spending twice.",
           "group": "Start a task",
-          "also": "start tabs",
-          "shown": true
+          "also": "Change"
         },
         {
-          "title": "Pick up a task, with a drafted brief",
-          "text": "Pick an issue and Goodboy drafts a short title, a goal and done-when criteria. Keep the brief, edit it or use the issue text.",
+          "title": "The New session page",
+          "text": "Pick folders if you want, write the ask and press Start. Esc keeps or discards the draft.",
+          "group": "Start a task",
+          "also": "New session page"
+        },
+        {
+          "title": "Start on a task",
+          "text": "Start on an issue in Tasks opens Start a run with the issue attached and its goal written in. The session links the issue when you press Start.",
           "group": "Start a task",
           "main": true
         },
@@ -103,21 +108,8 @@
           "also": "review a pull request"
         },
         {
-          "title": "Run a workflow",
-          "text": "Write a goal, choose how steps are picked and read the plan before you run it. One press creates the session and starts the run.",
-          "group": "Start a task",
-          "also": "run a workflow",
-          "shown": true
-        },
-        {
-          "title": "Start an agent",
-          "text": "Map an unfamiliar repo before you plan. The scout only reads, so it changes nothing.",
-          "group": "Start a task",
-          "also": "ask an agent"
-        },
-        {
           "title": "Start more work in a session",
-          "text": "New in a session lists Run a workflow, Run an orchestrator, Start an agent, Start an auto, Write a report and Draw a wireframe. Each opens its form beside the page.",
+          "text": "New in a session lists Start a run, Write a report and Draw a wireframe. Type @Scout or ~ and a preset in Start a run to pick the role or the preset yourself.",
           "group": "Start a task",
           "also": "new in a session"
         },
@@ -126,13 +118,6 @@
           "text": "Link work adds a task. Unlink acts at once and shows an Undo toast for about 10 seconds, and the Log keeps a Re-link. Cmd+Z undoes the last app operation when focus is not in a text field.",
           "group": "Start a task",
           "also": "undo unlink"
-        },
-        {
-          "title": "Start one session from several issues",
-          "text": "Pick up to five issues and start one session from them. The first names the branch, the brief is written from the whole set, and every issue is linked.",
-          "group": "Start a task",
-          "also": "several issues",
-          "shown": true
         },
         {
           "title": "Star an issue from Link work",
@@ -463,6 +448,12 @@
           "shown": true
         },
         {
+          "title": "New runs start as",
+          "text": "Pick how a new ask starts in this workspace: Auto, a plan with steps or one agent.",
+          "group": "Workspaces and folders",
+          "also": "run default"
+        },
+        {
           "title": "Copy settings from another workspace",
           "text": "Take the settings of another workspace, or restore the defaults, page by page. You see every change before it is saved.",
           "group": "Workspaces and folders",
@@ -518,8 +509,8 @@
       ],
       "items": [
         {
-          "title": "Workflow builder",
-          "text": "Shape a run before it starts with a name, a goal and a mode. The plan is previewed as a recipe, step 1 on top, in the same nodes the run will show.",
+          "title": "Start a workflow",
+          "text": "A workflow run starts from Start a run like any other. Type ~ and a preset name to follow that preset, step by step.",
           "group": "Workflows",
           "main": true
         },
@@ -530,8 +521,14 @@
           "main": true
         },
         {
+          "title": "A preset as the plan a run starts from",
+          "text": "A run follows its preset as a plan. It can adapt as it goes, or stop and ask when a step does not fit.",
+          "group": "Workflows",
+          "also": "preset plans"
+        },
+        {
           "title": "Preset and Custom",
-          "text": "Write the steps yourself, or draft them with a planner. Save what you changed as a preset, or pick a saved one by the role glyph of each step.",
+          "text": "A preset is a ready sequence of steps with a role and model each, kept in the Workflows studio. Save a run you like as a preset from its page.",
           "group": "Workflows",
           "also": "presets",
           "shown": true

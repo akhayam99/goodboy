@@ -79,7 +79,10 @@ describe('the Move to Auto panel', () => {
 
     const field = screen.getByRole('textbox', { name: 'What should Auto do next?' });
     expect(field).toHaveProperty('value', '');
-    expect(screen.getByRole('button', { name: 'Move to Auto' })).toHaveProperty('disabled', false);
+    expect(screen.getByRole('button', { name: 'Let Auto take it from here' })).toHaveProperty(
+      'disabled',
+      false,
+    );
   });
 
   it('moves the agent with the words of the user, opens Auto and closes', async () => {
@@ -89,7 +92,7 @@ describe('the Move to Auto panel', () => {
       target: { value: 'Review it after the tests' },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     const adoption = await getAdoptionOfAgent({ db, agentId: SOURCE });
@@ -112,7 +115,7 @@ describe('the Move to Auto panel', () => {
     const onClose = vi.fn();
     mount({ onClose });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
 
     expect(await screen.findByText('Pause or finish the run first.')).toBeDefined();
     expect(onClose).not.toHaveBeenCalled();
@@ -124,7 +127,7 @@ describe('the Move to Auto panel', () => {
     await setSetting(db, 'agents.autoExperiment', 'false');
     mount({ onClose });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).not.toBeNull();
@@ -133,7 +136,7 @@ describe('the Move to Auto panel', () => {
   it('says Auto is not in this build when the release gate is closed, and moves nothing', async () => {
     mount({ isReleased: false });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
 
     expect(await screen.findByText('Auto is not available in this build.')).toBeDefined();
     expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).toBeNull();
@@ -145,11 +148,11 @@ describe('the Move to Auto panel', () => {
     await db.execute("UPDATE agents SET workflow_run_id = 'run-harborline' WHERE id = ?", [SOURCE]);
     await db.exec('PRAGMA foreign_keys = ON');
     mount({ onClose });
-    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
     await screen.findByText('Pause or finish the run first.');
     await db.execute('UPDATE agents SET workflow_run_id = NULL WHERE id = ?', [SOURCE]);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).not.toBeNull();
@@ -167,7 +170,7 @@ describe('the Move to Auto panel', () => {
 
   it('offers Detach as the undo of the move', async () => {
     mount();
-    fireEvent.click(screen.getByRole('button', { name: 'Move to Auto' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Let Auto take it from here' }));
     await waitFor(async () =>
       expect(await getAdoptionOfAgent({ db, agentId: SOURCE })).not.toBeNull(),
     );

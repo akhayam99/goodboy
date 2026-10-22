@@ -23,6 +23,8 @@ import { moveAutoRestingPhase } from '../../auto/moveAutoRestingPhase';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { detachFromAuto } from '../../auto/detachFromAuto';
 import { classifyAgent } from '../../session/agent-kind';
+import { parseRunRoutes, runRoutesKey } from '../../session/startRun/runRoutesSetting';
+import { NAMES } from '../../../shared/names';
 import {
   isAgentClosable,
   isAgentClosedByUser,
@@ -119,7 +121,10 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
         isAdoptableKind({ kind }) &&
         agent.workflowRunId == null &&
         agent.stepId == null &&
-        !membership.isMember,
+        !membership.isMember &&
+        parseRunRoutes({ raw: state.settings[runRoutesKey({ sessionId: target.sessionId })] })[
+          agent.id
+        ] === undefined,
       isAdopted: membership.adoption !== null,
       autoRest: autoRestOf({
         views: state.autoTreeViews[target.sessionId] ?? [],
@@ -233,7 +238,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
     },
     {
       id: 'agent.moveToAuto',
-      label: 'Move to Auto',
+      label: NAMES.letAutoTakeIt,
       icon: CONCEPT_ICONS.auto,
       group: 'act',
       description: () => 'Auto takes over this work and decides what comes next',

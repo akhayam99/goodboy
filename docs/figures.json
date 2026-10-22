@@ -251,18 +251,6 @@
     "version": "0.27.1",
     "recipe": "--scene 'onboarding&step=workspace&brand=1' --window 1280x600 --wait 8000"
   },
-  "features/start-ask-agent": {
-    "version": "0.27.1",
-    "recipe": "--scene 'new-session-page-agent&brand=1' --window 1280x600 --wait 8000"
-  },
-  "features/start-pick-task": {
-    "version": "0.27.1",
-    "recipe": "--scene 'brand-kickoff&brand=1' --window 1000x940 --wait 8000"
-  },
-  "features/start-run-workflow": {
-    "version": "0.27.1",
-    "recipe": "--scene 'new-session-page-run-preset&brand=1' --window 1280x800 --wait 8000"
-  },
   "features/storage-branches": {
     "version": "0.27.1",
     "recipe": "--scene 'settings-app&section=branches&brand=1' --window 1280x800 --wait 8000"
@@ -291,25 +279,9 @@
     "version": "0.27.1",
     "recipe": "--scene 'session-hover&brand=1' --window 1280x720 --clip 0,0,680,720 --wait 8000"
   },
-  "features/workflow-builder": {
-    "version": "0.27.1",
-    "recipe": "--scene 'new-session-page-run&brand=1' --window 1280x700 --wait 8000"
-  },
-  "features/workflow-builder-custom": {
-    "version": "0.27.1",
-    "recipe": "--scene 'workflow-builder-modes&click=Preset,Trace%20and%20fix&brand=1' --window 1280x620 --wait 8000"
-  },
-  "features/workflow-builder-preset": {
-    "version": "0.27.1",
-    "recipe": "--scene 'workflow-builder-modes&brand=1' --window 1280x500 --wait 8000"
-  },
   "features/workflow-hints": {
     "version": "0.27.1",
     "recipe": "--scene 'workflow-run-step-question&brand=1' --clip 300,600,930,190 --window 1280x800 --wait 8000"
-  },
-  "features/workflow-model": {
-    "version": "0.27.1",
-    "recipe": "--scene 'new-session-page-run-preset&brand=1' --click 'Opus 5.5' --window 1280x900 --wait 8000"
   },
   "features/workflow-question-agent": {
     "version": "0.27.1",

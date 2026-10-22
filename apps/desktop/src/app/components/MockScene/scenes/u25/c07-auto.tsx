@@ -28,7 +28,6 @@ export const U25_C07_AUTO_SCENES = {
   'c07-auto-session-level': () => <C07AutoFrame seed={SESSION} />,
   'c07-auto-list': () => <C07AutoFrame seed={LIST} />,
   'c07-auto-start': () => <C07AutoFrame seed={START} />,
-  'c07-auto-start-open': () => <C07AutoFrame seed={START} clicks={['Start an auto']} />,
   'c07-auto-folded': () => <C07AutoFrame seed={WORKING} isFolded />,
   'c07-auto-project': () => <C07AutoFrame seed={PROJECT} />,
   'c07-auto-child': () => <C07AutoFrame seed={CHILD} />,

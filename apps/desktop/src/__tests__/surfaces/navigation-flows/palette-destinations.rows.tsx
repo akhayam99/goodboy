@@ -1,7 +1,6 @@
 import { expect, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import type { SessionId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
-import { STORY_NOW } from '../../../store/storyHarness';
+import type { SessionId } from '@goodboy/types';
 import {
   type Row,
   WAIT,
@@ -22,37 +21,9 @@ import {
   getSection,
 } from './harness';
 
-const SHIP_ID = 'flow-workflow-ship-a-fix' as WorkflowId;
-
 let pushed = vi.fn(async () => ({ ok: true }));
 let opened = vi.fn(async () => undefined);
 let spawned = vi.fn(async () => undefined);
-let attached = vi.fn(async () => undefined);
-
-const seedWorkflow = (): void => {
-  const state = useAppStore.getState();
-  const workspaceId = state.currentWorkspaceId as WorkspaceId;
-  const workflow: Workflow = {
-    id: SHIP_ID,
-    workspaceId,
-    name: 'Ship a fix',
-    description: '',
-    steps: ['Plan', 'Implement'].map((name, ordinal) => ({
-      id: `${SHIP_ID}-step-${ordinal}` as StepId,
-      workflowId: SHIP_ID,
-      ordinal,
-      name,
-      promptPrefix: '',
-    })),
-    createdAt: STORY_NOW,
-    updatedAt: STORY_NOW,
-  };
-  useAppStore.setState({
-    attachWorkflowToSession: attached,
-    phaseTemplates: { ...state.phaseTemplates, [workspaceId]: [workflow] },
-  } as never);
-};
-
 const openDiffHistory = async (): Promise<void> => {
   await openWorktreeMenu();
   await click(await screen.findByRole('menuitem', { name: /^Edit commits/ }));
@@ -242,42 +213,6 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
   })),
   {
-    name: 'palette: Run a workflow lists the workflows and asks before it starts anything',
-    covers: ['palette:Run a workflow'],
-    open: async () => {
-      attached = vi.fn(async () => undefined);
-      seedWorkflow();
-      await openPalette(/^Run a workflow$/, 'start a run');
-      fireEvent.mouseDown(await screen.findByRole('option', { name: /^Ship a fix/ }));
-      await settle();
-    },
-    lands: async () => {
-      expect(await screen.findByText('Run a workflow: Ship a fix', {}, WAIT)).toBeDefined();
-      expect(screen.getByText('Plan · Implement')).toBeDefined();
-      expect(attached).not.toHaveBeenCalled();
-    },
-  },
-  {
-    name: 'palette: confirming Run a workflow attaches the workflow to this session',
-    covers: ['attachWorkflowToSession', 'palette:Run a workflow: Ship a fix'],
-    open: async () => {
-      attached = vi.fn(async () => undefined);
-      seedWorkflow();
-      await openPalette(/^Run a workflow: Ship a fix/, 'ship a fix');
-      await clickButton('Run');
-    },
-    lands: ({ sessionId }) =>
-      waitFor(
-        () =>
-          expect(attached).toHaveBeenCalledWith(
-            sessionId,
-            SHIP_ID,
-            expect.objectContaining({ navigate: true }),
-          ),
-        WAIT,
-      ),
-  },
-  {
     name: 'palette: Tasks',
     covers: ['openStudio', 'studio:inbox', 'palette:Tasks'],
     door: 'palette',
@@ -393,9 +328,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     open: () => clickButton(/^New session$/),
     lands: both(
       () => heading('New session'),
-      () => visible('tab', /Pick up a task/),
-      () => visible('tab', /Run a workflow/),
-      () => visible('tab', /Start an agent/),
+      () => visible('textbox', 'Start a run'),
       () => visible('button', /Start blank/),
     ),
   },
@@ -496,9 +429,9 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('textbox', 'Session title'),
   },
   {
-    name: 'palette verb: Start an agent',
-    covers: ['navigate', 'palette:Start an agent'],
-    open: () => openPalette(/^Start an agent$/),
+    name: 'palette verb: Start a run',
+    covers: ['navigate', 'palette:Start a run'],
+    open: () => openPalette(/^Start a run$/),
     lands: both(lens('workflows'), () => heading('Runs')),
   },
   {

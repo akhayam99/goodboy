@@ -572,12 +572,7 @@ describe('an Explore row lists the same verbs on its buttons, its right click an
       .map((option) => option.getAttribute('aria-label') ?? '')
       .slice(0, fromContext.length);
 
-    expect(fromContext).toEqual([
-      'Open',
-      'Show in Finder',
-      'Start an agent on this file',
-      'Copy path',
-    ]);
+    expect(fromContext).toEqual(['Open', 'Show in Finder', 'Ask about this file', 'Copy path']);
     expect(buttons).toEqual(['Actions for rounding.ts']);
     expect(fromOverflow).toEqual(fromContext);
     expect(fromPalette).toEqual(fromContext);
@@ -598,7 +593,7 @@ const nextCardMenu = ({ suggestion, startsRole }: NextCardParams) => {
           suggestion={suggestion}
           actions={{
             primary: {
-              label: 'Start reviewer',
+              label: 'Continue with Reviewer',
               isDisabled: false,
               failureTitle: 'Failed',
               ...(startsRole !== null && { agentKind: startsRole }),
@@ -638,8 +633,8 @@ describe('the ⋯ menu of a Next card lists the registry set of its suggestion, 
       startsRole: 'reviewer',
     });
     expect(registry).toEqual([
-      'Start tester instead',
-      'Start implementer instead',
+      'Continue with Tester',
+      'Continue with Implementer',
       'Talk it through with Auto',
     ]);
     expect(drawn).toEqual(registry);

@@ -40,7 +40,7 @@ Paste `HBL-412`, `#318` or a link in the search box and open the issue, even whe
 
 ### Starred issues
 
-Star an issue from the star next to its key in the pane, or press **s** on its row, to keep it in the **Starred** group on top of Tasks and of **Pick up a task**. Stars belong to the workspace, not to one session.
+Star an issue from the star next to its key in the pane, or press **s** on its row, to keep it in the **Starred** group on top of Tasks. Stars belong to the workspace, not to one session.
 
 ### Start from any item
 

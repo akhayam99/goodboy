@@ -55,11 +55,11 @@ describe('the u21 page-state scenes', () => {
     expect(Object.keys(U21_STATES_SCENES).sort()).toEqual([...SCENE_IDS].sort());
   });
 
-  it('shows the Runs first-time state with its one primary', async () => {
+  it('shows the Runs first-time state as the Start a run field alone', async () => {
     renderScene('runs-list-empty');
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'No runs yet' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Run a workflow' })).toBeDefined();
+    expect(await screen.findByRole('textbox', { name: 'Start a run' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Run a workflow' })).toBeNull();
   });
 
   it('shows the Artifacts first-time state', async () => {

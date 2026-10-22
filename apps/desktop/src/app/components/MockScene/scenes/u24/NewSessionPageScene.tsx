@@ -122,7 +122,7 @@ export const NewSessionPageScene = ({ state }: Props) => {
   return (
     <StudioFrame
       target={{ place: null, tool: null }}
-      main={<SessionDraftPane workspaceId={WORKSPACE_ID} isAuto={state.isAuto === true} />}
+      main={<SessionDraftPane workspaceId={WORKSPACE_ID} />}
     />
   );
 };

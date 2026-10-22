@@ -55,10 +55,10 @@ describe('the runs-on-codex-default scene', () => {
   it('shows short verbs, keeps the full action names, and fills no primary', async () => {
     await mount();
 
-    const reviewer = screen.getByRole('button', { name: 'Start reviewer' });
+    const reviewer = screen.getByRole('button', { name: 'Continue with Reviewer' });
     expect(reviewer.textContent).toBe('Start');
     expect(screen.getByRole('button', { name: 'Analyze' }).textContent).toBe('Analyze');
-    const variants = ['Fix 3', 'Start reviewer', 'Analyze', 'Push'].map((name) =>
+    const variants = ['Fix 3', 'Continue with Reviewer', 'Analyze', 'Push'].map((name) =>
       screen.getByRole('button', { name }).getAttribute('data-variant'),
     );
     expect(variants).toEqual(['secondary', 'secondary', 'secondary', 'secondary']);
@@ -78,13 +78,13 @@ describe('the runs-on-codex-default scene', () => {
 
   it('lists the alternatives in the more menu and previews their role on the tile', async () => {
     await mount();
-    expect(screen.queryByRole('button', { name: /Start tester instead/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Continue with Tester/ })).toBeNull();
 
     fireEvent.click(
       screen.getByRole('button', { name: 'More options for Check the changes before you push' }),
     );
-    const tester = screen.getByRole('menuitem', { name: /Start tester instead/ });
-    screen.getByRole('menuitem', { name: /Start implementer instead/ });
+    const tester = screen.getByRole('menuitem', { name: /Continue with Tester/ });
+    screen.getByRole('menuitem', { name: /Continue with Implementer/ });
     fireEvent.mouseEnter(tester);
 
     expect(tileKind('check-changes')).toBe('tester');
@@ -103,7 +103,7 @@ describe('the runs-on-codex-default scene', () => {
     expect(screen.queryByText('3 review comments to resolve')).toBeNull();
     screen.getByText('Dismissed');
     expect(
-      screen.getByRole('button', { name: 'Start reviewer' }).getAttribute('data-variant'),
+      screen.getByRole('button', { name: 'Continue with Reviewer' }).getAttribute('data-variant'),
     ).toBe('secondary');
 
     await act(async () => {

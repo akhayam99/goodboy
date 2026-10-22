@@ -25,7 +25,7 @@ type SessionDraftCheckout = {
   readonly fallbackRef: string;
 };
 
-export type SessionDraftThen =
+type SessionDraftThen =
   | { readonly kind: 'workflow-run'; readonly run: SessionDraftRun }
   | {
       readonly kind: 'agent';

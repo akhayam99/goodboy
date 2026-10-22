@@ -79,7 +79,6 @@ import type { OpenQuestionsState } from './slices/open-questions/state';
 import type { NudgesState } from './slices/nudges/state';
 import type { SlackDraftsState } from './slices/slack-drafts/state';
 import type { WorkflowDraftsState } from './slices/workflowDrafts/state';
-import type { NewDrawerDraftsState } from './slices/newDrawerDrafts/state';
 import type { StartHintsState } from './slices/startHints/state';
 import type { RebaseAllState } from './slices/rebaseAll/state';
 import type { ArtifactDraftsState } from './slices/artifactDrafts/state';
@@ -193,7 +192,6 @@ type AppSliceState = ArtifactsState &
   NudgesState &
   SlackDraftsState &
   WorkflowDraftsState &
-  NewDrawerDraftsState &
   StartHintsState &
   RebaseAllState &
   ArtifactDraftsState &

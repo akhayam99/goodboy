@@ -231,12 +231,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     lead: 'A session is one task: a goal, its agents and a branch per folder they edit. It stays a draft until you press Start or Start blank.',
     points: [
       {
-        term: 'Start a run',
-        desc: 'Write what you want: Goodboy picks a plan, a preset or one agent. The selector also holds Pick up a task, Run a workflow, Run an orchestrator and Start an agent.',
+        term: NAMES.startARun,
+        desc: 'Write what you want done; Auto picks a plan, one agent or a preset. Esc closes the draft, asking first if you wrote something.',
       },
       {
-        term: 'Pick up a task',
-        desc: 'Pick up to five issues from your tools or Tasks. Goodboy drafts a title, a goal and Done when, and Runs as picks how to work on it.',
+        term: 'Start on a task',
+        desc: 'From Tasks, opens Start a run with the issue attached and its goal written in.',
       },
       {
         term: NAMES.folders,
@@ -244,11 +244,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'New menu',
-        desc: "New, in a session's Overview header, opens Run a workflow, Run an orchestrator, Start an agent, Start an auto, Write a report and Draw a wireframe, each a form in a pane.",
+        desc: "New, in a session's Overview header, opens Start a run on Runs, or Write a report and Draw a wireframe, each a form in a pane.",
       },
       {
-        term: 'Start an agent',
-        desc: 'One agent in the role you pick. Scout is the default and only reads, to map a repo before you plan.',
+        term: '@role',
+        desc: 'Type @Scout or another role in Start a run to start that role at once.',
       },
       {
         term: 'Start blank',
@@ -352,15 +352,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Runs page',
-        desc: "Every run, newest first: presets, orchestrated runs, Auto and your agents. An agent's menu holds Rename, Change model, Move to Auto and Delete agent.",
+        desc: "Every run, newest first: presets, orchestrated runs, Auto and your agents. An agent's menu holds Rename, Change model, Let Auto take it from here and Delete agent.",
       },
       {
         term: 'Auto',
-        desc: 'An experimental agent behind Start an auto. It answers what it can, hands the rest to child agents of the roles it picks and goes on under a limit.',
+        desc: 'The agent behind Start a run. It answers what it can, hands the rest to child agents of the roles it picks and goes on under a limit, listed under Runs.',
       },
       {
-        term: 'Move to Auto',
-        desc: 'Hands Auto an agent you started yourself, and Detach from Auto takes it back. When Auto cannot decide, it reads Blocked with the reason and Retry.',
+        term: 'Let Auto take it from here',
+        desc: 'Hands Auto an older agent you started yourself; Detach from Auto takes it back. When Auto cannot decide, it reads Blocked with Retry.',
       },
       {
         term: 'Activity',

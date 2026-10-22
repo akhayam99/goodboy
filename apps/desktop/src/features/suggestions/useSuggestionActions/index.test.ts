@@ -134,6 +134,10 @@ vi.mock('../../../store', async () => {
     useAppStore,
   };
 });
+const continueWithRole = vi.hoisted(() =>
+  vi.fn(async (_params: unknown) => ({ kind: 'message', agentId: 'agent-auto' })),
+);
+vi.mock('../../session/startRun/continueWithRole', () => ({ continueWithRole }));
 vi.mock('../../../shared/hooks/useKindRouting', () => ({
   useKindRouting: () => ({ provider: 'anthropic', model: 'claude', effort: 'medium' }),
 }));
@@ -723,7 +727,7 @@ describe('useSuggestionActions', () => {
     });
   });
 
-  it('starts a reviewer', () => {
+  it('asks the run of the session to continue with a reviewer', () => {
     const actions = actionsFor({
       suggestion: {
         ...suggestionBase,
@@ -734,12 +738,16 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Start reviewer');
+    expect(actions.primary?.label).toBe('Continue with Reviewer');
+    expect(actions.primary?.runsOn).toBeUndefined();
     actions.primary?.run();
-    expect(spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
-      kindOverride: 'reviewer',
-      focus: 'none',
+    expect(continueWithRole).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      role: 'reviewer',
+      work: 'Review the changes',
+      sourceAgentId: null,
     });
+    expect(spies.spawnAgent).not.toHaveBeenCalled();
   });
 
   it('pushes the named mount', () => {

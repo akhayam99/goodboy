@@ -12,7 +12,7 @@ type BlockParams = {
 const composeExploreAttachmentBlock = ({ relPath, absolutePath }: BlockParams): string =>
   `**Attached** (this message) read each path with your Read tool before relying on it:\n- ${relPath} (${absolutePath})`;
 
-export const buildExploreSpawnPrompt = ({ ask, relPath, absolutePath }: Params): string => {
+export const askWithFileOf = ({ ask, relPath, absolutePath }: Params): string => {
   const trimmedAsk = ask.trim();
   return [trimmedAsk, composeExploreAttachmentBlock({ relPath, absolutePath })].join('\n\n');
 };

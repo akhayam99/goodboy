@@ -19,7 +19,6 @@ type RowParams = {
 type SectionParams = {
   readonly row: PaletteEntry | null;
   readonly verbs: ReadonlyArray<PaletteEntry>;
-  readonly startRun: PaletteEntry | null;
   readonly openRuns: PaletteEntry | null;
 };
 
@@ -72,11 +71,9 @@ export const runRow = ({ facts, open }: RowParams): PaletteEntry => ({
 export const runSection = ({
   row,
   verbs,
-  startRun,
   openRuns,
 }: SectionParams): ReadonlyArray<PaletteEntry> => [
   ...(row === null ? [] : [row]),
   ...orderRunVerbs({ verbs }),
-  ...(startRun === null ? [] : [startRun]),
   ...(openRuns === null ? [] : [openRuns]),
 ];

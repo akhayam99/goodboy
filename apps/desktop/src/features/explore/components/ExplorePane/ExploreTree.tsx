@@ -39,6 +39,7 @@ import {
 import { exploreTreeKey } from '../../exploreTreeKey';
 import { useExploreOpen } from '../../hooks/useExploreOpen';
 import type { ExploreOpenFailure } from '../../openFailure';
+import { openStartRun } from '../../../session/startRun/openStartRun';
 import { ExploreRow } from './ExploreRow';
 import { ExploreStatusRow } from './ExploreStatusRow';
 
@@ -71,7 +72,6 @@ export const ExploreTree = ({
   const [failureByPath, setFailureByPath] = useState<
     Readonly<Record<string, ExploreOpenFailure | null>>
   >({});
-  const [askPath, setAskPath] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewport, setViewport] = useState(0);
@@ -141,23 +141,26 @@ export const ExploreTree = ({
 
   const targetOf = (row: ExploreEntryRow): ExploreFileActionTarget => {
     const { entry } = row;
-    return exploreFileTargetOf({
+    const target = exploreFileTargetOf({
       sessionId,
       sessionDir,
       entry,
       openAction: exploreOpen.canOpen({ entry }) ? exploreOpen.actionOf({ entry }) : null,
-      onAsk: () => setAskPath(entry.relPath),
+      onAsk: () =>
+        openStartRun({
+          sessionId,
+          file: { relPath: target.facts.relPath, absolutePath: target.facts.absolutePath },
+        }),
       onOpen: () => void runOpen({ entry, isReveal: false }),
       onReveal: () => void runOpen({ entry, isReveal: true }),
     });
+    return target;
   };
 
   const activeRow = entries.find((row) => row.id === effectiveActiveId);
   const treeRef = useHeldPaletteScope<HTMLDivElement>({
     scope: activeRow === undefined ? null : targetOf(activeRow),
   });
-
-  const handleAskClosed = useCallback(() => setAskPath(null), []);
 
   const focusRow = useCallback(
     ({ id }: FocusRowParams) => {
@@ -272,12 +275,10 @@ export const ExploreTree = ({
               now={now}
               isActive={row.id === effectiveActiveId}
               isSelected={!row.entry.isDir && row.entry.relPath === selectedRelPath}
-              isAskOpen={askPath === row.entry.relPath}
               change={changes.byPath.get(row.entry.relPath) ?? null}
               folderChangeCount={changes.countByFolder.get(row.entry.relPath) ?? 0}
               onToggle={onSetExpanded}
               onSelectFile={onSelectFile}
-              onAskClosed={handleAskClosed}
             />
           ) : (
             <ExploreStatusRow key={row.id} row={row} onRetry={onLoad} />
