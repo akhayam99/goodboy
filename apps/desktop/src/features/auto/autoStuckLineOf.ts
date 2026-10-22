@@ -1,15 +1,10 @@
 import type { AutoStuckKind } from './autoStuckKindOf';
+import { autoStuckVerbOf } from './autoStuckVerbOf';
 
 type Params = {
   readonly title: string;
   readonly kind: AutoStuckKind;
 };
 
-const VERB: Readonly<Record<AutoStuckKind, string>> = {
-  neverStarted: 'never started',
-  failed: 'stopped',
-  timedOut: 'timed out',
-  childBlocked: 'is blocked',
-};
-
-export const autoStuckLineOf = ({ title, kind }: Params): string => `"${title}" ${VERB[kind]}`;
+export const autoStuckLineOf = ({ title, kind }: Params): string =>
+  `"${title}" ${autoStuckVerbOf({ kind })}`;

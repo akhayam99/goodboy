@@ -8,7 +8,7 @@ import {
   type OpenQuestionId,
   type SessionId,
 } from '@goodboy/types';
-import type { SessionSuggestion } from '../../../suggestions/types';
+import type { RebaseSuggestionTarget, SessionSuggestion } from '../../../suggestions/types';
 import type { NeedsYouOwner } from '../../timeline/needsYou';
 import { actionCardsOf, type ActionCardModel, type AutoActionTarget } from './actionCardsOf';
 
@@ -33,6 +33,7 @@ const ownerOf = (overrides: Partial<NeedsYouOwner> & Pick<NeedsYouOwner, 'id'>):
   questionIds: [],
   prNumber: null,
   owed: null,
+  mountId: null,
   ...overrides,
 });
 
@@ -80,6 +81,7 @@ const ANSWER: SessionSuggestion = {
   payload: {
     count: 1,
     firstQuestion: { id: brandId({ value: 'question-cap' }), createdByAgentId: null },
+    rootAgentId: null,
   },
 };
 
@@ -88,7 +90,11 @@ const NEVER_STARTED: AutoActionTarget = {
   rootAgentId: brandId<AgentId>({ value: 'agent-auto' }),
   role: 'Fixer',
   kind: 'neverStarted',
+  noun: 'Fixer',
   reason: 'Auto created it at 10:21, no first message reached it.',
+  reasonCode: null,
+  mountId: null,
+  plan: null,
   canRetry: true,
 };
 
@@ -104,6 +110,10 @@ const QUESTION: OpenQuestion = {
 };
 
 const NONE = { owners: [], suggestions: [], autoTargets: [] } as const;
+
+type TargetParams = {
+  readonly mountId: MountId;
+};
 
 const kindsOf = (cards: ReadonlyArray<{ readonly kind: string }>): ReadonlyArray<string> =>
   cards.map((card) => card.kind);
@@ -182,31 +192,48 @@ describe('actionCardsOf', () => {
       band: 0,
       kind: 'neverStarted',
       title: 'Auto is stuck',
-      detail: '"Fixer" never started. Auto created it at 10:21, no first message reached it.',
+      detail: 'The fixer never started. Auto created it at 10:21, no first message reached it.',
     });
     expect(cards).toHaveLength(3);
   });
 
-  it('keeps a blocked Auto child apart from a failed one, with its own words', () => {
+  it('says a blocked child by its role, never its ask quoted or its own words in another language', () => {
+    const blocked = {
+      ...NEVER_STARTED,
+      agentId: brandId<AgentId>({ value: 'agent-scout' }),
+      role: 'Map the center page routes',
+      noun: 'Scout',
+      kind: 'childBlocked',
+      reason: 'Non riesco a chiudere: manca la fixture dei dati di esempio.',
+      reasonCode: 'declared_blocked',
+    } satisfies AutoActionTarget;
     const cards = actionCardsOf({
       ...NONE,
       autoTargets: [
+        blocked,
         {
-          ...NEVER_STARTED,
-          agentId: brandId<AgentId>({ value: 'agent-scout' }),
-          role: 'Map the center page routes',
-          kind: 'childBlocked',
-          reason: 'The design notes are not in harbor-portal.',
+          ...blocked,
+          agentId: brandId<AgentId>({ value: 'agent-tester' }),
+          noun: 'Tester',
+          kind: 'timedOut',
+          reasonCode: 'deadline_passed',
+        },
+        {
+          ...blocked,
+          agentId: brandId<AgentId>({ value: 'agent-docs' }),
+          noun: 'Docs writer',
+          kind: 'failed',
+          reasonCode: 'some_new_code',
         },
       ],
     });
 
-    expect(cards[0]).toMatchObject({
-      id: 'auto:agent-scout:childBlocked',
-      kind: 'childBlocked',
-      title: 'Auto is stuck',
-      detail: '"Map the center page routes" is blocked. The design notes are not in harbor-portal.',
-    });
+    expect(cards.map((card) => [card.kind, card.title, card.detail])).toEqual([
+      ['failed', 'Auto is stuck', 'The docs writer failed.'],
+      ['childBlocked', 'Auto is stuck', 'The scout is blocked.'],
+      ['timedOut', 'Auto is stuck', 'The tester timed out. It ran out of time.'],
+    ]);
+    expect(cards.every((card) => !(card.detail ?? '').includes('"'))).toBe(true);
   });
 
   it('breaks a tie by priority and then by id', () => {
@@ -228,6 +255,7 @@ describe('actionCardsOf', () => {
     const owner = ownerOf({
       id: 'fix-run',
       kind: 'fixRun',
+      mountId: MOUNT_ID,
       owed: {
         questions: 0,
         toReview: 1,
@@ -250,6 +278,118 @@ describe('actionCardsOf', () => {
     expect(mountOf('owner:plain')).toBeNull();
     expect(mountOf('suggestion:check-changes:agent-northwind')).toBeNull();
     expect(mountOf('auto:agent-fixer:neverStarted')).toBeNull();
+  });
+
+  it('names an approval by its plan and version and puts an Auto child on its branch', () => {
+    const cards = actionCardsOf({
+      ...NONE,
+      autoTargets: [
+        { ...NEVER_STARTED, mountId: MOUNT_ID },
+        {
+          ...NEVER_STARTED,
+          agentId: brandId<AgentId>({ value: 'agent-auto' }),
+          role: 'Auto',
+          noun: 'Auto',
+          kind: 'approve',
+          reason: null,
+          plan: { name: 'Center pages rollout', version: 3, branchCount: 4 },
+          canRetry: false,
+        },
+      ],
+    });
+
+    expect(cards.map((card) => [card.kind, card.mountId, card.detail])).toEqual([
+      ['approve', null, 'Plan v3 waits on your OK. The run covers 4 branches.'],
+      [
+        'neverStarted',
+        MOUNT_ID,
+        'The fixer never started. Auto created it at 10:21, no first message reached it.',
+      ],
+    ]);
+    expect(cards[0]?.title).toBe('Center pages rollout');
+  });
+
+  it('titles an approval without plan facts by Auto, and never quotes or prints a code', () => {
+    const cards = actionCardsOf({
+      ...NONE,
+      autoTargets: [
+        {
+          ...NEVER_STARTED,
+          agentId: brandId<AgentId>({ value: 'agent-auto' }),
+          kind: 'approve',
+          reason: null,
+          plan: null,
+          canRetry: false,
+        },
+        {
+          ...NEVER_STARTED,
+          kind: 'timedOut',
+          reason: 'deadline_passed',
+          reasonCode: 'deadline_passed',
+        },
+      ],
+    });
+
+    expect(cards.map((card) => [card.title, card.detail])).toEqual([
+      ['Auto waits on your OK', 'The plan waits on your OK.'],
+      ['Auto is stuck', 'The fixer timed out. It ran out of time.'],
+    ]);
+    expect(cards.some((card) => `${card.title}${card.detail}`.includes('"'))).toBe(false);
+    expect(cards.some((card) => `${card.title}${card.detail}`.includes('_'))).toBe(false);
+  });
+
+  it('folds a stopped rebase into the behind card when its branch is behind', () => {
+    const behind = brandId<MountId>({ value: 'mount-home' });
+    const rebaseOf = ({ mountId }: TargetParams): RebaseSuggestionTarget => ({
+      id: `${mountId}`,
+      mountId,
+      projectId: brandId({ value: 'project-harbor' }),
+      projectName: 'harbor-portal',
+      branch: `hl/${mountId}`,
+      worktreePath: `/work/${mountId}`,
+      baseBranch: 'main',
+      behind: 3,
+      dirtyCount: 0,
+    });
+    const rebase: SessionSuggestion = {
+      ...BASE,
+      id: 'rebase-project:ledger-core',
+      kind: 'rebase-project',
+      priority: 40,
+      band: 2,
+      title: 'Rebase harbor-portal',
+      fingerprint: 'rebase-project:ledger-core',
+      detail: '2 branches behind',
+      payload: { targets: [rebaseOf({ mountId: behind }), rebaseOf({ mountId: MOUNT_ID })] },
+    };
+    const stoppedHere = ownerOf({ id: 'stop-home', kind: 'rebase', mountId: behind });
+    const stoppedElsewhere = ownerOf({
+      id: 'stop-other',
+      kind: 'rebase',
+      mountId: brandId<MountId>({ value: 'mount-up-to-date' }),
+    });
+
+    const cards = actionCardsOf({
+      ...NONE,
+      owners: [stoppedHere, stoppedElsewhere],
+      suggestions: [rebase],
+    });
+
+    expect(cards.map((card) => card.id)).toEqual([
+      'owner:stop-other',
+      'suggestion:rebase-project:ledger-core',
+    ]);
+    expect(cards[1]?.detail).toBe('2 branches behind · 1 rebase stopped');
+    expect(cards[1]?.folded.map((card) => card.id)).toEqual(['owner:stop-home']);
+  });
+
+  it('keeps a stopped rebase as its own card when no behind card exists', () => {
+    const cards = actionCardsOf({
+      ...NONE,
+      owners: [ownerOf({ id: 'stop-home', kind: 'rebase', mountId: MOUNT_ID })],
+    });
+
+    expect(cards.map((card) => [card.id, card.mountId])).toEqual([['owner:stop-home', MOUNT_ID]]);
   });
 
   it('tags every card with its source and covers every source kind', () => {

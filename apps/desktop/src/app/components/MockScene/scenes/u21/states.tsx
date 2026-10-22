@@ -1,7 +1,6 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { PaneShell, ScrollFade } from '@goodboy/ui';
 import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
-import { AgentsPane } from '../../../../../features/session/components/SessionWorkspace/parts/AgentsPane';
 import { QuestionsPane } from '../../../../../features/session/components/SessionWorkspace/parts/QuestionsPane';
 import { SceneRunsSurface } from '../SceneRunsSurface';
 import { NeedsYouBlock } from '../../../../../features/session/components/SessionWorkspace/parts/TimelinePane/NeedsYouBlock';
@@ -150,6 +149,7 @@ const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
     questionIds: [],
     prNumber: 318,
     owed: null,
+    mountId: null,
   },
   {
     id: 'mock-states-owner-rebase',
@@ -162,6 +162,7 @@ const NEEDS_YOU_OWNERS: ReadonlyArray<NeedsYouOwner> = [
     questionIds: [],
     prNumber: null,
     owed: null,
+    mountId: null,
   },
 ];
 
@@ -169,11 +170,6 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   'runs-list-empty': () => (
     <StateScene lens="workflows">
       <SceneRunsSurface session={SESSION} />
-    </StateScene>
-  ),
-  'agents-list-empty': () => (
-    <StateScene lens="agents">
-      <AgentsPane session={SESSION} />
     </StateScene>
   ),
   'artifacts-empty': () => (

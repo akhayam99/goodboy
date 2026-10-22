@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Button, HeaderActions, formatUsd } from '@goodboy/ui';
 import { AutoAgentGroup } from '../../../auto/group/AutoAgentGroup';
 import type { TimelineOpenTarget } from '../../hooks/useTimelineOpen';
@@ -7,6 +8,7 @@ type Props = {
   readonly row: DoneRowModel;
   readonly openTarget: TimelineOpenTarget | null;
   readonly onShowInLog: () => void;
+  readonly retry?: ReactNode;
 };
 
 type Fact = {
@@ -32,7 +34,7 @@ const factsOf = ({ row }: DoneRowParams): ReadonlyArray<Fact> => {
   return facts;
 };
 
-export const DoneRowDetail = ({ row, openTarget, onShowInLog }: Props) => {
+export const DoneRowDetail = ({ row, openTarget, onShowInLog, retry = null }: Props) => {
   const facts = factsOf({ row });
   const { steps, auto, branches, fullText } = row.detail;
   return (
@@ -100,9 +102,12 @@ export const DoneRowDetail = ({ row, openTarget, onShowInLog }: Props) => {
             )
           }
           button={
-            <Button size="sm" variant="secondary" onClick={onShowInLog}>
-              Show in log
-            </Button>
+            <>
+              {retry}
+              <Button size="sm" variant="secondary" onClick={onShowInLog}>
+                Show in log
+              </Button>
+            </>
           }
         />
       </div>

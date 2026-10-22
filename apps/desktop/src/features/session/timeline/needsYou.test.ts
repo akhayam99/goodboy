@@ -197,6 +197,26 @@ describe('needsYouOwners', () => {
     expect(settled).toEqual([]);
   });
 
+  it('names the branch of a stopped rebase by the mount of its event', () => {
+    const stopped = event({
+      id: 'ev-1',
+      kind: 'history_stopped',
+      at: '2026-10-03T17:57:00.000Z',
+      payload: { origin: 'rebase', reason: 'origin-moved', branch: 'feat/export', mountId: 'm1' },
+    });
+    const stopRow = row({
+      id: 'event:ev-1',
+      familyId: null,
+      rowState: DONE_ROW_STATE,
+      entry: { kind: 'event', id: 'event:ev-1', event: stopped },
+      at: stopped.createdAt,
+    });
+
+    const owners = needsYouOwners({ items: [stopRow], entries: [], events: [stopped] });
+
+    expect(owners.map((owner) => [owner.kind, owner.mountId])).toEqual([['rebase', 'm1']]);
+  });
+
   it('drops a stopped rebase once the agent that stopped it was deleted', () => {
     const stopped = event({
       id: 'ev-1',

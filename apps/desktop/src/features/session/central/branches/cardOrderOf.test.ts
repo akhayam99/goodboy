@@ -42,6 +42,7 @@ const rebaseCard = (): ActionCardModel => {
     detail: suggestion.detail ?? null,
     mountId: null,
     source: { kind: 'suggestion', suggestion },
+    folded: [],
   };
 };
 

@@ -6,6 +6,7 @@ import {
   type AutoDelegationId,
   type AutoRequestId,
   type AutoTreeId,
+  type SessionId,
 } from '@goodboy/types';
 import type { Database, GuardedStatement, PlainStatement } from '../client';
 
@@ -277,6 +278,27 @@ export const isAutoChildAgent = async ({
     [agentId],
   );
   return rows.length > 0;
+};
+
+type ListGoneAutoChildIdsParams = {
+  readonly db: Database;
+  readonly treeId: AutoTreeId;
+  readonly sessionId: SessionId;
+};
+
+export const listGoneAutoChildIds = async ({
+  db,
+  treeId,
+  sessionId,
+}: ListGoneAutoChildIdsParams): Promise<ReadonlyArray<AgentId>> => {
+  const rows = await db.select<{ readonly id: string }>(
+    `SELECT DISTINCT d.child_agent_id AS id FROM auto_delegations d
+      JOIN agents a ON a.id = d.child_agent_id
+      WHERE d.tree_id = ? AND (a.deleted_at IS NOT NULL OR a.session_id <> ?)
+      ORDER BY d.child_agent_id`,
+    [treeId, sessionId],
+  );
+  return rows.map((row) => brandId<AgentId>({ value: row.id }));
 };
 
 type ListAutoDelegationsParams = {

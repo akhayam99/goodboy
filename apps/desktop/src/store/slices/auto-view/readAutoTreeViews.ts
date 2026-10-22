@@ -4,6 +4,7 @@ import {
   listAutoDelegations,
   listAutoOutbox,
   listAutoTreesOfSession,
+  listGoneAutoChildIds,
   readAutoTreeSpend,
   readFirstUserText,
   type AutoOutboxRow,
@@ -12,6 +13,7 @@ import {
 } from '@goodboy/db';
 import type { SessionId } from '@goodboy/types';
 import { deliveredResultsOf } from './deliveredResultsOf';
+import { presentDelegationsOf } from './presentDelegationsOf';
 import type { AutoPendingRefusal, AutoTreeView } from './state';
 
 type Params = {
@@ -46,17 +48,19 @@ export const readAutoTreeViews = async ({
   const trees = await listAutoTreesOfSession({ db, sessionId });
   return Promise.all(
     trees.map(async (tree): Promise<AutoTreeView> => {
-      const [delegations, artifacts, spend, pending, accepted, rootAsk] = await Promise.all([
-        listAutoDelegations({ db, treeId: tree.id }),
-        listAutoArtifactLedger({ db, treeId: tree.id }),
-        readAutoTreeSpend({ db, treeId: tree.id }),
-        listAutoOutbox({ db, treeId: tree.id, states: ['pending'] }),
-        listAutoOutbox({ db, treeId: tree.id, states: ['accepted'], kinds: ['results'] }),
-        readFirstUserText({ db, agentId: tree.rootAgentId }),
-      ]);
+      const [delegations, goneChildIds, artifacts, spend, pending, accepted, rootAsk] =
+        await Promise.all([
+          listAutoDelegations({ db, treeId: tree.id }),
+          listGoneAutoChildIds({ db, treeId: tree.id, sessionId }),
+          listAutoArtifactLedger({ db, treeId: tree.id }),
+          readAutoTreeSpend({ db, treeId: tree.id }),
+          listAutoOutbox({ db, treeId: tree.id, states: ['pending'] }),
+          listAutoOutbox({ db, treeId: tree.id, states: ['accepted'], kinds: ['results'] }),
+          readFirstUserText({ db, agentId: tree.rootAgentId }),
+        ]);
       return {
         tree,
-        delegations,
+        delegations: presentDelegationsOf({ delegations, goneChildIds: new Set(goneChildIds) }),
         artifacts,
         budget: spend === null ? null : autoBudgetOf({ spend }),
         pendingRefusal: pendingRefusalOf({ tree, pending }),

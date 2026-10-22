@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { brandId, type AgentId } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -21,6 +21,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 vi.mock('@goodboy/db', async () => (await import('../../../../store/storyHarness')).dbModuleMock());
 
 import { useAppStore } from '../../../../store';
+import { aDelegation, aView, FIXTURE_ROOT } from '../../../auto/testing/autoViewFixtures';
 import { WorkTimeContext, type WorkTimeSource } from '../../../workTreeModel/workTimeSource';
 import { DoneSection } from './DoneSection';
 import { useDoneRows } from './useDoneRows';
@@ -187,6 +188,57 @@ describe('DoneSection', () => {
         .getAllByRole('button', { name: /^(Open|Show in log)$/ })
         .every((button) => button.closest('[data-slot="header-actions"]') !== null),
     ).toBe(true);
+  });
+
+  it('retries a child you stopped, shows a failure in place and retries again', async () => {
+    const root = anAgent({ id: FIXTURE_ROOT, sessionId: SESSION_ID, kind: 'auto' });
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...aDelegation({
+            key: 'billing',
+            role: 'reviewer',
+            state: 'settled',
+            outcome: 'stopped',
+          }),
+          reason: 'stopped',
+          settledAt: NOW.getTime() - 60_000,
+        },
+      ],
+    });
+    const continueStoppedAgent = vi
+      .fn<(params: { readonly sessionId: string; readonly agentId: string }) => Promise<void>>()
+      .mockRejectedValueOnce(new Error('Auto is not running'))
+      .mockResolvedValueOnce(undefined);
+    useAppStore.setState({
+      sessionPhaseRuns: { [SESSION_ID]: [root] },
+      loadAutoTrees: vi.fn(async () => undefined),
+      continueStoppedAgent,
+    });
+    const model = { ...modelFor({ hasRows: false }), autoTrees: [view] };
+    const done = modelOf({ agents: [root], autoTrees: [view] });
+    render(
+      <ToastProvider>
+        <WorkTimeContext.Provider value={SOURCE}>
+          <SectionWithRows model={{ ...model, entries: done.entries }} />
+        </WorkTimeContext.Provider>
+      </ToastProvider>,
+    );
+
+    fireEvent.click(rowButton({ name: /You stopped the reviewer/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Retry: You stopped the reviewer' }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Auto is not running');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry: You stopped the reviewer' }));
+
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(continueStoppedAgent).toHaveBeenCalledTimes(2);
+    expect(continueStoppedAgent).toHaveBeenLastCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'agent-billing',
+    });
   });
 
   it('is not drawn without finished work', () => {

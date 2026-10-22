@@ -152,6 +152,80 @@ describe('autoGroupOf', () => {
     expect(group?.children.map((child) => child.state)).toEqual(['retried', 'running']);
   });
 
+  it('reads a stopped or declined child as stopped, never as stuck', () => {
+    const view = aView({
+      phase: 'waiting',
+      delegations: [
+        {
+          ...aDelegation({ key: 'mine', role: 'reviewer', state: 'settled', outcome: 'stopped' }),
+          reason: 'stopped',
+        },
+        {
+          ...aDelegation({ key: 'no', role: 'implementer', state: 'settled', outcome: 'stopped' }),
+          slot: 1,
+          reason: 'declined',
+        },
+      ],
+    });
+
+    const group = autoGroupOf({ view, agents: [ROOT], now: FIXTURE_NOW });
+
+    expect(group?.children.map((child) => [child.state, child.reasonCode])).toEqual([
+      ['stopped', 'stopped'],
+      ['stopped', 'declined'],
+    ]);
+    expect(group?.isStuck).toBe(false);
+  });
+
+  it('supersedes a child when a later one takes the same role on the same branch', () => {
+    const first = {
+      ...aDelegation({ key: 'fixer-1', role: 'implementer', state: 'settled', outcome: 'failed' }),
+      target: { mountId: 'mount-home' },
+    };
+    const other = {
+      ...aDelegation({ key: 'fixer-3', role: 'implementer', state: 'settled', outcome: 'failed' }),
+      target: { mountId: 'mount-billing' },
+      slot: 1,
+    };
+    const second = {
+      ...aDelegation({ key: 'fixer-2', role: 'implementer', state: 'settled', outcome: 'blocked' }),
+      target: { mountId: 'mount-home' },
+      slot: 2,
+      createdAt: FIXTURE_NOW + 1_000,
+    };
+    const group = autoGroupOf({
+      view: aView({ phase: 'waiting', delegations: [first, other, second] }),
+      agents: [ROOT],
+      now: FIXTURE_NOW,
+    });
+
+    expect(group?.children.map((child) => [child.state, child.mountId])).toEqual([
+      ['retried', 'mount-home'],
+      ['failed', 'mount-billing'],
+      ['blocked', 'mount-home'],
+    ]);
+  });
+
+  it('keeps a done child done when a later one takes the same role on its branch', () => {
+    const first = {
+      ...aDelegation({ key: 'r-1', role: 'reviewer', state: 'settled', outcome: 'completed' }),
+      target: { mountId: 'mount-home' },
+    };
+    const second = {
+      ...aDelegation({ key: 'r-2', role: 'reviewer', state: 'running' }),
+      target: { mountId: 'mount-home' },
+      slot: 1,
+      createdAt: FIXTURE_NOW + 1_000,
+    };
+    const group = autoGroupOf({
+      view: aView({ phase: 'waiting', delegations: [first, second] }),
+      agents: [ROOT],
+      now: FIXTURE_NOW,
+    });
+
+    expect(group?.children.map((child) => child.state)).toEqual(['done', 'running']);
+  });
+
   it('maps outcomes and the never started rule', () => {
     const view = aView({
       phase: 'waiting',

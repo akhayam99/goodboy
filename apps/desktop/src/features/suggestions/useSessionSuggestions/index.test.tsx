@@ -12,6 +12,7 @@ const { store, worktreeStatus, listNudgeEvents, openQuestions, tally } = vi.hois
   listNudgeEvents: vi.fn(async (): Promise<ReadonlyArray<NudgeEvent>> => []),
   store: {
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    autoTreeViews: Object.fromEntries<ReadonlyArray<unknown>>([]),
     planConsumptions: {} as Record<string, ReadonlyArray<unknown>>,
     sessionGithub: {} as Record<string, unknown>,
     mountGithub: {} as Record<string, unknown>,
@@ -73,6 +74,7 @@ vi.mock('@goodboy/db', async () =>
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import { aDelegation, aTree, aView } from '../../auto/testing/autoViewFixtures';
 import { useSessionSuggestions } from '.';
 
 const session = { id: 'session-1', workspaceId: 'ws-1', goal: 'Ship the thing' } as Session;
@@ -110,6 +112,7 @@ afterEach(() => {
   resetWorktreeStatusCache();
   store.sessionEvents = {};
   store.sessionPhaseRuns = {};
+  store.autoTreeViews = {};
 });
 
 const rebaseRequested = ({
@@ -420,7 +423,38 @@ describe('useSessionSuggestions open questions', () => {
       expect(answer?.kind === 'answer-questions' ? answer.payload : null).toEqual({
         count: 2,
         firstQuestion: { id: 'q-early', createdByAgentId: 'agent-q-early' },
+        rootAgentId: null,
       });
+    });
+  });
+
+  it('links the questions to the Auto run whose root and child asked them', async () => {
+    openQuestions.list = [
+      question('q-late', '2026-09-28T10:00:00.000Z'),
+      question('q-early', '2026-09-28T09:00:00.000Z'),
+    ];
+    store.autoTreeViews = {
+      'session-1': [
+        {
+          ...aView({}),
+          tree: { ...aTree({}), rootAgentId: 'agent-q-early' },
+          delegations: [
+            {
+              ...aDelegation({ key: 'late', role: 'planner', state: 'accepted' }),
+              childAgentId: 'agent-q-late',
+            },
+          ],
+        },
+      ],
+    };
+
+    const view = renderHook(() => useSessionSuggestions({ session, withRebase: false }));
+
+    await waitFor(() => {
+      const answer = view.result.current.find((s) => s.kind === 'answer-questions');
+      expect(answer?.kind === 'answer-questions' ? answer.payload.rootAgentId : null).toBe(
+        'agent-q-early',
+      );
     });
   });
 });

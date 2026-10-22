@@ -32,6 +32,7 @@ const QUESTION_OWNER: NeedsYouOwner = {
   questionIds: ['mock-central-question'],
   prNumber: null,
   owed: null,
+  mountId: null,
 };
 
 const FIX_CHECKS: SessionSuggestion = {
@@ -92,7 +93,11 @@ const FIXER_NEVER_STARTED: AutoActionTarget = {
   rootAgentId: AUTO_ID,
   role: 'Fixer',
   kind: 'neverStarted',
+  noun: 'Fixer',
   reason: 'Auto created it at 10:21, no first message reached it.',
+  reasonCode: null,
+  mountId: null,
+  plan: null,
   canRetry: true,
 };
 

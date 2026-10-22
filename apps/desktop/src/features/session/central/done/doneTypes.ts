@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Agent, SessionEvent } from '@goodboy/types';
+import type { Agent, AgentId, SessionEvent } from '@goodboy/types';
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import type { AutoGroup } from '../../../auto/autoGroupOf';
 import type { WorkTimeSource } from '../../../workTreeModel/workTimeSource';
@@ -60,6 +60,7 @@ export type DoneRowModel = {
   readonly by: string;
   readonly at: string;
   readonly mountId: string | null;
+  readonly retryAgentId: AgentId | null;
   readonly detail: DoneDetail;
 };
 

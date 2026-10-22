@@ -1,11 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type IsoDateTime, type ProviderRunId, type SessionId } from '@goodboy/types';
 import { insertTurnEvent } from '@goodboy/db';
-import { AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
-import { batchInput, childInput, makeAutoWorld } from '../auto/testing/autoWorld';
+import { AUTO_SEED_ROOT, AUTO_SEED_SESSION } from '@goodboy/db/test-helpers/auto-seeds';
+import { batchInput, childInput, makeAutoWorld, type AutoWorld } from '../auto/testing/autoWorld';
 import { addOutboxRow } from '../auto/testing/deliveryWorld';
 import { readAutoTreeViews } from './readAutoTreeViews';
 import { sameAutoTreeViews } from './sameAutoTreeViews';
+
+const NORTHWIND = brandId<SessionId>({ value: 'session-northwind' });
+
+type WorldParams = {
+  readonly world: AutoWorld;
+};
+
+const addNorthwindSession = async ({ world }: WorldParams): Promise<void> => {
+  await world.db.execute(
+    'INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [NORTHWIND, 'workspace-harborline', 'ship notify-relay', 'idle', 0, 0],
+  );
+};
 
 describe('readAutoTreeViews', () => {
   it('reads the tree, its delegations and one budget from the registry', async () => {
@@ -146,6 +159,56 @@ describe('readAutoTreeViews', () => {
 
     const views = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
     expect(views[0]?.pendingRefusal).toEqual({ action: 'block', code: 'spec_invalid', roles: [] });
+  });
+
+  it('leaves out a child that was deleted or moved, and keeps one not created yet', async () => {
+    const world = await makeAutoWorld({ agentIds: ['agent-deleted', 'agent-moved', 'agent-kept'] });
+    await world.scheduler.admit(
+      batchInput({
+        children: [
+          childInput({ key: 'deleted' }),
+          childInput({ key: 'moved' }),
+          childInput({ key: 'kept' }),
+          childInput({ key: 'unborn' }),
+        ],
+      }),
+    );
+    await addNorthwindSession({ world });
+    await world.db.execute('UPDATE agents SET deleted_at = ? WHERE id = ?', [
+      world.clock.now(),
+      'agent-deleted',
+    ]);
+    await world.db.execute('UPDATE agents SET session_id = ? WHERE id = ?', [
+      NORTHWIND,
+      'agent-moved',
+    ]);
+
+    const views = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+
+    expect(views[0]?.delegations.map((delegation) => delegation.childAgentId)).toEqual([
+      'agent-kept',
+      'agent-unborn',
+    ]);
+  });
+
+  it('shows a moved child in the session that holds it now', async () => {
+    const world = await makeAutoWorld({ agentIds: ['agent-moved'] });
+    await world.scheduler.admit(batchInput({ children: [childInput({ key: 'moved' })] }));
+    await addNorthwindSession({ world });
+    await world.db.execute('UPDATE agents SET session_id = ? WHERE id IN (?, ?)', [
+      NORTHWIND,
+      'agent-moved',
+      AUTO_SEED_ROOT,
+    ]);
+    await world.db.execute('UPDATE auto_trees SET session_id = ?', [NORTHWIND]);
+
+    const before = await readAutoTreeViews({ db: world.db, sessionId: AUTO_SEED_SESSION });
+    const after = await readAutoTreeViews({ db: world.db, sessionId: NORTHWIND });
+
+    expect(before).toEqual([]);
+    expect(after[0]?.delegations.map((delegation) => delegation.childAgentId)).toEqual([
+      'agent-moved',
+    ]);
   });
 
   it('is empty for a session without an Auto tree', async () => {

@@ -1,5 +1,5 @@
 import type { Agent } from '@goodboy/types';
-import { autoGroupOf } from '../../../auto/autoGroupOf';
+import { autoGroupOf, type AutoGroupChild } from '../../../auto/autoGroupOf';
 import { agentWorkTime, estimateKeyOf } from '../../../workTreeModel/agentWorkTime';
 import type { WorkTimeSource } from '../../../workTreeModel/workTimeSource';
 import { AGENT_KIND_META, KIND_TO_ROLE } from '../../agent-kind';
@@ -190,6 +190,7 @@ const agentRowOf = ({
     ...line,
     at,
     mountId: entry.agent.mountId ?? null,
+    retryAgentId: null,
     detail: {
       ...ran,
       duration: agentDurationOf({ agent: entry.agent, kind: entry.agentKind, source }),
@@ -264,6 +265,7 @@ const runRowOf = ({ entry, slice, steps, context }: RunRowParams): DoneRowModel 
     ...line,
     at,
     mountId: mountOfSteps({ steps: shown }),
+    retryAgentId: null,
     detail: {
       model: summary?.name ?? null,
       effort: null,
@@ -333,9 +335,49 @@ const eventRowOf = ({
     ...outcomeLineOf({ entry, model: context.model }),
     at: entry.event.createdAt,
     mountId: entry.event.payload?.mountId ?? null,
+    retryAgentId: null,
     detail: EMPTY_DETAIL,
   };
 };
+
+type ChildParams = {
+  readonly child: AutoGroupChild;
+};
+
+const stoppedTitleOf = ({ child }: ChildParams): string =>
+  `You ${child.reasonCode === 'declined' ? 'declined' : 'stopped'} the ${child.noun.toLowerCase()}`;
+
+type ModelParams = {
+  readonly model: DoneModel;
+};
+
+const stoppedChildRowsOf = ({ model }: ModelParams): ReadonlyArray<DoneRowModel> =>
+  model.autoTrees
+    .filter((view) => !FINISHED_TREE_PHASES.has(view.tree.phase))
+    .flatMap((view) => {
+      const group = autoGroupOf({ view, agents: model.agents, now: model.now });
+      const rootEntry = model.entries.find(
+        (entry) => entry.kind === 'agent' && entry.agent.id === view.tree.rootAgentId,
+      );
+      return (group?.children ?? []).flatMap((child): ReadonlyArray<DoneRowModel> => {
+        if (child.state !== 'stopped' || child.finishedAt === null) {
+          return [];
+        }
+        const id = `auto-stopped:${child.agentId}`;
+        return [
+          {
+            id,
+            entryId: rootEntry?.id ?? id,
+            title: stoppedTitleOf({ child }),
+            by: 'Auto',
+            at: new Date(child.finishedAt).toISOString(),
+            mountId: child.mountId,
+            retryAgentId: child.agentId,
+            detail: EMPTY_DETAIL,
+          },
+        ];
+      });
+    });
 
 export const doneRowsOf = ({ model, source, costs }: Params): ReadonlyArray<DoneDay> => {
   const batchByEventId = historyBatchByEventIdOf({ events: model.events });
@@ -346,8 +388,9 @@ export const doneRowsOf = ({ model, source, costs }: Params): ReadonlyArray<Done
     batchByEventId,
     foldedRows: batchDoneRowsOf({ model, batchByEventId }),
   };
-  const rows = model.entries
-    .flatMap((entry): ReadonlyArray<DoneRowModel> => {
+  const rows = [
+    ...stoppedChildRowsOf({ model }),
+    ...model.entries.flatMap((entry): ReadonlyArray<DoneRowModel> => {
       switch (entry.kind) {
         case 'agent': {
           const row = agentRowOf({ entry, context });
@@ -371,8 +414,8 @@ export const doneRowsOf = ({ model, source, costs }: Params): ReadonlyArray<Done
           return exhaustive;
         }
       }
-    })
-    .sort((first, second) => second.at.localeCompare(first.at));
+    }),
+  ].sort((first, second) => second.at.localeCompare(first.at));
   const days: Array<DoneDay> = [];
   for (const row of rows) {
     const key = dayKeyOf({ at: row.at });

@@ -40,6 +40,7 @@ export type NeedsYouOwner = {
   readonly questionIds: ReadonlyArray<string>;
   readonly prNumber: number | null;
   readonly owed: FixRunOwed | null;
+  readonly mountId: string | null;
 };
 
 const plural = ({
@@ -163,7 +164,14 @@ const mergeFixRunOwners = ({
       }),
       { questions: 0, toReview: 0, pushFailed: 0, couldntFix: 0, target: null },
     );
-    return [{ ...owner, owed, text: owedText({ prNumber: owner.prNumber, owed }) }];
+    return [
+      {
+        ...owner,
+        owed,
+        text: owedText({ prNumber: owner.prNumber, owed }),
+        mountId: owed.target?.mountId ?? owner.mountId,
+      },
+    ];
   });
 };
 
@@ -253,6 +261,7 @@ const runOwnerOf = ({
     questionIds: questions.map((question) => question.id),
     prNumber: null,
     owed: null,
+    mountId: null,
   };
 };
 
@@ -279,6 +288,7 @@ const ownerOfRow = ({
     questionIds: [],
     prNumber: null,
     owed: null,
+    mountId: entry.kind === 'agent' ? (entry.agent.mountId ?? null) : null,
   };
   if (entry.kind === 'event') {
     if (entry.event.kind !== 'history_stopped') {
@@ -290,6 +300,7 @@ const ownerOfRow = ({
     return {
       ...base,
       kind: 'rebase',
+      mountId: entry.event.payload?.mountId ?? null,
       text: segmentsToText({
         segments: sessionEventLabel({ event: entry.event }),
       }),
@@ -304,7 +315,14 @@ const ownerOfRow = ({
     const prNumber = facts.prNumber ?? null;
     return owed === null
       ? null
-      : { ...base, kind: 'fixRun', text: owedText({ prNumber, owed }), prNumber, owed };
+      : {
+          ...base,
+          kind: 'fixRun',
+          text: owedText({ prNumber, owed }),
+          prNumber,
+          owed,
+          mountId: owed.target?.mountId ?? base.mountId,
+        };
   }
   if (entry.kind !== 'agent' || !isAskingRow({ item })) {
     return null;
@@ -350,6 +368,7 @@ const ownerOfQuestion = ({ entry }: { readonly entry: TimelineQuestionEntry }): 
     questionIds: entry.questions.map((question) => question.id),
     prNumber: null,
     owed: null,
+    mountId: null,
   };
 };
 

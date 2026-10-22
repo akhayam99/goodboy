@@ -3,16 +3,27 @@ import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { autoRetryRouteOf } from '../../store/slices/turn/autoRetryRouteOf';
 import { autoGroupOf, type AutoGroupChild } from './autoGroupOf';
 import { autoStuckKindOf, type AutoStuckKind } from './autoStuckKindOf';
+import { textField } from './chat/readJson';
 import { isAutoPlanAwaitingApproval } from './isAutoPlanAwaitingApproval';
 
 type AutoRetryTargetKind = AutoStuckKind | 'approve' | 'blocked';
+
+export type AutoPlanFacts = Readonly<{
+  name: string;
+  version: number;
+  branchCount: number;
+}>;
 
 export type AutoRetryTarget = Readonly<{
   agentId: AgentId;
   rootAgentId: AgentId;
   role: string;
+  noun: string;
   kind: AutoRetryTargetKind;
   reason: string | null;
+  reasonCode: string | null;
+  mountId: string | null;
+  plan: AutoPlanFacts | null;
   canRetry: boolean;
 }>;
 
@@ -43,23 +54,53 @@ const targetOfChild = ({
     agentId: child.agentId,
     rootAgentId,
     role: child.label,
+    noun: child.noun,
     kind,
     reason: child.reason,
+    reasonCode: child.reasonCode,
+    mountId: child.mountId,
+    plan: null,
     canRetry: autoRetryRouteOf({ views, runs: agents, agentId: child.agentId }) !== null,
   };
 };
 
-type OwnParams = {
-  readonly rootAgentId: AgentId;
+type ViewParams = {
+  readonly view: AutoTreeView;
+};
+
+const planOf = ({ view }: ViewParams): AutoPlanFacts | null => {
+  const row = view.artifacts.find(
+    (candidate) =>
+      candidate.artifact.kind === 'plan' &&
+      candidate.artifact.approvalState === 'needs_approval' &&
+      candidate.artifact.openReviseDelegationId === null,
+  );
+  if (row === undefined || row.title.trim() === '') {
+    return null;
+  }
+  const branches = new Set(
+    view.delegations.flatMap((delegation) => {
+      const mountId = textField({ source: delegation.target, key: 'mountId' });
+      return mountId === null ? [] : [mountId];
+    }),
+  );
+  return { name: row.title.trim(), version: row.revision, branchCount: branches.size };
+};
+
+type OwnParams = ViewParams & {
   readonly kind: 'approve' | 'blocked';
 };
 
-const ownTargetOf = ({ rootAgentId, kind }: OwnParams): AutoRetryTarget => ({
-  agentId: rootAgentId,
-  rootAgentId,
+const ownTargetOf = ({ view, kind }: OwnParams): AutoRetryTarget => ({
+  agentId: view.tree.rootAgentId,
+  rootAgentId: view.tree.rootAgentId,
   role: 'Auto',
+  noun: 'Auto',
   kind,
   reason: null,
+  reasonCode: null,
+  mountId: null,
+  plan: kind === 'approve' ? planOf({ view }) : null,
   canRetry: false,
 });
 
@@ -81,9 +122,7 @@ export const autoRetryTargetsOf = ({
     });
     return [
       ...children,
-      ...(isAutoPlanAwaitingApproval({ view })
-        ? [ownTargetOf({ rootAgentId, kind: 'approve' })]
-        : []),
-      ...(phase === 'blocked' ? [ownTargetOf({ rootAgentId, kind: 'blocked' })] : []),
+      ...(isAutoPlanAwaitingApproval({ view }) ? [ownTargetOf({ view, kind: 'approve' })] : []),
+      ...(phase === 'blocked' ? [ownTargetOf({ view, kind: 'blocked' })] : []),
     ];
   });

@@ -18,6 +18,7 @@ const owner = (overrides: Partial<NeedsYouOwner>): NeedsYouOwner => ({
   questionIds: [],
   prNumber: null,
   owed: null,
+  mountId: null,
   ...overrides,
 });
 

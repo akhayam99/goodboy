@@ -4,6 +4,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useTimelineOpen } from '../../hooks/useTimelineOpen';
 import type { SessionWorkModel } from '../useSessionWorkModel';
+import { DoneRetry } from './DoneRetry';
 import { DoneRow } from './DoneRow';
 import { DoneRowDetail } from './DoneRowDetail';
 import type { DoneChipFor, DoneDay } from './doneTypes';
@@ -61,6 +62,15 @@ export const DoneSection = ({ session, model, days, initialOpenId = null, chipFo
                       row={row}
                       openTarget={openTarget}
                       onShowInLog={() => openLog({ focusEntryId: row.entryId })}
+                      retry={
+                        row.retryAgentId === null ? null : (
+                          <DoneRetry
+                            sessionId={sessionId}
+                            agentId={row.retryAgentId}
+                            title={row.title}
+                          />
+                        )
+                      }
                     />
                   </DoneRow>
                 );

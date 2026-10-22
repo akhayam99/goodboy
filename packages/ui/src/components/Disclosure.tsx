@@ -13,6 +13,7 @@ export type DisclosureProps = {
   readonly testId?: string;
   readonly className?: string;
   readonly triggerClassName?: string;
+  readonly actions?: ReactNode;
 };
 
 export const Disclosure = ({
@@ -23,34 +24,45 @@ export const Disclosure = ({
   testId,
   className,
   triggerClassName,
+  actions,
 }: DisclosureProps) => {
   const bodyId = useId();
+  const trigger = (
+    <button
+      type="button"
+      aria-expanded={isOpen}
+      aria-controls={bodyId}
+      onClick={onToggle}
+      className={cn(
+        'flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover',
+        FOCUS_RING,
+        isOpen && 'bg-hover',
+        triggerClassName,
+      )}
+    >
+      <ChevronRight
+        size={ICON_SIZE.control}
+        aria-hidden
+        data-testid="disclosure-chevron"
+        className={cn(
+          'shrink-0 text-faint-foreground motion-safe:transition-transform',
+          isOpen && 'rotate-90',
+        )}
+      />
+      {label}
+    </button>
+  );
 
   return (
     <div data-testid={testId} className={cn('flex min-w-0 flex-col', className)}>
-      <button
-        type="button"
-        aria-expanded={isOpen}
-        aria-controls={bodyId}
-        onClick={onToggle}
-        className={cn(
-          'flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-hover',
-          FOCUS_RING,
-          isOpen && 'bg-hover',
-          triggerClassName,
-        )}
-      >
-        <ChevronRight
-          size={ICON_SIZE.control}
-          aria-hidden
-          data-testid="disclosure-chevron"
-          className={cn(
-            'shrink-0 text-faint-foreground motion-safe:transition-transform',
-            isOpen && 'rotate-90',
-          )}
-        />
-        {label}
-      </button>
+      {actions === undefined ? (
+        trigger
+      ) : (
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-1 flex-col">{trigger}</div>
+          {actions}
+        </div>
+      )}
       <Reveal
         open={isOpen}
         id={bodyId}

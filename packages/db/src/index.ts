@@ -721,6 +721,7 @@ export {
   insertAutoDelegationStatement,
   listAutoDelegations,
   listAutoDelegationsOfRequest,
+  listGoneAutoChildIds,
   listOpenAutoDelegations,
   patchAutoDelegationChecksStatement,
   patchAutoDelegationPublishStatement,

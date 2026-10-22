@@ -1,8 +1,11 @@
 import type { AgentId } from '@goodboy/types';
+import type { AutoPlanFacts } from '../../../auto/autoRetryTargetsOf';
 import type { AutoStuckKind } from '../../../auto/autoStuckKindOf';
-import { autoStuckLineOf } from '../../../auto/autoStuckLineOf';
+import { autoStuckVerbOf } from '../../../auto/autoStuckVerbOf';
+import { delegationReasonTextOf } from '../../../auto/delegationReasonTextOf';
 import type { NextStepBand, SessionSuggestion } from '../../../suggestions/types';
 import type { NeedsYouOwner, NeedsYouOwnerKind } from '../../timeline/needsYou';
+import { planSentenceOf } from './planSentenceOf';
 
 type AutoTargetKind = AutoStuckKind | 'approve' | 'blocked';
 
@@ -10,8 +13,12 @@ export type AutoActionTarget = {
   readonly agentId: AgentId;
   readonly rootAgentId: AgentId;
   readonly role: string;
+  readonly noun: string;
   readonly kind: AutoTargetKind;
   readonly reason: string | null;
+  readonly reasonCode: string | null;
+  readonly mountId: string | null;
+  readonly plan: AutoPlanFacts | null;
   readonly canRetry: boolean;
 };
 
@@ -31,6 +38,7 @@ export type ActionCardModel = {
   readonly detail: string | null;
   readonly mountId: string | null;
   readonly source: ActionCardSource;
+  readonly folded: ReadonlyArray<ActionCardModel>;
 };
 
 type Params = {
@@ -40,6 +48,10 @@ type Params = {
 };
 
 const PR_TARGET_PREFIX = 'pr:';
+
+const NO_CARDS: ReadonlyArray<ActionCardModel> = [];
+
+const NO_MOUNTS: ReadonlySet<string> = new Set();
 
 type OwnerParams = {
   readonly owner: NeedsYouOwner;
@@ -87,6 +99,8 @@ const suggestionMountIdOf = ({ suggestion }: SuggestionParams): string | null =>
 
 const AUTO_STUCK = 'Auto is stuck';
 
+const DECLARED_BLOCKED = 'declared_blocked';
+
 const autoTitleOf = ({ target }: AutoParams): string => {
   switch (target.kind) {
     case 'neverStarted':
@@ -95,7 +109,7 @@ const autoTitleOf = ({ target }: AutoParams): string => {
     case 'childBlocked':
       return AUTO_STUCK;
     case 'approve':
-      return 'Auto waits on your OK';
+      return target.plan?.name ?? 'Auto waits on your OK';
     case 'blocked':
       return 'Auto is blocked';
     default: {
@@ -108,11 +122,25 @@ const autoTitleOf = ({ target }: AutoParams): string => {
 const autoDetailOf = ({ target }: AutoParams): string | null => {
   const reason = target.reason === null || target.reason === '' ? null : target.reason;
   const { kind } = target;
-  if (kind === 'approve' || kind === 'blocked') {
+  if (kind === 'approve') {
+    return planSentenceOf({ plan: target.plan, questionCount: 0 });
+  }
+  if (kind === 'blocked') {
     return reason;
   }
-  const line = `${autoStuckLineOf({ title: target.role, kind })}.`;
-  return reason === null ? line : `${line} ${reason}`;
+  const line = `The ${target.noun.toLowerCase()} ${autoStuckVerbOf({ kind })}.`;
+  const why = humanReasonOf({ target });
+  return why === null ? line : `${line} ${why}`;
+};
+
+const humanReasonOf = ({ target }: AutoParams): string | null => {
+  if (target.reasonCode === null) {
+    return target.kind === 'childBlocked' ? null : target.reason;
+  }
+  if (target.reasonCode === DECLARED_BLOCKED) {
+    return null;
+  }
+  return delegationReasonTextOf({ reason: target.reasonCode });
 };
 
 const ownerCardOf = ({ owner }: OwnerParams): ActionCardModel => ({
@@ -122,8 +150,9 @@ const ownerCardOf = ({ owner }: OwnerParams): ActionCardModel => ({
   kind: owner.kind,
   title: owner.text,
   detail: owner.where,
-  mountId: owner.owed?.target?.mountId ?? null,
+  mountId: owner.mountId,
   source: { kind: 'owner', owner },
+  folded: NO_CARDS,
 });
 
 const suggestionCardOf = ({ suggestion }: SuggestionParams): ActionCardModel => ({
@@ -135,6 +164,7 @@ const suggestionCardOf = ({ suggestion }: SuggestionParams): ActionCardModel => 
   detail: suggestion.detail ?? null,
   mountId: suggestionMountIdOf({ suggestion }),
   source: { kind: 'suggestion', suggestion },
+  folded: NO_CARDS,
 });
 
 const autoCardOf = ({ target }: AutoParams): ActionCardModel => ({
@@ -144,9 +174,54 @@ const autoCardOf = ({ target }: AutoParams): ActionCardModel => ({
   kind: target.kind,
   title: autoTitleOf({ target }),
   detail: autoDetailOf({ target }),
-  mountId: null,
+  mountId: target.mountId,
   source: { kind: 'auto', target },
+  folded: NO_CARDS,
 });
+
+type CardsParams = {
+  readonly cards: ReadonlyArray<ActionCardModel>;
+};
+
+type CardParams = {
+  readonly card: ActionCardModel;
+};
+
+type FoldParams = CardParams & {
+  readonly behindIds: ReadonlySet<string>;
+};
+
+const behindMountIdsOf = ({ card }: CardParams): ReadonlySet<string> =>
+  card.source.kind === 'suggestion' && card.source.suggestion.kind === 'rebase-project'
+    ? new Set(card.source.suggestion.payload.targets.map((target) => target.mountId))
+    : NO_MOUNTS;
+
+const isFoldedRebase = ({ card, behindIds }: FoldParams): boolean =>
+  card.kind === 'rebase' && card.mountId !== null && behindIds.has(card.mountId);
+
+const foldStoppedRebases = ({ cards }: CardsParams): ReadonlyArray<ActionCardModel> => {
+  const behind = cards.find((card) => behindMountIdsOf({ card }).size > 0);
+  if (behind === undefined) {
+    return cards;
+  }
+  const behindIds = behindMountIdsOf({ card: behind });
+  const folded = cards.filter((card) => isFoldedRebase({ card, behindIds }));
+  if (folded.length === 0) {
+    return cards;
+  }
+  const stopped = `${folded.length} ${folded.length === 1 ? 'rebase' : 'rebases'} stopped`;
+  return cards
+    .filter((card) => !isFoldedRebase({ card, behindIds }))
+    .map((card) =>
+      card === behind
+        ? {
+            ...card,
+            detail: card.detail === null ? stopped : `${card.detail} · ${stopped}`,
+            folded: [...card.folded, ...folded],
+          }
+        : card,
+    );
+};
 
 const isOwnedElsewhere = ({ suggestion, ownedQuestionIds }: OwnedParams): boolean =>
   suggestion.kind === 'answer-questions' &&
@@ -176,5 +251,5 @@ export const actionCardsOf = ({
       .map((suggestion) => suggestionCardOf({ suggestion })),
     ...autoTargets.map((target) => autoCardOf({ target })),
   ];
-  return cards.sort(compareCards);
+  return foldStoppedRebases({ cards: cards.sort(compareCards) });
 };
