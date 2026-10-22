@@ -12,6 +12,41 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.10
+
+Next groups its rows by what you do, every run of a session sits under Runs, and Start a run picks how to run what you write.
+
+### New
+
+#### Start a run picks how to run what you write
+<!-- gb area=sessions -->
+
+Write what you want done at the top of New session or a session's Runs page and press Start. Goodboy picks a plan, one of your presets or one agent from what you wrote, and keeps the reason with the run. If the start fails, your text stays and Start becomes Retry.
+
+Start a run is also in the New menu and in `⌘K`, which offers Start a run from each preset.
+
+### Improved
+
+#### Next groups its rows by what you do
+<!-- gb area=sessions -->
+
+In the new overview, Next sorts its rows into Decide, Fix, Update and Ship, always in that order, each folding behind its name with its count. A branch, pull request or plan shows once per group, led by its worst blocker, and a row keeps its place when the list refreshes.
+
+Fix retries every stuck agent at once with Retry and the count, Update rebases every branch behind with Rebase all, and a click on a row opens its place. Questions an Auto run asked join the row of its plan.
+
+#### One Runs entry for every run
+<!-- gb area=sessions -->
+
+Preset runs, orchestrated runs, Auto conversations and the agents you started sit in one rail entry, Runs, one row per request, newest first, each saying what it was. A link to the old Orchestrated, Agents or Auto agents page opens Runs.
+
+### Fixed
+
+- An agent Auto started that you stopped or declined leaves Next and shows in What was done, with Retry. <!-- gb area=agents -->
+- An agent Auto started that a later agent replaced on the same branch no longer waits in Next. <!-- gb area=agents -->
+- Auto agents that were deleted or moved to another session no longer show as stuck in Next, Now or What was done. <!-- gb area=agents -->
+- A stuck agent in Next reads by its role and state, never the request Auto sent it. <!-- gb area=agents -->
+- A stopped rebase of a branch that is still behind joins the branches behind card instead of a card of its own. <!-- gb area=sessions -->
+
 ## Goodboy v0.27.9
 
 Every page shows the way up from where you are, and the text an agent writes appears live wherever it lands.
