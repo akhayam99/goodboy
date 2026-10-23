@@ -444,4 +444,33 @@ describe('outside an Auto tree writers are leased exactly as before', () => {
     expect(spawn?.writableRoots).toEqual(['/repo/api/.goodboy/worktrees/second', '/repo/api/.git']);
     expect(spawn?.workingDir).toBe('/repo/api/.goodboy/worktrees/first');
   });
+
+  it('also hands the CLI the git directory of each linked worktree it writes', async () => {
+    storySpies.gitCommonDirectory.mockResolvedValue('/repo/api/.git');
+    storySpies.worktreeGitDirectory.mockImplementation(async ({ worktreePath }) => {
+      const name = worktreePath.split('/').pop();
+      return `/repo/api/.git/worktrees/${name}`;
+    });
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [first.sessionId]: [
+          repoMount({ sessionId: first.sessionId, name: 'first' }),
+          repoMount({ sessionId: first.sessionId, name: 'second' }),
+        ],
+      },
+    });
+
+    await sendOutsideAuto(first);
+
+    const spawn = storySpies.runTurn.mock.calls[0]?.[0];
+    expect(spawn?.writableRoots).toEqual([
+      '/repo/api/.goodboy/worktrees/second',
+      '/repo/api/.git',
+      '/repo/api/.git/worktrees/first',
+      '/repo/api/.git/worktrees/second',
+    ]);
+    expect(storySpies.worktreeGitDirectory).toHaveBeenCalledWith({
+      worktreePath: '/repo/api/.goodboy/worktrees/first',
+    });
+  });
 });

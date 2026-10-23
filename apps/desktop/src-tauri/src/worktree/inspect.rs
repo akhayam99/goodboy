@@ -33,6 +33,16 @@ pub(super) fn common_git_dir_with(path: &Path, run_git: RunGit<'_>) -> Option<Pa
     canonical_path(&resolved)
 }
 
+pub(super) fn worktree_git_dir_with(path: &Path, run_git: RunGit<'_>) -> Option<PathBuf> {
+    let raw = run_git(path, &["rev-parse", "--git-dir"]).ok()?;
+    let value = PathBuf::from(raw.trim());
+    let resolved = match value.is_absolute() {
+        true => value,
+        false => path.join(value),
+    };
+    canonical_path(&resolved)
+}
+
 fn repository_top_level_with(path: &Path, run_git: RunGit<'_>) -> Option<PathBuf> {
     let raw = run_git(path, &["rev-parse", "--show-toplevel"]).ok()?;
     canonical_path(Path::new(raw.trim()))
@@ -116,6 +126,17 @@ pub async fn worktree_inspect(
 pub async fn worktree_git_common_dir(repo_path: String) -> Option<String> {
     tauri::async_runtime::spawn_blocking(move || {
         common_git_dir_with(Path::new(&repo_path), &mut |cwd, args| git(cwd, args))
+            .map(|path| path.to_string_lossy().into_owned())
+    })
+    .await
+    .ok()
+    .flatten()
+}
+
+#[tauri::command]
+pub async fn worktree_git_dir(worktree_path: String) -> Option<String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_git_dir_with(Path::new(&worktree_path), &mut |cwd, args| git(cwd, args))
             .map(|path| path.to_string_lossy().into_owned())
     })
     .await

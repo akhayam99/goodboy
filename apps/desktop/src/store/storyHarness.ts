@@ -426,6 +426,7 @@ export const storySpies = {
   gitCommonDirectory: vi.fn(
     async (_args: { readonly repoPath: string }): Promise<string | null> => null,
   ),
+  worktreeGitDirectory: vi.fn(async (_args: WorktreeBaseArgs): Promise<string | null> => null),
   worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => ({
     files: [],
     numstat: '',
@@ -557,6 +558,7 @@ export const resetStorySpies = () => {
   storySpies.gitCommonDirectory.mockImplementation(
     async ({ repoPath }: { readonly repoPath: string }) => `${repoPath}/.git`,
   );
+  storySpies.worktreeGitDirectory.mockImplementation(async () => null);
   storySpies.deleteSessionMount.mockImplementation(async () => true);
   storySpies.listSessionMounts.mockImplementation(async () => []);
   storySpies.inspectWorktree.mockImplementation(
@@ -900,6 +902,7 @@ export const worktreeModuleMock = () => ({
   worktreeSnapshot: vi.fn(async () => ({ head: 'abc123', entries: [], isPartial: false })),
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   gitCommonDirectory: (args: { readonly repoPath: string }) => storySpies.gitCommonDirectory(args),
+  worktreeGitDirectory: (args: WorktreeBaseArgs) => storySpies.worktreeGitDirectory(args),
   acquireWorktreeWriter: (args: { readonly path: string; readonly holder?: string }) =>
     storySpies.acquireWorktreeWriter(args),
   releaseWorktreeWriter: (args: { readonly path: string }) =>

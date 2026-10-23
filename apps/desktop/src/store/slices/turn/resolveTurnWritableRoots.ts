@@ -5,6 +5,8 @@ import {
   buildTurnWritableRoots,
   repoRootsForTurn,
   resolveGitCommonDirs,
+  resolveWorktreeGitDirs,
+  worktreePathsForTurn,
 } from './turnWritableRoots';
 import type { GetFn } from './types';
 
@@ -32,8 +34,11 @@ export const resolveTurnWritableRoots = async ({
   }
   const mounts = selectWritableMounts({ state: get(), sessionId });
   const gitDirs = await resolveGitCommonDirs({ repoRoots: repoRootsForTurn({ mounts }) });
+  const worktreeGitDirs = await resolveWorktreeGitDirs({
+    worktreePaths: worktreePathsForTurn({ mounts }),
+  });
   return {
     isolatedCopyPath,
-    writableRoots: buildTurnWritableRoots({ mounts, workingDir, gitDirs }),
+    writableRoots: buildTurnWritableRoots({ mounts, workingDir, gitDirs, worktreeGitDirs }),
   };
 };

@@ -82,8 +82,9 @@ database.
   with a writer `confinedRole` (implementer, tester, docs, scribe, ci-fixer,
   rewriter: the turns of an Auto
   tree, set by the Auto units) takes one lease over its write set before it
-  spawns: its working folder, the sibling mounts of the session and the common
-  metadata folder of each repo, the same list `turnWriteSet` hands to the CLI as
+  spawns: its working folder, the sibling mounts of the session, the common
+  metadata folder of each repo and the own git folder of each linked worktree
+  (`.git/worktrees/<name>`, from `worktree_git_dir`), the same list `turnWriteSet` hands to the CLI as
   `--add-dir` roots, so the roots and the lease keys cannot drift. Rust
   `acquire_write_set` (`worktree_writer.rs`) grants every key or none, in sorted
   canonical order, and leaves nothing behind when a key is busy. The lease is

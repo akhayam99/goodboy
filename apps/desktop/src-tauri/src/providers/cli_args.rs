@@ -899,6 +899,31 @@ mod tests {
     }
 
     #[test]
+    fn a_codex_writer_in_a_linked_worktree_gets_the_common_and_the_own_git_dir() {
+        let roots = strings(&[
+            "/repo/api/.git",
+            "/repo/api/.git/worktrees/first",
+            "/repo/api/.git/worktrees/second",
+        ]);
+        let args = spawn_args("acceptEdits", Some("implementer"), &[], &[], &roots);
+        let argv = turn_args("codex", &args);
+        let added: Vec<&str> = argv
+            .windows(2)
+            .filter(|pair| pair[0] == "--add-dir")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(value_after(&argv, "-s").as_deref(), Some("workspace-write"));
+        assert_eq!(
+            added,
+            vec![
+                "/repo/api/.git",
+                "/repo/api/.git/worktrees/first",
+                "/repo/api/.git/worktrees/second"
+            ]
+        );
+    }
+
+    #[test]
     fn a_read_only_role_never_gets_the_bypass_flags_of_cursor_gemini_or_opencode() {
         let args = spawn_args("bypassPermissions", Some("scout"), &[], &[], &[]);
         let cursor = turn_args("cursor-agent", &args);

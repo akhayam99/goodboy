@@ -311,6 +311,7 @@ pub fn run() {
             worktree::worktree_create,
             worktree::worktree_inspect,
             worktree::worktree_git_common_dir,
+            worktree::worktree_git_dir,
             worktree::worktree_remove_checked,
             worktree::worktree_detach_assessment,
             worktree::worktree_directory_size,

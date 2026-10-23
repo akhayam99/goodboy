@@ -2,11 +2,26 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 
-vi.mock('../../../features/worktree/worktree', () => ({
-  gitCommonDirectory: vi.fn(async () => null),
+const { gitCommonDirectory, worktreeGitDirectory } = vi.hoisted(() => ({
+  gitCommonDirectory: vi.fn(
+    async (_args: { readonly repoPath: string }): Promise<string | null> => null,
+  ),
+  worktreeGitDirectory: vi.fn(
+    async (_args: { readonly worktreePath: string }): Promise<string | null> => null,
+  ),
 }));
 
-import { buildTurnWritableRoots, repoRootsForTurn } from './turnWritableRoots';
+vi.mock('../../../features/worktree/worktree', () => ({
+  gitCommonDirectory,
+  worktreeGitDirectory,
+}));
+
+import {
+  buildTurnWritableRoots,
+  repoRootsForTurn,
+  resolveWorktreeGitDirs,
+  worktreePathsForTurn,
+} from './turnWritableRoots';
 
 const mount = (overrides: Partial<SessionProjectMount> = {}): SessionProjectMount => ({
   mountId: 'mount-api' as MountId,
@@ -38,6 +53,7 @@ describe('buildTurnWritableRoots', () => {
       mounts: [first, second],
       workingDir: first.worktreePath,
       gitDirs: new Map([['/repo/api', '/repo/api/.git']]),
+      worktreeGitDirs: new Map(),
     });
 
     expect(roots).toEqual(['/repo/api/.goodboy/worktrees/second', '/repo/api/.git']);
@@ -50,6 +66,7 @@ describe('buildTurnWritableRoots', () => {
       mounts: [first],
       workingDir: first.worktreePath,
       gitDirs: new Map([['/repo/api', '/elsewhere/api.git']]),
+      worktreeGitDirs: new Map(),
     });
 
     expect(roots).toEqual(['/elsewhere/api.git']);
@@ -60,6 +77,7 @@ describe('buildTurnWritableRoots', () => {
       mounts: [first],
       workingDir: '/somewhere/else',
       gitDirs: new Map(),
+      worktreeGitDirs: new Map(),
     });
 
     expect(roots).toEqual(['/repo/api/.goodboy/worktrees/first', '/repo/api/.git']);
@@ -78,9 +96,96 @@ describe('buildTurnWritableRoots', () => {
       ],
       workingDir: '/repo/api/.goodboy/worktrees/first',
       gitDirs: new Map(),
+      worktreeGitDirs: new Map(),
     });
 
     expect(roots).toEqual([]);
+  });
+});
+
+describe('buildTurnWritableRoots in a linked worktree', () => {
+  const firstOwn = '/repo/api/.git/worktrees/first';
+  const secondOwn = '/repo/api/.git/worktrees/second';
+
+  it('adds the per-worktree git directory next to the common one', () => {
+    const roots = buildTurnWritableRoots({
+      mounts: [first],
+      workingDir: first.worktreePath,
+      gitDirs: new Map([['/repo/api', '/repo/api/.git']]),
+      worktreeGitDirs: new Map([[first.worktreePath, firstOwn]]),
+    });
+
+    expect(roots).toEqual(['/repo/api/.git', firstOwn]);
+  });
+
+  it('adds the git directory of every sibling worktree it can write', () => {
+    const roots = buildTurnWritableRoots({
+      mounts: [first, second],
+      workingDir: first.worktreePath,
+      gitDirs: new Map([['/repo/api', '/repo/api/.git']]),
+      worktreeGitDirs: new Map([
+        [first.worktreePath, firstOwn],
+        [second.worktreePath, secondOwn],
+      ]),
+    });
+
+    expect(roots).toEqual([second.worktreePath, '/repo/api/.git', firstOwn, secondOwn]);
+  });
+
+  it('names a shared git directory once when the worktree is the main checkout', () => {
+    const roots = buildTurnWritableRoots({
+      mounts: [first],
+      workingDir: first.worktreePath,
+      gitDirs: new Map([['/repo/api', '/repo/api/.git']]),
+      worktreeGitDirs: new Map([[first.worktreePath, '/repo/api/.git']]),
+    });
+
+    expect(roots).toEqual(['/repo/api/.git']);
+  });
+
+  it('skips the per-worktree directory git did not report', () => {
+    const roots = buildTurnWritableRoots({
+      mounts: [first],
+      workingDir: first.worktreePath,
+      gitDirs: new Map([['/repo/api', '/repo/api/.git']]),
+      worktreeGitDirs: new Map(),
+    });
+
+    expect(roots).toEqual(['/repo/api/.git']);
+  });
+});
+
+describe('worktreePathsForTurn', () => {
+  it('names each writable worktree once and skips detached mounts', () => {
+    const paths = worktreePathsForTurn({
+      mounts: [
+        first,
+        second,
+        mount({ worktreePath: '/repo/api/.goodboy/worktrees/gone', isAttached: false }),
+      ],
+    });
+
+    expect(paths).toEqual([first.worktreePath, second.worktreePath]);
+  });
+});
+
+describe('resolveWorktreeGitDirs', () => {
+  it('asks git for each worktree and drops the ones it cannot answer', async () => {
+    worktreeGitDirectory.mockImplementation(async ({ worktreePath }) => {
+      if (worktreePath === 'api-gone') {
+        return null;
+      }
+      if (worktreePath === 'api-broken') {
+        throw new Error('not a git repository');
+      }
+      return `${worktreePath}.git`;
+    });
+
+    const resolved = await resolveWorktreeGitDirs({
+      worktreePaths: ['api-first', 'api-gone', 'api-broken'],
+    });
+
+    expect(Array.from(resolved)).toEqual([['api-first', 'api-first.git']]);
   });
 });
 
