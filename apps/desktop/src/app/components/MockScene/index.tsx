@@ -18,6 +18,8 @@ export { MOCK_SCENES } from './registry';
 
 quietSceneRepoCheck();
 
+const DEFAULT_SCENE = import.meta.env.MODE === 'demo' ? 'demo' : 'workspace';
+
 export const MockScene = () => {
   useReportSheetParam();
   useEffect(() => {
@@ -25,7 +27,7 @@ export const MockScene = () => {
   }, []);
 
   const params = new URLSearchParams(window.location.search);
-  const sceneName = params.get('scene') ?? 'workspace';
+  const sceneName = params.get('scene') ?? DEFAULT_SCENE;
   const Scene = MOCK_SCENES[sceneName];
 
   if (params.get('brand') === '1') {

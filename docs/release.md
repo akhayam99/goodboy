@@ -47,6 +47,9 @@ There are two targets, both attached to the same draft release:
   stay macOS-only. A Linux user takes the next package from the release page.
 - Publishing the draft triggers `.github/workflows/homebrew.yml`, which bumps
   the cask in the tap.
+- The squash merge of the release PR on `main` redeploys `demo.goodboy-ai.dev`
+  from Vercel; no other commit on `main` does. The rule and the project
+  settings are in [mock-screenshots.md](mock-screenshots.md#published-demo).
 
 ## Cargo cache
 
