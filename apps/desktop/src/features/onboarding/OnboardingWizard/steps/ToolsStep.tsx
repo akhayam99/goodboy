@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useContext, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Button, FormActions, KeyHint, Notice, cn, useEscapeLayer } from '@goodboy/ui';
 import type { Project, WorkspaceId } from '@goodboy/types';
@@ -8,6 +8,7 @@ import { useToolConnections } from '../../../integrations/useToolConnections';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { hostFromRemote, hostsInOrder, type CodeHost } from '../hostFromRemote';
+import { InstantToolConnectContext } from '../instantToolConnectContext';
 import { isStepEnter } from '../stepEnter';
 import { useProjectRemote } from '../useProjectRemote';
 import { wizardCta } from '../wizardCta';
@@ -18,6 +19,10 @@ import { ToolRow } from './ToolRow';
 import { ToolsSection } from './ToolsSection';
 
 type Tool = CodeHost | 'linear' | 'jira';
+
+type ToggleParams = {
+  readonly tool: Tool;
+};
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -76,6 +81,7 @@ export const ToolsStep = ({
   const [openTool, setOpenTool] = useState<Tool | null>(null);
   const [isOtherHostsOpen, setIsOtherHostsOpen] = useState(false);
   const { connected, githubIdentity } = useToolConnections({ workspaceId: boundId });
+  const instantConnect = useContext(InstantToolConnectContext);
   const firstRepo = projects.filter((project) => project.kind === 'repo')[0] ?? null;
   const originHost = hostFromRemote(useProjectRemote({ project: firstRepo }));
   const [leadHost, ...otherHosts] = hostsInOrder(originHost);
@@ -89,7 +95,13 @@ export const ToolsStep = ({
     hasFailed: false,
   });
   useEscapeLayer(() => setOpenTool(null), openTool !== null);
-  const toggle = (tool: Tool) => setOpenTool(openTool === tool ? null : tool);
+  const toggle = ({ tool }: ToggleParams) => {
+    if (instantConnect !== null && tool !== 'github' && !connected[tool]) {
+      instantConnect({ workspaceId: boundId, tool });
+      return;
+    }
+    setOpenTool(openTool === tool ? null : tool);
+  };
   const GitlabBody = FORM_BODIES.gitlab;
   const BitbucketBody = FORM_BODIES.bitbucket;
   const LinearBody = FORM_BODIES.linear;
@@ -112,7 +124,7 @@ export const ToolsStep = ({
       })}
       isReady={connected[host]}
       isOpen={openTool === host}
-      onToggle={() => toggle(host)}
+      onToggle={() => toggle({ tool: host })}
       form={HOST_FORM[host]}
     />
   );
@@ -188,7 +200,7 @@ export const ToolsStep = ({
             line={MANAGER_LINE.linear}
             isReady={connected.linear}
             isOpen={openTool === 'linear'}
-            onToggle={() => toggle('linear')}
+            onToggle={() => toggle({ tool: 'linear' })}
             form={<LinearBody workspaceId={boundId} shouldAutoFocus />}
           />
           <ToolRow
@@ -196,7 +208,7 @@ export const ToolsStep = ({
             line={MANAGER_LINE.jira}
             isReady={connected.jira}
             isOpen={openTool === 'jira'}
-            onToggle={() => toggle('jira')}
+            onToggle={() => toggle({ tool: 'jira' })}
             form={<JiraBody workspaceId={boundId} shouldAutoFocus />}
           />
         </ul>

@@ -105,6 +105,7 @@ export const DemoStage = ({
   const sent = useRef(new Map<string, SentCommand>());
   const hintsSent = useRef(new Map<string, string>());
   const revealSent = useRef(0);
+  const [loadEpoch, setLoadEpoch] = useState(0);
 
   const currentKey = activeFrame.key;
   const currentKeyRef = useRef(currentKey);
@@ -144,8 +145,27 @@ export const DemoStage = ({
       }
       const report = event.data;
       if (report.type === 'ready') {
+        const isReload = sent.current.has(key);
         sent.current.set(key, { generation: report.generation, type: null });
         markMounted({ key });
+        if (isReload) {
+          hintsSent.current.delete(key);
+          setLoadEpoch((epoch) => epoch + 1);
+        }
+        if (isReload && key === currentKeyRef.current) {
+          onHintReport({
+            key,
+            report: {
+              channel: DEMO_PROTOCOL.channel,
+              version: DEMO_PROTOCOL.version,
+              generation: report.generation,
+              type: 'anchor',
+              hintId: null,
+              rect: null,
+              isOffscreen: false,
+            },
+          });
+        }
       }
       onReport({ key, report });
     };
@@ -207,7 +227,7 @@ export const DemoStage = ({
     }
     postToFrame({ frame: element, message: { generation: last.generation, type: command.type } });
     sent.current.set(command.key, { generation: last.generation, type: command.type });
-  }, [command, mountedKeys]);
+  }, [command, mountedKeys, loadEpoch]);
 
   useEffect(() => {
     if (hintTrack === undefined || !mountedKeys.has(currentKey)) {
@@ -232,7 +252,7 @@ export const DemoStage = ({
         settledIds: hintTrack.settledIds,
       },
     });
-  }, [hintTrack, mountedKeys, currentKey, command]);
+  }, [hintTrack, mountedKeys, currentKey, command, loadEpoch]);
 
   useEffect(() => {
     if (reveal === undefined || reveal.count === revealSent.current) {

@@ -19,6 +19,9 @@ import {
   type WizardSceneAgents,
   type WizardSceneWorkspace,
 } from '../onboarding/wizardSceneSeed';
+import { sampleScoutRuns } from '../onboarding/sampleScoutRuns';
+import { connectDemoTool } from '../onboarding/connectDemoTool';
+import { InstantToolConnectContext } from '../../../../../features/onboarding/OnboardingWizard/instantToolConnectContext';
 import { sceneParam } from './sceneParams';
 
 type PickParams<T extends string> = {
@@ -74,6 +77,7 @@ export const OnboardingScene = () => {
     const { step, agents, ws } = setup;
     seedWizardScene({ agents, ws, hasLinear: step === 'first-session' });
     setIsReady(true);
+    return () => sampleScoutRuns.cancel();
   }, [setup]);
 
   useEffect(() => {
@@ -96,7 +100,9 @@ export const OnboardingScene = () => {
       {session === undefined ? null : (
         <ShellFrame session={session} main={<ChatView session={session} />} />
       )}
-      <OnboardingWizard />
+      <InstantToolConnectContext.Provider value={connectDemoTool}>
+        <OnboardingWizard />
+      </InstantToolConnectContext.Provider>
     </main>
   );
 };

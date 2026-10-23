@@ -2,20 +2,32 @@ import { isHintId } from '../director/isHintId';
 import { HINT_PROGRESS_KEY } from './hintProgressKey';
 import type { ChapterHintProgress, HintProgress } from './hintProgressTypes';
 
-const idsOf = (value: unknown): ReadonlyArray<string> =>
+type ValueParams = {
+  readonly value: unknown;
+};
+
+type Params = {
+  readonly fallback: HintProgress;
+};
+
+const idsOf = ({ value }: ValueParams): ReadonlyArray<string> =>
   Array.isArray(value) ? value.filter((entry) => isHintId(entry)) : [];
 
-const chapterOf = (value: unknown): ChapterHintProgress => {
+const epochOf = ({ value }: ValueParams): number =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+
+const chapterOf = ({ value }: ValueParams): ChapterHintProgress => {
   if (typeof value !== 'object' || value === null) {
-    return { tried: [], skipped: [] };
+    return { tried: [], skipped: [], epoch: 0 };
   }
   return {
-    tried: idsOf(Reflect.get(value, 'tried')),
-    skipped: idsOf(Reflect.get(value, 'skipped')),
+    tried: idsOf({ value: Reflect.get(value, 'tried') }),
+    skipped: idsOf({ value: Reflect.get(value, 'skipped') }),
+    epoch: epochOf({ value: Reflect.get(value, 'epoch') }),
   };
 };
 
-export const readHintProgress = (): HintProgress => {
+export const readHintProgress = ({ fallback }: Params): HintProgress => {
   try {
     const raw = window.localStorage.getItem(HINT_PROGRESS_KEY);
     if (raw === null) {
@@ -28,9 +40,9 @@ export const readHintProgress = (): HintProgress => {
     return Object.fromEntries(
       Object.entries(parsed)
         .filter(([chapterId]) => isHintId(chapterId))
-        .map(([chapterId, value]) => [chapterId, chapterOf(value)]),
+        .map(([chapterId, value]) => [chapterId, chapterOf({ value })]),
     );
   } catch {
-    return {};
+    return fallback;
   }
 };

@@ -96,7 +96,8 @@ Below, `X` is the new version and `X-1` is the current latest.
      chapter plays to the end with no console error and no control that does
      nothing.
    - The version chip in the demo top bar shows `vX`.
-   - The demo still works in a phone-width window.
+   - The phone page works (touch emulation, which matches
+     `(hover: none) and (pointer: coarse)`).
 3. Wait until ALL CI checks are green (`gh pr checks`). Then merge on the
    server (`gh pr merge --squash --admin`). `main` asks collaborator PRs for
    one approving review and the owner bypasses only that rule, so `--admin`

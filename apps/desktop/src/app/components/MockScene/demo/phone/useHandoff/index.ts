@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 
-export type HandoffState = 'idle' | 'shared' | 'copied';
+export type HandoffState = 'idle' | 'shared' | 'copied' | 'failed';
 
-type HandoffResult = HandoffState | 'cancelled' | 'failed';
+type HandoffResult = HandoffState | 'cancelled';
 
 type Params = {
   readonly url: string;
@@ -57,10 +57,10 @@ const sendLink = async ({ url, title, text }: Params): Promise<HandoffResult> =>
 };
 
 const settledState = ({ result }: SettleParams): HandoffState => {
-  if (result === 'shared' || result === 'copied') {
-    return result;
+  if (result === 'cancelled') {
+    return 'idle';
   }
-  return 'idle';
+  return result;
 };
 
 export const useHandoff = ({ url, title, text }: Params): Handoff => {
