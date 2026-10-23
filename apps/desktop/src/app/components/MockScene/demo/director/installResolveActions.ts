@@ -169,6 +169,7 @@ const spawnResolver = ({ store, sessionId, threadIds, name, prompt }: SpawnParam
     store,
     cues: resolveFixCues({ sessionId, agentId, runId, attemptId: attempt.id, threadIds }),
     now: () => nowIso({}),
+    agentId,
   });
   runningFixes.set(agentId, cancel);
   return agentId;
@@ -277,7 +278,7 @@ export const installResolveActions = ({ store }: Params): void => {
           ...entry.thread,
           state: 'fixed',
           stage: 'approved',
-          replyDraft: reply ?? entry.thread.replyDraft,
+          replyDraft: reply === '' ? entry.thread.replyDraft : reply,
         },
       }),
     });
