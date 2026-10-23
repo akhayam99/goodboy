@@ -2,6 +2,7 @@ import type { Project, ProjectId, ProjectSentryLink } from '@goodboy/types';
 import type { SentryCodeMapping } from '../integrations/sentry/client';
 import { suggestLinks } from '../integrations/sentry/SentryProjectMap/suggestLinks';
 import { sentryLinkedProjects } from './attachInboxProjects';
+import { recordRepoProjectIds } from './recordRepoProjectIds';
 import { recordRepoPath, repoHostOf, repoProjectsOf } from './repoProjectsOf';
 import type { InboxProvider } from './types';
 
@@ -62,9 +63,11 @@ export const launchMountFor = ({
     if (path === null) {
       return null;
     }
-    const ids = repoProjectsOf({ host, projects, gitlabHosts })
-      .filter((candidate) => candidate.path === path)
-      .map((candidate) => candidate.id);
+    const ids = recordRepoProjectIds({
+      host,
+      url: source.url,
+      repos: repoProjectsOf({ host, projects, gitlabHosts }),
+    });
     return rankedMount({
       ids,
       projects,

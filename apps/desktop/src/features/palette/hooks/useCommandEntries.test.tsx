@@ -184,6 +184,36 @@ describe('the palette entries for new things', () => {
     expect(keys).toContain('action:new-terminal');
   });
 
+  it('opens the New session page on a workflow or an agent, by the names of the page', () => {
+    const openSessionDraft = vi.fn();
+    useAppStore.setState({ openSessionDraft });
+
+    const workflow = entryFor('action:new-session-workflow');
+    expect(workflow?.label).toBe('New workflow session');
+    expect(workflow?.secondary).toEqual(['New workflow', 'Orchestrated', 'Preset']);
+    act(() => workflow?.run());
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toMatchObject({
+      startKind: 'workflow',
+      startShape: null,
+      hasChosenStart: true,
+    });
+
+    const agent = entryFor('action:new-session-agent');
+    act(() => agent?.run());
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.startKind).toBe('agent');
+    expect(openSessionDraft).toHaveBeenCalledTimes(2);
+  });
+
+  it('opens Auto picks from Start a run outside a session, and leaves it to the session inside one', () => {
+    expect(entryKeys()).not.toContain('action:start-run-auto-picks');
+    useAppStore.setState({ currentSessionId: null, openSessionDraft: vi.fn() });
+
+    const start = entryFor('action:start-run-auto-picks');
+    expect(start?.label).toBe('Start a run');
+    act(() => start?.run());
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.startKind).toBe('auto');
+  });
+
   it('lists Reset chat only while Ask is open for the session', () => {
     expect(entryKeys()).not.toContain('action:ask-reset');
 

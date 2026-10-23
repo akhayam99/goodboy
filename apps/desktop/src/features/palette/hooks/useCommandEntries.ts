@@ -24,6 +24,7 @@ import { useLensDestinations } from '../../session/hooks/useLensDestinations';
 import { openLens } from '../../session/openLens';
 import { LENS_ICON } from '../../session/lens-labels';
 import { requestNewSession } from '../../session/requestNewSession';
+import { openNewSessionAs } from '../../session/startKind/openNewSessionAs';
 import { openReportSheet } from '../../bug-report/openReportSheet';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../notifications/studioEvent';
 import { terminalStudioPlace } from '../../terminal/terminalStudioPlace';
@@ -63,6 +64,11 @@ import { openSessionAnywhere } from '../openSessionAnywhere';
 import type { PaletteEntry } from '../types';
 import { useSessionsEverywhere } from './useSessionsEverywhere';
 import { projectById } from '../../../store/slices/projects/projectIndex';
+
+const NEW_SESSION_WITH = {
+  workflow: 'New workflow session',
+  agent: 'New agent session',
+} as const;
 
 const PAIR_SEPARATOR = '\u0000';
 
@@ -187,6 +193,17 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         run: () => {
           requestAskReset({ sessionId });
         },
+      });
+    }
+
+    if (sessionId === null) {
+      out.push({
+        key: 'action:start-run-auto-picks',
+        label: NAMES.startARun,
+        kind: 'create',
+        group: 'action',
+        icon: CONCEPT_ICONS.autoRouting,
+        run: () => openNewSessionAs({ startKind: 'auto' }),
       });
     }
 
@@ -356,6 +373,24 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
           icon: Plus,
           shortcut: 'session.new',
           run: requestNewSession,
+        },
+        {
+          key: 'action:new-session-workflow',
+          label: NEW_SESSION_WITH.workflow,
+          kind: 'create',
+          group: 'action',
+          icon: CONCEPT_ICONS.workflows,
+          secondary: ['New workflow', NAMES.runKind.orchestrated, NAMES.runKind.preset],
+          run: () => openNewSessionAs({ startKind: 'workflow' }),
+        },
+        {
+          key: 'action:new-session-agent',
+          label: NEW_SESSION_WITH.agent,
+          kind: 'create',
+          group: 'action',
+          icon: CONCEPT_ICONS.agents,
+          secondary: ['New agent', NAMES.runKind.autoAgent],
+          run: () => openNewSessionAs({ startKind: 'agent' }),
         },
         {
           key: 'action:new-chat',

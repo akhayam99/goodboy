@@ -117,7 +117,7 @@ describe('WorkflowBuilderView on the real store: autonomy', () => {
     expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Autonomy: Ask me' }));
     fireEvent.click(screen.getByRole('radio', { name: /^Autopilot/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Run an orchestrator' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
     expect(attachWorkflowToSession.mock.calls[0]?.[2]).toMatchObject({

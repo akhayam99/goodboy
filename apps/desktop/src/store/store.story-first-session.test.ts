@@ -106,7 +106,8 @@ describe('story: a first-run user opens their workspace and starts a session', (
     expect(recordedEventKinds()).toEqual([]);
   });
 
-  it('Start creates the session with nothing mounted', async () => {
+  it('Start on a workspace with one repo mounts that repo with nothing pinned', async () => {
+    primeMount();
     useAppStore.getState().openSessionDraft();
     const session = await useAppStore.getState().startSessionFromDraft({
       workspaceId: WORKSPACE_ID,
@@ -140,9 +141,12 @@ describe('story: a first-run user opens their workspace and starts a session', (
     expect(state.sessionExternalTasks[session.id]?.map((task) => task.identifier)).toEqual([
       'NW-214',
     ]);
-    expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(state.sessionWorktrees[session.id]).toEqual([]);
-    expect(state.sessionProjectMounts[session.id]).toEqual([]);
+    expect(storySpies.createWorktree).toHaveBeenCalledTimes(1);
+    expect(state.sessionWorktrees[session.id]).toEqual([MOUNT_PATH]);
+    expect(state.sessionProjectMounts[session.id]?.map((mount) => mount.projectId)).toEqual([
+      PROJECT_ID,
+    ]);
+    expect(recordedEventKinds()).not.toContain('project_materialization_proposed');
   });
 
   it('the first read turn runs from the scratch standpoint, mounting nothing', async () => {

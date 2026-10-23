@@ -77,13 +77,14 @@ const env: ActionEnv = {
 };
 
 describe('SPEC3 9.2 New session draft and the New forms, after one flow unit 5', () => {
-  it('is one Start a run field with Folders above it, and no start tabs', async () => {
+  it('starts from the task, asks the kind, and has no Folders field', async () => {
     await mountScene({ name: 'c10-start-workflow' });
 
     expect(screen.queryByRole('tablist', { name: 'How do you want to start?' })).toBeNull();
     const kickoff = within(screen.getByRole('region', { name: 'Kickoff' }));
-    kickoff.getByRole('region', { name: 'Folders' });
-    expect(kickoff.getByRole('textbox', { name: 'Start a run' })).toHaveProperty(
+    expect(kickoff.queryByRole('region', { name: 'Folders' })).toBeNull();
+    kickoff.getByRole('tablist', { name: 'What kind of run?' });
+    expect(kickoff.getByRole('textbox', { name: 'Task' })).toHaveProperty(
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );
@@ -101,13 +102,11 @@ describe('SPEC3 9.2 New session draft and the New forms, after one flow unit 5',
     screen.getByText('Keep this draft?');
   });
 
-  it('puts optional projects up front in a searchable picker with chips', async () => {
+  it('keeps folders an optional override behind Where, searchable', async () => {
     await mountScene({ name: 'c10-start-projects' });
 
-    screen.getByText('Optional');
     expect(screen.getByRole('combobox', { name: 'Search folders' })).toHaveProperty('value', 'pay');
-    screen.getByRole('button', { name: 'Remove payments-api' });
-    screen.getByRole('button', { name: 'Remove ledger-core' });
+    expect(screen.getByRole('combobox', { name: 'Where' }).textContent).toContain('2 folders');
   });
 
   it('marks a title Goodboy wrote as Named by Goodboy on the session hover card', async () => {

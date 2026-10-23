@@ -94,7 +94,7 @@ Choose how new session branches are named: a **Branch prefix**, with or without 
 
 ### New runs start as
 
-Choose how **Start a run** handles a new ask in this workspace: **Let Auto pick**, **A plan with steps** or **One agent**. A session default set from a run's **Change** menu wins over it. Each change shows a toast with **Undo**.
+Choose how **Start a run** handles a new ask in this workspace: **Let Auto pick**, **Workflow** or **Auto agent**. A session default set from a run's **Change** menu wins over it. Each change shows a toast with **Undo**.
 
 ### Monitoring
 

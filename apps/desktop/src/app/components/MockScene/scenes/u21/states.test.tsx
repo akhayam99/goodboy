@@ -59,7 +59,7 @@ describe('the u21 page-state scenes', () => {
     renderScene('runs-list-empty');
 
     expect(await screen.findByRole('textbox', { name: 'Start a run' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Run a workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start workflow' })).toBeNull();
   });
 
   it('shows the Artifacts first-time state', async () => {

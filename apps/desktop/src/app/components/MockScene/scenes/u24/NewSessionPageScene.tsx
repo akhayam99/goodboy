@@ -5,7 +5,6 @@ import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { draftFromWorkflow } from '../../../../../features/workflows/engine';
 import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
-import type { StartChoice } from '../../../../../store/slices/sessionDraft/state';
 import { kickoffDraftKey } from '../../../../../store/slices/workflowDrafts/kickoffDraftKey';
 import { durationHistory } from '../activityRunSeed';
 import { sceneClock } from '../../sceneClock';
@@ -61,8 +60,10 @@ const PRESET: Workflow = {
   updatedAt: clock.iso({ at: '2026-10-10T09:00:00.000Z' }),
 };
 
+export type SceneStartChoice = 'task' | 'workflow' | 'orchestrate' | 'scout';
+
 type SceneState = {
-  readonly choice: StartChoice;
+  readonly choice: SceneStartChoice;
   readonly isAuto?: boolean;
   readonly isPreset?: boolean;
   readonly goal: string;
@@ -80,7 +81,8 @@ export const NewSessionPageScene = ({ state }: Props) => {
     seedBoardScene();
     seedStudioChrome();
     const mode = state.isPreset === true ? 'preset' : 'dynamic';
-    const choice = state.choice === 'workflow' && mode === 'dynamic' ? 'orchestrate' : state.choice;
+    const isAgent = state.choice === 'scout';
+    const isWorkflow = state.choice === 'workflow' || state.choice === 'orchestrate';
     useAppStore.setState({
       phaseTemplates: { [WORKSPACE_ID]: [PRESET] },
       loadPhaseTemplates: async () => undefined,
@@ -88,11 +90,17 @@ export const NewSessionPageScene = ({ state }: Props) => {
       sessionDrafts: {
         [WORKSPACE_ID]: {
           ...EMPTY_SESSION_DRAFT,
-          choice,
-          ...(state.choice === 'workflow' && { workflowGoal: state.goal }),
-          ...(state.choice === 'orchestrate' && { workflowGoal: state.goal }),
-          ...(state.choice === 'scout' && state.isAuto === true && { autoGoal: state.goal }),
-          ...(state.choice === 'scout' && state.isAuto !== true && { agentPrompt: state.goal }),
+          workflowGoal: state.goal,
+          hasChosenStart: true,
+          ...(isWorkflow && {
+            startKind: 'workflow',
+            startShape: mode === 'preset' ? 'preset' : 'orchestrated',
+            ...(mode === 'preset' && { workflowId: PRESET_ID }),
+          }),
+          ...(isAgent && {
+            startKind: 'agent',
+            startShape: state.isAuto === true ? 'autoAgent' : 'agent',
+          }),
         },
       },
       openSessionDraftWorkspaceId: WORKSPACE_ID,

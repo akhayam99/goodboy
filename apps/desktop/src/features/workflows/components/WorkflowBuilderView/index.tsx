@@ -145,7 +145,7 @@ const IMMEDIATE_START: StartChoice = { triggerMode: 'immediate', chainAfterId: n
 
 const PRIMARY_LABEL: Readonly<Record<Mode, string>> = {
   preset: NAMES.startRun,
-  dynamic: NAMES.startOrchestrator,
+  dynamic: NAMES.startRun,
 };
 
 export const WorkflowBuilderView = (props: Props) => {

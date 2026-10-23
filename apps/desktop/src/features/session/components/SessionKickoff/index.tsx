@@ -1,14 +1,17 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { draftIssueKey } from '../../../../store/slices/sessionDraft/draftIssueKey';
-import { removeDraftIssue } from '../../../../store/slices/sessionDraft/removeDraftIssue';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import type { SessionDraftMount } from '../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { useLaunchMount } from '../../../inbox/useLaunchMount';
-import { StartRun } from '../StartRun/StartRun';
-import { KickoffProjects } from './KickoffProjects';
-import { PickedIssueRow } from './PickedIssueRow';
+import { useAutoTreeLimit } from '../../../auto/useAutoTreeLimit';
+import { useStartRun } from '../StartRun/useStartRun';
+import { AutoPicksActions } from './AutoPicksActions';
+import { StartKindChoice } from './StartKindChoice';
+import { StartShapeForm } from './StartShapeForm';
+import { StartTaskField } from './StartTaskField';
+import { useRestoreLastStart } from './useRestoreLastStart';
+import { useStartShape } from './useStartShape';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -20,6 +23,9 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
     (state) => selectSessionDraft({ state, workspaceId }).pickedIssues,
   );
   const projectIds = useAppStore((state) => selectSessionDraft({ state, workspaceId }).projectIds);
+  const startKind = useAppStore((state) => selectSessionDraft({ state, workspaceId }).startKind);
+  const startShape = useAppStore((state) => selectSessionDraft({ state, workspaceId }).startShape);
+  const isStarting = useAppStore((state) => selectSessionDraft({ state, workspaceId }).isStarting);
   const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
   const [first] = pickedIssues;
   const launch = useLaunchMount({
@@ -36,6 +42,10 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
       ? null
       : { projectId, reason: launch.reason };
   const prefilledRef = useRef<string | null>(null);
+  useRestoreLastStart({ workspaceId });
+  const limit = useAutoTreeLimit({ workspaceId });
+  const shapeRun = useStartShape({ workspaceId, mount, prepare: limit.persist });
+  const autoRun = useStartRun({ workspaceId, sessionId: null, mount, prepare: limit.persist });
 
   useEffect(() => {
     if (suggestedId === null || prefilledRef.current === suggestedId) {
@@ -47,34 +57,28 @@ export const SessionKickoff = ({ workspaceId, notice }: Props) => {
     }
   }, [patchSessionDraft, projectIds.length, suggestedId, workspaceId]);
 
+  const suggestedIds = suggestedId === null ? [] : [suggestedId];
+  const isAutoPicks = startKind === 'auto';
+  const isShaped = !isAutoPicks && startShape !== null;
+  const isBusy = isStarting || shapeRun.isStarting || autoRun.isStarting;
+  const hasGoal = autoRun.text.trim() !== '';
+
   return (
     <section aria-label="Kickoff" className="flex flex-col gap-6">
-      <KickoffProjects
+      <StartTaskField
         workspaceId={workspaceId}
-        suggestedIds={suggestedId === null ? [] : [suggestedId]}
-        launch={mount}
+        suggestedIds={suggestedIds}
+        isDisabled={isBusy}
+        isSubmitBlocked={!hasGoal || isBusy || (!isAutoPicks && !isShaped)}
+        onSubmit={() => void (isAutoPicks ? autoRun.start() : shapeRun.start())}
       />
-      {pickedIssues.length === 0 ? null : (
-        <ul aria-label="Picked issues" className="flex flex-col">
-          {pickedIssues.map((candidate, index) => {
-            const key = draftIssueKey({ candidate });
-            return (
-              <PickedIssueRow
-                key={key}
-                candidate={candidate}
-                isBranchNamer={index === 0 && pickedIssues.length > 1}
-                onRemove={() =>
-                  patchSessionDraft({
-                    workspaceId,
-                    patch: { pickedIssues: removeDraftIssue({ picked: pickedIssues, key }) },
-                  })
-                }
-              />
-            );
-          })}
-        </ul>
-      )}
-      <StartRun workspaceId={workspaceId} sessionId={null} mount={mount} />
+      {isAutoPicks ? null : <StartKindChoice workspaceId={workspaceId} isDisabled={isBusy} />}
+      {isAutoPicks ? (
+        <AutoPicksActions workspaceId={workspaceId} run={autoRun} limit={limit} />
+      ) : null}
+      {isShaped && startShape !== null ? (
+        <StartShapeForm workspaceId={workspaceId} shape={startShape} run={shapeRun} limit={limit} />
+      ) : null}
       {notice === undefined || notice === null ? null : (
         <div data-slot="kickoff-notice">{notice}</div>
       )}

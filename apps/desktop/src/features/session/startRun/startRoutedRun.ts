@@ -13,6 +13,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { openAgentRevealEvent } from '../../../shared/utils/openAgentReveal';
 import { ORCHESTRATED_WORKFLOW_NAME, uniqueWorkflowName } from '../../workflows/uniqueWorkflowName';
 import { presetSnapshotOf } from './presetSnapshotOf';
+import type { AgentKindRouting } from '../agent-kind';
 import type { RunRouteResult } from './runRouteOf';
 import { runRoutesKey, writeRunRoute } from './runRoutesSetting';
 
@@ -20,6 +21,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly result: RunRouteResult;
   readonly findings?: string;
+  readonly routing?: AgentKindRouting | null;
 };
 
 export type RoutedRun =
@@ -29,6 +31,7 @@ export const startRoutedRun = async ({
   sessionId,
   result,
   findings = '',
+  routing = null,
 }: Params): Promise<RoutedRun> => {
   const state = useAppStore.getState();
   const session = sessionById(state.sessions, sessionId);
@@ -43,6 +46,11 @@ export const startRoutedRun = async ({
       kindOverride: role ?? 'auto',
       initialPrompt: work,
       focus: 'agent',
+      ...(routing !== null && {
+        provider: routing.provider,
+        model: routing.model,
+        effort: routing.effort,
+      }),
     });
     await writeRunRoute({ db: tauriDatabase, sessionId, agentId, route });
     await useAppStore.getState().loadSetting(runRoutesKey({ sessionId }));

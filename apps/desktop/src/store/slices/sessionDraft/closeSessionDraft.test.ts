@@ -66,7 +66,7 @@ const write = ({
 }) =>
   store.getState().patchSessionDraft({
     workspaceId,
-    patch: { workflowGoal: 'Round the ledger postings', choice: 'workflow' },
+    patch: { workflowGoal: 'Round the ledger postings', startKind: 'workflow' },
   });
 
 const draftOf = ({

@@ -132,7 +132,7 @@ describe('the Move to Auto and Detach from Auto verbs of an agent', () => {
             presetName: null,
             closeness: null,
             role: 'implementer',
-            choice: 'One agent that starts what it needs',
+            choice: 'Agent · Auto agent',
             why: 'you picked it',
           },
         }),

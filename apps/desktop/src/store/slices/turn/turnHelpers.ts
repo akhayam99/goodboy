@@ -80,10 +80,9 @@ import type { SessionNudge } from '../nudges/state';
 import type { SetFn, GetFn } from '../../slice-types';
 import {
   deferredMaterializeNote,
-  materializationGate,
-  proposeMaterialization,
   runMaterializationBatch,
 } from '../project-mounts/materializationGate';
+import { admitProjectMount } from '../project-mounts/admitProjectMount';
 import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
 import { selectMountById } from '../project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './mountContinuations';
@@ -1032,48 +1031,32 @@ export const captureMaterializeRequestsFromTurn = async ({
           );
           continue;
         }
-        const decision = materializationGate({
-          get,
-          sessionId,
-          project,
-          immediateProjectIds: budget.immediateProjectIds,
-        });
-        if (decision.kind === 'deferred') {
-          try {
-            const proposal = await proposeMaterialization({
-              get,
-              sessionId,
-              project,
-              reason: request.reason,
-              cause: decision.cause,
-              agentId,
-              turnRunId: runId,
-            });
+        try {
+          const admitted = await admitProjectMount({
+            get,
+            sessionId,
+            project,
+            reason: request.reason,
+            budget,
+            agentId,
+            turnRunId: runId,
+          });
+          if (admitted.kind === 'asked') {
             decisionNote(
               deferredMaterializeNote({
                 projectName: project.name,
-                isAlreadyPending: proposal === 'already-pending',
+                isAlreadyPending: admitted.isAlreadyPending,
               }),
             );
-          } catch (error) {
-            note(`materialize failed for ${project.name}: ${formatError(error)}`);
-          }
-          continue;
-        }
-        try {
-          const outcome = await get().ensureProjectMounted({
-            sessionId,
-            projectId: project.id,
-            reason: request.reason,
-          });
-          if (outcome.status !== 'created') {
             continue;
           }
-          budget.immediateProjectIds.add(project.id);
+          if (admitted.result.status !== 'created') {
+            continue;
+          }
           const mount = selectMountById({
             state: get(),
             sessionId,
-            mountId: outcome.createdMountId,
+            mountId: admitted.result.createdMountId,
           });
           if (mount === null) {
             note(`materialize failed for ${project.name}: the created mount is not available`);

@@ -54,12 +54,10 @@ const settle = async (): Promise<void> => {
 const openDraft = async ({ text = '' }: { readonly text?: string } = {}): Promise<void> => {
   useAppStore.getState().navigate({ to: sessionPlace({ sessionId: cameFrom }) });
   useAppStore.getState().openSessionDraft();
-  if (text !== '') {
-    useAppStore.getState().patchSessionDraft({
-      workspaceId: WORKSPACE_ID,
-      patch: { workflowGoal: text, choice: 'workflow' },
-    });
-  }
+  useAppStore.getState().patchSessionDraft({
+    workspaceId: WORKSPACE_ID,
+    patch: { ...(text !== '' && { workflowGoal: text }), startKind: 'auto', hasChosenStart: true },
+  });
   render(
     <ToastProvider>
       <SessionDraftPane workspaceId={WORKSPACE_ID} />
@@ -161,7 +159,7 @@ describe('closing the New session page', () => {
 
   it('asks on Esc with only Start a run written, keeps it on reopen and Discard clears it', async () => {
     await openDraft();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Start a run' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Task' }), {
       target: { value: 'Reconcile the Northwind ledger' },
     });
 
@@ -176,7 +174,7 @@ describe('closing the New session page', () => {
     cleanup();
 
     await openDraft();
-    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Start a run' }).value).toBe(
+    expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Task' }).value).toBe(
       'Reconcile the Northwind ledger',
     );
 

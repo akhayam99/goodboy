@@ -65,18 +65,22 @@ describe('session draft slice', () => {
 
   it('keeps one draft per workspace and finds it intact', () => {
     h.slice.patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { workflowGoal: 'Ship it' } });
-    h.slice.patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { choice: 'workflow' } });
+    h.slice.patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { startKind: 'workflow' } });
 
     const draft = selectSessionDraft({ state: h.getState() as never, workspaceId: WORKSPACE_ID });
-    expect(draft).toEqual({ ...EMPTY_SESSION_DRAFT, workflowGoal: 'Ship it', choice: 'workflow' });
+    expect(draft).toEqual({
+      ...EMPTY_SESSION_DRAFT,
+      workflowGoal: 'Ship it',
+      startKind: 'workflow',
+    });
     expect(hasSessionDraftContent({ draft })).toBe(true);
     expect(
       selectSessionDraft({ state: h.getState() as never, workspaceId: 'ws-2' as WorkspaceId }),
     ).toBe(EMPTY_SESSION_DRAFT);
   });
 
-  it('counts a choice alone as no content', () => {
-    expect(hasSessionDraftContent({ draft: { ...EMPTY_SESSION_DRAFT, choice: 'scout' } })).toBe(
+  it('counts a picked kind alone as no content', () => {
+    expect(hasSessionDraftContent({ draft: { ...EMPTY_SESSION_DRAFT, startKind: 'agent' } })).toBe(
       false,
     );
   });
@@ -117,6 +121,7 @@ describe('session draft slice', () => {
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
+      shouldPickFolders: true,
       goal: 'Ship it',
       title: 'Ship it',
       omitGoalSlot: false,
@@ -141,6 +146,7 @@ describe('session draft slice', () => {
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
+      shouldPickFolders: true,
       goal: 'Look at the importer.',
       title: 'Look at the importer.',
       omitGoalSlot: false,
@@ -171,6 +177,7 @@ describe('session draft slice', () => {
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
+      shouldPickFolders: true,
       goal: 'Find one small bug',
       title: 'Find one small bug',
       omitGoalSlot: false,
@@ -193,6 +200,7 @@ describe('session draft slice', () => {
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
+      shouldPickFolders: true,
       goal: 'Scout the folder',
       title: 'Scout the folder',
       omitGoalSlot: true,
@@ -235,6 +243,7 @@ describe('session draft slice', () => {
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
+      shouldPickFolders: true,
       goal: 'Implement the folder',
       title: 'Implement the folder',
       omitGoalSlot: true,
@@ -265,6 +274,7 @@ describe('session draft slice', () => {
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
+      shouldPickFolders: true,
       goal: 'Stop crediting twice.',
       title: 'Invoices credited twice',
       omitGoalSlot: false,

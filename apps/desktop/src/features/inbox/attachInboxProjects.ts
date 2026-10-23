@@ -1,11 +1,6 @@
 import type { Project, ProjectId, ProjectSentryLink } from '@goodboy/types';
-import {
-  recordRepoPath,
-  repoHostOf,
-  repoProjectsOf,
-  type RepoHost,
-  type RepoProject,
-} from './repoProjectsOf';
+import { recordRepoProjectIds } from './recordRepoProjectIds';
+import { repoHostOf, repoProjectsOf, type RepoHost, type RepoProject } from './repoProjectsOf';
 import type { InboxRecord } from './types';
 
 type Params = {
@@ -39,11 +34,7 @@ export const attachInboxProjects = ({
   return records.map((record) => {
     const host = repoHostOf({ provider: record.provider });
     if (host !== null) {
-      const candidates = byHost[host];
-      const path = recordRepoPath({ host, url: record.url });
-      const projectIds = candidates
-        .filter((candidate) => candidate.path === path)
-        .map((candidate) => candidate.id);
+      const projectIds = recordRepoProjectIds({ host, url: record.url, repos: byHost[host] });
       return projectIds.length === 0 ? record : { ...record, projectIds };
     }
     if (record.payload.provider !== 'sentry') {

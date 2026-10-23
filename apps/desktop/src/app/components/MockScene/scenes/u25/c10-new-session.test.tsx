@@ -72,10 +72,7 @@ const FORM_SCENES: ReadonlyArray<readonly [SceneId, string]> = [
   ['c10-new-wireframe', 'Draw a wireframe'],
 ];
 
-const pickedNames = () =>
-  screen
-    .getAllByRole('button', { name: /^Remove / })
-    .map((chip) => chip.getAttribute('aria-label'));
+const whereLabel = (): string => screen.getByRole('combobox', { name: 'Where' }).textContent ?? '';
 
 describe('the c10 New session scenes', () => {
   it('registers one scene per state of the New session page and the New forms', () => {
@@ -94,22 +91,23 @@ describe('the c10 New session scenes', () => {
     }
   });
 
-  it('c10-start-task attaches HBL-412 above Start a run with one Start', async () => {
+  it('c10-start-task puts HBL-412 above the task and asks the kind before any Start', async () => {
     await mount({ id: 'c10-start-task' });
 
     expect(screen.getByRole('list', { name: 'Picked issues' }).textContent).toContain('HBL-412');
-    expect(screen.getAllByRole('button', { name: 'Start' })).toHaveLength(1);
+    expect(screen.getByRole('tablist', { name: 'What kind of run?' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Runs as/ })).toBeNull();
   });
 
-  it('c10-start-workflow is the Start a run field with the goal and the two project chips', async () => {
+  it('c10-start-workflow is the task with the goal and two folders pinned in Where', async () => {
     await mount({ id: 'c10-start-workflow' });
 
-    expect(screen.getByRole('textbox', { name: 'Start a run' })).toHaveProperty(
+    expect(screen.getByRole('textbox', { name: 'Task' })).toHaveProperty(
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );
-    expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
+    expect(whereLabel()).toContain('2 folders');
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
   });
 
@@ -135,11 +133,11 @@ describe('the c10 New session scenes', () => {
     expect(workspaceProjects).toHaveLength(50);
     const search = screen.getByRole('combobox', { name: 'Search folders' });
     expect(search).toHaveProperty('value', 'pay');
-    const listbox = screen.getByRole('listbox', { name: 'Folder' });
+    const listbox = screen.getByRole('listbox', { name: 'Where' });
     expect(within(listbox).getAllByRole('option')).toHaveLength(1);
     expect(within(listbox).getByRole('option', { name: /payments-api/ })).toBeDefined();
     expect(within(listbox).queryAllByText(/^(Suggested|All folders)$/).length).toBeGreaterThan(0);
-    expect(pickedNames()).toEqual(['Remove payments-api', 'Remove ledger-core']);
+    expect(whereLabel()).toContain('2 folders');
   });
 
   it('c10-start-failed keeps the draft, says why and turns Start into Retry', async () => {
@@ -148,7 +146,7 @@ describe('the c10 New session scenes', () => {
     expect(
       screen.getByText(/The branch hl\/retry-guard already exists in payments-api/),
     ).toBeDefined();
-    expect(screen.getByRole('textbox', { name: 'Start a run' })).toHaveProperty(
+    expect(screen.getByRole('textbox', { name: 'Task' })).toHaveProperty(
       'value',
       'Make ledger posts in payments-api safe to retry end to end, and keep ledger-core balances unchanged',
     );

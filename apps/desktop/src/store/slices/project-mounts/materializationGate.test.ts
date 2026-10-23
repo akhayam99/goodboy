@@ -1,7 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
+import { brandId } from '@goodboy/types';
 import type {
   IsoDateTime,
+  MountId,
   Project,
   ProjectId,
   SessionEvent,
@@ -16,6 +18,7 @@ import {
   proposeMaterialization,
   runMaterializationBatch,
 } from './materializationGate';
+import { admitProjectMount } from './admitProjectMount';
 import type { GetFn } from '../../slice-types';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -48,6 +51,11 @@ const harness = ({
 }: HarnessParams = {}) => {
   const recordSessionEvent = vi.fn(async () => undefined);
   const loadSessionEvents = vi.fn(async () => undefined);
+  const ensureProjectMounted = vi.fn(async () => ({
+    status: 'created' as const,
+    createdMountId: brandId<MountId>({ value: 'mount-new' }),
+    mountIds: [],
+  }));
   const state = {
     sessions: [
       {
@@ -67,6 +75,7 @@ const harness = ({
     sessionEvents: { [SESSION_ID]: events },
     loadSessionEvents,
     recordSessionEvent,
+    ensureProjectMounted,
   };
   return {
     get: (() => state) as unknown as GetFn,
@@ -81,6 +90,10 @@ type ImmediateParams = {
 
 const immediate = ({ projectIds = [] }: ImmediateParams): ReadonlySet<ProjectId> =>
   new Set(projectIds.map((projectId) => projectId as ProjectId));
+
+type AdmitParams = {
+  readonly id: string;
+};
 
 const PENDING_PROPOSAL: SessionEvent = {
   id: 'event-1' as SessionEventId,
@@ -182,6 +195,43 @@ describe('materializationGate', () => {
         immediateProjectIds: immediate({ projectIds: ['p-api', 'p-data'] }),
       }),
     ).toEqual({ kind: 'deferred', cause: 'batch' });
+  });
+
+  it('allows a folder the task links even after two extra folders', () => {
+    const { get } = harness({ mounts: ['p-one', 'p-two'] });
+
+    expect(
+      materializationGate({
+        get,
+        sessionId: SESSION_ID,
+        project: project({ id: WEB_ID, name: 'web' }),
+        immediateProjectIds: immediate({ projectIds: ['p-api', 'p-data'] }),
+        linkedProjectIds: [WEB_ID],
+      }),
+    ).toEqual({ kind: 'allowed' });
+  });
+
+  it('keeps a folder the task links out of the two extra folders at start', async () => {
+    const { get } = harness();
+    const budget = { immediateProjectIds: new Set<ProjectId>() };
+    const admit = ({ id }: AdmitParams) =>
+      admitProjectMount({
+        get,
+        sessionId: SESSION_ID,
+        project: project({ id, name: id }),
+        reason: 'from the task',
+        budget,
+        agentId: null,
+        turnRunId: null,
+        linkedProjectIds: [WEB_ID],
+      });
+
+    const linked = await admit({ id: WEB_ID });
+    const first = await admit({ id: 'p-api' });
+    const second = await admit({ id: 'p-data' });
+
+    expect([linked.kind, first.kind, second.kind]).toEqual(['mounted', 'mounted', 'mounted']);
+    expect([...budget.immediateProjectIds]).toEqual(['p-api', 'p-data']);
   });
 
   it('shares a batch budget across concurrent callers', async () => {

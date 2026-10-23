@@ -80,7 +80,7 @@ describe('runRouteOf, row 1: you said it', () => {
       shape: 'plan',
       closeness: 'follow',
       presetName: 'Fix a layout',
-      choice: 'Plan from Fix a layout, 3 steps · Follow the preset',
+      choice: 'Workflow · Preset Fix a layout · Follow it',
       why: 'you picked it',
     });
     expect(result.preset?.id).toBe(FIX_A_LAYOUT.id);
@@ -90,7 +90,12 @@ describe('runRouteOf, row 1: you said it', () => {
   it('starts the role named with an at sign as one agent', () => {
     const result = routeOf({ text: '@Scout where does payments-api validate a refund?' });
 
-    expect(result.route).toMatchObject({ row: 1, shape: 'lead', role: 'scout', choice: 'Scout' });
+    expect(result.route).toMatchObject({
+      row: 1,
+      shape: 'lead',
+      role: 'scout',
+      choice: 'Agent · Scout',
+    });
     expect(result.role).toBe('scout');
     expect(result.ask).toBe('where does payments-api validate a refund?');
   });
@@ -101,7 +106,7 @@ describe('runRouteOf, row 1: you said it', () => {
     expect(result.route).toMatchObject({
       row: 1,
       shape: 'plan',
-      choice: 'A plan with steps',
+      choice: 'Workflow · Orchestrated',
       why: 'your default',
     });
   });
@@ -128,7 +133,7 @@ describe('runRouteOf, row 2: a preset matches the ask', () => {
       shape: 'plan',
       closeness: 'adapt',
       presetName: 'Fix a layout',
-      choice: 'Plan from Fix a layout, 3 steps · Adapt as it goes',
+      choice: 'Workflow · Preset Fix a layout · Adapt as it goes',
       why: 'Your ask matches the preset',
     });
     expect(result.ask).toBe('Fix the layout of the Harborline billing page');
@@ -204,7 +209,7 @@ describe('runRouteOf, row 3: a task with an end', () => {
     expect(result.route).toMatchObject({
       row: 3,
       shape: 'plan',
-      choice: 'A plan with steps',
+      choice: 'Workflow · Orchestrated',
       why: 'A task with an end',
     });
   });
@@ -257,7 +262,7 @@ describe('runRouteOf, row 5: a question, a check or one file', () => {
     expect(result.route).toMatchObject({
       row: 5,
       shape: 'lead',
-      choice: 'One agent that starts what it needs',
+      choice: 'Agent · Auto agent',
       why: 'A question or a check, and no preset fits',
     });
   });
@@ -283,8 +288,8 @@ describe('runRouteOf, row 6: nothing above holds', () => {
       row: 6,
       shape: 'lead',
       presetName: null,
-      choice: 'One agent that starts what it needs',
-      why: 'Not sure yet: one agent first',
+      choice: 'Agent · Auto agent',
+      why: 'Not sure yet: an Auto agent first',
     });
     expect(result.ask).toBe('make the settings feel calmer');
   });

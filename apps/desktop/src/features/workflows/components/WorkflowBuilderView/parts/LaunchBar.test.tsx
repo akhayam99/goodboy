@@ -33,7 +33,7 @@ describe('LaunchBar', () => {
 
     const slot = screen.getByTestId('launch-estimate-slot');
     const discard = screen.getByRole('button', { name: 'Discard' });
-    const start = screen.getByRole('button', { name: 'Run a workflow' });
+    const start = screen.getByRole('button', { name: 'Start workflow' });
     expect(slot.contains(screen.getByTestId('chip'))).toBe(true);
     expect(discard.nextElementSibling).toBe(slot);
     expect(slot.nextElementSibling).toBe(start);
@@ -42,6 +42,6 @@ describe('LaunchBar', () => {
   it('collapses the slot when there is no estimate, so Discard touches Start', () => {
     render(bar({}));
     const discard = screen.getByRole('button', { name: 'Discard' });
-    expect(discard.nextElementSibling).toBe(screen.getByRole('button', { name: 'Run a workflow' }));
+    expect(discard.nextElementSibling).toBe(screen.getByRole('button', { name: 'Start workflow' }));
   });
 });

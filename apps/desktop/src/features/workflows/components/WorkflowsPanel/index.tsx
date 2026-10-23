@@ -17,7 +17,7 @@ import { WorkflowRulesPanel } from '../WorkflowRulesPanel';
 import { useRemovedBuiltins } from '../../hooks/useRemovedBuiltins';
 import { useSavedSteps } from '../../hooks/useSavedSteps';
 import { isPresetWorkflow } from '../../isPresetWorkflow';
-import { openNewRunDraft } from '../../../session/startRun/openNewRunDraft';
+import { openNewSessionAs } from '../../../session/startKind/openNewSessionAs';
 import { useWorkflowEditor } from './useWorkflowEditor';
 
 type Props = { readonly workspaceId: WorkspaceId };
@@ -116,7 +116,13 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
             }),
           })
         }
-        onStartRun={() => openNewRunDraft({ text: `~${historyWorkflow.name} ` })}
+        onStartRun={() =>
+          openNewSessionAs({
+            startKind: 'workflow',
+            startShape: 'preset',
+            presetId: historyWorkflow.id,
+          })
+        }
       />
     );
   const isPaneHosted = useStudioDrawer({

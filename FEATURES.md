@@ -24,6 +24,7 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 Begin from an issue, a workflow or a question. Everything starts as one draft, and it becomes a session only when you press Start, so empty sessions do not pile up.
 
+- The New session page
 - Start a run
 - Start on a task
 - Review a pull request

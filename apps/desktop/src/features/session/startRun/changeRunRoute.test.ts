@@ -87,7 +87,7 @@ const PLAN_ROUTE: RunRoute = {
   presetName: 'Fix a layout',
   closeness: 'adapt',
   role: null,
-  choice: 'Plan from Fix a layout, 1 step · Adapt as it goes',
+  choice: 'Workflow · Preset Fix a layout · Adapt as it goes',
   why: 'Your ask matches the preset',
   ask: ASK,
 };

@@ -28,6 +28,7 @@ import type {
   WorkflowId,
 } from '@goodboy/types';
 import { brandedId } from '../../../history/testing/brandedId';
+import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -159,27 +160,203 @@ const startThenRun: AppStore['startSessionFromDraft'] = async ({ start }) => {
   if (start.kind === 'workflow-run') {
     await start.run(cameFrom);
   }
+  if (start.kind === 'task' && start.then?.kind === 'workflow-run') {
+    await start.then.run(cameFrom);
+  }
   return cameFrom;
 };
 
+const TASK: IssueCandidate = {
+  provider: 'linear',
+  externalId: 'nw-88',
+  identifier: 'NW-88',
+  title: 'Retried webhooks post a second credit',
+  url: 'https://linear.app/northwind/issue/NW-88',
+  goal: 'Stop retried webhooks posting a second credit in payments-api',
+  body: '',
+  branchSlug: 'retried-webhooks-post-a-second-credit',
+};
+
+const typeGoal = (text: string): void => {
+  fireEvent.change(textBox('Task'), { target: { value: text } });
+};
+
+type ChooseParams = {
+  readonly box: string;
+  readonly option: RegExp;
+};
+
+const chooseOption = async ({ box, option }: ChooseParams): Promise<void> => {
+  fireEvent.click(screen.getByRole('combobox', { name: box }));
+  await settle();
+  fireEvent.click(screen.getByRole('option', { name: option }));
+  await settle();
+};
+
+const renderPage = async (): Promise<void> => {
+  render(
+    <ToastProvider>
+      <SessionDraftPane workspaceId={WORKSPACE_ID} />
+    </ToastProvider>,
+  );
+  await settle();
+};
+
+const autoPicks = async (): Promise<void> => {
+  fireEvent.click(screen.getByRole('button', { name: 'Not sure? Describe it and Auto picks' }));
+  await settle();
+};
+
+const KINDS = 'What kind of run?';
+
+type PickParams = {
+  readonly list: string;
+  readonly name: RegExp;
+};
+
+const cardOf = ({ list, name }: PickParams): HTMLElement =>
+  within(screen.getByRole('tablist', { name: list })).getByRole('tab', { name });
+
+const pick = async ({ list, name }: PickParams): Promise<void> => {
+  fireEvent.click(cardOf({ list, name }));
+  await settle();
+};
+
+const isPicked = ({ list, name }: PickParams): boolean =>
+  cardOf({ list, name }).getAttribute('aria-selected') === 'true';
+
 describe('New session page', () => {
-  it('is the Start a run field with Folders above it, and no start tabs', async () => {
+  it('opens on the task first, with Tasks and Where in its bottom row and no Folders field', async () => {
     await openPage();
 
-    expect(screen.queryByRole('tablist')).toBeNull();
-    const kickoff = within(screen.getByRole('region', { name: 'Kickoff' }));
-    expect(kickoff.getByRole('textbox', { name: 'Start a run' })).toBeDefined();
-    expect(kickoff.queryByRole('button', { name: 'Start an agent' })).toBeNull();
-    expect(kickoff.queryByRole('button', { name: 'Run a workflow' })).toBeNull();
+    const task = within(screen.getByRole('region', { name: 'Task' }));
+    expect(textBox('Task').placeholder).toBe('Describe a task, or pick one from Tasks');
+    expect(task.getByRole('combobox', { name: 'Pick from Tasks' })).toBeDefined();
+    expect(task.getByRole('combobox', { name: 'Where' }).textContent).toContain('Auto picks');
+    expect(screen.queryByRole('region', { name: 'Folders' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
+  });
+
+  it('asks for the kind on two explained cards under the task', async () => {
+    await openPage();
+
+    const kinds = within(screen.getByRole('tablist', { name: KINDS }));
+    expect(kinds.getAllByRole('tab').map((tab) => tab.getAttribute('aria-selected'))).toEqual([
+      'false',
+      'false',
+    ]);
+    expect(kinds.getAllByText('Example')).toHaveLength(2);
+    expect(screen.queryByRole('tablist', { name: 'Which workflow?' })).toBeNull();
+  });
+
+  it('shows the two kinds of the picked card and folds the first cards', async () => {
+    await openPage();
+
+    await pick({ list: KINDS, name: /^Workflow/ });
+
+    expect(isPicked({ list: KINDS, name: /^Workflow/ })).toBe(true);
+    const kinds = within(screen.getByRole('tablist', { name: KINDS }));
+    expect(kinds.queryByText('Example')).toBeNull();
+    const shapes = within(screen.getByRole('tablist', { name: 'Which workflow?' }));
+    const [orchestrated, preset] = shapes.getAllByRole('tab');
+    expect(orchestrated?.textContent?.startsWith('Orchestrated')).toBe(true);
+    expect(preset?.textContent?.startsWith('Preset')).toBe(true);
+    expect(
+      screen.queryByRole('button', { name: 'Not sure? Describe it and Auto picks' }),
+    ).toBeNull();
+  });
+
+  it('keeps the goal when you switch from one kind to the other', async () => {
+    await openPage();
+    await pick({ list: KINDS, name: /^Workflow/ });
+    await pick({ list: 'Which workflow?', name: /^Orchestrated/ });
+    useAppStore.getState().patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: { workflowGoal: GOAL },
+    });
+
+    await pick({ list: KINDS, name: /^Agent/ });
+    await pick({ list: 'Which agent?', name: /^Auto agent/ });
+
+    expect(isPicked({ list: 'Which agent?', name: /^Auto agent/ })).toBe(true);
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.workflowGoal).toBe(GOAL);
+  });
+
+  it('swaps the cards for Auto picks under the same task, and Pick it yourself brings them back', async () => {
+    await openPage();
+
+    await autoPicks();
+
+    expect(screen.queryByRole('tablist', { name: KINDS })).toBeNull();
+    const auto = within(screen.getByRole('region', { name: 'Start a run' }));
+    expect(
+      auto.getByText('Auto picks a workflow or an agent. Type ~preset or @role.'),
+    ).toBeDefined();
+    expect(textBox('Task')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Pick it yourself' }));
+    await settle();
+    expect(screen.getByRole('tablist', { name: KINDS })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Start a run' })).toBeNull();
+  });
+
+  it('pins folders from Where, and clearing them gives the choice back to Auto', async () => {
+    await openPage();
+
+    await chooseOption({ box: 'Where', option: /payments-api/ });
+    const where = screen.getByRole('combobox', { name: 'Where' });
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.projectIds).toHaveLength(1);
+    expect(where.textContent).not.toContain('Auto picks');
+
+    act(() =>
+      useAppStore.getState().patchSessionDraft({
+        workspaceId: WORKSPACE_ID,
+        patch: { projectIds: [] },
+      }),
+    );
+    await settle();
+    expect(screen.getByRole('combobox', { name: 'Where' }).textContent).toContain('Auto picks');
+  });
+
+  it('opens on the kind you started last in this workspace', async () => {
+    const loadSetting: AppStore['loadSetting'] = async (key) =>
+      key === `newSession.lastStart.${WORKSPACE_ID}` ? 'preset' : null;
+    useAppStore.setState({ loadSetting });
+
+    await openPage();
+
+    expect(isPicked({ list: KINDS, name: /^Workflow/ })).toBe(true);
+    expect(isPicked({ list: 'Which workflow?', name: /^Preset/ })).toBe(true);
+  });
+
+  it('keeps the pick of this window when another window starts something else', async () => {
+    let last: string | null = null;
+    const loadSetting: AppStore['loadSetting'] = async () => last;
+    useAppStore.setState({ loadSetting });
+    await openPage();
+    await pick({ list: KINDS, name: /^Agent/ });
+
+    last = 'preset';
+    cleanup();
+    render(
+      <ToastProvider>
+        <SessionDraftPane workspaceId={WORKSPACE_ID} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(isPicked({ list: KINDS, name: /^Agent/ })).toBe(true);
+    expect(screen.queryByRole('tablist', { name: 'Which workflow?' })).toBeNull();
   });
 
   it('keeps Start blank in the header and Discard in the actions row once something is written', async () => {
     await openPage();
+    await autoPicks();
 
     expect(screen.getByRole('button', { name: /start blank/i })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Discard' })).toBeNull();
 
-    fireEvent.change(textBox('Start a run'), { target: { value: GOAL } });
+    fireEvent.change(textBox('Task'), { target: { value: GOAL } });
 
     expect(screen.getAllByRole('button', { name: 'Discard' })).toHaveLength(1);
   });
@@ -187,8 +364,9 @@ describe('New session page', () => {
   it('creates the session and starts one agent with the ask Auto could not place', async () => {
     useAppStore.setState({ startSessionFromDraft: startThenRun, loadSetting: noSetting });
     await openPage();
+    await autoPicks();
 
-    fireEvent.change(textBox('Start a run'), { target: { value: GOAL } });
+    fireEvent.change(textBox('Task'), { target: { value: GOAL } });
     fireEvent.click(startButton());
 
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
@@ -206,8 +384,9 @@ describe('New session page', () => {
       loadSetting: noSetting,
     });
     await openPage();
+    await autoPicks();
 
-    fireEvent.change(textBox('Start a run'), { target: { value: `~Scout, plan, build ${GOAL}` } });
+    fireEvent.change(textBox('Task'), { target: { value: `~Scout, plan, build ${GOAL}` } });
     fireEvent.click(startButton());
 
     await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
@@ -217,5 +396,206 @@ describe('New session page', () => {
       rulesSnapshot: { route: { row: 1, presetName: 'Scout, plan, build', closeness: 'follow' } },
     });
     expect(spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('starts an orchestrated workflow with the route you picked', async () => {
+    const saveSetting = vi.fn<AppStore['saveSetting']>(async () => undefined);
+    useAppStore.setState({
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+      saveSetting,
+    });
+    await openPage();
+    await pick({ list: KINDS, name: /^Workflow/ });
+    await pick({ list: 'Which workflow?', name: /^Orchestrated/ });
+
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({
+      executionMode: 'dynamic',
+      goal: GOAL,
+      rulesSnapshot: { route: { shape: 'plan', presetName: null, why: 'you picked it' } },
+    });
+    expect(spawnAgent).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(saveSetting).toHaveBeenCalledWith(
+        `newSession.lastStart.${WORKSPACE_ID}`,
+        'orchestrated',
+      ),
+    );
+  });
+
+  it('starts the preset you picked and follows it when you say so', async () => {
+    useAppStore.setState({
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+    });
+    await openPage();
+    await pick({ list: KINDS, name: /^Workflow/ });
+    await pick({ list: 'Which workflow?', name: /^Preset/ });
+    typeGoal(GOAL);
+
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Start workflow' }).disabled).toBe(
+      true,
+    );
+    expect(screen.getByText('Pick a preset first.')).toBeDefined();
+    await chooseOption({ box: 'Preset', option: /Scout, plan, build/ });
+    const steps = screen.getByRole('list', { name: 'Preset steps' });
+    expect(within(steps).getAllByRole('listitem')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('tab', { name: 'Follow it' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({
+      rulesSnapshot: {
+        route: { presetName: 'Scout, plan, build', closeness: 'follow', why: 'you picked it' },
+        preset: { name: 'Scout, plan, build' },
+      },
+    });
+  });
+
+  it('starts the role you picked on the model you picked', async () => {
+    useAppStore.setState({ startSessionFromDraft: startThenRun, loadSetting: noSetting });
+    await openPage();
+    await pick({ list: KINDS, name: /^Agent/ });
+    await pick({ list: 'Which agent?', name: /^Agent/ });
+
+    expect(screen.queryByText(/^Limit/)).toBeNull();
+    await chooseOption({ box: 'Role', option: /^Planner/ });
+    useAppStore.getState().patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: { agentRouting: { provider: 'anthropic', model: 'opus', effort: 'high' } },
+    });
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start Planner' }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent).toHaveBeenCalledWith(
+      cameFrom.id,
+      expect.objectContaining({
+        kindOverride: 'planner',
+        initialPrompt: GOAL,
+        provider: 'anthropic',
+        model: 'opus',
+        effort: 'high',
+      }),
+    );
+    expect(attach).not.toHaveBeenCalled();
+  });
+
+  it('starts Auto agent with the goal', async () => {
+    useAppStore.setState({ startSessionFromDraft: startThenRun, loadSetting: noSetting });
+    await openPage();
+    await pick({ list: KINDS, name: /^Agent/ });
+    await pick({ list: 'Which agent?', name: /^Auto agent/ });
+
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(1));
+    expect(spawnAgent).toHaveBeenCalledWith(
+      cameFrom.id,
+      expect.objectContaining({ kindOverride: 'auto', initialPrompt: GOAL }),
+    );
+  });
+
+  it('keeps the goal and offers Retry when the start fails, and Retry starts it', async () => {
+    const failOnce = vi.fn<AppStore['startSessionFromDraft']>();
+    failOnce.mockRejectedValueOnce(new Error('The folder is locked by another window'));
+    failOnce.mockImplementation(startThenRun);
+    useAppStore.setState({
+      startSessionFromDraft: failOnce,
+      loadSetting: noSetting,
+      generateWorkflowTitle: vi.fn(async () => undefined),
+    });
+    await openPage();
+    await pick({ list: KINDS, name: /^Workflow/ });
+    await pick({ list: 'Which workflow?', name: /^Orchestrated/ });
+    typeGoal(GOAL);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    expect(await screen.findByText('The folder is locked by another window')).toBeDefined();
+    expect(textBox('Task').value).toBe(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+  });
+
+  it('drops a late answer once you left the page', async () => {
+    const late: { fail: (error: Error) => void } = { fail: () => undefined };
+    const pending: AppStore['startSessionFromDraft'] = () =>
+      new Promise((_resolve, reject) => {
+        late.fail = reject;
+      });
+    useAppStore.setState({ startSessionFromDraft: pending, loadSetting: noSetting });
+    await openPage();
+    await pick({ list: KINDS, name: /^Agent/ });
+    await pick({ list: 'Which agent?', name: /^Auto agent/ });
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    await settle();
+
+    cleanup();
+    late.fail(new Error('Late failure'));
+    await settle();
+    await renderPage();
+
+    expect(screen.queryByText('Late failure')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start Auto agent' })).toBeDefined();
+  });
+
+  it('attaches a task on any kind, starts on it, and Remove takes it off', async () => {
+    const start = vi.fn<AppStore['startSessionFromDraft']>(startThenRun);
+    useAppStore.setState({ startSessionFromDraft: start, loadSetting: noSetting });
+    await openPage();
+    await pick({ list: KINDS, name: /^Agent/ });
+    await pick({ list: 'Which agent?', name: /^Auto agent/ });
+    expect(screen.getByRole('combobox', { name: 'Pick from Tasks' })).toBeDefined();
+
+    act(() =>
+      useAppStore.getState().patchSessionDraft({
+        workspaceId: WORKSPACE_ID,
+        patch: { pickedIssues: [TASK], workflowGoal: TASK.goal },
+      }),
+    );
+    await settle();
+    expect(screen.queryByRole('combobox', { name: 'Pick from Tasks' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Start Auto agent' }));
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
+    expect(start.mock.calls[0]?.[0].start).toMatchObject({
+      kind: 'task',
+      candidates: [TASK],
+      goal: TASK.goal,
+    });
+    cleanup();
+
+    useAppStore.getState().patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: { pickedIssues: [TASK], startKind: 'workflow', startShape: 'orchestrated' },
+    });
+    await renderPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove NW-88' }));
+    await settle();
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]?.pickedIssues).toEqual([]);
+    expect(screen.getByRole('combobox', { name: 'Pick from Tasks' })).toBeDefined();
+  });
+
+  it('asks on Esc with a goal in the form, and Discard clears the draft', async () => {
+    await openPage();
+    await pick({ list: KINDS, name: /^Workflow/ });
+    await pick({ list: 'Which workflow?', name: /^Orchestrated/ });
+    typeGoal(GOAL);
+
+    fireEvent.keyDown(document.body, { key: 'Escape', code: 'Escape' });
+    await settle();
+    expect(screen.getByText('Keep this draft?')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    await settle();
+    expect(useAppStore.getState().sessionDrafts[WORKSPACE_ID]).toBeUndefined();
   });
 });

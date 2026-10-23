@@ -24,7 +24,7 @@ const aWorkflow = ({ name, isPreset }: WorkflowParams): Workflow => ({
 });
 
 describe('startRunFromPresetEntries', () => {
-  it('offers Start a run from each preset and opens the field with the preset named', () => {
+  it('offers Start from each preset and opens the field with the preset named', () => {
     const open = vi.fn();
     const entries = startRunFromPresetEntries({
       sessionId: SESSION,
@@ -35,7 +35,7 @@ describe('startRunFromPresetEntries', () => {
       open,
     });
 
-    expect(entries.map((entry) => entry.label)).toEqual(['Start a run from Fix a layout']);
+    expect(entries.map((entry) => entry.label)).toEqual(['Start from Fix a layout']);
     entries[0]?.run();
     expect(open).toHaveBeenCalledWith({ sessionId: SESSION, text: '~Fix a layout ' });
   });

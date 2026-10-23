@@ -79,25 +79,26 @@
         },
         {
           "title": "Start a run",
-          "text": "Write what you want done and press Start. Goodboy picks a plan, one agent or one of your presets, and says why.",
+          "text": "Not sure what kind of run? Describe it and Goodboy picks a workflow or an agent, and says why.",
           "group": "Start a task",
-          "main": true
+          "also": "Start a run",
+          "shown": true
         },
         {
           "title": "What Auto chose, and Change",
-          "text": "Each run says what Auto chose and why. Change switches its shape or preset without spending twice.",
+          "text": "Each run says what it is, Workflow or Agent, and why. Change switches it without spending twice.",
           "group": "Start a task",
           "also": "Change"
         },
         {
           "title": "The New session page",
-          "text": "Pick folders if you want, write the ask and press Start. Esc keeps or discards the draft.",
+          "text": "Write the task or pick it from Tasks, then pick a Workflow or an Agent. Agents pick the folders unless you pin them.",
           "group": "Start a task",
-          "also": "New session page"
+          "main": true
         },
         {
           "title": "Start on a task",
-          "text": "Start on an issue in Tasks opens Start a run with the issue attached and its goal written in. The session links the issue when you press Start.",
+          "text": "Start on an issue in Tasks opens New session with the issue linked and its goal written in. Pick from Tasks does the same.",
           "group": "Start a task",
           "main": true
         },

@@ -4,7 +4,6 @@ import { useAppStore } from '../../../../../store';
 import {
   EMPTY_SESSION_DRAFT,
   type SessionDraft,
-  type StartChoice,
 } from '../../../../../store/slices/sessionDraft/state';
 import { NewSessionBridge } from '../../../../../features/session/components/NewSessionBridge';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
@@ -68,8 +67,15 @@ const PRESETS: ReadonlyArray<Workflow> = [
   }),
 ];
 
-const choiceOf = ({ value }: { readonly value: string | null }): StartChoice | null =>
-  value === 'task' || value === 'workflow' || value === 'scout' ? value : null;
+const startOf = ({ value }: { readonly value: string | null }): Partial<SessionDraft> => {
+  if (value === 'workflow') {
+    return { startKind: 'workflow', startShape: 'preset', hasChosenStart: true };
+  }
+  if (value === 'scout') {
+    return { startKind: 'agent', startShape: 'agent', hasChosenStart: true };
+  }
+  return {};
+};
 
 const blankSessionOf = ({
   id,
@@ -124,7 +130,7 @@ export const seedSessionStart = (draft: Partial<SessionDraft> = {}): void => {
   seedWorkflowScene();
   seedWorkspaceChrome({ session: SESSION, siblings: WORKSPACE_SIBLINGS });
   const base = useAppStore.getState();
-  const choice = choiceOf({ value: sceneParam({ key: 'kind' }) });
+  const start = startOf({ value: sceneParam({ key: 'kind' }) });
   const isOpen = sceneParam({ key: 'open' }) === '1';
   useAppStore.setState({
     navigate,
@@ -139,7 +145,7 @@ export const seedSessionStart = (draft: Partial<SessionDraft> = {}): void => {
     spawnAgent: async () => undefined,
     workspaceIntegrations: {},
     starredIssues: {},
-    sessionDrafts: { [WORKSPACE_ID]: { ...EMPTY_SESSION_DRAFT, choice, ...draft } },
+    sessionDrafts: { [WORKSPACE_ID]: { ...EMPTY_SESSION_DRAFT, ...start, ...draft } },
     ...(isOpen && { currentSessionId: null, openSessionDraftWorkspaceId: WORKSPACE_ID }),
   } as never);
 };

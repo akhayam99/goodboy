@@ -25,7 +25,9 @@ export const SessionCloseScene = ({ isAsking }: Props) => {
       sessionDrafts: {
         [WORKSPACE_ID]: {
           ...EMPTY_SESSION_DRAFT,
-          choice: 'workflow',
+          startKind: 'workflow',
+          startShape: 'orchestrated',
+          hasChosenStart: true,
           workflowGoal: 'Round the ledger-core postings to the settlement currency',
         },
       },

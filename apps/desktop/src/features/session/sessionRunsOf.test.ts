@@ -137,23 +137,23 @@ describe('sessionRunsOf', () => {
     expect(byKind.get('preset')).toMatchObject({
       shape: 'plan',
       title: 'Center the profile page',
-      origin: 'Was a preset run · Fix a layout',
+      origin: 'Workflow · Preset Fix a layout',
       open: { kind: 'run', runId: preset.run.id },
     });
     expect(byKind.get('orchestrated')).toMatchObject({
       shape: 'plan',
-      origin: 'Was an orchestrated run',
+      origin: 'Workflow · Orchestrated',
       open: { kind: 'run', runId: plan.run.id },
     });
     expect(byKind.get('auto')).toMatchObject({
       shape: 'lead',
-      origin: 'Was an Auto conversation',
+      origin: 'Agent · Auto agent',
       stateWord: 'Done',
       open: { kind: 'auto', agentId: FIXTURE_ROOT },
     });
     expect(byKind.get('agent')).toMatchObject({
       shape: 'lead',
-      origin: 'Was an agent · Scout',
+      origin: 'Agent · Scout',
       stateWord: 'Done',
       progress: '1 agent',
       open: { kind: 'agent', agentId: 'agent-scout' },
