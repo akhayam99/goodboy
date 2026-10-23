@@ -12,6 +12,60 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.12
+
+New session starts from the task and asks what kind of run, agents pick the folders they need, and a stopped rebase lands where you can act on it.
+
+### New
+
+#### New session starts from the task
+<!-- gb area=sessions -->
+
+Write the task first, or use Pick from Tasks. Then What kind of run? offers Workflow or Agent, each with one line and an example. Workflow asks Orchestrated or Preset, Agent asks Agent or Auto agent, and the form shows only that kind's controls, with Start named after it.
+
+Not sure? Describe it and Auto picks lets Auto choose, and Pick it yourself brings the cards back. Where is optional: leave it on Auto picks, or pin folders yourself. New session opens on the kind you started last.
+
+#### Agents pick the folders they need
+<!-- gb area=agents -->
+
+With nothing pinned in Where, a new session adds the workspace's only repo, the repo of a linked GitHub or GitLab issue, and the repos the task names. Past the session's allowance, a folder becomes a suggestion you accept.
+
+An Auto writer with no folder adds the repo its task names before it asks where to work.
+
+#### A stopped rebase opens one panel you can act on
+<!-- gb area=sessions -->
+
+A stopped rebase shows one panel on its own branch page, with the files or the new online commits and one row of verbs: Resolve with Auto, Resolve myself, Keep branch as it was, Bring them in, Undo rebase, Retry. A failed verb keeps its error in the panel with Retry.
+
+The stop survives a restart and opens on its own branch. In Next, its row names the branch and offers the verb that fixes it.
+
+### Improved
+
+#### Each kind of run has one name everywhere
+<!-- gb area=sessions -->
+
+The route line, Change, Settings and the Runs list call a run Workflow or Agent, then Orchestrated, Preset, Auto agent or the role, the same names New session uses. `⌘K` offers New workflow session and New agent session.
+
+#### Update all updates every stopped branch
+<!-- gb area=sessions -->
+
+In Next, Update all rebases the branches behind and the stopped ones, one at a time, and brings online commits in where they moved. It never starts Auto: a conflict stays as its own row, and a branch that fails keeps its error on its row.
+
+#### The goal offer reads as an offer
+<!-- gb area=sessions -->
+
+When a session has linked work and no goal, the overview shows a notice with the issue, Write title and goal and Not now.
+
+### Fixed
+
+- The Pull request page shows the pull request of the branch you opened, not the create form, and its Checks tab reads that branch. <!-- gb area=review -->
+- A branch whose pull request check came back empty keeps its known pull request. <!-- gb area=review -->
+- The Conflict chip, the rebase line and the Next row clear once git shows the branch rebased and clean, and stay cleared after a reload. <!-- gb area=sessions -->
+- A stopped rebase on a merged, closed or removed branch leaves Next. <!-- gb area=sessions -->
+- An orchestrated run in the Overview opens that run, not the Runs list. <!-- gb area=sessions -->
+- The rebase panel offers Push for a branch with no pull request and unpushed commits. <!-- gb area=sessions -->
+- Pickers such as Group by, run autonomy, the terminal picker and the Jira menus move with the arrow keys, close on Escape and Tab, and mark the current value. <!-- gb area=app -->
+
 ## Goodboy v0.27.11
 
 Start a run is the one way to start work, each run shows how Auto runs it and why, and a preset is the plan a run starts from.
