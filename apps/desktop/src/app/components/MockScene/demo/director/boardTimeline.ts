@@ -2,6 +2,7 @@ import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { landingLiveKey } from '../../../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../../../features/chat/reveal/liveTextRegistry';
 import type { DemoTimeline, TimelineParams } from './directorTypes';
+import { travelCard } from './travelCard';
 
 const MOVE_MS = 2600;
 
@@ -42,29 +43,31 @@ export const boardTimeline = ({ state }: TimelineParams): DemoTimeline | null =>
             createdAt: at,
           };
           liveTextRegistry.mark({ runId: landingLiveKey({ scope: 'questions', id: sessionId }) });
-          store.setState((current) => ({
-            sessions: current.sessions.map((entry) =>
-              entry.id === sessionId
-                ? { ...entry, state: { kind: 'idle', lastActivityAt: at }, updatedAt: at }
-                : entry,
-            ),
-            sessionPhaseRuns: {
-              ...current.sessionPhaseRuns,
-              [sessionId]: (current.sessionPhaseRuns[sessionId] ?? []).map((entry) =>
-                entry.id === agent.id
-                  ? { ...entry, status: 'completed', completedAt: at, lastFinishedAt: at }
+          const move = () =>
+            store.setState((current) => ({
+              sessions: current.sessions.map((entry) =>
+                entry.id === sessionId
+                  ? { ...entry, state: { kind: 'idle', lastActivityAt: at }, updatedAt: at }
                   : entry,
               ),
-            },
-            agentTurnState: {
-              ...current.agentTurnState,
-              [agent.id]: { kind: 'idle', lastActivityAt: at },
-            },
-            sessionOpenQuestions: {
-              ...current.sessionOpenQuestions,
-              [sessionId]: [...(current.sessionOpenQuestions[sessionId] ?? []), question],
-            },
-          }));
+              sessionPhaseRuns: {
+                ...current.sessionPhaseRuns,
+                [sessionId]: (current.sessionPhaseRuns[sessionId] ?? []).map((entry) =>
+                  entry.id === agent.id
+                    ? { ...entry, status: 'completed', completedAt: at, lastFinishedAt: at }
+                    : entry,
+                ),
+              },
+              agentTurnState: {
+                ...current.agentTurnState,
+                [agent.id]: { kind: 'idle', lastActivityAt: at },
+              },
+              sessionOpenQuestions: {
+                ...current.sessionOpenQuestions,
+                [sessionId]: [...(current.sessionOpenQuestions[sessionId] ?? []), question],
+              },
+            }));
+          travelCard({ selector: `article[data-select-id="${sessionId}"]`, apply: move });
         },
       },
     ],
