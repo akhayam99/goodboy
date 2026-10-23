@@ -24,6 +24,7 @@ import { patchResolveThreads } from './patchResolveThreads';
 import { installDemoWorld } from './installDemoWorld';
 import { FAKE_RETRY_DIFF } from '../../scenes/resolveSeed';
 import { addDemoOverlay } from './addDemoOverlay';
+import { demoPublicationPreview } from './demoPublicationPreview';
 
 const PUBLISH_NOTICE =
   'Publishing posts the reply on your pull request in the app. Here the reply stays drafted, ready to publish.';
@@ -330,7 +331,21 @@ export const installResolveActions = ({ store }: Params): void => {
       stopFix({ store, sessionId, agentId: attempt.agentId });
     }
   };
+  const preparePublication: AppStore['preparePublication'] = async ({ sessionId, threadIds }) => {
+    const preview = demoPublicationPreview({ state: store.getState(), sessionId, threadIds });
+    store.setState((current) => ({
+      activePublicationPreview: { ...current.activePublicationPreview, [sessionId]: preview },
+    }));
+    return preview;
+  };
+  const cancelPublication: AppStore['cancelPublication'] = async ({ sessionId }) => {
+    store.setState((current) => ({
+      activePublicationPreview: { ...current.activePublicationPreview, [sessionId]: null },
+    }));
+  };
   store.setState({
+    preparePublication,
+    cancelPublication,
     forceCloseResolver,
     stopResolveLane,
     acceptResolveQueueItem,
