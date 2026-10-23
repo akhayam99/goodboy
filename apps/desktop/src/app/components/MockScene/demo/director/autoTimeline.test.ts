@@ -132,7 +132,11 @@ describe('stopping Auto in the demo', () => {
     expect(store.getState().agentTurnState[IMPLEMENTER_ID]?.kind).toBe('idle');
     expect(store.getState().agentTurnState[AUTO_ROOT_ID]?.kind).toBe('idle');
     vi.advanceTimersByTime(30000);
-    expect(phaseOf()).toBe('done');
+    expect(phaseOf()).toBe('stopped');
+    const implementer = store
+      .getState()
+      .sessionPhaseRuns[AUTO_SESSION.id]?.find((agent) => agent.id === IMPLEMENTER_ID);
+    expect(implementer).toMatchObject({ status: 'stopped', stoppedBy: 'you' });
     const running = store
       .getState()
       .autoTreeViews[AUTO_SESSION.id]?.[0]?.delegations.filter(

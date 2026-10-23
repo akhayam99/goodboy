@@ -146,6 +146,22 @@ describe('Auto in the demo', () => {
   });
 });
 
+describe('stopping Auto in the demo', () => {
+  it('says the visitor stopped it, not that it finished', async () => {
+    await mount({ Scene: U25_C07_AUTO_SCENES['c07-auto-working'] });
+    withSimulatedSend();
+    act(() => {
+      autoTimeline({ state: store.getState() })?.setup?.({ store });
+    });
+    await settle({ ms: 100 });
+    await click({ name: /^Stop( Auto and its agents)?$/ });
+    await settle({ ms: 30000 });
+    expect(store.getState().autoTreeViews[AUTO_SESSION.id]?.[0]?.tree.phase).toBe('stopped');
+    expect(screen.getAllByText(/Stopped by you/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Couldn't stop the Auto agents/)).toBeNull();
+  });
+});
+
 describe('the board in the demo', () => {
   it('opens the session behind a card with its reason', async () => {
     await import('../../scenes/BoardSessionView');

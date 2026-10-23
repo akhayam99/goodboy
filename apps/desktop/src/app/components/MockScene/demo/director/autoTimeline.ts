@@ -13,6 +13,7 @@ import { installDemoWorld } from './installDemoWorld';
 import { appendTurnEvents } from './appendTurnEvents';
 import { applyAutoScene } from './applyAutoScene';
 import { finishAgentTurn } from './finishAgentTurn';
+import { patchAgent } from './patchAgent';
 import { scheduleCues } from './scheduleCues';
 import { startAgentTurn } from './startAgentTurn';
 import { textCues } from './textCues';
@@ -228,7 +229,7 @@ const installAutoActions = ({ store }: FlowParams): void => {
           ...current.autoTreeViews,
           [AUTO_SESSION.id]: (current.autoTreeViews[AUTO_SESSION.id] ?? []).map((view) => ({
             ...view,
-            tree: { ...view.tree, phase: 'done' },
+            tree: { ...view.tree, phase: 'stopped' },
             delegations: view.delegations.map((delegation) =>
               delegation.state === 'running' || delegation.state === 'starting'
                 ? { ...delegation, state: 'settled', outcome: 'stopped', settledAt: Date.now() }
@@ -238,9 +239,16 @@ const installAutoActions = ({ store }: FlowParams): void => {
         },
       }));
       for (const agentId of [AUTO_ROOT_ID, IMPLEMENTER_ID]) {
-        if (store.getState().agentTurnState[agentId]?.kind === 'running') {
-          finishAgentTurn({ store, sessionId: AUTO_SESSION.id, agentId, at, isViewed: true });
+        if (store.getState().agentTurnState[agentId]?.kind !== 'running') {
+          continue;
         }
+        finishAgentTurn({ store, sessionId: AUTO_SESSION.id, agentId, at, isViewed: true });
+        patchAgent({
+          store,
+          sessionId: AUTO_SESSION.id,
+          agentId,
+          patch: { status: 'stopped', stoppedBy: 'you', stoppedAt: at },
+        });
       }
       return 'stopped';
     },
