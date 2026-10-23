@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -44,6 +44,19 @@ const mount = async ({ query }: MountParams): Promise<void> => {
 const shownStep = (): string | null =>
   screen.queryByRole('dialog', { name: 'Goodboy setup' })?.getAttribute('data-step') ?? null;
 
+const SCENE_OPEN_MS = 150;
+
+type ButtonParams = {
+  readonly name: string | RegExp;
+};
+
+const enabledButton = async ({ name }: ButtonParams): Promise<HTMLElement> =>
+  waitFor(() => {
+    const button = screen.getByRole('button', { name });
+    expect(button.hasAttribute('disabled')).toBe(false);
+    return button;
+  });
+
 const workspaceNames = (): ReadonlyArray<string> =>
   useAppStore.getState().workspaces.map((workspace) => workspace.name);
 
@@ -76,4 +89,50 @@ describe('onboarding scene', () => {
 
     await waitFor(() => expect(shownStep()).toBe('welcome'));
   });
+
+  it('walks from the folder pick to a running first session with no native call', async () => {
+    await mount({ query: '&step=workspace' });
+    await act(() => new Promise((resolve) => setTimeout(resolve, SCENE_OPEN_MS)));
+    expect(shownStep()).toBe('workspace');
+
+    fireEvent.click(await enabledButton({ name: /Choose folder/ }));
+    fireEvent.click(await enabledButton({ name: /Create workspace/ }));
+
+    await waitFor(() => expect(shownStep()).toBe('tools'));
+    expect(workspaceNames()).toEqual(['Harborline']);
+    const state = useAppStore.getState();
+    expect(
+      state.projects
+        .filter((project) => project.workspaceId === state.currentWorkspaceId)
+        .map((project) => project.name),
+    ).toEqual(['payments-api', 'ledger-core', 'notify-relay']);
+
+    fireEvent.click(await enabledButton({ name: /Continue/ }));
+    await waitFor(() => expect(shownStep()).toBe('first-session'));
+
+    fireEvent.click(await enabledButton({ name: 'Find one small bug' }));
+    fireEvent.click(await enabledButton({ name: /^Start/ }));
+
+    await waitFor(() => expect(shownStep()).toBeNull());
+    expect(screen.queryByText(/not found/)).toBeNull();
+    await screen.findByRole('textbox', { name: 'Message to the agent' });
+    const session = useAppStore.getState().currentSessionId;
+    const agent = session === null ? null : useAppStore.getState().selectedAgentId[session];
+    const events =
+      agent === null || agent === undefined ? [] : useAppStore.getState().transcripts[agent];
+    expect(events?.[0]).toMatchObject({
+      kind: 'user_text',
+      text: 'Find one small, real bug in payments-api. Say where it is and why it is a bug. Do not change any file.',
+    });
+    await waitFor(
+      () =>
+        expect(
+          (agent === null || agent === undefined
+            ? []
+            : (useAppStore.getState().transcripts[agent] ?? [])
+          ).some((event) => event.kind === 'assistant_text'),
+        ).toBe(true),
+      { timeout: 4000 },
+    );
+  }, 20000);
 });

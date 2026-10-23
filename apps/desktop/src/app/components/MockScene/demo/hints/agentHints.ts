@@ -78,7 +78,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     outcome: 'question-answered',
     anchor: ({ state }) => {
       const id = blockingQuestionOf({ state });
-      return id === null ? null : `[data-oq-anchor="${CSS.escape(id)}"] [role="radiogroup"]`;
+      return id === null ? null : `[data-oq-anchor="${CSS.escape(id)}"]`;
     },
     side: 'top',
     revealWhen: ({ state }) => blockingQuestionOf({ state }) !== null && !isAgentBusy({ state }),

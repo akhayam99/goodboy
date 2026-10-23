@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
-import { Button, FLOATING_SURFACE, IconButton, canAnimate, cn } from '@goodboy/ui';
+import { ArrowRight, X } from 'lucide-react';
+import { Button, FLOATING_SURFACE, ICON_SIZE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
 import type { HintSide } from './hints/demoHintTypes';
 import { placeCallout } from './hints/placeCallout';
@@ -12,6 +12,16 @@ export type CoachMark = {
   readonly total: number;
   readonly side: HintSide;
   readonly rect: DemoRect;
+  readonly next?: NextChapter;
+};
+
+type NextChapter = {
+  readonly id: string;
+  readonly title: string;
+};
+
+type ChapterParams = {
+  readonly id: string;
 };
 
 type Size = {
@@ -25,6 +35,7 @@ type Props = {
   readonly bounds: Size;
   readonly onSkip: () => void;
   readonly onHide: () => void;
+  readonly onNext: (params: ChapterParams) => void;
 };
 
 const RING_OUTSET = 4;
@@ -78,7 +89,8 @@ const caretStyle = ({ side, target, x, y, height }: CaretParams) => {
   return side === 'right' ? { top, left: CARET_OFFSET } : { top, right: CARET_OFFSET };
 };
 
-export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) => {
+export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: Props) => {
+  const { next } = coach;
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
@@ -141,7 +153,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
       <div
         ref={calloutRef}
         role="note"
-        aria-label={`Hint ${coach.step} of ${coach.total}`}
+        aria-label={next === undefined ? `Hint ${coach.step} of ${coach.total}` : 'Group done'}
         data-side={side}
         className={cn('pointer-events-auto absolute flex flex-col gap-2 p-3', FLOATING_SURFACE)}
         style={{
@@ -168,14 +180,26 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
           <p className="text-row text-foreground">{coach.copy}</p>
           <IconButton icon={X} label="Hide hint" shortcut="Esc" size="xs" onClick={onHide} />
         </div>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-meta text-faint-foreground">
-            Hint {coach.step} of {coach.total}
-          </span>
-          <Button size="xs" variant="quiet" onClick={onSkip}>
-            Skip hint
+        {next === undefined ? (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-meta text-faint-foreground">
+              Hint {coach.step} of {coach.total}
+            </span>
+            <Button size="xs" variant="quiet" onClick={onSkip}>
+              Skip hint
+            </Button>
+          </div>
+        ) : (
+          <Button
+            size="xs"
+            variant="primary"
+            className="self-start"
+            onClick={() => onNext({ id: next.id })}
+          >
+            Next: {next.title}
+            <ArrowRight size={ICON_SIZE.control} />
           </Button>
-        </div>
+        )}
       </div>
     </div>
   );

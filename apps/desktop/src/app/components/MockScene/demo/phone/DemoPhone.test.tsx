@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DemoPhone } from './DemoPhone';
+import { DEMO_GROUPS } from '../demoGroups';
 import { DEMO_LINKS } from '../demoLinks';
 import { PHONE_LINKS } from './phoneLinks';
 import { deviceNoun } from './deviceNoun';
@@ -116,7 +117,9 @@ describe('demo phone page', () => {
     const star = screen.getByRole('link', { name: /Star on GitHub/ });
     expect(star.getAttribute('href')).toBe(DEMO_LINKS.github);
     expect(star.getAttribute('href')).toBe('https://github.com/akhayam99/goodboy');
-    expect(screen.getAllByRole('listitem')).toHaveLength(4);
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual(
+      Object.values(DEMO_GROUPS).map((group) => `${group.title}${group.line}`),
+    );
   });
 
   it('shares the canonical demo link with the requested chapter', async () => {

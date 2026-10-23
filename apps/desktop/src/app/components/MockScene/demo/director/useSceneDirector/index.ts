@@ -12,6 +12,7 @@ import type { DemoTimeline } from '../directorTypes';
 import type { DemoHintReport, DemoReport } from '../demoProtocol';
 import { isDemoCommand } from '../isDemoCommand';
 import { isDemoHintsCommand } from '../isDemoHintsCommand';
+import { isDemoRevealCommand } from '../isDemoRevealCommand';
 import { waitForPaint } from '../waitForPaint';
 
 type Params = {
@@ -27,7 +28,7 @@ type ChapterParams = {
 };
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-const INPUT_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
+const INPUT_EVENTS = ['pointerdown', 'keydown'] as const;
 const STILL: DemoTimeline = { prepare: () => undefined, cues: [] };
 const GENERIC_REPLY =
   'On it. In the app I would read the code this touches first, then report back here before anything is pushed.';
@@ -40,8 +41,17 @@ const post = ({ report }: ReportParams): void => {
   window.parent.postMessage(report, window.location.origin);
 };
 
-const hintsOf = ({ chapterId }: ChapterParams) =>
-  DEMO_CHAPTERS.find((chapter) => chapter.id === chapterId)?.hints ?? [];
+const chapterOf = ({ chapterId }: ChapterParams) =>
+  DEMO_CHAPTERS.find((chapter) => chapter.id === chapterId);
+
+const hintsOf = ({ chapterId }: ChapterParams) => chapterOf({ chapterId })?.hints ?? [];
+
+type PlaceParams = ChapterParams & {
+  readonly root: Document;
+};
+
+const placeOf = ({ chapterId, root }: PlaceParams): string | null =>
+  chapterOf({ chapterId })?.placeOf?.({ root }) ?? null;
 
 export const useSceneDirector = ({ sceneName }: Params): void => {
   useEffect(() => {
@@ -90,6 +100,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         view: window,
         generation: () => started.generation(),
         hintsOf,
+        placeOf,
         onReport: post,
       });
       director.start();
@@ -103,6 +114,12 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         return;
       }
       if (director === null) {
+        return;
+      }
+      if (isDemoRevealCommand(event.data)) {
+        if (event.data.generation === director.generation()) {
+          hints?.reveal({ hintId: event.data.hintId });
+        }
         return;
       }
       if (isDemoHintsCommand(event.data)) {
@@ -136,7 +153,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       if (!event.isTrusted) {
         return;
       }
-      director?.pause();
+      director?.settle();
     };
 
     window.addEventListener('message', onMessage);

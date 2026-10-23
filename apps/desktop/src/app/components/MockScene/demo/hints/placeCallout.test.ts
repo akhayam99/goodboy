@@ -30,8 +30,15 @@ describe('callout placement', () => {
     expect(place({ target })).toMatchObject({ side: 'right', x: 312 });
   });
 
-  it('flips to the other side near the right edge', () => {
+  it('drops below a control near the right edge, where a form keeps its free space', () => {
     const target = { x: 900, y: 200, width: 80, height: 32 };
+    const placement = place({ target });
+    expect(placement.side).toBe('bottom');
+    expect(overlaps({ target, x: placement.x, y: placement.y })).toBe(false);
+  });
+
+  it('flips to the other side when there is no room below or above either', () => {
+    const target = { x: 900, y: 20, width: 80, height: 700 };
     const placement = place({ target });
     expect(placement.side).toBe('left');
     expect(placement.x + CALLOUT.width).toBe(888);

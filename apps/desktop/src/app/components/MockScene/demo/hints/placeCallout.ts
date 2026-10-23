@@ -21,7 +21,7 @@ export type CalloutPlacement = {
   readonly y: number;
 };
 
-const SIDE_ORDER: ReadonlyArray<HintSide> = ['right', 'left', 'top', 'bottom'];
+const SIDE_ORDER: ReadonlyArray<HintSide> = ['right', 'bottom', 'top', 'left'];
 
 type ClampParams = {
   readonly value: number;
