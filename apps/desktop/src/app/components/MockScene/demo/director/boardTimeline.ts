@@ -1,4 +1,4 @@
-import type { OpenQuestion, OpenQuestionId } from '@goodboy/types';
+import { brandId, type OpenQuestion, type OpenQuestionId } from '@goodboy/types';
 import { landingLiveKey } from '../../../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../../../features/chat/reveal/liveTextRegistry';
 import type { DemoTimeline, TimelineParams } from './directorTypes';
@@ -29,7 +29,7 @@ export const boardTimeline = ({ state }: TimelineParams): DemoTimeline | null =>
         atMs: MOVE_MS,
         apply: ({ store, at }) => {
           const question: OpenQuestion = {
-            id: `demo-board-question-${sessionId}` as OpenQuestionId,
+            id: brandId<OpenQuestionId>({ value: `demo-board-question-${sessionId}` }),
             sessionId,
             createdByAgentId: agent.id,
             turnOrdinal: 1,

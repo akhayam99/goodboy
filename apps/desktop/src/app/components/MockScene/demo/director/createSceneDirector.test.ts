@@ -6,7 +6,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, IsoDateTime } from '@goodboy/types';
+import { brandId, type AgentId, type IsoDateTime } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -38,7 +38,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const AGENT = 'demo-test-agent' as AgentId;
+const AGENT = brandId<AgentId>({ value: 'demo-test-agent' });
 
 type DirectParams = {
   readonly timeline: DemoTimeline;
@@ -52,7 +52,7 @@ const direct = ({ timeline, isSettled = false }: DirectParams) => {
     store,
     clock: createPlaybackClock({ now: () => Date.now() }),
     isSettled,
-    now: () => new Date().toISOString() as IsoDateTime,
+    now: () => brandId<IsoDateTime>({ value: new Date().toISOString() }),
     onReport: ({ report }) => reports.push(report),
   });
   return { director, reports };

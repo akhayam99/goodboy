@@ -1,4 +1,10 @@
-import type { AgentId, ProviderRunId, SessionId, WorkflowRunId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type ProviderRunId,
+  type SessionId,
+  type WorkflowRunId,
+} from '@goodboy/types';
 import type { DemoCue, DemoTimeline, DirectorStore, TimelineParams } from './directorTypes';
 import { eventCue } from './eventCue';
 import { appendTurnEvents } from './appendTurnEvents';
@@ -52,7 +58,7 @@ const targetOf = ({ state }: TimelineParams): Target | null => {
   if (focused === null) {
     return null;
   }
-  const workflowRunId = focused as WorkflowRunId;
+  const workflowRunId = brandId<WorkflowRunId>({ value: focused });
   const steps = (state.sessionPhaseRuns[sessionId] ?? [])
     .filter((agent) => agent.workflowRunId === workflowRunId)
     .sort((left, right) => left.ordinal - right.ordinal);
@@ -90,7 +96,7 @@ export const runTimeline = ({ state }: TimelineParams): DemoTimeline | null => {
     return null;
   }
   const { sessionId, implementerId, implementRunId, reviewerId } = target;
-  const reviewRunId = `demo-review-${reviewerId}` as ProviderRunId;
+  const reviewRunId = brandId<ProviderRunId>({ value: `demo-review-${reviewerId}` });
   const openToolUseId = target.openToolUseId;
   const implement: ReadonlyArray<DemoCue> = [
     ...(openToolUseId === null
