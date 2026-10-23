@@ -43,7 +43,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         return;
       }
       const store = useAppStore;
-      const timeline = DEMO_TIMELINES[sceneName]?.({ state: store.getState() }) ?? STILL;
+      const timeline = DEMO_TIMELINES.get(sceneName)?.({ state: store.getState() }) ?? STILL;
       store.setState({
         sendTurn: createSimulatedSend({
           store,
