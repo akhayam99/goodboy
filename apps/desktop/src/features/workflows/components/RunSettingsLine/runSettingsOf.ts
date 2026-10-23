@@ -19,6 +19,7 @@ type Params = {
   readonly workspaceAutonomy: WorkflowAutonomy;
   readonly sessionCapUsd: number | null;
   readonly spentUsd: number;
+  readonly sessionSpentUsd: number;
   readonly providers: ReadonlyArray<ProviderId>;
 };
 
@@ -38,7 +39,7 @@ const asksOf = ({ run, workspaceName, workspaceAutonomy }: AsksParams): RunSetti
     workspaceAutonomy,
   });
 
-type LimitParams = Pick<Params, 'run' | 'sessionCapUsd' | 'spentUsd'>;
+type LimitParams = Pick<Params, 'run' | 'sessionCapUsd' | 'spentUsd' | 'sessionSpentUsd'>;
 
 type AmountParams = {
   readonly amount: number | null;
@@ -47,7 +48,12 @@ type AmountParams = {
 const amountOf = ({ amount }: AmountParams): string =>
   amount === null ? 'none' : formatUsd(amount);
 
-const limitOf = ({ run, sessionCapUsd, spentUsd }: LimitParams): RunSettingWords => {
+const limitOf = ({
+  run,
+  sessionCapUsd,
+  spentUsd,
+  sessionSpentUsd,
+}: LimitParams): RunSettingWords => {
   const runLimit = run.spendLimitUsd ?? null;
   const limits = [runLimit, sessionCapUsd].filter((limit): limit is number => limit !== null);
   const first = limits.length === 0 ? null : Math.min(...limits);
@@ -61,10 +67,17 @@ const limitOf = ({ run, sessionCapUsd, spentUsd }: LimitParams): RunSettingWords
       chain: `${chain} Nothing stops this run.`,
     };
   }
+  if (first === runLimit) {
+    return {
+      value: `${formatUsd(spentUsd)} of ${formatUsd(first)}`,
+      source: 'this run',
+      chain: `${chain} ${formatUsd(first)} comes first.`,
+    };
+  }
   return {
-    value: `${formatUsd(spentUsd)} of ${formatUsd(first)}`,
-    source: first === runLimit ? 'this run' : 'from session',
-    chain: `${chain} ${formatUsd(first)} comes first.`,
+    value: `${formatUsd(sessionSpentUsd)} of ${formatUsd(first)}`,
+    source: 'from session',
+    chain: `${chain} ${formatUsd(first)} comes first, counted over the whole session: ${formatUsd(sessionSpentUsd)} spent, ${formatUsd(spentUsd)} of it this run.`,
   };
 };
 
@@ -94,9 +107,10 @@ export const runSettingsOf = ({
   workspaceAutonomy,
   sessionCapUsd,
   spentUsd,
+  sessionSpentUsd,
   providers,
 }: Params): RunSettings => ({
   asks: asksOf({ run, workspaceName, workspaceAutonomy }),
-  limit: limitOf({ run, sessionCapUsd, spentUsd }),
+  limit: limitOf({ run, sessionCapUsd, spentUsd, sessionSpentUsd }),
   models: modelsOf({ run, workspaceName, providers }),
 });

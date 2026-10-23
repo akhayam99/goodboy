@@ -13,18 +13,24 @@ import userEvent from '@testing-library/user-event';
 import {
   brandId,
   DEFAULT_WORKFLOW_RULES,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
   type Session,
+  type TelemetryRecord,
+  type TelemetryRecordId,
   type WorkflowId,
   type WorkflowRun,
   type WorkflowRunId,
 } from '@goodboy/types';
-import { aSession } from '@goodboy/types/testing';
+import { anAgent, aSession } from '@goodboy/types/testing';
 import {
   importStore,
   resetStoryStore,
   STORE_IMPORT_TIMEOUT_MS,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { withoutKeys } from '../../../../store/slices/workflows/patchWorkflowRun';
 import { RUN_AUTONOMY_HEADER } from '../../runAutonomy';
 
 let useAppStore: StoryStore;
@@ -42,6 +48,12 @@ const RUN: WorkflowRun = {
   executionMode: 'dynamic',
   spendLimitUsd: 5,
   rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'step' },
+};
+
+type RecordParams = {
+  readonly id: string;
+  readonly run: ProviderRunId;
+  readonly usd: number;
 };
 
 const SESSION: Session = aSession({ goal: 'Center every member page', workflowRuns: [RUN] });
@@ -103,6 +115,51 @@ describe('the run settings line', () => {
     expect(popover.textContent).not.toContain(RUN_AUTONOMY_HEADER);
     expect(screen.queryByRole('button', { name: 'Done' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+  });
+
+  it('counts the whole session against the session cap, with the run spend in the popover', () => {
+    const runId = brandId<ProviderRunId>({ value: 'provider-run-this-run' });
+    const earlierId = brandId<ProviderRunId>({ value: 'provider-run-earlier' });
+    const record = ({ id, run, usd }: RecordParams): TelemetryRecord => ({
+      id: brandId<TelemetryRecordId>({ value: id }),
+      runId: run,
+      sessionId: SESSION.id,
+      kind: 'turn',
+      provider: 'anthropic',
+      model: 'opus',
+      inputTokens: 1,
+      outputTokens: 1,
+      estimatedCostUsd: usd,
+      recordedAt: brandId<IsoDateTime>({ value: '2026-10-23T09:00:00.000Z' }),
+    });
+    useAppStore.setState({
+      sessionBudgets: {
+        [SESSION.id]: { sessionId: SESSION.id, softCapUsd: 20, onExceed: 'pause' },
+      },
+      sessionPhaseRuns: {
+        [SESSION.id]: [
+          anAgent({
+            id: brandId<AgentId>({ value: 'agent-this-run' }),
+            workflowRunId: RUN_ID,
+            runId,
+          }),
+        ],
+      },
+      sessionTelemetry: {
+        [SESSION.id]: [
+          record({ id: 'telemetry-earlier', run: earlierId, usd: 15 }),
+          record({ id: 'telemetry-this-run', run: runId, usd: 2 }),
+        ],
+      },
+    });
+    const noLimit = withoutKeys(RUN, ['spendLimitUsd']);
+    render(<RunSettingsLine session={SESSION} run={noLimit} isOpen />);
+
+    const trigger = chip('Limit');
+    expect(trigger.getAttribute('aria-label')).toContain('$17.00 of $20.00');
+    fireEvent.click(trigger);
+    const popover = screen.getByRole('dialog', { name: 'Limit' });
+    expect(popover.textContent).toContain('$2.00 of it this run');
   });
 
   it('applies a new answer to when it asks on click, for the run it names', async () => {

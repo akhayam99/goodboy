@@ -20,6 +20,7 @@ const BASE = {
   workspaceAutonomy: 'step' as const,
   sessionCapUsd: 8,
   spentUsd: 0.92,
+  sessionSpentUsd: 3.4,
   providers: ['anthropic', 'codex'] as const,
 };
 
@@ -38,17 +39,52 @@ describe('runSettingsOf', () => {
     expect(asks.chain).toMatch(/^From Harborline: /);
   });
 
-  it('puts the smallest limit first and says where it comes from', () => {
+  it('counts the run against its own limit when that limit comes first', () => {
     const own = runSettingsOf({ ...BASE, run: { ...RUN, spendLimitUsd: 5 } }).limit;
     expect(own).toEqual({
       value: '$0.92 of $5.00',
       source: 'this run',
       chain: 'This run $5.00, then session $8.00. $5.00 comes first.',
     });
+  });
 
+  it('counts the whole session against the session cap when that cap comes first', () => {
     const session = runSettingsOf({ ...BASE, run: { ...RUN, spendLimitUsd: 12 } }).limit;
-    expect(session.value).toBe('$0.92 of $8.00');
-    expect(session.source).toBe('from session');
+    expect(session).toEqual({
+      value: '$3.40 of $8.00',
+      source: 'from session',
+      chain:
+        'This run $12.00, then session $8.00. $8.00 comes first, counted over the whole session: $3.40 spent, $0.92 of it this run.',
+    });
+  });
+
+  it('reads 17 of 20 for a run that spent 2 inside a session that spent 17', () => {
+    const { limit } = runSettingsOf({
+      ...BASE,
+      sessionCapUsd: 20,
+      sessionSpentUsd: 17,
+      spentUsd: 2,
+    });
+
+    expect(limit.value).toBe('$17.00 of $20.00');
+    expect(limit.source).toBe('from session');
+    expect(limit.chain).toContain('$2.00 of it this run');
+  });
+
+  it('counts the session when the run has no limit of its own', () => {
+    const { limit } = runSettingsOf({ ...BASE, sessionCapUsd: 8 });
+
+    expect(limit.value).toBe('$3.40 of $8.00');
+    expect(limit.chain).toBe(
+      'This run none, then session $8.00. $8.00 comes first, counted over the whole session: $3.40 spent, $0.92 of it this run.',
+    );
+  });
+
+  it('keeps the run spend when both limits are the same amount', () => {
+    const { limit } = runSettingsOf({ ...BASE, run: { ...RUN, spendLimitUsd: 8 } });
+
+    expect(limit.value).toBe('$0.92 of $8.00');
+    expect(limit.source).toBe('this run');
   });
 
   it('says nothing stops a run with no limit anywhere', () => {

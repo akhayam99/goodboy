@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { DEFAULT_WORKFLOW_RULES, type Session, type WorkflowRun } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useRunSpendUsd } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useRunSpendUsd, useSessionCost } from '../../../../store';
 import { runProvidersOf } from '../../runProvidersOf';
 import { RunAsksSetting } from './RunAsksSetting';
 import { RunLimitSetting } from './RunLimitSetting';
@@ -25,6 +25,7 @@ export const RunSettingsLine = ({ session, run, kind, isOpen }: Props) => {
   const sessionCapUsd = useAppStore((state) => state.sessionBudgets[sessionId]?.softCapUsd ?? null);
   const allProviders = useAppStore((state) => state.providers ?? EMPTY_ARRAY);
   const spentUsd = useRunSpendUsd(sessionId, run.id);
+  const sessionSpentUsd = useSessionCost(sessionId);
   const policy = overrides?.providerPool ?? null;
   const pool = run.providerPool;
   const providers = useMemo(() => {
@@ -42,6 +43,7 @@ export const RunSettingsLine = ({ session, run, kind, isOpen }: Props) => {
     workspaceAutonomy: overrides?.workflowRules?.autonomy ?? DEFAULT_WORKFLOW_RULES.autonomy,
     sessionCapUsd,
     spentUsd,
+    sessionSpentUsd,
     providers,
   });
   return (
