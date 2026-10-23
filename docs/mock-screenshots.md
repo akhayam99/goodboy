@@ -396,7 +396,7 @@ notice through the undo toast bridge instead (`demoExitNotices.ts`). A timeline'
 the real store only as their simulated step lands: run steps
 (`runActions.ts`), Auto start, approval, stop and retry (`autoTimeline.ts`),
 board cards (`installBoardActions.ts`), plan comments, diff notes, pins, Stop,
-report runs (`installDemoWorld.ts`), review comment fixes from working to a
+report and wireframe runs that always save a sample artifact (`installDemoWorld.ts`), review comment fixes from working to a
 drafted reply that stays ready to publish (`installResolveActions.ts`), and the
 limits handoff, where Claude hits its usage limit and Codex finishes the same
 brief (`limitsTimeline.ts`). Push and publish first preview the approved fixes
