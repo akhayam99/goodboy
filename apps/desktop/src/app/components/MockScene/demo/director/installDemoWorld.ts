@@ -2,6 +2,9 @@ import type { ProviderDisplayInfo } from '../../../../../features/providers/prov
 import type { DirectorStore } from './directorTypes';
 import { installArtifactComments } from './installArtifactComments';
 import { installDiffNotes } from './installDiffNotes';
+import { installSessionChrome } from './installSessionChrome';
+import { installStopTurn } from './installStopTurn';
+import { installArtifactAgents } from './installArtifactAgents';
 
 type Params = {
   readonly store: DirectorStore;
@@ -27,6 +30,9 @@ const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
 export const installDemoWorld = ({ store }: Params): void => {
   installArtifactComments({ store });
   installDiffNotes({ store });
+  installSessionChrome({ store });
+  installStopTurn({ store });
+  installArtifactAgents({ store });
   if (store.getState().providers.some((provider) => provider.connection === 'connected')) {
     return;
   }

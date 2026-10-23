@@ -185,7 +185,12 @@ const installAutoActions = ({ store }: FlowParams): void => {
       to: agentPlace({ sessionId, agentId: AUTO_ROOT_ID }),
       drawer: { kind: 'spawned', sessionId, payload: null },
     });
-    scheduleCues({ store, cues: planCues({ runId }), now: () => nowIso({}) });
+    scheduleCues({
+      store,
+      cues: planCues({ runId }),
+      now: () => nowIso({}),
+      agentId: AUTO_ROOT_ID,
+    });
     return AUTO_ROOT_ID;
   };
   const sendTurn: AppStore['sendTurn'] = async (input) => {
@@ -196,7 +201,12 @@ const installAutoActions = ({ store }: FlowParams): void => {
     const runId = runOf({ label: 'approved' });
     appendUserTurn({ store, runId, text: input.content });
     input.onStarted?.();
-    scheduleCues({ store, cues: workCues({ runId, isApproval: true }), now: () => nowIso({}) });
+    scheduleCues({
+      store,
+      cues: workCues({ runId, isApproval: true }),
+      now: () => nowIso({}),
+      agentId: AUTO_ROOT_ID,
+    });
     return { blockedOverBudget: false };
   };
   const attachWorkflowToSession: AppStore['attachWorkflowToSession'] = async (

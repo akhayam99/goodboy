@@ -7,6 +7,8 @@ import { SessionWorkspace } from '../../../../../features/session/components/Ses
 import { SideColumn } from '../../../SideColumn';
 import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import { useSceneRailFold } from '../useSceneRailFold';
+import { isDirectedScene } from '../../demo/director/isDirectedScene';
+import { showDemoNotice } from '../../demo/director/showDemoNotice';
 import type { ColumnActions } from '../../../SideColumn/columnDoors';
 import {
   C08_SESSION_ID,
@@ -27,21 +29,34 @@ type Props = {
 
 const noop = () => undefined;
 
-const ACTIONS: ColumnActions = {
-  openBoard: noop,
-  openInbox: noop,
-  openChat: noop,
-  openWorkflows: noop,
-  openTerminalStudio: noop,
-  openNewChat: noop,
-  openNewTerminal: noop,
-  openMonitoring: noop,
-  openImpact: noop,
-  openSettings: noop,
-  openChangelog: noop,
-  openGuide: noop,
-  openShortcuts: noop,
+const ELSEWHERE_NOTICE =
+  'This sample opens one run. In the app the sidebar takes you to the rest of Goodboy.';
+
+const elsewhere = () => showDemoNotice({ message: ELSEWHERE_NOTICE });
+
+type ActionsParams = {
+  readonly open: () => void;
 };
+
+const actionsOf = ({ open }: ActionsParams): ColumnActions => ({
+  openBoard: open,
+  openInbox: open,
+  openChat: open,
+  openWorkflows: open,
+  openTerminalStudio: open,
+  openNewChat: open,
+  openNewTerminal: open,
+  openMonitoring: open,
+  openImpact: open,
+  openSettings: open,
+  openChangelog: open,
+  openGuide: open,
+  openShortcuts: open,
+});
+
+const ACTIONS = actionsOf({ open: noop });
+
+const DEMO_ACTIONS = actionsOf({ open: elsewhere });
 
 const CLICK_DELAY_MS = 200;
 
@@ -89,7 +104,7 @@ export const C08RunScene = ({ state, selection, click = 'none', isFolded = false
           workspaceId={C08_WORKSPACE_ID}
           currentSessionId={session.id}
           place={null}
-          actions={ACTIONS}
+          actions={isDirectedScene() ? DEMO_ACTIONS : ACTIONS}
         />
       </div>
       <main className="relative flex min-w-0 flex-1 flex-col">

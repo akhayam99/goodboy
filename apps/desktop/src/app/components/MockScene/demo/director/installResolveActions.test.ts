@@ -1,0 +1,109 @@
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(() => new Promise<never>(() => undefined)),
+}));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
+import { SESSION_ID, seedResolveScene } from '../../scenes/resolveSeed';
+import { installResolveActions } from './installResolveActions';
+
+const THREAD = 'PRRT_thread_retry_constant';
+
+let store: StoryStore;
+
+beforeAll(async () => {
+  store = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+  seedResolveScene({ expandedThreadId: null });
+  installResolveActions({ store });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+const entryOf = () =>
+  (store.getState().sessionResolveQueueItems[SESSION_ID] ?? []).find(
+    (entry) => entry.thread.threadId === THREAD,
+  );
+
+const startFix = async () =>
+  store.getState().spawnAgent(SESSION_ID, {
+    kindOverride: 'resolver',
+    sourceThreadIds: [THREAD],
+    name: 'Resolve: 1 review comment',
+    humanPrompt: 'Fix this review comment.',
+  });
+
+describe('the simulated review fix', () => {
+  it('keeps the comment working until the fix and the drafted reply exist', async () => {
+    const agentId = await startFix();
+    expect(entryOf()?.thread.stage).toBe('working');
+    expect(entryOf()?.thread.replyDraft).toBeNull();
+    vi.advanceTimersByTime(4000);
+    expect(entryOf()?.thread.stage).toBe('working');
+    vi.advanceTimersByTime(4000);
+    expect(entryOf()?.thread).toMatchObject({
+      state: 'fixed',
+      stage: 'proposed',
+      disposition: 'fix',
+    });
+    expect(entryOf()?.thread.replyDraft?.length).toBeGreaterThan(0);
+    expect(store.getState().agentTurnState[agentId]?.kind).toBe('idle');
+    const attempt = store
+      .getState()
+      .sessionResolveAttempts[SESSION_ID]?.find((entry) => entry.agentId === agentId);
+    expect(attempt?.phase).toBe('finished');
+  });
+
+  it('approves the fix locally and keeps the drafted reply ready to publish', async () => {
+    await startFix();
+    vi.advanceTimersByTime(8000);
+    const entry = entryOf();
+    if (entry === undefined) {
+      throw new Error('no comment');
+    }
+    await store.getState().acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: entry.item.id,
+      revision: entry.item.candidateRevision,
+      reply: entry.thread.replyDraft ?? '',
+    });
+    expect(entryOf()?.item.approvalState).toBe('accepted');
+    expect(entryOf()?.thread.stage).toBe('approved');
+    expect(entryOf()?.thread.replyPostedAt).toBeNull();
+  });
+
+  it('stops a fix in flight and lets the visitor start it again', async () => {
+    const first = await startFix();
+    vi.advanceTimersByTime(2000);
+    await store.getState().forceCloseResolver(SESSION_ID, first);
+    expect(entryOf()?.thread).toMatchObject({ state: 'open', stage: 'new' });
+    vi.advanceTimersByTime(10000);
+    expect(entryOf()?.thread.replyDraft).toBeNull();
+    await startFix();
+    vi.advanceTimersByTime(8000);
+    expect(entryOf()?.thread.stage).toBe('proposed');
+  });
+
+  it('keeps publishing local and says so', async () => {
+    await expect(
+      store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: THREAD }),
+    ).rejects.toThrow();
+    const notice = store.getState().undoNotices.at(-1);
+    expect(notice?.toast.title).toBe('Demo playground');
+    expect(entryOf()?.thread.replyPostedAt).toBeNull();
+  });
+});
