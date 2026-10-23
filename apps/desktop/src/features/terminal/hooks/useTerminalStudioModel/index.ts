@@ -26,6 +26,7 @@ import {
   type TerminalWorktree,
 } from '../../terminalWorktrees';
 import { terminalWorktreeKeyIn } from '../../../../store/slices/terminal/terminalWorktree';
+import { changeDirectoryInput } from '../../changeDirectoryInput';
 import { forgetTerminalCommand, lastCommandOf } from '../../commandTracker';
 import { invokeTerminalWrite } from '../../terminal';
 import { stringToBase64 } from '../../terminalDriver';
@@ -53,10 +54,6 @@ type OpenOnParams = {
   readonly owner: TerminalOwner;
   readonly cwd: string | null;
   readonly sessionId: SessionId | null;
-};
-
-type QuoteParams = {
-  readonly path: string;
 };
 
 export type TerminalSelectParams = {
@@ -93,8 +90,6 @@ const NO_MOUNTS: ReadonlyArray<SessionProjectMount> = [];
 const NO_TABS: ReadonlyArray<TerminalTab> = [];
 
 const NO_CLUSTERS: ReadonlyArray<PickerCluster> = [];
-
-const shellQuote = ({ path }: QuoteParams): string => `'${path.split("'").join("'\\''")}'`;
 
 export const useTerminalStudioModel = ({
   workspaceId,
@@ -393,7 +388,7 @@ export const useTerminalStudioModel = ({
       }
       void invokeTerminalWrite(
         selected.id,
-        stringToBase64({ value: `cd ${shellQuote({ path: target.path })}\r` }),
+        stringToBase64({ value: changeDirectoryInput({ path: target.path }) }),
       ).catch((error) =>
         reportError({ title: 'Could not change the terminal folder', error, workspaceId }),
       );
