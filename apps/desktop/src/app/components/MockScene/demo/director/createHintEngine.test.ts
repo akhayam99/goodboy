@@ -23,6 +23,7 @@ import {
 import { AGENT_HINTS } from '../hints/agentHints';
 import { ONBOARDING_HINTS } from '../hints/onboardingHints';
 import type { DemoHint } from '../hints/demoHintTypes';
+import { setupPlace } from '../hints/setupPlace';
 import { createHintEngine } from './createHintEngine';
 import { createSimulatedAnswer } from './createSimulatedAnswer';
 import { createSimulatedSend } from './createSimulatedSend';
@@ -107,16 +108,19 @@ const engineFor = ({ hints }: EngineParams) => {
     view: window,
     generation: () => generation,
     hintsOf: ({ chapterId }: TrackParams) => (chapterId === 'test' ? hints : []),
+    placeOf: setupPlace,
     onReport: ({ report }) => reports.push(report),
   });
   const shown = (): ReadonlyArray<string | null> =>
     reports.flatMap((report) => (report.type === 'anchor' ? [report.hintId] : []));
   const tried = (): ReadonlyArray<string> =>
     reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : []));
+  const places = (): ReadonlyArray<string> =>
+    reports.flatMap((report) => (report.type === 'place' ? [report.place] : []));
   const setGeneration = (next: number) => {
     generation = next;
   };
-  return { engine, reports, shown, tried, setGeneration };
+  return { engine, reports, shown, tried, places, setGeneration };
 };
 
 const frame = async (): Promise<void> => {
@@ -268,6 +272,89 @@ describe('the hint engine', () => {
     await frame();
     expect(tried()).toEqual(['setup-agents']);
     expect(shown().at(-1)).toBeNull();
+    engine.dispose();
+  });
+
+  it('reports the wizard screen once per change so the shell can follow it', async () => {
+    document.body.innerHTML = `<div aria-label="Goodboy setup" data-step="welcome"></div>`;
+    const { engine, places } = engineFor({ hints: ONBOARDING_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    document.querySelector('[aria-label="Goodboy setup"]')?.setAttribute('data-step', 'agents');
+    await frame();
+    await frame();
+    expect(places()).toEqual(['welcome', 'agents']);
+    engine.dispose();
+  });
+
+  it('asks for Create once a folder is chosen, then credits the workspace', async () => {
+    document.body.innerHTML = `
+      <div aria-label="Goodboy setup" data-step="workspace">
+        <button type="button" data-demo-anchor="setup-choose-folder">Choose folder</button>
+      </div>
+    `;
+    const { engine, shown, tried } = engineFor({ hints: ONBOARDING_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    expect(shown().at(-1)).toBe('setup-workspace');
+    const wizard = document.querySelector('[aria-label="Goodboy setup"]');
+    if (wizard === null) {
+      throw new Error('missing wizard');
+    }
+    wizard.innerHTML = '<button type="submit" data-demo-anchor="setup-create">Create</button>';
+    await frame();
+    expect(shown().at(-1)).toBe('setup-create');
+    expect(tried()).toEqual(['setup-workspace']);
+    wizard.setAttribute('data-step', 'tools');
+    await frame();
+    expect(tried()).toEqual(['setup-workspace', 'setup-create']);
+    engine.dispose();
+  });
+
+  it('credits the first task when its session opens and points on once it answered', async () => {
+    document.body.innerHTML = `
+      <div aria-label="Goodboy setup" data-step="first-session">
+        <button type="button" data-demo-anchor="setup-first-start">Start</button>
+      </div>
+    `;
+    const { engine, shown, tried } = engineFor({ hints: ONBOARDING_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    expect(shown().at(-1)).toBe('setup-first-start');
+    document.body.innerHTML = '<textarea aria-label="Message to the agent"></textarea>';
+    seed();
+    await frame();
+    expect(tried()).toEqual(['setup-first-start']);
+    expect(shown().at(-1)).toBe('setup-done');
+    engine.dispose();
+  });
+
+  it('flags a control scrolled out of view and scrolls it in on request', async () => {
+    document.body.innerHTML = `
+      <div aria-label="Goodboy setup" data-step="tools">
+        <button type="button" data-demo-anchor="setup-continue">Continue</button>
+      </div>
+    `;
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      return this.tagName === 'BUTTON'
+        ? new DOMRect(100, window.innerHeight + 400, 40, 24)
+        : new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+    });
+    const { engine, reports } = engineFor({ hints: ONBOARDING_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    expect(reports.at(-1)).toMatchObject({
+      type: 'anchor',
+      hintId: 'setup-tools',
+      rect: null,
+      isOffscreen: true,
+    });
+    engine.reveal({ hintId: 'setup-tools' });
+    expect(scrolled).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
     engine.dispose();
   });
 });

@@ -328,9 +328,11 @@ Acme docs; `none` up to Workspace, `repo` after it), and
 optional, Work with an agent, Orchestrate, Find work and results, Review and
 ship), each a list of beats. A beat is another scene loaded in an iframe of the
 same server (`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and
-scaled to fit, so every beat gets a clean store and its own timers. The groups
-live in `MockScene/demo/demoChapters.ts`, `#<group id>` in the URL opens one,
-and a bare visit opens Work with an agent.
+scaled to fit, so every beat gets a clean store and its own timers. The group
+names and their one line live in `MockScene/demo/demoGroups.ts`, which both the
+rail (through `demoChapters.ts`) and the phone page read, so the two never
+drift. `#<group id>` in the URL opens one, and a bare visit opens Work with an
+agent (`defaultGroupId.ts`).
 
 Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With
@@ -345,20 +347,27 @@ reveal. The frame and the playground talk over `postMessage` on channel
 `goodboy-demo`, version 1, both sides checking origin and the exact source
 window. The frame reports `ready` (seeded and painted, cues waiting), `progress`,
 `complete` and `hint` (a cue's `hint({ text })`, for step hints the shell does
-not draw yet); the playground sends `play`, `pause` and `restart`. A restart
-carries a higher generation: the frame restores the store it had before the
-first cue and replays, and every report from an older generation is dropped.
-The stage shows a frame only once it reports `ready`, keeping the previous one
-on screen until then, and a beat moves on `holdMs` after its frame reports
-`complete`. On the board the card that leaves Running travels once to Needs
+not draw yet); the playground sends `play` once the frame it shows is ready.
+The frame still answers `pause` and `restart` (a restart carries a higher
+generation, restores the store it had before the first cue and drops every
+report from an older generation), but the shell no longer sends them. The
+stage shows a frame only once it reports `ready`, keeping the previous one on
+screen until then. Nothing moves on by itself: the visitor drives, and a beat
+changes only when they pick a step in the timeline or act in the app. A group
+can name a `placeOf` check and give its beats a `place`; the frame reports
+`place` when that check changes, and the timeline follows the step without
+reloading the frame (Set up follows the wizard screen this way). Picking the
+step the frame left reloads it fresh. Replay loads the group's first beat in a
+fresh frame and clears its hint progress. On the board the card that leaves Running travels once to Needs
 you: `demo/director/travelCard.ts` flies a copy of the card from its old box to
 its new one over the columns (a column's `ScrollFade` would clip the real card)
 and fades the real card in as the copy lands. It runs only in the demo, since
 the app's motion registry in `packages/ui/DESIGN-SYSTEM.md` is closed, and
-under reduced motion or with nothing laid out the card changes column in place. Pointer, key and wheel input inside a frame pause both sides
-without blocking the input; Play after that restarts the beat instead of
-writing cues over the visitor's changes. Under reduced motion the frame settles
-on the seeded scene and autoplay is off. In a directed frame `sendTurn` is
+under reduced motion or with nothing laid out the card changes column in place. A pointer or key press inside
+a frame settles its cues at once (`settle` in `createSceneDirector.ts` applies
+every cue left and reports `complete`), so the scene never writes over the
+visitor's changes and there is nothing to pause. Under reduced motion the
+frame settles on the seeded scene. In a directed frame `sendTurn` is
 simulated: it appends the user turn, runs the agent and streams a reply
 through the same live text path, so a composer never reaches IPC, and
 `useFakeTauri` keeps its fake boundary for the whole visit. `&theme=dark`
@@ -374,17 +383,32 @@ store and DOM of the frame. Once a frame is ready the stage sends
 it `hints` (the group id and the hint ids already tried or skipped); the frame's
 `createHintEngine` re-measures on store changes, DOM mutations, scroll and
 resize in one animation frame and reports `anchor` (the first untried hint whose
-control is on screen, with its rect) and `tried` (a hint whose done check held
-after its reveal check did). Reports carry the frame's generation and the stage
+control exists, with its rect, or `isOffscreen` when a scroll container or the
+viewport hides it) and `tried` (a hint whose done check held after its reveal
+check did). Reports carry the frame's generation and the stage
 drops any from an older generation or another frame. The stage draws one note
 beside the anchor through the stage scale, a 2px outline and a callout that
-flips side near an edge; only the callout takes clicks. Escape hides it, H
-brings it back, Skip hint settles it. The rail and the header count distinct
+tries the other sides near an edge (below before the opposite side); only the
+callout takes clicks. A control scrolled out of view gets a note at the bottom
+of the stage with Show control, which sends `reveal` so the frame scrolls it
+into view once. Escape hides either note, H brings it back, Skip hint settles
+it. A hint with `nextChapterId` is the closing note of a group: it counts no
+outcome and offers Next to that group instead of Skip. The rail and the header count distinct
 outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
 (every read and write survives blocked storage), and Replay clears the open
 group only. Another group gets hints by adding a data file and a `hints` entry.
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
 answer, keeps the unsent draft and streams a short acknowledgment.
+
+Set up runs the real wizard end to end. `scenes/onboarding/setupSceneAnswer.ts`
+answers the folder picker with `~/Code/harborline` (payments-api, ledger-core,
+notify-relay) after a short delay, the git checks and a committed
+`db_transaction`, so Create goes through the real `createWorkspaceWithFolders`.
+`seedWizardScene` signs in a detected agent on Sign in, keeps the new workspace
+on `setCurrentWorkspace` and starts the first task through
+`startSampleScout.ts`: it seeds a Scout session, appends the visitor's prompt and
+streams a reply picked by `sampleScoutReply.ts`, and `OnboardingScene` shows
+that session in the app shell once the wizard closes.
 
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens

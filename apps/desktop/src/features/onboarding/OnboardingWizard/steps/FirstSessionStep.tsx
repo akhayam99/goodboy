@@ -234,6 +234,7 @@ export const FirstSessionStep = ({
           isBusy={isStarting}
           busyLabel="Starting session"
           onClick={start}
+          data-demo-anchor="setup-first-start"
         >
           {cta.primary}
           <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />

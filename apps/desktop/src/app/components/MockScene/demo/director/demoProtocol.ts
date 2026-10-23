@@ -38,6 +38,14 @@ export type DemoHintsCommand = {
   readonly settledIds: ReadonlyArray<string>;
 };
 
+export type DemoRevealCommand = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'reveal';
+  readonly hintId: string;
+};
+
 type DemoAnchorReport = {
   readonly channel: typeof DEMO_PROTOCOL.channel;
   readonly version: typeof DEMO_PROTOCOL.version;
@@ -45,6 +53,15 @@ type DemoAnchorReport = {
   readonly type: 'anchor';
   readonly hintId: string | null;
   readonly rect: DemoRect | null;
+  readonly isOffscreen: boolean;
+};
+
+type DemoPlaceReport = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'place';
+  readonly place: string;
 };
 
 type DemoTriedReport = {
@@ -55,4 +72,4 @@ type DemoTriedReport = {
   readonly hintId: string;
 };
 
-export type DemoHintReport = DemoAnchorReport | DemoTriedReport;
+export type DemoHintReport = DemoAnchorReport | DemoTriedReport | DemoPlaceReport;

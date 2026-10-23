@@ -1,30 +1,25 @@
-import { GitPullRequest, Network, Plug, SquareTerminal, type LucideIcon } from 'lucide-react';
+import {
+  GitPullRequest,
+  LayoutList,
+  Network,
+  Plug,
+  SquareTerminal,
+  type LucideIcon,
+} from 'lucide-react';
+import { DEMO_GROUPS } from '../demoGroups';
 
-type PhoneGroup = {
-  readonly title: string;
-  readonly line: string;
-  readonly icon: LucideIcon;
-};
+type GroupId = keyof typeof DEMO_GROUPS;
 
-export const PHONE_GROUPS = [
-  {
-    title: 'Set up',
-    line: 'Sign in to your agents and point Goodboy at a repository',
-    icon: Plug,
-  },
-  {
-    title: 'Work with an agent',
-    line: 'It edits, explains and stops to ask when a choice is yours',
-    icon: SquareTerminal,
-  },
-  {
-    title: 'Orchestrate',
-    line: 'Chain agents in a workflow, or let Auto plan and delegate',
-    icon: Network,
-  },
-  {
-    title: 'Review and ship',
-    line: 'Read every change, then turn review comments into fixes',
-    icon: GitPullRequest,
-  },
-] as const satisfies ReadonlyArray<PhoneGroup>;
+const GROUP_ICON = {
+  setup: Plug,
+  agent: SquareTerminal,
+  orchestrate: Network,
+  find: LayoutList,
+  review: GitPullRequest,
+} as const satisfies Readonly<Record<GroupId, LucideIcon>>;
+
+export const PHONE_GROUPS = Object.values(DEMO_GROUPS).map((group) => ({
+  title: group.title,
+  line: group.line,
+  icon: GROUP_ICON[group.id],
+}));

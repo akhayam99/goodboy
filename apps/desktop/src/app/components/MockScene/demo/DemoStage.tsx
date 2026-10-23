@@ -3,19 +3,19 @@ import { cn } from '@goodboy/ui';
 import { useStageScale } from './useStageScale';
 import { DemoStageLoading } from './DemoStageLoading';
 import { STAGE_BACKDROP } from './stageBackdrop';
-import { DEMO_PROTOCOL, type DemoCommandType, type DemoReport } from './director/demoProtocol';
+import { DEMO_PROTOCOL, type DemoReport } from './director/demoProtocol';
 import { isDemoReport } from './director/isDemoReport';
 import { isDemoHintReport } from './director/isDemoHintReport';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
+import { DemoHintSlot } from './DemoHintSlot';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
-import type { HintReportParams, HintTrack } from './useDemoHints';
+import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
 
 const APP_WIDTH = 1440;
 const APP_HEIGHT = 900;
 const STAGE_INSET = 16;
 const SILENT_LIMIT_MS = 20000;
 const FADE_MS = 320;
-const INPUT_EVENTS = ['pointerdown', 'keydown', 'wheel'] as const;
 
 type ShownParams = {
   readonly key: string;
@@ -24,16 +24,23 @@ type ShownParams = {
 type Props = {
   readonly frame: StageFrame;
   readonly preloadFrame: StageFrame | undefined;
-  readonly command: FrameCommand;
+  readonly command: FrameCommand | undefined;
   readonly onShown: (params: ShownParams) => void;
   readonly onReport: (params: FrameReportParams) => void;
-  readonly onInteract: () => void;
   readonly onFocusLost: () => void;
   readonly hintTrack: HintTrack | undefined;
   readonly coach: CoachMark | undefined;
+  readonly offscreen: OffscreenHint | undefined;
+  readonly reveal: HintReveal | undefined;
   readonly onHintReport: (params: HintReportParams) => void;
   readonly onSkipHint: () => void;
   readonly onHideHint: () => void;
+  readonly onRevealHint: () => void;
+  readonly onNextChapter: (params: ChapterParams) => void;
+};
+
+type ChapterParams = {
+  readonly id: string;
 };
 
 type WatchParams = {
@@ -43,18 +50,17 @@ type WatchParams = {
 
 type SentCommand = {
   readonly generation: number;
-  readonly type: Exclude<DemoCommandType, 'restart'>;
+  readonly type: FrameCommand['type'] | null;
 };
 
 type PostParams = {
   readonly frame: HTMLIFrameElement;
-  readonly generation: number;
-  readonly type: DemoCommandType;
+  readonly message: Readonly<Record<string, unknown>>;
 };
 
-const postCommand = ({ frame, generation, type }: PostParams): void => {
+const postToFrame = ({ frame, message }: PostParams): void => {
   frame.contentWindow?.postMessage(
-    { channel: DEMO_PROTOCOL.channel, version: DEMO_PROTOCOL.version, generation, type },
+    { channel: DEMO_PROTOCOL.channel, version: DEMO_PROTOCOL.version, ...message },
     window.location.origin,
   );
 };
@@ -75,13 +81,16 @@ export const DemoStage = ({
   command,
   onShown,
   onReport,
-  onInteract,
   onFocusLost,
   hintTrack,
   coach,
+  offscreen,
+  reveal,
   onHintReport,
   onSkipHint,
   onHideHint,
+  onRevealHint,
+  onNextChapter,
 }: Props) => {
   const { ref, scale, hasRoom } = useStageScale({
     width: APP_WIDTH,
@@ -95,6 +104,7 @@ export const DemoStage = ({
   const elements = useRef(new Map<string, HTMLIFrameElement>());
   const sent = useRef(new Map<string, SentCommand>());
   const hintsSent = useRef(new Map<string, string>());
+  const revealSent = useRef(0);
 
   const currentKey = activeFrame.key;
   const currentKeyRef = useRef(currentKey);
@@ -134,7 +144,7 @@ export const DemoStage = ({
       }
       const report = event.data;
       if (report.type === 'ready') {
-        sent.current.set(key, { generation: report.generation, type: 'pause' });
+        sent.current.set(key, { generation: report.generation, type: null });
         markMounted({ key });
       }
       onReport({ key, report });
@@ -184,7 +194,7 @@ export const DemoStage = ({
   }, [fadingKey]);
 
   useEffect(() => {
-    if (!mountedKeys.has(command.key)) {
+    if (command === undefined || !mountedKeys.has(command.key)) {
       return;
     }
     const element = elements.current.get(command.key);
@@ -192,16 +202,11 @@ export const DemoStage = ({
       return;
     }
     const last = sent.current.get(command.key);
-    if (last !== undefined && last.generation < command.generation) {
-      postCommand({ frame: element, generation: command.generation, type: 'restart' });
-      sent.current.set(command.key, { generation: command.generation, type: 'pause' });
-    }
-    const latest = sent.current.get(command.key);
-    if (latest?.generation === command.generation && latest.type === command.type) {
+    if (last === undefined || last.type === command.type) {
       return;
     }
-    postCommand({ frame: element, generation: command.generation, type: command.type });
-    sent.current.set(command.key, { generation: command.generation, type: command.type });
+    postToFrame({ frame: element, message: { generation: last.generation, type: command.type } });
+    sent.current.set(command.key, { generation: last.generation, type: command.type });
   }, [command, mountedKeys]);
 
   useEffect(() => {
@@ -218,25 +223,33 @@ export const DemoStage = ({
       return;
     }
     hintsSent.current.set(currentKey, signature);
-    element.contentWindow?.postMessage(
-      {
-        channel: DEMO_PROTOCOL.channel,
-        version: DEMO_PROTOCOL.version,
+    postToFrame({
+      frame: element,
+      message: {
         generation,
         type: 'hints',
         chapterId: hintTrack.chapterId,
         settledIds: hintTrack.settledIds,
       },
-      window.location.origin,
-    );
+    });
   }, [hintTrack, mountedKeys, currentKey, command]);
+
+  useEffect(() => {
+    if (reveal === undefined || reveal.count === revealSent.current) {
+      return;
+    }
+    const element = elements.current.get(currentKey);
+    const generation = sent.current.get(currentKey)?.generation;
+    if (element === undefined || generation === undefined) {
+      return;
+    }
+    revealSent.current = reveal.count;
+    postToFrame({ frame: element, message: { generation, type: 'reveal', hintId: reveal.hintId } });
+  }, [reveal, currentKey]);
 
   const visibleKey = shownKey ?? currentKey;
 
   const watch = ({ key, frame }: WatchParams) => {
-    for (const type of INPUT_EVENTS) {
-      frame.contentWindow?.addEventListener(type, onInteract, { capture: true, passive: true });
-    }
     window.setTimeout(() => {
       if (!frame.isConnected || sent.current.has(key)) {
         return;
@@ -290,7 +303,11 @@ export const DemoStage = ({
                 bounds={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
                 onSkip={onSkipHint}
                 onHide={onHideHint}
+                onNext={onNextChapter}
               />
+            ) : null}
+            {offscreen !== undefined && shownKey === currentKey ? (
+              <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
             ) : null}
             {frames.map((frame) => {
               const isVisible = frame.key === visibleKey && shownKey !== undefined;
