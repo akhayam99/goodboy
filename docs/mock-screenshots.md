@@ -54,8 +54,8 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
 `pnpm --dir apps/desktop build:demo` typechecks and builds a production mock
 site into the gitignored `apps/desktop/dist-demo/`. The script in
 `apps/desktop/package.json` enables `VITE_GOODBOY_MOCK=1`, uses mode `demo`
-and sets a relative asset base, so the output can live below `/demo/` without
-the Tauri runtime. It uses the existing mock entry in `apps/desktop/src/main.tsx`.
+and sets a relative asset base, so the same output serves the root of
+`demo.goodboy-ai.dev` and `vite preview` without the Tauri runtime. It uses the existing mock entry in `apps/desktop/src/main.tsx`.
 `apps/desktop/src/shared/lib/scrollerStyle.ts` returns the browser scrollbar
 default before scene IPC is installed, so the root provider does not call
 native IPC during that first mount.
@@ -68,10 +68,7 @@ dev. Preview with `pnpm --dir apps/desktop exec vite preview --outDir dist-demo 
 and open `http://localhost:5194/` for the playground, or
 `http://localhost:5194/?scene=chat-shell` for a single frame.
 
-For a host that removes trailing slashes, build with
-`pnpm --dir apps/desktop build:demo --base /demo/`. An absolute asset base
-keeps `/demo` and `/demo/` working with the same files. Keep source maps off
-for public output. The eager registry in `MockScene/registry/index.ts` bundles
+Keep source maps off for public output. The eager registry in `MockScene/registry/index.ts` bundles
 every scene fixture, not only the playground's, so every fixture is public:
 paths are `~/code/<mock company>/<repo>` (never `/Users/` or `/home/`), email
 addresses sit on a mock company or reserved domain, and nothing is shaped like
