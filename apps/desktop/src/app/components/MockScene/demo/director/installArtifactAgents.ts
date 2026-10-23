@@ -18,6 +18,7 @@ import { scheduleCues } from './scheduleCues';
 import { startAgentTurn } from './startAgentTurn';
 import { textCues } from './textCues';
 import { textCuesEndMs } from './textCuesEndMs';
+import { SAMPLE_WIREFRAME_DOCUMENT } from './sampleWireframeDocument';
 
 const SAMPLE =
   'This is a sample run. No agent is connected in this playground. The result is saved in Artifacts.';
@@ -38,7 +39,7 @@ const sampleArtifactOf = ({
   kind,
   runId,
   at,
-}: ArtifactParams): SessionArtifact | null => {
+}: ArtifactParams): SessionArtifact => {
   const state = store.getState();
   const base = {
     id: brandId<ArtifactId>({ value: `demo-${kind}-${agentId}` }),
@@ -64,12 +65,14 @@ const sampleArtifactOf = ({
       metadata: { reportType: 'session-summary' },
     };
   }
-  const saved = Object.values(state.sessionArtifacts)
-    .flat()
-    .find((artifact) => artifact.kind === 'wireframe' && artifact.status === 'active');
-  return saved === undefined || saved.kind !== 'wireframe'
-    ? null
-    : { ...saved, ...base, kind: 'wireframe' };
+  return {
+    ...base,
+    kind: 'wireframe',
+    title: 'Deliveries screen',
+    sourceFormat: 'json',
+    sourceText: JSON.stringify(SAMPLE_WIREFRAME_DOCUMENT, null, 2),
+    metadata: { fidelity: 'low', designProfile: {} },
+  };
 };
 
 type Params = {
@@ -122,14 +125,12 @@ const spawnSample = ({ store, sessionId, kind, name, brief }: SpawnParams): Agen
             runId,
             at: doneAt,
           });
-          if (artifact !== null) {
-            target.setState((current) => ({
-              sessionArtifacts: {
-                ...current.sessionArtifacts,
-                [sessionId]: [...(current.sessionArtifacts[sessionId] ?? []), artifact],
-              },
-            }));
-          }
+          target.setState((current) => ({
+            sessionArtifacts: {
+              ...current.sessionArtifacts,
+              [sessionId]: [...(current.sessionArtifacts[sessionId] ?? []), artifact],
+            },
+          }));
           appendTurnEvents({
             store: target,
             agentId,
