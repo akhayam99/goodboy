@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import type { IsoDateTime } from '@goodboy/types';
 import { useAppStore } from '../../../../../../store';
+import { nowIso } from '../../../../../../store/slices/project-mounts/nowIso';
 import { createPlaybackClock } from '../createPlaybackClock';
 import { createSceneDirector, type SceneDirector } from '../createSceneDirector';
 import { createSimulatedSend } from '../createSimulatedSend';
@@ -27,8 +27,6 @@ const GENERIC_REPLY =
 const isReducedMotion = (): boolean =>
   typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches;
 
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
-
 const post = ({ report }: ReportParams): void => {
   window.parent.postMessage(report, window.location.origin);
 };
@@ -50,7 +48,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         sendTurn: createSimulatedSend({
           store,
           reply: timeline.reply ?? GENERIC_REPLY,
-          now: nowIso,
+          now: () => nowIso({}),
         }),
       });
       director = createSceneDirector({
@@ -58,7 +56,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         store,
         clock: createPlaybackClock({ now: () => performance.now() }),
         isSettled: isReducedMotion(),
-        now: nowIso,
+        now: () => nowIso({}),
         onReport: post,
       });
       director.start();

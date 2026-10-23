@@ -1,4 +1,10 @@
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type IsoDateTime,
+  type ProviderRunId,
+  type SessionId,
+} from '@goodboy/types';
 import type { SendTurnInput, SendTurnResult } from '../../../../../store/slices/turn/types';
 import type { DirectorStore } from './directorTypes';
 import { appendTurnEvents } from './appendTurnEvents';
@@ -87,7 +93,7 @@ export const createSimulatedSend = ({ store, reply, now }: Params) => {
       return { blockedOverBudget: false };
     }
     turns += 1;
-    const runId = `demo-run-${agentId}-${turns}` as ProviderRunId;
+    const runId = brandId<ProviderRunId>({ value: `demo-run-${agentId}-${turns}` });
     const at = now();
     appendTurnEvents({
       store,

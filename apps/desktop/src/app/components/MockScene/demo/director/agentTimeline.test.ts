@@ -6,7 +6,13 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, OpenQuestion, OpenQuestionId, ProviderRunId } from '@goodboy/types';
+import {
+  brandId,
+  type IsoDateTime,
+  type OpenQuestion,
+  type OpenQuestionId,
+  type ProviderRunId,
+} from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -34,12 +40,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const AT = '2026-10-16T15:00:00.000Z' as IsoDateTime;
-const RUN = 'demo-test-run' as ProviderRunId;
+const AT = brandId<IsoDateTime>({ value: '2026-10-16T15:00:00.000Z' });
+const RUN = brandId<ProviderRunId>({ value: 'demo-test-run' });
 const session = aSession({ goal: 'Stop payments-api from double-crediting invoices' });
 const agent = anAgent({ sessionId: session.id, status: 'completed', kind: 'implementer' });
 const QUESTION: OpenQuestion = {
-  id: 'demo-test-question' as OpenQuestionId,
+  id: brandId<OpenQuestionId>({ value: 'demo-test-question' }),
   sessionId: session.id,
   createdByAgentId: agent.id,
   text: 'Banner or badge?',
@@ -75,7 +81,7 @@ const seed = (): void => {
   });
 };
 
-const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
+const nowIso = (): IsoDateTime => brandId<IsoDateTime>({ value: new Date().toISOString() });
 
 describe('the agent timeline', () => {
   it('rewinds the seeded turn and replays it up to the blocking question', () => {
