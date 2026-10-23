@@ -4,7 +4,10 @@ import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
-import { useAppStore, useSessions } from '../../../../store';
+import { useAppStore, useCurrentSession, useSessions } from '../../../../store';
+import { KeepAliveWorkSurface } from '../../KeepAliveWorkSurface';
+import { SessionFrame } from '../../SessionRail/SessionFrame';
+import { isDirectedScene } from '../demo/director/isDirectedScene';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
 import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';
@@ -23,7 +26,7 @@ const seedBoardChrome = (): void => {
     clearNotifications: async () => undefined,
     scriptRuns: {},
     projectScripts: {},
-    navigate: () => undefined,
+    ...(isDirectedScene() ? {} : { navigate: () => undefined }),
     ...(sceneParam({ key: 'storage' }) === 'reclaimable'
       ? { storageFolders: [...SETTINGS_STORAGE_FOLDERS] }
       : {}),
@@ -52,6 +55,7 @@ export const BoardShellScene = () => {
 
 const BoardShellSceneContent = () => {
   const sessions = useSessions();
+  const currentSession = useCurrentSession();
   const arrangement = shellArrangement({
     hasWorkspace: true,
     isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
@@ -75,14 +79,24 @@ const BoardShellSceneContent = () => {
           <ShellLeft
             arrangement={arrangement}
             workspaceId={WORKSPACE_ID}
-            currentSessionId={null}
+            currentSessionId={currentSession?.id ?? null}
             isDraftShown={false}
             actions={shell.actions}
             settingsSlotRef={shell.settingsSlotRef}
-            {...(shell.isStudioOpen ? {} : { placeOverride: 'board' as const })}
+            {...(shell.isStudioOpen || currentSession !== null
+              ? {}
+              : { placeOverride: 'board' as const })}
           />
         }
-        main={<StageBoard workspaceId={WORKSPACE_ID} sessions={sessions} />}
+        main={
+          currentSession === null ? (
+            <StageBoard workspaceId={WORKSPACE_ID} sessions={sessions} />
+          ) : (
+            <SessionFrame session={currentSession}>
+              <KeepAliveWorkSurface sessionId={currentSession.id} isActive />
+            </SessionFrame>
+          )
+        }
       />
       {shell.layers}
     </>
