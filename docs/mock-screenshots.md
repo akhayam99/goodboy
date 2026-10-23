@@ -370,7 +370,8 @@ under reduced motion or with nothing laid out the card changes column in place. 
 a frame settles its cues at once (`settle` in `createSceneDirector.ts` applies
 every cue left and reports `complete`), so the scene never writes over the
 visitor's changes and there is nothing to pause. Under reduced motion the
-frame settles on the seeded scene. In a directed frame `sendTurn` is
+frame runs `prepare` and applies every cue before it reports `ready`, so it
+opens on the timeline's final state (a working run ends finished). In a directed frame `sendTurn` is
 simulated: it appends the user turn, runs the agent and streams a reply
 through the same live text path, so a composer never reaches IPC. Sends and
 answers share one `createReplyRuns` per frame: every run gets its own id, a

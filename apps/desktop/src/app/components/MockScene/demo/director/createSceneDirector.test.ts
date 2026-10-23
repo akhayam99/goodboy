@@ -140,14 +140,23 @@ describe('the scene director', () => {
     expect(draftOf()).toBe('abc');
   });
 
-  it('settles at once under reduced motion', () => {
+  it('lands on the final state at once under reduced motion', () => {
     const prepare = vi.fn();
     const { director, reports } = direct({ timeline: { ...LETTERS, prepare }, isSettled: true });
     director.start();
+    expect(prepare).toHaveBeenCalledTimes(1);
+    expect(draftOf()).toBe('abc');
     director.play();
-    expect(prepare).not.toHaveBeenCalled();
-    expect(draftOf()).toBe('');
     expect(reports.at(-1)).toMatchObject({ type: 'complete', durationMs: 0 });
+    vi.advanceTimersByTime(2000);
+    expect(draftOf()).toBe('abc');
+  });
+
+  it('lands on the final state again after a restart under reduced motion', () => {
+    const { director } = direct({ timeline: LETTERS, isSettled: true });
+    director.start();
+    director.restart({ generation: 1 });
+    expect(draftOf()).toBe('abc');
   });
 
   it('passes a hint from a cue to the parent', () => {
@@ -211,6 +220,27 @@ describe('the demo timelines', () => {
     expect(run?.currentStep).toBe(2);
     expect(reviewer?.status).toBe('completed');
     expect(state.transcripts[C08_REVIEWER_ID]?.at(-1)?.kind).toBe('done');
+  });
+
+  it('finishes a working run without timers under reduced motion', () => {
+    seedC08({ state: 'working', selection: 'implementer' });
+    const timeline = runTimeline({ state: store.getState() });
+    if (timeline === null) {
+      throw new Error('no run timeline');
+    }
+    const { director, reports } = direct({ timeline, isSettled: true });
+    director.start();
+    director.play();
+    const state = store.getState();
+    const run = state.sessions
+      .find((session) => session.id === C08_SESSION_ID)
+      ?.workflowRuns.find((entry) => entry.id === C08_RUN_ID);
+    const reviewer = state.sessionPhaseRuns[C08_SESSION_ID]?.find(
+      (agent) => agent.id === C08_REVIEWER_ID,
+    );
+    expect(run?.currentStep).toBe(2);
+    expect(reviewer?.status).toBe('completed');
+    expect(reports.at(-1)?.type).toBe('complete');
   });
 });
 

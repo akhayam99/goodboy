@@ -51,8 +51,8 @@ export const createSceneDirector = ({
   now,
   onReport,
 }: Params): SceneDirector => {
-  const cues = isSettled ? [] : orderedCues({ timeline });
-  const durationMs = cues.at(-1)?.atMs ?? 0;
+  const cues = orderedCues({ timeline });
+  const durationMs = isSettled ? 0 : (cues.at(-1)?.atMs ?? 0);
   timeline.setup?.({ store });
   const snapshot = store.getState();
   let generation = 0;
@@ -88,11 +88,19 @@ export const createSceneDirector = ({
     timer = null;
   };
 
+  const applyRemaining = (): void => {
+    for (const cue of cues.slice(cueIndex)) {
+      cue.apply(cueParams());
+    }
+    cueIndex = cues.length;
+  };
+
   const prepare = (): void => {
-    if (isSettled) {
+    timeline.prepare(cueParams());
+    if (!isSettled) {
       return;
     }
-    timeline.prepare(cueParams());
+    applyRemaining();
   };
 
   const tick = (): void => {
@@ -149,10 +157,7 @@ export const createSceneDirector = ({
       }
       clearTimer();
       clock.pause();
-      for (const cue of cues.slice(cueIndex)) {
-        cue.apply(cueParams());
-      }
-      cueIndex = cues.length;
+      applyRemaining();
       emit({ type: 'complete' });
     },
     restart: ({ generation: next }: RestartParams) => {
