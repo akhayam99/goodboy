@@ -6,7 +6,6 @@ import { TRAIL_PILL_INSET } from '../../../shared/components/trailingSlot';
 import { useActionControls } from '../../actions/useActionControls';
 import type { SessionActionTarget } from '../../actions/types';
 import { RebasePromptVerb } from '../components/RebasePromptVerb';
-import { useRebaseStatuses } from '../useRebaseStatuses';
 import { rebaseAllSummaryOf } from './rebaseAllSummaryOf';
 
 type Props = {
@@ -23,7 +22,6 @@ const TRAIL_CLASS = 'flex shrink-0 items-center';
 export const RebaseAllCard = ({ sessionId }: Props) => {
   const run = useAppStore((s) => s.rebaseAllRuns[sessionId] ?? null);
   const dismissRebaseAll = useAppStore((s) => s.dismissRebaseAll);
-  useRebaseStatuses({ sessionId });
   const target = useMemo<SessionActionTarget>(() => ({ kind: 'session', sessionId }), [sessionId]);
   const controls = useActionControls({ target });
   const rebaseAllAction = controls.actions.find((action) => action.id === REBASE_ALL_ID);

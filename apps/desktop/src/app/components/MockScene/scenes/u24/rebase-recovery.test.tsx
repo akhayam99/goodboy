@@ -73,10 +73,11 @@ describe('the u24 rebase recovery scenes', () => {
   it('offers to bring the online commits in when the origin moved', async () => {
     renderScene({ name: 'rebase-origin-moved' });
 
-    await screen.findByRole('button', { name: 'Bring them into the plan' }, { timeout: 4_000 });
+    await screen.findByRole('button', { name: 'Bring them in' }, { timeout: 4_000 });
     await waitForSettledReads();
 
-    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Resolve myself' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
   });
 
   it('offers a retry, the terminal and the hook output when the push failed', async () => {

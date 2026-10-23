@@ -171,6 +171,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
         message: rebaseConflictMessageOf({ files, baseBranch, isHook }),
         files,
         sha,
+        head: rebase.head,
       }).then((outcome) => (outcome === 'stopped' ? 'conflict' : outcome));
     };
     const predicted = predictedConflictOf({ prediction });
@@ -184,7 +185,13 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
       return 'stopped';
     }
     if (typeof trial === 'string') {
-      return stopWith({ reason: 'failed', message: trial, files: [], sha: null });
+      return stopWith({
+        reason: 'failed',
+        message: trial,
+        files: [],
+        sha: null,
+        head: rebase.head,
+      });
     }
     if (trial.stop !== null) {
       if (trial.copyPath !== null) {
@@ -207,6 +214,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
         message: 'The rebase on the copy made no result. Nothing was changed.',
         files: [],
         sha: null,
+        head: rebase.head,
       });
     }
     if (trial.check?.isPassed === false) {

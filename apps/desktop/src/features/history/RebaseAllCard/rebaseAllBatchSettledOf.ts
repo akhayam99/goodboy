@@ -1,7 +1,7 @@
 import type { WorktreeStatus } from '@goodboy/types';
 import type { MountRowView } from '../../../store/slices/project-mounts/mountRowModel';
 import type { RebaseAllRun } from '../../../store/slices/rebaseAll/types';
-import { distanceBehind } from '../../../shared/lib/gitStatus';
+import { isRebaseStopSettled } from '../isRebaseStopSettled';
 
 type Params = {
   readonly run: RebaseAllRun | null;
@@ -14,9 +14,7 @@ type SettledParams = {
 };
 
 export const isRebasedBranchSettled = ({ status }: SettledParams): boolean =>
-  status !== undefined &&
-  distanceBehind({ distance: status.mainDistance }) === 0 &&
-  status.inProgress !== 'rebase';
+  isRebaseStopSettled({ status, head: null });
 
 export const rebaseAllBatchSettledOf = ({ run, rows, statuses }: Params): boolean => {
   if (run === null) {

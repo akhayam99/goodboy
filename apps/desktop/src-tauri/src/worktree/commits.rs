@@ -134,6 +134,220 @@ pub(super) fn worktree_abort_rebase_blocking(worktree_path: &str) -> Result<(), 
 }
 
 #[derive(Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RebaseStep {
+    pub is_in_progress: bool,
+}
+
+fn unmerged_paths(p: &Path) -> Result<Vec<String>, WorktreeError> {
+    let raw = git(p, &["diff", "--name-only", "--diff-filter=U"])?;
+    Ok(raw
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect())
+}
+
+#[derive(Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RebaseConflictFile {
+    pub path: String,
+    pub has_markers: bool,
+    pub is_stage_only: bool,
+}
+
+fn is_regular_blob(mode: &str) -> bool {
+    mode == "100644" || mode == "100755"
+}
+
+fn is_text_merge(p: &Path, path: &str) -> bool {
+    let Ok(raw) = git(p, &["ls-files", "-u", "-z", "--", path]) else {
+        return false;
+    };
+    let mut ours = None;
+    let mut theirs = None;
+    for entry in raw.split('\0') {
+        let Some((meta, _)) = entry.split_once('\t') else {
+            continue;
+        };
+        let fields: Vec<&str> = meta.split(' ').collect();
+        let [mode, sha, stage] = fields[..] else {
+            continue;
+        };
+        if !is_regular_blob(mode) {
+            return false;
+        }
+        match stage {
+            "2" => ours = Some(sha),
+            "3" => theirs = Some(sha),
+            _ => {}
+        }
+    }
+    let (Some(ours), Some(theirs)) = (ours, theirs) else {
+        return false;
+    };
+    let is_merge_unset = git(p, &["check-attr", "merge", "--", path])
+        .map(|line| line.trim_end().ends_with(": unset"))
+        .unwrap_or(true);
+    if is_merge_unset {
+        return false;
+    }
+    git(p, &["diff", "--numstat", ours, theirs])
+        .map(|stat| !stat.starts_with("-\t-\t"))
+        .unwrap_or(false)
+}
+
+fn has_conflict_markers(file: &Path) -> bool {
+    let Ok(bytes) = std::fs::read(file) else {
+        return false;
+    };
+    bytes
+        .split(|byte| *byte == b'\n')
+        .any(|line| line.starts_with(b"<<<<<<<") || line.starts_with(b">>>>>>>"))
+}
+
+fn conflict_files(p: &Path) -> Result<Vec<RebaseConflictFile>, WorktreeError> {
+    Ok(unmerged_paths(p)?
+        .into_iter()
+        .map(|path| RebaseConflictFile {
+            has_markers: has_conflict_markers(&p.join(&path)),
+            is_stage_only: !is_text_merge(p, &path),
+            path,
+        })
+        .collect())
+}
+
+fn rebase_step(p: &Path, args: &[&str]) -> Result<RebaseStep, WorktreeError> {
+    let output = Git::new()
+        .cwd(p)
+        .args(["-c", "core.editor=true"])
+        .args(args)
+        .env("GIT_EDITOR", "true")
+        .env("GIT_SEQUENCE_EDITOR", "true")
+        .batch_auth()
+        .output()?;
+    if output.success() {
+        return Ok(RebaseStep {
+            is_in_progress: in_progress_operation(p) == Some(GitOperation::Rebase),
+        });
+    }
+    if in_progress_operation(p) == Some(GitOperation::Rebase) && !unmerged_paths(p)?.is_empty() {
+        return Ok(RebaseStep {
+            is_in_progress: true,
+        });
+    }
+    Err(WorktreeError::Git {
+        message: output.stderr_redacted().trim().to_string(),
+    })
+}
+
+fn existing_worktree(worktree_path: &str) -> Result<&Path, WorktreeError> {
+    let p = Path::new(worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path.to_string()));
+    }
+    Ok(p)
+}
+
+#[tauri::command]
+pub async fn worktree_start_rebase(
+    worktree_path: String,
+    onto: String,
+    branch: String,
+) -> Result<RebaseStep, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        worktree_start_rebase_blocking(&worktree_path, &onto, &branch)
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+pub(super) fn worktree_start_rebase_blocking(
+    worktree_path: &str,
+    onto: &str,
+    branch: &str,
+) -> Result<RebaseStep, WorktreeError> {
+    let p = existing_worktree(worktree_path)?;
+    let onto = onto.trim();
+    if onto.is_empty() || onto.starts_with('-') {
+        return Err(WorktreeError::Git {
+            message: format!("{onto} is not a branch to rebase on"),
+        });
+    }
+    if in_progress_operation(p).is_some() {
+        return Err(WorktreeError::Git {
+            message: "another git operation is in progress in this worktree".to_string(),
+        });
+    }
+    let current = current_branch_name(p);
+    if current.as_deref() != Some(branch) {
+        return Err(WorktreeError::Git {
+            message: format!(
+                "this worktree is on {}, not {branch}",
+                current.as_deref().unwrap_or("no branch")
+            ),
+        });
+    }
+    rebase_step(p, &["rebase", onto])
+}
+
+#[tauri::command]
+pub async fn worktree_continue_rebase(worktree_path: String) -> Result<RebaseStep, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_continue_rebase_blocking(&worktree_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+pub(super) fn worktree_continue_rebase_blocking(
+    worktree_path: &str,
+) -> Result<RebaseStep, WorktreeError> {
+    let p = existing_worktree(worktree_path)?;
+    if in_progress_operation(p) != Some(GitOperation::Rebase) {
+        return Err(WorktreeError::Git {
+            message: "no rebase is stopped in this worktree".to_string(),
+        });
+    }
+    let files = conflict_files(p)?;
+    let left = files
+        .iter()
+        .filter(|file| file.has_markers || file.is_stage_only)
+        .count();
+    if left > 0 {
+        return Err(WorktreeError::Git {
+            message: format!(
+                "{left} {} still conflict",
+                match left {
+                    1 => "file",
+                    _ => "files",
+                }
+            ),
+        });
+    }
+    if !files.is_empty() {
+        let mut args = vec!["add", "-A", "--"];
+        args.extend(files.iter().map(|file| file.path.as_str()));
+        git(p, &args)?;
+    }
+    rebase_step(p, &["rebase", "--continue"])
+}
+
+#[tauri::command]
+pub async fn worktree_rebase_conflicts(
+    worktree_path: String,
+) -> Result<Vec<RebaseConflictFile>, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_rebase_conflicts_blocking(&worktree_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+pub(super) fn worktree_rebase_conflicts_blocking(
+    worktree_path: &str,
+) -> Result<Vec<RebaseConflictFile>, WorktreeError> {
+    conflict_files(existing_worktree(worktree_path)?)
+}
+
+#[derive(Debug, Serialize, PartialEq)]
 pub struct RangeCommit {
     pub sha: String,
     pub subject: String,

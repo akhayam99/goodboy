@@ -525,6 +525,37 @@ export const worktreeAbortRebase = async ({ worktreePath }: AbortRebaseParams): 
   await invokeCommand<void>('worktree_abort_rebase', { worktreePath });
 };
 
+export type RebaseStep = { readonly isInProgress: boolean };
+
+type StartRebaseParams = {
+  readonly worktreePath: string;
+  readonly onto: string;
+  readonly branch: string;
+};
+
+export const worktreeStartRebase = async ({
+  worktreePath,
+  onto,
+  branch,
+}: StartRebaseParams): Promise<RebaseStep> =>
+  invokeCommand<RebaseStep>('worktree_start_rebase', { worktreePath, onto, branch });
+
+export const worktreeContinueRebase = async ({
+  worktreePath,
+}: AbortRebaseParams): Promise<RebaseStep> =>
+  invokeCommand<RebaseStep>('worktree_continue_rebase', { worktreePath });
+
+export type RebaseConflictFile = {
+  readonly path: string;
+  readonly hasMarkers: boolean;
+  readonly isStageOnly: boolean;
+};
+
+export const worktreeRebaseConflicts = async ({
+  worktreePath,
+}: AbortRebaseParams): Promise<ReadonlyArray<RebaseConflictFile>> =>
+  invokeCommand<ReadonlyArray<RebaseConflictFile>>('worktree_rebase_conflicts', { worktreePath });
+
 export type RangeCommit = { readonly sha: string; readonly subject: string };
 
 export type CommitRangeParams = {

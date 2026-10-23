@@ -2,7 +2,6 @@ import { Button } from '@goodboy/ui';
 import type { RebaseJobControls } from '../useRebaseJob';
 import type { useJobBannerActions } from '../hooks/useJobBannerActions';
 import { ForgetSavedButton } from './ForgetSavedButton';
-import { JobBannerDetails } from './JobBannerDetails';
 
 type Props = {
   readonly controls: RebaseJobControls;
@@ -110,74 +109,19 @@ export const JobBannerActions = ({ controls, actions, isNoteOpen, onToggleNote }
           {dismiss}
         </>
       );
-    case 'dirty':
-      return (
-        <>
-          <Button size="sm" onClick={controls.checkAgain}>
-            Check again
-          </Button>
-          <Button size="sm" variant="secondary" onClick={controls.openTerminal}>
-            Open terminal
-          </Button>
-          {dismiss}
-        </>
-      );
-    case 'head-moved':
-      return (
-        <>
-          <Button size="sm" isBusy={pendingKeys.has('retry-rebase')} onClick={actions.retryRebase}>
-            Retry rebase
-          </Button>
-          {dismiss}
-        </>
-      );
-    case 'push-failed':
-      return (
-        <>
-          <Button size="sm" isBusy={pendingKeys.has('fix-push')} onClick={actions.fixPush}>
-            Fix with agent
-          </Button>
-          <Button size="sm" variant="secondary" onClick={controls.openPushTerminal}>
-            Open terminal here
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            isBusy={pendingKeys.has('retry-push')}
-            onClick={actions.retryPush}
-          >
-            Retry push
-          </Button>
-          {job.detail === null ? null : <JobBannerDetails detail={job.detail} />}
-          {dismiss}
-        </>
-      );
-    case 'origin-moved':
-      return (
-        <>
-          <Button size="sm" isBusy={pendingKeys.has('bring-origin')} onClick={actions.bringOrigin}>
-            Bring them into the plan
-          </Button>
-          {dismiss}
-        </>
-      );
-    case 'auto-resolving':
-      return (
-        <>
-          {agentId === null ? null : (
-            <Button size="sm" variant="ghost" onClick={controls.seeWhatItDid}>
-              Open Auto
-            </Button>
-          )}
-          {dismiss}
-        </>
-      );
-    case 'auto-done':
-    case 'result-differs':
-    case 'blocked':
-    case 'failed':
-      return dismiss;
     case 'conflict':
+    case 'rebasing-here':
+    case 'rebased-here':
+    case 'auto-resolving':
+    case 'auto-done':
+    case 'pushed':
+    case 'origin-moved':
+    case 'push-failed':
+    case 'dirty':
+    case 'head-moved':
+    case 'blocked':
+    case 'result-differs':
+    case 'failed':
     case 'checking':
     case 'replaying':
     case 'checking-result':

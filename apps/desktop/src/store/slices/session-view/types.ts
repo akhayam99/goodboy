@@ -288,12 +288,18 @@ type SessionViewSliceActions = {
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
   openMountDiff(sessionId: SessionId, worktreePath: string): void;
   openRewriteHistory(sessionId: SessionId, worktreePath: string | null): void;
+  openMountCommits(input: OpenMountCommitsInput): boolean;
   openMountTerminal(sessionId: SessionId, worktreePath: string): void;
   beginSessionCreation(
     sessionId: SessionId,
     creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
   ): SessionCreationId;
   endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
+};
+
+export type OpenMountCommitsInput = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
 };
 
 export type SessionViewSlice = SessionViewSliceState & SessionViewSliceActions;

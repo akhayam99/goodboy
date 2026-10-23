@@ -6,6 +6,7 @@ import type { NextGroupChoice } from '../../../../store/slices/next-view/state';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import type { ActionCardModel } from './actionCardsOf';
 import { NextGroup } from './NextGroup';
+import type { RebaseStopRowFor } from '../../../history/useRebaseStopRows';
 import { nextGroupsOf, type NextGroupModel } from './nextGroupsOf';
 import { nextRowCopyOf, type NextBranchName } from './nextRowCopyOf';
 import { nextSeenKeyOf } from './nextSeenKeyOf';
@@ -27,6 +28,7 @@ type Props = {
   readonly chipFor?: (params: NextCardParams) => ReactNode;
   readonly nameFor?: (params: NextCardParams) => string | null;
   readonly branchFor?: (params: NextCardParams) => NextBranchName | null;
+  readonly stopRowFor?: RebaseStopRowFor;
 };
 
 type GroupParams = {
@@ -48,6 +50,7 @@ export const NextStackView = ({
   chipFor,
   nameFor,
   branchFor,
+  stopRowFor,
 }: Props) => {
   const { ref: observe, width: observedWidth } = useElementWidth();
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
@@ -68,10 +71,18 @@ export const NextStackView = ({
       nextGroupsOf({ cards, seen }).map((group) => ({
         ...group,
         rows: group.rows.map((row) =>
-          nextRowCopyOf({ row, group: group.id, branch: branchFor?.({ card: row }) ?? null }),
+          nextRowCopyOf({
+            row,
+            group: group.id,
+            branch: branchFor?.({ card: row }) ?? null,
+            stopLine:
+              row.kind === 'rebase'
+                ? (stopRowFor?.({ mountId: row.mountId })?.sentence ?? null)
+                : null,
+          }),
         ),
       })),
-    [branchFor, cards, seen],
+    [branchFor, cards, seen, stopRowFor],
   );
   useEffect(() => {
     noteNextSubjects({
@@ -117,6 +128,8 @@ export const NextStackView = ({
               actionsFor={actionsFor}
               openFor={openFor}
               chipFor={chipFor}
+              sessionId={sessionId}
+              stopRowFor={stopRowFor}
             />
           );
         })}

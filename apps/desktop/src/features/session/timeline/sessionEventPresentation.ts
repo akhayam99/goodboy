@@ -278,6 +278,13 @@ const historyEventLabel = ({
       },
     ];
   }
+  if (payload?.reason === 'kept') {
+    return [
+      { kind: 'text', text: 'Kept ' },
+      branchSegment({ payload }),
+      { kind: 'text', text: ' as it was' },
+    ];
+  }
   return [{ kind: 'text', text: 'Restored the previous history of ' }, branchSegment({ payload })];
 };
 

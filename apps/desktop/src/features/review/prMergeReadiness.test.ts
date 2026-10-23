@@ -40,7 +40,7 @@ const factsOf = (patch: Patch = {}): PullRequestFacts => {
 
 type Row = {
   readonly name: string;
-  readonly facts: PullRequestFacts;
+  readonly facts: PullRequestFacts & { readonly isRebaseStopOpen?: boolean };
   readonly status: 'ready' | 'unknown' | 'blocked';
   readonly reason: string;
   readonly word: string;
@@ -69,6 +69,14 @@ const ROWS: ReadonlyArray<Row> = [
     facts: factsOf({ pr: { mergeable: false } }),
     status: 'blocked',
     reason: 'Conflicts with main. Rebase on main from the Branch header.',
+    word: 'Blocked: conflicts with main',
+    isClear: false,
+  },
+  {
+    name: 'a head that conflicts with the base while a stopped rebase is open',
+    facts: { ...factsOf({ pr: { mergeable: false } }), isRebaseStopOpen: true },
+    status: 'blocked',
+    reason: 'Conflicts with main. Resolve them in the banner.',
     word: 'Blocked: conflicts with main',
     isClear: false,
   },

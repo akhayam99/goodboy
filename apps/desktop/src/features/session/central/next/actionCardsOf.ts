@@ -223,6 +223,36 @@ const foldStoppedRebases = ({ cards }: CardsParams): ReadonlyArray<ActionCardMod
     );
 };
 
+const isDiverged = ({ card }: CardParams): boolean =>
+  card.source.kind === 'suggestion' &&
+  card.source.suggestion.kind === 'push-branch' &&
+  card.source.suggestion.payload.state === 'diverged';
+
+const foldDivergedIntoStops = ({ cards }: CardsParams): ReadonlyArray<ActionCardModel> => {
+  const stopMounts = new Set(
+    cards.flatMap((card) =>
+      card.kind === 'rebase' && card.source.kind === 'owner' && card.mountId !== null
+        ? [card.mountId]
+        : [],
+    ),
+  );
+  const isFolded = ({ card }: CardParams): boolean =>
+    isDiverged({ card }) && card.mountId !== null && stopMounts.has(card.mountId);
+  const diverged = cards.filter((card) => isFolded({ card }));
+  if (diverged.length === 0) {
+    return cards;
+  }
+  return cards
+    .filter((card) => !isFolded({ card }))
+    .map((card) => {
+      if (card.kind !== 'rebase' || card.source.kind !== 'owner') {
+        return card;
+      }
+      const mine = diverged.filter((other) => other.mountId === card.mountId);
+      return mine.length === 0 ? card : { ...card, folded: [...card.folded, ...mine] };
+    });
+};
+
 const isOwnedElsewhere = ({ suggestion, ownedQuestionIds }: OwnedParams): boolean =>
   suggestion.kind === 'answer-questions' &&
   suggestion.payload.firstQuestion !== null &&
@@ -251,5 +281,5 @@ export const actionCardsOf = ({
       .map((suggestion) => suggestionCardOf({ suggestion })),
     ...autoTargets.map((target) => autoCardOf({ target })),
   ];
-  return foldStoppedRebases({ cards: cards.sort(compareCards) });
+  return foldStoppedRebases({ cards: foldDivergedIntoStops({ cards: cards.sort(compareCards) }) });
 };

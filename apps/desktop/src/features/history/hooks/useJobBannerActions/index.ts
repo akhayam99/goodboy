@@ -1,5 +1,7 @@
+import { useCallback, useRef, useState } from 'react';
 import { useCopyText } from '../../../../shared/hooks/useCopyText';
 import { useShallow } from 'zustand/react/shallow';
+import { formatError } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { captureStartHint } from '../../../../store/slices/startHints/captureStartHint';
@@ -9,7 +11,10 @@ import {
   selectMountBaseBranch,
   selectMountForPath,
 } from '../../../../store/slices/project-mounts/selectors';
-import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
+import { usePendingAction, type PendingActionRun } from '../../../../shared/hooks/usePendingAction';
+import { ReportedError } from '../../../../store/slices/notifications/reportedError';
+import { refreshWorktreeStatuses } from '../../../../store/slices/worktreeStatuses/cache';
+import { worktreeAbortRebase, worktreeContinueRebase } from '../../../worktree/worktree';
 import { discardHistoryCopy, readRebasePlan } from '../../historyEngine';
 
 type Params = {
@@ -20,6 +25,11 @@ type Params = {
 
 type RetryWithNoteParams = {
   readonly note: string;
+};
+
+export type JobBannerFailure = {
+  readonly key: string;
+  readonly message: string;
 };
 
 export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params) => {
@@ -35,12 +45,147 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
   );
   const pending = usePendingAction({ sessionId });
   const mountId = mount?.mountId ?? null;
+  const [failure, setFailure] = useState<JobBannerFailure | null>(null);
+  const failedRun = useRef<PendingActionRun | null>(null);
   const attempt = (params: Parameters<typeof pending.run>[0]): void => {
     void pending.run(params);
+  };
+  const runInline = useCallback(
+    (params: PendingActionRun): void => {
+      setFailure(null);
+      failedRun.current = null;
+      void pending.run({
+        ...params,
+        task: async () => {
+          try {
+            await params.task();
+          } catch (error) {
+            const message = formatError(error);
+            failedRun.current = params;
+            setFailure({ key: params.key, message });
+            throw new ReportedError(message);
+          }
+        },
+      });
+    },
+    [pending],
+  );
+  const refreshHere = async (): Promise<void> => {
+    if (worktreePath !== null) {
+      await refreshWorktreeStatuses({ worktreePaths: [worktreePath] });
+    }
   };
   return {
     mountId,
     pendingKeys: pending.pendingKeys,
+    failure,
+    retryFailed: () => {
+      const params = failedRun.current;
+      if (params !== null) {
+        runInline(params);
+      }
+    },
+    resolveWithAuto: () => {
+      if (mountId === null) {
+        return;
+      }
+      runInline({
+        key: 'resolve-auto',
+        failureTitle: "Couldn't start Auto.",
+        task: async () => {
+          const state = useAppStore.getState();
+          const capture = captureStartHint({
+            state,
+            sessionId,
+            scope: START_HINT_SCOPES.rebase({ mountId }),
+          });
+          await state.resolveRebaseWithAuto({
+            sessionId,
+            mountIds: [mountId],
+            hint: capture.text,
+            onAccepted: () => useAppStore.getState().settleStartHint({ capture }),
+          });
+        },
+      });
+    },
+    resolveMyself: () => {
+      if (mountId === null) {
+        return;
+      }
+      runInline({
+        key: 'resolve-myself',
+        failureTitle: "Couldn't start the rebase in the worktree.",
+        task: () => useAppStore.getState().resolveRebaseMyself({ sessionId, mountId }),
+      });
+    },
+    keep: () => {
+      if (mountId === null) {
+        return;
+      }
+      runInline({
+        key: 'keep',
+        failureTitle: "Couldn't keep the branch as it was.",
+        task: () => useAppStore.getState().keepRebaseStop({ sessionId, mountId }),
+      });
+    },
+    continueRebase: () => {
+      if (worktreePath === null) {
+        return;
+      }
+      runInline({
+        key: 'continue',
+        failureTitle: "Couldn't continue the rebase.",
+        task: async () => {
+          await worktreeContinueRebase({ worktreePath });
+          await refreshHere();
+        },
+      });
+    },
+    abortHere: () => {
+      if (worktreePath === null) {
+        return;
+      }
+      runInline({
+        key: 'abort-here',
+        failureTitle: "Couldn't abort the rebase.",
+        task: async () => {
+          await worktreeAbortRebase({ worktreePath });
+          await refreshHere();
+        },
+      });
+    },
+    bringIn: () => {
+      if (mountId === null) {
+        return;
+      }
+      runInline({
+        key: 'bring-in',
+        failureTitle: "Couldn't bring the online commits in.",
+        task: () => useAppStore.getState().bringOriginInAndPush({ sessionId, mountId }),
+      });
+    },
+    undoRebase: () => {
+      if (mountId === null) {
+        return;
+      }
+      runInline({
+        key: 'undo-rebase',
+        failureTitle: "Couldn't undo the rebase.",
+        task: async () => {
+          const state = useAppStore.getState();
+          const run = state.adoptRebaseStop({ sessionId, mountId });
+          if (run === null || run.backupRef === null) {
+            return;
+          }
+          await state.restoreHistory({
+            sessionId,
+            mountId,
+            backupRef: run.backupRef,
+            shouldPush: false,
+          });
+        },
+      });
+    },
     stashAndMove: () => {
       if (mountId === null) {
         return;
@@ -81,31 +226,22 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
       if (mountId === null) {
         return;
       }
-      attempt({
+      runInline({
         key: 'retry-rebase',
         failureTitle: "Couldn't retry the rebase.",
         task: () => useAppStore.getState().rebaseBranch({ sessionId, mountId }),
-      });
-    },
-    bringOrigin: () => {
-      if (mountId === null) {
-        return;
-      }
-      attempt({
-        key: 'bring-origin',
-        failureTitle: "Couldn't bring the online commits into the plan.",
-        task: () => useAppStore.getState().bringOriginIntoHistory({ sessionId, mountId }),
       });
     },
     fixPush: () => {
       if (mountId === null) {
         return;
       }
-      attempt({
+      runInline({
         key: 'fix-push',
         failureTitle: "Couldn't start the agent.",
         task: () => {
           const state = useAppStore.getState();
+          state.adoptRebaseStop({ sessionId, mountId });
           const capture = captureStartHint({
             state,
             sessionId,
@@ -120,11 +256,26 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
         },
       });
     },
+    pushBranch: () => {
+      if (mountId === null) {
+        return;
+      }
+      runInline({
+        key: 'push',
+        failureTitle: "Couldn't push the branch.",
+        task: async () => {
+          const result = await useAppStore.getState().pushSessionBranch({ sessionId, mountId });
+          if (!result.ok) {
+            throw new Error(result.error);
+          }
+        },
+      });
+    },
     retryPush: () => {
       if (mountId === null) {
         return;
       }
-      attempt({
+      runInline({
         key: 'retry-push',
         failureTitle: "Couldn't retry the push.",
         task: async () => {

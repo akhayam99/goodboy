@@ -23,7 +23,7 @@ type LineParams = {
   readonly isHook: boolean;
 };
 
-export const rebaseConflictTitleOf = ({ files, baseBranch, isHook }: LineParams): string => {
+const rebaseConflictTitleOf = ({ files, baseBranch, isHook }: LineParams): string => {
   if (isHook) {
     return `A commit hook stopped the rebase on ${baseBranch}`;
   }
@@ -33,7 +33,7 @@ export const rebaseConflictTitleOf = ({ files, baseBranch, isHook }: LineParams)
   return `${conflictCountLabelOf({ count: files.length })} conflict with ${baseBranch}`;
 };
 
-export const rebaseConflictLineOf = ({ files, isHook }: Omit<LineParams, 'baseBranch'>): string =>
+const rebaseConflictLineOf = ({ files, isHook }: Omit<LineParams, 'baseBranch'>): string =>
   isHook || files.length === 0
     ? 'Nothing changed on your branch.'
     : `${conflictFilesLabelOf({ files })}. Nothing changed on your branch.`;

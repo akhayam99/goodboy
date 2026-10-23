@@ -55,6 +55,7 @@ import {
 } from './gitRuns';
 import { mountFacts, type MountFacts } from './mountFacts';
 import { mountRebaseConflictOf } from './mountRebaseConflictOf';
+import { selectRebaseStop } from '../../../store/slices/history/selectRebaseStop';
 import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
 import { selectProjectById } from '../../../store/slices/projects/selectProjectById';
 import { captureStartHint } from '../../../store/slices/startHints/captureStartHint';
@@ -336,14 +337,14 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
   },
   {
     id: 'mount.abortRebaseConflict',
-    label: 'Abort rebase',
+    label: 'Keep branch as it was',
     icon: Undo2,
     group: 'act',
     when: ({ facts }) => isAsking({ facts }),
     slot: () => 'notice',
-    run: ({ facts, env }) => {
-      env.getState().dismissHistoryRun({ sessionId: facts.sessionId, mountId: facts.mountId });
-    },
+    pendingLabel: () => 'Keeping…',
+    run: ({ facts, env }) =>
+      env.getState().keepRebaseStop({ sessionId: facts.sessionId, mountId: facts.mountId }),
   },
   {
     id: 'mount.rewriteHistory',
@@ -589,7 +590,9 @@ export const mountFactsFor = ({
     isScribeWriting: isScribeWriting({ scribeWork: state.scribeWork, mountId }),
     editors: state.detectedEditors.filter((editor) => REFERENCE_EDITORS.has(editor.binary)),
     onlyOnline: readOnlyOnline({ mountId, branch: view.branch }),
-    rebaseConflict: mountRebaseConflictOf({ run: state.historyRuns[mountId] }),
+    rebaseConflict: mountRebaseConflictOf({
+      run: selectRebaseStop({ state, sessionId, mountId })?.run,
+    }),
     autoBlockedReason: autoUnavailableReason({ state }),
     blockers: mountCleanupBlockers({
       state,

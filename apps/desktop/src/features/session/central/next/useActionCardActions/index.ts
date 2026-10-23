@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ConfirmRole } from '@goodboy/ui';
-import type { Session } from '@goodboy/types';
+import type { MountId, Session } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   agentPlace,
@@ -9,6 +9,7 @@ import {
   useAppStore,
 } from '../../../../../store';
 import { ReportedError } from '../../../../../store/slices/notifications/reportedError';
+import type { RebaseAllRun } from '../../../../../store/slices/rebaseAll/types';
 import type {
   ActionCardActionTarget,
   ActionTrack,
@@ -16,6 +17,12 @@ import type {
   SuggestionActionTarget,
 } from '../../../../actions/types';
 import { autoTreeOfAgent } from '../../../../auto/autoTreeOfAgent';
+import { autoUnavailableReason } from '../../../../auto/autoUnavailableReason';
+import type { RebaseStopRow } from '../../../../history/rebaseStopRowOf';
+import { useRebaseStopRows } from '../../../../history/useRebaseStopRows';
+import { selectWritableMounts } from '../../../../../store/slices/project-mounts/selectors';
+import { captureStartHint } from '../../../../../store/slices/startHints/captureStartHint';
+import { START_HINT_SCOPES } from '../../../../../store/slices/startHints/startHintScopes';
 import { useIsAutoOn } from '../../../../auto/useIsAutoOn';
 import { pendingChoiceIds } from '../../../../suggestions/pendingChoiceIds';
 import { useSuggestionRunner } from '../../../../suggestions/useSuggestionRunner';
@@ -128,6 +135,34 @@ const ownerVerbOf = ({ owner }: OwnerParams): string => {
   }
 };
 
+type TaskParams = {
+  readonly task: () => Promise<unknown>;
+};
+
+type LaterParams = TaskParams & {
+  readonly key: string;
+};
+
+type StopVerbParams = {
+  readonly row: RebaseStopRow;
+  readonly owner: NeedsYouOwner;
+  readonly mountId: MountId;
+  readonly key: string;
+};
+
+type BatchParams = {
+  readonly batch: RebaseAllRun | undefined;
+  readonly mountId: MountId;
+};
+
+const batchFailureOf = ({ batch, mountId }: BatchParams): string | null => {
+  if (batch === undefined || batch.phase !== 'done') {
+    return null;
+  }
+  const branch = batch.branches.find((candidate) => candidate.mountId === mountId);
+  return branch?.state === 'failed' ? branch.message : null;
+};
+
 type ErrorParams = {
   readonly error: unknown;
 };
@@ -172,6 +207,9 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
   const isAutoOn = useIsAutoOn();
   const openTargetFor = useTimelineOpen({ sessionId });
   const openNeedsYou = useOpenNeedsYou({ sessionId, openTargetFor });
+  const stopRowFor = useRebaseStopRows({ sessionId });
+  const batch = useAppStore((s) => s.rebaseAllRuns[sessionId]);
+  const autoBlockedReason = useAppStore((s) => autoUnavailableReason({ state: s }));
   const [failures, setFailures] = useState<ReadonlyMap<string, string>>(new Map());
   const [droppedIds, setDroppedIds] = useState<ReadonlySet<string>>(new Set());
   const [busyIds, setBusyIds] = useState<ReadonlySet<string>>(new Set());
@@ -263,6 +301,144 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     menu: null,
     foldedTarget: null,
   });
+
+  const runLater =
+    ({ key, task }: LaterParams) =>
+    (): void =>
+      void runOnce({
+        key,
+        task: async () => {
+          await task();
+        },
+      });
+
+  const stopMainOf = ({ row, owner, mountId, key }: StopVerbParams): Omit<VerbParams, 'isBusy'> => {
+    const store = useAppStore.getState;
+    const runIt = ({ task }: TaskParams) => runLater({ key, task });
+    switch (row.verb) {
+      case 'resolve-auto':
+        return {
+          label: 'Resolve with Auto',
+          isDisabled: autoBlockedReason !== null,
+          run: runIt({
+            task: () => {
+              const state = store();
+              const capture = captureStartHint({
+                state,
+                sessionId,
+                scope: START_HINT_SCOPES.rebase({ mountId }),
+              });
+              return state.resolveRebaseWithAuto({
+                sessionId,
+                mountIds: [mountId],
+                hint: capture.text,
+                onAccepted: () => store().settleStartHint({ capture }),
+              });
+            },
+          }),
+        };
+      case 'bring-in':
+        return {
+          label: 'Bring them in',
+          run: runIt({ task: () => store().bringOriginInAndPush({ sessionId, mountId }) }),
+        };
+      case 'retry-rebase':
+        return {
+          label: 'Retry rebase',
+          run: runIt({ task: () => store().rebaseBranch({ sessionId, mountId }) }),
+        };
+      case 'fix-push':
+        return {
+          label: 'Fix with agent',
+          run: runIt({
+            task: () => {
+              const state = store();
+              state.adoptRebaseStop({ sessionId, mountId });
+              return state.fixPushWithAgent({ sessionId, mountId });
+            },
+          }),
+        };
+      case 'open':
+        return { label: ownerVerbOf({ owner }), run: () => openNeedsYou({ owner }) };
+      default: {
+        const exhaustive: never = row.verb;
+        return exhaustive;
+      }
+    }
+  };
+
+  const stopActions = ({ card, owner }: CardParams & OwnerParams): CardActions => {
+    const mount = selectWritableMounts({ state: useAppStore.getState(), sessionId }).find(
+      (candidate) => candidate.mountId === owner.mountId,
+    );
+    const row = mount === undefined ? null : stopRowFor({ mountId: mount.mountId });
+    if (mount === undefined || row === null) {
+      return ownerActions({ owner });
+    }
+    const mountId = mount.mountId;
+    const key = card.id;
+    const isBusy = busyIds.has(key);
+    const store = useAppStore.getState;
+    const later = ({ task }: TaskParams) => runLater({ key, task });
+    const main = stopMainOf({ row, owner, mountId, key });
+    const verbs: ReadonlyArray<FoldedVerb> = [
+      ...(row.isAsking
+        ? [
+            {
+              id: `${key}:myself`,
+              label: 'Resolve myself',
+              run: later({ task: () => store().resolveRebaseMyself({ sessionId, mountId }) }),
+            },
+          ]
+        : []),
+      ...(row.state === 'origin-moved' && row.hasBackup
+        ? [
+            {
+              id: `${key}:undo`,
+              label: 'Undo rebase',
+              run: later({
+                task: async () => {
+                  const state = store();
+                  const run = state.adoptRebaseStop({ sessionId, mountId });
+                  if (run === null || run.backupRef === null) {
+                    return;
+                  }
+                  await state.restoreHistory({
+                    sessionId,
+                    mountId,
+                    backupRef: run.backupRef,
+                    shouldPush: false,
+                  });
+                },
+              }),
+            },
+          ]
+        : []),
+      ...(row.canKeep
+        ? [
+            {
+              id: `${key}:keep`,
+              label: 'Keep branch as it was',
+              run: later({ task: () => store().keepRebaseStop({ sessionId, mountId }) }),
+            },
+          ]
+        : []),
+      { id: `${key}:open`, label: 'Open branch', run: () => openNeedsYou({ owner }) },
+    ];
+    return {
+      main: verbOf({
+        ...main,
+        ariaLabel: `${main.label} on ${mount.branch}`,
+        isBusy,
+      }),
+      second: null,
+      failure: failures.get(key) ?? batchFailureOf({ batch, mountId }),
+      isBusy,
+      agentKind: null,
+      menu: null,
+      foldedTarget: { kind: 'actionCard', sessionId, verbs },
+    };
+  };
 
   const autoActions = ({ card, target }: CardParams & AutoParams): CardActions => {
     const key = card.id;
@@ -378,7 +554,9 @@ export const useActionCardActions = ({ session }: Params): ActionCardActions => 
     const { source } = card;
     switch (source.kind) {
       case 'owner':
-        return ownerActions({ owner: source.owner });
+        return source.owner.kind === 'rebase'
+          ? stopActions({ card, owner: source.owner })
+          : ownerActions({ owner: source.owner });
       case 'suggestion':
         return suggestionActions({ suggestion: source.suggestion });
       case 'auto':

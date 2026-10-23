@@ -2,7 +2,17 @@
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { Agent, AgentId, IsoDateTime, ProjectId, SessionProjectMount } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  ProjectId,
+  SessionEvent,
+  SessionEventId,
+  SessionEventKind,
+  SessionEventPayload,
+  SessionProjectMount,
+} from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
   A_REBASE_AGENT_ID,
@@ -69,6 +79,45 @@ const agentEntry = ({
     throw new Error('the groups hold no agent');
   }
   return entry;
+};
+
+type EventEntryParams = {
+  readonly kind: SessionEventKind;
+  readonly payload: SessionEventPayload;
+};
+
+const eventEntry = ({ kind, payload }: EventEntryParams): TimelineStreamEntry => {
+  const event: SessionEvent = {
+    id: brandedId<SessionEventId>({ value: 'ev-stop' }),
+    sessionId: A_REBASE_SESSION_ID,
+    kind,
+    payload,
+    createdAt: brandedId<IsoDateTime>({ value: '2026-10-10T09:00:00.000Z' }),
+  };
+  const entry = buildTimelineGroups({
+    sessionId: A_REBASE_SESSION_ID,
+    agents: [],
+    workflows: [],
+    plans: [],
+    artifacts: [],
+    externalTasks: [],
+    questions: [],
+    worktrees: [],
+    events: [event],
+    agentKindOverride: {},
+  }).entries.find((candidate) => candidate.kind === 'event');
+  if (entry === undefined) {
+    throw new Error('the groups hold no event');
+  }
+  return entry;
+};
+
+const OTHER_MOUNT: SessionProjectMount = {
+  ...MOUNT,
+  mountId: brandedId<SessionProjectMount['mountId']>({ value: 'mount-relay' }),
+  mountName: 'notify-relay',
+  worktreePath: '/w/notify-relay',
+  branch: 'hl/feat-center-profile-page',
 };
 
 beforeAll(async () => {
@@ -147,5 +196,80 @@ describe('the verb of a job row', () => {
     expect(
       result.current({ entry: agentEntry({ id: 'agent-other', kind: 'implementer' }) })?.label,
     ).toBe('Open chat');
+  });
+
+  describe('a saved history event', () => {
+    const navigatedPath = (navigate: ReturnType<typeof vi.fn>): unknown =>
+      navigate.mock.calls[0]?.[0]?.to?.view?.target?.mountPath;
+
+    it('opens a stopped rebase on its own branch by mount id, even when the path moved', () => {
+      const navigate = vi.fn();
+      useAppStore.setState({
+        navigate,
+        sessionProjectMounts: { [A_REBASE_SESSION_ID]: [OTHER_MOUNT, MOUNT] },
+        diffMountPath: { [A_REBASE_SESSION_ID]: '/w/notify-relay' },
+      });
+      const { result } = renderHook(() => useTimelineOpen({ sessionId: A_REBASE_SESSION_ID }));
+
+      const target = result.current({
+        entry: eventEntry({
+          kind: 'history_stopped',
+          payload: {
+            mountId: A_REBASE_MOUNT_ID,
+            worktreePath: '/w/old-copy-of-payments-api',
+            branch: MOUNT.branch,
+            origin: 'rebase',
+            reason: 'conflict',
+          },
+        }),
+      });
+      target?.open();
+
+      expect(target?.label).toBe('Open rebase');
+      expect(navigatedPath(navigate)).toBe('/w/payments-api');
+      expect(navigate.mock.calls[0]?.[0]?.to?.view?.target?.tab).toBe('commits');
+    });
+
+    it('offers no verb, and never the first branch, once the stopped branch left the session', () => {
+      const navigate = vi.fn();
+      useAppStore.setState({
+        navigate,
+        sessionProjectMounts: { [A_REBASE_SESSION_ID]: [OTHER_MOUNT] },
+        diffMountPath: { [A_REBASE_SESSION_ID]: '/w/notify-relay' },
+      });
+      const { result } = renderHook(() => useTimelineOpen({ sessionId: A_REBASE_SESSION_ID }));
+
+      const target = result.current({
+        entry: eventEntry({
+          kind: 'history_stopped',
+          payload: {
+            mountId: A_REBASE_MOUNT_ID,
+            worktreePath: '/w/payments-api',
+            origin: 'rebase',
+            reason: 'conflict',
+          },
+        }),
+      });
+
+      expect(target).toBeNull();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('keeps Open commits for a rewrite event of the same branch', () => {
+      const navigate = vi.fn();
+      useAppStore.setState({ navigate });
+      const { result } = renderHook(() => useTimelineOpen({ sessionId: A_REBASE_SESSION_ID }));
+
+      const target = result.current({
+        entry: eventEntry({
+          kind: 'history_rewritten',
+          payload: { mountId: A_REBASE_MOUNT_ID, origin: 'plan', backupRef: 'refs/backup/1' },
+        }),
+      });
+      target?.open();
+
+      expect(target?.label).toBe('Open commits');
+      expect(navigatedPath(navigate)).toBe('/w/payments-api');
+    });
   });
 });

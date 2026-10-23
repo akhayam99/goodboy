@@ -1,7 +1,9 @@
-import type { AgentId, MountId } from '@goodboy/types';
+import type { AgentId, MountId, SessionEventId, SessionId } from '@goodboy/types';
+import { readRebasePlan } from '../../../features/history/historyEngine';
 import { rebaseConflictOf } from '../../../features/history/rebaseConflictOf';
 import { scopedKindRouting } from '../agents/scopedKindRouting';
 import { historyTargetOf } from '../history/historyTargetOf';
+import { selectRebaseStop } from '../history/selectRebaseStop';
 import type { HistoryRun } from '../history/types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { rebaseAutoGoal, type RebaseAutoBranch, type TidyAutoBranch } from './rebaseAutoGoal';
@@ -17,27 +19,39 @@ const AUTO_NAME = 'Auto: rebase';
 type Asked = {
   readonly mountId: MountId;
   readonly run: HistoryRun;
+  readonly eventId: SessionEventId | null;
   readonly branch: RebaseAutoBranch;
 };
 
 type MarkParams = {
   readonly set: SetFn;
+  readonly sessionId: SessionId;
   readonly asked: ReadonlyArray<Asked>;
   readonly agentId: AgentId;
 };
 
-const markHanded = ({ set, asked, agentId }: MarkParams): void => {
+const markHanded = ({ set, sessionId, asked, agentId }: MarkParams): void => {
   set((state) => {
     const next = { ...state.historyRuns };
     let isChanged = false;
-    for (const { mountId, run } of asked) {
+    for (const { mountId, run, eventId, branch } of asked) {
       const current = next[mountId];
-      if (current !== run || current.rebaseConflict === undefined) {
+      const isStillOpen =
+        eventId !== null &&
+        current === undefined &&
+        selectRebaseStop({ state, sessionId, mountId })?.eventId === eventId;
+      const base = isStillOpen ? run : current;
+      if (base !== run || base.rebaseConflict === undefined) {
         continue;
       }
       next[mountId] = {
-        ...current,
-        rebaseConflict: { ...current.rebaseConflict, autoAgentId: agentId },
+        ...base,
+        rebaseConflict: {
+          ...base.rebaseConflict,
+          ontoRef: branch.ontoRef,
+          head: branch.head,
+          autoAgentId: agentId,
+        },
         updatedAt: Date.now(),
       };
       isChanged = true;
@@ -54,29 +68,41 @@ export const resolveRebaseWithAuto = (set: SetFn, get: GetFn) => {
     hint,
     onAccepted,
   }: ResolveRebaseWithAutoInput): Promise<ResolveRebaseWithAutoOutcome> => {
-    const state = get();
-    const asked = mountIds.flatMap((mountId): ReadonlyArray<Asked> => {
-      const run = state.historyRuns[mountId];
-      const conflict = rebaseConflictOf({ run });
-      if (run === undefined || conflict === null || conflict.autoAgentId !== null) {
-        return [];
-      }
-      const target = historyTargetOf({ get, sessionId, mountId });
-      return [
-        {
-          mountId,
-          run,
-          branch: {
-            projectName: target.projectName,
-            branch: target.branch,
-            worktreePath: target.worktreePath,
-            ontoRef: conflict.ontoRef,
-            head: conflict.head,
-            files: conflict.files,
+    const found = await Promise.all(
+      mountIds.map(async (mountId): Promise<ReadonlyArray<Asked>> => {
+        const stop = selectRebaseStop({ state: get(), sessionId, mountId });
+        const conflict = rebaseConflictOf({ run: stop?.run });
+        if (stop === null || conflict === null || conflict.autoAgentId !== null) {
+          return [];
+        }
+        const target = historyTargetOf({ get, sessionId, mountId });
+        const plan =
+          conflict.ontoRef === null || conflict.head === null
+            ? await readRebasePlan({
+                worktreePath: target.worktreePath,
+                baseBranch: target.baseBranch,
+                fetches: true,
+              })
+            : { ontoRef: conflict.ontoRef, head: conflict.head };
+        return [
+          {
+            mountId,
+            run: stop.run,
+            eventId: stop.isRebuilt ? stop.eventId : null,
+            branch: {
+              projectName: target.projectName,
+              branch: target.branch,
+              worktreePath: target.worktreePath,
+              ontoRef: plan.ontoRef,
+              head: plan.head,
+              files: conflict.files,
+            },
           },
-        },
-      ];
-    });
+        ];
+      }),
+    );
+    const asked = found.flat();
+    const state = get();
     const tidy = tidyMountIds.map((mountId): TidyAutoBranch => {
       const target = historyTargetOf({ get, sessionId, mountId });
       return {
@@ -107,7 +133,7 @@ export const resolveRebaseWithAuto = (set: SetFn, get: GetFn) => {
         holder.isAccepted = true;
         return;
       }
-      markHanded({ set, asked, agentId: holder.agentId });
+      markHanded({ set, sessionId, asked, agentId: holder.agentId });
       onAccepted?.({ agentId: holder.agentId });
     };
     const agentId = await get().spawnAgent(sessionId, {

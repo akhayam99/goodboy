@@ -80,4 +80,42 @@ describe('nextRowCopyOf', () => {
     expect(nextRowCopyOf({ row, group: 'ship', branch: HOME_BRANCH })).toBe(row);
     expect(nextRowCopyOf({ row, group: 'fix', branch: null })).toBe(row);
   });
+
+  it('titles a stopped rebase in Update by its branch, with the sentence of the stop', () => {
+    const [stop] = actionCardsOf({
+      owners: [
+        {
+          id: 'event:ev-home-stop',
+          kind: 'rebase',
+          text: 'Rebase of hl/feat-center-home-page stopped · conflict in HomePage.tsx',
+          where: null,
+          at: '2026-10-22T10:00:00.000Z',
+          item: null,
+          question: null,
+          questionIds: [],
+          prNumber: null,
+          owed: null,
+          mountId: HOME,
+        },
+      ],
+      suggestions: [],
+      autoTargets: [],
+    });
+    if (stop === undefined) {
+      throw new Error('no stop row');
+    }
+
+    const row = nextRowCopyOf({
+      row: stop,
+      group: 'update',
+      branch: HOME_BRANCH,
+      stopLine: '1 file conflicts with main: HomePage.tsx. Your branch is as it was.',
+    });
+
+    expect([row.title, row.detail]).toEqual([
+      'hl/feat-center-home-page · #9995',
+      '1 file conflicts with main: HomePage.tsx. Your branch is as it was.',
+    ]);
+    expect(nextRowCopyOf({ row: stop, group: 'update', branch: HOME_BRANCH })).toBe(stop);
+  });
 });

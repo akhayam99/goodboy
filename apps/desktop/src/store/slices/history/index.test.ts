@@ -1538,6 +1538,67 @@ describe('bring origin into the plan', () => {
     expect(engine.pushWithLease).not.toHaveBeenCalled();
     expect(read().historyRuns[MOUNT_ID]?.phase).toBe('applied');
   });
+
+  it('starts no rewriter on a conflict when asked not to, and leaves the stop as it was', async () => {
+    const { slice, read, seed } = harness();
+    const stop = { reason: 'origin-moved', message: 'moved', files: [], sha: null } as const;
+    seed({
+      historyRuns: {
+        [MOUNT_ID]: {
+          sessionId: SESSION_ID,
+          mountId: MOUNT_ID,
+          origin: 'rebase',
+          phase: 'stopped',
+          planId: null,
+          agentId: null,
+          copyPath: null,
+          stop,
+          result: null,
+          backupRef: null,
+          remoteSha: 'remote-at-apply',
+          holder: null,
+          progress: null,
+          applied: null,
+          identity: null,
+          movedHead: null,
+          threadShas: [],
+          commitCount: null,
+          updatedAt: 1,
+        },
+      },
+    });
+    engine.readOriginAhead.mockResolvedValue({
+      remoteSha: 'remote-now',
+      knownRemoteSha: 'remote-now',
+      commits: [{ sha: 'teammate1', subject: 'Teammate adds a note' }],
+      onlyOnline: [],
+      fetchError: null,
+    });
+    engine.tryHistoryPlan.mockResolvedValue({
+      head: null,
+      map: [],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: { kind: 'conflict', files: ['ledger.ts'], sha: 'teammate1' },
+      copyPath: '/copies/ledger',
+      order: [],
+    });
+
+    await expect(
+      slice.bringOriginIntoHistory({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        canStartRewriter: false,
+      }),
+    ).resolves.toBe('conflict');
+
+    expect(engine.discardHistoryCopy).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      copyPath: '/copies/ledger',
+    });
+    expect(read().historyRewriters).toEqual({});
+    expect(read().historyRuns[MOUNT_ID]).toMatchObject({ phase: 'stopped', stop });
+  });
 });
 
 describe('sync the branch with its remote', () => {

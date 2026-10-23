@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -53,9 +53,13 @@ describe('the u25 push fix scenes', () => {
   it('offers both actions on a hook failure', async () => {
     await renderScene({ name: 'push-failed-hook' });
 
-    expect(screen.getByText('Rebased, but the push failed')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Fix with agent' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
+    const panel = within(screen.getByRole('region', { name: 'Rebase' }));
+    expect(panel.getByText('Rebased, but the push failed')).toBeDefined();
+    expect(panel.getByRole('button', { name: 'Fix with agent' })).toBeDefined();
+    expect(panel.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
+    expect(document.querySelector('[data-rebase-conflict]')?.textContent).toContain(
+      'Rebased, but the push failed',
+    );
   });
 
   it('shows the agent fixing and hides the failure actions', async () => {

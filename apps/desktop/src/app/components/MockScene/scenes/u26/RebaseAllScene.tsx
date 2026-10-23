@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
+import type { RebaseAllBranch, RebaseAllRun } from '../../../../../store/slices/rebaseAll/types';
 import { ObjectMenuProvider } from '../../../../../features/actions/components/ObjectMenuProvider';
 import { SessionLevel } from '../../../SessionRail/SessionLevel';
 import { CTX_STATUS } from '../brand/contextBranch';
@@ -17,7 +18,7 @@ import {
   rebasingRunOf,
 } from './rebaseSeed';
 
-export type RebaseAllStage = 'idle' | 'running' | 'auto';
+export type RebaseAllStage = 'idle' | 'running' | 'auto' | 'settled';
 
 type Props = {
   readonly theme: 'dark' | 'light';
@@ -43,6 +44,11 @@ const AUTO_RESOLVING_STATUS: WorktreeStatus = {
   inProgress: 'rebase',
 };
 
+const AGENT_REBASED_STATUS: WorktreeStatus = {
+  ...REBASED_STATUS,
+  head: 'mock-agent-rebased-head',
+};
+
 const REBASED_SLUGS: ReadonlyArray<string> = [
   'fix-duplicate-credit',
   'retry-credit-notes',
@@ -59,6 +65,9 @@ type StatusParams = {
 };
 
 const statusOf = ({ payload, stage }: StatusParams): WorktreeStatus => {
+  if (stage === 'settled') {
+    return AGENT_REBASED_STATUS;
+  }
   if (stage !== 'auto') {
     return BEHIND_STATUS;
   }
@@ -68,6 +77,26 @@ const statusOf = ({ payload, stage }: StatusParams): WorktreeStatus => {
   }
   const isRebased = REBASED_SLUGS.some((slug) => text.includes(slug));
   return isRebased ? REBASED_STATUS : BEHIND_STATUS;
+};
+
+const runOf = ({ stage }: SeedParams): RebaseAllRun => {
+  const run = rebaseAllRunOf({ isAuto: stage === 'auto' });
+  if (stage !== 'settled') {
+    return run;
+  }
+  return {
+    ...run,
+    phase: 'done',
+    branches: run.branches.map((branch): RebaseAllBranch => {
+      if (branch.state === 'conflict') {
+        return branch;
+      }
+      if (branch.branch.endsWith('export-batch')) {
+        return { ...branch, state: 'failed', message: 'origin cannot be reached' };
+      }
+      return { ...branch, state: 'rebased' };
+    }),
+  };
 };
 
 const seed = ({ stage }: SeedParams): void => {
@@ -93,7 +122,7 @@ const seed = ({ stage }: SeedParams): void => {
       ...(stage !== 'idle' &&
         BATCH_CONFLICT_MOUNT !== undefined &&
         BATCH_REBASING_MOUNT !== undefined && {
-          rebaseAllRuns: { [SESSION_ID]: rebaseAllRunOf({ isAuto: stage === 'auto' }) },
+          rebaseAllRuns: { [SESSION_ID]: runOf({ stage }) },
           historyRuns: {
             [BATCH_CONFLICT_MOUNT.mountId]: conflictRunOf({
               sessionId: SESSION_ID,

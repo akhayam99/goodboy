@@ -56,6 +56,7 @@ export type HistoryStop = {
   readonly message: string;
   readonly files: ReadonlyArray<string>;
   readonly sha: string | null;
+  readonly head?: string;
 };
 
 export type HistoryIdentity = {
@@ -126,10 +127,11 @@ export type HistoryRun = {
 };
 
 type RebaseConflict = {
-  readonly ontoRef: string;
+  readonly ontoRef: string | null;
   readonly baseBranch: string;
-  readonly head: string;
+  readonly head: string | null;
   readonly autoAgentId: AgentId | null;
+  readonly isHere?: boolean;
 };
 
 export type HistoryAppliedLine = {

@@ -282,7 +282,7 @@ export const AgentDetailPane = ({
           })}
         composerNotice={
           isRewriterFinished ? (
-            <RewriterFinishedNotice sessionId={session.id} worktreePath={rewriter.worktreePath} />
+            <RewriterFinishedNotice sessionId={session.id} mountId={rewriter.mountId} />
           ) : isMoveOpen && adoption === null ? (
             <MoveToAutoPanel
               sessionId={session.id}

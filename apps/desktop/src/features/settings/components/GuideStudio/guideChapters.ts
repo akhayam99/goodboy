@@ -228,27 +228,27 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     id: 'kickoff',
     group: 'daily',
     title: 'New session',
-    lead: 'A session is one task: a goal, its agents and a branch per folder they edit. It stays a draft until you press Start or Start blank.',
+    lead: 'A session is one task: write it or pick it from Tasks, then pick the kind of run. It stays a draft until you press Start or Start blank.',
     points: [
       {
+        term: 'What kind of run?',
+        desc: 'Pick Workflow or Agent, then Orchestrated or Preset, Agent or Auto agent. One form follows, with only that kind.',
+      },
+      {
         term: NAMES.startARun,
-        desc: 'Write what you want done; Auto picks a plan, one agent or a preset. Esc closes the draft, asking first if you wrote something.',
+        desc: 'Not sure? Describe it and Auto picks a workflow or an agent; @Scout starts that role. Esc closes the draft, asking first if you wrote something.',
       },
       {
         term: 'Start on a task',
-        desc: 'From Tasks, opens Start a run with the issue attached and its goal written in.',
+        desc: 'From Tasks, opens New session with the issue linked and its goal written in. Pick from Tasks does the same on the page.',
       },
       {
-        term: NAMES.folders,
-        desc: 'Optional. The picker opens on Suggested, then All folders, and with none picked Goodboy adds a folder when an agent needs it.',
+        term: 'Where',
+        desc: 'Reads Auto picks: an agent adds the folder it must edit. Pin folders here from Suggested or All folders.',
       },
       {
         term: 'New menu',
         desc: "New, in a session's Overview header, opens Start a run on Runs, or Write a report and Draw a wireframe, each a form in a pane.",
-      },
-      {
-        term: '@role',
-        desc: 'Type @Scout or another role in Start a run to start that role at once.',
       },
       {
         term: 'Start blank',
@@ -554,7 +554,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'A rebase conflict asks',
-        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Open terminal here or Abort rebase, with Add a hint. Auto resolves in the worktree and never pushes.',
+        desc: 'A conflict leaves the branch as it was and asks: Resolve with Auto, Resolve myself or Keep branch as it was, with Add a hint. Auto resolves in the worktree and never pushes; Resolve myself starts the rebase in the terminal.',
       },
       {
         term: 'Rebase all',

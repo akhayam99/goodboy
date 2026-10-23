@@ -229,6 +229,7 @@ const harness = ({
     refreshSessionMr: vi.fn(async () => undefined),
     refreshSessionBitbucketPr: vi.fn(async () => undefined),
     refreshSessionPrDetail: vi.fn(async () => undefined),
+    settleStaleRebases: vi.fn(),
   };
   const set = ((updater: unknown) => {
     const changes =
@@ -433,6 +434,20 @@ describe('recheckSessionMounts', () => {
         `/repo/.goodboy/worktrees/${OTHER_MOUNT}`,
       ],
     });
+  });
+
+  it('settles stale rebase records only after the turn end git read lands', async () => {
+    const { state, slice } = harness({ githubAvailable: false });
+    const order: Array<string> = [];
+    h.refreshWorktreeStatuses.mockImplementationOnce(async () => {
+      order.push('read');
+    });
+    state.settleStaleRebases = vi.fn(() => order.push('settle'));
+
+    await slice.recheckSessionMounts({ sessionId: SESSION_ID, reason: 'turn-end' });
+
+    expect(order).toEqual(['read', 'settle']);
+    expect(state.settleStaleRebases).toHaveBeenCalledWith({ sessionId: SESSION_ID });
   });
 
   it('fetches the branch ref once the pull request head moved past it, then re-reads git', async () => {

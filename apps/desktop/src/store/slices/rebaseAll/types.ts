@@ -11,6 +11,7 @@ export type RebaseAllBranch = {
   readonly branch: string;
   readonly state: RebaseAllBranchState;
   readonly message: string | null;
+  readonly isBringIn?: boolean;
 };
 
 type RebaseAllPhase = 'running' | 'handing' | 'handed' | 'done' | 'aborted';
@@ -18,6 +19,7 @@ type RebaseAllPhase = 'running' | 'handing' | 'handed' | 'done' | 'aborted';
 export type RebaseAllRun = {
   readonly id: string;
   readonly sessionId: SessionId;
+  readonly startedAt: number;
   readonly shouldTidy: boolean;
   readonly isAborted: boolean;
   readonly phase: RebaseAllPhase;
@@ -30,6 +32,14 @@ export type RebaseAllInput = {
   readonly sessionId: SessionId;
   readonly mountIds: ReadonlyArray<MountId>;
   readonly shouldTidy: boolean;
+  readonly bringInMountIds?: ReadonlyArray<MountId>;
+  readonly shouldHandConflicts?: boolean;
+};
+
+export type UpdateAllInput = {
+  readonly sessionId: SessionId;
+  readonly rebaseMountIds: ReadonlyArray<MountId>;
+  readonly bringInMountIds: ReadonlyArray<MountId>;
 };
 
 export type RebaseAllOutcome = 'done' | 'handed' | 'aborted' | 'busy' | 'empty';
@@ -49,6 +59,10 @@ export type ResolveRebaseWithAutoInput = {
 
 type ResolveAcceptedParams = {
   readonly agentId: AgentId;
+};
+
+export type SettleStaleRebasesInput = {
+  readonly sessionId: SessionId;
 };
 
 export type ResolveRebaseWithAutoOutcome =

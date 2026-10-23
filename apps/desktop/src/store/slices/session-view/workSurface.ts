@@ -1,5 +1,5 @@
 import type { ArtifactId, SessionExternalTask, SessionId } from '@goodboy/types';
-import type { DiffFocus, GetFn, LensKind, SetFn } from './types';
+import type { DiffFocus, GetFn, LensKind, OpenMountCommitsInput, SetFn } from './types';
 import { sentryRecordKey } from '../../../features/inbox/adapters/sentry';
 import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { workSurfaceFocus } from './workSurfaceFocus';
@@ -7,6 +7,7 @@ import { drawerAfterArtifactFocus } from '../drawer/drawerAfterArtifactFocus';
 import { branchPlace, sessionPlace } from '../navigation/place';
 import { openSessionTerminal } from '../../../features/terminal/openSessionTerminal';
 import { sessionById } from '../sessions/sessionIndex';
+import { selectMountById } from '../project-mounts/selectors';
 
 export const setActiveLens = (set: SetFn) => {
   return (sessionId: SessionId, lens: LensKind | null): void => {
@@ -83,6 +84,19 @@ export const openRewriteHistory = (get: GetFn) => {
         tab: 'commits',
       }),
     });
+  };
+};
+
+export const openMountCommits = (get: GetFn) => {
+  return ({ sessionId, mountId }: OpenMountCommitsInput): boolean => {
+    const mount = selectMountById({ state: get(), sessionId, mountId });
+    if (mount === null || mount.worktreePath === '') {
+      return false;
+    }
+    get().navigate({
+      to: branchPlace({ sessionId, mountPath: mount.worktreePath, tab: 'commits' }),
+    });
+    return true;
   };
 };
 

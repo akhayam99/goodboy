@@ -197,6 +197,33 @@ describe('needsYouOwners', () => {
     expect(settled).toEqual([]);
   });
 
+  it('drops a stopped rebase once git settled it outside the rebase flow', () => {
+    const stopped = event({
+      id: 'ev-1',
+      kind: 'history_stopped',
+      at: '2026-10-03T17:57:00.000Z',
+      payload: { origin: 'rebase', reason: 'conflict', branch: 'feat/export', mountId: 'm1' },
+    });
+    const stopRow = row({
+      id: 'event:ev-1',
+      familyId: null,
+      rowState: DONE_ROW_STATE,
+      entry: { kind: 'event', id: 'event:ev-1', event: stopped },
+      at: stopped.createdAt,
+    });
+
+    const open = needsYouOwners({ items: [stopRow], entries: [], events: [stopped] });
+    const settled = needsYouOwners({
+      items: [stopRow],
+      entries: [],
+      events: [stopped],
+      settledStopIds: new Set(['ev-1']),
+    });
+
+    expect(open.map((owner) => owner.kind)).toEqual(['rebase']);
+    expect(settled).toEqual([]);
+  });
+
   it('names the branch of a stopped rebase by the mount of its event', () => {
     const stopped = event({
       id: 'ev-1',

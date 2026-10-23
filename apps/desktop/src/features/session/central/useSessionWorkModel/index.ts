@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { useOpenStopMountIds } from '../../hooks/useOpenStopMountIds';
 import type { Session, SessionEvent, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
@@ -16,6 +17,7 @@ import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
 import type { JobActivityFacts } from '../../../../store/slices/history/jobFactsByAgentId';
 import type { AttachedRun } from '../../../workflows/activeWorkflowRuns';
 import type { WorkflowAdvanceState } from '../../../workflows/advanceGate';
+import { useRebaseStatuses } from '../../../history/useRebaseStatuses';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { useWorkflowAdvanceStates } from '../../../workflows/useWorkflowAdvanceStates';
 import { useJobActivity } from '../../hooks/useJobActivity';
@@ -75,6 +77,8 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
   const resolveActivity = useResolveActivity({ sessionId });
   const jobActivity = useJobActivity({ sessionId });
   const autoTrees = useAutoTrees({ sessionId });
+  const settledStops = useAppStore((s) => s.settledRebaseStops[sessionId] ?? EMPTY_ARRAY);
+  useRebaseStatuses({ sessionId });
 
   useEffect(() => {
     void loadSessionEvents({ sessionId });
@@ -163,6 +167,9 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
     [agents, hasLoadedAgents],
   );
 
+  const settledStopIds = useMemo(() => new Set(settledStops), [settledStops]);
+  const openMountIds = useOpenStopMountIds({ sessionId });
+
   const decidingRunIds = useMemo(() => {
     const deciding = new Set<string>();
     for (const { run } of workflows) {
@@ -191,6 +198,8 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
         events,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         liveAgentIds,
+        settledStopIds,
+        openMountIds,
       }),
     [
       advanceByRunId,
@@ -200,7 +209,9 @@ export const useSessionWorkModel = ({ session }: Params): SessionWorkModel => {
       jobActivity,
       liveAgentIds,
       model.entries,
+      openMountIds,
       resolveActivity,
+      settledStopIds,
       unreadAgentIds,
     ],
   );

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useOpenStopMountIds } from '../../../../../hooks/useOpenStopMountIds';
 import { useShallow } from 'zustand/react/shallow';
 import type { SessionWorktree } from '@goodboy/db';
 import type {
@@ -256,6 +257,10 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
     [agents, areAgentsLoaded],
   );
 
+  const settledStops = useAppStore((s) => s.settledRebaseStops[sessionId] ?? EMPTY_ARRAY);
+  const settledStopIds = useMemo(() => new Set(settledStops), [settledStops]);
+  const openMountIds = useOpenStopMountIds({ sessionId });
+
   const decidingRunIds = useMemo(() => {
     const deciding = new Set<string>();
     for (const { run } of workflows) {
@@ -284,6 +289,8 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
         events,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
         liveAgentIds,
+        settledStopIds,
+        openMountIds,
       }),
     [
       advanceByRunId,
@@ -293,15 +300,23 @@ export const useTimelineRows = ({ session, view, query, explode }: Params): Time
       jobActivity,
       liveAgentIds,
       model.entries,
+      openMountIds,
       resolveActivity,
+      settledStopIds,
       unreadAgentIds,
     ],
   );
 
   const viewEntries = useMemo(() => {
-    const inView = entriesOfView({ entries: model.entries, events, view, liveAgentIds });
+    const inView = entriesOfView({
+      entries: model.entries,
+      events,
+      view,
+      liveAgentIds,
+      settledStopIds,
+    });
     return view !== 'activity' ? logEntriesMatching({ entries: inView, query }) : inView;
-  }, [events, liveAgentIds, model.entries, query, view]);
+  }, [events, liveAgentIds, model.entries, query, settledStopIds, view]);
 
   const stream = useMemo(
     () =>

@@ -1,6 +1,7 @@
 import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import type { HistoryRun } from '../../../../../store/slices/history/types';
+import { CTX_STATUS } from '../brand/contextBranch';
 import { SESSION_ID } from '../resolveSeed';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import type {
@@ -36,7 +37,7 @@ export const conflictRunOf = ({ sessionId, mountId, files }: ConflictRunParams):
   rebaseConflict: {
     ontoRef: 'origin/main',
     baseBranch: 'main',
-    head: '7f3c1d9a2b4e',
+    head: CTX_STATUS.head ?? '7f3c1d9a2b4e',
     autoAgentId: null,
   },
   updatedAt: Date.parse('2026-10-17T09:12:00.000Z'),
@@ -106,6 +107,7 @@ type RunParams = {
 export const rebaseAllRunOf = ({ isAuto }: RunParams): RebaseAllRun => ({
   id: 'mock-u26-rebase-all',
   sessionId: SESSION_ID,
+  startedAt: 0,
   shouldTidy: false,
   isAborted: false,
   phase: isAuto ? 'handed' : 'running',

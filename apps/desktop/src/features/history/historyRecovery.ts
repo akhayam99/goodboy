@@ -4,6 +4,8 @@ type Params = {
   readonly event: SessionEvent;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly liveAgentIds?: ReadonlySet<string>;
+  readonly settledStopIds?: ReadonlySet<string>;
+  readonly openMountIds?: ReadonlySet<string>;
 };
 
 type OrphanedStopParams = {
@@ -21,6 +23,20 @@ const isOrphanedStop = ({ event, liveAgentIds }: OrphanedStopParams): boolean =>
   );
 };
 
+type ClosedMountParams = {
+  readonly event: SessionEvent;
+  readonly openMountIds: ReadonlySet<string> | undefined;
+};
+
+const isOnClosedMount = ({ event, openMountIds }: ClosedMountParams): boolean => {
+  const mountId = event.payload?.mountId;
+  return (
+    event.kind === 'history_stopped' &&
+    openMountIds !== undefined &&
+    (mountId === undefined || !openMountIds.has(mountId))
+  );
+};
+
 const isHistoryEvent = ({ event }: { readonly event: SessionEvent }): boolean =>
   event.kind.startsWith('history_');
 
@@ -35,9 +51,17 @@ const isSuperseded = ({ event, events }: Params): boolean => {
   );
 };
 
-export const hasHistoryRecovery = ({ event, events, liveAgentIds }: Params): boolean => {
+export const hasHistoryRecovery = ({
+  event,
+  events,
+  liveAgentIds,
+  settledStopIds,
+  openMountIds,
+}: Params): boolean => {
   if (
     !isHistoryEvent({ event }) ||
+    settledStopIds?.has(event.id) === true ||
+    isOnClosedMount({ event, openMountIds }) ||
     isSuperseded({ event, events }) ||
     isOrphanedStop({ event, liveAgentIds })
   ) {

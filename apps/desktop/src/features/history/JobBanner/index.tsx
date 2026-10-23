@@ -4,14 +4,12 @@ import type { SessionId } from '@goodboy/types';
 import type { RebaseJobState, RebaseJobTone } from '../rebaseJob';
 import { useJobBannerActions } from '../hooks/useJobBannerActions';
 import { useRebaseJob } from '../useRebaseJob';
-import { StartHint } from '../../../shared/components/StartHint';
-import { START_HINT_COPY } from '../../../shared/components/startHintCopy';
-import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintScopes';
 import { JobBannerActions } from './JobBannerActions';
 import { JobBannerLine } from './JobBannerLine';
 import { JobBannerNote } from './JobBannerNote';
 import { JobBannerReview } from './JobBannerReview';
-import { RebaseConflictPrompt } from '../components/RebaseConflictPrompt';
+import { RebaseStopPanel } from '../components/RebaseStopPanel';
+import { REBASE_STOP_PANEL_STATES } from '../components/rebaseStopPanelStates';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -46,8 +44,15 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
     return null;
   }
   const { job } = controls;
-  if (job.state === 'conflict') {
-    return <RebaseConflictPrompt sessionId={sessionId} worktreePath={worktreePath} />;
+  if (REBASE_STOP_PANEL_STATES.has(job.state) && worktreePath !== null) {
+    return (
+      <RebaseStopPanel
+        sessionId={sessionId}
+        worktreePath={worktreePath}
+        controls={controls}
+        actions={actions}
+      />
+    );
   }
   const isNoteShown = isNoteOpen && job.state === 'stuck';
   const tone = TONE_OF[job.tone];
@@ -83,14 +88,6 @@ export const JobBanner = ({ sessionId, worktreePath }: Props) => {
       <div className="flex min-w-0 flex-col gap-2">
         <JobBannerLine job={job} />
         <JobBannerReview sessionId={sessionId} mountId={actions.mountId} />
-        {job.state === 'push-failed' && actions.mountId !== null ? (
-          <StartHint
-            sessionId={sessionId}
-            scope={START_HINT_SCOPES.pushFix({ mountId: actions.mountId })}
-            label={START_HINT_COPY.implementerLabel}
-            placeholder={START_HINT_COPY.pushFix}
-          />
-        ) : null}
       </div>
       {isNoteShown ? (
         <JobBannerNote

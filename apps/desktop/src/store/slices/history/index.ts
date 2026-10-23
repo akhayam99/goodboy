@@ -31,6 +31,10 @@ import type { SliceDeps } from '../../slice-types';
 import { changeLiveHistory } from './changeLiveHistory';
 import { setHistoryLiveSession } from './setHistoryLiveSession';
 import { clearLiveHistoryError } from './clearLiveHistoryError';
+import { keepRebaseStop } from './keepRebaseStop';
+import { adoptRebaseStop } from './adoptRebaseStop';
+import { resolveRebaseMyself } from './resolveRebaseMyself';
+import { bringOriginInAndPush } from './bringOriginInAndPush';
 
 export { historyInitialState } from './state';
 
@@ -55,6 +59,10 @@ export const createHistorySlice = ({ set, get }: SliceDeps) => {
     editHistoryDraft: editHistoryDraft(set, get),
     undoHistoryDraft: undoHistoryDraft(set, get),
     dismissHistoryRun: dismissHistoryRun(set, get),
+    keepRebaseStop: keepRebaseStop({ set, get }),
+    adoptRebaseStop: adoptRebaseStop({ set, get }),
+    resolveRebaseMyself: resolveRebaseMyself({ set, get }),
+    bringOriginInAndPush: bringOriginInAndPush({ set, get }),
     discardHistoryDraft: discardHistoryDraft(set, get),
     applyHistoryDraft: applyHistoryDraft(set, get),
     applyRewrittenHistory: applyRewrittenHistory(set, get),

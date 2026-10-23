@@ -6,6 +6,7 @@ import type { SessionId } from '@goodboy/types';
 import type { SessionEventKind } from '@goodboy/types';
 import { agentPlace, branchPlace, sessionPlace, useAppStore } from '../../../../store';
 import { lensPlace } from '../../../../store/slices/navigation/canonicalLocation';
+import { selectWritableMounts } from '../../../../store/slices/project-mounts/selectors';
 import type { LensKind } from '../../../../store/slices/session-view/types';
 import type { TimelineStreamEntry } from '../../timeline/buildTimelineStream';
 import { jobMountPathOf } from '../../timeline/jobMountPathOf';
@@ -232,10 +233,20 @@ export const useTimelineOpen = ({
           return null;
         }
         if (entry.event.kind.startsWith('history_')) {
-          const historyPath = entry.event.payload?.worktreePath ?? null;
+          const payload = entry.event.payload;
+          const mount = selectWritableMounts({ state: store, sessionId }).find(
+            (candidate) => candidate.mountId === payload?.mountId,
+          );
+          if (mount === undefined) {
+            return null;
+          }
+          const isRebaseStop =
+            entry.event.kind === 'history_stopped' && payload?.origin === 'rebase';
           return {
-            label: 'Open commits',
-            open: () => store.openRewriteHistory(sessionId, historyPath),
+            label: isRebaseStop ? 'Open rebase' : 'Open commits',
+            open: () => {
+              store.openMountCommits({ sessionId, mountId: mount.mountId });
+            },
           };
         }
         return {
