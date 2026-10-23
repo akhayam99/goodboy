@@ -671,6 +671,10 @@ fails silently at runtime.
   Subscribing after the snapshot loses what prints in between; writing every
   event after it prints the overlap twice. Offsets are byte counts, so compare
   them on bytes, never on decoded text.
+  A character can be split across two events: decode the bytes of one run with one
+  streaming `TextDecoder` (`base64Bytes`, then `decode(bytes, { stream: true })`, and a last
+  `decode()` at exit), never `atob` text per event. Script runs and the provider lifecycle
+  runs do.
 - `lsof` exits 1 when it finds nothing: no listener, or a pid that died between
   the two reads. The monitor reads exit 0 and 1 as success and anything else,
   or a timeout, as a failed snapshot; treating 1 as an error would show a

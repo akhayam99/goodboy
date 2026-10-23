@@ -6,6 +6,7 @@ import {
   type ScriptRunRecord,
   type ScriptRunResult,
 } from '../../../features/scripts/scripts';
+import { base64Bytes } from '../../../shared/utils/base64Bytes';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -21,7 +22,7 @@ type Params = {
 };
 
 type OutputChunk = {
-  readonly text: string;
+  readonly bytes: Uint8Array;
   readonly offset: number;
 };
 
@@ -64,6 +65,7 @@ export const registerScriptRunListeners = async ({
   const result = new Promise<ScriptRunResult>((resolve) => {
     resolveResult = resolve;
   });
+  const decoder = new TextDecoder('utf-8');
   let stdoutBuffer = '';
   let isTruncated = false;
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -95,16 +97,19 @@ export const registerScriptRunListeners = async ({
     }
   };
 
-  const applyChunk = ({ text, offset }: OutputChunk): void => {
+  const decode = ({ bytes }: Pick<OutputChunk, 'bytes'>): string =>
+    decoder.decode(bytes, { stream: true });
+
+  const applyChunk = ({ bytes, offset }: OutputChunk): void => {
     if (snapshotEnd === null) {
-      append(text);
+      append(decode({ bytes }));
       return;
     }
     const skip = snapshotEnd - offset;
-    if (skip >= text.length) {
+    if (skip >= bytes.length) {
       return;
     }
-    append(skip > 0 ? text.slice(skip) : text);
+    append(decode({ bytes: skip > 0 ? bytes.subarray(skip) : bytes }));
   };
 
   const finishRun = (exitCode: number): void => {
@@ -118,6 +123,7 @@ export const registerScriptRunListeners = async ({
     if (current == null || current.runId !== runId) {
       return;
     }
+    append(decoder.decode());
     const stdout = stdoutBuffer.replace(ANSI_PATTERN, '');
     const completed: ScriptRunResult = { stdout, stderr: '', exitCode };
     writeRun({
@@ -138,7 +144,7 @@ export const registerScriptRunListeners = async ({
     if (payload.runId !== runId) {
       return;
     }
-    const chunk = { text: atob(payload.data), offset: payload.offset };
+    const chunk = { bytes: base64Bytes({ data: payload.data }), offset: payload.offset };
     if (isReplaying) {
       pendingChunks.push(chunk);
       return;
@@ -161,8 +167,9 @@ export const registerScriptRunListeners = async ({
     let snapshotExitCode: number | null = null;
     try {
       const snapshot = await invokeScriptSnapshot(runId);
-      snapshotEnd = snapshot.offset + atob(snapshot.data).length;
-      append(atob(snapshot.data));
+      const bytes = base64Bytes({ data: snapshot.data });
+      snapshotEnd = snapshot.offset + bytes.length;
+      append(decode({ bytes }));
       snapshotExitCode = snapshot.exitCode;
     } finally {
       isReplaying = false;

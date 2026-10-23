@@ -53,6 +53,7 @@ type Harness = {
   readonly connect: (providerId: ProviderId) => Promise<void>;
   readonly cancel: (providerId: ProviderId) => Promise<void>;
   readonly emitOutput: (text: string) => void;
+  readonly emitBytes: (bytes: ReadonlyArray<number>) => void;
   readonly emitExit: (params: {
     readonly exitCode: number;
     readonly authState: string;
@@ -123,6 +124,12 @@ const harness = ({
       mocks.outputHandler?.({
         runId: mocks.invokeProviderLifecycleRun.mock.calls.at(-1)?.[0]?.runId,
         data: btoa(text),
+      });
+    },
+    emitBytes: (bytes) => {
+      mocks.outputHandler?.({
+        runId: mocks.invokeProviderLifecycleRun.mock.calls.at(-1)?.[0]?.runId,
+        data: btoa(String.fromCharCode(...bytes)),
       });
     },
     emitExit: ({ exitCode, authState, identity }) => {
@@ -331,6 +338,17 @@ describe('connectProvider', () => {
     h.emitExit({ exitCode: 127, authState: 'disconnected', identity: null });
     expect(h.phase()).toBe('failed');
     expect(h.errorTail()).toBe('bash: claude: command not found');
+  });
+
+  it('reads a failure line whose accented letter is split across two output events', async () => {
+    const h = harness();
+    await h.connect('anthropic');
+    const bytes = [...new TextEncoder().encode('working\nbash: città non trovata\n')];
+    const cut = bytes.indexOf(0xc3) + 1;
+    h.emitBytes(bytes.slice(0, cut));
+    h.emitBytes(bytes.slice(cut));
+    h.emitExit({ exitCode: 127, authState: 'disconnected', identity: null });
+    expect(h.errorTail()).toBe('bash: città non trovata');
   });
 
   it('reaches success from the poll when the process stays alive', async () => {
