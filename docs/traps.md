@@ -126,7 +126,7 @@ file holds those explanations. Everything below has been "fixed" at least once a
   target (`mountId`, carried into its facts). The lifecycle writes of that target (`markPrReady`,
   `mergePr`, `reopenPr`, `convertPrToDraft`, `closePr`) and their refresh take the same `mountId`
   through `PrWriteOptions`: a write without one lands on the active mount's repository, where
-  another pull request can carry the same number. `refreshMountPr` keeps the known request when a poll of
+  another pull request can carry the same number. So do `requestReview`, `editPr`, the reviewer search port (`usePullRequestPort({ mountId })`), the create form's reviewer step and the Scribe settle (`work.mountId`). `refreshMountPr` keeps the known request when a poll of
   the same branch and repository answers empty.
 - Review comments come from a `ReviewSource` (`packages/core/src/review-source/`),
   never from `sessionGithub` alone. `activeReviewSourceOf` (review-source slice)

@@ -1,9 +1,13 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { PullRequestPort } from '@goodboy/core';
-import { Avatar, EmptyLine, IconButton } from '@goodboy/ui';
-import type { PullRequestReviewer, PullRequestReviewerState, SessionId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { Avatar, EmptyLine, formatError, ICON_SIZE, IconButton } from '@goodboy/ui';
+import type {
+  MountId,
+  PullRequestReviewer,
+  PullRequestReviewerState,
+  SessionId,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
 import { ReviewerPicker } from '../../../../shared/components/ReviewerPicker';
@@ -17,6 +21,7 @@ export type ReviewerRequest =
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
   readonly prNumber: number;
   readonly people: ReadonlyArray<PullRequestReviewer>;
   readonly bots: ReadonlyArray<PullRequestReviewer>;
@@ -35,6 +40,7 @@ const STATE_WORD: Readonly<Record<PullRequestReviewerState, string>> = {
 
 export const ReviewersProperty = ({
   sessionId,
+  mountId,
   prNumber,
   people,
   bots,
@@ -51,14 +57,21 @@ export const ReviewersProperty = ({
     async (query: string) => (port === null ? [] : await port.searchReviewers({ query })),
     [port],
   );
+  const [failure, setFailure] = useState<string | null>(null);
   const onAdd = useCallback(
     (logins: ReadonlyArray<string>) => {
       void (async () => {
-        await requestReview(sessionId, prNumber, logins).catch(() => undefined);
+        setFailure(null);
+        try {
+          await requestReview(sessionId, prNumber, logins, mountId === null ? {} : { mountId });
+        } catch (error) {
+          setFailure(`Couldn't ask for the review. ${formatError(error)}`);
+          return;
+        }
         onMutated();
       })();
     },
-    [onMutated, prNumber, requestReview, sessionId],
+    [mountId, onMutated, prNumber, requestReview, sessionId],
   );
 
   const action =
@@ -97,6 +110,11 @@ export const ReviewersProperty = ({
       )}
       {request.kind === 'disabled' && (
         <p className="text-meta text-faint-foreground">{request.reason}</p>
+      )}
+      {failure !== null && (
+        <p role="alert" className="text-meta text-danger">
+          {failure}
+        </p>
       )}
     </PropertyField>
   );

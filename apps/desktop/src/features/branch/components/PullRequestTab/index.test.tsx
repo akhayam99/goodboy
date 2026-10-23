@@ -14,7 +14,7 @@ import {
   type PrPageVariant,
 } from '../../../../app/components/MockScene/scenes/u23/prPageSeed';
 import { PrPageScene } from '../../../../app/components/MockScene/scenes/u23/PrPageScene';
-import type { PullRequestState } from '@goodboy/types';
+import { brandId, type MountId, type PullRequestState } from '@goodboy/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { applyMountGithub } from '../../../../store/slices/github/mountGithub';
 import {
@@ -100,6 +100,29 @@ const show = async ({ variant = 'github' }: { readonly variant?: PrPageVariant }
   );
   await screen.findByRole('region', { name: 'Description' });
   useAppStore.setState(stubs);
+};
+
+const shownMountOf = () => {
+  const mount = useAppStore.getState().sessionProjectMounts[SESSION.id]?.[0];
+  if (mount === undefined) {
+    throw new Error('the scene seeds one mount');
+  }
+  return mount;
+};
+
+const collaboratorSearchRoots = (): ReadonlyArray<string> => {
+  const roots = new Set<string>();
+  for (const [command, args] of vi.mocked(invoke).mock.calls) {
+    if (command !== 'gh_run' || typeof args !== 'object' || args === null) {
+      continue;
+    }
+    const isSearch =
+      'args' in args && Array.isArray(args.args) && args.args.join(' ').includes('collaborators');
+    if (isSearch && 'cwd' in args && typeof args.cwd === 'string') {
+      roots.add(args.cwd);
+    }
+  }
+  return [...roots];
 };
 
 const description = (): HTMLElement => screen.getByRole('region', { name: 'Description' });
@@ -282,7 +305,56 @@ describe('the reviewers', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
 
     fireEvent.click(await screen.findByText('rio-k'));
-    expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 318, ['rio-k']);
+    expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 318, ['rio-k'], {
+      mountId: shownMountOf().mountId,
+    });
+  });
+
+  it('searches and asks in the repository on screen while another one takes the writes', async () => {
+    await show();
+    const shown = shownMountOf();
+    act(() =>
+      useAppStore.setState({
+        sessionProjectMounts: {
+          [SESSION.id]: [
+            shown,
+            {
+              ...shown,
+              mountId: brandId<MountId>({ value: 'mock-u23-mount-ledger-core' }),
+              repoRoot: '~/code/harborline/ledger-core',
+              worktreePath: '~/code/harborline/ledger-core-main',
+              lastWorktreePath: '~/code/harborline/ledger-core-main',
+              branch: 'hl/ledger-core-main',
+              parallelIndex: 1,
+            },
+          ],
+        },
+        sessionActiveMount: {
+          [SESSION.id]: brandId<MountId>({ value: 'mock-u23-mount-ledger-core' }),
+        },
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+    fireEvent.click(await screen.findByText('rio-k'));
+
+    expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 318, ['rio-k'], {
+      mountId: shown.mountId,
+    });
+    expect(collaboratorSearchRoots()).toEqual(['~/code/harborline/payments-api']);
+  });
+
+  it('says why the request failed and keeps the list as it was', async () => {
+    await show();
+    stubs.requestReview.mockRejectedValueOnce(new Error('Resource not accessible'));
+    useAppStore.setState(stubs);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+    fireEvent.click(await screen.findByText('rio-k'));
+
+    const reviewers = await screen.findByRole('region', { name: 'Reviewers' });
+    expect(await within(reviewers).findByText(/Resource not accessible/)).toBeDefined();
+    expect(within(reviewers).queryByText('rio-k')).toBeNull();
   });
 
   it('leaves out the people already in the list', async () => {

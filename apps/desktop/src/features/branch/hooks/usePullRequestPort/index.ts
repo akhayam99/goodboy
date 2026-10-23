@@ -1,21 +1,29 @@
 import { useMemo } from 'react';
 import type { PullRequestPort } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionPullRequestOf } from '../../../../store/slices/review-source/sessionPullRequestOf';
 import { pullRequestPortFor } from '../../../../store/slices/review-source/pullRequestPortFor';
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
 };
 
-export const usePullRequestPort = ({ sessionId }: Params): PullRequestPort | null => {
+export const usePullRequestPort = ({ sessionId, mountId }: Params): PullRequestPort | null => {
   const prNumber = useAppStore(
-    (state) => sessionPullRequestOf({ state, sessionId })?.number ?? null,
+    (state) => sessionPullRequestOf({ state, sessionId, mountId })?.number ?? null,
   );
-  const mountId = useAppStore((state) => state.sessionActiveMount?.[sessionId] ?? null);
   return useMemo(
-    () => (prNumber === null ? null : pullRequestPortFor({ get: useAppStore.getState, sessionId })),
+    () =>
+      prNumber === null
+        ? null
+        : pullRequestPortFor({
+            get: useAppStore.getState,
+            sessionId,
+            ...(mountId === null ? {} : { mountId }),
+            prNumber,
+          }),
     [mountId, prNumber, sessionId],
   );
 };

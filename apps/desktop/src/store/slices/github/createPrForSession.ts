@@ -262,6 +262,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
         await get()
           .editPr(sessionId, created.number, {
             body: appendClosingReferences({ body: created.body, references: filledReferences }),
+            mountId: mount.id,
           })
           .catch((error: unknown) => {
             void get().emitNotification({

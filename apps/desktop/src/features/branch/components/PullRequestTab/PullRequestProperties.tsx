@@ -37,6 +37,7 @@ export const PullRequestProperties = ({
   >
     <ReviewersProperty
       sessionId={sessionId}
+      mountId={mountId}
       prNumber={pr.number}
       people={reviewers.people}
       bots={reviewers.bots}

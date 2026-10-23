@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import type { SessionId } from '@goodboy/types';
-import { AnchoredPopover, Button, formatError, useDropdown } from '@goodboy/ui';
+import type { MountId, SessionId } from '@goodboy/types';
+import { AnchoredPopover, Button, formatError, ICON_SIZE, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { appendClosingReferences } from '../../../integrations/github/appendClosingReferences';
 import type { ClosingIssueReference } from '../../../integrations/github/closingIssueReferences';
@@ -9,12 +9,13 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
   readonly prNumber: number;
   readonly body: string;
   readonly candidates: ReadonlyArray<ClosingIssueReference>;
 };
 
-export const LinkIssueToPrPopover = ({ sessionId, prNumber, body, candidates }: Props) => {
+export const LinkIssueToPrPopover = ({ sessionId, mountId, prNumber, body, candidates }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [pendingNumber, setPendingNumber] = useState<number | null>(null);
   const editPr = useAppStore((state) => state.editPr);
@@ -32,6 +33,7 @@ export const LinkIssueToPrPopover = ({ sessionId, prNumber, body, candidates }: 
     try {
       await editPr(sessionId, prNumber, {
         body: appendClosingReferences({ body, references: [reference] }),
+        ...(mountId === null ? {} : { mountId }),
       });
       close();
     } catch (linkError) {

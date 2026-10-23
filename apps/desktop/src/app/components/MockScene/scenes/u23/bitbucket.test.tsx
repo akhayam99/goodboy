@@ -218,7 +218,9 @@ describe('the Pull request tab on Bitbucket, controls', () => {
     fireEvent.click(screen.getByText('rio-k'));
 
     await waitFor(() => expect(stubs.requestReview).toHaveBeenCalledTimes(1));
-    expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 42, ['rio-k']);
+    expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 42, ['rio-k'], {
+      mountId: expect.any(String),
+    });
   });
 });
 

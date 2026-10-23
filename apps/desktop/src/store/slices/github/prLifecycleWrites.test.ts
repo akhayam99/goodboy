@@ -224,6 +224,43 @@ describe('pull request writes with two mounts', () => {
     });
   });
 
+  it('requests the review in the mount it names and reads that mount again', async () => {
+    const state = makeState();
+
+    await requestReview(vi.fn(), asGet(state))(SESSION_ID, 44, ['octo-reviewer'], {
+      mountId: RELAY_MOUNT_ID,
+    });
+
+    expect(h.run).toHaveBeenCalledWith(['pr', 'edit', '44', '--add-reviewer', 'octo-reviewer'], {
+      cwd: '/repos/notify-relay',
+      workspaceId: 'workspace-1',
+      projectId: RELAY_ID,
+    });
+    expect(state.refreshSessionPrDetail).toHaveBeenCalledWith(SESSION_ID, {
+      force: true,
+      mountId: RELAY_MOUNT_ID,
+    });
+  });
+
+  it('edits the description in the mount it names and reads that mount again', async () => {
+    const state = makeState();
+
+    await editPr(vi.fn(), asGet(state))(SESSION_ID, 44, {
+      body: 'Closes #12',
+      mountId: RELAY_MOUNT_ID,
+    });
+
+    expect(h.run).toHaveBeenCalledWith(['pr', 'edit', '44', '--body', 'Closes #12'], {
+      cwd: '/repos/notify-relay',
+      workspaceId: 'workspace-1',
+      projectId: RELAY_ID,
+    });
+    expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
+      force: true,
+      mountId: RELAY_MOUNT_ID,
+    });
+  });
+
   it('keeps the active mount when no mount is named', async () => {
     const state = makeState();
 
