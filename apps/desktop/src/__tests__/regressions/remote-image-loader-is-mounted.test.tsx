@@ -6,7 +6,7 @@ import { Markdown } from '@goodboy/ui';
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock, isTauri: () => true }));
 vi.mock('../../App', () => ({
   App: () => <Markdown text="![board](https://example.com/board.png)" />,
 }));
