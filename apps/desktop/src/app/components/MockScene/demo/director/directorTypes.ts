@@ -4,7 +4,7 @@ import type { AppStore } from '../../../../../store/store';
 
 export type DirectorStore = Pick<typeof useAppStore, 'getState' | 'setState'>;
 
-export type HintParams = {
+type HintParams = {
   readonly text: string;
 };
 
@@ -14,7 +14,7 @@ export type CueParams = {
   readonly hint: (params: HintParams) => void;
 };
 
-export type SetupParams = {
+type SetupParams = {
   readonly store: DirectorStore;
 };
 
