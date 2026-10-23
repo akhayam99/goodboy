@@ -21,6 +21,7 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { createSimulatedSend } from './createSimulatedSend';
+import { createReplyRuns } from './createReplyRuns';
 import { installDemoWorld } from './installDemoWorld';
 
 let store: StoryStore;
@@ -58,7 +59,13 @@ const seed = (): void => {
   store.setState({
     sessions: [session],
     sessionPhaseRuns: { [session.id]: [planner] },
-    sendTurn: createSimulatedSend({ store, reply: 'Revised.', now: () => AT }),
+    sendTurn: createSimulatedSend({
+      store,
+      reply: 'Revised.',
+      now: () => AT,
+      shouldClearDraft: true,
+      runs: createReplyRuns(),
+    }),
   });
   installDemoWorld({ store });
 };

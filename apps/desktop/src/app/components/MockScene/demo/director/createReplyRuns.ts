@@ -32,6 +32,7 @@ export type ReplyRuns = {
   readonly isActive: (params: RunParams) => boolean;
   readonly later: (params: LaterParams) => void;
   readonly finish: (params: FinishParams) => void;
+  readonly cancelAgent: (params: AgentParams) => void;
   readonly cancel: () => void;
   readonly dispose: () => void;
 };
@@ -98,6 +99,10 @@ export const createReplyRuns = (): ReplyRuns => {
       queued.set(agentId, rest);
       active.set(agentId, next.runId);
       next.start();
+    },
+    cancelAgent: ({ agentId }) => {
+      active.delete(agentId);
+      queued.delete(agentId);
     },
     cancel,
     dispose: () => {
