@@ -9,38 +9,50 @@ type Params = {
   readonly sessionId: SessionId;
   readonly sha: string | null;
   readonly path: string | null;
-  readonly fallbackWorktreePath: string | null;
+  readonly worktreePath: string | null;
 };
 
+export type OriginCommitDiff = Readonly<{
+  files: ReadonlyArray<FileDiff>;
+  hasFailed: boolean;
+}>;
+
 const NO_FILES: ReadonlyArray<FileDiff> = [];
+
+const WAITING: OriginCommitDiff = { files: NO_FILES, hasFailed: false };
+
+const FAILED: OriginCommitDiff = { files: NO_FILES, hasFailed: true };
 
 export const useOriginCommitDiff = ({
   sessionId,
   sha,
   path,
-  fallbackWorktreePath,
-}: Params): ReadonlyArray<FileDiff> => {
-  const [files, setFiles] = useState<ReadonlyArray<FileDiff>>(NO_FILES);
-  const repoPath = useAppStore(
+  worktreePath: givenPath,
+}: Params): OriginCommitDiff => {
+  const [diff, setDiff] = useState<OriginCommitDiff>(WAITING);
+  const activePath = useAppStore(
     (state) => resolveSessionRepo({ state, sessionId })?.worktreePath ?? null,
   );
-  const worktreePath = repoPath ?? fallbackWorktreePath;
+  const worktreePath = givenPath ?? activePath;
 
   useEffect(() => {
     if (worktreePath === null || sha === null || path === null) {
-      setFiles(NO_FILES);
+      setDiff(WAITING);
       return;
     }
     let isCancelled = false;
     worktreeDiffCommit(worktreePath, sha)
       .then((raw) => {
         if (!isCancelled) {
-          setFiles(parseUnifiedDiff(raw).filter((file) => file.path === path));
+          setDiff({
+            files: parseUnifiedDiff(raw).filter((file) => file.path === path),
+            hasFailed: false,
+          });
         }
       })
       .catch(() => {
         if (!isCancelled) {
-          setFiles(NO_FILES);
+          setDiff(FAILED);
         }
       });
     return () => {
@@ -48,5 +60,5 @@ export const useOriginCommitDiff = ({
     };
   }, [path, sha, worktreePath]);
 
-  return files;
+  return diff;
 };
