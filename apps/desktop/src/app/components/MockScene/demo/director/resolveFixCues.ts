@@ -107,8 +107,13 @@ const bash =
     },
   ];
 
-export const resolveFixCues = (params: Params): ReadonlyArray<DemoCue> => {
-  const { sessionId, agentId, runId } = params;
+export const resolveFixCues = ({
+  sessionId,
+  agentId,
+  runId,
+  attemptId,
+  threadIds,
+}: Params): ReadonlyArray<DemoCue> => {
   const toolUseId = `demo-resolve-test-${runId}`;
   return [
     eventCue({
@@ -149,7 +154,7 @@ export const resolveFixCues = (params: Params): ReadonlyArray<DemoCue> => {
       atMs: 6400,
       apply: ({ store, at }) => {
         appendTurnEvents({ store, agentId, events: [{ kind: 'done', runId, at }] });
-        settleFix({ store, ...params });
+        settleFix({ store, sessionId, agentId, runId, attemptId, threadIds });
         finishAgentTurn({ store, sessionId, agentId, at, isViewed: true });
       },
     },

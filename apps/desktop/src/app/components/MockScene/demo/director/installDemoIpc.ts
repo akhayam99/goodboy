@@ -23,7 +23,11 @@ const METADATA = {
 
 const isInvoke = (value: unknown): value is Invoke => typeof value === 'function';
 
-const overlayInvokeOf = (value: unknown): Invoke | null => {
+type OverlaySourceParams = {
+  readonly value: unknown;
+};
+
+const overlayInvokeOf = ({ value }: OverlaySourceParams): Invoke | null => {
   if (typeof value !== 'object' || value === null) {
     return null;
   }
@@ -169,7 +173,7 @@ export const installDemoIpc = (): void => {
     enumerable: true,
     get: () => internals,
     set: (value: unknown) => {
-      const overlay = overlayInvokeOf(value);
+      const overlay = overlayInvokeOf({ value });
       if (overlay !== null && overlay !== invoke) {
         addOverlay({ overlay });
       }
