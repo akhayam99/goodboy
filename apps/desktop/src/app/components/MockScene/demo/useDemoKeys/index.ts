@@ -5,6 +5,8 @@ type Params = {
   readonly onNext: () => void;
   readonly onToggle: () => void;
   readonly onReplay: () => void;
+  readonly onHideHint: () => void;
+  readonly onShowHint: () => void;
 };
 
 type TargetParams = {
@@ -14,7 +16,14 @@ type TargetParams = {
 const isControl = ({ target }: TargetParams): boolean =>
   target instanceof HTMLElement && target.closest('button, a, input, textarea') !== null;
 
-export const useDemoKeys = ({ onPrevious, onNext, onToggle, onReplay }: Params) =>
+export const useDemoKeys = ({
+  onPrevious,
+  onNext,
+  onToggle,
+  onReplay,
+  onHideHint,
+  onShowHint,
+}: Params) =>
   useCallback(
     (event: KeyboardEvent<HTMLElement>) => {
       if (event.metaKey || event.ctrlKey || event.altKey) {
@@ -35,10 +44,19 @@ export const useDemoKeys = ({ onPrevious, onNext, onToggle, onReplay }: Params) 
         onToggle();
         return;
       }
+      if (event.key === 'Escape') {
+        onHideHint();
+        return;
+      }
+      if (event.key === 'h' || event.key === 'H') {
+        event.preventDefault();
+        onShowHint();
+        return;
+      }
       if (event.key === 'r' || event.key === 'R') {
         event.preventDefault();
         onReplay();
       }
     },
-    [onPrevious, onNext, onToggle, onReplay],
+    [onPrevious, onNext, onToggle, onReplay, onHideHint, onShowHint],
   );

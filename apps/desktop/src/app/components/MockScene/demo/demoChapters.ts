@@ -1,3 +1,7 @@
+import type { DemoHint } from './hints/demoHintTypes';
+import { ONBOARDING_HINTS } from './hints/onboardingHints';
+import { AGENT_HINTS } from './hints/agentHints';
+
 export type DemoBeat = {
   readonly label: string;
   readonly scene: string;
@@ -5,72 +9,32 @@ export type DemoBeat = {
   readonly holdMs: number;
 };
 
-export type DemoChapterGroup = 'setup' | 'flows';
-
 export type DemoChapter = {
   readonly id: string;
-  readonly group: DemoChapterGroup;
   readonly title: string;
+  readonly isOptional?: boolean;
   readonly summary: string;
   readonly tryThis: string;
+  readonly hints?: ReadonlyArray<DemoHint>;
   readonly beats: ReadonlyArray<DemoBeat>;
 };
 
-type DemoGroupCopy = {
-  readonly label: string;
-  readonly noun: string;
-};
-
-export const DEMO_GROUPS = {
-  setup: { label: 'Get started', noun: 'Setup' },
-  flows: { label: 'Flows', noun: 'Flow' },
-} as const satisfies Record<DemoChapterGroup, DemoGroupCopy>;
-
 export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>] = [
   {
-    id: 'welcome',
-    group: 'setup',
-    title: 'Welcome',
-    summary: 'Goodboy finds the coding agents already on your Mac.',
+    id: 'setup',
+    title: 'Set up',
+    isOptional: true,
+    summary:
+      'Goodboy finds the agents on your Mac, then you point it at your code and hand over a first task.',
     tryThis: 'Press Get started and walk the setup yourself.',
-    beats: [{ label: 'Welcome', scene: 'onboarding', params: { step: 'welcome' }, holdMs: 5000 }],
-  },
-  {
-    id: 'agents',
-    group: 'setup',
-    title: 'Your agents',
-    summary: 'See which coding agents are ready and sign in to the rest.',
-    tryThis: 'Open the API key option to see the other providers.',
+    hints: ONBOARDING_HINTS,
     beats: [
+      { label: 'Welcome', scene: 'onboarding', params: { step: 'welcome' }, holdMs: 5000 },
       { label: 'Agents', scene: 'onboarding', params: { step: 'agents' }, holdMs: 5000 },
-      {
-        label: 'Sign in',
-        scene: 'onboarding',
-        params: { step: 'agents', agents: 'signin' },
-        holdMs: 4500,
-      },
-    ],
-  },
-  {
-    id: 'workspace',
-    group: 'setup',
-    title: 'Workspace and tools',
-    summary: 'Point Goodboy at your repositories, then link GitHub or Linear.',
-    tryThis: 'Move between the steps with Back and Continue.',
-    beats: [
       { label: 'Workspace', scene: 'onboarding', params: { step: 'workspace' }, holdMs: 5000 },
       { label: 'Tools', scene: 'onboarding', params: { step: 'tools' }, holdMs: 5000 },
-    ],
-  },
-  {
-    id: 'first-session',
-    group: 'setup',
-    title: 'First session',
-    summary: 'Ask a question or hand over a task to start your first session.',
-    tryThis: 'Type your own task in the box.',
-    beats: [
       {
-        label: 'First session',
+        label: 'First task',
         scene: 'onboarding',
         params: { step: 'first-session' },
         holdMs: 6000,
@@ -79,82 +43,54 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
   },
   {
     id: 'agent',
-    group: 'flows',
     title: 'Work with an agent',
-    summary: 'The Implementer edits, explains and stops to ask when a choice is yours.',
-    tryThis: 'Press Answer it yourself on the blocking question.',
-    beats: [{ label: 'Works, then asks', scene: 'chat-shell', holdMs: 4000 }],
-  },
-  {
-    id: 'run',
-    group: 'flows',
-    title: 'Run a workflow',
-    summary: 'A run chains agents step by step and stops when a step needs you.',
-    tryThis: 'Open a step to read what that agent did.',
+    summary:
+      'Send a follow-up, answer the question the agent stops on and keep an eye on your limits.',
+    tryThis: 'Send the message, then answer the blocking question.',
+    hints: AGENT_HINTS,
     beats: [
-      { label: 'Approval', scene: 'c08-run-approval', holdMs: 4500 },
-      { label: 'Steps run', scene: 'c08-run-working', holdMs: 2500 },
-      { label: 'Done', scene: 'c08-run-done', holdMs: 5000 },
+      { label: 'Works, then asks', scene: 'chat-shell', holdMs: 4000 },
+      { label: 'Limits', scene: 'brand-limits', holdMs: 6000 },
     ],
   },
   {
-    id: 'auto',
-    group: 'flows',
-    title: 'Auto',
-    summary: 'Auto plans the work, delegates each piece and reports back.',
-    tryThis: 'Read the plan, then follow a child agent.',
+    id: 'orchestrate',
+    title: 'Orchestrate',
+    summary:
+      'Let Auto plan and delegate, or run a saved workflow that stops when a step needs you.',
+    tryThis: 'Read the plan, then follow a helper agent.',
     beats: [
-      { label: 'Start', scene: 'c07-auto-start', holdMs: 4000 },
-      { label: 'Plan', scene: 'c07-auto-plan', holdMs: 5000 },
-      { label: 'Working', scene: 'c07-auto-working', holdMs: 5000 },
-      { label: 'Child done', scene: 'c07-auto-child-done', holdMs: 5000 },
+      { label: 'Auto starts', scene: 'c07-auto-start', holdMs: 4000 },
+      { label: 'Auto plans', scene: 'c07-auto-plan', holdMs: 5000 },
+      { label: 'Auto works', scene: 'c07-auto-working', holdMs: 5000 },
+      { label: 'Helper done', scene: 'c07-auto-child-done', holdMs: 5000 },
+      { label: 'Run approval', scene: 'c08-run-approval', holdMs: 4500 },
+      { label: 'Run steps', scene: 'c08-run-working', holdMs: 2500 },
+      { label: 'Run done', scene: 'c08-run-done', holdMs: 5000 },
     ],
   },
   {
-    id: 'board',
-    group: 'flows',
-    title: 'Board',
-    summary: 'Every session in one place, grouped by what needs you.',
-    tryThis: 'Scan the columns, then open a card.',
-    beats: [{ label: 'A card needs you', scene: 'board-shell', holdMs: 4000 }],
-  },
-  {
-    id: 'limits',
-    group: 'flows',
-    title: 'Limits in sight',
-    summary: 'See how much of each plan is left before a run stops.',
-    tryThis: 'Hover the Claude chip in the top bar to see when the plan resets.',
-    beats: [{ label: 'Limits', scene: 'brand-limits', holdMs: 6000 }],
+    id: 'find',
+    title: 'Find work and results',
+    summary:
+      'Every session on one board, grouped by what needs you, and every report next to its code.',
+    tryThis: 'Open the card that needs you, then a report from the library.',
+    beats: [
+      { label: 'Board', scene: 'board-shell', holdMs: 4000 },
+      { label: 'Library', scene: 'artifacts-lens-shell', holdMs: 5000 },
+      { label: 'Report', scene: 'artifact-report', holdMs: 5000 },
+    ],
   },
   {
     id: 'review',
-    group: 'flows',
-    title: 'Review the diff',
-    summary: 'Read every change before anything is pushed.',
-    tryThis: 'Switch between files and leave a note on a line.',
-    beats: [{ label: 'Diff', scene: 'brand-diff', holdMs: 6000 }],
-  },
-  {
-    id: 'resolve',
-    group: 'flows',
-    title: 'Resolve review comments',
-    summary: 'Pull request comments become fixes, and replies go back to the thread.',
-    tryThis: 'Pick a comment and start a fix.',
+    title: 'Review and ship',
+    summary: 'Read every change before it is pushed, and turn review comments into fixes.',
+    tryThis: 'Switch between files, then pick a comment and start a fix.',
     beats: [
-      { label: 'Queue', scene: 'resolve-queue-shell', holdMs: 5000 },
+      { label: 'Diff', scene: 'brand-diff', holdMs: 6000 },
+      { label: 'Comments', scene: 'resolve-queue-shell', holdMs: 5000 },
       { label: 'Fixing', scene: 'resolve-fix-working', holdMs: 5000 },
       { label: 'Ready', scene: 'resolve-fix-ready', holdMs: 5000 },
-    ],
-  },
-  {
-    id: 'artifacts',
-    group: 'flows',
-    title: 'Artifacts',
-    summary: 'Plans, reports and wireframes stay next to the code they describe.',
-    tryThis: 'Open a report from the library.',
-    beats: [
-      { label: 'Library', scene: 'artifacts-lens-shell', holdMs: 5000 },
-      { label: 'Report', scene: 'artifact-report', holdMs: 5000 },
     ],
   },
 ];

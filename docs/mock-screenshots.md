@@ -314,11 +314,13 @@ event, with `&step=` a step id (`welcome`, `agents`, `workspace`, `tools`,
 Acme docs; `none` up to Workspace, `repo` after it), and
 `onboarding-home&state=` shows Home in `list`, `new` or `empty`.
 
-`demo` is the playground: a frame that walks a visitor through chapters, each a
-list of beats. A beat is another scene loaded in an iframe of the same server
-(`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and scaled to fit,
-so every beat gets a clean store and its own timers. The chapters live in
-`MockScene/demo/demoChapters.ts`, and `#<chapter id>` in the URL opens one.
+`demo` is the playground: five open groups in the rail (Set up, which is
+optional, Work with an agent, Orchestrate, Find work and results, Review and
+ship), each a list of beats. A beat is another scene loaded in an iframe of the
+same server (`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and
+scaled to fit, so every beat gets a clean store and its own timers. The groups
+live in `MockScene/demo/demoChapters.ts`, `#<group id>` in the URL opens one,
+and a bare visit opens Work with an agent.
 
 Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With
@@ -352,6 +354,27 @@ through the same live text path, so a composer never reaches IPC, and
 `useFakeTauri` keeps its fake boundary for the whole visit. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
+
+A group carries an ordered list of hints (`demo/hints/`, typed in
+`demoHintTypes.ts`): an id, the copy, the outcome it counts toward, an anchor,
+a preferred side and two checks, reveal when and done when. The anchor is a
+selector inside the frame (an existing `aria-label` or role, or a
+`data-demo-anchor` that only the demo reads), and the two checks read the real
+store and DOM of the frame. Once a frame is ready the stage sends
+it `hints` (the group id and the hint ids already tried or skipped); the frame's
+`createHintEngine` re-measures on store changes, DOM mutations, scroll and
+resize in one animation frame and reports `anchor` (the first untried hint whose
+control is on screen, with its rect) and `tried` (a hint whose done check held
+after its reveal check did). Reports carry the frame's generation and the stage
+drops any from an older generation or another frame. The stage draws one note
+beside the anchor through the stage scale, a 2px outline and a callout that
+flips side near an edge; only the callout takes clicks. Escape hides it, H
+brings it back, Skip hint settles it. The rail and the header count distinct
+outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
+(every read and write survives blocked storage), and Replay clears the open
+group only. Another group gets hints by adding a data file and a `hints` entry.
+In a directed frame `answerOpenQuestions` is simulated too: it marks the
+answer, keeps the unsent draft and streams a short acknowledgment.
 
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens

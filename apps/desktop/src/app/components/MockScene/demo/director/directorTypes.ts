@@ -2,7 +2,7 @@ import type { IsoDateTime } from '@goodboy/types';
 import type { useAppStore } from '../../../../../store';
 import type { AppStore } from '../../../../../store/store';
 
-export type DirectorStore = Pick<typeof useAppStore, 'getState' | 'setState'>;
+export type DirectorStore = Pick<typeof useAppStore, 'getState' | 'setState' | 'subscribe'>;
 
 type HintParams = {
   readonly text: string;
@@ -28,6 +28,7 @@ export type DemoTimeline = {
   readonly prepare: (params: CueParams) => void;
   readonly cues: ReadonlyArray<DemoCue>;
   readonly reply?: string;
+  readonly answerReply?: string;
 };
 
 export type TimelineParams = {

@@ -1,23 +1,23 @@
-import { Check } from 'lucide-react';
-import { ICON_SIZE, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
+import type { HintTally } from './hints/hintTally';
 
 type Props = {
   readonly chapter: DemoChapter;
   readonly ordinal: number;
   readonly isActive: boolean;
-  readonly isVisited: boolean;
+  readonly tally: HintTally;
   readonly onSelect: () => void;
 };
 
-export const DemoRailRow = ({ chapter, ordinal, isActive, isVisited, onSelect }: Props) => (
+export const DemoRailRow = ({ chapter, ordinal, isActive, tally, onSelect }: Props) => (
   <button
     type="button"
     onClick={onSelect}
-    aria-current={isActive ? 'step' : undefined}
+    aria-current={isActive ? 'page' : undefined}
     data-selected={isActive ? 'true' : 'false'}
     className={cn(
-      'grid w-full grid-cols-[20px_minmax(0,1fr)_14px] items-center gap-3 rounded-lg px-3 py-2 text-left',
+      'grid w-full grid-cols-[20px_minmax(0,1fr)] items-baseline gap-3 rounded-lg px-3 py-2 text-left',
       ROW_INTERACTIVE,
       'data-[selected=true]:bg-selected data-[selected=true]:hover:bg-selected',
     )}
@@ -25,13 +25,25 @@ export const DemoRailRow = ({ chapter, ordinal, isActive, isVisited, onSelect }:
     <span className={cn('text-meta', isActive ? 'text-primary' : 'text-faint-foreground')}>
       {String(ordinal).padStart(2, '0')}
     </span>
-    <span className={cn('text-row', isActive ? 'text-foreground' : 'text-muted-foreground')}>
-      {chapter.title}
+    <span className="flex min-w-0 flex-col">
+      <span className="flex items-baseline gap-2">
+        <span className={cn('text-row', isActive ? 'text-foreground' : 'text-muted-foreground')}>
+          {chapter.title}
+        </span>
+        {chapter.isOptional === true ? (
+          <span className="text-meta text-faint-foreground">Optional</span>
+        ) : null}
+      </span>
+      {tally.total > 0 ? (
+        <span
+          className={cn(
+            'text-meta',
+            tally.tried > 0 ? 'text-muted-foreground' : 'text-faint-foreground',
+          )}
+        >
+          {tally.tried} of {tally.total} tried
+        </span>
+      ) : null}
     </span>
-    {isVisited && !isActive ? (
-      <Check aria-label="Seen" size={ICON_SIZE.row} className="self-center text-faint-foreground" />
-    ) : (
-      <span aria-hidden />
-    )}
   </button>
 );

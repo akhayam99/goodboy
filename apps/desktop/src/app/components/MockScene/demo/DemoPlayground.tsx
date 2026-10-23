@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyDocumentTheme } from '../../../../shared/lib/theme';
-import { DEMO_CHAPTERS, DEMO_GROUPS } from './demoChapters';
+import { DEMO_CHAPTERS } from './demoChapters';
 import { DemoTopBar } from './DemoTopBar';
 import { DemoRail } from './DemoRail';
 import { DemoChapterHeader } from './DemoChapterHeader';
@@ -10,6 +10,7 @@ import { DemoClosing } from './DemoClosing';
 import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
 import { useDemoKeys } from './useDemoKeys';
+import { useDemoHints } from './useDemoHints';
 
 type Theme = 'dark' | 'light';
 
@@ -20,6 +21,8 @@ type ChapterParams = {
 type ShownParams = {
   readonly key: string;
 };
+
+const DEFAULT_CHAPTER_ID = 'agent';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -32,8 +35,10 @@ const initialTheme = (): Theme =>
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<Theme>(initialTheme);
-  const { chapterId, selectChapter } = useChapterHash({ chapters: DEMO_CHAPTERS });
-  const [visitedIds, setVisitedIds] = useState<ReadonlySet<string>>(() => new Set([chapterId]));
+  const { chapterId, selectChapter } = useChapterHash({
+    chapters: DEMO_CHAPTERS,
+    fallbackId: DEFAULT_CHAPTER_ID,
+  });
 
   const chapterIndex = Math.max(
     0,
@@ -46,8 +51,7 @@ export const DemoPlayground = () => {
   const [isReducedMotion] = useState(prefersReducedMotion);
   const player = useBeatPlayer({ chapter, nextChapter, theme, shownKey, isReducedMotion });
 
-  const groupChapters = DEMO_CHAPTERS.filter((entry) => entry.group === chapter.group);
-  const position = `${DEMO_GROUPS[chapter.group].noun} ${groupChapters.indexOf(chapter) + 1} of ${groupChapters.length}`;
+  const hints = useDemoHints({ chapter, frameKey: player.frame.key });
 
   const focusFrame = useCallback(() => {
     rootRef.current?.focus({ preventScroll: true });
@@ -60,12 +64,6 @@ export const DemoPlayground = () => {
   useEffect(() => {
     applyDocumentTheme({ theme });
   }, [theme]);
-
-  useEffect(() => {
-    setVisitedIds((current) =>
-      current.has(chapter.id) ? current : new Set([...current, chapter.id]),
-    );
-  }, [chapter.id]);
 
   const goToChapter = useCallback(
     ({ id }: ChapterParams) => {
@@ -90,7 +88,20 @@ export const DemoPlayground = () => {
   }, [nextChapter, goToChapter]);
 
   const onToggle = player.isPlaying ? player.pause : player.play;
-  const onKeyDown = useDemoKeys({ onPrevious, onNext, onToggle, onReplay: player.replay });
+  const { reset: resetHints } = hints;
+  const { replay } = player;
+  const onReplay = useCallback(() => {
+    resetHints();
+    replay();
+  }, [resetHints, replay]);
+  const onKeyDown = useDemoKeys({
+    onPrevious,
+    onNext,
+    onToggle,
+    onReplay,
+    onHideHint: hints.hide,
+    onShowHint: hints.show,
+  });
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
 
@@ -109,11 +120,16 @@ export const DemoPlayground = () => {
         <DemoRail
           chapters={DEMO_CHAPTERS}
           activeId={chapter.id}
-          visitedIds={visitedIds}
+          tallyOf={hints.tallyOf}
           onSelect={goToChapter}
         />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
-          <DemoChapterHeader chapter={chapter} position={position} />
+          <DemoChapterHeader
+            chapter={chapter}
+            tally={hints.tally}
+            isHintHidden={hints.isHidden}
+            onShowHint={hints.show}
+          />
           <DemoStage
             frame={player.frame}
             preloadFrame={player.preloadFrame}
@@ -122,10 +138,19 @@ export const DemoPlayground = () => {
             onReport={player.report}
             onInteract={player.interact}
             onFocusLost={focusFrame}
+            hintTrack={hints.track}
+            coach={hints.coach}
+            onHintReport={hints.onHintReport}
+            onSkipHint={hints.skip}
+            onHideHint={hints.hide}
           />
+          <p className="sr-only" aria-live="polite">
+            {hints.coach === undefined ? '' : `Hint: ${hints.coach.copy}`}
+          </p>
           <DemoTimeline
             chapter={chapter}
             player={player}
+            onReplay={onReplay}
             nextChapter={nextChapter}
             hasPrevious={previousChapter !== undefined}
             onPrevious={onPrevious}

@@ -19,6 +19,7 @@ type Params = {
   readonly store: DirectorStore;
   readonly reply: string;
   readonly now: () => IsoDateTime;
+  readonly shouldClearDraft: boolean;
 };
 
 type AgentParams = {
@@ -57,7 +58,7 @@ type StreamParams = {
   readonly runId: ProviderRunId;
 };
 
-export const createSimulatedSend = ({ store, reply, now }: Params) => {
+export const createSimulatedSend = ({ store, reply, now, shouldClearDraft }: Params) => {
   let turns = 0;
   const stream = ({ sessionId, agentId, runId }: StreamParams): void => {
     const sentences = sentencesOf({ text: reply });
@@ -100,11 +101,13 @@ export const createSimulatedSend = ({ store, reply, now }: Params) => {
       agentId,
       events: [{ kind: 'user_text', runId, text: content, at }],
     });
-    store.setState((current) => ({
-      agentDraft: Object.fromEntries(
-        Object.entries(current.agentDraft).filter(([id]) => id !== agentId),
-      ),
-    }));
+    if (shouldClearDraft) {
+      store.setState((current) => ({
+        agentDraft: Object.fromEntries(
+          Object.entries(current.agentDraft).filter(([id]) => id !== agentId),
+        ),
+      }));
+    }
     startAgentTurn({ store, sessionId, agentId, runId, at });
     onStarted?.();
     stream({ sessionId, agentId, runId });
