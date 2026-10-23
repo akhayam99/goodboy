@@ -61,7 +61,14 @@ export const WelcomeStep = ({ isLocked, onStart }: Props) => {
         <DetectionLine rows={rows} />
       </div>
       <div className="welcome-rise flex flex-col items-center gap-3" style={delay(460)}>
-        <Button ref={startRef} size="md" variant="primary" disabled={isLocked} onClick={onStart}>
+        <Button
+          ref={startRef}
+          size="md"
+          variant="primary"
+          disabled={isLocked}
+          onClick={onStart}
+          data-demo-anchor="setup-start"
+        >
           Get started
           <KeyHint keys={shortcutGlyphs('composer.send')} isOnTone />
         </Button>

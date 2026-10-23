@@ -187,6 +187,7 @@ export const AgentsStep = ({ mode, isLocked, onBack, onDone, setBusy }: Props) =
           isBusy={isSaving}
           aria-describedby={canContinue ? undefined : reasonId}
           onClick={onContinue}
+          data-demo-anchor="setup-continue"
         >
           {cta.primary}
           <KeyHint keys={shortcutGlyphs('composer.send')} isOnTone />

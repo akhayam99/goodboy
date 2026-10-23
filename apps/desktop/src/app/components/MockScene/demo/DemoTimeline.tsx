@@ -7,6 +7,7 @@ import { DemoBeatSegment } from './DemoBeatSegment';
 type Props = {
   readonly chapter: DemoChapter;
   readonly player: BeatPlayer;
+  readonly onReplay: () => void;
   readonly nextChapter: DemoChapter | undefined;
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
@@ -31,6 +32,7 @@ const beatState = ({ index, current }: BeatStateParams): 'past' | 'current' | 'n
 export const DemoTimeline = ({
   chapter,
   player,
+  onReplay,
   nextChapter,
   hasPrevious,
   onPrevious,
@@ -59,7 +61,7 @@ export const DemoTimeline = ({
         label="Replay chapter"
         shortcut="R"
         size="md"
-        onClick={player.replay}
+        onClick={onReplay}
       />
     </div>
     <ol aria-label="Steps in this chapter" className="flex min-w-0 flex-1 items-stretch gap-1">

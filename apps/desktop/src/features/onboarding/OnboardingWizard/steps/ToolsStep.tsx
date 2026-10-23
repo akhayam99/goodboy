@@ -222,7 +222,13 @@ export const ToolsStep = ({
             Back
           </Button>
         )}
-        <Button size="md" variant="primary" disabled={isLocked} onClick={onContinue}>
+        <Button
+          size="md"
+          variant="primary"
+          disabled={isLocked}
+          onClick={onContinue}
+          data-demo-anchor="setup-continue"
+        >
           {cta.primary}
           <KeyHint keys={shortcutGlyphs('composer.send')} isOnTone />
         </Button>
