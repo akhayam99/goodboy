@@ -136,3 +136,26 @@ describe('the simulated review fix', () => {
     expect(entryOf()?.thread.replyPostedAt).toBeNull();
   });
 });
+
+describe('keeping a draft after the reviewer edits the comment', () => {
+  it('keeps the comment list and the draft and clears the change', async () => {
+    const typo = 'PRRT_thread_typo';
+    const before = store.getState().sessionResolveQueueItems[SESSION_ID] ?? [];
+    expect(
+      store.getState().sessionResolveSourceSnapshots[SESSION_ID]?.[typo]?.changed,
+    ).not.toBeNull();
+    void store
+      .getState()
+      .settleResolveSourceChange({ sessionId: SESSION_ID, threadId: typo, keepDraft: true });
+    await vi.advanceTimersByTimeAsync(0);
+    const state = store.getState();
+    expect(state.sessionResolveQueueItems[SESSION_ID]).toEqual(before);
+    expect(state.sessionResolveSourceSnapshots[SESSION_ID]?.[typo]).toMatchObject({
+      fingerprint: 'mock-typo-after',
+      changed: null,
+    });
+    expect(
+      state.sessionResolveSourceSnapshots[SESSION_ID]?.['PRRT_thread_retry_metrics'],
+    ).toBeDefined();
+  });
+});
