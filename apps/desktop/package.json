@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.build.json && vite build",
+    "build:demo": "tsc -p tsconfig.build.json && VITE_GOODBOY_MOCK=1 vite build --mode demo --outDir dist-demo --base ./",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",

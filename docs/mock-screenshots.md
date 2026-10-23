@@ -49,6 +49,36 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
   `?scene=` query param and renders one of several scene components, one per
   screenshot. To add a scene, follow [recipes/mock-scene.md](recipes/mock-scene.md).
 
+## Static demo build
+
+`pnpm --dir apps/desktop build:demo` typechecks and builds a production mock
+site into the gitignored `apps/desktop/dist-demo/`. The script in
+`apps/desktop/package.json` enables `VITE_GOODBOY_MOCK=1`, uses mode `demo`
+and sets a relative asset base, so the output can live below `/demo/` without
+the Tauri runtime. It uses the existing mock entry in `apps/desktop/src/main.tsx`.
+`apps/desktop/src/shared/lib/scrollerStyle.ts` returns the browser scrollbar
+default before scene IPC is installed, so the root provider does not call
+native IPC during that first mount.
+Do not include private values in `VITE_*` or `TAURI_ENV_*` variables: the
+`envPrefix` in `apps/desktop/vite.config.ts` exposes those prefixes to the client.
+
+Preview with `pnpm --dir apps/desktop exec vite preview --outDir dist-demo --port 5194 --strictPort`.
+Open `http://localhost:5194/?scene=demo` for the playground, or
+`http://localhost:5194/?scene=chat-shell` for a single frame. The default
+without a query is owned by `MockScene/index.tsx`; until its fallback changes
+from `workspace` to `demo`, the explicit query is required.
+
+For a host that removes trailing slashes, build with
+`pnpm --dir apps/desktop build:demo --base /demo/`. An absolute asset base
+keeps `/demo` and `/demo/` working with the same files. Keep source maps off
+for public output and inspect all mock fixtures for private paths and data
+before publishing: the scene registry includes fixtures beyond the playground.
+The eager registry in `MockScene/registry/index.ts` includes home-path literals
+from `scenes/resolveBitbucketSeed.ts`, `scenes/activityResolvesSeed.ts`,
+`scenes/brand/StorageScene.tsx`, `scenes/audit/CrashThrower.tsx` and
+`scenes/audit/ReportScenes.tsx`. Those fixtures need sanitizing before this
+output is public.
+
 ## Reuse the real components, never rebuild the UI
 
 Every scene should render the real production component the feature uses, fed
