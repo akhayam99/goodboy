@@ -61,13 +61,11 @@ export const LiveRunBlock = ({ sessionId, group, chip }: Props) => {
   const isOrchestrated = group.kind === 'orchestrated';
   const open = () =>
     navigate({
-      to: isOrchestrated
-        ? sessionPlace({ sessionId, lens: 'orchestrated' })
-        : sessionPlace({
-            sessionId,
-            lens: 'workflows',
-            target: { kind: 'run', runId: group.entry.run.id },
-          }),
+      to: sessionPlace({
+        sessionId,
+        lens: 'workflows',
+        target: { kind: 'run', runId: group.entry.run.id },
+      }),
     });
   return (
     <section
