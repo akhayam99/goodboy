@@ -16,6 +16,7 @@ import { seedC07 } from '../../scenes/u25/c07/c07AutoSeed';
 import { AUTO_ROOT_ID, AUTO_SESSION, IMPLEMENTER_ID } from '../../scenes/u24/autoSceneSeed';
 import { autoTimeline } from './autoTimeline';
 import { createSimulatedSend } from './createSimulatedSend';
+import { createReplyRuns } from './createReplyRuns';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { currentTreeStopPort } from '../../../../../features/auto/treeStopPort';
 
@@ -42,7 +43,13 @@ type SeedParams = {
 const install = ({ state, place }: SeedParams) => {
   seedC07({ state, place });
   store.setState({
-    sendTurn: createSimulatedSend({ store, reply: 'On it.', now: () => nowIso({}) }),
+    sendTurn: createSimulatedSend({
+      store,
+      reply: 'On it.',
+      now: () => nowIso({}),
+      shouldClearDraft: true,
+      runs: createReplyRuns(),
+    }),
   });
   const timeline = autoTimeline({ state: store.getState() });
   if (timeline === null) {

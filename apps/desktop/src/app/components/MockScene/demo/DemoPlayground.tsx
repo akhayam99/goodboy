@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEscapeLayer } from '@goodboy/ui';
 import { applyDocumentTheme } from '../../../../shared/lib/theme';
 import { DEMO_CHAPTERS } from './demoChapters';
 import { DEFAULT_GROUP_ID } from './defaultGroupId';
@@ -110,9 +111,9 @@ export const DemoPlayground = () => {
     onPrevious,
     onNext,
     onReplay,
-    onHideHint: hints.hide,
     onShowHint: hints.show,
   });
+  useEscapeLayer(hints.hide, hints.coach !== undefined || hints.offscreen !== undefined);
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
   const isLastBeat = player.beatIndex === chapter.beats.length - 1;

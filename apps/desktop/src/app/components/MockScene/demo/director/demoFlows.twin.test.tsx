@@ -27,6 +27,7 @@ import { ResolveQueueShellScene } from '../../scenes/SurfaceAuditScenes';
 import { SESSION_ID } from '../../scenes/resolveSeed';
 import { autoTimeline } from './autoTimeline';
 import { createSimulatedSend } from './createSimulatedSend';
+import { createReplyRuns } from './createReplyRuns';
 import { installBoardActions } from './installBoardActions';
 import { installDemoIpc } from './installDemoIpc';
 import { installResolveActions } from './installResolveActions';
@@ -93,7 +94,13 @@ const click = async ({ name }: ButtonParams): Promise<void> => {
 const withSimulatedSend = (): void => {
   act(() => {
     store.setState({
-      sendTurn: createSimulatedSend({ store, reply: 'On it.', now: () => nowIso({}) }),
+      sendTurn: createSimulatedSend({
+        store,
+        reply: 'On it.',
+        now: () => nowIso({}),
+        shouldClearDraft: true,
+        runs: createReplyRuns(),
+      }),
     });
   });
 };
@@ -141,6 +148,7 @@ describe('Auto in the demo', () => {
 
 describe('the board in the demo', () => {
   it('opens the session behind a card with its reason', async () => {
+    await import('../../scenes/BoardSessionView');
     await mount({ Scene: BoardShellScene });
     act(() => {
       installBoardActions({ store });
@@ -156,7 +164,7 @@ describe('the board in the demo', () => {
     });
     await settle({ ms: 1000 });
     expect(store.getState().currentSessionId).not.toBeNull();
-    expect(screen.getByText(/Should the warning go out by email/)).toBeTruthy();
+    screen.getByText(/Should the warning go out by email/);
   });
 });
 

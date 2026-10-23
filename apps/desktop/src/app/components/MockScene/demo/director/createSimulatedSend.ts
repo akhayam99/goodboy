@@ -5,6 +5,7 @@ import { appendTurnEvents } from './appendTurnEvents';
 import { startAgentTurn } from './startAgentTurn';
 import { finishAgentTurn } from './finishAgentTurn';
 import type { ReplyRuns } from './createReplyRuns';
+import { trackDemoRun } from './demoRunRegistry';
 
 const THINK_MS = 1200;
 const SENTENCE_MS = 1300;
@@ -98,6 +99,7 @@ export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs 
       events: [{ kind: 'user_text', runId, text: content, at }],
     });
     startAgentTurn({ store, sessionId, agentId, runId, at });
+    trackDemoRun({ agentId, cancel: () => runs.cancelAgent({ agentId }) });
     stream({ sessionId, agentId, runId });
   };
   return async ({

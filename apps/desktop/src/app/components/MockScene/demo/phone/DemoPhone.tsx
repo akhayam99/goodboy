@@ -165,7 +165,7 @@ export const DemoPhone = () => {
             </div>
             <ol className="flex flex-col gap-2">
               {PHONE_GROUPS.map(({ title, line, icon: Icon }) => (
-                <li key={title} className="flex items-start gap-3 rounded-lg bg-subtle px-4 py-3">
+                <li key={title} className="flex items-start gap-3 rounded-lg bg-subtle px-3 py-2">
                   <span className="grid size-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
                     <Icon size={ICON_SIZE.control} aria-hidden />
                   </span>

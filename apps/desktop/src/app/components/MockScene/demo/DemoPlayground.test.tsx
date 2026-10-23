@@ -379,15 +379,16 @@ describe('demo playground', () => {
     );
   });
 
-  it('draws the hint over the stage beside its anchor and leaves the app clickable', () => {
+  it('draws the hint over the stage beside its anchor with a callout that takes clicks', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send' });
     const note = screen.getByRole('note', { name: 'Hint 1 of 3' });
     expect(note.textContent).toContain('Send this follow-up to the agent');
-    expect(screen.getByTestId('demo-coach-mark').className).toContain('pointer-events-none');
-    expect(note.className).toContain('pointer-events-auto');
+    expect(screen.getByTestId('demo-coach-mark').contains(note)).toBe(true);
+    fireEvent.click(within(note).getByRole('button', { name: 'Skip hint' }));
+    expect(screen.queryByRole('note')).toBeNull();
   });
 
   it('tracks the hints again and drops a stale hint once the frame reloads', () => {

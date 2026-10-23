@@ -9,6 +9,7 @@ import {
 import { useAppStore } from '../../../../../store';
 import type { StartSessionFromDraftParams } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
+import { projectById } from '../../../../../store/slices/projects/projectIndex';
 import { draftGoalText } from '../../../../../store/slices/sessionDraft/draftGoalText';
 import { applyAgentTurnState } from '../../../../../store/slices/sessions/sessionMutators';
 import { appendTurnEvents } from '../../demo/director/appendTurnEvents';
@@ -134,8 +135,7 @@ export const startSampleScout = async ({
   const state = useAppStore.getState();
   const focus = focusOf({ start }).trim();
   const projectId = state.sessionDrafts[workspaceId]?.projectIds[0] ?? null;
-  const folder =
-    state.projects.find((project) => project.id === projectId)?.name ?? 'this workspace';
+  const folder = projectById(state.projects, projectId)?.name ?? 'this workspace';
   const at = nowIso({});
   const sessionId = brandId<SessionId>({ value: `sample-session-${crypto.randomUUID()}` });
   const agentId = brandId<AgentId>({ value: `sample-agent-${crypto.randomUUID()}` });

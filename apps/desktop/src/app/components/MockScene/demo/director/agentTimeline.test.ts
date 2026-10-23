@@ -25,6 +25,7 @@ import { createSceneDirector } from './createSceneDirector';
 import { createSimulatedSend } from './createSimulatedSend';
 import { createReplyRuns } from './createReplyRuns';
 import { createSimulatedAnswer } from './createSimulatedAnswer';
+import { stopDemoRuns } from './demoRunRegistry';
 import { agentTimeline } from './agentTimeline';
 
 let store: StoryStore;
@@ -206,5 +207,25 @@ describe('the simulated send', () => {
     runs.dispose();
     vi.advanceTimersByTime(20000);
     expect(store.getState().transcripts[agent.id]).toHaveLength(before);
+  });
+
+  it('writes nothing more for a reply the visitor stopped, and runs the next one', async () => {
+    seed();
+    const runs = createReplyRuns();
+    const send = createSimulatedSend({
+      store,
+      reply: 'On it. Done soon.',
+      now: nowIso,
+      shouldClearDraft: true,
+      runs,
+    });
+    await send({ sessionId: session.id, agentId: agent.id, content: 'Log the event id.' });
+    const before = store.getState().transcripts[agent.id]?.length ?? 0;
+    stopDemoRuns({ agentId: agent.id });
+    vi.advanceTimersByTime(20000);
+    expect(store.getState().transcripts[agent.id]).toHaveLength(before);
+    await send({ sessionId: session.id, agentId: agent.id, content: 'Try again.' });
+    vi.advanceTimersByTime(20000);
+    expect(store.getState().transcripts[agent.id]?.at(-1)?.kind).toBe('done');
   });
 });
