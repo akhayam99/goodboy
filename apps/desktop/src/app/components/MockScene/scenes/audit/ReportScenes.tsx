@@ -16,7 +16,7 @@ const OPEN_DELAY_MS = 400;
 
 const NOTICE = {
   title: 'Retry failed, conversations left open',
-  body: 'gh: HTTP 502 Bad Gateway for rowan@example.dev in /Users/rowan/code/core-api',
+  body: 'gh: HTTP 502 Bad Gateway for dev@example.com in ~/code/harborline/payments-api',
 };
 
 export const useReportSheetParam = (): void => {

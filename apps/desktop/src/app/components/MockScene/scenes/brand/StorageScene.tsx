@@ -373,7 +373,7 @@ const MB = 1024 * 1024;
 const OTHER_TOOLS: ReadonlyArray<OtherToolUsage> = [
   {
     id: 'claude-code',
-    path: '/mock/home/.claude',
+    path: '~/.claude',
     displayPath: '~/.claude',
     bytes: 6_100 * MB,
     sessions: 4_405,
@@ -381,7 +381,7 @@ const OTHER_TOOLS: ReadonlyArray<OtherToolUsage> = [
   },
   {
     id: 'codex',
-    path: '/mock/home/.codex',
+    path: '~/.codex',
     displayPath: '~/.codex',
     bytes: 976 * MB,
     sessions: 1_275,
@@ -389,7 +389,7 @@ const OTHER_TOOLS: ReadonlyArray<OtherToolUsage> = [
   },
   {
     id: 'cursor',
-    path: '/mock/home/.cursor',
+    path: '~/.cursor',
     displayPath: '~/.cursor',
     bytes: 2_000 * MB,
     sessions: 2_916,
