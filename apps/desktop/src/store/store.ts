@@ -52,6 +52,7 @@ import type {
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
 import { createSettingsLastPageSlice } from './slices/settings-last-page';
+import { createLocalChecksSlice } from './slices/local-checks';
 import { createChatLastOpenSlice } from './slices/chat-last-open';
 import { createNextViewSlice } from './slices/next-view';
 import {
@@ -169,6 +170,7 @@ import { worktreesInitialState } from './slices/worktrees/state';
 import { overridesInitialState } from './slices/overrides/state';
 import { sidebarInitialState } from './slices/sidebar/state';
 import { settingsLastPageInitialState } from './slices/settings-last-page/state';
+import { localChecksInitialState } from './slices/local-checks/state';
 import { chatLastOpenInitialState } from './slices/chat-last-open/state';
 import { nextViewInitialState } from './slices/next-view/state';
 import { turnInitialState } from './slices/turn/state';
@@ -257,6 +259,7 @@ export type AppStore = AppState &
   ReturnType<typeof createNavigationSlice> &
   ReturnType<typeof createSidebarSlice> &
   ReturnType<typeof createSettingsLastPageSlice> &
+  ReturnType<typeof createLocalChecksSlice> &
   ReturnType<typeof createChatLastOpenSlice> &
   ReturnType<typeof createNextViewSlice> &
   ReturnType<typeof createCheckFixCommitsSlice> &
@@ -374,6 +377,7 @@ export const initialState: AppState = {
   ...overridesInitialState,
   ...sidebarInitialState,
   ...settingsLastPageInitialState,
+  ...localChecksInitialState,
   ...chatLastOpenInitialState,
   ...nextViewInitialState,
   ...checkFixCommitsInitialState,
@@ -440,6 +444,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createIntegrationsSlice({ set, get }),
   ...createSidebarSlice({ set, get }),
   ...createSettingsLastPageSlice({ set, get }),
+  ...createLocalChecksSlice({ set, get }),
   ...createChatLastOpenSlice({ set, get }),
   ...createNextViewSlice({ set, get }),
   ...createCheckFixCommitsSlice({ set, get }),

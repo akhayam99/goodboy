@@ -1,8 +1,15 @@
 import { useMemo } from 'react';
 import { EmptyLine, ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import type { LinkedIssue, PullRequestState, PullRequestView, SessionId } from '@goodboy/types';
+import type {
+  LinkedIssue,
+  MountId,
+  PullRequestState,
+  PullRequestView,
+  SessionId,
+} from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { closingIssueReferences } from '../../../integrations/github/closingIssueReferences';
 import { LinkIssueToPrPopover } from './LinkIssueToPrPopover';
@@ -11,6 +18,7 @@ import { PropertyField } from './PropertyField';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
   readonly pr: PullRequestState;
   readonly view: PullRequestView | null;
   readonly canEdit: boolean;
@@ -32,11 +40,13 @@ const fromLinked = ({ issue }: { readonly issue: LinkedIssue }): Resolved => ({
   number: issue.number,
 });
 
-export const ResolvesProperty = ({ sessionId, pr, view, canEdit }: Props) => {
-  const linkedIssues = useAppStore((s) => s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY);
+export const ResolvesProperty = ({ sessionId, mountId, pr, view, canEdit }: Props) => {
+  const linkedIssues = useAppStore(
+    (s) => branchGithubOf({ state: s, sessionId, mountId })?.linkedIssues ?? EMPTY_ARRAY,
+  );
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
   const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
-  const repo = useSessionRepo({ sessionId });
+  const repo = useSessionRepo({ sessionId, mountId });
   const branch = repo?.branch ?? null;
 
   const rows = useMemo<ReadonlyArray<Resolved>>(() => {

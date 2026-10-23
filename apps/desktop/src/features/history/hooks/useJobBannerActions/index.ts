@@ -256,21 +256,6 @@ export const useJobBannerActions = ({ sessionId, worktreePath, agentId }: Params
         },
       });
     },
-    pushBranch: () => {
-      if (mountId === null) {
-        return;
-      }
-      runInline({
-        key: 'push',
-        failureTitle: "Couldn't push the branch.",
-        task: async () => {
-          const result = await useAppStore.getState().pushSessionBranch({ sessionId, mountId });
-          if (!result.ok) {
-            throw new Error(result.error);
-          }
-        },
-      });
-    },
     retryPush: () => {
       if (mountId === null) {
         return;

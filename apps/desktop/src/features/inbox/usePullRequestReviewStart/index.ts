@@ -55,7 +55,7 @@ export const usePullRequestReviewStart = ({ workspaceId, mount }: Params): Resul
         });
         const place = branchPlace({
           sessionId: session.id,
-          tab: branchLandingTabOf({ hasPullRequest: true, deepLink: 'pr' }),
+          tab: branchLandingTabOf({ deepLink: 'pr' }),
         });
         navigate({ to: place });
         followReview({

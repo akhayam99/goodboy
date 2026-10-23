@@ -1,15 +1,22 @@
 import type { PullRequestFailureKind } from '@goodboy/core';
 import type {
+  BranchCommit,
+  MountId,
+  FileDiff,
   PullRequestHost,
   PrDetail,
   PullRequestState,
   PullRequestView,
   Session,
 } from '@goodboy/types';
+import type { MountDiffStat } from '../../../../store';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
+import type { BranchStart } from '../../hooks/useBranchStart';
+import type { PullRequestReadiness } from '../../hooks/usePullRequestReadiness';
+import type { PullRequestBranchFacts } from './pullRequestCellsOf';
 import { BitbucketNoPullRequest } from './BitbucketNoPullRequest';
-import { NoPullRequest } from './NoPullRequest';
+import { BranchStartPage } from './BranchStartPage';
 import { PullRequestPage } from './PullRequestPage';
 import type { ReviewerRequest } from './ReviewersProperty';
 
@@ -26,6 +33,15 @@ type Props = {
   readonly viewError: string | null;
   readonly viewErrorKind: PullRequestFailureKind | null;
   readonly mountPath: string | null;
+  readonly branch: string | null;
+  readonly start: BranchStart;
+  readonly mountId: MountId | null;
+  readonly readiness: PullRequestReadiness;
+  readonly branchFacts: PullRequestBranchFacts;
+  readonly mergeWord: string;
+  readonly commits: ReadonlyArray<BranchCommit>;
+  readonly files: ReadonlyArray<FileDiff>;
+  readonly stat: MountDiffStat | null;
   readonly canEdit: boolean;
   readonly request: ReviewerRequest;
   readonly isConnected: boolean;
@@ -49,6 +65,15 @@ export const PullRequestTab = ({
   viewError,
   viewErrorKind,
   mountPath,
+  branch,
+  start,
+  mountId,
+  readiness,
+  branchFacts,
+  mergeWord,
+  commits,
+  files,
+  stat,
   canEdit,
   request,
   isConnected,
@@ -58,18 +83,27 @@ export const PullRequestTab = ({
   onReload,
   onSelectTab,
 }: Props) => {
-  if (pr === null && isBitbucketRemote) {
-    return <BitbucketNoPullRequest url={newPullRequestUrl} isConnected={isBitbucketConnected} />;
-  }
   if (pr === null) {
     return (
-      <NoPullRequest
+      <BranchStartPage
+        hostForm={
+          isBitbucketRemote ? (
+            <BitbucketNoPullRequest url={newPullRequestUrl} isConnected={isBitbucketConnected} />
+          ) : null
+        }
         session={session}
         mountPath={mountPath}
-        isRepoMissing={false}
+        branch={branch}
+        step={start.step}
+        cells={start.cells}
+        commits={commits}
+        files={files}
+        stat={stat}
+        conflictFiles={start.conflictFiles}
         isConnected={isConnected}
         onConnected={onConnected}
         onCreated={onCreated}
+        onSelectTab={onSelectTab}
       />
     );
   }
@@ -78,6 +112,10 @@ export const PullRequestTab = ({
       session={session}
       host={host}
       pr={pr}
+      mountId={mountId}
+      readiness={readiness}
+      branch={branchFacts}
+      mergeWord={mergeWord}
       detail={detail}
       view={view}
       edits={edits}

@@ -56,7 +56,9 @@ describe('the u24 prpage create scenes', () => {
     renderScene({ name: 'branch-create', state });
 
     expect(await screen.findByRole('region', { name: 'Pull request text' }, WAIT)).toBeDefined();
-    expect(screen.getAllByRole('button', { name: /Create (draft )?pull request/ }).length).toBe(1);
+    expect(screen.getAllByRole('button', { name: /create (draft )?pull request$/i }).length).toBe(
+      1,
+    );
   });
 
   it('offers Write with Scribe and no Discard text while nothing is typed', async () => {

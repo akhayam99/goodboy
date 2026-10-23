@@ -51,6 +51,9 @@ export const useProjectsSignal = ({ sessionId, rows, statuses }: Params): Worktr
         diff: null,
         view: views[index] ?? null,
         scope: null,
+        status: row.worktreePath === null ? null : (statuses.get(row.worktreePath) ?? null),
+        commits: null,
+        hasRemoteHead: false,
       });
       return [
         worktreeRowStateFor({

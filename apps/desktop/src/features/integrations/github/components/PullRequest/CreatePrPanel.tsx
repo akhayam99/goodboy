@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -22,6 +22,8 @@ type Props = {
   readonly defaultBody?: string;
   readonly closedPr?: { readonly number: number; readonly url: string };
   readonly onCreated: (created: CreatedReview) => void;
+  readonly submitVariant?: 'primary' | 'secondary';
+  readonly trailing?: ReactNode;
 };
 
 const NOUNS: CreateReviewNouns = {
@@ -37,10 +39,12 @@ export const CreatePrPanel = ({
   defaultBody,
   closedPr,
   onCreated,
+  submitVariant = 'primary',
+  trailing = null,
 }: Props) => {
   const createPrForSession = useAppStore((state) => state.createPrForSession);
   const requestReview = useAppStore((state) => state.requestReview);
-  const repo = useSessionRepo({ sessionId });
+  const repo = useSessionRepo({ sessionId, mountId });
   const workspaceId = useAppStore((state) => sessionById(state.sessions, sessionId)?.workspaceId);
   const projectRoot = repo?.repoRoot ?? null;
   const projectId = repo?.projectId;
@@ -101,6 +105,8 @@ export const CreatePrPanel = ({
       create={create}
       requestReviewers={requestReviewers}
       onCreated={onCreated}
+      submitVariant={submitVariant}
+      trailing={trailing}
     />
   );
 };

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { useToast } from '../../../../../shared/components/Toast';
 import { useAppStore } from '../../../../../store';
 import { CreateReviewForm } from '../../../components/CreateReviewForm/CreateReviewForm';
@@ -13,6 +13,9 @@ import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
+  readonly defaultTitle?: string;
+  readonly defaultBody?: string;
   readonly onCreated: (created: CreatedReview) => void;
 };
 
@@ -24,7 +27,13 @@ const NOUNS: CreateReviewNouns = {
 
 const NO_REQUESTS = async (): Promise<void> => undefined;
 
-export const CreateMrForm = ({ sessionId, onCreated }: Props) => {
+export const CreateMrForm = ({
+  sessionId,
+  mountId = null,
+  defaultTitle,
+  defaultBody = '',
+  onCreated,
+}: Props) => {
   const createMrForSession = useAppStore((state) => state.createMrForSession);
   const { showToast } = useToast();
   const goal = useAppStore((state) => sessionById(state.sessions, sessionId)?.goal ?? '');
@@ -33,6 +42,7 @@ export const CreateMrForm = ({ sessionId, onCreated }: Props) => {
     async ({ title, body, base, isDraft }: CreateReviewInput): Promise<CreatedReview> => {
       await createMrForSession({
         sessionId,
+        ...(mountId === null ? {} : { mountId }),
         title: title.trim(),
         description: body,
         targetBranch: base,
@@ -41,13 +51,15 @@ export const CreateMrForm = ({ sessionId, onCreated }: Props) => {
       showToast({ kind: 'success', message: 'Merge request opened' });
       return { number: null, url: null };
     },
-    [createMrForSession, sessionId, showToast],
+    [createMrForSession, mountId, sessionId, showToast],
   );
 
   return (
     <CreateReviewForm
       sessionId={sessionId}
-      defaultTitle={goal}
+      mountId={mountId}
+      defaultTitle={defaultTitle ?? goal}
+      defaultBody={defaultBody}
       nouns={NOUNS}
       canSetDraft={REVIEW_SOURCE_CAPABILITIES.gitlab.canSetDraft}
       loadBases={null}

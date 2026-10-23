@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AlertCircle, Check, MessageSquare, Pencil, XCircle } from 'lucide-react';
+import { AlertCircle, Bot, Check, MessageSquare, Pencil, XCircle } from 'lucide-react';
 import { ClampedProse, ROW_INTERACTIVE, SectionHeader, cn } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -16,10 +16,15 @@ type Props = {
   readonly onOpenChecks: () => void;
 };
 
+type RowComment = {
+  readonly who: string | null;
+  readonly text: string;
+};
+
 type Row = {
   readonly glyph: ReactNode;
   readonly line: ReactNode;
-  readonly body: string | null;
+  readonly comments: ReadonlyArray<RowComment>;
   readonly open: { readonly label: string; readonly run: () => void } | null;
 };
 
@@ -59,7 +64,7 @@ const rowOf = ({
             {nouns.long}
           </>
         ),
-        body: null,
+        comments: [],
         open: null,
       };
     case 'push':
@@ -72,7 +77,7 @@ const rowOf = ({
             <span className="text-code">{item.sha}</span>
           </>
         ),
-        body: null,
+        comments: [],
         open: null,
       };
     case 'review':
@@ -95,7 +100,24 @@ const rowOf = ({
                 : 'commented'}
           </>
         ),
-        body: item.text === '' ? null : item.text,
+        comments: item.text === '' ? [] : [{ who: null, text: item.text }],
+        open: null,
+      };
+    case 'bots':
+      return {
+        glyph: <Bot size={GLYPH_SIZE} aria-hidden />,
+        line:
+          item.comments.length === 1 ? (
+            <>
+              <Who name={item.comments[0]?.who ?? null} /> commented
+            </>
+          ) : (
+            <>{plural({ count: item.comments.length, one: 'bot', many: 'bots' })} commented</>
+          ),
+        comments:
+          item.comments.length === 1
+            ? item.comments.map((comment) => ({ who: null, text: comment.text }))
+            : item.comments,
         open: null,
       };
     case 'comments':
@@ -107,7 +129,7 @@ const rowOf = ({
             {commentsWord({ item })}
           </>
         ),
-        body: null,
+        comments: [],
         open: { label: 'Open comments', run: onOpenComments },
       };
     case 'checks':
@@ -120,7 +142,7 @@ const rowOf = ({
           <Check size={GLYPH_SIZE} aria-hidden className="text-success" />
         ),
         line: <>{item.text}</>,
-        body: null,
+        comments: [],
         open: { label: 'Open checks', run: onOpenChecks },
       };
     case 'edit':
@@ -131,7 +153,7 @@ const rowOf = ({
             <Who name="You" /> edited the {item.what}
           </>
         ),
-        body: null,
+        comments: [],
         open: null,
       };
     case 'merged':
@@ -143,14 +165,14 @@ const rowOf = ({
             <span className="text-code">{baseBranch}</span>
           </>
         ),
-        body: null,
+        comments: [],
         open: null,
       };
     case 'closed':
       return {
         glyph: <XCircle size={GLYPH_SIZE} aria-hidden />,
         line: <>This {nouns.long} was closed</>,
-        body: null,
+        comments: [],
         open: null,
       };
     default: {
@@ -172,12 +194,12 @@ export const PullRequestActivity = ({
     <section aria-label="Activity" className="flex min-w-0 flex-col gap-3">
       <SectionHeader label="Activity" headingLevel={2} />
       <ol className="flex min-w-0 flex-col">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const row = rowOf({ item, nouns, baseBranch, onOpenComments, onOpenChecks });
           const age = formatAge({ from: item.at, now });
           const content = (
             <>
-              <span className="flex size-5 shrink-0 items-center justify-center text-muted-foreground">
+              <span className="relative flex size-5 shrink-0 items-center justify-center rounded-full bg-subtle text-muted-foreground">
                 {row.glyph}
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -197,16 +219,35 @@ export const PullRequestActivity = ({
                     </time>
                   )}
                 </span>
-                {row.body !== null && (
-                  <span className="min-w-0 text-label text-muted-foreground">
-                    <ClampedProse text={row.body} lines={2} />
-                  </span>
+                {row.comments.length === 0 ? null : (
+                  <ul className="flex min-w-0 flex-col gap-2">
+                    {row.comments.map((comment, position) => (
+                      <li
+                        key={`${comment.who ?? ''}:${position}`}
+                        className="flex min-w-0 flex-col gap-1 rounded-md bg-subtle px-3 py-2"
+                      >
+                        {comment.who === null ? null : (
+                          <span className="text-meta text-muted-foreground">{comment.who}</span>
+                        )}
+                        <span className="min-w-0 text-label text-foreground">
+                          <ClampedProse text={comment.text} lines={2} />
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </span>
             </>
           );
           return (
-            <li key={item.key} className="min-w-0">
+            <li key={item.key} data-activity={item.kind} className="relative min-w-0">
+              {index === items.length - 1 ? null : (
+                <span
+                  aria-hidden
+                  data-slot="activity-spine"
+                  className="absolute bottom-0 left-4.5 top-6 w-px bg-border-soft"
+                />
+              )}
               {row.open === null ? (
                 <div className="flex min-h-8 min-w-0 items-start gap-2 px-2 py-1">{content}</div>
               ) : (

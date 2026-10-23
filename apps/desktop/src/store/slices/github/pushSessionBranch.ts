@@ -50,8 +50,11 @@ export const pushSessionBranch = async ({
     sha,
   });
   if (push.exitCode !== 0) {
-    return { ok: false, error: push.stderr.trim() || `git push exited with ${push.exitCode}` };
+    const error = push.stderr.trim() || `git push exited with ${push.exitCode}`;
+    get().recordLocalCheck({ mountId, answer: { error }, at: Date.now() });
+    return { ok: false, error };
   }
+  get().recordLocalCheck({ mountId, answer: { error: null }, at: Date.now() });
   await refreshWorktreeStatuses({ worktreePaths: [repo.worktreePath] }).catch(() => undefined);
   void get().refreshSessionPr(sessionId, { mountId, force: true, silent: true });
   return { ok: true };

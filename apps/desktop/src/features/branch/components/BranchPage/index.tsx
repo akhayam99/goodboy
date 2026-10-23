@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
-import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
+import { PageColumn, PaneShell, ScrollFade, tintClasses } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../store';
 import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
@@ -26,6 +26,11 @@ import { BranchDiffContext } from '../../branchDiffContext';
 import { useBranchControls } from '../../hooks/useBranchControls';
 import { useBitbucketRemote } from '../../hooks/useBitbucketRemote';
 import { useBranchIdentity } from '../../hooks/useBranchIdentity';
+import { useBranchStart } from '../../hooks/useBranchStart';
+import { usePullRequestReadiness } from '../../hooks/usePullRequestReadiness';
+import { pullRequestNextStepOf } from '../../pullRequestNextStepOf';
+import { hasOpenRebaseStopOf } from '../../hasOpenRebaseStopOf';
+import { MERGE_METHOD_LABEL } from '../../../actions/kinds/pullRequest';
 import { useBranchTab } from '../../hooks/useBranchTab';
 import { usePullRequestView } from '../../hooks/usePullRequestView';
 import { capabilityReasonOf } from '../../pullRequestCapabilityReason';
@@ -34,7 +39,7 @@ import { branchTabsOf, isBranchReadOnly, resolveBranchTab } from '../../branchTa
 import { branchScopeOf } from '../../../../store/slices/session-view/branchScopeOf';
 import { pullRequestKindOf } from '../../../../shared/pullRequestKind';
 import { pullRequestRunsOf } from '../../pullRequestRunsOf';
-import { notPushedCountOf } from '../../../history/notPushedCountOf';
+import { notPushedOf } from '../../notPushedOf';
 import { commentsCountOf } from '../../../resolve/commentsCountOf';
 import { requestNounLabel } from '../../requestNounLabel';
 import { worktreeEntryFactsOf } from '../../worktreeEntryFacts';
@@ -45,9 +50,13 @@ import { BranchFiles } from '../BranchFiles';
 import { BranchHeader } from '../BranchHeader';
 import { NoPullRequest } from '../PullRequestTab/NoPullRequest';
 import { PullRequestTab } from '../PullRequestTab';
+import { PullRequestHeaderLine } from '../PullRequestTab/PullRequestHeaderLine';
 import type { ReviewerRequest } from '../PullRequestTab/ReviewersProperty';
 import { BranchDetail } from './BranchDetail';
 import { TabActionsSlotContext } from '../../../../shared/components/TabActions/tabActionsSlotContext';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+
+const NO_PREFILL = { title: '', body: '' };
 
 type Props = {
   readonly session: Session;
@@ -111,7 +120,9 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const remoteHost: PullRequestHost =
     remoteKind === 'gitlab' ? 'gitlab' : bitbucketRemote.isBitbucket ? 'bitbucket' : 'github';
   const host: PullRequestHost = activeSource?.kind ?? (pr === null ? remoteHost : identity.host);
-  const hasComments = useAppStore((s) => branchScopeOf({ state: s, sessionId }).hasComments);
+  const hasComments = useAppStore(
+    (s) => branchScopeOf({ state: s, sessionId, mountId: historyMountId }).hasComments,
+  );
   const scope = {
     state:
       pr === null ? ('none' as const) : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft }),
@@ -163,6 +174,62 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     [entries, pushCount, pushState, pushableIds],
   );
 
+  const start = useBranchStart({
+    sessionId,
+    mountId: historyMountId,
+    mountPath: identity.mountPath,
+    status: diff.status,
+  });
+  const isBranchStart = pr === null;
+  const hasOpenRebaseStop = useAppStore((s) =>
+    hasOpenRebaseStopOf({ state: s, sessionId, mountId: historyMountId, status: diff.status }),
+  );
+  const prReadiness = usePullRequestReadiness({
+    sessionId,
+    mountId: historyMountId,
+    isRebaseStopOpen: hasOpenRebaseStop,
+  });
+  const mergeMethod = useAppStore((s) => s.pullRequestViews[sessionId]?.view?.mergeMethods[0]);
+  const mergeWord = MERGE_METHOD_LABEL[mergeMethod ?? 'squash'];
+  const onlineAhead =
+    diff.status !== null && diff.status.upstreamDistance.kind === 'known'
+      ? diff.status.upstreamDistance.behind
+      : 0;
+  const branchFacts = useMemo(
+    () => ({
+      ahead: start.step.ahead ?? 0,
+      behind: start.step.behind,
+      onlineAhead,
+      isRebasing: start.step.state === 'conflict',
+    }),
+    [onlineAhead, start.step.ahead, start.step.behind, start.step.state],
+  );
+  const nextStep = isBranchStart
+    ? start.step.header
+    : pr === null
+      ? null
+      : pullRequestNextStepOf({
+          state: scope.state,
+          facts: prReadiness.facts,
+          readiness: prReadiness.readiness,
+          hasReviewer: prReadiness.reviewers.people.length > 0,
+          behind: start.step.behind ?? 0,
+          isStopOpen: hasOpenRebaseStop,
+        });
+
+  const selectTab = useCallback(
+    (next: BranchTab): void => {
+      if (next === tab) {
+        return;
+      }
+      navigate({
+        to: branchPlace({ sessionId, mountPath: identity.mountPath, tab: next }),
+        mode: 'replace',
+      });
+    },
+    [identity.mountPath, navigate, sessionId, tab],
+  );
+
   const controls = useBranchControls({
     sessionId,
     worktreePath: identity.mountPath,
@@ -170,6 +237,10 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     diff,
     review,
     remoteHost: host,
+    nextStep,
+    hasOpenRebaseStop,
+    mergeLabel: mergeWord,
+    onOpenTab: selectTab,
   });
 
   useEffect(() => {
@@ -223,19 +294,6 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     onMutated();
   }, [onMutated, sessionId, setPullRequestMode]);
 
-  const selectTab = useCallback(
-    (next: BranchTab): void => {
-      if (next === tab) {
-        return;
-      }
-      navigate({
-        to: branchPlace({ sessionId, mountPath: identity.mountPath, tab: next }),
-        mode: 'replace',
-      });
-    },
-    [identity.mountPath, navigate, sessionId, tab],
-  );
-
   const capabilities = activeSource?.capabilities ?? REVIEW_SOURCE_CAPABILITIES[host];
   const isPrimaryYielding =
     push.phase.kind === 'confirm' ||
@@ -269,6 +327,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
         <NoPullRequest
           session={session}
           mountPath={identity.mountPath}
+          prefill={NO_PREFILL}
           isRepoMissing
           isConnected={isGithubConnected}
           onConnected={() => void githubConnection.refresh()}
@@ -293,6 +352,19 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               viewError={pullRequestView.error}
               viewErrorKind={pullRequestView.errorKind}
               mountPath={identity.mountPath}
+              branch={identity.mount?.branch ?? null}
+              start={start}
+              mountId={historyMountId}
+              readiness={prReadiness}
+              branchFacts={branchFacts}
+              mergeWord={mergeWord}
+              commits={diff.commits}
+              files={diff.files}
+              stat={
+                identity.mountPath === null
+                  ? null
+                  : (mountDiffStats.get(identity.mountPath) ?? null)
+              }
               canEdit={canEditBody}
               request={request}
               isConnected={isGithubConnected}
@@ -368,10 +440,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
       .needsYou,
     files: filesCount,
     diff: identity.mountPath === null ? null : (mountDiffStats.get(identity.mountPath) ?? null),
-    notPushed: notPushedCountOf({
-      commits: historyCommits,
-      hasUpstream: (diff.status !== null && diff.status.upstream !== null) || hasRemoteHead,
-    }),
+    notPushed: notPushedOf({ status: diff.status, commits: historyCommits, hasRemoteHead }),
     checks: checksRuns,
     checksUnreadReason,
   });
@@ -395,6 +464,19 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     />
   );
 
+  const startLine = isBranchStart ? (
+    <span
+      data-branch-start-line={start.step.state}
+      className="flex min-w-0 flex-wrap items-center gap-x-2 text-label text-muted-foreground"
+    >
+      <span className={`inline-flex items-center gap-1 ${tintClasses(start.line.tone).text}`}>
+        <CONCEPT_ICONS.branch size={ICON_SIZE.row} aria-hidden />
+        {start.line.word}
+      </span>
+      {start.line.distance === null ? null : <span>{start.line.distance}</span>}
+    </span>
+  ) : null;
+
   const detail = (
     <BranchDetail>
       <PaneShell
@@ -408,8 +490,22 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
               pr={pr}
               fallbackTitle={
                 tab === 'pr'
-                  ? `New ${requestLabel.toLowerCase()}`
+                  ? identity.label
                   : (tabs.find((entry) => entry.id === tab)?.label ?? identity.label)
+              }
+              line={
+                startLine ??
+                (pr === null ? null : (
+                  <PullRequestHeaderLine
+                    pr={pr}
+                    host={host}
+                    commitCount={
+                      pullRequestView.view?.number === pr.number
+                        ? pullRequestView.view.commits.length
+                        : null
+                    }
+                  />
+                ))
               }
               controls={controls}
               isPushBusy={isPushBusy}
@@ -422,7 +518,9 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
             />
             <PushBanner sessionId={sessionId} push={push} />
             {baseRow}
-            <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
+            <div data-rebase-flow-hook="" className="flex min-w-0 flex-col empty:hidden">
+              <JobBanner sessionId={sessionId} worktreePath={identity.mountPath} />
+            </div>
             {tab === 'comments' ? null : tabActionsSlotNode}
           </div>
         }

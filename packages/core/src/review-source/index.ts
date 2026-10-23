@@ -54,6 +54,11 @@ export { groupReviewComments } from './groupReviewComments';
 export { LOCAL_NOTE_NO_REPLY, localReviewSource } from './localReviewSource';
 export { NOTE_THREAD_PREFIX } from './noteThreadPrefix';
 export { pullRequestReviewersOf } from './pullRequestReviewers';
+export { isBotLogin } from './isBotLogin';
+export {
+  pullRequestReviewerGroupsOf,
+  type PullRequestReviewerGroups,
+} from './pullRequestReviewerGroups';
 export {
   PULL_REQUEST_CAPABILITY_METHODS,
   PULL_REQUEST_NOUNS,

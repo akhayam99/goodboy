@@ -699,22 +699,19 @@ the confirm holds the one filled button. A plan drawer reads
 `[Edit] [Approve] [...]`; Approve reads Approving until the approval resolves,
 then closes the drawer on any page and raises one toast, and a plan whose run
 was approved reads Approved with no primary until the run starts the step. The
-run pages (the preset run level and the orchestrated document) hold **Pause
-run** and **Stop run** (asks first) as visible words in their header while the
-run lives (`RunLiveVerbs`, the `workflowRun` registry's own `when`: Pause while
-a step is in flight and the run is not paused, Stop while the run is closable),
-then the run `⋯`; the verbs of `runPrimaryOf`
-(**Review plan**, **Answer**, **Continue the run**, **Retry**,
-**Raise limit**, **Decide next step**, **Start step 2**, **Start run**)
-sit on the run tail (a paused run's tail only says Paused by you, since
-Resume run sits in the header), and an archived run shows **Restore** as its one header
-primary. The `⋯` holds View diff, Step routing (orchestrated), Autonomy, Skip
-step N, Save as preset, Copy run summary, Archive run and Delete run, never
-**Approve plan**, **Pause run**, **Resume run** or **Stop run**. After Pause
-run the header shows **Resume run** in its place (`workflowRun.resume`, while
-`isRunPaused`), and Stop run stays. A failed Pause, Resume or Stop leaves the
-run as it was, reports the error and keeps the word, so pressing it again is
-the retry.
+run pages (the preset run level and the orchestrated document) hold one
+primary in their header (`runHeaderPrimaryOf`): **Answer** for an open
+question, **Raise limit** at the limit, else the verb of `runPrimaryOf`
+(**Review plan**, **Approve plan**, **Continue the run**, **Retry**, **Decide
+next step**, **Start step 2**, **Start run**, **Restore**), else **Pause run**
+or, once paused, **Resume run** in the same place (`RunLiveVerbs`, the
+`workflowRun` registry's own `when`). The tail says the state and keeps only
+its own step verbs. The `⋯` follows See, Steer, Settings, Copy, End: View
+diff, Skip step N (and Pause or Resume run while the header holds another
+primary), Step routing (orchestrated), Save as preset, Copy
+run summary, **Stop run** (asks first), Archive run and Delete run, never
+**Approve plan**. A failed Pause, Resume or Stop leaves the run as it was,
+reports the error and keeps the word, so pressing it again is the retry.
 The title is the only h1 of the page; the trail says `Session > Runs > Run`, the
 Runs crumb or Esc goes back to the list, and no chevron on the page does.
 Scripts reads `[search] [New script]`. A page with no actions draws no `...`.
@@ -807,41 +804,36 @@ rows are the column's rows (28px, `SelectableRow`, the same type roles).
   F2 on the focused title, renames it in place with the same rename as the
   sidebar row (an archived session's title stays read only), and "Overview" is only the
   rail entry's label. The rail's top row holds the rail
-  toggle at the left and two icon buttons at the right, no `⋯`
+  toggle at the left and three buttons at the right
   (`SessionLevel/SessionLevelActions`): **Pin session**, a toggle that shows
   pressed while on and runs its registry action (`session.pin` / `unpin`; a
   failure keeps the old state and shows under the row with Retry,
-  `ActionStatusLine`), and
+  `ActionStatusLine`),
   **Refresh session** (⌘⇧R, `useSessionRefresh`, the same call as the key and
-  the palette). Autopilot has no rail control: Turn on Autopilot and Turn off
+  the palette) and **More session actions** (`⋯`, `ObjectOverflowMenu` over
+  the `session` registry kind), which holds **Spend and limit**
+  (`session.spend`), **Archive** and **Delete** with the rest of the session's
+  verbs. Autopilot has no rail control: Turn on Autopilot and Turn off
   Autopilot (`session.autopilotOn` / `Off`) stay in the sidebar row's right
-  click menu and the palette. An archived session shows none of them. The foot
-  (`SessionLevel/SessionLevelFoot`) is one row: the session spend at the left
-  (`SessionCostChip`, over `sessionSpendByAgent` and
-  `sessionSpendPresentation`, the one source of the number): `$3.47`, or the
-  compact `$3.47 / $10` once a limit is set (`compactLabel`, a whole limit
-  without its cents), with the full sentence ("$3.47 spent of the $10.00 limit
-  in this session", `sentence`) in the tooltip and `Spend $3.47 of $10.00
-limit` as its name; the warning tone from 80 percent and danger past it, the
-  pause glyph and `Paused, …` in the tooltip when a pausing limit stopped the
-  session, and `Set a limit` in faint gray while nothing is spent and no limit
-  is set. A click opens the session spend popover (the limit editor, the
-  agents and the context cost, Open in Impact); **Raise limit** on a paused
-  run opens it on the editor from any session level: off the session level an
-  edit host in `SessionFrame` opens it at the rail foot (`sessionSpendLines`).
-  At the right of the same row sit two `sm` icon buttons, no text and no
-  ellipsis, each with a tooltip that names it and its key: **Archive session**
-  (the archive icon, ⌘⇧A, the registry `session.archive`; **Restore session**
-  with the restore icon on an archived session) in gray, and **Delete session**
-  (the trash icon, ⌘⇧⌫) in the danger tone. Archive asks first: the registry
+  click menu and the palette. An archived session shows only the `⋯`, with
+  **Restore** and **Delete**. The rail has no foot: **Spend and limit** and
+  **Raise limit** on a paused run open the session spend popover from the edit
+  host in `SessionFrame` (`SessionCostChip` with `placement="editHost"`,
+  `requestSessionSpendLimitEdit`, `sessionSpendLines`). **Spend and limit** on
+  another session, from its sidebar row or the workspace board, opens that
+  session and holds the request by its id until its edit host mounts and takes
+  it once (`openSessionSpendLimitEdit`, `pendingSpendEdit`); going anywhere else
+  first drops it, so it never opens on another session. An agent page's
+  **Limit** chip edits the same session limit. Archive asks first: the registry
   verb carries a confirm (`archiveConfirmOf`, "Archive session?", saying how
   many agents are still running in the session when any run, from
-  `runningAgentCountOf`, and that they keep running after the archive), so the foot, the sidebar row's right click menu, the
+  `runningAgentCountOf`, and that they keep running after the archive), so the `⋯`, the sidebar row's right click menu, the
   palette and ⌘⇧A (`SessionArchiveBridge` triggers the same verb and anchors
   its confirm at the window corner) all ask the same way, and Undo on the toast
-  still restores it. Restore never asks. Delete opens `DeleteSessionConfirm`
-  anchored to the button (end aligned, the `ConfirmPopover` default, flipped
-  above it and kept inside the window by `useDropdownDirection`). Rename has no rail
+  still restores it; the `⋯` anchors the confirm to itself (`ArmedActionPopover`
+  over the rail's `useActionControls`, so a failure shows under the top row with
+  Retry). Restore never asks. Delete asks with the registry's delete confirm
+  ("Delete session?"). Rename has no rail
   control: a rename
   request (`session-header`, from the palette, the sidebar row's right click
   menu or the shortcut) edits the Overview title in place while that session's
@@ -1266,8 +1258,11 @@ Artifacts, and Questions while one is open) takes `bg-selected` and
 takes the sign while its page is on screen. While a studio (Tasks, Chat,
 Workflows, Terminal, Impact) sits over the session the column selects that
 studio's door and shows the session row in medium weight with no fill. A worktree row click goes through `switchBranchMount` and
-lands on the landing tab of that branch (`branchLandingTabOf`), never on the
-tab, thread or diff focus of the branch it leaves.
+lands on the landing tab of that branch (`branchLandingTabOf`: Pull request, which is
+the branch page while the branch has no pull request), never on the tab, thread or diff
+focus of the branch it leaves. The Pull request entry under a branch row names the request
+by its number alone (`#9998`, `MR !42`), so the label is never cut; the row above already
+names the branch.
 
 **The rail holds the pinned sessions and, when needed, the open one.** Under the
 doors, in the workspace scope only, the pinned sessions are 28px node buttons
@@ -1436,17 +1431,17 @@ activity yet show the plain overview with its actions.
 
 ## The session tools
 
-One thin icon column at the right edge of the session content, between the
+One labeled column at the right edge of the session content, between the
 page and the open drawer, the same on every rail level and in this order:
 **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C),
 **Agents** (⌘⌥L) and **Scripts** (⌘⌥S) (`SESSION_TOOLS`). `SessionTools`
 (`features/session/components/SessionTools`) is mounted by `SessionFrame`
-after the page, 44px wide on the sheet background, its buttons starting on the
-rail top row's line. Each tool is a 32px `IconButton`
-(`SessionToolButton`): icon only, its word and chord in a left tooltip and in
-its accessible name ("Context, Decisions changed since you last looked" while
-a dot shows), `aria-pressed` with the `bg-selected` fill while its drawer is
-open (`openPaneOf`). The Context dot stays on the icon's corner: info while the
+after the page, 128px wide on the sheet background, its buttons starting on the
+rail top row's line. Each tool is a `md` quiet `Button` with its icon and its
+word (`SessionToolButton`), its chord in a left tooltip, its accessible name
+reading the word and any note ("Context, Decisions changed since you last
+looked" while a dot shows), `aria-pressed` with the `bg-selected` fill while
+its drawer is open (`openPaneOf`). The Context dot sits after the word: info while the
 summary runs, danger when it failed, primary when the context changed since
 you looked. The column is a `toolbar` (`aria-orientation="vertical"`, named
 Session tools) with one tab stop; Up, Down, Home and End move it
@@ -1467,8 +1462,8 @@ Folding the rail leaves the column in place, and a drill never moves it.
   title, which renames inline on click), the run's agents as a tree, **Add
   step** and the foot "Limit $3.00 · $1.12 spent" (`RunSpendFoot`); on an Auto
   agent or one of its children it shows Auto and its children as a tree, "No
-  agents started yet" while Auto has none, and the limit foot
-  (`AutoLimitFoot`). With nothing selected, or after **All launches**, it
+  agents started yet" while Auto has none; Auto's limit sits on the Auto page's
+  settings line (`AgentSettingsLine`), not in this panel. With nothing selected, or after **All launches**, it
   lists every live and recent launch of the session newest first
   (`launchesOf`: preset runs that are not archived and Auto roots), each with
   its agents under it; picking a launch opens it in the center and keeps the
@@ -1486,7 +1481,7 @@ Folding the rail leaves the column in place, and a drill never moves it.
   (`flex-col-reverse` on `[data-spawned-launch]`); every reader of the screen
   order goes through `spawnedTreeItemsOf`. A focused Auto launch is the same
   `SpawnedAutoGroup` as the list, so it reads the same way: Now, the newest
-  child, down to the oldest, Auto at the foot, then the limit foot. A child
+  child, down to the oldest, Auto at the foot. A child
   that starts while you read lower in the list moves in at the top and the rows
   you read stay where they are (`useSpawnedScrollHold` keeps the first visible
   row's offset across the change; at the top, on Now, the new row simply shows).
@@ -2814,7 +2809,7 @@ workspaceId, nowMs })`, owns every row's attention sentence and tone (it replace
   holds the effort (`Sonnet 5.5 · Medium`), the day label has no rule and an
   empty Activity reads `Nothing ran yet`. A Next button carries its label only
   and the menu column leaves when no row has a menu. The Activity header holds
-  no spend: the session spend lives once, at the session rail foot.
+  no spend: the session spend lives in the top bar and the spend popover.
   `Mark all seen` is a ghost button in the Activity header and shows only
   while an agent is unseen; a waiting question is answered from its Needs you row, never from a
   second `Answer` on the timeline row.
@@ -3564,10 +3559,10 @@ detail; nothing moves from one section to the next.
 **Header.** One row: the title, the one h1 (the pull request's title, or the branch name
 without a pull request; on a pull request you can edit, click it or press `E` on
 the Pull request entry and it becomes an input in the same 32px row, `Enter` saves
-to the host, `Esc` cancels, a failure is an inline notice with Retry), one primary and `⋯`. No
-state chip and no meta line: the state, the number, the author, the base and the readiness are
-the Pull request property block, the commit count is the Commits entry, and a blocked primary
-says its reason in its tooltip. **There is no branch switcher in the header or
+to the host, `Esc` cancels, a failure is an inline notice with Retry), one primary and `⋯`. The
+line under the title says the state once (the state chip), the number, who wants to merge how
+many commits into which base and from which branch (`PullRequestHeaderLine`); without a pull
+request it says `Not pushed`, `Pushed` or `Rebasing` and the distance to the base. **There is no branch switcher in the header or
 the rail**: the branches of the session are the rows of the Projects tree
 (`SessionLevel/ProjectTree`), and choosing one makes it the active mount and
 replaces the address with the landing tab of that branch (`switchBranchMount`,
@@ -3577,19 +3572,28 @@ A new branch is the `+` on its folder row (`project.newBranch`), which opens
 the new branch form (`forkMount` lands on the new worktree on its landing tab);
 a folder project cannot fork and shows none.
 
-The header holds at most one secondary and one primary (`branchActionsOf`). The secondary is
-the first push that applies: `Push N fixes` (every accepted thread, then unpushed commits), `Publish N
-replies` (the fix is already on origin), `Retry N`; a merged or closed request has none. The
-primary follows the state: `Mark ready for review` on a draft, `Merge` on an open or approved
-request, `Reopen` on a closed one (where the host allows it), none on a merged or queued one and none
-without a pull request, where the create form owns `Create pull request`. A stopped rebase
-shows `Continue rebase` as the primary, with `Abort rebase` in `⋯`, in the rebase banner and on
-the worktree status line; `Rebase` lives on the worktree status line only, never in the header
-or a property. `Merge` is a filled primary only when the pull request is
-ready; while comments need you or a fix run is live it turns secondary, never disabled,
-and while a check fails, a review is missing or the branch conflicts it is disabled. The
-label names its blocker (`Merge · 2 failing`, `Merge · needs review`, `Merge · 4 unresolved`,
-`readiness.labelBlocker`) and the Readiness property says it once (`Blocked by lint`).
+The header holds at most one secondary and one primary (`branchActionsOf`), and the primary is never
+disabled. The secondary is the first push that applies: `Push N fixes` (every accepted thread), `Push
+N commits` while the branch is level with origin, `Publish N replies` (the fix is already on origin),
+`Retry N`; a merged or closed request has none, and `Force push` never sits there: while the online
+copy moved it waits in `⋯` behind its confirm. The primary is the page's next step
+(`pullRequestNextStepOf`): `Mark ready for review` on a draft, `Request review` while nobody was
+asked, `Fix comments` while changes are requested or comments need you, `Fix checks` while a check
+fails (both open their tab), the merge method (`Squash and merge`) once the pull request is ready,
+`Rebase on main` when only the base moved, `Reopen` on a closed one, and none while a reviewer or a
+check is still on it, on a queued or merged one, or while a banner holds the next action (a stopped
+rebase, someone pushed). One predicate says when a stop is open for the shown branch
+(`hasOpenRebaseStopOf`: the stop the rebase panel shows, read through `rebaseStopOf`, live or
+rebuilt from the session events after a restart, or the worktree is mid rebase); while it holds
+the header draws no primary and no push, with or without a pull request, so nothing sits next
+to the stop panel. Without a pull request the branch's next step decides (`branchNextStepOf`):
+`Push N commits` while commits are not on origin, `Rebase on main` while the branch is behind, and
+none once it is pushed and up to date, where the create form's `Create pull request` is the one
+primary. A step whose action is blocked draws no primary: a blocked `Merge`, `Mark ready` or
+`Reopen` waits in `⋯`, disabled with its reason, and runs through the header's own confirm and
+failure line from there; the header never repeats its primary in `⋯`. A stopped rebase shows no
+primary, with `Abort rebase` in the rebase banner and on the worktree status line. The Merge
+cell of the status strip says the blocker once (`Blocked by checks`).
 One rule decides all three (`evaluatePrMergeReadiness`, `features/review`): its
 blockers are a merged, closed, queued or draft pull request, conflicts, checks
 unknown, failing or running, changes requested, a review required and a write
@@ -3682,26 +3686,57 @@ remembered once the person has chosen one; the page shows the section the state 
 when the stored one is gone, without writing history.
 
 **Pull request.** The pull request itself, on the 960px column
-(`features/branch/components/PullRequestTab`), one column in every state: the property block
-first, then the description and the Activity. The property block (`PullRequestProperties`) is a
-grid, label 96 and value, in three groups 12px apart with no labels in caps: State (`State`
-with the state chip from `PULL_REQUEST_PRESENTATION` and the number, `#318` or `MR !42`, from
-`pullRequestNumberLabel`; `Base` as `→ main`; `Checks`, one line that opens the Checks entry;
-`Readiness`, the word and reason of `evaluatePrMergeReadiness`, plus the queue line of a queued
-request), People (`Author`, `Reviewers` with `Request review`) and Links (`Linked issues`).
-There is no Rebase in it: the worktree status line owns it. The description renders as markdown with `Edit` beside its heading
+(`features/branch/components/PullRequestTab`): the status strip first, then two columns, the
+reading column (the description and the Activity, at most a prose measure, `max-w-prose`) and the 224px side column;
+below an 880px page container the side column moves above the reading column as one wrapping
+row. The strip (`PullRequestStatusStrip`, cells from
+`pullRequestCellsOf`) has four fixed cells, each a label, a word with a `StatusDot` and one faint
+detail: Checks (`2 passed`, `1 failing` with the failing names, `Running, 2 of 3`, counted by
+`checksCountsOf` as the rail is, and a click opens the Checks entry), Review (`No approval yet`,
+`Waiting on dana-r`, `Changes requested`, `Approved by dana-r`), Merge (`Blocked by checks`,
+`Conflicts` in amber as in the branch state map, `Ready` with the merge method, `Queued` with the
+queue line, `Merged`) and Branch (`Up to date`, `7 behind main`, `Rebasing`, `Diverged` when
+someone pushed online). The side column (`PullRequestProperties`) holds `Reviewers` (people only,
+the asked ones first, each verdict right after the name: `Asked`, `Changes`, `Approved`; `+`
+requests another), `Bots that commented` (bots whose only review is a comment, with no verdict,
+`pullRequestReviewerGroupsOf` in core), `Author` and `Linked issues`, all read from the branch on
+screen. There is no Rebase in it. The description renders as markdown with `Edit` beside its heading;
+the body's own headings read as bold lead-ins and a first heading that repeats `Description` is
+dropped (`demoteBodyHeadings`; a code fence closes only on the same character, at least as
+long and with nothing after it, as CommonMark says, and an unclosed fence runs to the end, so
+a heading inside code stays literal), while the edit preview keeps them as written
 (a click on the text also opens it; the editor is a textarea with Write and
 Preview, `Save` and `Cancel` at its end, a failure keeps the draft and offers
 Retry; an empty description reads `No description yet` with `Add description`)
 and the Activity, oldest first: who opened it, the pushes grouped by day, the
 reviews, one line `4 comments on files, 2 need you` that opens Comments, one line
-for the checks that opens Checks, your edits of this session and the merge. Rows
-that open something carry `ROW_INTERACTIVE`. Reviewers draw a glyph and a word each (`+`
+for the checks that opens Checks, your edits of this session and the merge. Bot comments
+in a row fold into one event, `4 bots commented`, each comment clamped to two lines; a person
+in between splits the group (`groupBotActivity`). The glyphs sit on a spine, a 1px line from
+one event to the next. Rows that open something carry `ROW_INTERACTIVE`. Reviewers draw a glyph and a word each (`+`
 opens the picker that searches the host's collaborators), Checks reads `4 passed · 1 failing`
 (`Checks unknown` when the read failed), Linked issues carry their relation (`Closes #412`;
-`Link issue` opens the popover). Without a pull request the section is the create
-form alone, with no block above it (the Pull request entry reads `None`), and it
-fills the same grid: one input card (the title from the session goal as a large
+`Link issue` opens the popover). Without a pull request the section is the branch
+page (`BranchStartPage`): the header names the branch with `Not pushed`, `Pushed` or
+`Rebasing` and `3 ahead, 0 behind main` under it, a four cell strip (Local checks:
+`Passed` or `Declined` with the age of the last push from this machine, read from the push
+result since the repo's pre-push hook is the one local gate, kept in memory per mount
+(`local-checks` slice, `mountLocalChecks`), so after a restart it reads `Not run` until the
+next push; a push that went through counts as `Passed` whether or not the repo has a hook,
+and a failure that does not name `pre-push` leaves the last result, a remote
+`pre-receive hook declined` included (`localCheckOf`);
+Pull request `None yet`, Remote, Branch, the conflict cell amber), then the create
+form, prefilled from the branch (`pullRequestPrefillOf`: one commit gives its
+headline, several give the linked issue and the first headline, the description
+lists the commits and `Closes HL-1372` for a Linear issue), and `In this branch`
+with the commits and files under it. The form works on the branch on screen: it
+reads that mount's status and base branches and opens the pull request from it,
+never from the session's write destination; on GitLab `CreateMrForm` takes the same mount
+and prefill and hands the mount to `createMrForSession`. Its submit is the one primary once the
+branch is pushed and up to date, and secondary, `Push and create pull request`,
+while commits are not on origin. While a rebase is stopped the form waits and the
+conflicting files are listed; a branch with no commit of its own shows `No commits on
+this branch yet`. The form fills the same grid: one input card (the title as a large
 borderless field, the description growing from 6 to 16 lines, and in the card's
 bottom row `Write with Scribe` with its routing and a faint `Markdown`), then
 the settings as labelled properties in the side column (`Into`; `Opens as` with
@@ -3757,7 +3792,10 @@ on the right and the column re-centres in what is left. The Comments section is 
 list at every pane width, with no back link; the open comment is the drawer, and the last row
 opened stays marked after the drawer closes. The entry slots read nothing until the data arrives and nothing at zero:
 Pull request `Draft`, `Merged` or `Closed`; Comments the count that needs you; Files the
-count; Commits `↑2` (tooltip `2 not pushed`, `notPushedCountOf`); Checks the failing or
+count; Commits `↑2` (tooltip `2 not pushed`, `notPushedOf`: the history draft's unpushed
+commits once the branch has an upstream, else the status: the upstream's ahead count, a
+diverged branch included, so `2 ahead, 3 behind` reads `↑2`, and for a branch never pushed
+its commits over main, so it reads `↑3` too, the same function for the session rail and the page); Checks the failing or
 running count (`worktreeEntryFactsOf`; the comment
 source tabs drop a zero badge the same way). All three arrive without a visit: `BranchPage` loads
 the mount's history draft (`loadHistoryDraft`) once when the page opens and the

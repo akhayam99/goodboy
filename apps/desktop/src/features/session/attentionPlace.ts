@@ -69,7 +69,7 @@ export const attentionPlace = ({ state, sessionId, reason }: Params): PlaceReque
   if (reason === 'pr-approved' || reason === 'changes-requested') {
     return branchPlace({
       sessionId,
-      tab: branchLandingTabOf({ hasPullRequest: true, deepLink: 'pr' }),
+      tab: branchLandingTabOf({ deepLink: 'pr' }),
     });
   }
   if (reason === null) {

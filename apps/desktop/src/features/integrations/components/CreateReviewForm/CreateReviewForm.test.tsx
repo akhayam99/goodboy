@@ -147,7 +147,7 @@ describe('the create form', () => {
     );
     expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
     expect(
-      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+      screen.getByRole('button', { name: 'Push and create pull request' }).hasAttribute('disabled'),
     ).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(stopScribe).toHaveBeenCalledWith({ key: expect.stringMatching(/^pr:/) });
@@ -261,7 +261,7 @@ describe('the create form', () => {
     ).toBeDefined();
     expect(screen.getByText('Opening the pull request')).toBeDefined();
     expect(
-      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+      screen.getByRole('button', { name: 'Push and create pull request' }).hasAttribute('disabled'),
     ).toBe(true);
   });
 
@@ -274,7 +274,7 @@ describe('the create form', () => {
     expect(within(alert).getByText('The text is kept.')).toBeDefined();
     expect(descriptionValue()).toContain('Settlement retries');
     expect(
-      screen.getByRole('button', { name: 'Create pull request' }).hasAttribute('disabled'),
+      screen.getByRole('button', { name: 'Push and create pull request' }).hasAttribute('disabled'),
     ).toBe(false);
   });
 
@@ -361,7 +361,7 @@ describe('the create form', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
     fireEvent.click(await screen.findByRole('button', { name: 'maya-ortiz' }));
     expect(requestReviewers).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Create pull request' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Push and create pull request' }));
 
     await waitFor(() => expect(onCreated).toHaveBeenCalledWith({ number: 318, url: null }));
     expect(order).toEqual(['create', 'request']);

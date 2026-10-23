@@ -186,9 +186,7 @@ export const SIDEBAR_NAV_ROWS: ReadonlyArray<Row> = [
         WAIT,
       );
       const state = useAppStore.getState();
-      expect(state.branchTab[ctx.sessionId]).toBe(
-        branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
-      );
+      expect(state.branchTab[ctx.sessionId]).toBe(branchLandingTabOf({ deepLink: null }));
       expect(state.branchThreadId[ctx.sessionId] ?? null).toBeNull();
       await waitFor(() => {
         const identity = document.querySelector(

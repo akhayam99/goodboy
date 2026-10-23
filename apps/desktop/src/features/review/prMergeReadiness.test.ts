@@ -241,7 +241,7 @@ describe('evaluatePrMergeReadiness tone', () => {
     ['a live run', factsOf({ isFixRunLive: true }), 'info'],
     ['changes requested', factsOf({ review: 'changes_requested' }), 'warning'],
     ['a failing check', factsOf({ checks: 'failing', failingChecks: ['lint'] }), 'danger'],
-    ['conflicts', factsOf({ pr: { mergeable: false } }), 'danger'],
+    ['conflicts', factsOf({ pr: { mergeable: false } }), 'warning'],
     ['running checks', factsOf({ checks: 'pending', runningChecks: 1 }), 'neutral'],
     ['a draft', factsOf({ pr: { isDraft: true } }), 'neutral'],
     ['a merged pull request', factsOf({ pr: { state: 'merged' } }), 'neutral'],

@@ -1,14 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { Plus } from 'lucide-react';
-import { pullRequestReviewersOf, type PullRequestPort } from '@goodboy/core';
+import type { PullRequestPort } from '@goodboy/core';
 import { Avatar, EmptyLine, IconButton } from '@goodboy/ui';
-import type {
-  PrDetail,
-  PullRequestReviewer,
-  PullRequestReviewerState,
-  PullRequestView,
-  SessionId,
-} from '@goodboy/types';
+import type { PullRequestReviewer, PullRequestReviewerState, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { PR_REQUEST_REVIEW_EVENT, pullRequestEventName } from '../../../actions/kinds/pullRequest';
@@ -24,8 +18,8 @@ export type ReviewerRequest =
 type Props = {
   readonly sessionId: SessionId;
   readonly prNumber: number;
-  readonly detail: PrDetail | null;
-  readonly view: PullRequestView | null;
+  readonly people: ReadonlyArray<PullRequestReviewer>;
+  readonly bots: ReadonlyArray<PullRequestReviewer>;
   readonly port: PullRequestPort | null;
   readonly request: ReviewerRequest;
   readonly onMutated: () => void;
@@ -33,44 +27,25 @@ type Props = {
 
 const STATE_WORD: Readonly<Record<PullRequestReviewerState, string>> = {
   approved: 'Approved',
-  changes_requested: 'Changes requested',
+  changes_requested: 'Changes',
   commented: 'Commented',
-  pending: 'Pending',
+  pending: 'Asked',
   dismissed: 'Dismissed',
-};
-
-const reviewersFor = ({
-  detail,
-  view,
-  prNumber,
-}: {
-  readonly detail: PrDetail | null;
-  readonly view: PullRequestView | null;
-  readonly prNumber: number;
-}): ReadonlyArray<PullRequestReviewer> => {
-  if (detail !== null && detail.prNumber === prNumber) {
-    return pullRequestReviewersOf({ reviews: detail.reviews, requests: detail.reviewRequests });
-  }
-  return view?.reviewers ?? [];
 };
 
 export const ReviewersProperty = ({
   sessionId,
   prNumber,
-  detail,
-  view,
+  people,
+  bots,
   port,
   request,
   onMutated,
 }: Props) => {
   const requestReview = useAppStore((state) => state.requestReview);
-  const reviewers = useMemo(
-    () => reviewersFor({ detail, view, prNumber }),
-    [detail, view, prNumber],
-  );
   const known = useMemo(
-    () => new Set(reviewers.map((reviewer) => reviewer.person.login.toLowerCase())),
-    [reviewers],
+    () => new Set([...people, ...bots].map((reviewer) => reviewer.person.login.toLowerCase())),
+    [bots, people],
   );
   const search = useCallback(
     async (query: string) => (port === null ? [] : await port.searchReviewers({ query })),
@@ -100,24 +75,21 @@ export const ReviewersProperty = ({
 
   return (
     <PropertyField label="Reviewers" labelAction={action}>
-      {reviewers.length === 0 ? (
-        <EmptyLine>None requested</EmptyLine>
+      {people.length === 0 ? (
+        <EmptyLine>Nobody asked yet</EmptyLine>
       ) : (
         <ul className="flex min-w-0 flex-col">
-          {reviewers.map((reviewer) => (
+          {people.map((reviewer) => (
             <li
               key={reviewer.person.login}
+              data-reviewer-state={reviewer.state}
               className="flex min-h-7 min-w-0 items-center gap-2 text-label"
             >
               <Avatar url={reviewer.person.avatarUrl} alt={reviewer.person.login} size="xs" />
-              <span className="min-w-0 flex-1 truncate text-foreground">
-                {reviewer.person.login}
-              </span>
-              <span className="flex w-36 shrink-0 items-center gap-2">
+              <span className="min-w-0 truncate text-foreground">{reviewer.person.login}</span>
+              <span className="flex shrink-0 items-center gap-1 text-meta text-muted-foreground">
                 <ReviewStateIcon state={reviewer.state} size={ICON_SIZE.row} />
-                <span className="truncate text-meta text-muted-foreground">
-                  {STATE_WORD[reviewer.state]}
-                </span>
+                {STATE_WORD[reviewer.state]}
               </span>
             </li>
           ))}

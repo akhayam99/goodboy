@@ -42,7 +42,7 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
   const github = useAppStore((s) => branchGithubOf({ state: s, sessionId, mountId }));
   const workspaceId = useAppStore((s) => sessionById(s.sessions, sessionId)?.workspaceId ?? null);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const repo = useSessionRepo({ sessionId });
+  const repo = useSessionRepo({ sessionId, mountId });
   const projectId = repo?.projectId ?? null;
   const hasBinding = useAppStore((s) =>
     workspaceId === null
@@ -56,7 +56,7 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
   const connection = useGithubConnection({ workspaceId });
   const host = useAppStore(
     useShallow((s) => {
-      const entry = selectedReviewEntryOf({ state: s, sessionId });
+      const entry = selectedReviewEntryOf({ state: s, sessionId, mountId });
       const kind: ChecksHostKind = entry?.kind ?? 'local';
       return { kind, url: entry?.url ?? null, number: entry?.number ?? null };
     }),
@@ -66,11 +66,12 @@ export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
   const isPortHost = portHost !== null;
   const portView = usePullRequestView({
     sessionId,
+    mountId,
     isEnabled: isPortHost && canReadChecks,
     fallbackNumber: host.number,
   });
   const create = useActionControls({
-    target: { kind: 'pullRequest', sessionId, prNumber: null },
+    target: { kind: 'pullRequest', sessionId, mountId, prNumber: null },
   });
 
   const pr = github?.pr ?? null;

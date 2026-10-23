@@ -14,7 +14,13 @@ import { useRebasePrediction } from '../../../history/useRebasePrediction';
 import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import type { SessionDiff } from '../../../diff/hooks/useSessionDiff';
-import { branchActionsOf, type BranchPrimary, type BranchReviewCounts } from '../../branchPrimary';
+import {
+  branchActionsOf,
+  type BranchPrimary,
+  type BranchNextStep,
+  type BranchReviewCounts,
+} from '../../branchPrimary';
+import type { BranchTab } from '../../../../store/slices/navigation/types';
 import type { PullRequestPresentationState } from '../../../../shared/pullRequestPresentation';
 
 type Params = {
@@ -24,6 +30,10 @@ type Params = {
   readonly diff: SessionDiff;
   readonly review: BranchReviewCounts;
   readonly remoteHost?: PullRequestHost;
+  readonly nextStep?: BranchNextStep;
+  readonly hasOpenRebaseStop?: boolean;
+  readonly mergeLabel?: string;
+  readonly onOpenTab?: (tab: BranchTab) => void;
 };
 
 export type BranchControls = {
@@ -47,6 +57,10 @@ export const useBranchControls = ({
   diff,
   review,
   remoteHost,
+  nextStep = null,
+  hasOpenRebaseStop = false,
+  mergeLabel = 'Merge',
+  onOpenTab,
 }: Params): BranchControls => {
   const state: PullRequestPresentationState =
     pr === null ? 'none' : pullRequestKindOf({ state: pr.state, isDraft: pr.isDraft });
@@ -105,10 +119,11 @@ export const useBranchControls = ({
     () => ({
       kind: 'pullRequest',
       sessionId,
+      mountId,
       prNumber: pr?.number ?? null,
       ...(remoteHost === undefined ? {} : { host: remoteHost }),
     }),
-    [pr?.number, remoteHost, sessionId],
+    [mountId, pr?.number, remoteHost, sessionId],
   );
   const scopeKey = `${sessionId}:${worktreePath ?? ''}`;
   const diffControls = useActionControls({ target: diffTarget, scopeKey });
@@ -136,13 +151,26 @@ export const useBranchControls = ({
         review,
         hasPullRequest: pr !== null && !isRequestMerged,
         state,
+        nextStep,
+        hasOpenRebaseStop,
+        mergeLabel,
       }),
-    [diffControls.actions, isRequestMerged, pr, pullRequestControls.actions, review, state],
+    [
+      diffControls.actions,
+      hasOpenRebaseStop,
+      isRequestMerged,
+      mergeLabel,
+      nextStep,
+      pr,
+      pullRequestControls.actions,
+      review,
+      state,
+    ],
   );
 
   const controlsOf = useCallback(
     (action: BranchPrimary): ActionControls | null => {
-      if (action.source === 'review') {
+      if (action.source === 'review' || action.source === 'tab') {
         return null;
       }
       return action.source === 'diff' ? diffControls : pullRequestControls;
@@ -153,6 +181,12 @@ export const useBranchControls = ({
   const press = useCallback(
     (action: BranchPrimary) => {
       if (action.blockedReason !== null) {
+        return;
+      }
+      if (action.source === 'tab') {
+        if (action.tab !== null) {
+          onOpenTab?.(action.tab);
+        }
         return;
       }
       if (action.source === 'review') {
@@ -166,7 +200,7 @@ export const useBranchControls = ({
       const controls = action.source === 'diff' ? diffControls : pullRequestControls;
       controls.trigger({ actionId: action.actionId });
     },
-    [diffControls, pullRequestControls, sessionId],
+    [diffControls, onOpenTab, pullRequestControls, sessionId],
   );
 
   return {

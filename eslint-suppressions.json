@@ -1314,7 +1314,7 @@
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/pr-page.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/app/components/MockScene/scenes/u23/prPageSeed.ts": {
@@ -1981,7 +1981,7 @@
   },
   "apps/desktop/src/features/branch/components/BranchHeader/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 9
+      "count": 8
     }
   },
   "apps/desktop/src/features/branch/components/BranchPage/index.test.tsx": {
@@ -5492,7 +5492,7 @@
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 5
+      "count": 3
     }
   },
   "apps/desktop/src/features/session/components/SessionOverviewPane/lib.test.ts": {
@@ -6272,16 +6272,6 @@
       "count": 2
     }
   },
-  "apps/desktop/src/features/suggestions/components/NextStepSlot/index.test.tsx": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 7
-    }
-  },
-  "apps/desktop/src/features/suggestions/components/NextStepSlot/index.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/suggestions/components/SuggestionRow/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -6596,7 +6586,7 @@
   },
   "apps/desktop/src/features/workflows/components/RunSpendLimitPopover/index.tsx": {
     "@typescript-eslint/naming-convention": {
-      "count": 2
+      "count": 1
     }
   },
   "apps/desktop/src/features/workflows/components/RunTree/index.folds.test.tsx": {

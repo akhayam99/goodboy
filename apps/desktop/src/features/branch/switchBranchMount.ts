@@ -1,6 +1,5 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
-import { mountRequestOf } from '../../store/slices/project-mounts/mountRowModel';
 import { branchPlace } from '../../store/slices/navigation/place';
 import type { BranchTab } from '../../store/slices/navigation/types';
 import { branchLandingTabOf } from './branchLandingTab';
@@ -27,17 +26,11 @@ export const switchBranchMount = async ({
     void before.reportError({ title: "Couldn't switch to that branch", error, sessionId });
     return;
   }
-  const state = useAppStore.getState();
-  state.navigate({
+  useAppStore.getState().navigate({
     to: branchPlace({
       sessionId,
       mountPath: worktreePath,
-      tab:
-        tab ??
-        branchLandingTabOf({
-          hasPullRequest: mountRequestOf({ state, mountId }) !== null,
-          deepLink: null,
-        }),
+      tab: tab ?? branchLandingTabOf({ deepLink: null }),
     }),
     mode,
   });

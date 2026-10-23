@@ -53,7 +53,7 @@ describe('switchBranchMount', () => {
       to: branchPlace({
         sessionId: SESSION,
         mountPath: PATH,
-        tab: branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
+        tab: branchLandingTabOf({ deepLink: null }),
       }),
       mode: 'replace',
     });
@@ -73,7 +73,7 @@ describe('switchBranchMount', () => {
       to: branchPlace({
         sessionId: SESSION,
         mountPath: PATH,
-        tab: branchLandingTabOf({ hasPullRequest: true, deepLink: null }),
+        tab: branchLandingTabOf({ deepLink: null }),
       }),
       mode: 'replace',
     });
@@ -99,7 +99,7 @@ describe('switchBranchMount', () => {
       to: branchPlace({
         sessionId: SESSION,
         mountPath: PATH,
-        tab: branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
+        tab: branchLandingTabOf({ deepLink: null }),
         threadId: null,
         focus: null,
       }),

@@ -9,21 +9,25 @@ vi.mock('../../../shared/lib/editor', async (importOriginal) => ({
   openUrl: vi.fn(async () => undefined),
 }));
 
+import { invoke } from '@tauri-apps/api/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import { brandId } from '@goodboy/types';
 import type {
+  AgentId,
   GhTokenStatus,
   IntegrationBinding,
   IsoDateTime,
   MountId,
   PrCheckRun,
   PrDetail,
+  ProjectId,
   PullRequestView,
 } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
+  buildStoryProject,
   importStore,
   resetStoryStore,
   type StoryStore,
@@ -457,6 +461,152 @@ describe('Checks tab on Bitbucket', () => {
     load.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(load).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
+  });
+});
+
+describe('Checks tab on the second of two Bitbucket mounts', () => {
+  const MOUNT_B = brandId<MountId>({ value: 'mount-ledger-core' });
+  const PROJECT_B = brandId<ProjectId>({ value: 'project-ledger-core' });
+  const PATH_B = '/Users/mock/acme/ledger-core';
+  const BRANCH_B = 'acme/ledger-retry';
+  const URL_B = 'https://bitbucket.org/acme/ledger-core/pull-requests/34';
+
+  const VIEW_B: PullRequestView = {
+    host: 'bitbucket',
+    number: 34,
+    title: 'Retry the ledger export',
+    body: '',
+    url: URL_B,
+    state: 'open',
+    isDraft: false,
+    author: null,
+    baseBranch: 'main',
+    headBranch: BRANCH_B,
+    headSha: null,
+    createdAt: '2026-10-01T10:00:00Z',
+    updatedAt: '2026-10-06T10:00:00Z',
+    mergedAt: null,
+    mergeable: null,
+    reviewDecision: null,
+    reviewers: [],
+    resolves: [],
+    checks: {
+      read: 'ok',
+      error: null,
+      runs: [{ name: 'ledger-e2e', conclusion: 'failure', detailsUrl: null, durationMs: 9000 }],
+    },
+    files: { count: 0, first: [] },
+    commits: [],
+    mergeMethods: ['squash', 'merge', 'rebase'],
+    mergeMethodReasons: {},
+  };
+
+  let load = vi.fn();
+  let spawnAgent = vi.fn(async () => brandId<AgentId>({ value: 'agent-debugger' }));
+
+  beforeEach(() => {
+    seedResolveBitbucketScene({ selected: 'bitbucket' });
+    github({ pr: null, detail: null });
+    load = vi.fn();
+    spawnAgent = vi.fn(async () => brandId<AgentId>({ value: 'agent-debugger' }));
+    const state = useAppStore.getState();
+    const mountA = state.sessionMounts[SESSION.id]?.[0];
+    const bitbucketA = Object.values(state.mountBitbucketPr)[0];
+    const prA = bitbucketA?.pr ?? null;
+    if (mountA === undefined || bitbucketA === undefined || prA === null) {
+      throw new Error('the Bitbucket scene has no mount');
+    }
+    const prB = { ...prA, id: 34, sourceBranch: BRANCH_B, webUrl: URL_B };
+    useAppStore.setState({
+      projects: [
+        buildStoryProject({
+          id: mountA.projectId,
+          workspaceId: SESSION.workspaceId,
+          name: 'storefront-web',
+          rootPath: mountA.repoRoot,
+          kind: 'repo',
+        }),
+        buildStoryProject({
+          id: PROJECT_B,
+          workspaceId: SESSION.workspaceId,
+          name: 'ledger-core',
+          rootPath: PATH_B,
+          kind: 'repo',
+        }),
+      ],
+      sessionMounts: {
+        [SESSION.id]: [
+          mountA,
+          {
+            ...mountA,
+            id: MOUNT_B,
+            projectId: PROJECT_B,
+            worktreePath: PATH_B,
+            repoRoot: PATH_B,
+            branch: BRANCH_B,
+            mountName: 'ledger-core',
+            repoSlug: 'acme/ledger-core',
+          },
+        ],
+      },
+      mountBitbucketPr: {
+        ...state.mountBitbucketPr,
+        [MOUNT_B]: {
+          ...bitbucketA,
+          pr: prB,
+          prs: [prB],
+          mountId: MOUNT_B,
+          projectId: PROJECT_B,
+          repository: 'acme/ledger-core',
+          branch: BRANCH_B,
+        },
+      },
+      pullRequestViews: {
+        [SESSION.id]: {
+          prNumber: 34,
+          mountId: MOUNT_B,
+          view: VIEW_B,
+          isLoading: false,
+          error: null,
+          fetchedAt: brandId<IsoDateTime>({ value: '2026-10-07T09:00:00.000Z' }),
+          edits: [],
+        },
+      },
+      loadPullRequestView: load,
+      spawnAgent,
+    });
+    vi.mocked(invoke).mockImplementation(async (command: string) =>
+      command === 'worktree_changed_files' ? { paths: [] } : new Promise<never>(() => undefined),
+    );
+  });
+
+  afterEach(() => {
+    vi.mocked(invoke).mockImplementation(() => new Promise<never>(() => undefined));
+  });
+
+  it('lists the checks of the shown mount and analyzes them on its branch', async () => {
+    render(
+      <ToastProvider>
+        <BranchChecks sessionId={SESSION.id} mountId={MOUNT_B} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(load).toHaveBeenCalledWith({ sessionId: SESSION.id, mountId: MOUNT_B });
+    expect(screen.getByText('ledger-e2e')).toBeDefined();
+    expect(screen.queryByText('lint')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Analyze' }));
+    await settle();
+
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith('worktree_changed_files', {
+      worktreePath: PATH_B,
+      baseBranch: 'main',
+    });
+    expect(spawnAgent).toHaveBeenCalledWith(
+      SESSION.id,
+      expect.objectContaining({ mountId: MOUNT_B, sourceKind: 'failed_check' }),
+    );
   });
 });
 

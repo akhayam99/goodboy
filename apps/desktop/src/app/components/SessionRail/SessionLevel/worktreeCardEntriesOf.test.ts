@@ -6,6 +6,7 @@ import type {
   ProjectId,
   PullRequestChecksRead,
   PullRequestView,
+  WorktreeStatus,
 } from '@goodboy/types';
 import type {
   MountRequestView,
@@ -107,7 +108,56 @@ const checksEntryOf = ({
     diff: null,
     view,
     scope: null,
+    status: null,
+    commits: null,
+    hasRemoteHead: false,
   }).find((entry) => entry.tab === 'checks');
+
+type CommitsParams = {
+  readonly upstream: WorktreeStatus['upstreamDistance'];
+};
+
+const commitsEntryOf = ({ upstream }: CommitsParams) =>
+  worktreeCardEntriesOf({
+    row: rowOf({ provider: 'github' }),
+    github: null,
+    threads: [],
+    diff: null,
+    view: null,
+    scope: null,
+    status: {
+      branch: 'hl/surface-retry-state',
+      head: null,
+      headSubject: null,
+      upstreamDistance: upstream,
+      mainDistance: { kind: 'known', ahead: 3, behind: 0 },
+      workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+      upstream: null,
+      inProgress: null,
+    },
+    commits: null,
+    hasRemoteHead: false,
+  }).find((entry) => entry.tab === 'commits');
+
+describe('the Commits entry of a branch row', () => {
+  it('says how many commits are not pushed, from the branch status', () => {
+    expect(
+      commitsEntryOf({ upstream: { kind: 'known', ahead: 2, behind: 0 } })?.fact,
+    ).toMatchObject({ text: '↑2', tooltip: '2 not pushed' });
+  });
+
+  it('counts every commit of a branch that was never pushed', () => {
+    expect(
+      commitsEntryOf({ upstream: { kind: 'unknown', reason: 'no-upstream' } })?.fact.text,
+    ).toBe('↑3');
+  });
+
+  it('draws nothing once everything is pushed', () => {
+    expect(
+      commitsEntryOf({ upstream: { kind: 'known', ahead: 0, behind: 0 } })?.fact.text,
+    ).toBeNull();
+  });
+});
 
 describe('the check counts of a branch row on every host', () => {
   for (const provider of ['gitlab', 'bitbucket'] as const) {

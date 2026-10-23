@@ -16,6 +16,7 @@ import type { PrMergeMethod, PullRequestState, SessionId } from '@goodboy/types'
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { selectActiveProjectPrs } from '../../../store/slices/github/activeProjectPrs';
+import { branchGithubOf } from '../../../store/slices/github/branchGithubOf';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { selectPrWrite } from '../../../store/slices/pr-writes/selectPrWrite';
 import {
@@ -30,6 +31,7 @@ import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessi
 import { isScribeWriting } from '../../../store/slices/scribe/isScribeWriting';
 import { SCRIBE_WRITING_REASON } from '../../../store/slices/scribe/scribeWritingReason';
 import { describePrWriteInFlight } from '../../review/prLifecycle';
+import { hasOpenRebaseStopOf } from '../../branch/hasOpenRebaseStopOf';
 import {
   evaluatePrMergeReadiness,
   mergeIsClear,
@@ -92,7 +94,7 @@ const mergeBlock = ({ facts }: FactsOnly): string | null =>
 const isMergeClear = ({ facts }: FactsOnly): boolean =>
   mergeIsClear({ readiness: readinessOf({ facts }) });
 
-const MERGE_METHOD_LABEL: Readonly<Record<PrMergeMethod, string>> = {
+export const MERGE_METHOD_LABEL: Readonly<Record<PrMergeMethod, string>> = {
   squash: 'Squash and merge',
   merge: 'Merge commit',
   rebase: 'Rebase and merge',
@@ -482,7 +484,8 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       if (facts.number === null) {
         return;
       }
-      const mountId = selectActiveMountId({ state: env.getState(), sessionId: facts.sessionId });
+      const mountId =
+        facts.mountId ?? selectActiveMountId({ state: env.getState(), sessionId: facts.sessionId });
       const target = { sessionId: facts.sessionId, ...(mountId === null ? {} : { mountId }) };
       const port = pullRequestPortFor({ get: env.getState, ...target, prNumber: facts.number });
       if (port?.cancelAutoMerge === undefined) {
@@ -508,10 +511,12 @@ const findPr = ({
 export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, PullRequestFacts> = {
   noun: 'pull request',
   facts: ({ state, target }) => {
-    const github = state.sessionGithub[target.sessionId] ?? null;
+    const mountId = target.mountId ?? null;
+    const github = branchGithubOf({ state, sessionId: target.sessionId, mountId });
     const requestParams = {
       state,
       sessionId: target.sessionId,
+      mountId,
       ...(target.prNumber === null ? {} : { prNumber: target.prNumber }),
     };
     const canonical = sessionPullRequestOf(requestParams);
@@ -533,7 +538,11 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
             ),
           ].find((candidate) => candidate !== null && candidate.prNumber === pr.number) ?? null);
     const detailMatches = detail !== null;
-    const repo = resolveSessionRepo({ state, sessionId: target.sessionId });
+    const repo = resolveSessionRepo({
+      state,
+      sessionId: target.sessionId,
+      ...(mountId === null ? {} : { mountId }),
+    });
     const claim =
       pr === null || repo === null
         ? null
@@ -546,6 +555,7 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
     const portChecks = host !== 'github' && view !== null ? view.checks : null;
     return pullRequestFacts({
       sessionId: target.sessionId,
+      mountId,
       host,
       pr,
       checks: detailMatches ? detail.checks : portChecks === null ? null : portChecks.runs,
@@ -568,6 +578,12 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
       isScribeWriting: sessionMountViews({ state, sessionId: target.sessionId }).some((view) =>
         isScribeWriting({ scribeWork: state.scribeWork, mountId: view.id }),
       ),
+      isRebaseStopOpen: hasOpenRebaseStopOf({
+        state,
+        sessionId: target.sessionId,
+        mountId,
+        status: null,
+      }),
       ...signals,
       ...(view === null
         ? {}

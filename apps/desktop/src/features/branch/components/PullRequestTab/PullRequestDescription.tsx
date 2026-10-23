@@ -18,6 +18,8 @@ import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entry
 import { embedImageUrl } from './embedImageUrl';
 import { RenderedBody } from './RenderedBody';
 
+const DESCRIPTION = 'Description';
+
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId | null;
@@ -161,8 +163,8 @@ export const PullRequestDescription = ({
   );
 
   return (
-    <section aria-label="Description" className="flex min-w-0 flex-col gap-3">
-      <SectionHeader label="Description" headingLevel={2} action={action} />
+    <section aria-label={DESCRIPTION} className="flex min-w-0 flex-col gap-3">
+      <SectionHeader label={DESCRIPTION} headingLevel={2} action={action} />
       {isEditing ? (
         <div className="flex min-w-0 flex-col gap-3">
           <SegmentedTabs<EditorView>
@@ -222,7 +224,7 @@ export const PullRequestDescription = ({
           className={canEdit ? 'cursor-text rounded-md' : undefined}
           data-testid="pull-request-description"
         >
-          <RenderedBody text={pr.body} workspaceId={workspaceId} />
+          <RenderedBody text={pr.body} workspaceId={workspaceId} demoteUnder={DESCRIPTION} />
         </div>
       ) : (
         <EmptyLine

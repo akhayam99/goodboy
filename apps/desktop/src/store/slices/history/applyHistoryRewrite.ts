@@ -340,6 +340,7 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
       projectId: target.projectId,
     }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
     if (pushed.kind === 'pushed') {
+      get().recordLocalCheck({ mountId, answer: { error: null }, at: Date.now() });
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushed', stop: null } });
       await refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] }).catch(
         () => undefined,
@@ -382,6 +383,13 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
             sha: null,
           }
         : { reason: 'push-failed', message: pushed.message, files: [], sha: null };
+    if (pushed.kind === 'failed') {
+      get().recordLocalCheck({
+        mountId,
+        answer: { error: pushed.message },
+        at: Date.now(),
+      });
+    }
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop } });
     await reportHistoryStop({ get, set, target, origin, stop, planId });
     return 'stopped';

@@ -2,6 +2,7 @@ import type { PrCheckRun, PrDetail, PullRequestView } from '@goodboy/types';
 import { checksCountsOf, checksWordOf } from '../../../integrations/github/checksRollup';
 import { openReviewThreadIds } from '../../../../store/slices/resolve/openReviewThreadIds';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
+import { groupBotActivity } from './groupBotActivity';
 
 type ReviewVerdict = 'approved' | 'changes_requested' | 'commented';
 
@@ -44,6 +45,12 @@ export type ActivityItem =
       readonly text: string;
       readonly isRunning: boolean;
       readonly isFailing: boolean;
+    }
+  | {
+      readonly kind: 'bots';
+      readonly key: string;
+      readonly at: string;
+      readonly comments: ReadonlyArray<{ readonly who: string; readonly text: string }>;
     }
   | { readonly kind: 'edit'; readonly key: string; readonly at: string; readonly what: string }
   | {
@@ -219,8 +226,10 @@ export const pullRequestActivityOf = ({
     })),
     ...endOf({ view }),
   ];
-  return items
-    .map((item, index) => ({ item, index }))
-    .sort((a, b) => a.item.at.localeCompare(b.item.at) || a.index - b.index)
-    .map(({ item }) => item);
+  return groupBotActivity({
+    items: items
+      .map((item, index) => ({ item, index }))
+      .sort((a, b) => a.item.at.localeCompare(b.item.at) || a.index - b.index)
+      .map(({ item }) => item),
+  });
 };

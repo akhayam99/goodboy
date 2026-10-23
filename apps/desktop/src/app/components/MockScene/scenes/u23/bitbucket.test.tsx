@@ -127,16 +127,16 @@ describe('the Bitbucket scenes', () => {
     );
   });
 
-  it('reads the readiness, reviewers, checks and base in the property block', async () => {
+  it('reads the merge state in the strip and the reviewers in the property block', async () => {
     await show();
     const side = within(properties());
 
-    expect(screen.getByTestId('pr-readiness').textContent).toMatch(/check/);
+    expect(document.querySelector('[data-cell="merge"]')?.textContent ?? '').not.toBe('');
     expect(side.getByText('kenji-w')).toBeDefined();
     expect(side.getByText('Approved')).toBeDefined();
-    expect(side.getByText('Changes requested')).toBeDefined();
-    expect(side.getByText('Pending')).toBeDefined();
-    expect(side.getByRole('region', { name: 'Base' }).textContent).toContain('main');
+    expect(side.getByText('Changes')).toBeDefined();
+    expect(side.getByText('Asked')).toBeDefined();
+    expect(side.queryByRole('region', { name: 'Base' })).toBeNull();
     expect(side.queryByRole('region', { name: 'Files changed' })).toBeNull();
   });
 

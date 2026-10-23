@@ -129,11 +129,11 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     description: pushDescription,
     icon: ArrowUpToLine,
     group: 'act',
-    when: ({ facts }) =>
-      facts.unpushed > 0 && hasPr({ facts }) && facts.pr !== 'merged' && !facts.isRebasing,
+    when: ({ facts }) => facts.unpushed > 0 && facts.pr !== 'merged' && !facts.isRebasing,
     blockedReason: pushBlockedReason,
     confirm: pushConfirm,
-    slot: ({ facts }) => (facts.behind === 0 && !facts.isDiverged ? 'primary' : 'menu'),
+    slot: ({ facts }) =>
+      hasPr({ facts }) && facts.behind === 0 && !facts.isDiverged ? 'primary' : 'menu',
     pendingLabel: () => 'Pushing…',
     doneLabel: pushDoneLabel,
     run: ({ facts, env }) =>

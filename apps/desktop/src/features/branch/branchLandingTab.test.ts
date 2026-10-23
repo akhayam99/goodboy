@@ -6,16 +6,11 @@ import { branchLandingTabOf } from './branchLandingTab';
 const TABS: ReadonlyArray<BranchTab> = ['pr', 'comments', 'files', 'commits', 'checks'];
 
 describe('branchLandingTabOf', () => {
-  it('lands on the pull request when the active mount has one', () => {
-    expect(branchLandingTabOf({ hasPullRequest: true, deepLink: null })).toBe('pr');
-  });
-
-  it('lands on Files when the branch has no pull request yet', () => {
-    expect(branchLandingTabOf({ hasPullRequest: false, deepLink: null })).toBe('files');
+  it('lands on Pull request, the pull request or the branch page of a branch without one', () => {
+    expect(branchLandingTabOf({ deepLink: null })).toBe('pr');
   });
 
   it.each(TABS)('lets an explicit %s tab win over the rule', (tab) => {
-    expect(branchLandingTabOf({ hasPullRequest: true, deepLink: tab })).toBe(tab);
-    expect(branchLandingTabOf({ hasPullRequest: false, deepLink: tab })).toBe(tab);
+    expect(branchLandingTabOf({ deepLink: tab })).toBe(tab);
   });
 });

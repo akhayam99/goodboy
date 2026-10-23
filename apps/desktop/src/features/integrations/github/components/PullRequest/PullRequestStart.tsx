@@ -1,4 +1,5 @@
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { ReactNode } from 'react';
+import type { MountId, SessionId, WorkspaceId } from '@goodboy/types';
 import { GithubConnectionEmptyState } from '../GithubConnectionEmptyState';
 import { CreatePrPanel } from './CreatePrPanel';
 
@@ -9,7 +10,11 @@ type CreatedPullRequest = {
 type Props = {
   readonly sessionId: SessionId;
   readonly workspaceId: WorkspaceId;
+  readonly mountId: MountId | null;
   readonly defaultTitle: string;
+  readonly defaultBody: string;
+  readonly submitVariant?: 'primary' | 'secondary';
+  readonly trailing?: ReactNode;
   readonly isRepoMissing: boolean;
   readonly isConnected: boolean;
   readonly onConnected: () => void;
@@ -19,7 +24,11 @@ type Props = {
 export const PullRequestStart = ({
   sessionId,
   workspaceId,
+  mountId,
   defaultTitle,
+  defaultBody,
+  submitVariant = 'primary',
+  trailing = null,
   isRepoMissing,
   isConnected,
   onConnected,
@@ -34,5 +43,15 @@ export const PullRequestStart = ({
       />
     );
   }
-  return <CreatePrPanel sessionId={sessionId} defaultTitle={defaultTitle} onCreated={onCreated} />;
+  return (
+    <CreatePrPanel
+      sessionId={sessionId}
+      mountId={mountId}
+      defaultTitle={defaultTitle}
+      defaultBody={defaultBody}
+      submitVariant={submitVariant}
+      trailing={trailing}
+      onCreated={onCreated}
+    />
+  );
 };
