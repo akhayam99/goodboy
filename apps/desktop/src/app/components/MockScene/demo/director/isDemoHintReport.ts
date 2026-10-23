@@ -19,7 +19,11 @@ const isLength = ({ data, field }: FieldParams): boolean => {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= LIMIT;
 };
 
-const isRect = (value: unknown): boolean => {
+type ValueParams = {
+  readonly value: unknown;
+};
+
+const isRect = ({ value }: ValueParams): boolean => {
   if (value === null) {
     return true;
   }
@@ -50,7 +54,7 @@ export const isDemoHintReport = (data: unknown): data is DemoHintReport => {
   }
   return (
     (hintId === null || isHintId(hintId)) &&
-    isRect(Reflect.get(data, 'rect')) &&
+    isRect({ value: Reflect.get(data, 'rect') }) &&
     typeof Reflect.get(data, 'isOffscreen') === 'boolean'
   );
 };

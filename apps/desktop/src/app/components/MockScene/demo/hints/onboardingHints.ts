@@ -46,7 +46,14 @@ const isFirstTaskAnswered = ({ state }: StateParams): boolean => {
     return false;
   }
   const isBusy = state.agentTurnState[agentId]?.kind === 'running';
-  return !isBusy && (state.transcripts[agentId] ?? []).some((event) => event.kind === 'done');
+  const isStopped = (state.sessionPhaseRuns[sessionId] ?? []).some(
+    (agent) => agent.id === agentId && agent.status === 'stopped',
+  );
+  return (
+    !isBusy &&
+    !isStopped &&
+    (state.transcripts[agentId] ?? []).some((event) => event.kind === 'done')
+  );
 };
 
 const WORKSPACE_CREATE = '[data-step="workspace"] [data-demo-anchor="setup-create"]';

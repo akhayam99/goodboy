@@ -52,7 +52,7 @@ export const FolderRows = ({ draft, home, destinationName, isBusy }: Props) => {
           variant="ghost"
           size="sm"
           disabled={isBusy}
-          isBusy={draft.readingPath !== null}
+          isBusy={draft.readingPath !== null || draft.isPicking}
           busyLabel="Reading folder"
           onClick={() => void draft.addFolder()}
         >

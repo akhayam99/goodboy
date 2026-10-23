@@ -23,6 +23,8 @@ import {
 import { createPlaybackClock } from './createPlaybackClock';
 import { createSceneDirector } from './createSceneDirector';
 import { createSimulatedSend } from './createSimulatedSend';
+import { createReplyRuns } from './createReplyRuns';
+import { createSimulatedAnswer } from './createSimulatedAnswer';
 import { agentTimeline } from './agentTimeline';
 
 let store: StoryStore;
@@ -121,6 +123,7 @@ describe('the simulated send', () => {
       reply: 'On it. Done soon.',
       now: nowIso,
       shouldClearDraft: true,
+      runs: createReplyRuns(),
     });
     await send({ sessionId: session.id, agentId: agent.id, content: 'Log the event id.' });
     const started = store.getState();
@@ -136,5 +139,72 @@ describe('the simulated send', () => {
     );
     expect(replies.slice(-2).join('')).toBe('On it. Done soon.');
     expect(settled.agentTurnState[agent.id]?.kind).toBe('idle');
+  });
+
+  it('answers during a follow-up after it, with its own run, and stays running until both end', async () => {
+    seed();
+    const runs = createReplyRuns();
+    const send = createSimulatedSend({
+      store,
+      reply: 'On it. Done soon.',
+      now: nowIso,
+      shouldClearDraft: true,
+      runs,
+    });
+    const answer = createSimulatedAnswer({
+      store,
+      send: createSimulatedSend({
+        store,
+        reply: 'Thanks. Carrying on.',
+        now: nowIso,
+        shouldClearDraft: false,
+        runs,
+      }),
+      now: nowIso,
+    });
+    await send({ sessionId: session.id, agentId: agent.id, content: 'Log the event id.' });
+    await answer(session.id, [{ id: QUESTION.id, text: QUESTION.text, answer: 'Badge' }], null);
+    const runIdsOf = (): ReadonlyArray<string> => [
+      ...new Set(
+        (store.getState().transcripts[agent.id] ?? [])
+          .filter((event) => event.runId !== RUN)
+          .map((event) => event.runId),
+      ),
+    ];
+    vi.advanceTimersByTime(6000);
+    expect(store.getState().agentTurnState[agent.id]?.kind).toBe('running');
+    vi.advanceTimersByTime(20000);
+    const events = (store.getState().transcripts[agent.id] ?? []).filter(
+      (event) => event.runId !== RUN,
+    );
+    expect(runIdsOf()).toHaveLength(2);
+    expect(events.map((event) => event.kind)).toEqual([
+      'user_text',
+      'assistant_text',
+      'assistant_text',
+      'done',
+      'user_text',
+      'assistant_text',
+      'assistant_text',
+      'done',
+    ]);
+    expect(store.getState().agentTurnState[agent.id]?.kind).toBe('idle');
+  });
+
+  it('drops the pending reply once the runs are cancelled', async () => {
+    seed();
+    const runs = createReplyRuns();
+    const send = createSimulatedSend({
+      store,
+      reply: 'On it. Done soon.',
+      now: nowIso,
+      shouldClearDraft: true,
+      runs,
+    });
+    await send({ sessionId: session.id, agentId: agent.id, content: 'Log the event id.' });
+    const before = store.getState().transcripts[agent.id]?.length ?? 0;
+    runs.dispose();
+    vi.advanceTimersByTime(20000);
+    expect(store.getState().transcripts[agent.id]).toHaveLength(before);
   });
 });

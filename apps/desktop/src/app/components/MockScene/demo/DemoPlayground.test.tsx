@@ -390,6 +390,34 @@ describe('demo playground', () => {
     expect(note.className).toContain('pointer-events-auto');
   });
 
+  it('tracks the hints again and drops a stale hint once the frame reloads', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send' });
+    expect(screen.getByRole('note', { name: 'Hint 1 of 3' })).not.toBeNull();
+    report({ frame, type: 'ready' });
+    expect(screen.queryByRole('note')).toBeNull();
+    const tracks = post.mock.calls.filter(
+      ([message]) => typeof message === 'object' && message !== null && message.type === 'hints',
+    );
+    expect(tracks).toHaveLength(2);
+  });
+
+  it('plays a reloaded frame again', () => {
+    window.history.replaceState(null, '', '/?scene=demo#find');
+    render(<DemoPlayground />);
+    const board = frameOf({ scene: 'board-shell' });
+    const post = vi.spyOn(board.contentWindow ?? window, 'postMessage');
+    report({ frame: board, type: 'ready' });
+    report({ frame: board, type: 'ready' });
+    const plays = post.mock.calls.filter(
+      ([message]) => typeof message === 'object' && message !== null && message.type === 'play',
+    );
+    expect(plays).toHaveLength(2);
+  });
+
   it('drops a hint from a stale generation or from a window that is not the visible frame', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
@@ -443,8 +471,52 @@ describe('demo playground', () => {
     tried({ frame, hintId: 'agent-answer' });
     expect(screen.getAllByText(/1 of 3/)).toHaveLength(2);
     expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
-      agent: { tried: ['agent-answer'], skipped: [] },
+      agent: { tried: ['agent-answer'], skipped: [], epoch: 0 },
     });
+  });
+
+  it('follows another tab and never overwrites its progress', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const otherTab = JSON.stringify({
+      agent: { tried: ['agent-files'], skipped: [], epoch: 0 },
+      setup: { tried: ['setup-start'], skipped: [], epoch: 0 },
+    });
+    window.localStorage.setItem(HINT_PROGRESS_KEY, otherTab);
+    tried({ frame, hintId: 'agent-answer' });
+    expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
+      agent: { tried: ['agent-files', 'agent-answer'], skipped: [], epoch: 0 },
+      setup: { tried: ['setup-start'], skipped: [], epoch: 0 },
+    });
+    expect(screen.getAllByText(/2 of 3/)).toHaveLength(2);
+    act(() => {
+      window.localStorage.setItem(
+        HINT_PROGRESS_KEY,
+        JSON.stringify({ agent: { tried: [], skipped: [], epoch: 1 } }),
+      );
+      window.dispatchEvent(new StorageEvent('storage', { key: HINT_PROGRESS_KEY }));
+    });
+    expect(screen.getAllByText(/0 of 3/)).toHaveLength(2);
+  });
+
+  it('does not bring back a group another tab replayed', () => {
+    window.localStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({ agent: { tried: ['agent-answer'], skipped: [], epoch: 0 } }),
+    );
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    window.localStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({ agent: { tried: [], skipped: [], epoch: 1 } }),
+    );
+    tried({ frame, hintId: 'agent-files' });
+    expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
+      agent: { tried: [], skipped: [], epoch: 1 },
+    });
+    expect(screen.getAllByText(/0 of 3/)).toHaveLength(2);
   });
 
   it('starts with the stored progress and resets only this group on replay', () => {

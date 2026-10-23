@@ -10,11 +10,11 @@ vi.mock('../../../lib/db', async () =>
   (await import('../../../../store/storyHarness')).dbLibModuleMock(),
 );
 const { dialog } = vi.hoisted(() => {
-  const picks: Array<string | null> = [];
+  const picks: Array<string | null | Promise<string | null>> = [];
   return { dialog: { picks } };
 });
 vi.mock('@tauri-apps/plugin-dialog', () => ({
-  open: vi.fn(async () => dialog.picks.shift() ?? null),
+  open: vi.fn(async () => (await dialog.picks.shift()) ?? null),
 }));
 vi.mock('@tauri-apps/api/path', () => ({ homeDir: vi.fn(async () => '/mock') }));
 
@@ -259,6 +259,60 @@ describe('useWorkspaceDraft', () => {
 
     expect(result.current.folders.map((folder) => folder.path)).toEqual([ACME_WEB]);
     expect(result.current.name).toBe('Acme web');
+  });
+
+  it('keeps a newer pick when an older folder dialog answers late', async () => {
+    const slow = deferred<string | null>();
+    dialog.picks = [slow.promise, ACME_WEB];
+    const { result } = draftHook();
+
+    let first: Promise<void> = Promise.resolve();
+    act(() => {
+      first = result.current.choose();
+    });
+    expect(result.current.isPicking).toBe(true);
+    await act(() => result.current.choose());
+    slow.resolve(DOCS);
+    await act(() => first);
+
+    expect(result.current.folders.map((folder) => folder.path)).toEqual([ACME_WEB]);
+    expect(result.current.isPicking).toBe(false);
+  });
+
+  it('drops a folder picked after the visitor moved to start from scratch', async () => {
+    const slow = deferred<string | null>();
+    dialog.picks = [slow.promise];
+    const { result } = draftHook();
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.choose();
+    });
+    act(() => result.current.startScratch());
+    expect(result.current.isPicking).toBe(false);
+    slow.resolve(ACME_WEB);
+    await act(() => pending);
+
+    expect(result.current.stage).toBe('scratch');
+    expect(result.current.folders).toEqual([]);
+  });
+
+  it('reads nothing for a folder picked after the form closed', async () => {
+    const slow = deferred<string | null>();
+    const validate = vi.fn((args: unknown) => CHECKS[pathOf(args)] ?? null);
+    stubFolders({ validate_git_repo: validate });
+    dialog.picks = [slow.promise];
+    const { result, unmount } = draftHook();
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.choose();
+    });
+    unmount();
+    slow.resolve(ACME_WEB);
+    await pending;
+
+    expect(validate).not.toHaveBeenCalled();
   });
 
   it('preselects the face from what a plain folder holds and sends it with Create', async () => {

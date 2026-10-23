@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { brandId, type FolderPurpose, type ProjectId, type WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
@@ -99,6 +99,7 @@ export type WorkspaceDraft = {
   readonly folderCount: number;
   readonly block: string | null;
   readonly readingPath: string | null;
+  readonly isPicking: boolean;
   readonly isCreating: boolean;
   readonly error: string | null;
   readonly scratch: NewProjectModel;
@@ -186,9 +187,17 @@ export const useWorkspaceDraft = ({
   );
   const [editedName, setEditedName] = useState<string | null>(null);
   const [readingPath, setReadingPath] = useState<string | null>(null);
+  const [isPicking, setIsPicking] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pickRef = useRef(0);
+
+  useEffect(() => {
+    const picks = pickRef;
+    return () => {
+      picks.current += 1;
+    };
+  }, []);
 
   const isScratch = draft.stage === 'scratch';
   const only = draft.folders.length === 1 ? draft.folders[0] : undefined;
@@ -218,6 +227,21 @@ export const useWorkspaceDraft = ({
   const invalidate = () => {
     pickRef.current += 1;
     setReadingPath(null);
+    setIsPicking(false);
+  };
+
+  const pickPath = async (): Promise<string | null> => {
+    pickRef.current += 1;
+    const pick = pickRef.current;
+    setIsPicking(true);
+    try {
+      const picked = await pickFolder();
+      return pick === pickRef.current ? picked : null;
+    } finally {
+      if (pick === pickRef.current) {
+        setIsPicking(false);
+      }
+    }
   };
 
   const read = async ({ path, replaces }: ReadParams) => {
@@ -265,7 +289,7 @@ export const useWorkspaceDraft = ({
   };
 
   const choose = async () => {
-    const picked = await pickFolder();
+    const picked = await pickPath();
     if (picked !== null) {
       await read({ path: picked, replaces: 'all' });
     }
@@ -281,7 +305,7 @@ export const useWorkspaceDraft = ({
   };
 
   const addFolder = async () => {
-    const picked = await pickFolder();
+    const picked = await pickPath();
     if (picked !== null) {
       await read({ path: picked, replaces: null });
     }
@@ -295,7 +319,7 @@ export const useWorkspaceDraft = ({
   };
 
   const chooseAnother = async ({ pick }: PickParams) => {
-    const picked = await pickFolder();
+    const picked = await pickPath();
     if (picked !== null) {
       await read({ path: picked, replaces: replacementOf({ pick }) });
     }
@@ -496,6 +520,7 @@ export const useWorkspaceDraft = ({
     folderCount,
     block,
     readingPath,
+    isPicking,
     isCreating,
     error,
     scratch,

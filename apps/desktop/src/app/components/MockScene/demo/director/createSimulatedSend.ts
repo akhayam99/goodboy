@@ -1,15 +1,10 @@
-import {
-  brandId,
-  type AgentId,
-  type IsoDateTime,
-  type ProviderRunId,
-  type SessionId,
-} from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import type { SendTurnInput, SendTurnResult } from '../../../../../store/slices/turn/types';
 import type { DirectorStore } from './directorTypes';
 import { appendTurnEvents } from './appendTurnEvents';
 import { startAgentTurn } from './startAgentTurn';
 import { finishAgentTurn } from './finishAgentTurn';
+import type { ReplyRuns } from './createReplyRuns';
 
 const THINK_MS = 1200;
 const SENTENCE_MS = 1300;
@@ -20,6 +15,7 @@ type Params = {
   readonly reply: string;
   readonly now: () => IsoDateTime;
   readonly shouldClearDraft: boolean;
+  readonly runs: ReplyRuns;
 };
 
 type AgentParams = {
@@ -58,30 +54,51 @@ type StreamParams = {
   readonly runId: ProviderRunId;
 };
 
-export const createSimulatedSend = ({ store, reply, now, shouldClearDraft }: Params) => {
-  let turns = 0;
+type StartParams = StreamParams & {
+  readonly content: string;
+};
+
+export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs }: Params) => {
   const stream = ({ sessionId, agentId, runId }: StreamParams): void => {
     const sentences = sentencesOf({ text: reply });
     sentences.forEach((delta, index) => {
-      setTimeout(
-        () => {
+      runs.later({
+        agentId,
+        runId,
+        delayMs: THINK_MS + index * SENTENCE_MS,
+        run: () => {
           appendTurnEvents({
             store,
             agentId,
             events: [{ kind: 'assistant_text', runId, delta, at: now() }],
           });
         },
-        THINK_MS + index * SENTENCE_MS,
-      );
+      });
     });
-    setTimeout(
-      () => {
+    runs.later({
+      agentId,
+      runId,
+      delayMs: THINK_MS + sentences.length * SENTENCE_MS + DONE_MS,
+      run: () => {
         const at = now();
         appendTurnEvents({ store, agentId, events: [{ kind: 'done', runId, at }] });
-        finishAgentTurn({ store, sessionId, agentId, at, isViewed: true });
+        runs.finish({
+          agentId,
+          runId,
+          onIdle: () => finishAgentTurn({ store, sessionId, agentId, at, isViewed: true }),
+        });
       },
-      THINK_MS + sentences.length * SENTENCE_MS + DONE_MS,
-    );
+    });
+  };
+  const start = ({ sessionId, agentId, runId, content }: StartParams): void => {
+    const at = now();
+    appendTurnEvents({
+      store,
+      agentId,
+      events: [{ kind: 'user_text', runId, text: content, at }],
+    });
+    startAgentTurn({ store, sessionId, agentId, runId, at });
+    stream({ sessionId, agentId, runId });
   };
   return async ({
     sessionId,
@@ -93,14 +110,7 @@ export const createSimulatedSend = ({ store, reply, now, shouldClearDraft }: Par
     if (agentId === null) {
       return { blockedOverBudget: false };
     }
-    turns += 1;
-    const runId = brandId<ProviderRunId>({ value: `demo-run-${agentId}-${turns}` });
-    const at = now();
-    appendTurnEvents({
-      store,
-      agentId,
-      events: [{ kind: 'user_text', runId, text: content, at }],
-    });
+    const runId = runs.nextRunId({ agentId });
     if (shouldClearDraft) {
       store.setState((current) => ({
         agentDraft: Object.fromEntries(
@@ -108,9 +118,12 @@ export const createSimulatedSend = ({ store, reply, now, shouldClearDraft }: Par
         ),
       }));
     }
-    startAgentTurn({ store, sessionId, agentId, runId, at });
+    runs.enqueue({
+      agentId,
+      runId,
+      start: () => start({ sessionId, agentId, runId, content }),
+    });
     onStarted?.();
-    stream({ sessionId, agentId, runId });
     return { blockedOverBudget: false };
   };
 };

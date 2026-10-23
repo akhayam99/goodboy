@@ -3105,7 +3105,10 @@ the workspace they name by id). The form owns its action row.
 - **Pick or drop a folder.** Choose folder (Cmd+O) or a drop on the drop area
   only reads: `validate_git_repo`, `scan_child_repos` and the move preview fill
   a draft in memory (`useWorkspaceDraft`). Each read carries a pick number and a
-  late answer for an older pick is dropped. A repository shows Git and its
+  late answer for an older pick is dropped. The pick number is taken before the
+  folder dialog opens (`isPicking` keeps Choose folder busy), so a folder that
+  answers after a newer pick, Start from scratch, Back or closing the form is
+  dropped too. A repository shows Git and its
   default branch; a subfolder of one snaps to its root and says so; a folder of
   repositories lists them checked; a plain folder offers git init on Create; a
   folder that cannot be read says why (macOS privacy opens Privacy settings

@@ -74,7 +74,8 @@ lazy-loads `MockScene/demo/phone/DemoPhone` instead of `MockScene`, so no
 scene chunk and no iframe loads. The page says what Goodboy is, stars the
 repository and hands the canonical demo link (with a valid chapter hash) to
 the Web Share API, or copies it and confirms only once the clipboard
-resolves. A tablet with a trackpad reports a fine pointer and gets the
+resolves. A cancelled share changes nothing; a failed copy shows the link in a
+read-only field to select by hand and turns the button into Try again. A tablet with a trackpad reports a fine pointer and gets the
 playground. `shouldOpenDemoPhone.ts` owns the rule and `DemoPhone.test.tsx`
 pins it.
 
@@ -369,7 +370,11 @@ every cue left and reports `complete`), so the scene never writes over the
 visitor's changes and there is nothing to pause. Under reduced motion the
 frame settles on the seeded scene. In a directed frame `sendTurn` is
 simulated: it appends the user turn, runs the agent and streams a reply
-through the same live text path, so a composer never reaches IPC, and
+through the same live text path, so a composer never reaches IPC. Sends and
+answers share one `createReplyRuns` per frame: every run gets its own id, a
+second reply for an agent waits until the first one ends (the agent stays
+running in between), and a timer whose run is no longer active writes nothing.
+A restart cancels the pending replies, and
 `useFakeTauri` keeps its fake boundary for the whole visit. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
@@ -386,7 +391,9 @@ resize in one animation frame and reports `anchor` (the first untried hint whose
 control exists, with its rect, or `isOffscreen` when a scroll container or the
 viewport hides it) and `tried` (a hint whose done check held after its reveal
 check did). Reports carry the frame's generation and the stage
-drops any from an older generation or another frame. The stage draws one note
+drops any from an older generation or another frame. A frame that reports
+`ready` again (it reloaded) loses its note, and the stage sends it `play` and
+`hints` again. The stage draws one note
 beside the anchor through the stage scale, a 2px outline and a callout that
 tries the other sides near an edge (below before the opposite side); only the
 callout takes clicks. A control scrolled out of view gets a note at the bottom
@@ -396,7 +403,10 @@ it. A hint with `nextChapterId` is the closing note of a group: it counts no
 outcome and offers Next to that group instead of Skip. The rail and the header count distinct
 outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
 (every read and write survives blocked storage), and Replay clears the open
-group only. Another group gets hints by adding a data file and a `hints` entry.
+group only. Every change reads the stored progress first and writes one
+group back, so two tabs never overwrite each other, and a `storage` event
+updates the other tab. Replay bumps the group's `epoch`; a mark made against
+an older epoch is dropped, so a stale tab cannot bring a replayed group back. Another group gets hints by adding a data file and a `hints` entry.
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
 answer, keeps the unsent draft and streams a short acknowledgment.
 
@@ -408,7 +418,12 @@ notify-relay) after a short delay, the git checks and a committed
 on `setCurrentWorkspace` and starts the first task through
 `startSampleScout.ts`: it seeds a Scout session, appends the visitor's prompt and
 streams a reply picked by `sampleScoutReply.ts`, and `OnboardingScene` shows
-that session in the app shell once the wizard closes.
+that session in the app shell once the wizard closes. The reply runs on
+`sampleScoutRuns`: Stop cancels its timers and marks Scout stopped, so a
+stopped run never ends in the setup done note, and leaving or reseeding the
+scene cancels them too. On Your tools, Connect adds a mock account
+(`connectDemoTool.ts`, through `InstantToolConnectContext`) instead of opening
+the key form, the way Sign in works for agents.
 
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens

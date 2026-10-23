@@ -50,6 +50,10 @@ type AnchorParams = {
   readonly probe: HintProbe;
 };
 
+type ElementParams = {
+  readonly element: Element | null;
+};
+
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
 
 type Placement = {
@@ -135,7 +139,7 @@ export const createHintEngine = ({
     return root.querySelector(selector);
   };
 
-  const placementOf = (element: Element | null): Placement => {
+  const placementOf = ({ element }: ElementParams): Placement => {
     if (element === null) {
       return MISSING;
     }
@@ -207,7 +211,7 @@ export const createHintEngine = ({
       )
       .map((hint) => ({
         hint,
-        placement: placementOf(anchorOf({ hint, probe: probeOf({ hint, state }) })),
+        placement: placementOf({ element: anchorOf({ hint, probe: probeOf({ hint, state }) }) }),
       }))
       .find((candidate) => candidate.placement.rect !== null || candidate.placement.isOffscreen);
     const rect = current?.placement.rect ?? null;

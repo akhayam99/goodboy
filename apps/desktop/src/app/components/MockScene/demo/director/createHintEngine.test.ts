@@ -27,6 +27,7 @@ import { setupPlace } from '../hints/setupPlace';
 import { createHintEngine } from './createHintEngine';
 import { createSimulatedAnswer } from './createSimulatedAnswer';
 import { createSimulatedSend } from './createSimulatedSend';
+import { createReplyRuns } from './createReplyRuns';
 import type { DemoHintReport } from './demoProtocol';
 
 let store: StoryStore;
@@ -129,7 +130,13 @@ const frame = async (): Promise<void> => {
 };
 
 const sendOf = () =>
-  createSimulatedSend({ store, reply: 'On it. Done.', now: () => AT, shouldClearDraft: true });
+  createSimulatedSend({
+    store,
+    reply: 'On it. Done.',
+    now: () => AT,
+    shouldClearDraft: true,
+    runs: createReplyRuns(),
+  });
 
 describe('the hint engine', () => {
   it('stays silent until the shell names a track', async () => {
@@ -187,6 +194,7 @@ describe('the hint engine', () => {
         reply: 'Thanks.',
         now: () => AT,
         shouldClearDraft: false,
+        runs: createReplyRuns(),
       }),
       now: () => AT,
     });

@@ -24,6 +24,7 @@ import { sceneClock } from '../../sceneClock';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { setupSceneAnswer } from './setupSceneAnswer';
 import { startSampleScout } from './startSampleScout';
+import { sampleScoutRuns } from './sampleScoutRuns';
 
 export type WizardSceneAgents = 'ready' | 'signin' | 'none' | 'error';
 
@@ -242,6 +243,7 @@ type SeedParams = AgentsParams & {
 };
 
 export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded => {
+  sampleScoutRuns.cancel();
   const detected = agentsFor({ agents });
   const seeded = SEEDED[ws];
   const { workspace } = seeded;
