@@ -5,7 +5,7 @@ import { appendTurnEvents } from './appendTurnEvents';
 import { startAgentTurn } from './startAgentTurn';
 import { finishAgentTurn } from './finishAgentTurn';
 import type { ReplyRuns } from './createReplyRuns';
-import { trackDemoRun } from './demoRunRegistry';
+import { demoRuns } from './demoRunRegistry';
 
 const THINK_MS = 1200;
 const SENTENCE_MS = 1300;
@@ -49,18 +49,22 @@ const sentencesOf = ({ text }: SplitParams): ReadonlyArray<string> =>
         `${index === 0 ? '' : ' '}${part}${index < parts.length - 1 ? '.' : ''}`,
     );
 
-type StreamParams = {
+type RunParams = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly runId: ProviderRunId;
 };
 
-type StartParams = StreamParams & {
+type StreamParams = RunParams & {
+  readonly untrack: () => void;
+};
+
+type StartParams = RunParams & {
   readonly content: string;
 };
 
 export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs }: Params) => {
-  const stream = ({ sessionId, agentId, runId }: StreamParams): void => {
+  const stream = ({ sessionId, agentId, runId, untrack }: StreamParams): void => {
     const sentences = sentencesOf({ text: reply });
     sentences.forEach((delta, index) => {
       runs.later({
@@ -82,6 +86,7 @@ export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs 
       delayMs: THINK_MS + sentences.length * SENTENCE_MS + DONE_MS,
       run: () => {
         const at = now();
+        untrack();
         appendTurnEvents({ store, agentId, events: [{ kind: 'done', runId, at }] });
         runs.finish({
           agentId,
@@ -99,8 +104,8 @@ export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs 
       events: [{ kind: 'user_text', runId, text: content, at }],
     });
     startAgentTurn({ store, sessionId, agentId, runId, at });
-    trackDemoRun({ agentId, cancel: () => runs.cancelAgent({ agentId }) });
-    stream({ sessionId, agentId, runId });
+    const untrack = demoRuns.track({ agentId, cancel: () => runs.cancelAgent({ agentId }) });
+    stream({ sessionId, agentId, runId, untrack });
   };
   return async ({
     sessionId,

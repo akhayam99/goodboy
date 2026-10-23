@@ -376,8 +376,12 @@ through the same live text path, so a composer never reaches IPC. Sends and
 answers share one `createReplyRuns` per frame: every run gets its own id, a
 second reply for an agent waits until the first one ends (the agent stays
 running in between), and a timer whose run is no longer active writes nothing.
-A restart cancels the pending replies, Stop cancels the agent's through
-`demoRunRegistry.ts`, and
+Every other simulation (a run step, a review fix, an Auto run, a comment
+send) registers in the one run scope of `demoRunRegistry.ts` and leaves it once
+its last cue lands. A restart or a closed frame cancels the pending replies and
+the whole scope before the director restores the store, and a timer from an
+older generation writes nothing. Stop cancels the agent's runs through the same
+scope, and
 `useFakeTauri` keeps its fake boundary for the whole visit.
 
 A directed frame also installs one demo IPC boundary before the scene mounts

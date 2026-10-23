@@ -23,6 +23,10 @@ import type { DemoReport } from './demoProtocol';
 import type { DemoTimeline } from './directorTypes';
 import { boardTimeline } from './boardTimeline';
 import { runTimeline } from './runTimeline';
+import { installRunActions } from './runActions';
+import { installResolveActions } from './installResolveActions';
+import { demoRuns } from './demoRunRegistry';
+import { SESSION_ID as RESOLVE_SESSION_ID, seedResolveScene } from '../../scenes/resolveSeed';
 
 let store: StoryStore;
 
@@ -207,5 +211,65 @@ describe('the demo timelines', () => {
     expect(run?.currentStep).toBe(2);
     expect(reviewer?.status).toBe('completed');
     expect(state.transcripts[C08_REVIEWER_ID]?.at(-1)?.kind).toBe('done');
+  });
+});
+
+const STILL: DemoTimeline = { prepare: () => undefined, cues: [] };
+
+describe('a replay during a simulation', () => {
+  it('drops a running workflow step instead of finishing it in the restored scene', async () => {
+    seedC08({ state: 'ready', selection: 'implementer' });
+    const { director } = direct({ timeline: { ...STILL, setup: installRunActions } });
+    director.start();
+    const seeded = store.getState();
+    await store
+      .getState()
+      .activateWorkflowAgent({ sessionId: C08_SESSION_ID, agentId: C08_REVIEWER_ID });
+    vi.advanceTimersByTime(2000);
+    director.restart({ generation: 1 });
+    vi.advanceTimersByTime(20000);
+    const state = store.getState();
+    expect(state.transcripts[C08_REVIEWER_ID]).toEqual(seeded.transcripts[C08_REVIEWER_ID]);
+    expect(state.sessionPhaseRuns[C08_SESSION_ID]).toEqual(seeded.sessionPhaseRuns[C08_SESSION_ID]);
+    expect(state.agentTurnState[C08_REVIEWER_ID]).toEqual(seeded.agentTurnState[C08_REVIEWER_ID]);
+  });
+
+  it('drops a running review fix instead of drafting its reply in the restored scene', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    const { director } = direct({ timeline: { ...STILL, setup: installResolveActions } });
+    director.start();
+    const seeded = store.getState();
+    await store.getState().spawnAgent(RESOLVE_SESSION_ID, {
+      kindOverride: 'resolver',
+      sourceThreadIds: ['PRRT_thread_retry_constant'],
+      name: 'Resolve: 1 review comment',
+      humanPrompt: 'Fix this review comment.',
+    });
+    vi.advanceTimersByTime(2000);
+    director.restart({ generation: 1 });
+    vi.advanceTimersByTime(20000);
+    const state = store.getState();
+    expect(state.sessionResolveQueueItems[RESOLVE_SESSION_ID]).toEqual(
+      seeded.sessionResolveQueueItems[RESOLVE_SESSION_ID],
+    );
+    expect(state.sessionResolveAttempts[RESOLVE_SESSION_ID]).toEqual(
+      seeded.sessionResolveAttempts[RESOLVE_SESSION_ID],
+    );
+    expect(state.sessionPhaseRuns[RESOLVE_SESSION_ID]).toEqual(
+      seeded.sessionPhaseRuns[RESOLVE_SESSION_ID],
+    );
+  });
+
+  it('forgets a simulation once its last cue lands', async () => {
+    seedC08({ state: 'ready', selection: 'implementer' });
+    const { director } = direct({ timeline: { ...STILL, setup: installRunActions } });
+    director.start();
+    const before = demoRuns.size();
+    await store
+      .getState()
+      .activateWorkflowAgent({ sessionId: C08_SESSION_ID, agentId: C08_REVIEWER_ID });
+    expect(demoRuns.size()).toBe(before + 1);
+    vi.advanceTimersByTime(20000);
+    expect(demoRuns.size()).toBe(before);
   });
 });
