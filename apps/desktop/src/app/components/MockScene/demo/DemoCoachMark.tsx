@@ -52,11 +52,11 @@ const ENTER_SHIFT = {
   left: 'translateX(4px)',
 } as const satisfies Record<HintSide, string>;
 
-const CARET_EDGE = {
-  bottom: 'border-l border-t',
-  top: 'border-b border-r',
-  right: 'border-b border-l',
-  left: 'border-r border-t',
+const CARET_HALF = {
+  bottom: '[clip-path:polygon(0_0,100%_0,0_100%)]',
+  top: '[clip-path:polygon(100%_0,100%_100%,0_100%)]',
+  right: '[clip-path:polygon(0_0,100%_100%,0_100%)]',
+  left: '[clip-path:polygon(0_0,100%_0,100%_100%)]',
 } as const satisfies Record<HintSide, string>;
 
 type CaretParams = {
@@ -166,7 +166,10 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
         {placement === null ? null : (
           <span
             aria-hidden
-            className={cn('absolute size-2 rotate-45 border-border bg-floating', CARET_EDGE[side])}
+            className={cn(
+              'absolute size-2 rotate-45 border border-border bg-floating',
+              CARET_HALF[side],
+            )}
             style={caretStyle({
               side,
               target,

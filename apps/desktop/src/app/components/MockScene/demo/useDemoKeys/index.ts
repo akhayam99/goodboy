@@ -4,11 +4,10 @@ type Params = {
   readonly onPrevious: () => void;
   readonly onNext: () => void;
   readonly onReplay: () => void;
-  readonly onHideHint: () => void;
   readonly onShowHint: () => void;
 };
 
-export const useDemoKeys = ({ onPrevious, onNext, onReplay, onHideHint, onShowHint }: Params) =>
+export const useDemoKeys = ({ onPrevious, onNext, onReplay, onShowHint }: Params) =>
   useCallback(
     (event: KeyboardEvent<HTMLElement>) => {
       if (event.metaKey || event.ctrlKey || event.altKey) {
@@ -24,10 +23,6 @@ export const useDemoKeys = ({ onPrevious, onNext, onReplay, onHideHint, onShowHi
         onNext();
         return;
       }
-      if (event.key === 'Escape') {
-        onHideHint();
-        return;
-      }
       if (event.key === 'h' || event.key === 'H') {
         event.preventDefault();
         onShowHint();
@@ -38,5 +33,5 @@ export const useDemoKeys = ({ onPrevious, onNext, onReplay, onHideHint, onShowHi
         onReplay();
       }
     },
-    [onPrevious, onNext, onReplay, onHideHint, onShowHint],
+    [onPrevious, onNext, onReplay, onShowHint],
   );

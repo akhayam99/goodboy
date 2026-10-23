@@ -40,8 +40,9 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
   It then fails in a way that looks like a regression in the feature under
   test.
 - `main.tsx` checks it once, outside any component, when it decides what to
-  render at the root: `MOCK_ENABLED ? <MockScene /> : <App />`. `MockScene`
-  loads through `lazy()` behind a `Suspense`, so the scenes and their seed
+  render at the root: `MOCK_ENABLED ? <MockEntry /> : <App />`. `MockEntry`
+  (`MockScene/MockEntry.tsx`) loads through `lazy()` behind a `Suspense` and
+  lazy-loads either the phone page or `MockScene`, so the scenes and their seed
   data are a separate chunk that a production build never fetches. `App.tsx`
   itself has no mock branch, so a hot-reload never has to reconcile a
   different hook count between the two.
@@ -69,7 +70,7 @@ and open `http://localhost:5194/` for the playground, or
 `http://localhost:5194/?scene=chat-shell` for a single frame.
 
 A phone never gets the playground. When the pointer is coarse and nothing
-hovers (`(hover: none) and (pointer: coarse)`, never a width), `main.tsx`
+hovers (`(hover: none) and (pointer: coarse)`, never a width), `MockEntry`
 lazy-loads `MockScene/demo/phone/DemoPhone` instead of `MockScene`, so no
 scene chunk and no iframe loads. The page says what Goodboy is, stars the
 repository and hands the canonical demo link (with a valid chapter hash) to
@@ -375,7 +376,8 @@ through the same live text path, so a composer never reaches IPC. Sends and
 answers share one `createReplyRuns` per frame: every run gets its own id, a
 second reply for an agent waits until the first one ends (the agent stays
 running in between), and a timer whose run is no longer active writes nothing.
-A restart cancels the pending replies, and
+A restart cancels the pending replies, Stop cancels the agent's through
+`demoRunRegistry.ts`, and
 `useFakeTauri` keeps its fake boundary for the whole visit.
 
 A directed frame also installs one demo IPC boundary before the scene mounts

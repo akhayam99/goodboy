@@ -19,25 +19,16 @@ import {
   describeCrash,
   installCrashCapture,
 } from './features/bug-report/crashReport';
-import { shouldOpenDemoPhone } from './app/components/MockScene/demo/phone/shouldOpenDemoPhone';
 import './styles.css';
 
 bootstrapTheme();
 installCrashCapture();
 
-const MockScene = lazy(() =>
-  import('./app/components/MockScene').then((module) => ({ default: module.MockScene })),
-);
-
-const DemoPhone = lazy(() =>
-  import('./app/components/MockScene/demo/phone/DemoPhone').then((module) => ({
-    default: module.DemoPhone,
+const MockEntry = lazy(() =>
+  import('./app/components/MockScene/MockEntry').then((module) => ({
+    default: module.MockEntry,
   })),
 );
-
-const isDemoPhone =
-  MOCK_ENABLED &&
-  shouldOpenDemoPhone({ search: window.location.search, mode: import.meta.env.MODE });
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport
@@ -59,7 +50,9 @@ createRoot(container).render(
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
           <ScrollerStyleProvider>
             {MOCK_ENABLED ? (
-              <Suspense fallback={null}>{isDemoPhone ? <DemoPhone /> : <MockScene />}</Suspense>
+              <Suspense fallback={null}>
+                <MockEntry />
+              </Suspense>
             ) : (
               <App />
             )}

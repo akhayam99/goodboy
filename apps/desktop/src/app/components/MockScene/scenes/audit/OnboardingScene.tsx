@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { OnboardingWizard } from '../../../../../features/onboarding/OnboardingWizard';
 import { ChatView } from '../../../../../features/chat/components/ChatView';
 import { useAppStore } from '../../../../../store';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { ShellFrame } from '../shellChrome';
 import {
   WIZARD_STEPS,
@@ -67,11 +68,7 @@ const OPEN_DELAY_MS = 100;
 export const OnboardingScene = () => {
   const [setup] = useState(readSetup);
   const [isReady, setIsReady] = useState(false);
-  const session = useAppStore((state) =>
-    state.currentSessionId === null
-      ? undefined
-      : state.sessions.find((entry) => entry.id === state.currentSessionId),
-  );
+  const session = useAppStore((state) => sessionById(state.sessions, state.currentSessionId));
 
   useEffect(() => {
     const { step, agents, ws } = setup;
