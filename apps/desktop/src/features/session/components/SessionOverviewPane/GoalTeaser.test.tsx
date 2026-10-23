@@ -59,7 +59,7 @@ const fieldValue = ({ name }: FieldParams) => {
 type MountParams = { readonly current?: Session };
 const mount = ({ current = session }: MountParams = {}) => render(<GoalTeaser session={current} />);
 const ready = async () => {
-  fireEvent.click(screen.getByRole('button', { name: 'Write' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Write title and goal' }));
   await waitFor(() => expect(fieldValue({ name: 'Proposed title' })).toBe(BRIEF.title));
 };
 const goal = () =>
@@ -159,11 +159,13 @@ describe('GoalTeaser on the real store', () => {
   it('hints from two linked issues and persists Not now across reloads', () => {
     store.setState({ sessionExternalTasks: { [session.id]: TASKS } });
     mount();
-    expect(screen.getByText('Write the title and goal from HL-204 and HL-211?')).toBeDefined();
+    screen.getByText('Write the title and goal from');
+    screen.getByText('HL-204 and HL-211');
+    screen.getByText('Fix duplicate credits');
     fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
     cleanup();
     mount();
-    expect(screen.queryByRole('button', { name: 'Write' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Write title and goal' })).toBeNull();
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')).toEqual([session.id]);
   });
   it('keeps dismissal per session and caps the persisted ids', () => {
@@ -180,7 +182,7 @@ describe('GoalTeaser on the real store', () => {
     const other = aSession({ goal: 'Untitled session' });
     store.setState({ sessionExternalTasks: { [other.id]: TASKS } });
     mount({ current: other });
-    expect(screen.getByRole('button', { name: 'Write' })).toBeDefined();
+    screen.getByRole('button', { name: 'Write title and goal' });
   });
   it('keeps dismissal in memory when storage is blocked', () => {
     store.setState({ sessionExternalTasks: { [session.id]: TASKS } });
@@ -192,14 +194,14 @@ describe('GoalTeaser on the real store', () => {
     });
     mount();
     fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
-    expect(screen.queryByRole('button', { name: 'Write' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Write title and goal' })).toBeNull();
   });
   it('observes another window dismissing the hint', () => {
     store.setState({ sessionExternalTasks: { [session.id]: TASKS } });
     mount();
     localStorage.setItem(STORAGE_KEY, JSON.stringify([session.id]));
     fireEvent(window, new StorageEvent('storage', { key: STORAGE_KEY }));
-    expect(screen.queryByRole('button', { name: 'Write' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Write title and goal' })).toBeNull();
   });
   it('uses a compact label for three issues', () => {
     store.setState({
@@ -208,7 +210,7 @@ describe('GoalTeaser on the real store', () => {
       },
     });
     mount();
-    expect(screen.getByText('Write the title and goal from HL-204 and 2 more?')).toBeDefined();
+    screen.getByText('HL-204 and 2 more');
   });
   it('reads only after a click and writes both fields with one Undo', async () => {
     store.setState({ sessionExternalTasks: { [session.id]: TASKS } });
@@ -264,7 +266,7 @@ describe('GoalTeaser on the real store', () => {
       },
     });
     mount();
-    fireEvent.click(screen.getByRole('button', { name: 'Write' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write title and goal' }));
     await screen.findByRole('alert');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     await waitFor(() => expect(fieldValue({ name: 'Proposed title' })).toBe(BRIEF.title));
@@ -315,7 +317,7 @@ describe('GoalTeaser on the real store', () => {
     const model = vi.fn(() => ({ stdout: '', stderr: '', exitCode: 0 }));
     stubStoryInvoke({ linear_fetch_issue: () => pending, summarize_session: model });
     const view = mount();
-    fireEvent.click(screen.getByRole('button', { name: 'Write' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write title and goal' }));
     expect(screen.getByRole('status').textContent).toBe('Reading 2 issues');
     const other = aSession({ goal: 'Untitled session' });
     view.rerender(<GoalTeaser session={other} />);
@@ -355,7 +357,7 @@ describe('GoalTeaser on the real store', () => {
     );
     store.setState({ sessionExternalTasks: { [session.id]: many } });
     mount();
-    expect(screen.getByText('Write the title and goal from HL-204 and 5 more?')).toBeDefined();
+    screen.getByText('HL-204 and 5 more');
     await ready();
     expect(screen.getByText('Based on the first five linked issues.')).toBeDefined();
   });

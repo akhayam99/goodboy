@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { Target } from 'lucide-react';
 import { Notice, type NoticePlacement, type NoticeTone } from './index';
 
 const TONES = ['danger', 'warning', 'info', 'success'] as const satisfies ReadonlyArray<NoticeTone>;
@@ -131,6 +132,20 @@ describe('Notice', () => {
     );
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+  });
+
+  it('uses a concept icon at the notice size', () => {
+    render(
+      <Notice
+        tone="info"
+        placement="inline"
+        title="Write the title and goal"
+        icon={Target}
+        iconTestId="notice-icon"
+      />,
+    );
+
+    expect(screen.getByTestId('notice-icon').getAttribute('width')).toBe('16');
   });
 
   it('centres a title-only notice on its actions once wide, tops a multi-line one', () => {
