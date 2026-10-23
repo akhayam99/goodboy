@@ -38,7 +38,7 @@ const LEGACY_BACK = 26 * 60;
 const MOUNT_TARGET = {
   mountId: 'mock-mount-payments-api' as MountId,
   mountRevision: 1,
-  worktreePath: '/Users/dev/harborline/payments-api',
+  worktreePath: '~/code/harborline/payments-api',
 };
 
 const RUN_SEEDS: ReadonlyArray<ResolveSeed> = [
