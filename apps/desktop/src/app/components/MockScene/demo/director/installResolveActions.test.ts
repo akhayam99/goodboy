@@ -98,6 +98,35 @@ describe('the simulated review fix', () => {
     expect(entryOf()?.thread.stage).toBe('proposed');
   });
 
+  it('previews the approved fix for the push, then says publishing stays local', async () => {
+    await startFix();
+    vi.advanceTimersByTime(8000);
+    const entry = entryOf();
+    if (entry === undefined) {
+      throw new Error('no comment');
+    }
+    await store.getState().acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: entry.item.id,
+      revision: entry.item.candidateRevision,
+      reply: entry.thread.replyDraft ?? '',
+    });
+    const preview = await store.getState().preparePublication({ sessionId: SESSION_ID });
+    expect(preview.blocker).toBeNull();
+    expect(preview.replies.map((reply) => reply.threadId)).toContain(THREAD);
+    expect(preview.commits.flatMap((commit) => commit.threadIds)).toContain(THREAD);
+    expect(store.getState().activePublicationPreview[SESSION_ID]).toEqual(preview);
+    const publicationId = preview.publicationId;
+    if (publicationId === null) {
+      throw new Error('no publication');
+    }
+    await expect(
+      store.getState().publishConversations({ sessionId: SESSION_ID, publicationId }),
+    ).rejects.toThrow();
+    expect(store.getState().undoNotices.at(-1)?.toast.title).toBe('Demo playground');
+    expect(entryOf()?.thread.replyPostedAt).toBeNull();
+  });
+
   it('keeps publishing local and says so', async () => {
     await expect(
       store.getState().publishThreadNow({ sessionId: SESSION_ID, threadId: THREAD }),
