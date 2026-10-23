@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { MountId, SessionId } from '@goodboy/types';
-import { AnchoredPopover, Button, formatError, ICON_SIZE, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, formatError, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { appendClosingReferences } from '../../../integrations/github/appendClosingReferences';
 import type { ClosingIssueReference } from '../../../integrations/github/closingIssueReferences';
