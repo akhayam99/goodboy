@@ -1,18 +1,16 @@
 import { brandId, type OpenQuestion, type OpenQuestionId } from '@goodboy/types';
 import { landingLiveKey } from '../../../../../features/chat/reveal/landingLiveKey';
 import { liveTextRegistry } from '../../../../../features/chat/reveal/liveTextRegistry';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
+import { RUNNING_CHECKOUT_RETRY } from '../../scenes/BoardScene';
 import type { DemoTimeline, TimelineParams } from './directorTypes';
 import { travelCard } from './travelCard';
 
 const MOVE_MS = 2600;
 
 export const boardTimeline = ({ state }: TimelineParams): DemoTimeline | null => {
-  const session = state.sessions.find(
-    (entry) =>
-      entry.state.kind === 'running' &&
-      (state.sessionPhaseRuns[entry.id] ?? []).some((agent) => agent.status === 'running'),
-  );
-  if (session === undefined) {
+  const session = sessionById(state.sessions, RUNNING_CHECKOUT_RETRY);
+  if (session === undefined || session.state.kind !== 'running') {
     return null;
   }
   const sessionId = session.id;

@@ -14,7 +14,8 @@ import {
   type StoryStore,
 } from '../../../../../store/storyHarness';
 import { stageInfoOf } from '../../../../../store/slices/session-view/stageInfoOf';
-import { seedBoardScene } from '../../scenes/BoardScene';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
+import { RUNNING_CHECKOUT_RETRY, seedBoardScene } from '../../scenes/BoardScene';
 import { C08_REVIEWER_ID, C08_RUN_ID, C08_SESSION_ID, seedC08 } from '../../scenes/u25/c08RunSeed';
 import { createPlaybackClock } from './createPlaybackClock';
 import { createSceneDirector } from './createSceneDirector';
@@ -151,13 +152,9 @@ describe('the demo timelines', () => {
     if (timeline === null) {
       throw new Error('no board timeline');
     }
-    const target = store.getState().sessions.find((session) => session.state.kind === 'running');
-    if (target === undefined) {
-      throw new Error('no running session');
-    }
     const stageOf = (): string => {
       const state = store.getState();
-      const session = state.sessions.find((entry) => entry.id === target.id);
+      const session = sessionById(state.sessions, RUNNING_CHECKOUT_RETRY);
       return session === undefined ? 'missing' : stageInfoOf(state, session).stage;
     };
     const stages: string[] = [stageOf()];
