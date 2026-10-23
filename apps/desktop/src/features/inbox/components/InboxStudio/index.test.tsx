@@ -882,7 +882,14 @@ describe('InboxStudio at scale', () => {
     renderStudio();
 
     fireEvent.click(screen.getByRole('button', { name: 'Group: Source' }));
+    expect(screen.getByRole('menuitemradio', { name: 'Source' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+    expect(document.activeElement?.textContent).toBe('Source');
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'Group tasks by' }), { key: 'End' });
+    expect(document.activeElement?.textContent).toBe('None');
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Status' }));
+    expect(screen.queryByRole('menu', { name: 'Group tasks by' })).toBeNull();
 
     expect(groupNames()).toContain('Linear · Open');
     expect(JSON.parse(localStorage.getItem(VIEW_KEY) ?? '')).toMatchObject({ groupBy: 'status' });

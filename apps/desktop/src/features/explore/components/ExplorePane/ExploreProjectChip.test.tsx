@@ -237,6 +237,9 @@ describe('the Explore project chip with two projects', () => {
     expect(within(menu).getByRole('group', { name: 'notify-relay' })).toBeDefined();
     const rows = within(menu).getAllByRole('menuitemradio');
     expect(rows.map((row) => row.getAttribute('aria-checked'))).toEqual(['true', 'false']);
+    expect(document.activeElement).toBe(rows[0]);
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(rows[1]);
   });
 
   it('browses the project you pick and leaves the write destination alone', async () => {

@@ -171,7 +171,9 @@ describe('StepEditor', () => {
     renderHost(handlers);
 
     fireEvent.click(screen.getByRole('button', { name: 'More options' }));
-    expect(screen.getByRole('menuitem', { name: 'Move up' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('menuitem', { name: 'Move up' }).getAttribute('aria-disabled')).toBe(
+      'true',
+    );
     fireEvent.click(screen.getByRole('menuitem', { name: 'Move down' }));
 
     expect(handlers.onMoveDown).toHaveBeenCalledTimes(1);

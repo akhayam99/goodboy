@@ -222,7 +222,7 @@ describe('JiraIssueDetail', () => {
     mount();
 
     fireEvent.click(screen.getByRole('button', { name: 'Grace Hopper' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ada Lovelace' }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Ada Lovelace' }));
 
     await waitFor(() =>
       expect(setAssignee).toHaveBeenCalledWith(
@@ -261,7 +261,7 @@ describe('JiraIssueDetail', () => {
     expect(screen.getByText('ENG-900')).toBeDefined();
 
     fireEvent.click(screen.getByRole('button', { name: 'Unassigned' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ada Lovelace' }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Ada Lovelace' }));
     await waitFor(() =>
       expect(setAssignee).toHaveBeenCalledWith(
         expect.objectContaining({ issueKey: 'ENG-900', accountId: 'a2' }),

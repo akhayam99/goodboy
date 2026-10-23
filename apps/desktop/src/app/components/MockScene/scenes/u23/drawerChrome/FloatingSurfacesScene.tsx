@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
 import { CircleUser, Copy, GitBranch, Pencil } from 'lucide-react';
-import { FLOATING_SURFACE, Popover, ROW_INTERACTIVE, cn } from '@goodboy/ui';
+import { FLOATING_SURFACE, Popover, cn, type MenuEntry } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { AppMenuList } from '../../../../../../features/actions/AppMenuList';
 import { SessionHoverCardBody } from '../../../../../../features/workspace/components/SessionHoverCard/SessionHoverCardBody';
 import { SwitcherPanel } from '../../../../../../features/workspace/components/SessionSwitcher/SwitcherPanel';
 import { SESSION, seedActivityRunScene } from '../../activityRunSeed';
 
 const noop = () => undefined;
 
-const MENU_ROWS = [
-  { key: 'rename', label: 'Rename', icon: Pencil },
-  { key: 'copy', label: 'Copy link', icon: Copy },
-  { key: 'branch', label: 'Open the branch', icon: GitBranch },
-] as const;
+const MENU_ENTRIES: ReadonlyArray<MenuEntry> = [
+  { kind: 'item', key: 'rename', label: 'Rename', icon: Pencil, onSelect: noop },
+  { kind: 'item', key: 'copy', label: 'Copy link', icon: Copy, onSelect: noop },
+  { kind: 'item', key: 'branch', label: 'Open the branch', icon: GitBranch, onSelect: noop },
+];
 
 const SWITCHER_SESSIONS = [
   SESSION,
@@ -38,22 +39,13 @@ export const FloatingSurfacesScene = () => {
       className="grid grid-cols-2 items-start gap-6 bg-background p-6 text-foreground"
       style={{ width: 1000 }}
     >
-      <Popover role="menu" ariaLabel="Session actions" className="w-60 p-1">
-        {MENU_ROWS.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            type="button"
-            role="menuitem"
-            onClick={noop}
-            className={cn(
-              'flex h-7 items-center gap-2 rounded-sm px-2 text-left text-label',
-              ROW_INTERACTIVE,
-            )}
-          >
-            <Icon size={ICON_SIZE.row} aria-hidden />
-            {label}
-          </button>
-        ))}
+      <Popover className="w-60">
+        <AppMenuList
+          label="Session actions"
+          entries={MENU_ENTRIES}
+          onClose={noop}
+          isAutoFocus={false}
+        />
       </Popover>
       <Popover role="dialog" ariaLabel="Assignee" className="w-80 gap-2 p-3">
         <p className="text-label text-foreground">Assign to</p>

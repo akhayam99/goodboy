@@ -1,7 +1,8 @@
 import { ArrowDown, ArrowUp, Copy, Save, Trash2 } from 'lucide-react';
-import { AnchoredPopover, Button, MenuItems, useDropdown } from '@goodboy/ui';
-import type { OverflowMenuItem } from '@goodboy/ui';
+import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
+import type { MenuEntry } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AppMenuList } from '../../../actions/AppMenuList';
 
 type Props = {
   readonly ordinal: number;
@@ -37,7 +38,7 @@ export const StepEditorMenu = ({
     expectedHeight: 200,
     disabled,
   });
-  const items: ReadonlyArray<OverflowMenuItem> = [
+  const items: ReadonlyArray<MenuEntry> = [
     ...(onDuplicate === undefined
       ? []
       : [
@@ -46,7 +47,7 @@ export const StepEditorMenu = ({
             key: 'duplicate',
             label: 'Duplicate',
             icon: Copy,
-            onClick: onDuplicate,
+            onSelect: onDuplicate,
           },
         ]),
     ...(onSaveAsStep === undefined
@@ -57,8 +58,8 @@ export const StepEditorMenu = ({
             key: 'save-as-step',
             label: 'Save as step',
             icon: Save,
-            disabled: !canSaveAsStep,
-            onClick: onSaveAsStep,
+            isDisabled: !canSaveAsStep,
+            onSelect: onSaveAsStep,
           },
         ]),
     ...(onMoveUp === undefined || onMoveDown === undefined
@@ -70,16 +71,16 @@ export const StepEditorMenu = ({
             key: 'move-up',
             label: 'Move up',
             icon: ArrowUp,
-            disabled: ordinal === 1,
-            onClick: onMoveUp,
+            isDisabled: ordinal === 1,
+            onSelect: onMoveUp,
           },
           {
             kind: 'item' as const,
             key: 'move-down',
             label: 'Move down',
             icon: ArrowDown,
-            disabled: ordinal === stepCount,
-            onClick: onMoveDown,
+            isDisabled: ordinal === stepCount,
+            onSelect: onMoveDown,
           },
         ]),
     ...(onDuplicate === undefined && onSaveAsStep === undefined && onMoveUp === undefined
@@ -90,18 +91,15 @@ export const StepEditorMenu = ({
       key: 'delete',
       label: deleteLabel,
       icon: Trash2,
-      destructive: true,
-      onClick: onDelete,
+      isDestructive: true,
+      onSelect: onDelete,
     },
   ];
 
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel={LABEL}
       anchorClassName="shrink-0"
-      className="py-1"
       trigger={
         <Button
           variant="ghost"
@@ -116,7 +114,7 @@ export const StepEditorMenu = ({
         </Button>
       }
     >
-      <MenuItems items={items} onClose={dropdown.close} />
+      <AppMenuList label={LABEL} entries={items} onClose={dropdown.close} />
     </AnchoredPopover>
   );
 };

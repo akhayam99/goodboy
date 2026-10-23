@@ -22,6 +22,10 @@ type Props = {
   readonly isAutoFocus?: boolean;
 };
 
+type RowParams = {
+  readonly entry: MenuItemEntry;
+};
+
 type Expanded = {
   readonly key: string;
   readonly anchor: HTMLElement;
@@ -35,7 +39,12 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
   const typeahead = useRef({ query: '', at: 0 });
   const rowRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  const items = entries.filter((entry): entry is MenuItemEntry => entry.kind === 'item');
+  const items = entries.flatMap((entry): ReadonlyArray<MenuItemEntry> => {
+    if (entry.kind === 'item') {
+      return [entry];
+    }
+    return entry.kind === 'group' ? entry.items : [];
+  });
   const confirming = items.find((entry) => entry.key === confirmKey) ?? null;
   const confirm = confirming?.confirm ?? null;
   const expandedEntry = items.find((entry) => entry.key === expanded?.key) ?? null;
@@ -60,7 +69,9 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
     readonly entry: MenuItemEntry;
     readonly choice: string | null;
   }) => {
-    onClose();
+    if (entry.shouldStayOpen !== true) {
+      onClose();
+    }
     await entry.onSelect(choice);
   };
 
@@ -146,6 +157,28 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
     }
   };
 
+  const renderRow = ({ entry }: RowParams) => (
+    <MenuRow
+      key={entry.key}
+      entry={entry}
+      isExpanded={expanded?.key === entry.key}
+      rowRef={(node) => {
+        if (node === null) {
+          rowRefs.current.delete(entry.key);
+          return;
+        }
+        rowRefs.current.set(entry.key, node);
+      }}
+      onActivate={() => activate(entry)}
+      onHover={() => {
+        if (expanded !== null && expanded.key !== entry.key) {
+          setExpanded(null);
+        }
+      }}
+      onKeyDown={(event) => onRowKeyDown({ event, entry })}
+    />
+  );
+
   if (confirming !== null && confirm !== null) {
     const Icon = confirming.icon;
     return (
@@ -220,33 +253,28 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
               key={entry.key}
               entry={entry}
               onChoose={(choice) => {
-                onClose();
+                if (entry.shouldStayOpen !== true) {
+                  onClose();
+                }
                 void entry.onSelect(choice);
               }}
             />
           );
         }
-        return (
-          <MenuRow
-            key={entry.key}
-            entry={entry}
-            isExpanded={expanded?.key === entry.key}
-            rowRef={(node) => {
-              if (node === null) {
-                rowRefs.current.delete(entry.key);
-                return;
-              }
-              rowRefs.current.set(entry.key, node);
-            }}
-            onActivate={() => activate(entry)}
-            onHover={() => {
-              if (expanded !== null && expanded.key !== entry.key) {
-                setExpanded(null);
-              }
-            }}
-            onKeyDown={(event) => onRowKeyDown({ event, entry })}
-          />
-        );
+        if (entry.kind === 'group') {
+          return (
+            <div key={entry.key} role="group" aria-label={entry.label} className="flex flex-col">
+              <div
+                role="presentation"
+                className="truncate px-2 pt-2 pb-0.5 text-eyebrow text-faint-foreground"
+              >
+                {entry.label}
+              </div>
+              {entry.items.map((item) => renderRow({ entry: item }))}
+            </div>
+          );
+        }
+        return renderRow({ entry });
       })}
       {expanded !== null && expandedEntry !== null && expandedEntry.choices != null ? (
         <MenuChoicePanel

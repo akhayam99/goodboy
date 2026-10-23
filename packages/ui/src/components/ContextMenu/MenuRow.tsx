@@ -1,6 +1,7 @@
 import type { KeyboardEvent, Ref } from 'react';
 import { ChevronRight, ExternalLink } from 'lucide-react';
 import { cn } from '../../cn';
+import { OptionalTooltip } from '../OptionalTooltip';
 import { tintClasses } from '../../tint';
 import type { MenuItemEntry } from './menuTypes';
 import { ICON_SIZE } from '../../iconSize';
@@ -22,65 +23,77 @@ export const MenuRow = ({ entry, isExpanded, rowRef, onActivate, onHover, onKeyD
   const hasChoices = entry.choices != null && entry.choices.length > 0;
   const detail = entry.blockedReason ?? entry.description ?? null;
   return (
-    <button
-      ref={rowRef}
-      type="button"
-      role="menuitem"
-      tabIndex={-1}
-      data-menu-label={entry.label}
-      aria-label={entry.ariaLabel ?? undefined}
-      aria-disabled={isBlocked || undefined}
-      aria-haspopup={hasChoices ? 'menu' : undefined}
-      aria-expanded={hasChoices ? isExpanded : undefined}
-      aria-description={entry.blockedReason ?? undefined}
-      onClick={onActivate}
-      onMouseEnter={() => {
-        onHover();
-        entry.onActive?.();
-      }}
-      onFocus={entry.onActive}
-      onMouseLeave={entry.onInactive}
-      onBlur={entry.onInactive}
-      onKeyDown={onKeyDown}
-      className={cn(
-        'flex w-full gap-2 rounded-sm px-2 text-left focus-visible:outline-none motion-safe:transition-colors',
-        detail === null ? 'items-center py-2' : 'items-start py-2',
-        isBlocked
-          ? 'cursor-not-allowed text-disabled-foreground focus:bg-hover'
-          : entry.isDestructive === true
-            ? cn(dangerTint.text, dangerTint.hoverBg, dangerTint.hoverText, 'focus:bg-hover')
-            : 'text-foreground hover:bg-hover focus:bg-hover',
-        isExpanded && 'bg-hover',
-      )}
-    >
-      <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden>
-        {Icon === undefined ? null : (
-          <Icon
+    <OptionalTooltip content={entry.tooltip} side="right">
+      <button
+        ref={rowRef}
+        type="button"
+        role="menuitem"
+        tabIndex={-1}
+        data-menu-label={entry.label}
+        aria-label={entry.ariaLabel ?? undefined}
+        aria-disabled={isBlocked || undefined}
+        aria-haspopup={hasChoices ? 'menu' : undefined}
+        aria-expanded={hasChoices ? isExpanded : undefined}
+        aria-description={entry.blockedReason ?? undefined}
+        onClick={onActivate}
+        onMouseEnter={() => {
+          onHover();
+          entry.onActive?.();
+        }}
+        onFocus={entry.onActive}
+        onMouseLeave={entry.onInactive}
+        onBlur={entry.onInactive}
+        onKeyDown={onKeyDown}
+        className={cn(
+          'flex w-full gap-2 rounded-sm px-2 text-left focus-visible:outline-none motion-safe:transition-colors',
+          detail === null ? 'items-center py-2' : 'items-start py-2',
+          isBlocked
+            ? 'cursor-not-allowed text-disabled-foreground focus:bg-hover'
+            : entry.isDestructive === true
+              ? cn(dangerTint.text, dangerTint.hoverBg, dangerTint.hoverText, 'focus:bg-hover')
+              : 'text-foreground hover:bg-hover focus:bg-hover',
+          (isExpanded || entry.isActive === true) && 'bg-hover',
+        )}
+      >
+        <span className="flex size-4 shrink-0 items-center justify-center" aria-hidden>
+          {Icon === undefined ? null : (
+            <Icon
+              size={ICON_SIZE.row}
+              aria-hidden
+              className={cn(
+                isBlocked
+                  ? 'text-disabled-foreground'
+                  : entry.isDestructive === true
+                    ? dangerTint.icon
+                    : (entry.iconClassName ?? 'text-faint-foreground'),
+              )}
+            />
+          )}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate">{entry.label}</span>
+          {detail === null ? null : (
+            <span className="text-meta text-faint-foreground">{detail}</span>
+          )}
+        </span>
+        {entry.hint == null ? null : (
+          <kbd className="shrink-0 text-meta text-faint-foreground">{entry.hint}</kbd>
+        )}
+        {entry.isExternal === true ? (
+          <ExternalLink
             size={ICON_SIZE.row}
             aria-hidden
-            className={cn(
-              isBlocked
-                ? 'text-disabled-foreground'
-                : entry.isDestructive === true
-                  ? dangerTint.icon
-                  : (entry.iconClassName ?? 'text-faint-foreground'),
-            )}
+            className="shrink-0 text-faint-foreground"
           />
-        )}
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate">{entry.label}</span>
-        {detail === null ? null : <span className="text-meta text-faint-foreground">{detail}</span>}
-      </span>
-      {entry.hint == null ? null : (
-        <kbd className="shrink-0 text-meta text-faint-foreground">{entry.hint}</kbd>
-      )}
-      {entry.isExternal === true ? (
-        <ExternalLink size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-      ) : null}
-      {hasChoices ? (
-        <ChevronRight size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
-      ) : null}
-    </button>
+        ) : null}
+        {hasChoices ? (
+          <ChevronRight
+            size={ICON_SIZE.row}
+            aria-hidden
+            className="shrink-0 text-faint-foreground"
+          />
+        ) : null}
+      </button>
+    </OptionalTooltip>
   );
 };

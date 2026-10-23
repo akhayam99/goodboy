@@ -1,6 +1,5 @@
-import { Check } from 'lucide-react';
-import { AnchoredPopover, Button, ROW_INTERACTIVE, cn, useDropdown } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AnchoredPopover, Button, cn, useDropdown, type MenuEntry } from '@goodboy/ui';
+import { AppMenuList } from '../../../actions/AppMenuList';
 import { TASK_GROUP_BYS, TASK_GROUP_BY_LABEL, type TaskGroupBy } from '../../taskGroups';
 
 type Props = {
@@ -9,13 +8,29 @@ type Props = {
 };
 
 export const TasksGroupByMenu = ({ groupBy, onGroupBy }: Props) => {
-  const dropdown = useDropdown({ width: 'min-w-50', expectedHeight: 140 });
+  const dropdown = useDropdown({ width: 'min-w-50', expectedHeight: 160 });
+  const entries: ReadonlyArray<MenuEntry> = [
+    {
+      kind: 'radio',
+      key: 'group-by',
+      label: 'Group by',
+      choices: TASK_GROUP_BYS.map((value) => ({
+        id: value,
+        label: TASK_GROUP_BY_LABEL[value],
+        isCurrent: value === groupBy,
+      })),
+      onSelect: (choice) => {
+        const next = TASK_GROUP_BYS.find((value) => value === choice);
+        if (next === undefined) {
+          return;
+        }
+        onGroupBy(next);
+      },
+    },
+  ];
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel="Group tasks by"
-      className="py-1"
       trigger={
         <Button
           variant="secondary"
@@ -29,25 +44,7 @@ export const TasksGroupByMenu = ({ groupBy, onGroupBy }: Props) => {
         </Button>
       }
     >
-      {TASK_GROUP_BYS.map((value) => (
-        <button
-          key={value}
-          type="button"
-          role="menuitemradio"
-          aria-checked={value === groupBy}
-          onClick={() => {
-            onGroupBy(value);
-            dropdown.close();
-          }}
-          className={cn(
-            'flex w-full items-center justify-between gap-3 px-3 py-1 text-left text-label',
-            ROW_INTERACTIVE,
-          )}
-        >
-          {TASK_GROUP_BY_LABEL[value]}
-          {value === groupBy ? <Check size={ICON_SIZE.row} aria-hidden /> : null}
-        </button>
-      ))}
+      <AppMenuList label="Group tasks by" entries={entries} onClose={dropdown.close} />
     </AnchoredPopover>
   );
 };

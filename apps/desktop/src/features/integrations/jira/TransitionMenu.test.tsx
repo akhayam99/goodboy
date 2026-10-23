@@ -87,4 +87,40 @@ describe('TransitionMenu', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('Reviewer');
     expect(screen.getByRole('menuitem', { name: 'Ready for review' })).toBeDefined();
   });
+
+  it('closes only after Jira accepts the move, and names where each move goes', async () => {
+    listTransitions.mockResolvedValue([
+      { id: '11', name: 'Start progress', to: { id: '3', name: 'In Progress' }, hasScreen: false },
+      { id: '31', name: 'Ready for review', to: null, hasScreen: true },
+    ]);
+    let accept: () => void = () => undefined;
+    const onTransition = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          accept = resolve;
+        }),
+    );
+    mount({ onTransition });
+
+    fireEvent.click(await screen.findByRole('button', { name: /move this issue/ }));
+    const menu = screen.getByRole('menu', { name: 'Move this issue' });
+    expect(screen.getByRole('menuitem', { name: /Start progress/ }).textContent).toContain(
+      'In Progress',
+    );
+    expect(screen.getByRole('menuitem', { name: /Ready for review/ }).textContent).toContain(
+      'extra fields',
+    );
+    expect(document.activeElement?.textContent).toContain('Start progress');
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(document.activeElement?.textContent).toContain('Ready for review');
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /Start progress/ }));
+
+    expect(onTransition).toHaveBeenCalledWith('11');
+    expect(
+      screen.getByRole('menuitem', { name: /Ready for review/ }).getAttribute('aria-disabled'),
+    ).toBe('true');
+    accept();
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+  });
 });

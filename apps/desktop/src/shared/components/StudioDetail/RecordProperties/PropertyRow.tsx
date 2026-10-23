@@ -40,8 +40,6 @@ export const PropertyRow = ({ row }: Props) => {
       <dd className="flex min-h-7 min-w-0">
         <AnchoredPopover
           dropdown={dropdown}
-          role="menu"
-          ariaLabel={actionLabel}
           anchorClassName="min-w-0 flex-1"
           trigger={
             <Tooltip content={actionLabel}>

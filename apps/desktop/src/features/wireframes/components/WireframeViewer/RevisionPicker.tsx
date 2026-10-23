@@ -1,6 +1,7 @@
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Button, MenuItems, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, useDropdown, type MenuEntry } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AppMenuList } from '../../../actions/AppMenuList';
 import { wireframeVersionLabel, type WireframeVersion } from '../../wireframeVersion';
 
 type Props = {
@@ -14,15 +15,31 @@ export const RevisionPicker = ({ label, versions, value, onChange }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
     width: 'w-80 max-w-[calc(100vw-2rem)]',
-    expectedHeight: 240,
+    expectedHeight: 260,
     expectedWidth: 320,
   });
+  const entries: ReadonlyArray<MenuEntry> = [
+    {
+      kind: 'radio',
+      key: 'revision',
+      label,
+      choices: versions.map((version) => ({
+        id: String(version.revision),
+        label: `v${version.revision} ${wireframeVersionLabel({ version })}`,
+        isCurrent: version.revision === value,
+      })),
+      onSelect: (choice) => {
+        const version = versions.find((candidate) => String(candidate.revision) === choice);
+        if (version === undefined) {
+          return;
+        }
+        onChange(version.revision);
+      },
+    },
+  ];
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel={label}
-      className="py-1"
       trigger={
         <Button
           variant="secondary"
@@ -37,15 +54,7 @@ export const RevisionPicker = ({ label, versions, value, onChange }: Props) => {
         </Button>
       }
     >
-      <MenuItems
-        onClose={dropdown.close}
-        items={versions.map((version) => ({
-          kind: 'item' as const,
-          key: String(version.revision),
-          label: `v${version.revision} ${wireframeVersionLabel({ version })}`,
-          onClick: () => onChange(version.revision),
-        }))}
-      />
+      <AppMenuList label={label} entries={entries} onClose={dropdown.close} />
     </AnchoredPopover>
   );
 };
