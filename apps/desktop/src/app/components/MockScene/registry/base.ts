@@ -3,6 +3,7 @@ import { TaskLinksScene } from '../scenes/TaskLinksScene';
 import { TaskLinksHoverScene } from '../scenes/TaskLinksHoverScene';
 import { TaskLinksUndoScene } from '../scenes/TaskLinksUndoScene';
 import { WorkspaceScene } from '../scenes/WorkspaceScene';
+import { DemoPlayground } from '../demo/DemoPlayground';
 import { WorkflowScene } from '../scenes/WorkflowScene';
 import { ShellScene } from '../scenes/ShellScene';
 import { ChatShellScene } from '../scenes/ChatShellScene';
@@ -317,6 +318,7 @@ const NOGIT_SCENES: Readonly<Record<string, ComponentType>> = Object.fromEntries
 ]);
 
 export const BASE_SCENES = {
+  demo: DemoPlayground,
   workspace: WorkspaceScene,
   workflow: WorkflowScene,
   shell: ShellScene,

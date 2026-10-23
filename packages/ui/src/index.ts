@@ -67,7 +67,7 @@ export type {
 } from './components/Trail/crumbMenuTypes';
 export type { DrawerBack, DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';
-export { Button } from './components/Button';
+export { Button, buttonClasses } from './components/Button';
 export { Avatar } from './components/Avatar';
 export { BranchPair } from './components/BranchPair';
 export { BrandGlyph } from './components/BrandGlyph';

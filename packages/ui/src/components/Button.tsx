@@ -35,6 +35,19 @@ export const BUTTON_SIZE_CLASSES = {
   md: 'h-8 gap-2 px-3 text-body',
 } as const satisfies Record<ButtonSize, string>;
 
+type ButtonClassParams = {
+  readonly variant: ButtonVariant;
+  readonly size: ButtonSize;
+};
+
+export const buttonClasses = ({ variant, size }: ButtonClassParams): string =>
+  cn(
+    'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none',
+    FOCUS_RING,
+    BUTTON_VARIANT_CLASSES[variant],
+    BUTTON_SIZE_CLASSES[size],
+  );
+
 export const Button = ({
   variant = 'primary',
   size = 'sm',
@@ -53,13 +66,7 @@ export const Button = ({
       aria-busy={isBusy ? true : undefined}
       data-size={size}
       data-variant={variant}
-      className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none',
-        FOCUS_RING,
-        BUTTON_VARIANT_CLASSES[variant],
-        BUTTON_SIZE_CLASSES[size],
-        className,
-      )}
+      className={cn(buttonClasses({ variant, size }), className)}
       {...rest}
     >
       {isBusy ? (

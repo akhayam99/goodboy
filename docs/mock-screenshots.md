@@ -255,6 +255,16 @@ event, with `&step=` a step id (`welcome`, `agents`, `workspace`, `tools`,
 Acme docs; `none` up to Workspace, `repo` after it), and
 `onboarding-home&state=` shows Home in `list`, `new` or `empty`.
 
+`demo` is the playground: a frame that walks a visitor through chapters, each a
+list of beats. A beat is another scene loaded in an iframe of the same server
+(`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and scaled to fit,
+so every beat gets a clean store and its own timers. The chapters live in
+`MockScene/demo/demoChapters.ts`, and `#<chapter id>` in the URL opens one. A
+beat's hold starts only once its frame has mounted, and the next beat loads
+behind it, because a dev server takes seconds to boot each frame. `&theme=dark`
+now forces dark the same way `&theme=light` forces light, so a frame never
+follows a stored preference.
+
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens
 Settings through the store, so the column, the rail and the page behave as in

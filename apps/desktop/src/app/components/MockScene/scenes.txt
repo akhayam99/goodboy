@@ -349,6 +349,7 @@ debugger-drawer-hint-filled
 debugger-drawer-options
 debugger-drawer-proposal
 debugger-drawer-running
+demo
 design-comments
 design-controls-scale
 design-scale

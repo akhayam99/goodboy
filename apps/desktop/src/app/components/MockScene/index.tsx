@@ -38,10 +38,11 @@ export const MockScene = () => {
   useBrandChrome({ isBrand: params.get('brand') === '1' });
 
   useEffect(() => {
-    if (params.get('theme') !== 'light') {
+    const theme = params.get('theme');
+    if (theme !== 'light' && theme !== 'dark') {
       return;
     }
-    applyDocumentTheme({ theme: 'light' });
+    applyDocumentTheme({ theme });
   }, []);
 
   return (
