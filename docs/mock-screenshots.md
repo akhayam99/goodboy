@@ -377,9 +377,11 @@ through the same live text path, so a composer never reaches IPC. Sends and
 answers share one `createReplyRuns` per frame: every run gets its own id, a
 second reply for an agent waits until the first one ends (the agent stays
 running in between), and a timer whose run is no longer active writes nothing.
-Every other simulation (a run step, a review fix, an Auto run, a comment
-send) registers in the one run scope of `demoRunRegistry.ts` and leaves it once
-its last cue lands. A restart or a closed frame cancels the pending replies and
+Every reply, queued or streaming, and every other simulation (a run step, a
+review fix, an Auto run) registers in the one run scope of `demoRunRegistry.ts`
+and leaves it once its last cue lands. A simulated reply calls the send's
+`onSettled` when it ends or is stopped, so sent plan comments turn addressed
+only when their own reply finishes and go back to drafts when Stop ends it. A restart or a closed frame cancels the pending replies and
 the whole scope before the director restores the store, and a timer from an
 older generation writes nothing. Stop cancels the agent's runs through the same
 scope, and

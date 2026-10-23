@@ -131,6 +131,48 @@ describe('plan comments in the demo', () => {
   });
 });
 
+type DraftParams = {
+  readonly body: string;
+};
+
+const addDraft = async ({ body }: DraftParams): Promise<void> => {
+  await store.getState().addArtifactComment({
+    sessionId: session.id,
+    artifactId: PLAN_ID,
+    revision: 1,
+    anchor: { kind: 'part', index: 0, title: 'Steps' },
+    body,
+  });
+};
+
+describe('plan comments settled by their reply', () => {
+  it('keeps comments sent while the planner is still replying', async () => {
+    seed();
+    await addDraft({ body: 'Show a number.' });
+    await store.getState().sendArtifactComments({ sessionId: session.id, plan: PLAN });
+    vi.advanceTimersByTime(3500);
+    expect(commentsOf()[0]?.status).toBe('sent');
+    expect(store.getState().artifactCommentSends[PLAN_ID]).toBe(true);
+    vi.advanceTimersByTime(500);
+    expect(commentsOf()[0]?.status).toBe('addressed');
+  });
+
+  it('leaves comments retryable when the reply is stopped', async () => {
+    seed();
+    await addDraft({ body: 'Show a number.' });
+    await store.getState().sendArtifactComments({ sessionId: session.id, plan: PLAN });
+    vi.advanceTimersByTime(1000);
+    await store.getState().cancelCurrentTurn(session.id, planner.id);
+    vi.advanceTimersByTime(5000);
+    expect(commentsOf()[0]?.status).toBe('draft');
+    expect(store.getState().artifactCommentSends[PLAN_ID]).toBeUndefined();
+    expect(
+      (await store.getState().sendArtifactComments({ sessionId: session.id, plan: PLAN })).kind,
+    ).toBe('unchanged');
+    expect(commentsOf()[0]?.status).toBe('sent');
+  });
+});
+
 describe('diff notes in the demo', () => {
   it('adds a line note, edits it, discards it and brings it back with undo', async () => {
     seed();
