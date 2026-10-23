@@ -47,7 +47,18 @@ pub(crate) fn needs_workspace_trust(cli: Cli, argv: &[String]) -> bool {
         return false;
     }
     let skips_prompt = ["--force", "-f", "--yolo", CURSOR_TRUST_FLAG];
-    !argv.iter().any(|arg| skips_prompt.contains(&arg.as_str()))
+    let mut after_prompt_flag = false;
+    for arg in argv {
+        if after_prompt_flag {
+            after_prompt_flag = false;
+            continue;
+        }
+        after_prompt_flag = arg == "-p";
+        if skips_prompt.contains(&arg.as_str()) {
+            return false;
+        }
+    }
+    true
 }
 
 pub(crate) fn partial_output_flag(cli: Cli) -> Option<&'static str> {
@@ -588,6 +599,8 @@ mod tests {
         for cli in [Cli::Claude, Cli::Agy, Cli::Codex, Cli::Opencode] {
             assert!(!needs_workspace_trust(cli, &read_only));
         }
+        let prompt_is_a_flag = strings(&["-p", "--force", "--mode", "plan"]);
+        assert!(needs_workspace_trust(Cli::Cursor, &prompt_is_a_flag));
     }
 
     #[test]
