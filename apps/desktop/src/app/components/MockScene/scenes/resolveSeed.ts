@@ -835,7 +835,7 @@ const PUBLICATION_THREAD_ROWS: ReadonlyArray<ResolvePublicationThread> = [
   },
 ];
 
-const FAKE_RETRY_DIFF = [
+export const FAKE_RETRY_DIFF = [
   'diff --git a/src/webhooks/retryPolicy.ts b/src/webhooks/retryPolicy.ts',
   '--- a/src/webhooks/retryPolicy.ts',
   '+++ b/src/webhooks/retryPolicy.ts',

@@ -1,4 +1,4 @@
-import { recordDemoMiss } from './recordDemoMiss';
+import { DEMO_PARK, recordDemoMiss } from './recordDemoMiss';
 import { DEMO_IPC_HANDLERS, type DemoIpcArgs } from './demoIpcHandlers';
 
 type Invoke = (command: string, args?: DemoIpcArgs, options?: unknown) => unknown;
@@ -31,6 +31,29 @@ const overlayInvokeOf = (value: unknown): Invoke | null => {
   return isInvoke(invoke) ? invoke : null;
 };
 
+type Parked = {
+  readonly command: string;
+  readonly args: DemoIpcArgs;
+  readonly options: unknown;
+  readonly resolve: (answer: unknown) => void;
+};
+
+type AskParams = {
+  readonly overlay: Invoke;
+  readonly command: string;
+  readonly args: DemoIpcArgs;
+  readonly options: unknown;
+};
+
+type Answer = {
+  readonly isAnswered: boolean;
+  readonly answer: unknown;
+};
+
+type OverlayParams = {
+  readonly overlay: Invoke;
+};
+
 type AnswerParams = {
   readonly command: string;
   readonly args: DemoIpcArgs;
@@ -61,21 +84,49 @@ export const installDemoIpc = (): void => {
   const callbacks = new Map<number, CallbackHandler>();
   let nextCallback = 1;
 
+  const parked: Array<Parked> = [];
+
+  const ask = async ({ overlay, command, args, options }: AskParams): Promise<Answer> => {
+    try {
+      const answer: unknown = await overlay(command, args, options);
+      if (answer !== undefined && answer !== null) {
+        return { isAnswered: true, answer };
+      }
+      return { isAnswered: answer === null && !DEMO_IPC_HANDLERS.has(command), answer };
+    } catch {
+      return { isAnswered: false, answer: undefined };
+    }
+  };
+
   const invoke: Invoke = async (command, args, options) => {
     for (const overlay of [...overlays].reverse()) {
-      try {
-        const answer = await overlay(command, args, options);
-        if (answer !== undefined && answer !== null) {
-          return answer;
-        }
-        if (answer === null && !DEMO_IPC_HANDLERS.has(command)) {
-          return answer;
-        }
-      } catch {
-        continue;
+      const reply = await ask({ overlay, command, args, options });
+      if (reply.isAnswered) {
+        return reply.answer;
       }
     }
-    return demoAnswer({ command, args });
+    const answer = demoAnswer({ command, args });
+    if (answer !== DEMO_PARK) {
+      return answer;
+    }
+    return new Promise((resolve) => {
+      parked.push({ command, args, options, resolve });
+    });
+  };
+
+  const addOverlay = ({ overlay }: OverlayParams): void => {
+    overlays.push(overlay);
+    for (const call of [...parked]) {
+      void ask({ overlay, command: call.command, args: call.args, options: call.options }).then(
+        (reply) => {
+          if (!reply.isAnswered || !parked.includes(call)) {
+            return;
+          }
+          parked.splice(parked.indexOf(call), 1);
+          call.resolve(reply.answer);
+        },
+      );
+    }
   };
 
   const internals: DemoInternals & { readonly isGoodboyDemo: true } = {
@@ -108,7 +159,7 @@ export const installDemoIpc = (): void => {
     get: () => invoke,
     set: (value: unknown) => {
       if (isInvoke(value) && value !== invoke) {
-        overlays.push(value);
+        addOverlay({ overlay: value });
       }
     },
   });
@@ -120,7 +171,7 @@ export const installDemoIpc = (): void => {
     set: (value: unknown) => {
       const overlay = overlayInvokeOf(value);
       if (overlay !== null && overlay !== invoke) {
-        overlays.push(overlay);
+        addOverlay({ overlay });
       }
     },
   });

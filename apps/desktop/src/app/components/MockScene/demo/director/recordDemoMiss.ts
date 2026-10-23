@@ -1,17 +1,17 @@
 const MISSES_KEY = '__goodboyDemoMisses';
 
-const PENDING: Promise<never> = new Promise<never>(() => undefined);
+export const DEMO_PARK: unique symbol = Symbol('demo-park');
 
 type Params = {
   readonly entry: string;
 };
 
-export const recordDemoMiss = ({ entry }: Params): Promise<never> => {
+export const recordDemoMiss = ({ entry }: Params): typeof DEMO_PARK => {
   const current: unknown = Reflect.get(window, MISSES_KEY);
   const list: Array<unknown> = Array.isArray(current) ? current : [];
   if (!list.includes(entry)) {
     list.push(entry);
   }
   Reflect.set(window, MISSES_KEY, list);
-  return PENDING;
+  return DEMO_PARK;
 };

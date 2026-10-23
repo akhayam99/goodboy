@@ -21,6 +21,7 @@ import type { ProviderDisplayInfo } from '../../../../features/providers/provide
 import { sceneClock } from '../sceneClock';
 import { shellArrangement } from '../../../shellArrangement';
 import { useSceneShell } from './useSceneShell';
+import { isDirectedScene } from '../demo/director/isDirectedScene';
 
 const clock = sceneClock({ anchor: '2026-09-20T09:00:00.000Z' });
 
@@ -92,7 +93,7 @@ export const seedShellChrome = ({
     markNotificationsRead: async () => undefined,
     clearNotifications: async () => undefined,
     loadArchivedSessions: async () => undefined,
-    navigate: () => undefined,
+    ...(isDirectedScene() ? {} : { navigate: () => undefined }),
   });
 };
 
