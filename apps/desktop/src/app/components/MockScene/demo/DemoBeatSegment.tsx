@@ -1,18 +1,39 @@
 import { FOCUS_RING, cn } from '@goodboy/ui';
 import type { DemoBeat } from './demoChapters';
+import type { BeatFill } from './useBeatPlayer';
 import { useBeatFill } from './useBeatFill';
 
 type Props = {
   readonly beat: DemoBeat;
   readonly state: 'past' | 'current' | 'next';
   readonly isRunning: boolean;
-  readonly isPending: boolean;
+  readonly fill: BeatFill;
   readonly runKey: string;
   readonly onSelect: () => void;
 };
 
-export const DemoBeatSegment = ({ beat, state, isRunning, isPending, runKey, onSelect }: Props) => {
-  const fillRef = useBeatFill({ isRunning, durationMs: beat.holdMs, runKey });
+type RestParams = {
+  readonly state: Props['state'];
+  readonly fill: BeatFill;
+};
+
+const restScale = ({ state, fill }: RestParams): number => {
+  if (state === 'past') {
+    return 1;
+  }
+  if (state === 'next' || fill.totalMs <= 0) {
+    return 0;
+  }
+  return Math.min(1, fill.startMs / fill.totalMs);
+};
+
+export const DemoBeatSegment = ({ beat, state, isRunning, fill, runKey, onSelect }: Props) => {
+  const fillRef = useBeatFill({
+    isRunning,
+    totalMs: fill.totalMs,
+    startMs: fill.startMs,
+    runKey,
+  });
   const isCurrent = state === 'current';
   return (
     <button
@@ -31,7 +52,7 @@ export const DemoBeatSegment = ({ beat, state, isRunning, isPending, runKey, onS
             'absolute inset-0 origin-left rounded-full',
             isCurrent ? 'bg-primary' : 'bg-muted-foreground',
           )}
-          style={{ transform: state === 'next' || isPending ? 'scaleX(0)' : 'scaleX(1)' }}
+          style={{ transform: `scaleX(${restScale({ state, fill })})` }}
         />
       </span>
       <span

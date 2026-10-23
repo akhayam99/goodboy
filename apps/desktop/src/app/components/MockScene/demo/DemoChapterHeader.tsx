@@ -8,11 +8,13 @@ type Props = {
 };
 
 export const DemoChapterHeader = ({ chapter, position }: Props) => (
-  <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+  <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-2">
     <div className="flex min-w-0 flex-col gap-1">
-      <Eyebrow label={position} />
-      <h1 className="text-display text-foreground">{chapter.title}</h1>
-      <p className="text-read text-muted-foreground">{chapter.summary}</p>
+      <div className="flex flex-wrap items-baseline gap-x-3">
+        <h1 className="text-display text-foreground">{chapter.title}</h1>
+        <Eyebrow label={position} muted />
+      </div>
+      <p className="text-ui text-muted-foreground">{chapter.summary}</p>
     </div>
     <p className="flex max-w-sm items-center gap-2 text-ui text-muted-foreground">
       <MousePointerClick size={ICON_SIZE.control} className="shrink-0 text-primary" aria-hidden />

@@ -10,7 +10,6 @@ import { DemoClosing } from './DemoClosing';
 import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
 import { useDemoKeys } from './useDemoKeys';
-import { STAGE_BACKDROP } from './stageBackdrop';
 
 type Theme = 'dark' | 'light';
 
@@ -21,6 +20,11 @@ type ChapterParams = {
 type ShownParams = {
   readonly key: string;
 };
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+const prefersReducedMotion = (): boolean =>
+  typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches;
 
 const initialTheme = (): Theme =>
   new URLSearchParams(window.location.search).get('theme') === 'light' ? 'light' : 'dark';
@@ -39,7 +43,8 @@ export const DemoPlayground = () => {
   const chapter = DEMO_CHAPTERS[chapterIndex] ?? DEMO_CHAPTERS[0];
   const previousChapter = DEMO_CHAPTERS[chapterIndex - 1];
   const nextChapter = DEMO_CHAPTERS[chapterIndex + 1];
-  const player = useBeatPlayer({ chapter, nextChapter, theme, shownKey });
+  const [isReducedMotion] = useState(prefersReducedMotion);
+  const player = useBeatPlayer({ chapter, nextChapter, theme, shownKey, isReducedMotion });
 
   const groupChapters = DEMO_CHAPTERS.filter((entry) => entry.group === chapter.group);
   const position = `${DEMO_GROUPS[chapter.group].noun} ${groupChapters.indexOf(chapter) + 1} of ${groupChapters.length}`;
@@ -107,20 +112,17 @@ export const DemoPlayground = () => {
           visitedIds={visitedIds}
           onSelect={goToChapter}
         />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-5 px-4 py-6 sm:px-8">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
           <DemoChapterHeader chapter={chapter} position={position} />
-          <div
-            className="flex min-h-0 flex-1 rounded-frame p-3 sm:p-8"
-            style={{ backgroundImage: STAGE_BACKDROP }}
-          >
-            <DemoStage
-              frame={player.frame}
-              preloadFrame={player.preloadFrame}
-              onShown={onShown}
-              onInteract={player.pause}
-              onFocusLost={focusFrame}
-            />
-          </div>
+          <DemoStage
+            frame={player.frame}
+            preloadFrame={player.preloadFrame}
+            command={player.command}
+            onShown={onShown}
+            onReport={player.report}
+            onInteract={player.interact}
+            onFocusLost={focusFrame}
+          />
           <DemoTimeline
             chapter={chapter}
             player={player}

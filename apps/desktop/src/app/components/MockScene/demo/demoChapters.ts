@@ -83,7 +83,7 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     title: 'Work with an agent',
     summary: 'The Implementer edits, explains and stops to ask when a choice is yours.',
     tryThis: 'Press Answer it yourself on the blocking question.',
-    beats: [{ label: 'Session', scene: 'chat-shell', holdMs: 7000 }],
+    beats: [{ label: 'Works, then asks', scene: 'chat-shell', holdMs: 4000 }],
   },
   {
     id: 'run',
@@ -92,9 +92,8 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     summary: 'A run chains agents step by step and stops when a step needs you.',
     tryThis: 'Open a step to read what that agent did.',
     beats: [
-      { label: 'Ready', scene: 'c08-run-ready', holdMs: 4000 },
-      { label: 'Working', scene: 'c08-run-working', holdMs: 5000 },
-      { label: 'Approval', scene: 'c08-run-approval', holdMs: 5000 },
+      { label: 'Approval', scene: 'c08-run-approval', holdMs: 4500 },
+      { label: 'Steps run', scene: 'c08-run-working', holdMs: 2500 },
       { label: 'Done', scene: 'c08-run-done', holdMs: 5000 },
     ],
   },
@@ -117,7 +116,7 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     title: 'Board',
     summary: 'Every session in one place, grouped by what needs you.',
     tryThis: 'Scan the columns, then open a card.',
-    beats: [{ label: 'Board', scene: 'board-shell', holdMs: 6000 }],
+    beats: [{ label: 'A card needs you', scene: 'board-shell', holdMs: 4000 }],
   },
   {
     id: 'limits',

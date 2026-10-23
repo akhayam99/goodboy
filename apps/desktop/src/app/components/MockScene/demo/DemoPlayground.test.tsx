@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DemoPlayground } from './DemoPlayground';
 import { DEMO_CHAPTERS } from './demoChapters';
+import { DEMO_PROTOCOL, type DemoReportType } from './director/demoProtocol';
 
 const visibleFrame = (): HTMLIFrameElement => {
   const frame = document.querySelector<HTMLIFrameElement>('iframe[data-shown="true"]');
@@ -16,16 +17,62 @@ const visibleFrame = (): HTMLIFrameElement => {
 
 const STAGE_BOX = new DOMRect(0, 0, 1440, 900);
 
+type ReportParams = {
+  readonly frame: HTMLIFrameElement;
+  readonly type: DemoReportType;
+  readonly generation?: number;
+  readonly source?: MessageEventSource | null;
+};
+
+const report = ({ frame, type, generation = 0, source = frame.contentWindow }: ReportParams) => {
+  act(() => {
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          channel: DEMO_PROTOCOL.channel,
+          version: DEMO_PROTOCOL.version,
+          generation,
+          type,
+          elapsedMs: 0,
+          durationMs: 0,
+          cueIndex: 0,
+        },
+        origin: window.location.origin,
+        source,
+      }),
+    );
+  });
+};
+
+type SrcParams = {
+  readonly scene: string;
+};
+
+const frameOf = ({ scene }: SrcParams): HTMLIFrameElement => {
+  const frame = Array.from(document.querySelectorAll('iframe')).find((entry) =>
+    (entry.getAttribute('src') ?? '').includes(`scene=${scene}&`),
+  );
+  if (frame === undefined) {
+    throw new Error(`no frame for ${scene}`);
+  }
+  return frame;
+};
+
+const currentStep = (): string =>
+  document.querySelector('ol button[aria-current="step"]')?.textContent ?? '';
+
 beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(STAGE_BOX);
   window.history.replaceState(null, '', '/?scene=demo');
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  vi.spyOn(Animation.prototype, 'cancel').mockImplementation(() => undefined);
 });
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   window.history.replaceState(null, '', '/');
 });
 
@@ -49,7 +96,8 @@ describe('demo playground', () => {
     render(<DemoPlayground />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Run a workflow');
     expect(screen.getByText('Flow 2 of 8').textContent).toBe('Flow 2 of 8');
-    expect(visibleFrame().getAttribute('src')).toContain('scene=c08-run-ready');
+    expect(visibleFrame().getAttribute('src')).toContain('scene=c08-run-approval');
+    expect(visibleFrame().getAttribute('src')).toContain('director=1');
   });
 
   it('moves to the next chapter and writes it to the hash', () => {
@@ -103,6 +151,68 @@ describe('demo playground', () => {
     expect(screen.getAllByRole('link', { name: /Download for macOS/ })).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Back to the start' }));
     expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[0].id}`);
+  });
+
+  it('shows the loading state until the frame reports ready', () => {
+    render(<DemoPlayground />);
+    expect(screen.getByRole('status').textContent).toBe('Opening Goodboy');
+    report({ frame: visibleFrame(), type: 'ready' });
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('ignores a report from a window that is not one of its frames', () => {
+    render(<DemoPlayground />);
+    report({ frame: visibleFrame(), type: 'ready', source: window });
+    expect(screen.getByRole('status').textContent).toBe('Opening Goodboy');
+  });
+
+  it('starts the cues once the frame is ready and moves on after the hold', () => {
+    window.history.replaceState(null, '', '/?scene=demo#run');
+    render(<DemoPlayground />);
+    const approval = frameOf({ scene: 'c08-run-approval' });
+    const post = vi.spyOn(approval.contentWindow ?? window, 'postMessage');
+    report({ frame: approval, type: 'ready' });
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'play', generation: 0 }),
+      window.location.origin,
+    );
+    report({ frame: approval, type: 'complete' });
+    act(() => {
+      vi.advanceTimersByTime(4500);
+    });
+    expect(currentStep()).toBe('Steps run');
+  });
+
+  it('restarts a touched frame with a new generation and drops stale reports', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
+    report({ frame, type: 'ready' });
+    fireEvent.click(screen.getByRole('button', { name: 'Replay chapter' }));
+    expect(post).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'restart', generation: 1 }),
+      window.location.origin,
+    );
+    report({ frame, type: 'complete', generation: 0 });
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+    expect(screen.getByRole('button', { name: 'Pause' }).getAttribute('aria-label')).toBe('Pause');
+  });
+
+  it('keeps autoplay off under reduced motion', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    render(<DemoPlayground />);
+    expect(screen.getByRole('button', { name: 'Play' }).getAttribute('aria-label')).toBe('Play');
   });
 
   it('switches the frame and the stage to the light theme', () => {

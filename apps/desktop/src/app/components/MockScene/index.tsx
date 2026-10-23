@@ -12,6 +12,7 @@ import { useReportSheetParam } from './scenes/audit/ReportScenes';
 import { MOCK_SCENES } from './registry';
 import { UnknownScene } from './UnknownScene';
 import { quietSceneRepoCheck } from './scenes/quietSceneRepoCheck';
+import { DemoDirector } from './demo/DemoDirector';
 
 export { MOCK_SCENES } from './registry';
 
@@ -50,6 +51,7 @@ export const MockScene = () => {
       <UndoToastBridge />
       <ObjectMenuProvider>
         {Scene === undefined ? <UnknownScene sceneName={sceneName} /> : <Scene />}
+        {params.has('director') ? <DemoDirector sceneName={sceneName} /> : null}
         <ReportSheetHost />
       </ObjectMenuProvider>
     </ToastProvider>

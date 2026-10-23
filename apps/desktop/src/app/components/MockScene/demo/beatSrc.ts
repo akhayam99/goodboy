@@ -6,6 +6,6 @@ type Params = {
 };
 
 export const beatSrc = ({ beat, theme }: Params): string => {
-  const query = new URLSearchParams({ scene: beat.scene, ...beat.params, theme });
+  const query = new URLSearchParams({ scene: beat.scene, ...beat.params, theme, director: '1' });
   return `${window.location.pathname}?${query.toString()}`;
 };

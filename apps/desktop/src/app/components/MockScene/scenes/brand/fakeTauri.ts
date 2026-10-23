@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect } from 'react';
+import { isDirectedScene } from '../../demo/director/isDirectedScene';
 
 type FakeArgs = Readonly<Record<string, unknown>> | undefined;
 
@@ -37,6 +38,11 @@ export const useFakeTauri = ({ handlers, holdMs }: Params): void => {
   }, [handlers]);
 
   useEffect(() => {
+    if (isDirectedScene()) {
+      return () => {
+        Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
+      };
+    }
     const clear = window.setTimeout(() => {
       Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
     }, holdMs);

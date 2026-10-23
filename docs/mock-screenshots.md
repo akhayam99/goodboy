@@ -289,9 +289,33 @@ Acme docs; `none` up to Workspace, `repo` after it), and
 list of beats. A beat is another scene loaded in an iframe of the same server
 (`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and scaled to fit,
 so every beat gets a clean store and its own timers. The chapters live in
-`MockScene/demo/demoChapters.ts`, and `#<chapter id>` in the URL opens one. A
-beat's hold starts only once its frame has mounted, and the next beat loads
-behind it, because a dev server takes seconds to boot each frame. `&theme=dark`
+`MockScene/demo/demoChapters.ts`, and `#<chapter id>` in the URL opens one.
+
+Every beat frame carries `&director=1`. Without that param a scene stays as
+static as before, so screenshots and the a11y suite never see a director. With
+it, `MockScene` mounts `demo/DemoDirector`, which waits for fonts and two
+painted frames, then builds the scene's timeline from the seeded store
+(`demo/director/demoTimelines.ts`: `chat-shell`, `c08-run-working`,
+`board-shell`; any other scene gets an empty one). A timeline rewinds the
+seeded state in `prepare` and replays it as cues `{ atMs, apply }` against the
+real `useAppStore`, on a playback clock that leaves pauses out. Assistant text
+marks the live text registry first, so it streams through the product's own
+reveal. The frame and the playground talk over `postMessage` on channel
+`goodboy-demo`, version 1, both sides checking origin and the exact source
+window. The frame reports `ready` (seeded and painted, cues waiting), `progress`,
+`complete` and `hint` (a cue's `hint({ text })`, for step hints the shell does
+not draw yet); the playground sends `play`, `pause` and `restart`. A restart
+carries a higher generation: the frame restores the store it had before the
+first cue and replays, and every report from an older generation is dropped.
+The stage shows a frame only once it reports `ready`, keeping the previous one
+on screen until then, and a beat moves on `holdMs` after its frame reports
+`complete`. Pointer, key and wheel input inside a frame pause both sides
+without blocking the input; Play after that restarts the beat instead of
+writing cues over the visitor's changes. Under reduced motion the frame settles
+on the seeded scene and autoplay is off. In a directed frame `sendTurn` is
+simulated: it appends the user turn, runs the agent and streams a reply
+through the same live text path, so a composer never reaches IPC, and
+`useFakeTauri` keeps its fake boundary for the whole visit. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
