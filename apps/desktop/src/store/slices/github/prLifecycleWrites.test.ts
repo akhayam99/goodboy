@@ -169,6 +169,61 @@ describe('pull request writes with two mounts', () => {
     });
   });
 
+  it('reopens the pull request in the mount it names, not the active one', async () => {
+    const state = makeState();
+
+    await reopenPr(vi.fn(), asGet(state))(SESSION_ID, 44, { mountId: RELAY_MOUNT_ID });
+
+    expect(h.run).toHaveBeenCalledWith(['pr', 'reopen', '44'], {
+      cwd: '/repos/notify-relay',
+      workspaceId: 'workspace-1',
+      projectId: RELAY_ID,
+    });
+    expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
+      force: true,
+      mountId: RELAY_MOUNT_ID,
+    });
+  });
+
+  it('converts to draft in the mount it names and reads that mount again', async () => {
+    const state = makeState();
+
+    await convertPrToDraft(vi.fn(), asGet(state))(SESSION_ID, 44, {
+      mountId: RELAY_MOUNT_ID,
+    });
+
+    expect(h.run).toHaveBeenCalledWith(['pr', 'ready', '44', '--undo'], {
+      cwd: '/repos/notify-relay',
+      workspaceId: 'workspace-1',
+      projectId: RELAY_ID,
+    });
+    expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
+      force: true,
+      mountId: RELAY_MOUNT_ID,
+    });
+  });
+
+  it('closes the pull request in the mount it names and records that pull request', async () => {
+    const state = makeState();
+
+    await closePr(vi.fn(), asGet(state))(SESSION_ID, 44, { mountId: RELAY_MOUNT_ID });
+
+    expect(h.run).toHaveBeenCalledWith(['pr', 'close', '44'], {
+      cwd: '/repos/notify-relay',
+      workspaceId: 'workspace-1',
+      projectId: RELAY_ID,
+    });
+    expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
+      force: true,
+      mountId: RELAY_MOUNT_ID,
+    });
+    expect(state.recordSessionEventOnce).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      kind: 'pr_closed',
+      payload: { number: 44, title: 'Relay change', url: 'https://example.test/44' },
+    });
+  });
+
   it('keeps the active mount when no mount is named', async () => {
     const state = makeState();
 

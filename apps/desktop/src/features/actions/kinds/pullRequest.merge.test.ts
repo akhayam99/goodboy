@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import type { PullRequestState, SessionId } from '@goodboy/types';
+import { brandId, type MountId, type PullRequestState, type SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { resolveActions } from '../resolveActions';
 import type { ActionEnv } from '../types';
@@ -8,6 +8,7 @@ import { PULL_REQUEST_KIND } from './pullRequest';
 import type { PullRequestFacts } from './pullRequestFacts';
 
 const SESSION = 'session-harborline' as SessionId;
+const SHOWN_MOUNT = brandId<MountId>({ value: 'mount-payments-api' });
 
 const PR: PullRequestState = {
   number: 318,
@@ -141,7 +142,10 @@ describe('the merge confirm choice', () => {
 
   const loadPullRequestView = vi.fn(async () => undefined);
 
-  const runMerge = async (choice: string | null, state: PullRequestFacts = facts()) => {
+  const runMerge = async (
+    choice: string | null,
+    state: PullRequestFacts = facts({ mountId: SHOWN_MOUNT }),
+  ) => {
     const mergePr = vi.fn(async () => undefined);
     useAppStore.setState({
       mergePr,
@@ -155,18 +159,34 @@ describe('the merge confirm choice', () => {
   };
 
   it('sends the chosen method to the merge', async () => {
-    expect(await runMerge('rebase')).toHaveBeenCalledWith(SESSION, 318, 'rebase');
-    expect(await runMerge('merge')).toHaveBeenCalledWith(SESSION, 318, 'merge');
+    expect(await runMerge('rebase')).toHaveBeenCalledWith(SESSION, 318, 'rebase', {
+      mountId: SHOWN_MOUNT,
+    });
+    expect(await runMerge('merge')).toHaveBeenCalledWith(SESSION, 318, 'merge', {
+      mountId: SHOWN_MOUNT,
+    });
   });
 
   it('falls back to the default method when nothing was chosen', async () => {
-    expect(await runMerge(null)).toHaveBeenCalledWith(SESSION, 318, 'squash');
-    expect(await runMerge('fast-forward')).toHaveBeenCalledWith(SESSION, 318, 'squash');
+    expect(await runMerge(null)).toHaveBeenCalledWith(SESSION, 318, 'squash', {
+      mountId: SHOWN_MOUNT,
+    });
+    expect(await runMerge('fast-forward')).toHaveBeenCalledWith(SESSION, 318, 'squash', {
+      mountId: SHOWN_MOUNT,
+    });
+  });
+
+  it('names no mount when the facts carry none', async () => {
+    expect(await runMerge('squash', facts())).toHaveBeenCalledWith(SESSION, 318, 'squash', {});
   });
 
   it('reads the activity again once the merge is done', async () => {
     loadPullRequestView.mockClear();
     await runMerge('squash');
-    expect(loadPullRequestView).toHaveBeenCalledWith({ sessionId: SESSION, force: true });
+    expect(loadPullRequestView).toHaveBeenCalledWith({
+      sessionId: SESSION,
+      mountId: SHOWN_MOUNT,
+      force: true,
+    });
   });
 });

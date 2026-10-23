@@ -4,14 +4,16 @@ import { refreshActiveRequest } from '../review-source/refreshActiveRequest';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
+import type { PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
 
 export const reopenPr = (_set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, prNumber?: number) => {
+  return async (sessionId: SessionId, prNumber?: number, { mountId }: PrWriteOptions = {}) => {
     const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
       prNumber,
+      ...(mountId === undefined ? {} : { mountId }),
       failureTitle: ({ prNumber: target, nouns }) =>
         prLifecycleFailureTitle({ action: 'reopen', prNumber: target, nouns }),
     });
@@ -28,7 +30,11 @@ export const reopenPr = (_set: SetFn, get: GetFn) => {
           title: prLifecycleFailureTitle({ action: 'reopen', prNumber: num, nouns: port.nouns }),
           run: () => port.reopen(),
         });
-        await refreshActiveRequest({ get, sessionId });
+        await refreshActiveRequest({
+          get,
+          sessionId,
+          ...(mountId === undefined ? {} : { mountId }),
+        });
       },
     });
   };
