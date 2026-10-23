@@ -1432,17 +1432,17 @@ activity yet show the plain overview with its actions.
 
 ## The session tools
 
-One labeled column at the right edge of the session content, between the
+One icon-only column at the right edge of the session content, between the
 page and the open drawer, the same on every rail level and in this order:
 **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C),
 **Agents** (⌘⌥L) and **Scripts** (⌘⌥S) (`SESSION_TOOLS`). `SessionTools`
 (`features/session/components/SessionTools`) is mounted by `SessionFrame`
-after the page, 128px wide on the sheet background, its buttons starting on the
-rail top row's line. Each tool is a `md` quiet `Button` with its icon and its
-word (`SessionToolButton`), its chord in a left tooltip, its accessible name
+after the page, one icon button plus its inset wide (40px) on the sheet background, its buttons starting on the
+rail top row's line. Each tool is a square `md` `IconButton` with its icon only
+(`SessionToolButton`), its name and chord in a left tooltip, its accessible name
 reading the word and any note ("Context, Decisions changed since you last
 looked" while a dot shows), `aria-pressed` with the `bg-selected` fill while
-its drawer is open (`openPaneOf`). The Context dot sits after the word: info while the
+its drawer is open (`openPaneOf`). The Context dot is a badge on the icon's top right corner: info while the
 summary runs, danger when it failed, primary when the context changed since
 you looked. The column is a `toolbar` (`aria-orientation="vertical"`, named
 Session tools) with one tab stop; Up, Down, Home and End move it

@@ -15,6 +15,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { DrawerHost } from '../../../../app/components/DrawerHost';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
@@ -66,7 +67,7 @@ const README: ExploreEntry = {
 };
 
 describe('SessionTools', () => {
-  it('stacks Ask, Terminal, Explore, Context, Agents and Scripts with their words in a vertical toolbar', () => {
+  it('stacks Ask, Terminal, Explore, Context, Agents and Scripts as icons in a vertical toolbar', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
@@ -79,15 +80,39 @@ describe('SessionTools', () => {
       'Agents',
       'Scripts',
     ]);
-    expect(buttons.map((button) => button.textContent)).toEqual([
-      'Ask',
-      'Terminal',
-      'Explore',
-      'Context',
-      'Agents',
-      'Scripts',
-    ]);
+    expect(buttons.map((button) => button.textContent)).toEqual(['', '', '', '', '', '']);
+    expect(buttons.every((button) => button.querySelector('svg') !== null)).toBe(true);
     expect(within(toolbar).queryByRole('button', { name: /^More/ })).toBeNull();
+  });
+
+  it('names each icon with its label and chord in the tooltip on the left', () => {
+    renderCluster();
+
+    expect(tooltipTextOf({ element: toggle('ask') })).toContain('Ask');
+    expect(tooltipTextOf({ element: toggle('terminal') })).toContain('Terminal');
+  });
+
+  it('draws the Context dot on the icon as a badge, not after a word', () => {
+    renderCluster();
+    act(() => {
+      useAppStore.setState((state) => ({
+        summarizerStatus: {
+          ...state.summarizerStatus,
+          [SESSION_ID]: {
+            status: 'running',
+            lastUpdate: null,
+            error: null,
+            lastUsage: null,
+            lastAttempt: null,
+          },
+        },
+      }));
+    });
+
+    const dot = screen.getByTestId('tool-signal');
+    expect(dot.parentElement?.contains(toggle('context'))).toBe(true);
+    expect(toggle('context').contains(dot)).toBe(false);
+    expect(toggle('context').textContent).toBe('');
   });
 
   it('keeps one tab stop and moves it with the arrow keys, Home and End', () => {
