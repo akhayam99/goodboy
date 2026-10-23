@@ -82,6 +82,21 @@ const LETTERS: DemoTimeline = {
 };
 
 describe('the scene director', () => {
+  it('settles a running scene at once when the visitor takes over', () => {
+    const { director, reports } = direct({ timeline: LETTERS });
+    director.start();
+    director.play();
+    vi.advanceTimersByTime(400);
+    expect(draftOf()).toBe('ab');
+    director.settle();
+    expect(draftOf()).toBe('abc');
+    expect(reports.at(-1)?.type).toBe('complete');
+    vi.advanceTimersByTime(2000);
+    expect(draftOf()).toBe('abc');
+    director.settle();
+    expect(reports.filter((report) => report.type === 'complete')).toHaveLength(1);
+  });
+
   it('waits for play, then runs cues by time and declaration order', () => {
     const { director, reports } = direct({ timeline: LETTERS });
     director.start();

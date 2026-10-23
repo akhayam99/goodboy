@@ -68,6 +68,16 @@ dev. Preview with `pnpm --dir apps/desktop exec vite preview --outDir dist-demo 
 and open `http://localhost:5194/` for the playground, or
 `http://localhost:5194/?scene=chat-shell` for a single frame.
 
+A phone never gets the playground. When the pointer is coarse and nothing
+hovers (`(hover: none) and (pointer: coarse)`, never a width), `main.tsx`
+lazy-loads `MockScene/demo/phone/DemoPhone` instead of `MockScene`, so no
+scene chunk and no iframe loads. The page says what Goodboy is, stars the
+repository and hands the canonical demo link (with a valid chapter hash) to
+the Web Share API, or copies it and confirms only once the clipboard
+resolves. A tablet with a trackpad reports a fine pointer and gets the
+playground. `shouldOpenDemoPhone.ts` owns the rule and `DemoPhone.test.tsx`
+pins it.
+
 Keep source maps off for public output. The eager registry in `MockScene/registry/index.ts` bundles
 every scene fixture, not only the playground's, so every fixture is public:
 paths are `~/code/<mock company>/<repo>` (never `/Users/` or `/home/`), email
@@ -314,11 +324,15 @@ event, with `&step=` a step id (`welcome`, `agents`, `workspace`, `tools`,
 Acme docs; `none` up to Workspace, `repo` after it), and
 `onboarding-home&state=` shows Home in `list`, `new` or `empty`.
 
-`demo` is the playground: a frame that walks a visitor through chapters, each a
-list of beats. A beat is another scene loaded in an iframe of the same server
-(`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and scaled to fit,
-so every beat gets a clean store and its own timers. The chapters live in
-`MockScene/demo/demoChapters.ts`, and `#<chapter id>` in the URL opens one.
+`demo` is the playground: five open groups in the rail (Set up, which is
+optional, Work with an agent, Orchestrate, Find work and results, Review and
+ship), each a list of beats. A beat is another scene loaded in an iframe of the
+same server (`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and
+scaled to fit, so every beat gets a clean store and its own timers. The group
+names and their one line live in `MockScene/demo/demoGroups.ts`, which both the
+rail (through `demoChapters.ts`) and the phone page read, so the two never
+drift. `#<group id>` in the URL opens one, and a bare visit opens Work with an
+agent (`defaultGroupId.ts`).
 
 Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With
@@ -333,25 +347,68 @@ reveal. The frame and the playground talk over `postMessage` on channel
 `goodboy-demo`, version 1, both sides checking origin and the exact source
 window. The frame reports `ready` (seeded and painted, cues waiting), `progress`,
 `complete` and `hint` (a cue's `hint({ text })`, for step hints the shell does
-not draw yet); the playground sends `play`, `pause` and `restart`. A restart
-carries a higher generation: the frame restores the store it had before the
-first cue and replays, and every report from an older generation is dropped.
-The stage shows a frame only once it reports `ready`, keeping the previous one
-on screen until then, and a beat moves on `holdMs` after its frame reports
-`complete`. On the board the card that leaves Running travels once to Needs
+not draw yet); the playground sends `play` once the frame it shows is ready.
+The frame still answers `pause` and `restart` (a restart carries a higher
+generation, restores the store it had before the first cue and drops every
+report from an older generation), but the shell no longer sends them. The
+stage shows a frame only once it reports `ready`, keeping the previous one on
+screen until then. Nothing moves on by itself: the visitor drives, and a beat
+changes only when they pick a step in the timeline or act in the app. A group
+can name a `placeOf` check and give its beats a `place`; the frame reports
+`place` when that check changes, and the timeline follows the step without
+reloading the frame (Set up follows the wizard screen this way). Picking the
+step the frame left reloads it fresh. Replay loads the group's first beat in a
+fresh frame and clears its hint progress. On the board the card that leaves Running travels once to Needs
 you: `demo/director/travelCard.ts` flies a copy of the card from its old box to
 its new one over the columns (a column's `ScrollFade` would clip the real card)
 and fades the real card in as the copy lands. It runs only in the demo, since
 the app's motion registry in `packages/ui/DESIGN-SYSTEM.md` is closed, and
-under reduced motion or with nothing laid out the card changes column in place. Pointer, key and wheel input inside a frame pause both sides
-without blocking the input; Play after that restarts the beat instead of
-writing cues over the visitor's changes. Under reduced motion the frame settles
-on the seeded scene and autoplay is off. In a directed frame `sendTurn` is
+under reduced motion or with nothing laid out the card changes column in place. A pointer or key press inside
+a frame settles its cues at once (`settle` in `createSceneDirector.ts` applies
+every cue left and reports `complete`), so the scene never writes over the
+visitor's changes and there is nothing to pause. Under reduced motion the
+frame settles on the seeded scene. In a directed frame `sendTurn` is
 simulated: it appends the user turn, runs the agent and streams a reply
 through the same live text path, so a composer never reaches IPC, and
 `useFakeTauri` keeps its fake boundary for the whole visit. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
+
+A group carries an ordered list of hints (`demo/hints/`, typed in
+`demoHintTypes.ts`): an id, the copy, the outcome it counts toward, an anchor,
+a preferred side and two checks, reveal when and done when. The anchor is a
+selector inside the frame (an existing `aria-label` or role, or a
+`data-demo-anchor` that only the demo reads), and the two checks read the real
+store and DOM of the frame. Once a frame is ready the stage sends
+it `hints` (the group id and the hint ids already tried or skipped); the frame's
+`createHintEngine` re-measures on store changes, DOM mutations, scroll and
+resize in one animation frame and reports `anchor` (the first untried hint whose
+control exists, with its rect, or `isOffscreen` when a scroll container or the
+viewport hides it) and `tried` (a hint whose done check held after its reveal
+check did). Reports carry the frame's generation and the stage
+drops any from an older generation or another frame. The stage draws one note
+beside the anchor through the stage scale, a 2px outline and a callout that
+tries the other sides near an edge (below before the opposite side); only the
+callout takes clicks. A control scrolled out of view gets a note at the bottom
+of the stage with Show control, which sends `reveal` so the frame scrolls it
+into view once. Escape hides either note, H brings it back, Skip hint settles
+it. A hint with `nextChapterId` is the closing note of a group: it counts no
+outcome and offers Next to that group instead of Skip. The rail and the header count distinct
+outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
+(every read and write survives blocked storage), and Replay clears the open
+group only. Another group gets hints by adding a data file and a `hints` entry.
+In a directed frame `answerOpenQuestions` is simulated too: it marks the
+answer, keeps the unsent draft and streams a short acknowledgment.
+
+Set up runs the real wizard end to end. `scenes/onboarding/setupSceneAnswer.ts`
+answers the folder picker with `~/Code/harborline` (payments-api, ledger-core,
+notify-relay) after a short delay, the git checks and a committed
+`db_transaction`, so Create goes through the real `createWorkspaceWithFolders`.
+`seedWizardScene` signs in a detected agent on Sign in, keeps the new workspace
+on `setCurrentWorkspace` and starts the first task through
+`startSampleScout.ts`: it seeds a Scout session, appends the visitor's prompt and
+streams a reply picked by `sampleScoutReply.ts`, and `OnboardingScene` shows
+that session in the app shell once the wizard closes.
 
 The Settings frames of the default shell are `settings-general-pinned` and
 `settings-providers-rail`; they live in `scenes/u21/settings.tsx`. Each mounts `audit/AppFrame` and opens

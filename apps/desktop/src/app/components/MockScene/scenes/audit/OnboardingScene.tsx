@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { OnboardingWizard } from '../../../../../features/onboarding/OnboardingWizard';
+import { ChatView } from '../../../../../features/chat/components/ChatView';
+import { useAppStore } from '../../../../../store';
+import { ShellFrame } from '../shellChrome';
 import {
   WIZARD_STEPS,
   type WizardStepId,
@@ -61,6 +64,11 @@ const OPEN_DELAY_MS = 100;
 export const OnboardingScene = () => {
   const [setup] = useState(readSetup);
   const [isReady, setIsReady] = useState(false);
+  const session = useAppStore((state) =>
+    state.currentSessionId === null
+      ? undefined
+      : state.sessions.find((entry) => entry.id === state.currentSessionId),
+  );
 
   useEffect(() => {
     const { step, agents, ws } = setup;
@@ -85,6 +93,9 @@ export const OnboardingScene = () => {
   return (
     <main className="h-screen bg-background text-foreground">
       <style>{SETTLED_MOTION}</style>
+      {session === undefined ? null : (
+        <ShellFrame session={session} main={<ChatView session={session} />} />
+      )}
       <OnboardingWizard />
     </main>
   );

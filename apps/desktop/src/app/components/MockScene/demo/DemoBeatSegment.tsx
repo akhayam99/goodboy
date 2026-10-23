@@ -7,6 +7,7 @@ type Props = {
   readonly beat: DemoBeat;
   readonly state: 'past' | 'current' | 'next';
   readonly isRunning: boolean;
+  readonly isComplete: boolean;
   readonly fill: BeatFill;
   readonly runKey: string;
   readonly onSelect: () => void;
@@ -14,11 +15,12 @@ type Props = {
 
 type RestParams = {
   readonly state: Props['state'];
+  readonly isComplete: boolean;
   readonly fill: BeatFill;
 };
 
-const restScale = ({ state, fill }: RestParams): number => {
-  if (state === 'past') {
+const restScale = ({ state, isComplete, fill }: RestParams): number => {
+  if (state === 'past' || isComplete) {
     return 1;
   }
   if (state === 'next' || fill.totalMs <= 0) {
@@ -27,7 +29,15 @@ const restScale = ({ state, fill }: RestParams): number => {
   return Math.min(1, fill.startMs / fill.totalMs);
 };
 
-export const DemoBeatSegment = ({ beat, state, isRunning, fill, runKey, onSelect }: Props) => {
+export const DemoBeatSegment = ({
+  beat,
+  state,
+  isRunning,
+  isComplete,
+  fill,
+  runKey,
+  onSelect,
+}: Props) => {
   const fillRef = useBeatFill({
     isRunning,
     totalMs: fill.totalMs,
@@ -52,7 +62,7 @@ export const DemoBeatSegment = ({ beat, state, isRunning, fill, runKey, onSelect
             'absolute inset-0 origin-left rounded-full',
             isCurrent ? 'bg-primary' : 'bg-muted-foreground',
           )}
-          style={{ transform: `scaleX(${restScale({ state, fill })})` }}
+          style={{ transform: `scaleX(${restScale({ state, isComplete, fill })})` }}
         />
       </span>
       <span

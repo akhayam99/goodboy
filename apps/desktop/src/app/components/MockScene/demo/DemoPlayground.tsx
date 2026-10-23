@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { applyDocumentTheme } from '../../../../shared/lib/theme';
-import { DEMO_CHAPTERS, DEMO_GROUPS } from './demoChapters';
+import { DEMO_CHAPTERS } from './demoChapters';
+import { DEFAULT_GROUP_ID } from './defaultGroupId';
 import { DemoTopBar } from './DemoTopBar';
 import { DemoRail } from './DemoRail';
 import { DemoChapterHeader } from './DemoChapterHeader';
@@ -10,6 +11,7 @@ import { DemoClosing } from './DemoClosing';
 import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
 import { useDemoKeys } from './useDemoKeys';
+import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
 
 type Theme = 'dark' | 'light';
 
@@ -21,19 +23,26 @@ type ShownParams = {
   readonly key: string;
 };
 
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-
-const prefersReducedMotion = (): boolean =>
-  typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches;
-
 const initialTheme = (): Theme =>
   new URLSearchParams(window.location.search).get('theme') === 'light' ? 'light' : 'dark';
+
+type AnnouncementParams = {
+  readonly coach: DemoHints['coach'];
+  readonly offscreen: DemoHints['offscreen'];
+};
+
+const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
+  const copy = coach?.copy ?? offscreen?.copy;
+  return copy === undefined ? '' : `Hint: ${copy}`;
+};
 
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<Theme>(initialTheme);
-  const { chapterId, selectChapter } = useChapterHash({ chapters: DEMO_CHAPTERS });
-  const [visitedIds, setVisitedIds] = useState<ReadonlySet<string>>(() => new Set([chapterId]));
+  const { chapterId, selectChapter } = useChapterHash({
+    chapters: DEMO_CHAPTERS,
+    fallbackId: DEFAULT_GROUP_ID,
+  });
 
   const chapterIndex = Math.max(
     0,
@@ -43,11 +52,9 @@ export const DemoPlayground = () => {
   const chapter = DEMO_CHAPTERS[chapterIndex] ?? DEMO_CHAPTERS[0];
   const previousChapter = DEMO_CHAPTERS[chapterIndex - 1];
   const nextChapter = DEMO_CHAPTERS[chapterIndex + 1];
-  const [isReducedMotion] = useState(prefersReducedMotion);
-  const player = useBeatPlayer({ chapter, nextChapter, theme, shownKey, isReducedMotion });
+  const player = useBeatPlayer({ chapter, nextChapter, theme, shownKey });
 
-  const groupChapters = DEMO_CHAPTERS.filter((entry) => entry.group === chapter.group);
-  const position = `${DEMO_GROUPS[chapter.group].noun} ${groupChapters.indexOf(chapter) + 1} of ${groupChapters.length}`;
+  const hints = useDemoHints({ chapter, chapters: DEMO_CHAPTERS, frameKey: player.frame.key });
 
   const focusFrame = useCallback(() => {
     rootRef.current?.focus({ preventScroll: true });
@@ -60,12 +67,6 @@ export const DemoPlayground = () => {
   useEffect(() => {
     applyDocumentTheme({ theme });
   }, [theme]);
-
-  useEffect(() => {
-    setVisitedIds((current) =>
-      current.has(chapter.id) ? current : new Set([...current, chapter.id]),
-    );
-  }, [chapter.id]);
 
   const goToChapter = useCallback(
     ({ id }: ChapterParams) => {
@@ -89,10 +90,36 @@ export const DemoPlayground = () => {
     goToChapter({ id: nextChapter.id });
   }, [nextChapter, goToChapter]);
 
-  const onToggle = player.isPlaying ? player.pause : player.play;
-  const onKeyDown = useDemoKeys({ onPrevious, onNext, onToggle, onReplay: player.replay });
+  const { reset: resetHints, onHintReport: onHintNote } = hints;
+  const { replay, follow } = player;
+  const onReplay = useCallback(() => {
+    resetHints();
+    replay();
+  }, [resetHints, replay]);
+  const onHintReport = useCallback(
+    ({ key, report }: HintReportParams) => {
+      if (report.type === 'place') {
+        follow({ key, place: report.place });
+        return;
+      }
+      onHintNote({ key, report });
+    },
+    [follow, onHintNote],
+  );
+  const onKeyDown = useDemoKeys({
+    onPrevious,
+    onNext,
+    onReplay,
+    onHideHint: hints.hide,
+    onShowHint: hints.show,
+  });
 
   const onShown = useCallback(({ key }: ShownParams) => setShownKey(key), []);
+  const isLastBeat = player.beatIndex === chapter.beats.length - 1;
+  const isGroupDone =
+    hints.tally.total > 0
+      ? hints.tally.tried >= hints.tally.total
+      : isLastBeat && player.isComplete;
 
   return (
     <div
@@ -109,23 +136,41 @@ export const DemoPlayground = () => {
         <DemoRail
           chapters={DEMO_CHAPTERS}
           activeId={chapter.id}
-          visitedIds={visitedIds}
+          tallyOf={hints.tallyOf}
           onSelect={goToChapter}
         />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
-          <DemoChapterHeader chapter={chapter} position={position} />
+          <DemoChapterHeader
+            chapter={chapter}
+            tally={hints.tally}
+            isHintHidden={hints.isHidden}
+            onShowHint={hints.show}
+          />
           <DemoStage
             frame={player.frame}
             preloadFrame={player.preloadFrame}
             command={player.command}
             onShown={onShown}
             onReport={player.report}
-            onInteract={player.interact}
             onFocusLost={focusFrame}
+            hintTrack={hints.track}
+            coach={hints.coach}
+            offscreen={hints.offscreen}
+            reveal={hints.reveal}
+            onHintReport={onHintReport}
+            onSkipHint={hints.skip}
+            onHideHint={hints.hide}
+            onRevealHint={hints.revealHint}
+            onNextChapter={goToChapter}
           />
+          <p className="sr-only" aria-live="polite">
+            {hintAnnouncement({ coach: hints.coach, offscreen: hints.offscreen })}
+          </p>
           <DemoTimeline
             chapter={chapter}
             player={player}
+            onReplay={onReplay}
+            isGroupDone={isGroupDone}
             nextChapter={nextChapter}
             hasPrevious={previousChapter !== undefined}
             onPrevious={onPrevious}

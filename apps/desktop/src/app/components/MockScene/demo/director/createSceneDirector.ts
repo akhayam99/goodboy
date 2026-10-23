@@ -25,6 +25,7 @@ export type SceneDirector = {
   readonly start: () => void;
   readonly play: () => void;
   readonly pause: () => void;
+  readonly settle: () => void;
   readonly restart: (params: RestartParams) => void;
   readonly dispose: () => void;
 };
@@ -140,6 +141,18 @@ export const createSceneDirector = ({
       clearTimer();
       clock.pause();
       emit({ type: 'progress' });
+    },
+    settle: () => {
+      if (cueIndex >= cues.length) {
+        return;
+      }
+      clearTimer();
+      clock.pause();
+      for (const cue of cues.slice(cueIndex)) {
+        cue.apply(cueParams());
+      }
+      cueIndex = cues.length;
+      emit({ type: 'complete' });
     },
     restart: ({ generation: next }: RestartParams) => {
       clearTimer();

@@ -132,6 +132,7 @@ export const NewWorkspaceForm = ({
       isBusy={draft.isCreating}
       busyLabel={busyLabel}
       aria-describedby={draft.block === null ? undefined : reasonId}
+      data-demo-anchor="setup-create"
     >
       {draft.error === null ? createLabel : 'Retry'}
       <KeyHint keys={shortcutGlyphs('composer.submit')} isOnTone />
@@ -142,6 +143,7 @@ export const NewWorkspaceForm = ({
       isBusy={isReading}
       busyLabel="Reading folder"
       onClick={() => void draft.choose()}
+      data-demo-anchor="setup-choose-folder"
     >
       Choose folder
       <KeyHint keys={formatCombo(CHOOSE_COMBO)} isOnTone />
