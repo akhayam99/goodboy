@@ -36,7 +36,9 @@ export type TailSceneState =
   | 'fixrun'
   | 'history'
   | 'stopping'
-  | 'childstopped';
+  | 'childstopped'
+  | 'childconfirm'
+  | 'childasked';
 
 const FACTS: Record<TailSceneState, () => TailFacts | null> = {
   working: () =>
@@ -125,6 +127,22 @@ const FACTS: Record<TailSceneState, () => TailFacts | null> = {
       delegation: { state: 'settled', outcome: 'stopped', reason: null },
       turn: null,
       agent: { status: 'stopped', stoppedBy: 'app', stoppedAt: undefined },
+      lastTool: null,
+      project: null,
+    }),
+  childconfirm: () =>
+    autoChildLive({
+      delegation: { state: 'awaiting_confirm', outcome: null, reason: null },
+      turn: null,
+      agent: AGENT,
+      lastTool: null,
+      project: null,
+    }),
+  childasked: () =>
+    autoChildLive({
+      delegation: { state: 'paused', outcome: null, reason: null },
+      turn: { kind: 'blocked', runId: RUN, blockedAt: STARTED },
+      agent: AGENT,
       lastTool: null,
       project: null,
     }),

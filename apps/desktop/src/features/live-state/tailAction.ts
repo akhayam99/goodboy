@@ -12,6 +12,8 @@ export const TAIL_ACTION = {
   raiseLimit: { id: 'raiseLimit', label: 'Raise limit' },
   changeLimit: { id: 'changeLimit', label: 'Change limit' },
   answer: { id: 'answer', label: 'Answer' },
+  confirmDelegation: { id: 'confirmDelegation', label: 'Confirm' },
+  declineDelegation: { id: 'declineDelegation', label: 'Decline' },
   viewTranscript: { id: 'viewTranscript', label: 'View transcript' },
   forceStop: { id: 'forceStop', label: 'Force stop' },
 } as const satisfies Record<TailActionId, TailAction>;

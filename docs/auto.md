@@ -400,8 +400,10 @@ writing to it reopens it to **Deciding**.
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
   `DelegationResult`; the summary is markdown through the shared `Markdown`,
-  with any artifact block dropped by `splitArtifactText`) and its tail (`autoChildLive`: its live line with **Stop
-  agent**, **Failed: ...** or **Stopped** with **Retry through Auto**, or
+  with any artifact block dropped by `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
+  accepted it and not started it, its live line with **Stop agent**, **Waiting for
+  your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
+  conversation above), **Failed: ...** or **Stopped** with **Retry through Auto**, or
   **Returned to Auto**). A pane opened from the Agents panel shows **Back to
   agents**. **Open full** puts the child in the center; there the notice reads
   the same and **Open Auto** goes back.

@@ -7,7 +7,9 @@ import { autoChildLive } from '../../live-state/adapters/autoChildLive';
 import type { TailActionId, TailFacts } from '../../live-state/tailFacts';
 import { DelegationResult } from '../chat/DelegationResult';
 import { useChecksRerun } from '../chat/useChecksRerun';
+import { useDelegationDecision } from '../chat/useDelegationDecision';
 import { usePublishAct } from '../chat/usePublishAct';
+import type { DelegationDecision } from '../delegationDecisionPort';
 import type { DelegationCardModel } from '../chat/delegationCardOf';
 
 type Props = {
@@ -15,6 +17,10 @@ type Props = {
   readonly delegation: AutoDelegation;
   readonly card: DelegationCardModel;
   readonly agent: Agent;
+};
+
+type DecideParams = {
+  readonly choice: DelegationDecision;
 };
 
 const RETURNED: TailFacts = {
@@ -30,14 +36,23 @@ export const AutoChildEnd = ({ sessionId, delegation, card, agent }: Props) => {
   const cancelCurrentTurn = useAppStore((state) => state.cancelCurrentTurn);
   const { runningId, rerun } = useChecksRerun();
   const publishing = usePublishAct();
+  const decision = useDelegationDecision();
   if (turn?.kind === 'running' || turn?.kind === 'starting') {
     return null;
   }
   const live = autoChildLive({ delegation, turn, agent, lastTool: null, project: null });
   const facts = live ?? (delegation.state === 'settled' ? RETURNED : null);
+  const decide = ({ choice }: DecideParams): void => {
+    if (decision.busyId === delegation.id) {
+      return;
+    }
+    void decision.decide({ delegationId: delegation.id, decision: choice });
+  };
   const handlers: Partial<Record<TailActionId, () => void>> = {
     retryThroughAuto: () => void continueStoppedAgent({ sessionId, agentId: agent.id }),
     stopAgent: () => void cancelCurrentTurn(sessionId, agent.id, 'user'),
+    confirmDelegation: () => decide({ choice: 'confirm' }),
+    declineDelegation: () => decide({ choice: 'decline' }),
   };
 
   return (

@@ -147,6 +147,8 @@ c01-grid-dots
 c01-grid-groups
 c01-grid-list
 c01-grid-type
+c01-tail-childasked
+c01-tail-childconfirm
 c01-tail-childstopped
 c01-tail-cifix
 c01-tail-cleanup

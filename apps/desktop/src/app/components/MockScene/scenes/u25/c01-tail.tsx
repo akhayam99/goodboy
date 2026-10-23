@@ -15,4 +15,6 @@ export const U25_C01_TAIL_SCENES = {
   'c01-tail-history': () => <TailScene state="history" />,
   'c01-tail-stopping': () => <TailScene state="stopping" />,
   'c01-tail-childstopped': () => <TailScene state="childstopped" />,
+  'c01-tail-childconfirm': () => <TailScene state="childconfirm" />,
+  'c01-tail-childasked': () => <TailScene state="childasked" />,
 };

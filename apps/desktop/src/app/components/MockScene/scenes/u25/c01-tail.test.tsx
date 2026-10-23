@@ -49,6 +49,24 @@ describe('c01 tail scenes', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
+  it('reads a child that waits for your OK as needing you, with Confirm first', async () => {
+    const Scene = U25_C01_TAIL_SCENES['c01-tail-childconfirm'];
+    render(<Scene />);
+    screen.getByText('Waiting for your OK');
+    expect(screen.queryByText('Queued')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop agent' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    screen.getByText('Pressed confirmDelegation');
+  });
+
+  it('reads a child that asked a question as needing you, with nothing to stop', () => {
+    const Scene = U25_C01_TAIL_SCENES['c01-tail-childasked'];
+    render(<Scene />);
+    screen.getByText('Asked a question');
+    expect(screen.queryByText('Queued')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop agent' })).toBeNull();
+  });
+
   it('keeps the reason and Retry in the pressed row after a failed close', () => {
     const Scene = U25_C01_TAIL_SCENES['c01-tail-cleanup'];
     render(<Scene />);
