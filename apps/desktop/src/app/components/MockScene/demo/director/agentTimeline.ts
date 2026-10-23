@@ -17,6 +17,8 @@ const DONE_GAP_MS = 1600;
 const QUESTION_GAP_MS = 700;
 const DRAFT =
   'Also log the processor event id when a duplicate is skipped, so support can trace it.';
+const ANSWER_REPLY =
+  'Thanks, that settles it. Updating notify-relay to match, then rerunning the redelivery test.';
 const REPLY =
   'Adding it now. The duplicate branch in handler.ts logs the event id at info level, and the redelivery test checks the line is written once.';
 
@@ -201,6 +203,7 @@ export const agentTimeline = ({ state }: TimelineParams): DemoTimeline | null =>
       store.setState((current) => ({ agentDraft: { ...current.agentDraft, [agentId]: DRAFT } }));
     },
     reply: REPLY,
+    answerReply: ANSWER_REPLY,
     prepare: ({ store, at }) => {
       store.setState((current) => ({
         transcripts: { ...current.transcripts, [agentId]: target.opening },

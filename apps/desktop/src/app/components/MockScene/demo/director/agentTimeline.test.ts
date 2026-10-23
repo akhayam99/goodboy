@@ -116,7 +116,12 @@ describe('the agent timeline', () => {
 describe('the simulated send', () => {
   it('appends the user turn, runs the agent and streams a reply to the end', async () => {
     seed();
-    const send = createSimulatedSend({ store, reply: 'On it. Done soon.', now: nowIso });
+    const send = createSimulatedSend({
+      store,
+      reply: 'On it. Done soon.',
+      now: nowIso,
+      shouldClearDraft: true,
+    });
     await send({ sessionId: session.id, agentId: agent.id, content: 'Log the event id.' });
     const started = store.getState();
     expect(started.transcripts[agent.id]?.at(-1)).toMatchObject({

@@ -142,6 +142,7 @@ export const NewWorkspaceForm = ({
       isBusy={isReading}
       busyLabel="Reading folder"
       onClick={() => void draft.choose()}
+      data-demo-anchor="setup-choose-folder"
     >
       Choose folder
       <KeyHint keys={formatCombo(CHOOSE_COMBO)} isOnTone />

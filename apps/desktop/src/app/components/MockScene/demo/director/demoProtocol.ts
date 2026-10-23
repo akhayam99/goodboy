@@ -21,3 +21,38 @@ export type DemoReport = {
   readonly cueIndex: number;
   readonly hint?: string;
 };
+
+export type DemoRect = {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+};
+
+export type DemoHintsCommand = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'hints';
+  readonly chapterId: string;
+  readonly settledIds: ReadonlyArray<string>;
+};
+
+type DemoAnchorReport = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'anchor';
+  readonly hintId: string | null;
+  readonly rect: DemoRect | null;
+};
+
+type DemoTriedReport = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'tried';
+  readonly hintId: string;
+};
+
+export type DemoHintReport = DemoAnchorReport | DemoTriedReport;

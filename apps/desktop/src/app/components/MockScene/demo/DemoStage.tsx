@@ -5,7 +5,10 @@ import { DemoStageLoading } from './DemoStageLoading';
 import { STAGE_BACKDROP } from './stageBackdrop';
 import { DEMO_PROTOCOL, type DemoCommandType, type DemoReport } from './director/demoProtocol';
 import { isDemoReport } from './director/isDemoReport';
+import { isDemoHintReport } from './director/isDemoHintReport';
+import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
+import type { HintReportParams, HintTrack } from './useDemoHints';
 
 const APP_WIDTH = 1440;
 const APP_HEIGHT = 900;
@@ -26,6 +29,11 @@ type Props = {
   readonly onReport: (params: FrameReportParams) => void;
   readonly onInteract: () => void;
   readonly onFocusLost: () => void;
+  readonly hintTrack: HintTrack | undefined;
+  readonly coach: CoachMark | undefined;
+  readonly onHintReport: (params: HintReportParams) => void;
+  readonly onSkipHint: () => void;
+  readonly onHideHint: () => void;
 };
 
 type WatchParams = {
@@ -69,6 +77,11 @@ export const DemoStage = ({
   onReport,
   onInteract,
   onFocusLost,
+  hintTrack,
+  coach,
+  onHintReport,
+  onSkipHint,
+  onHideHint,
 }: Props) => {
   const { ref, scale, hasRoom } = useStageScale({
     width: APP_WIDTH,
@@ -81,8 +94,11 @@ export const DemoStage = ({
   const [fadingKey, setFadingKey] = useState<string | undefined>(undefined);
   const elements = useRef(new Map<string, HTMLIFrameElement>());
   const sent = useRef(new Map<string, SentCommand>());
+  const hintsSent = useRef(new Map<string, string>());
 
   const currentKey = activeFrame.key;
+  const currentKeyRef = useRef(currentKey);
+  currentKeyRef.current = currentKey;
 
   const markMounted = useCallback(
     ({ key }: ShownParams) => {
@@ -96,7 +112,7 @@ export const DemoStage = ({
 
   useEffect(() => {
     const onMessage = (event: MessageEvent): void => {
-      if (event.origin !== window.location.origin || !isDemoReport(event.data)) {
+      if (event.origin !== window.location.origin) {
         return;
       }
       const entry = [...elements.current].find(
@@ -106,6 +122,16 @@ export const DemoStage = ({
         return;
       }
       const [key] = entry;
+      if (isDemoHintReport(event.data)) {
+        const isCurrent = key === currentKeyRef.current;
+        if (isCurrent && event.data.generation === sent.current.get(key)?.generation) {
+          onHintReport({ key, report: event.data });
+        }
+        return;
+      }
+      if (!isDemoReport(event.data)) {
+        return;
+      }
       const report = event.data;
       if (report.type === 'ready') {
         sent.current.set(key, { generation: report.generation, type: 'pause' });
@@ -115,7 +141,7 @@ export const DemoStage = ({
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [markMounted, onReport]);
+  }, [markMounted, onReport, onHintReport]);
 
   useEffect(() => {
     const isPreloading =
@@ -178,6 +204,33 @@ export const DemoStage = ({
     sent.current.set(command.key, { generation: command.generation, type: command.type });
   }, [command, mountedKeys]);
 
+  useEffect(() => {
+    if (hintTrack === undefined || !mountedKeys.has(currentKey)) {
+      return;
+    }
+    const element = elements.current.get(currentKey);
+    const generation = sent.current.get(currentKey)?.generation;
+    if (element === undefined || generation === undefined) {
+      return;
+    }
+    const signature = JSON.stringify({ generation, ...hintTrack });
+    if (hintsSent.current.get(currentKey) === signature) {
+      return;
+    }
+    hintsSent.current.set(currentKey, signature);
+    element.contentWindow?.postMessage(
+      {
+        channel: DEMO_PROTOCOL.channel,
+        version: DEMO_PROTOCOL.version,
+        generation,
+        type: 'hints',
+        chapterId: hintTrack.chapterId,
+        settledIds: hintTrack.settledIds,
+      },
+      window.location.origin,
+    );
+  }, [hintTrack, mountedKeys, currentKey, command]);
+
   const visibleKey = shownKey ?? currentKey;
 
   const watch = ({ key, frame }: WatchParams) => {
@@ -208,6 +261,7 @@ export const DemoStage = ({
       if (!live.has(key)) {
         elements.current.delete(key);
         sent.current.delete(key);
+        hintsSent.current.delete(key);
       }
     }
   }, [frames]);
@@ -229,6 +283,15 @@ export const DemoStage = ({
             style={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
           >
             {shownKey === undefined ? <DemoStageLoading /> : null}
+            {coach !== undefined && shownKey === currentKey ? (
+              <DemoCoachMark
+                coach={coach}
+                scale={scale}
+                bounds={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
+                onSkip={onSkipHint}
+                onHide={onHideHint}
+              />
+            ) : null}
             {frames.map((frame) => {
               const isVisible = frame.key === visibleKey && shownKey !== undefined;
               const isFading = frame.key === fadingKey;
