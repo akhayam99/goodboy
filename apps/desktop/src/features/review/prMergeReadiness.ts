@@ -28,6 +28,7 @@ export type MergeReadinessFacts = {
   readonly commentsUnresolved?: number;
   readonly isFixRunLive: boolean;
   readonly host?: ReviewSourceKind;
+  readonly isRebaseStopOpen?: boolean;
 };
 
 const MERGE_CHECKED_BY_HOST = 'Bitbucket checks this when you merge';
@@ -107,12 +108,26 @@ const reviewBlocker = ({ facts }: { readonly facts: MergeReadinessFacts }): stri
   return null;
 };
 
+type ConflictParams = {
+  readonly facts: MergeReadinessFacts;
+  readonly base: string;
+};
+
+const conflictBlocker = ({ facts, base }: ConflictParams): string | null => {
+  if (!facts.hasConflicts) {
+    return null;
+  }
+  return facts.isRebaseStopOpen === true
+    ? `Conflicts with ${base}. Resolve them in the banner.`
+    : `Conflicts with ${base}. Rebase on ${base} from the Branch header.`;
+};
+
 const blockersOf = ({ facts }: { readonly facts: MergeReadinessFacts }): ReadonlyArray<string> => {
   const base = baseOf({ facts });
   const found = [
     facts.writeInFlight === null ? null : `${facts.writeInFlight}.`,
     phaseBlocker({ facts }),
-    facts.hasConflicts ? `Conflicts with ${base}. Rebase on ${base} from the Branch header.` : null,
+    conflictBlocker({ facts, base }),
     checksBlocker({ facts }),
     reviewBlocker({ facts }),
   ];

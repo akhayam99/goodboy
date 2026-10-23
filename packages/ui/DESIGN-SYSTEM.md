@@ -1412,7 +1412,12 @@ A task chip reserves a 16px trailing slot that shows the unlink on hover, so
 the button never covers the last character of the label.
 
 A selected card is a fill plus a check: never a ring, a border and a wash
-together. A focus ring appears on keyboard focus (`focus-visible`) only.
+together.
+A `ChoiceCards` option may carry `facts` (label and text pairs, the New
+session page's Example line). While nothing is picked the cards are explained:
+each card has a soft border and draws its facts under the hint. Once one is
+picked every card folds back to the one-line card, so the form under it has
+the room. A focus ring appears on keyboard focus (`focus-visible`) only.
 
 Rules for new and changed code (the migration of old code is the sweep's):
 icons use `ICON_SIZE` (mark 10, row 12, control 14, hero 18), on the icon and
@@ -1514,7 +1519,7 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
   (`placeContextMenu`).
 - **Row**: a 16px leading slot for the icon, the label, the shortcut glyphs on
   the right in `text-meta text-faint-foreground`, and a chevron when the
-  row opens a submenu. Groups are split by a hairline, never by headers. A
+  row opens a submenu. Verb groups are split by a hairline, never by headers. A
   blocked row stays in `disabled-foreground` with its reason on a second faint
   line, is `aria-disabled`, and keeps focus so the reason can be read. Only a
   verb whose confirm is destructive takes the danger tint.
@@ -1526,8 +1531,23 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
   eyebrow, one `menuitemradio` row per choice with `aria-checked`, and a
   primary check in the leading slot of the current one. Choosing closes the
   menu and runs `onSelect` with the choice id. A disabled group stays
-  visible and `aria-disabled`. It is the one place a menu shows a header,
-  because the label names what the choices set (the run route Change menu).
+  visible and `aria-disabled`. A choice can carry a `hint` (a count, drawn
+  after the label in `text-meta`, as the diff filter does) and a `tooltip`
+  (also its `aria-description`, as the run autonomy menu does). Every value
+  picker is a radio group: the run route Change menu, Group by in the tasks
+  inbox, the file tree filter, run autonomy, the Explore folder switcher,
+  the history arrows, the wireframe version and the Jira assignee.
+- **Labeled group**: a `kind: 'group'` entry holds items under an eyebrow
+  label in a `role="group"` named by it, for a list of places split by owner
+  (the New terminal picker groups its folders by session). Radio groups and
+  labeled groups are the only places a menu shows a header, because the label
+  names what the rows belong to.
+- **Item extras**: `tooltip` draws a tooltip on the row (the terminal
+  picker's full path), `isActive` paints the row hovered while focus stays in
+  a filter field (the row Enter would open), and `shouldStayOpen` keeps the
+  menu open after a choice so its owner closes it once the write succeeds and
+  shows a refusal inline (the Jira moves and assignee). `shouldStayOpen` works
+  on a radio entry too.
 - **Confirm in place**: a verb with a confirm swaps the menu body for
   `InlineConfirm`, the menu swap placement below; Escape
   cancels the confirm first, then closes.
@@ -1537,6 +1557,12 @@ never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
   ArrowLeft or Escape leaves it; Tab and a click outside close. Every
   `AnchoredPopover` with `role="menu"` gets the same arrow keys and typeahead
   through `useMenuKeys`, so `MenuItems` menus move the same way.
+- **No hand-built roles**: only the primitives in this package write `menu`,
+  `menuitem`, `menuitemradio` or `menuitemcheckbox`. The desktop renders every
+  menu through `AppMenuList`, with no allowlist
+  (`apps/desktop/src/__tests__/actions/handBuiltMenus.test.ts`). A picker
+  with a filter field puts the field above the list and passes
+  `isAutoFocus={false}` so typing stays in the field.
 
 ## Key hints
 
@@ -1572,7 +1598,9 @@ neutral, the title is `foreground` and the body is `muted-foreground`. Tone
 never colors the text, fills the surface or draws a line.
 
 - **Tone**: `danger` (`CircleAlert`), `warning` (`TriangleAlert`), `info`
-  (`Info`), `success` (`CircleCheck`), always at 16px.
+  (`Info`), `success` (`CircleCheck`), always at 16px. A notice for a named
+  concept may replace that mark with the concept icon while keeping the tone's
+  color and the same size.
 - **No tone line, no border.** `inline` and `banner` sit on `bg-subtle`,
   `rounded-md`, 12px padding, with no border, no ring, no `ToneBar` and no
   side rail: a side line on a rounded box is the debt the design system
@@ -1909,8 +1937,8 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. The less frequent starts sit behind an `OverflowMenu`. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon, and `OverflowMenu` renders the items through `MenuItems`.
-- The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
-- The session overview's actions are one secondary `New` button that opens a menu of every start: Run a workflow (Open run once one is active), Start an agent, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
+- The New session page follows the same rule, with one exception: it asks "What kind of run?" with two explained `ChoiceCards` (Workflow, Agent) side by side, then the two kinds of the picked card under them, because the kinds are the doors and they read better side by side. Only the picked kind's form, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
+- The session overview's actions are one secondary `New` button that opens a menu of every start: Start a run, then Report and Wireframe. It is the one control of its kind on the page, so nothing sits beside it.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". A page header holds no switch: the session's autorun is a menu verb, Turn on Autopilot or Turn off Autopilot, in the session `⋯`.
 

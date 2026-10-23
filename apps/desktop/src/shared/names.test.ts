@@ -106,13 +106,15 @@ describe('names', () => {
   it('names every start with one verb set and keeps the old labels as former names', () => {
     expect([NAMES.startARun, NAMES.startRun, NAMES.letAutoTakeIt]).toEqual([
       'Start a run',
-      'Run a workflow',
+      'Start workflow',
       'Let Auto take it from here',
     ]);
     expect(formerNamesOf(NAMES.startARun)).toEqual(
       expect.arrayContaining(['Start an agent', 'Start an auto', 'Start another run']),
     );
-    expect(formerNamesOf(NAMES.startOrchestrator)).toEqual(['Orchestrate']);
+    expect(formerNamesOf(NAMES.startRun)).toEqual(
+      expect.arrayContaining(['Run a workflow', 'Run an orchestrator', 'Orchestrate']),
+    );
     expect(formerNamesOf(NAMES.letAutoTakeIt)).toEqual(['Move to Auto']);
   });
 

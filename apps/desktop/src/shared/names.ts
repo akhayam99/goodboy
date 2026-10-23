@@ -1,5 +1,7 @@
 import type { AgentRole } from '@goodboy/types';
 
+const AUTO_AGENT = 'Auto agent';
+
 export const NAMES = {
   needsYou: 'Needs you',
   running: 'Running',
@@ -17,6 +19,13 @@ export const NAMES = {
   autoAgents: 'Auto agents',
   runs: 'Runs',
   orchestrated: 'Orchestrated',
+  runKind: {
+    workflow: 'Workflow',
+    agent: 'Agent',
+    orchestrated: 'Orchestrated',
+    preset: 'Preset',
+    autoAgent: AUTO_AGENT,
+  },
   overview: 'Overview',
   branch: 'Branch',
   comments: 'Comments',
@@ -62,8 +71,7 @@ export const NAMES = {
   stopRun: 'Stop run',
   archiveRun: 'Archive run',
   deleteRun: 'Delete run',
-  startRun: 'Run a workflow',
-  startOrchestrator: 'Run an orchestrator',
+  startRun: 'Start workflow',
   startARun: 'Start a run',
   removeFromSession: 'Remove from session',
   deleteAllData: 'Delete all data',
@@ -114,7 +122,7 @@ export const NAMES = {
     scribe: 'Scribe',
     'ci-debugger': 'CI debugger',
     'ci-fixer': 'CI fixer',
-    auto: 'Auto agent',
+    auto: AUTO_AGENT,
     custom: 'Generalist',
   } satisfies Record<AgentRole, string>,
 } as const;
@@ -155,8 +163,14 @@ const FORMER_NAMES: Readonly<Record<string, ReadonlyArray<string>>> = {
   [NAMES.stopRun]: ['Stop workflow', 'Close workflow'],
   [NAMES.archiveRun]: ['Archive workflow', 'Discard workflow'],
   [NAMES.deleteRun]: ['Delete workflow run'],
-  [NAMES.startRun]: ['Run workflow', 'Start a workflow', 'Attach another workflow'],
-  [NAMES.startOrchestrator]: ['Orchestrate'],
+  [NAMES.startRun]: [
+    'Run a workflow',
+    'Run workflow',
+    'Start a workflow',
+    'Attach another workflow',
+    'Run an orchestrator',
+    'Orchestrate',
+  ],
   [NAMES.startARun]: [
     'Start an agent',
     'Start an auto',

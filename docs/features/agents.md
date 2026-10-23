@@ -77,7 +77,7 @@ Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Need
 
 ### Composer plus menu
 
-Do more from the message box. The **+** opens **Attach files**, **Run a script** (`$`), **Run a workflow** (`~`) and **Ask another agent** (`@`). `$` lists your saved scripts and the `package.json` scripts you pinned.
+Do more from the message box. The **+** opens **Attach files**, **Run a script** (`$`), **Start workflow** (`~`) and **Ask another agent** (`@`). `$` lists your saved scripts and the `package.json` scripts you pinned.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/agents-composer-menu-dark.webp">

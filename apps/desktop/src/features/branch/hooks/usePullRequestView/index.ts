@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import type { PullRequestFailureKind } from '@goodboy/core';
-import type { PullRequestView, SessionId } from '@goodboy/types';
+import type { MountId, PullRequestView, SessionId } from '@goodboy/types';
 import type { PullRequestEdit } from '../../../../store/slices/pull-request-view/state';
 import { useAppStore } from '../../../../store';
 import { entryMountIdOf } from '../../../../store/slices/pull-request-view/entryMountId';
@@ -8,6 +8,7 @@ import { sessionPullRequestOf } from '../../../../store/slices/review-source/ses
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
   readonly isEnabled: boolean;
   readonly fallbackNumber?: number | null;
 };
@@ -25,27 +26,35 @@ export type PullRequestViewRead = {
 
 export const usePullRequestView = ({
   sessionId,
+  mountId: displayedMountId = null,
   isEnabled,
   fallbackNumber = null,
 }: Params): PullRequestViewRead => {
   const entry = useAppStore((state) => state.pullRequestViews[sessionId] ?? null);
   const load = useAppStore((state) => state.loadPullRequestView);
   const hostNumber = useAppStore(
-    (state) => sessionPullRequestOf({ state, sessionId })?.number ?? null,
+    (state) =>
+      sessionPullRequestOf({ state, sessionId, mountId: displayedMountId })?.number ?? null,
   );
   const prNumber = hostNumber ?? fallbackNumber;
-  const mountId = useAppStore((state) => entryMountIdOf({ state, sessionId }));
+  const mountId = useAppStore((state) =>
+    entryMountIdOf({ state, sessionId, mountId: displayedMountId ?? undefined }),
+  );
 
   useEffect(() => {
     if (!isEnabled || prNumber === null) {
       return;
     }
-    void load({ sessionId });
-  }, [isEnabled, load, mountId, prNumber, sessionId]);
+    void load({ sessionId, ...(displayedMountId === null ? {} : { mountId: displayedMountId }) });
+  }, [displayedMountId, isEnabled, load, mountId, prNumber, sessionId]);
 
   const reload = useCallback(() => {
-    void load({ sessionId, force: true });
-  }, [load, sessionId]);
+    void load({
+      sessionId,
+      ...(displayedMountId === null ? {} : { mountId: displayedMountId }),
+      force: true,
+    });
+  }, [displayedMountId, load, sessionId]);
 
   const isCurrent = entry !== null && entry.prNumber === prNumber && entry.mountId === mountId;
   return {

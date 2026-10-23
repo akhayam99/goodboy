@@ -85,6 +85,17 @@ const mergeRequests = ({
     key: ({ item }) => item.url,
   });
 
+type KnownParams = {
+  readonly existing: MountGithubState | undefined;
+  readonly branch: string;
+  readonly repository: string;
+};
+
+const knownRequestOf = ({ existing, branch, repository }: KnownParams): PullRequestState | null =>
+  existing !== undefined && existing.branch === branch && existing.repository === repository
+    ? existing.pr
+    : null;
+
 export const refreshMountPr = async ({
   set,
   get,
@@ -192,8 +203,10 @@ export const refreshMountPr = async ({
           return { kind: 'stale' };
         }
         const prs = mergeRequests({ fetched, links: nextLinks });
+        const known = knownRequestOf({ existing, branch: mount.branch, repository });
+        const isKeptOnEmpty = fetched.length === 0 && known !== null;
         const canonical =
-          requested === null ? (fetched[0] ?? null) : (existing?.pr ?? fetched[0] ?? null);
+          requested === null ? (fetched[0] ?? known) : (existing?.pr ?? fetched[0] ?? null);
         const selected = get().mountSelectedPr?.[mountId] ?? null;
         const displayed =
           selected === null
@@ -244,9 +257,10 @@ export const refreshMountPr = async ({
               detailError: hasDisplayedChanged ? null : (current?.detailError ?? null),
             };
           },
-          ...(requested === null && {
-            after: () => persistBranchCache({ repository, branch, pr: canonical }),
-          }),
+          ...(requested === null &&
+            !isKeptOnEmpty && {
+              after: () => persistBranchCache({ repository, branch, pr: canonical }),
+            }),
         };
       },
       failedEntry: ({ current, error }) => ({

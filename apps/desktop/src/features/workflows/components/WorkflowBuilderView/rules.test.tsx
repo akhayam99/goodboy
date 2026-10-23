@@ -209,7 +209,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: 'Add backoff to the payments-api retry worker' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Run an orchestrator' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledOnce());
     expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Balanced');

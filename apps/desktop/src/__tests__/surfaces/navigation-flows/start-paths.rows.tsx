@@ -176,8 +176,20 @@ const openFullRecord = async (): Promise<void> => {
   fireEvent.click(await screen.findByRole('button', { name: 'Open full' }, WAIT));
 };
 
-const openTasksAndStart = async (ctx: Ctx): Promise<void> => {
+type StartOnParams = {
+  readonly ctx: Ctx;
+  readonly lastStart?: string | null;
+};
+
+const openTasksAndStartOn = async ({ ctx, lastStart = null }: StartOnParams): Promise<void> => {
   installFakes(ctx);
+  if (lastStart !== null) {
+    const fallback = useAppStore.getState().loadSetting;
+    useAppStore.setState({
+      loadSetting: async (key) =>
+        key.startsWith('newSession.lastStart.') ? lastStart : fallback(key),
+    });
+  }
   clicks = 0;
   await clickButton('Tasks');
   await visible('listbox', 'Starred');
@@ -186,6 +198,8 @@ const openTasksAndStart = async (ctx: Ctx): Promise<void> => {
   counted(await screen.findByRole('button', { name: 'Start session' }, WAIT));
   await settle(6);
 };
+
+const openTasksAndStart = (ctx: Ctx): Promise<void> => openTasksAndStartOn({ ctx });
 
 const toastTitles = (title: string): ReadonlyArray<HTMLElement> => screen.queryAllByText(title);
 
@@ -237,7 +251,7 @@ export const startBridge = (
 
 export const START_PATHS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'Tasks issue: Start opens the New session draft with the issue attached to Start a run',
+    name: 'Tasks issue: Start opens the New session draft with the issue above the task',
     covers: ['navigate'],
     open: openTasksAndStart,
     lands: async () => {
@@ -246,20 +260,20 @@ export const START_PATHS_ROWS: ReadonlyArray<Row> = [
       const workspaceId = useAppStore.getState().currentWorkspaceId as WorkspaceId;
       const draft = useAppStore.getState().sessionDrafts[workspaceId];
       expect(draft?.pickedIssues[0]?.identifier).toBe('HBL-415');
-      expect(screen.getByRole('textbox', { name: 'Start a run' })).toBeDefined();
-      expect(screen.getAllByRole('button', { name: 'Start' })).toHaveLength(1);
+      expect(screen.getByRole('textbox', { name: 'Task' })).toBeDefined();
+      expect(screen.getByRole('tablist', { name: 'What kind of run?' })).toBeDefined();
       expect(startCalls.briefs).toHaveLength(0);
       expect(startCalls.sessions).toHaveLength(0);
       expect(screen.queryByRole('dialog', { name: 'Start a session' })).toBeNull();
     },
   },
   {
-    name: 'Start from the draft creates the session and the run, with one Follow toast and three clicks',
+    name: 'Start from the draft, on the kind started last, creates the session and the run, with one Follow toast and three clicks',
     covers: ['navigate', 'toast:follow'],
     open: async (ctx) => {
-      await openTasksAndStart(ctx);
+      await openTasksAndStartOn({ ctx, lastStart: 'orchestrated' });
       await screen.findByRole('list', { name: 'Picked issues' }, WAIT);
-      counted(await screen.findByRole('button', { name: 'Start' }, WAIT));
+      counted(await screen.findByRole('button', { name: 'Start workflow' }, WAIT));
       await settle(6);
     },
     lands: async () => {

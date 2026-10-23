@@ -1,11 +1,22 @@
-import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type {
+  ProjectId,
+  RunRouteCloseness,
+  SessionId,
+  WorkflowId,
+  WorkspaceId,
+} from '@goodboy/types';
 import type { IssueCandidate } from '../../../features/integrations/fetchIssueCandidates';
 import type { AgentKind, AgentKindRouting } from '../../../features/session/agent-kind';
 
-export type StartChoice = 'task' | 'workflow' | 'orchestrate' | 'scout';
+export type StartKind = 'workflow' | 'agent' | 'auto';
+
+export type StartShape = 'orchestrated' | 'preset' | 'agent' | 'autoAgent';
 
 export type SessionDraft = {
-  readonly choice: StartChoice | null;
+  readonly startKind: StartKind | null;
+  readonly startShape: StartShape | null;
+  readonly hasChosenStart: boolean;
+  readonly presetCloseness: RunRouteCloseness;
   readonly issueQuery: string;
   readonly pickedIssues: ReadonlyArray<IssueCandidate>;
   readonly focusedIssueKey: string | null;
@@ -23,7 +34,10 @@ export type SessionDraft = {
 };
 
 export const EMPTY_SESSION_DRAFT: SessionDraft = {
-  choice: null,
+  startKind: null,
+  startShape: null,
+  hasChosenStart: false,
+  presetCloseness: 'adapt',
   issueQuery: '',
   pickedIssues: [],
   focusedIssueKey: null,

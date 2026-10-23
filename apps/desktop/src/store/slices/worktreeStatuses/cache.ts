@@ -4,6 +4,7 @@ import { worktreeStatus } from '../../../features/worktree/worktree';
 type CacheEntry = {
   value: WorktreeStatus | null;
   fetchedAt: number;
+  readAt: number;
   inflight: Promise<void> | null;
   worktreePath: string;
   baseBranch?: string;
@@ -56,6 +57,7 @@ const entryFor = ({
   const created: CacheEntry = {
     value: null,
     fetchedAt: 0,
+    readAt: 0,
     inflight: null,
     worktreePath,
     baseBranch,
@@ -96,14 +98,17 @@ const fetchInto = (entry: CacheEntry): Promise<void> => {
   if (entry.inflight) {
     return entry.inflight;
   }
+  const requestedAt = Date.now();
   const inflight = schedule(() =>
     worktreeStatus({ worktreePath: entry.worktreePath, baseBranch: entry.baseBranch }),
   )
     .then((status) => {
       entry.value = status;
+      entry.readAt = requestedAt;
     })
     .catch(() => {
       entry.value = null;
+      entry.readAt = 0;
     })
     .finally(() => {
       entry.fetchedAt = Date.now();
@@ -157,6 +162,23 @@ export const subscribe = ({ key, listener }: SubscribeParams): (() => void) => {
 
 export const readWorktreeStatus = (key: string): WorktreeStatus | null =>
   entries.get(key)?.value ?? null;
+
+export type WorktreeStatusRead = {
+  readonly status: WorktreeStatus;
+  readonly readAt: number;
+};
+
+type ReadParams = {
+  readonly key: string;
+};
+
+export const readWorktreeStatusRead = ({ key }: ReadParams): WorktreeStatusRead | null => {
+  const entry = entries.get(key);
+  if (entry === undefined || entry.value === null) {
+    return null;
+  }
+  return { status: entry.value, readAt: entry.readAt };
+};
 
 export const isWorktreeStatusSettled = (key: string): boolean =>
   (entries.get(key)?.fetchedAt ?? 0) > 0;

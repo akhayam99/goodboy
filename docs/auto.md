@@ -11,7 +11,7 @@ Auto is an agent that answers questions itself and hands the work it cannot do
 alone to agents of the right role, with a model it picks for each. It waits for
 their results, reads them and goes on. It is always on, and there is no switch
 to turn it off. Since ux27 one flow unit 1 an Auto conversation is a row of the one **Runs** entry of
-the session rail ("Was an Auto conversation"), so the rail has no Auto entry
+the session rail ("Agent · Auto agent"), so the rail has no Auto entry
 to mark. Auto starts agents of the role it picks (`AUTO_ROLE_WHEN`), and
 agents started by hand keep working.
 
@@ -862,7 +862,13 @@ its answered line. Once Auto's next turn takes the
 row, the line goes, and an admitted retry draws its delegation line. The mount of a child
 (`pickAutoMount`): a named mount wins; a reader without one works in the tree's primary mount; a
 writer without one goes to the only usable mount, is refused `mount_ambiguous` when more than
-one fits (Auto never guesses a write) and `mount_missing` when none does. The refusal counters (`refusals_used`, the limit on refusals)
+one fits (Auto never guesses a write) and `mount_missing` when none does. Before a writer is
+refused `mount_missing`, `pickChildMount` lets it pick a folder the way a single agent does
+(`mountTaskFolders`, the same rule as a new session's start, see
+[mounts.md](mounts.md#who-picks-the-folders)): the workspace project its `mount` names, or, with
+no mount named and none usable, the only repo, the repo of a linked task, or the repos its task
+names by exact name. Inside the session's allowance they are mounted and the pick runs again;
+past it a mount proposal waits for the user and the refusal says so. The refusal counters (`refusals_used`, the limit on refusals)
 move once per generation and run, so a duplicate settle of the same turn cannot spend the limit twice. Each result line in a delivery starts with the name the user
 sees on its card ("- Reviewer 2 (reviewer <agent id>, <delegation id>): completed"), and the
 results block says the user sees each result as that card above the reply; the system prompt

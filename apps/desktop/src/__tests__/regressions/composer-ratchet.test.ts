@@ -19,6 +19,7 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/workflows/components/OrchestratorStrip/OrchestratorHintComposer.tsx': ['message'],
   'features/session/components/OrchestratedRun/OrchestratedContinue.tsx': ['message'],
   'features/session/components/StartRun/StartRun.tsx': ['message'],
+  'features/session/components/SessionKickoff/StartTaskField.tsx': ['message'],
   'features/context/components/QuestionsTab/CustomAnswerField/index.tsx': ['message'],
   'features/context/components/QuestionsTab/QuestionCard/QuestionAnswerInput.tsx': ['message'],
   'features/context/components/QuestionsTab/DelegateAnswerRow/index.tsx': ['document'],

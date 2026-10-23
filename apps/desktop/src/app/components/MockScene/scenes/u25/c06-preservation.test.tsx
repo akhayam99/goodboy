@@ -173,7 +173,7 @@ describe('SPEC3 9.4 agent rows stay reachable from the one conversation', () => 
   it('Rename, close and delete from a list row: the row right click menu keeps them', async () => {
     await mount({ name: 'c06-agents-list' });
 
-    const [row] = screen.getAllByRole('button', { name: /, One agent, Running$/ });
+    const [row] = screen.getAllByRole('button', { name: /, Agent, Running$/ });
     expect(row).toBeDefined();
     await act(async () => {
       fireEvent.contextMenu(row!);

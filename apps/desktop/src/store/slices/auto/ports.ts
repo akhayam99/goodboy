@@ -273,10 +273,23 @@ export type RefreshSessionArtifactsParams = Readonly<{
   sessionId: SessionId;
 }>;
 
+export type MountTaskFoldersParams = Readonly<{
+  sessionId: SessionId;
+  requested: string | null;
+  text: string;
+}>;
+
+export type TaskFoldersAdded = Readonly<{
+  mounted: ReadonlyArray<string>;
+  asked: ReadonlyArray<string>;
+  failed: ReadonlyArray<string>;
+}>;
+
 export type AutoPorts = Readonly<{
   newId: () => string;
   refreshSessionArtifacts: (params: RefreshSessionArtifactsParams) => Promise<void>;
   loadMounts: (params: LoadMountsParams) => Promise<ReadonlyArray<PickableMount>>;
+  mountTaskFolders: (params: MountTaskFoldersParams) => Promise<TaskFoldersAdded>;
   resolveRouting: (params: RoutingRequest) => Promise<RoutingOutcome>;
   isPlanApprovalRequired: () => boolean;
   startAutoTurn: (params: StartAutoTurnParams) => Promise<TurnStartOutcome>;

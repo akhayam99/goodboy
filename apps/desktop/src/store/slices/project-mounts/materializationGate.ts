@@ -24,15 +24,18 @@ type AuthorizationParams = {
   readonly project: Project;
 };
 
-type SessionAuthorizationParams = Omit<AuthorizationParams, 'project'>;
+type SessionAuthorizationParams = Omit<AuthorizationParams, 'project'> & {
+  readonly linkedProjectIds?: ReadonlyArray<ProjectId>;
+};
 
 const explicitlyAuthorizedProjectIds = ({
   get,
   sessionId,
+  linkedProjectIds = [],
 }: SessionAuthorizationParams): ReadonlySet<ProjectId> => {
   const state = get();
   const session = sessionById(state.sessions, sessionId);
-  const ids = new Set<ProjectId>();
+  const ids = new Set<ProjectId>(linkedProjectIds);
   if (session?.activeProjectId !== undefined) {
     ids.add(session.activeProjectId);
   }
@@ -48,8 +51,17 @@ const explicitlyAuthorizedProjectIds = ({
   return ids;
 };
 
-const isAuthorizedProject = ({ get, sessionId, project }: AuthorizationParams): boolean => {
-  if (explicitlyAuthorizedProjectIds({ get, sessionId }).has(project.id)) {
+type ProjectAuthorizationParams = AuthorizationParams & {
+  readonly linkedProjectIds: ReadonlyArray<ProjectId>;
+};
+
+const isAuthorizedProject = ({
+  get,
+  sessionId,
+  project,
+  linkedProjectIds,
+}: ProjectAuthorizationParams): boolean => {
+  if (explicitlyAuthorizedProjectIds({ get, sessionId, linkedProjectIds }).has(project.id)) {
     return true;
   }
   return (get().sessionProjectMounts[sessionId] ?? []).some(
@@ -57,7 +69,7 @@ const isAuthorizedProject = ({ get, sessionId, project }: AuthorizationParams): 
   );
 };
 
-type BatchBudget = {
+export type BatchBudget = {
   readonly immediateProjectIds: Set<ProjectId>;
 };
 
@@ -66,6 +78,7 @@ type GateParams = {
   readonly sessionId: SessionId;
   readonly project: Project;
   readonly immediateProjectIds: ReadonlySet<ProjectId>;
+  readonly linkedProjectIds?: ReadonlyArray<ProjectId>;
 };
 
 export const materializationGate = ({
@@ -73,18 +86,19 @@ export const materializationGate = ({
   sessionId,
   project,
   immediateProjectIds,
+  linkedProjectIds = [],
 }: GateParams): MaterializationDecision => {
   const mounts = get().sessionProjectMounts[sessionId] ?? [];
   if (mounts.some((mount) => mount.projectId === project.id)) {
     return { kind: 'mounted' };
   }
-  if (isAuthorizedProject({ get, sessionId, project })) {
+  if (isAuthorizedProject({ get, sessionId, project, linkedProjectIds })) {
     return { kind: 'allowed' };
   }
   if (immediateProjectIds.size >= IMMEDIATE_MATERIALIZE_CAP) {
     return { kind: 'deferred', cause: 'batch' };
   }
-  const authorizedIds = explicitlyAuthorizedProjectIds({ get, sessionId });
+  const authorizedIds = explicitlyAuthorizedProjectIds({ get, sessionId, linkedProjectIds });
   const nonAuthorizedIds = new Set<ProjectId>();
   for (const mount of mounts) {
     if (!authorizedIds.has(mount.projectId)) {

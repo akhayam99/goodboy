@@ -47,10 +47,9 @@ describe('write from work scenes', () => {
   });
   it('shows the first hint with two linked issues', async () => {
     mount({ id: 'goalhint' });
-    expect(
-      await screen.findByText('Write the title and goal from HL-204 and HL-211?'),
-    ).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Write' })).toBeDefined();
+    await screen.findByText('Write the title and goal from');
+    screen.getByText('HL-204 and HL-211');
+    screen.getByRole('button', { name: 'Write title and goal' });
   });
   it('shows an editable proposal and the model cost', async () => {
     mount({ id: 'goalproposal' });

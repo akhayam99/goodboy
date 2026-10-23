@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, Folder, GitBranch, Plus } from 'lucide-react';
 import {
   AnchoredPopover,
   Button,
@@ -8,14 +8,15 @@ import {
   SearchField,
   Tooltip,
   useDropdown,
+  type MenuEntry,
 } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AppMenuList } from '../../../actions/AppMenuList';
 import { filterPickerClusters } from '../../filterPickerClusters';
 import { pickerRowCount } from '../../pickerRowCount';
 import type { PickerCluster } from '../../terminalPickerClusters';
 import { TERMINAL_PICKER_EVENTS } from '../../terminalPickerEvents';
 import type { TerminalTarget } from '../../terminalTargets';
-import { PickerClusterView } from './PickerClusterView';
 
 type Props = {
   readonly clusters: ReadonlyArray<PickerCluster>;
@@ -23,10 +24,33 @@ type Props = {
   readonly onOpenAt: (target: TerminalTarget) => void;
 };
 
+type EntriesParams = {
+  readonly clusters: ReadonlyArray<PickerCluster>;
+  readonly activeKey: string | null;
+  readonly onOpenAt: (target: TerminalTarget) => void;
+};
+
 const PICKER_WIDTH_CLASS = 'w-[32.5rem]';
 const PICKER_EXPECTED_WIDTH = 520;
 const PICKER_EXPECTED_HEIGHT = 420;
 const PICKER_MAX_WIDTH = 520;
+
+const entriesOf = ({ clusters, activeKey, onOpenAt }: EntriesParams): ReadonlyArray<MenuEntry> =>
+  clusters.map((cluster) => ({
+    kind: 'group',
+    key: cluster.key,
+    label: cluster.title,
+    items: cluster.rows.map((row) => ({
+      kind: 'item',
+      key: row.key,
+      label: row.projectName,
+      icon: row.kind === 'workspace' ? Folder : GitBranch,
+      description: row.branch,
+      tooltip: row.path,
+      isActive: row.key === activeKey,
+      onSelect: () => onOpenAt(row.target),
+    })),
+  }));
 
 export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
   const [query, setQuery] = useState('');
@@ -43,6 +67,7 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
   const hasChoices = pickerRowCount({ clusters }) > 1;
   const shown = useMemo(() => filterPickerClusters({ clusters, query }), [clusters, query]);
   const activeKey = isFilterFocused ? (shown[0]?.rows[0]?.key ?? null) : null;
+  const entries = entriesOf({ clusters: shown, activeKey, onOpenAt });
 
   useEffect(() => {
     if (!dropdown.open) {
@@ -52,17 +77,13 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
     filterRef.current?.focus();
   }, [dropdown.open]);
 
-  const pick = (target: TerminalTarget): void => {
-    dropdown.close();
-    onOpenAt(target);
-  };
-
   const handleFilterKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
     if (event.key === 'Enter') {
       event.preventDefault();
       const first = shown[0]?.rows[0];
       if (first !== undefined) {
-        pick(first.target);
+        dropdown.close();
+        onOpenAt(first.target);
       }
       return;
     }
@@ -86,8 +107,6 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
         <AnchoredPopover
           dropdown={dropdown}
           anchorClassName="flex shrink-0"
-          role="menu"
-          ariaLabel="New terminal in"
           className="gap-0 p-0"
           trigger={
             <Tooltip content="New terminal in" anchorClassName="flex h-full">
@@ -105,7 +124,7 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
           }
         >
           <PopoverBody className="max-h-full">
-            <div className="flex flex-col gap-3 p-2">
+            <div className="flex flex-col gap-1 p-2">
               <SearchField
                 ariaLabel="Filter terminal locations"
                 placeholder="Type to filter"
@@ -116,14 +135,14 @@ export const NewTerminalMenu = ({ clusters, onNew, onOpenAt }: Props) => {
                 onFocus={() => setIsFilterFocused(true)}
                 onBlur={() => setIsFilterFocused(false)}
               />
-              {shown.map((cluster) => (
-                <PickerClusterView
-                  key={cluster.key}
-                  cluster={cluster}
-                  activeKey={activeKey}
-                  onPick={pick}
+              {entries.length === 0 ? null : (
+                <AppMenuList
+                  label="New terminal in"
+                  entries={entries}
+                  onClose={dropdown.close}
+                  isAutoFocus={false}
                 />
-              ))}
+              )}
             </div>
           </PopoverBody>
         </AnchoredPopover>

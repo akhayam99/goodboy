@@ -91,6 +91,97 @@ describe('a radio group in MenuList', () => {
     expect(onShape).toHaveBeenCalledWith('lead');
   });
 
+  it('shows a choice hint after its label and keeps typeahead on the label', () => {
+    render(
+      <MenuList
+        label="Filter"
+        entries={[
+          {
+            kind: 'radio',
+            key: 'show',
+            label: 'Show',
+            choices: [
+              { id: 'all', label: 'All', isCurrent: true },
+              { id: 'unviewed', label: 'Unviewed', isCurrent: false, hint: '3' },
+            ],
+            onSelect: vi.fn(),
+          },
+        ]}
+        onClose={vi.fn()}
+      />,
+    );
+    const row = screen.getByRole('menuitemradio', { name: /^Unviewed/ });
+
+    expect(row.textContent).toBe('Unviewed3');
+    expect(row.getAttribute('data-menu-label')).toBe('Unviewed');
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'Filter' }), { key: 'u' });
+    expect(document.activeElement).toBe(row);
+  });
+
+  it('describes a choice that carries a tooltip', () => {
+    render(
+      <MenuList
+        label="Autonomy"
+        entries={[
+          {
+            kind: 'radio',
+            key: 'autonomy',
+            label: 'Autonomy',
+            choices: [
+              { id: 'step', label: 'Ask me', isCurrent: true, tooltip: 'Pauses every step.' },
+              { id: 'run', label: 'Autopilot', isCurrent: false },
+            ],
+            onSelect: vi.fn(),
+          },
+        ]}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('menuitemradio', { name: 'Ask me' }).getAttribute('aria-description'),
+    ).toBe('Pauses every step.');
+    expect(
+      screen.getByRole('menuitemradio', { name: 'Autopilot' }).hasAttribute('aria-description'),
+    ).toBe(false);
+  });
+
+  it('leaves closing to the owner of an entry that should stay open', () => {
+    const onPick = vi.fn<Choose>();
+    const onMove = vi.fn<(choice: string | null) => void>();
+    const onClose = vi.fn<() => void>();
+    render(
+      <MenuList
+        label="Issue"
+        entries={[
+          {
+            kind: 'radio',
+            key: 'assignee',
+            label: 'Assign to',
+            choices: [{ id: 'ada', label: 'Ada Lovelace', isCurrent: false }],
+            shouldStayOpen: true,
+            onSelect: onPick,
+          },
+          {
+            kind: 'item',
+            key: 'move',
+            label: 'Start progress',
+            shouldStayOpen: true,
+            onSelect: onMove,
+          },
+        ]}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Ada Lovelace' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Start progress' }));
+
+    expect(onPick).toHaveBeenCalledWith('ada');
+    expect(onMove).toHaveBeenCalledWith(null);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('keeps a disabled group visible, marked disabled, and never runs it', () => {
     const { onShape, onClose } = renderMenu({ isDisabled: true });
     const row = screen.getByRole('menuitemradio', { name: 'One agent' });

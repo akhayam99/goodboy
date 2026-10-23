@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { MenuItems, formatError, type OverflowMenuItem } from '@goodboy/ui';
+import { formatError, tintClasses, type MenuEntry } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearFetchTeamStates, type LinearWorkflowState } from './client';
+import { AppMenuList } from '../../actions/AppMenuList';
 import { INBOX_STATE_PRESENTATION } from '../../../shared/components/StudioDetail/RecordState';
 import { linearStateCategory } from '../../../shared/detail-fields/linearIssueFields';
 
@@ -19,32 +20,25 @@ type Loaded =
   | { readonly kind: 'failed'; readonly message: string }
   | { readonly kind: 'ready'; readonly states: ReadonlyArray<LinearWorkflowState> };
 
-type ItemsParams = {
-  readonly loaded: Loaded;
+type EntriesParams = {
+  readonly states: ReadonlyArray<LinearWorkflowState>;
   readonly currentName: string;
   readonly onPick: (stateId: string) => void;
 };
 
-const itemsOf = ({ loaded, currentName, onPick }: ItemsParams): ReadonlyArray<OverflowMenuItem> => {
-  if (loaded.kind === 'loading') {
-    return [{ kind: 'empty', key: 'loading', label: 'Loading states' }];
-  }
-  if (loaded.kind === 'failed') {
-    return [{ kind: 'empty', key: 'failed', label: `Couldn't load states: ${loaded.message}` }];
-  }
-  return loaded.states.map((state) => {
+const entriesOf = ({ states, currentName, onPick }: EntriesParams): ReadonlyArray<MenuEntry> =>
+  states.map((state) => {
     const presentation = INBOX_STATE_PRESENTATION[linearStateCategory({ type: state.type })];
     return {
       kind: 'item',
       key: state.id,
       label: state.name,
       icon: presentation.icon,
-      tone: presentation.tone,
-      disabled: state.name === currentName,
-      onClick: () => onPick(state.id),
+      iconClassName: tintClasses(presentation.tone).icon,
+      isDisabled: state.name === currentName,
+      onSelect: () => onPick(state.id),
     };
   });
-};
 
 export const LinearStateMenu = ({
   workspaceId,
@@ -74,9 +68,21 @@ export const LinearStateMenu = ({
     };
   }, [workspaceId, issueId, projectId]);
 
+  if (loaded.kind === 'loading') {
+    return <p className="px-3 py-2 text-faint-foreground italic">Loading states</p>;
+  }
+  if (loaded.kind === 'failed') {
+    return (
+      <p role="alert" className="px-3 py-2 text-faint-foreground italic">
+        {`Couldn't load states: ${loaded.message}`}
+      </p>
+    );
+  }
   return (
-    <div className="flex flex-col py-1">
-      <MenuItems items={itemsOf({ loaded, currentName, onPick })} onClose={onClose} />
-    </div>
+    <AppMenuList
+      label="Change status"
+      entries={entriesOf({ states: loaded.states, currentName, onPick })}
+      onClose={onClose}
+    />
   );
 };

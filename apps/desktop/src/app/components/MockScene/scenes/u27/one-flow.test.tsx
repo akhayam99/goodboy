@@ -82,11 +82,11 @@ describe('the u27 one flow scenes', () => {
         (item) => item.textContent,
       ),
     ).toEqual([
-      'A plan with steps',
-      'One agent that starts what it needs',
+      'Workflow · Orchestrated',
+      'Agent · Auto agent',
       'Fix a layout',
       'No preset',
-      'Follow the preset',
+      'Follow it',
       'Adapt as it goes',
       'Start every run in this session like this',
     ]);
@@ -117,15 +117,15 @@ describe('the u27 one flow scenes', () => {
     const rows = within(list).getAllByRole('button');
     expect(rows).toHaveLength(4);
     for (const origin of [
-      'Was a preset run · Fix a layout',
-      'Was an orchestrated run',
-      'Was an Auto conversation',
-      'Was an agent · Scout',
+      'Workflow · Preset Fix a layout',
+      'Workflow · Orchestrated',
+      'Agent · Auto agent',
+      'Agent · Scout',
     ]) {
       expect(within(list).getByText(origin)).toBeDefined();
     }
     expect(
-      rows.filter((row) => row.getAttribute('aria-label')?.includes(', Plan, ') === true),
+      rows.filter((row) => row.getAttribute('aria-label')?.includes(', Workflow, ') === true),
     ).toHaveLength(2);
   });
 });

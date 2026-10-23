@@ -26,7 +26,7 @@ export const loadPullRequestView = async ({
   force = false,
 }: Params): Promise<void> => {
   const number =
-    sessionPullRequestOf({ state: get(), sessionId })?.number ??
+    sessionPullRequestOf({ state: get(), sessionId, mountId: mountId ?? null })?.number ??
     activeReviewSourceOf({ state: get(), sessionId })?.prNumber ??
     selectBitbucketRequest({ state: get(), sessionId })?.pr.id ??
     null;

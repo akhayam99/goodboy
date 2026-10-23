@@ -7,13 +7,29 @@ vi.mock('@tauri-apps/api/core', async () => {
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ProjectId, SessionProjectMount, WorktreeStatus } from '@goodboy/types';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import type {
+  HistoryOriginAhead,
+  HistoryRebasePlan,
+  IsoDateTime,
+  ProjectId,
+  SessionEvent,
+  SessionEventId,
+  SessionProjectMount,
+  WorktreeStatus,
+} from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
 import { mockSceneIpc } from '../../../app/components/MockScene/scenes/mockSceneIpc';
+import { mountGithubOf } from '../../workspace/testing/sessionColumn';
+import type { RebaseConflictFile } from '../../worktree/worktree';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../../store/storyHarness';
 import { useAppStore } from '../../../store';
-import { resetWorktreeStatusCache } from '../../../store/slices/worktreeStatuses/cache';
+import type { AppStore } from '../../../store/store';
+import type { ProviderDisplayInfo } from '../../providers/providers';
+import {
+  refreshWorktreeStatuses,
+  resetWorktreeStatusCache,
+} from '../../../store/slices/worktreeStatuses/cache';
 import type { HistoryRun } from '../../../store/slices/history/types';
 import { clearSceneInvoke } from '../../../test/sceneInvoke';
 import {
@@ -44,25 +60,103 @@ const MOUNT: SessionProjectMount = {
   revision: 1,
 };
 
+const gitNow: {
+  head: string;
+  behind: number;
+  isRebasing: boolean;
+  unmerged: number;
+  upstreamAhead: number;
+} = {
+  head: 'head-sha',
+  behind: 18,
+  isRebasing: false,
+  unmerged: 0,
+  upstreamAhead: 0,
+};
+
+const conflictsNow: { files: ReadonlyArray<RebaseConflictFile> } = { files: [] };
+
+const gitCalls: Array<string> = [];
+
 const statusWith = ({ changed }: { readonly changed: number }): WorktreeStatus => ({
   branch: MOUNT.branch,
-  head: 'head-sha',
+  head: gitNow.head,
   headSubject: 'Guard the settlement batch',
   upstream: `origin/${MOUNT.branch}`,
-  upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
-  mainDistance: { kind: 'known', ahead: 7, behind: 18 },
+  upstreamDistance: { kind: 'known', ahead: gitNow.upstreamAhead, behind: 0 },
+  mainDistance: { kind: 'known', ahead: 7, behind: gitNow.behind },
   workingTree: {
     kind: 'known',
     staged: changed,
     unstaged: 0,
     untracked: 0,
-    unmerged: 0,
+    unmerged: gitNow.unmerged,
     changed,
   },
-  inProgress: null,
+  inProgress: gitNow.isRebasing ? 'rebase' : null,
 });
 
 const dirty = { changed: 11 };
+
+const REBASE_PLAN: HistoryRebasePlan = {
+  onto: 'c0ffee000000',
+  ontoRef: 'origin/main',
+  mergeBase: 'a0a0a0a0a0a0',
+  head: 'head-sha',
+  commits: [],
+  behind: 18,
+  fetchError: null,
+};
+
+const ORIGIN_AHEAD: HistoryOriginAhead = {
+  remoteSha: 'online-sha',
+  knownRemoteSha: 'old-online-sha',
+  commits: [{ sha: '7c41e0a9b8c7', subject: 'Fix the avatar size on narrow screens' }],
+  onlyOnline: [{ sha: '7c41e0a9b8c7', subject: 'Fix the avatar size on narrow screens' }],
+  fetchError: null,
+};
+
+const CONNECTED: ReadonlyArray<ProviderDisplayInfo> = [
+  {
+    id: 'anthropic',
+    binary: 'claude',
+    capabilities: {
+      models: [],
+      supportsTools: true,
+      supportsStream: true,
+      supportsCheapModel: true,
+    },
+    connection: 'connected',
+    version: '1.0.0',
+    identity: 'harborline',
+    label: 'Claude',
+    error: null,
+    docsUrl: 'https://example.invalid/docs',
+  },
+];
+
+type SavedStopParams = {
+  readonly at: string;
+};
+
+const savedConflict = ({ at }: SavedStopParams): SessionEvent => ({
+  id: brandedId<SessionEventId>({ value: 'ev-stop' }),
+  sessionId: A_REBASE_SESSION_ID,
+  kind: 'history_stopped',
+  payload: {
+    mountId: A_REBASE_MOUNT_ID,
+    branch: MOUNT.branch,
+    projectName: 'payments-api',
+    origin: 'rebase',
+    reason: 'conflict',
+    title: '2 files conflict with main.',
+    files: ['src/settlement/batch.ts', 'src/settlement/ledger.ts'],
+    head: 'head-sha',
+  },
+  createdAt: brandedId<IsoDateTime>({ value: at }),
+});
+
+const PAST = '2026-10-01T10:00:00.000Z';
 
 beforeAll(async () => {
   await importStore();
@@ -72,9 +166,39 @@ beforeEach(async () => {
   await resetStoryStore();
   resetWorktreeStatusCache();
   dirty.changed = 0;
-  mockSceneIpc((command) =>
-    command === 'worktree_status' ? statusWith({ changed: dirty.changed }) : null,
-  );
+  gitNow.head = 'head-sha';
+  gitNow.behind = 18;
+  gitNow.isRebasing = false;
+  gitNow.unmerged = 0;
+  gitNow.upstreamAhead = 0;
+  conflictsNow.files = [];
+  gitCalls.length = 0;
+  mockSceneIpc((command) => {
+    if (command === 'worktree_rebase_conflicts') {
+      return conflictsNow.files;
+    }
+    if (command === 'worktree_start_rebase') {
+      gitCalls.push(command);
+      gitNow.isRebasing = true;
+      gitNow.unmerged = 2;
+      return { isInProgress: true };
+    }
+    if (command === 'worktree_continue_rebase') {
+      gitCalls.push(command);
+      gitNow.isRebasing = false;
+      gitNow.unmerged = 0;
+      gitNow.behind = 0;
+      gitNow.head = 'rebased-sha';
+      return { isInProgress: false };
+    }
+    if (command === 'history_rebase_plan') {
+      return REBASE_PLAN;
+    }
+    if (command === 'history_origin_ahead') {
+      return ORIGIN_AHEAD;
+    }
+    return command === 'worktree_status' ? statusWith({ changed: dirty.changed }) : null;
+  });
   useAppStore.setState({
     sessions: [aSession({ id: A_REBASE_SESSION_ID })],
     projects: [aProject({ id: PROJECT_ID, name: 'payments-api', baseBranch: 'main' })],
@@ -91,6 +215,13 @@ const SETTLE_MS = 400;
 
 const settle = (): Promise<void> =>
   act(() => new Promise<void>((resolve) => window.setTimeout(resolve, SETTLE_MS)));
+
+type NodeParams = {
+  readonly node: HTMLElement;
+};
+
+const verbsIn = ({ node }: NodeParams): ReadonlyArray<string> =>
+  Array.from(node.querySelectorAll('[data-rebase-verb]')).map((verb) => verb.textContent ?? '');
 
 const showRun = async (patch: Partial<HistoryRun>) => {
   useAppStore.setState({
@@ -170,19 +301,17 @@ describe('the job banner', () => {
     expect(screen.getByRole('button', { name: 'Undo rewrite' })).toBeDefined();
   });
 
-  it('offers to bring the online commits into the plan when the origin moved', async () => {
+  it('names the new online commit and offers Bring them in, Resolve myself and Undo rebase', async () => {
     await showRun({
       phase: 'stopped',
+      backupRef: 'refs/goodboy/backup/1',
       stop: { reason: 'origin-moved', message: 'Origin moved.', files: [], sha: null },
     });
 
-    const alert = screen.getByRole('alert');
-    expect(alert.textContent).toContain('Someone pushed to the online copy');
-    expect(alert.textContent).toContain('Nothing was pushed.');
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Bring them into the plan',
-      'Dismiss',
-    ]);
+    const panel = screen.getByRole('region', { name: 'Rebase' });
+    expect(panel.textContent).toContain('Rebased here, but origin has 1 new commit');
+    expect(panel.textContent).toContain('Fix the avatar size on narrow screens');
+    expect(verbsIn({ node: panel })).toEqual(['Bring them in', 'Resolve myself', 'Undo rebase']);
   });
 
   it('retries the rebase when the branch moved', async () => {
@@ -203,27 +332,41 @@ describe('the job banner', () => {
     expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
   });
 
-  it('brings the online commits into the plan from the banner', async () => {
-    const bringOriginIntoHistory = vi.fn(async () => 'nothing' as const);
-    useAppStore.setState({ bringOriginIntoHistory });
+  it('brings the online commits in, then pushes with the lease of what it brought in', async () => {
+    const pushHistoryRewrite = vi.fn<AppStore['pushHistoryRewrite']>(async () => 'pushed');
+    const bringOriginIntoHistory = vi.fn<AppStore['bringOriginIntoHistory']>(async () => {
+      useAppStore.setState((state) => ({
+        historyRuns: {
+          ...state.historyRuns,
+          [A_REBASE_MOUNT_ID]: aRebaseRun({ phase: 'applied', remoteSha: 'online-sha' }),
+        },
+      }));
+      return 'applied';
+    });
+    useAppStore.setState({ bringOriginIntoHistory, pushHistoryRewrite });
     await showRun({
       phase: 'stopped',
       stop: { reason: 'origin-moved', message: 'Origin moved.', files: [], sha: null },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bring them into the plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bring them in' }));
     await settle();
 
     expect(bringOriginIntoHistory).toHaveBeenCalledWith({
       sessionId: A_REBASE_SESSION_ID,
       mountId: A_REBASE_MOUNT_ID,
+      canStartRewriter: true,
     });
+    expect(pushHistoryRewrite).toHaveBeenCalledWith(
+      expect.objectContaining({ mountId: A_REBASE_MOUNT_ID, expectedRemoteSha: 'online-sha' }),
+    );
   });
 
-  it('says the rebase could not be retried when it fails', async () => {
-    const rebaseBranch = vi.fn(async () => {
-      throw new Error('git is busy');
-    });
+  it('keeps the panel with the error when a verb fails, and Retry runs it again', async () => {
+    const rebaseBranch = vi
+      .fn<AppStore['rebaseBranch']>()
+      .mockRejectedValueOnce(new Error('git is busy'))
+      .mockResolvedValueOnce('rebased');
     const reportError = vi.fn(async () => undefined);
     useAppStore.setState({ rebaseBranch, reportError });
     await showRun({
@@ -234,9 +377,15 @@ describe('the job banner', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retry rebase' }));
     await settle();
 
-    expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Couldn't retry the rebase." }),
-    );
+    const panel = screen.getByRole('region', { name: 'Rebase' });
+    expect(within(panel).getByText('git is busy')).toBeDefined();
+    expect(reportError).not.toHaveBeenCalled();
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Retry' }));
+    await settle();
+
+    expect(rebaseBranch).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText('git is busy')).toBeNull();
   });
 
   it('retries a stuck rewrite with the typed note and the same plan', async () => {
@@ -323,14 +472,13 @@ describe('the job banner', () => {
       stop: { reason: 'push-failed', message: 'declined\nlint error', files: [], sha: null },
     });
 
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+    expect(verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) })).toEqual([
       'Fix with agent',
       'Open terminal here',
       'Retry push',
-      'Details',
-      'Dismiss',
-      'Add a hint',
     ]);
+    expect(screen.getByRole('button', { name: 'Details' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Retry push' }));
     await settle();
 
@@ -438,52 +586,405 @@ describe('the job banner', () => {
     window.removeEventListener('goodboy:open-settings', opened);
   });
 
-  it('drops the run when the user dismisses it', async () => {
-    await showRun({
-      phase: 'stopped',
-      stop: { reason: 'head-moved', message: 'moved', files: [], sha: null },
-    });
+  it.each(['head-moved', 'blocked'] as const)(
+    'offers Retry rebase and no Dismiss on a %s stop, which blocks the branch',
+    async (reason) => {
+      await showRun({
+        phase: 'stopped',
+        stop: { reason, message: 'moved', files: [], sha: null },
+      });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-    await settle();
+      expect(verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) })).toEqual([
+        'Retry rebase',
+        'Open terminal',
+      ]);
+    },
+  );
 
-    expect(useAppStore.getState().historyRuns[A_REBASE_MOUNT_ID]).toBeUndefined();
-    expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull();
-    expect(screen.queryByRole('alert')).toBeNull();
-  });
+  it.each([
+    ['failed', 'the rebase failed'],
+    ['unverified', 'changed ledger.ts'],
+  ] as const)(
+    'dismisses a %s stop by recording it, so it leaves Next too',
+    async (reason, message) => {
+      await showRun({ phase: 'stopped', stop: { reason, message, files: [], sha: null } });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+      await settle();
+
+      expect(useAppStore.getState().historyRuns[A_REBASE_MOUNT_ID]).toBeUndefined();
+      expect(screen.queryByRole('region', { name: 'Rebase' })).toBeNull();
+    },
+  );
 });
 
 describe('a dirty tree stop', () => {
   const dirtyStop = { reason: 'dirty', message: 'unused', files: [], sha: null } as const;
 
-  it('names the files, and leaves when the tree is clean again', async () => {
+  it('names the files, offers Retry rebase, and leaves when the tree is clean again', async () => {
     dirty.changed = 11;
     await showRun({ phase: 'stopped', stop: dirtyStop });
 
     expect(screen.getByRole('alert').textContent).toContain(
       '11 files have changes that are not committed',
     );
-    expect(screen.getByRole('button', { name: 'Check again' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Open terminal' })).toBeDefined();
+    expect(verbsIn({ node: screen.getByRole('region', { name: 'Rebase' }) })).toEqual([
+      'Retry rebase',
+      'Open terminal',
+    ]);
 
     dirty.changed = 0;
-    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    await act(async () => {
+      await refreshWorktreeStatuses({ worktreePaths: [WORKTREE] });
+    });
     await settle();
 
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Rebase job' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Rebase' })).toBeNull();
+  });
+});
+
+describe('a stop saved before a restart', () => {
+  const showSaved = async ({ at }: SavedStopParams) => {
+    useAppStore.setState({
+      historyRuns: {},
+      sessionEvents: { [A_REBASE_SESSION_ID]: [savedConflict({ at })] },
+    });
+    render(<JobBanner sessionId={A_REBASE_SESSION_ID} worktreePath={WORKTREE} />);
+    await settle();
+  };
+
+  it('asks with the same prompt and verbs as the window that ran the rebase', async () => {
+    await showRun({
+      phase: 'stopped',
+      stop: {
+        reason: 'conflict',
+        message: '2 files conflict with main.',
+        files: ['src/settlement/batch.ts', 'src/settlement/ledger.ts'],
+        sha: null,
+        head: 'head-sha',
+      },
+      rebaseConflict: {
+        ontoRef: 'origin/main',
+        baseBranch: 'main',
+        head: 'head-sha',
+        autoAgentId: null,
+      },
+    });
+    const live = screen.getByRole('alert');
+    const liveTitle = live.textContent;
+    const liveVerbs = verbsIn({ node: live });
+    cleanup();
+
+    await showSaved({ at: PAST });
+
+    const saved = screen.getByRole('alert');
+    expect(saved.textContent).toBe(liveTitle);
+    expect(verbsIn({ node: saved })).toEqual(liveVerbs);
+    expect(liveVerbs).toEqual(['Resolve with Auto', 'Resolve myself', 'Keep branch as it was']);
   });
 
-  it('stays while the tree is still dirty after checking again', async () => {
-    dirty.changed = 11;
-    await showRun({ phase: 'stopped', stop: dirtyStop });
+  it('starts Auto from the saved stop and then says Auto has it', async () => {
+    const spawnAgent = vi.fn<AppStore['spawnAgent']>(async (_sessionId, args) => {
+      args.onKickoffAccepted?.();
+      return A_REBASE_AGENT_ID;
+    });
+    useAppStore.setState({ providers: CONNECTED, spawnAgent });
+    await showSaved({ at: PAST });
 
-    dirty.changed = 3;
-    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve with Auto' }));
     await settle();
 
-    expect(screen.getByRole('alert').textContent).toContain(
-      '3 files have changes that are not committed',
+    expect(spawnAgent).toHaveBeenCalledTimes(1);
+    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain('rebase on origin/main');
+    expect(useAppStore.getState().historyRuns[A_REBASE_MOUNT_ID]?.rebaseConflict?.autoAgentId).toBe(
+      A_REBASE_AGENT_ID,
     );
+    expect(screen.getByText('Auto is rebasing on main')).toBeDefined();
+  });
+
+  it('leaves once a fresh git read shows the rebase finished', async () => {
+    gitNow.head = 'moved-sha';
+    gitNow.behind = 0;
+
+    await showSaved({ at: PAST });
+
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('drops a late git read for an old head that was requested before the stop', async () => {
+    gitNow.head = 'moved-sha';
+    gitNow.behind = 0;
+
+    await showSaved({ at: new Date(Date.now() + 60_000).toISOString() });
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Rebase on main stopped: 2 files conflict',
+    );
+  });
+});
+
+describe('the rebase stop panel', () => {
+  const CONFLICT_STOP = {
+    reason: 'conflict',
+    message: '2 files conflict with main.',
+    files: ['src/settlement/batch.ts', 'src/settlement/ledger.ts'],
+    sha: null,
+    head: 'head-sha',
+  } as const;
+
+  const conflictRun = (patch: Partial<HistoryRun> = {}): Partial<HistoryRun> => ({
+    phase: 'stopped',
+    commitCount: 4,
+    stop: CONFLICT_STOP,
+    rebaseConflict: {
+      ontoRef: 'origin/main',
+      baseBranch: 'main',
+      head: 'head-sha',
+      autoAgentId: null,
+    },
+    ...patch,
+  });
+
+  const panel = (): HTMLElement => screen.getByRole('region', { name: 'Rebase' });
+
+  const fileStates = (): ReadonlyArray<string | null> =>
+    Array.from(panel().querySelectorAll('[data-rebase-file]')).map((node) =>
+      node.getAttribute('data-rebase-file'),
+    );
+
+  const refresh = async (): Promise<void> => {
+    await act(async () => {
+      await refreshWorktreeStatuses({ worktreePaths: [WORKTREE] });
+    });
+    await settle();
+  };
+
+  it('names what stopped, lists every file, and offers the three ways forward', async () => {
+    await showRun(conflictRun());
+
+    expect(panel().textContent).toContain('Rebase on main stopped: 2 files conflict');
+    expect(panel().textContent).toContain('Your branch is as it was.');
+    expect(within(panel()).getByText('src/settlement/batch.ts')).toBeDefined();
+    expect(within(panel()).getByText('src/settlement/ledger.ts')).toBeDefined();
+    expect(fileStates()).toEqual(['conflict', 'conflict']);
+    expect(verbsIn({ node: panel() })).toEqual([
+      'Resolve with Auto',
+      'Resolve myself',
+      'Keep branch as it was',
+    ]);
+    expect(
+      within(panel()).getByRole('button', { name: 'Resolve with Auto' }).hasAttribute('disabled'),
+    ).toBe(true);
+  });
+
+  it('starts the rebase in the worktree on Resolve myself, then holds Continue until no file conflicts', async () => {
+    await showRun(conflictRun());
+
+    conflictsNow.files = [
+      { path: 'src/settlement/batch.ts', hasMarkers: true, isStageOnly: false },
+      { path: 'src/settlement/ledger.ts', hasMarkers: true, isStageOnly: false },
+    ];
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve myself' }));
+    await settle();
+
+    expect(gitCalls).toEqual(['worktree_start_rebase']);
+    expect(useAppStore.getState().historyRuns[A_REBASE_MOUNT_ID]?.rebaseConflict?.isHere).toBe(
+      true,
+    );
+    expect((useAppStore.getState().terminalTabs[A_REBASE_SESSION_ID] ?? []).length).toBe(1);
+    expect(panel().textContent).toContain('You are rebasing on main in the terminal');
+    expect(panel().textContent).toContain('2 of 2 files left.');
+    expect(verbsIn({ node: panel() })).toEqual([
+      'Continue rebase',
+      'Open terminal',
+      'Abort rebase',
+    ]);
+    const blocked = within(panel()).getByRole('button', { name: 'Continue rebase' });
+    expect(blocked.hasAttribute('disabled')).toBe(true);
+
+    conflictsNow.files = [
+      { path: 'src/settlement/batch.ts', hasMarkers: false, isStageOnly: false },
+      { path: 'src/settlement/ledger.ts', hasMarkers: true, isStageOnly: false },
+    ];
+    gitNow.unmerged = 1;
+    await refresh();
+    expect(panel().textContent).toContain('1 of 2 files left.');
+    expect(fileStates()).toEqual(['resolved', 'conflict']);
+    expect(
+      within(panel()).getByRole('button', { name: 'Continue rebase' }).hasAttribute('disabled'),
+    ).toBe(true);
+
+    conflictsNow.files = [
+      { path: 'src/settlement/batch.ts', hasMarkers: false, isStageOnly: false },
+      { path: 'src/settlement/ledger.ts', hasMarkers: false, isStageOnly: false },
+    ];
+    gitNow.unmerged = 0;
+    await refresh();
+    const ready = within(panel()).getByRole('button', { name: 'Continue rebase' });
+    expect(ready.hasAttribute('disabled')).toBe(false);
+
+    gitNow.upstreamAhead = 4;
+    fireEvent.click(ready);
+    await settle();
+
+    expect(gitCalls).toEqual(['worktree_start_rebase', 'worktree_continue_rebase']);
+    expect(panel().textContent).toContain('Rebased on main');
+    expect(panel().textContent).toContain('Origin still has the old copy.');
+  });
+
+  it('keeps a markerless conflict unresolved until it is staged, with Continue off', async () => {
+    await showRun(conflictRun());
+
+    conflictsNow.files = [
+      { path: 'src/settlement/batch.ts', hasMarkers: false, isStageOnly: true },
+      { path: 'src/settlement/ledger.ts', hasMarkers: true, isStageOnly: false },
+    ];
+    fireEvent.click(screen.getByRole('button', { name: 'Resolve myself' }));
+    await settle();
+
+    expect(fileStates()).toEqual(['conflict', 'conflict']);
+    expect(panel().textContent).toContain('stage it with git add or git rm');
+
+    conflictsNow.files = [
+      { path: 'src/settlement/batch.ts', hasMarkers: false, isStageOnly: true },
+      { path: 'src/settlement/ledger.ts', hasMarkers: false, isStageOnly: false },
+    ];
+    gitNow.unmerged = 1;
+    await refresh();
+    expect(fileStates()).toEqual(['conflict', 'resolved']);
+    expect(
+      within(panel()).getByRole('button', { name: 'Continue rebase' }).hasAttribute('disabled'),
+    ).toBe(true);
+
+    conflictsNow.files = [
+      { path: 'src/settlement/ledger.ts', hasMarkers: false, isStageOnly: false },
+    ];
+    gitNow.unmerged = 0;
+    await refresh();
+    expect(fileStates()).toEqual(['resolved', 'resolved']);
+    expect(
+      within(panel()).getByRole('button', { name: 'Continue rebase' }).hasAttribute('disabled'),
+    ).toBe(false);
+  });
+
+  it('keeps the branch as it was and records it', async () => {
+    const keepRebaseStop = vi.fn<AppStore['keepRebaseStop']>(async () => undefined);
+    useAppStore.setState({ keepRebaseStop });
+    await showRun(conflictRun());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep branch as it was' }));
+    await settle();
+
+    expect(keepRebaseStop).toHaveBeenCalledWith({
+      sessionId: A_REBASE_SESSION_ID,
+      mountId: A_REBASE_MOUNT_ID,
+    });
+  });
+
+  it('shows Auto at work with the files it resolves and Open Auto only', async () => {
+    gitNow.isRebasing = true;
+    gitNow.unmerged = 1;
+    conflictsNow.files = [
+      { path: 'src/settlement/ledger.ts', hasMarkers: true, isStageOnly: false },
+    ];
+    await showRun(
+      conflictRun({
+        rebaseConflict: {
+          ontoRef: 'origin/main',
+          baseBranch: 'main',
+          head: 'head-sha',
+          autoAgentId: A_REBASE_AGENT_ID,
+        },
+      }),
+    );
+
+    expect(panel().textContent).toContain('Auto is rebasing on main');
+    expect(panel().textContent).toContain('1 of 2 files resolved.');
+    expect(fileStates()).toEqual(['resolved', 'conflict']);
+    expect(verbsIn({ node: panel() })).toEqual(['Open Auto']);
+  });
+
+  it('offers Push with the lease once Auto rebased, and says pushed once origin has it', async () => {
+    gitNow.behind = 0;
+    gitNow.upstreamAhead = 4;
+    useAppStore.setState({
+      mountGithub: { [A_REBASE_MOUNT_ID]: mountGithubOf({ mount: MOUNT, number: 418 }) },
+    });
+    await showRun(
+      conflictRun({
+        rebaseConflict: {
+          ontoRef: 'origin/main',
+          baseBranch: 'main',
+          head: 'head-sha',
+          autoAgentId: A_REBASE_AGENT_ID,
+        },
+      }),
+    );
+
+    expect(panel().textContent).toContain('Rebased on main');
+    expect(verbsIn({ node: panel() })).toEqual(['Push', 'See what Auto did']);
+
+    gitNow.upstreamAhead = 0;
+    await refresh();
+
+    expect(panel().textContent).toContain('Pushed to origin');
+    expect(verbsIn({ node: panel() })).toEqual(['Dismiss']);
+  });
+
+  it('offers a plain Push on a branch with no pull request', async () => {
+    const pushSessionBranch = vi.fn<AppStore['pushSessionBranch']>(async () => ({ ok: true }));
+    useAppStore.setState({ pushSessionBranch });
+    gitNow.behind = 0;
+    gitNow.upstreamAhead = 4;
+    await showRun(
+      conflictRun({
+        rebaseConflict: {
+          ontoRef: 'origin/main',
+          baseBranch: 'main',
+          head: 'head-sha',
+          autoAgentId: A_REBASE_AGENT_ID,
+        },
+      }),
+    );
+
+    expect(verbsIn({ node: panel() })).toEqual(['Push', 'See what Auto did']);
+
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Push' }));
+    await settle();
+
+    expect(pushSessionBranch).toHaveBeenCalledWith({
+      sessionId: A_REBASE_SESSION_ID,
+      mountId: A_REBASE_MOUNT_ID,
+    });
+  });
+
+  it('keeps the panel with the error when the plain push fails', async () => {
+    const pushSessionBranch = vi.fn<AppStore['pushSessionBranch']>(async () => ({
+      ok: false,
+      error: 'rejected: non-fast-forward',
+    }));
+    useAppStore.setState({ pushSessionBranch });
+    gitNow.behind = 0;
+    gitNow.upstreamAhead = 4;
+    await showRun(
+      conflictRun({
+        rebaseConflict: {
+          ontoRef: 'origin/main',
+          baseBranch: 'main',
+          head: 'head-sha',
+          autoAgentId: A_REBASE_AGENT_ID,
+        },
+      }),
+    );
+
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Push' }));
+    await settle();
+
+    expect(panel().textContent).toContain('rejected: non-fast-forward');
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Retry' }));
+    await settle();
+
+    expect(pushSessionBranch).toHaveBeenCalledTimes(2);
   });
 });

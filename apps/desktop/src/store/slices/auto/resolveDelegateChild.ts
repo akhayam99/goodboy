@@ -13,7 +13,6 @@ import {
   substepLinkOf,
   isUserPayload,
   parseAutoDelegationRole,
-  pickAutoMount,
   type AutoDelegationRole,
   type AdmissionSubstep,
   type AutoRefusalCode,
@@ -43,6 +42,7 @@ import {
 } from '@goodboy/types';
 import type { AdmitChildInput } from './admit';
 import { gatherBranchFacts, mountLabelOf } from './gatherBranchFacts';
+import { pickChildMount } from './pickChildMount';
 import type { AgentGrant } from './ports';
 import type { AgentVerbContext } from './verbContext';
 
@@ -361,11 +361,14 @@ export const resolveDelegateChild = async ({
       message: roleCannotRunCommandsMessage({ role }),
     });
   }
-  const picked = pickAutoMount({
+  const picked = await pickChildMount({
+    ports: ctx.ports,
+    sessionId: grant.sessionId,
     role,
     requested: child.mount ?? revise?.producerMountId ?? null,
     mounts,
     primaryMountId: tree.primaryMountId,
+    task: child.task,
   });
   if (picked.kind === 'refused') {
     return refuse({ slot, code: picked.code, message: picked.message });

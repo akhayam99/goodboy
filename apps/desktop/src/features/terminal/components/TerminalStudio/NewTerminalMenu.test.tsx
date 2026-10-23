@@ -122,6 +122,9 @@ describe('the New terminal in picker opened by key', () => {
     openByKey();
     const filter = screen.getByRole('searchbox', { name: 'Filter terminal locations' });
     fireEvent.keyDown(filter, { key: 'ArrowDown' });
+    expect(document.activeElement?.textContent).toBe('harborline');
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'New terminal in' }), { key: 'ArrowDown' });
+    expect(document.activeElement?.textContent).toBe('payments-apimara/ledger-export');
     const focused = document.activeElement;
     expect(focused?.getAttribute('role')).toBe('menuitem');
     if (focused !== null) {

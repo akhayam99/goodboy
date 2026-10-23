@@ -1,20 +1,6 @@
-export type RemoteHostKind = 'github' | 'gitlab' | 'other' | 'none';
+import { remoteHostNameOf } from './remoteHostNameOf';
 
-const hostFromRemoteUrl = (url: string): string | null => {
-  const trimmed = url.trim();
-  if (!trimmed) {
-    return null;
-  }
-  const scpLike = /^[\w.-]+@([^:]+):/.exec(trimmed);
-  if (scpLike?.[1]) {
-    return scpLike[1].toLowerCase();
-  }
-  try {
-    return new URL(trimmed).hostname.toLowerCase();
-  } catch {
-    return null;
-  }
-};
+export type RemoteHostKind = 'github' | 'gitlab' | 'other' | 'none';
 
 export const projectPathFromRemoteUrl = (url: string | null): string | null => {
   if (!url) {
@@ -49,12 +35,12 @@ export const classifyRemoteHost = (
   if (!url) {
     return 'none';
   }
-  const host = hostFromRemoteUrl(url);
+  const host = remoteHostNameOf({ url });
   if (!host) {
     return 'other';
   }
   const knownGitlab = gitlabHosts
-    .map((h) => hostFromRemoteUrl(h) ?? h.trim().toLowerCase())
+    .map((h) => remoteHostNameOf({ url: h }) ?? h.trim().toLowerCase())
     .filter(Boolean);
   if (knownGitlab.includes(host) || host.includes('gitlab')) {
     return 'gitlab';

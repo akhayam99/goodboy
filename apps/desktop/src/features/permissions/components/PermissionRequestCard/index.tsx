@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Hand, ShieldCheck } from 'lucide-react';
 import {
-  ROW_INTERACTIVE,
-  cn,
   AnchoredPopover,
   Button,
   ConfirmPopover,
@@ -14,6 +12,7 @@ import { isFilePathTool, prefixRuleFor } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
+import { AppMenuList } from '../../../actions/AppMenuList';
 import { formatRequestInput } from './formatRequestInput';
 import { PromptField } from '../../../../shared/components/PromptField';
 import { modeCopyOf } from '../../modeCopy';
@@ -264,9 +263,8 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
             trigger={() => (
               <AnchoredPopover
                 dropdown={dropdown}
-                role={overflowView === 'menu' ? 'menu' : 'dialog'}
-                ariaLabel="More permission actions"
-                className={overflowView === 'menu' ? 'py-1' : undefined}
+                role={overflowView === 'menu' ? undefined : 'dialog'}
+                ariaLabel={overflowView === 'menu' ? undefined : 'More permission actions'}
                 trigger={
                   <MenuTriggerButton
                     label="More permission actions"
@@ -280,47 +278,35 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                 }
               >
                 {overflowView === 'menu' && (
-                  <>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={busy}
-                      onClick={handleAllowSession}
-                      className={cn(
-                        'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
-                        ROW_INTERACTIVE,
-                      )}
-                    >
-                      Allow all commands in this session
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={busy}
-                      onClick={() => {
-                        closeOverflow();
-                        setIsConfirmingGlobal(true);
-                      }}
-                      className={cn(
-                        'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
-                        ROW_INTERACTIVE,
-                      )}
-                    >
-                      {rule.label} everywhere
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={busy}
-                      onClick={() => setOverflowView('denyReason')}
-                      className={cn(
-                        'flex w-full items-center px-3 py-2 text-left text-label text-foreground',
-                        ROW_INTERACTIVE,
-                      )}
-                    >
-                      Deny and tell {askerNoun ?? 'the agent'} why…
-                    </button>
-                  </>
+                  <AppMenuList
+                    label="More permission actions"
+                    onClose={closeOverflow}
+                    entries={[
+                      {
+                        kind: 'item',
+                        key: 'allow-session',
+                        label: 'Allow all commands in this session',
+                        isDisabled: busy,
+                        shouldStayOpen: true,
+                        onSelect: handleAllowSession,
+                      },
+                      {
+                        kind: 'item',
+                        key: 'allow-everywhere',
+                        label: `${rule.label} everywhere`,
+                        isDisabled: busy,
+                        onSelect: () => setIsConfirmingGlobal(true),
+                      },
+                      {
+                        kind: 'item',
+                        key: 'deny-reason',
+                        label: `Deny and tell ${askerNoun ?? 'the agent'} why…`,
+                        isDisabled: busy,
+                        shouldStayOpen: true,
+                        onSelect: () => setOverflowView('denyReason'),
+                      },
+                    ]}
+                  />
                 )}
                 {overflowView === 'denyReason' && (
                   <div className="flex flex-col gap-2 p-3">

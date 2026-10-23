@@ -2,7 +2,14 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { brandId, type AgentId, type Session } from '@goodboy/types';
+import {
+  brandId,
+  type AgentId,
+  type MountId,
+  type ProjectId,
+  type Session,
+  type SessionProjectMount,
+} from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import { UndoToastBridge } from '../../../../app/components/UndoToastBridge';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -65,6 +72,11 @@ vi.mock('../../../suggestions/useNextStepOutcomes', () => ({
 import type { AutoActionTarget } from './actionCardsOf';
 import { NextStackView } from './NextStackView';
 import { useNextCards } from './useNextCards';
+import { useAppStore } from '../../../../store';
+import type { AppStore } from '../../../../store/store';
+import type { HistoryRun, HistoryStop } from '../../../../store/slices/history/types';
+import { useRebaseStopRows } from '../../../history/useRebaseStopRows';
+import { aRebaseRun } from '../../../history/testing/aRebaseRun';
 
 type StackProps = {
   readonly session: Session;
@@ -78,6 +90,92 @@ const Stack = (props: StackProps) => {
 };
 
 const SESSION = aSession();
+
+const MEMBERS_MOUNT: SessionProjectMount = {
+  mountId: brandId<MountId>({ value: 'mount-members' }),
+  sessionId: SESSION.id,
+  projectId: brandId<ProjectId>({ value: 'project-harbor-portal' }),
+  mountName: 'harbor-portal',
+  worktreePath: '/w/harbor-portal-members',
+  lastWorktreePath: null,
+  repoRoot: '/repos/harbor-portal',
+  branch: 'hl/feat-center-members-page',
+  baseBranch: 'main',
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present',
+  revision: 1,
+};
+
+const STOP_OWNER: NeedsYouOwner = {
+  id: 'event:ev-members-stop',
+  kind: 'rebase',
+  text: 'Rebase of hl/feat-center-members-page stopped · conflict in MembersPage.tsx',
+  where: null,
+  at: '2026-10-22T10:00:00.000Z',
+  item: null,
+  question: null,
+  questionIds: [],
+  prNumber: null,
+  owed: null,
+  mountId: MEMBERS_MOUNT.mountId,
+};
+
+const STOP_CARD_ID = `action-card-owner:${STOP_OWNER.id}`;
+
+type StopParams = {
+  readonly stop: HistoryStop;
+  readonly patch?: Partial<HistoryRun>;
+};
+
+const seedStop = ({ stop, patch = {} }: StopParams): void => {
+  useAppStore.setState({
+    sessions: [SESSION],
+    sessionProjectMounts: { [SESSION.id]: [MEMBERS_MOUNT] },
+    historyRuns: {
+      [MEMBERS_MOUNT.mountId]: aRebaseRun({
+        sessionId: SESSION.id,
+        mountId: MEMBERS_MOUNT.mountId,
+        phase: 'stopped',
+        stop,
+        ...patch,
+      }),
+    },
+  });
+};
+
+const StopStack = (props: StackProps) => {
+  const { cards, actionsFor } = useNextCards(props);
+  const stopRowFor = useRebaseStopRows({ sessionId: props.session.id });
+  return (
+    <NextStackView
+      sessionId={props.session.id}
+      cards={cards}
+      actionsFor={actionsFor}
+      branchFor={({ card }) =>
+        card.mountId === MEMBERS_MOUNT.mountId
+          ? { branch: MEMBERS_MOUNT.branch, request: null }
+          : null
+      }
+      stopRowFor={stopRowFor}
+    />
+  );
+};
+
+const showStop = (): void => {
+  render(
+    <ToastProvider>
+      <StopStack session={SESSION} model={{ ...MODEL, owners: [STOP_OWNER] }} autoTargets={[]} />
+    </ToastProvider>,
+  );
+};
+
+const stopCard = (): HTMLElement => screen.getByTestId(STOP_CARD_ID);
+
+const menuOf = (): ReadonlyArray<string> => {
+  fireEvent.click(within(stopCard()).getByRole('button', { name: /^More options for / }));
+  return screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+};
 
 const MODEL: SessionWorkModel = {
   entries: [],
@@ -329,5 +427,209 @@ describe('action cards in a stack', () => {
 
     expect(task).toHaveBeenCalledTimes(1);
     expect(recordNextStepOutcome).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('a stopped rebase in Next', () => {
+  const CONFLICT: HistoryStop = {
+    reason: 'conflict',
+    message: '2 files conflict with main.',
+    files: ['src/pages/members/MembersPage.tsx', 'src/pages/members/members.css'],
+    sha: null,
+    head: 'b0a1c2d',
+  };
+
+  const CONFLICT_RUN: Partial<HistoryRun> = {
+    rebaseConflict: {
+      ontoRef: 'origin/main',
+      baseBranch: 'main',
+      head: 'b0a1c2d',
+      autoAgentId: null,
+    },
+  };
+
+  beforeEach(() => {
+    suggestionState.list = [];
+  });
+
+  it('titles the row by its branch, says what stopped in one sentence, and leads with Resolve with Auto', () => {
+    seedStop({ stop: CONFLICT, patch: CONFLICT_RUN });
+    showStop();
+
+    const card = within(stopCard());
+    card.getByText('hl/feat-center-members-page');
+    card.getByText(
+      '2 files conflict with main: MembersPage.tsx and 1 more. Your branch is as it was.',
+    );
+    const main = card.getByRole('button', {
+      name: 'Resolve with Auto on hl/feat-center-members-page',
+    });
+    expect(main.textContent).toBe('Resolve with Auto');
+    expect(menuOf()).toEqual(['Resolve myself', 'Keep branch as it was', 'Open branch']);
+  });
+
+  it.each([
+    [
+      { reason: 'origin-moved', message: 'Origin moved.', files: [], sha: null },
+      'Bring them in',
+      'Rebased here, but someone pushed to origin. Nothing was pushed.',
+    ],
+    [
+      { reason: 'failed', message: 'git failed', files: [], sha: null },
+      'Retry rebase',
+      "Couldn't rebase harbor-portal on main.",
+    ],
+    [
+      { reason: 'push-failed', message: 'remote unreachable', files: [], sha: null },
+      'Fix with agent',
+      'Rebased, but the push failed.',
+    ],
+  ] satisfies ReadonlyArray<readonly [HistoryStop, string, string]>)(
+    'leads a %j stop with its own verb',
+    (stop, verb, sentence) => {
+      seedStop({ stop });
+      showStop();
+
+      const card = within(stopCard());
+      card.getByText(sentence);
+      expect(
+        card.getByRole('button', { name: `${verb} on hl/feat-center-members-page` }).textContent,
+      ).toBe(verb);
+    },
+  );
+
+  it('retries a failed rebase from the row and keeps the cause on it when it fails again', async () => {
+    const rebaseBranch = vi
+      .fn<() => Promise<'rebased'>>()
+      .mockRejectedValueOnce(new Error('git is busy'));
+    useAppStore.setState({ rebaseBranch });
+    seedStop({ stop: { reason: 'failed', message: 'git failed', files: [], sha: null } });
+    showStop();
+
+    await act(async () => {
+      fireEvent.click(
+        within(stopCard()).getByRole('button', {
+          name: 'Retry rebase on hl/feat-center-members-page',
+        }),
+      );
+    });
+
+    expect(rebaseBranch).toHaveBeenCalledWith({
+      sessionId: SESSION.id,
+      mountId: MEMBERS_MOUNT.mountId,
+    });
+    within(stopCard()).getByText('git is busy');
+  });
+
+  it('folds the diverged card of the same branch into the stop, never as And 1 more', () => {
+    seedStop({ stop: { reason: 'origin-moved', message: 'Origin moved.', files: [], sha: null } });
+    suggestionState.list = [
+      {
+        id: 'push-branch:members',
+        kind: 'push-branch',
+        priority: 5,
+        band: 1,
+        title: 'hl/feat-center-members-page diverged from origin',
+        sessionId: SESSION.id,
+        targetKey: null,
+        fingerprint: 'push-branch:members:diverged',
+        payload: {
+          mountId: MEMBERS_MOUNT.mountId,
+          projectId: MEMBERS_MOUNT.projectId,
+          projectName: 'harbor-portal',
+          branch: MEMBERS_MOUNT.branch,
+          worktreePath: MEMBERS_MOUNT.worktreePath,
+          state: 'diverged',
+          ahead: 4,
+          behind: 1,
+        },
+      },
+    ];
+    showStop();
+
+    const region = screen.getByRole('region', { name: 'Next steps' });
+    expect(region.querySelectorAll('[data-action-card]')).toHaveLength(1);
+    expect(stopCard().textContent).not.toContain('And 1 more');
+    expect(menuOf()).toContain('hl/feat-center-members-page diverged from origin');
+  });
+
+  it('updates every stopped branch from Update all in the group header, and shows a failure on its row', async () => {
+    const PROFILE_MOUNT: SessionProjectMount = {
+      ...MEMBERS_MOUNT,
+      mountId: brandId<MountId>({ value: 'mount-profile' }),
+      worktreePath: '/w/harbor-portal-profile',
+      branch: 'hl/feat-center-profile-page',
+    };
+    const PROFILE_OWNER: NeedsYouOwner = {
+      ...STOP_OWNER,
+      id: 'event:ev-profile-stop',
+      text: 'Rebase of hl/feat-center-profile-page stopped · origin moved',
+      mountId: PROFILE_MOUNT.mountId,
+    };
+    const updateAll = vi.fn<AppStore['updateAll']>(async () => {
+      useAppStore.setState({
+        rebaseAllRuns: {
+          [SESSION.id]: {
+            id: 'run-update',
+            sessionId: SESSION.id,
+            startedAt: 0,
+            shouldTidy: false,
+            isAborted: false,
+            phase: 'done',
+            autoAgentId: null,
+            error: null,
+            branches: [
+              {
+                mountId: MEMBERS_MOUNT.mountId,
+                projectName: 'harbor-portal',
+                branch: MEMBERS_MOUNT.branch,
+                state: 'failed',
+                message: 'git is busy',
+              },
+            ],
+          },
+        },
+      });
+      return 'done';
+    });
+    useAppStore.setState({
+      updateAll,
+      sessions: [SESSION],
+      sessionProjectMounts: { [SESSION.id]: [MEMBERS_MOUNT, PROFILE_MOUNT] },
+      historyRuns: {
+        [MEMBERS_MOUNT.mountId]: aRebaseRun({
+          sessionId: SESSION.id,
+          mountId: MEMBERS_MOUNT.mountId,
+          phase: 'stopped',
+          stop: { reason: 'failed', message: 'git failed', files: [], sha: null },
+        }),
+        [PROFILE_MOUNT.mountId]: aRebaseRun({
+          sessionId: SESSION.id,
+          mountId: PROFILE_MOUNT.mountId,
+          phase: 'stopped',
+          stop: { reason: 'origin-moved', message: 'Origin moved.', files: [], sha: null },
+        }),
+      },
+    });
+    render(
+      <ToastProvider>
+        <StopStack
+          session={SESSION}
+          model={{ ...MODEL, owners: [STOP_OWNER, PROFILE_OWNER] }}
+          autoTargets={[]}
+        />
+      </ToastProvider>,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Update all 2 branches' }));
+    });
+
+    expect(updateAll).toHaveBeenCalledWith({
+      sessionId: SESSION.id,
+      rebaseMountIds: [MEMBERS_MOUNT.mountId],
+      bringInMountIds: [PROFILE_MOUNT.mountId],
+    });
+    within(stopCard()).getByText('git is busy');
   });
 });

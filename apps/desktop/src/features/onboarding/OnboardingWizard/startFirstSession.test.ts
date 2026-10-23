@@ -87,12 +87,12 @@ describe('handOffFirstSession', () => {
 
     const draft = useAppStore.getState().sessionDrafts[WORKSPACE_ID];
     expect({
-      choice: draft?.choice,
+      startKind: draft?.startKind,
       projectIds: draft?.projectIds,
       picked: draft?.pickedIssues.map((issue) => issue.identifier),
       goal: draft?.workflowGoal,
     }).toEqual({
-      choice: null,
+      startKind: null,
       projectIds: [PROJECT_ID],
       picked: ['ACM-112'],
       goal: 'Checkout submits twice on a slow network',

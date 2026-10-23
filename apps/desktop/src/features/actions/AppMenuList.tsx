@@ -4,8 +4,9 @@ type Props = {
   readonly label: string;
   readonly entries: ReadonlyArray<MenuEntry>;
   readonly onClose: () => void;
+  readonly isAutoFocus?: boolean;
 };
 
-export const AppMenuList = ({ label, entries, onClose }: Props) => (
-  <MenuList label={label} entries={entries} onClose={onClose} />
+export const AppMenuList = ({ label, entries, onClose, isAutoFocus = true }: Props) => (
+  <MenuList label={label} entries={entries} onClose={onClose} isAutoFocus={isAutoFocus} />
 );

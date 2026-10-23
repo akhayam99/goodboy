@@ -10,6 +10,7 @@ type Params = {
   readonly row: ActionCardModel;
   readonly group: NextGroupId;
   readonly branch: NextBranchName | null;
+  readonly stopLine?: string | null;
 };
 
 type RowParams = {
@@ -37,13 +38,22 @@ const sentenceOf = ({ row }: RowParams): string | null => {
   return `${head} ${detail.endsWith('.') ? detail : `${detail}.`}`;
 };
 
-export const nextRowCopyOf = ({ row, group, branch }: Params): ActionCardModel => {
-  if (group !== 'fix' || branch === null) {
+type TitleParams = {
+  readonly branch: NextBranchName;
+};
+
+const branchTitleOf = ({ branch }: TitleParams): string =>
+  branch.request === null ? branch.branch : `${branch.branch} · ${branch.request}`;
+
+export const nextRowCopyOf = ({ row, group, branch, stopLine = null }: Params): ActionCardModel => {
+  if (branch === null) {
     return row;
   }
-  return {
-    ...row,
-    title: branch.request === null ? branch.branch : `${branch.branch} · ${branch.request}`,
-    detail: sentenceOf({ row }),
-  };
+  if (group === 'update' && row.kind === 'rebase' && stopLine !== null) {
+    return { ...row, title: branchTitleOf({ branch }), detail: stopLine };
+  }
+  if (group !== 'fix') {
+    return row;
+  }
+  return { ...row, title: branchTitleOf({ branch }), detail: sentenceOf({ row }) };
 };

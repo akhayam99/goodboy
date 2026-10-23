@@ -1,8 +1,16 @@
 import { useRef } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { AnchoredPopover, TOP_BAR_CONTROL, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  TOP_BAR_CONTROL,
+  Tooltip,
+  cn,
+  useDropdown,
+  type MenuEntry,
+} from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { HistoryMenu, type HistoryItem } from './HistoryMenu';
+import { AppMenuList } from '../../../../features/actions/AppMenuList';
+import type { HistoryItem } from './historyItem';
 import type { HistoryLabel } from './historyLabel';
 
 const HOLD_MS = 400;
@@ -43,6 +51,27 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
     holdTimer.current = null;
   };
 
+  const entries: ReadonlyArray<MenuEntry> = [
+    {
+      kind: 'radio',
+      key: 'history',
+      label: verb,
+      choices: items.map((item) => ({
+        id: String(item.index),
+        label: item.label,
+        isCurrent: item.isCurrent,
+        hint: item.context,
+      })),
+      onSelect: (choice) => {
+        const item = items.find((candidate) => String(candidate.index) === choice);
+        if (item === undefined) {
+          return;
+        }
+        onJump(item.index);
+      },
+    },
+  ];
+
   const openMenu = () => {
     if (items.length === 0 || open) {
       return;
@@ -53,8 +82,6 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel="History"
       anchorClassName="flex shrink-0"
       trigger={
         <Tooltip content={tooltip} shortcut={isDisabled ? undefined : shortcut} side="bottom">
@@ -99,13 +126,7 @@ export const HistoryArrow = ({ direction, target, items, onGo, onJump }: Props) 
         </Tooltip>
       }
     >
-      <HistoryMenu
-        items={items}
-        onJump={(index) => {
-          close();
-          onJump(index);
-        }}
-      />
+      <AppMenuList label="History" entries={entries} onClose={close} />
     </AnchoredPopover>
   );
 };

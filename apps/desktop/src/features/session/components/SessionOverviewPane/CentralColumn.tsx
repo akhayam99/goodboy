@@ -12,6 +12,7 @@ import { useDoneRows } from '../../central/done/useDoneRows';
 import type { ActionCardModel } from '../../central/next/actionCardsOf';
 import { NextStackView } from '../../central/next/NextStackView';
 import { useNextCards } from '../../central/next/useNextCards';
+import { useRebaseStopRows } from '../../../history/useRebaseStopRows';
 import { NowBlock } from '../../central/now/NowBlock';
 import { useSessionWorkModel } from '../../central/useSessionWorkModel';
 
@@ -71,6 +72,7 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
     ({ card }: CardParams) => branchNameOf({ mountId: card.mountId }),
     [branchNameOf],
   );
+  const stopRowFor = useRebaseStopRows({ sessionId });
   const doneOutcome = days[0]?.rows[0]?.title ?? null;
   const hasLead = !isArchived && cards.length > 0;
 
@@ -106,6 +108,7 @@ export const CentralColumn = ({ session, onLeadChange }: Props) => {
           chipFor={({ card }) => chipOf({ branchLabelOf, mountId: card.mountId })}
           nameFor={({ card }) => nameOf({ branchLabelOf, card })}
           branchFor={branchFor}
+          stopRowFor={stopRowFor}
         />
       )}
       <DoneSection

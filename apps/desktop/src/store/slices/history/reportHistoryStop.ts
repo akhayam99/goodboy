@@ -37,6 +37,7 @@ export const reportHistoryStop = async ({
       reason: stop.reason,
       title: stop.message,
       files: stop.files,
+      ...(stop.head !== undefined && { head: stop.head }),
       ...(agentId !== null && { agentId }),
     },
   });

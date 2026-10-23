@@ -6,6 +6,7 @@ import type {
   TurnState,
   WorkflowRunId,
 } from '@goodboy/types';
+import { runKindLineOf } from './startKind/runKindLineOf';
 import type { DotState } from '@goodboy/ui';
 import type { AutoTreeView } from '../../store/slices/auto-view/state';
 import { autoTreeWordOf } from '../auto/autoTreeWordOf';
@@ -76,8 +77,8 @@ const WAITING_DOTS: ReadonlySet<DotState> = new Set<DotState>(['needsYou', 'fail
 const FINISHED_DOTS: ReadonlySet<DotState> = new Set<DotState>(['done', 'stopped']);
 
 const ORIGIN = {
-  orchestrated: 'Was an orchestrated run',
-  auto: 'Was an Auto conversation',
+  orchestrated: runKindLineOf({ line: { kind: 'orchestrated' } }),
+  auto: runKindLineOf({ line: { kind: 'autoAgent' } }),
 } as const;
 
 type TimeParams = {
@@ -169,7 +170,7 @@ const workflowRowsOf = ({
       title: nameByRunId.get(run.id) ?? workflowKindName(workflow),
       origin: isOrchestrated
         ? ORIGIN.orchestrated
-        : `Was a preset run · ${workflowKindName(workflow)}`,
+        : runKindLineOf({ line: { kind: 'preset', presetName: workflowKindName(workflow) } }),
       dot: facts.dot,
       stateWord: facts.word,
       ...(isArchived ? { isInProgress: false, isWaiting: false } : progressStateOf(facts)),
@@ -290,7 +291,7 @@ const agentRowOf = ({ agent, kind, agents, questions }: AgentRowParams): Session
     kind: 'agent',
     shape: 'lead',
     title: agent.name,
-    origin: `Was an agent · ${agentKindPalette({ kind }).label}`,
+    origin: runKindLineOf({ line: { kind: 'agent', role: agentKindPalette({ kind }).label } }),
     dot,
     stateWord: hasQuestion ? 'Needs you' : describeAgentStatus({ status: agent.status }).label,
     ...progressStateOf({ dot }),

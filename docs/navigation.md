@@ -223,11 +223,9 @@ drawer instead of the Terminal page.
   3. **Runs**: only when the session has a run or a workflow exists. The run on
      screen, else the one that needs you, is live, or is queued, as a row with its
      state; its verbs in state order (Answer, Start run, Continue step, Start next
-     step, Restart step, Stop run); **Run a workflow**, which opens a level of
-     workflows ("from a workflow"); and **Open Runs**. Picking a workflow, here or
-     from a typed `Run a workflow: Ship a fix` row, opens a confirm that names the
-     session, the project, the model and the steps, and nothing starts until you
-     confirm.
+     step, Restart step, Stop run); and **Open Runs**. ⌘K also offers **Start from** each
+     preset (`startRunFromPresetEntries`), which opens the Start a run field
+     with `~` and the preset name.
   4. **Recent**, agents of this session first; then four fixed groups, each
      entry in the one its `kind` names (`EMPTY_SECTION_KINDS` in
      `commandList.ts`): **Go to** (`goto`: Sessions, Tasks, Chat, Workflows,
@@ -464,7 +462,12 @@ never exists on one surface only.
   surfaces, `stateMatrix.test.ts` pins the Open rows, and
   `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
   outside the registry, against a shrinking list of menus that are not objects
-  (creation pickers, property pickers, page chrome).
+  (page chrome, a few value pickers). The same test fails, with no allowlist,
+  on any `role="menu"`, `menuitem`, `menuitemradio` or `menuitemcheckbox`
+  written in `features/`, `app/` or `shared/`: every menu, value pickers
+  included, renders its rows through `AppMenuList` (radio entries for
+  pickers, items for verbs), and only the menu primitives in `packages/ui`
+  write those roles.
 - **What each object offers.** A session: Open, Comments, Files, Open in terminal
   (one choice per worktree), Open in
   editor; Rename (inline, in the row that opened the menu), Turn on Autopilot or
@@ -873,9 +876,9 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   (`features/session/sessionRunsOf.ts`): workflow runs (preset and
   orchestrated), Auto conversations and the agents you started by hand, newest
   first, In progress above Finished, archived runs folded. A row draws its
-  state dot, a shape glyph (Plan or One agent), the title, where it came from
-  ("Was a preset run · Fix a layout", "Was an orchestrated run", "Was an Auto
-  conversation", "Was an agent · Scout"), its state word, progress, cost and
+  state dot, a shape glyph (Workflow or Agent), the title, where it came from
+  ("Workflow · Preset Fix a layout", "Workflow · Orchestrated", "Agent · Auto
+  agent", "Agent · Scout"), its state word, progress, cost and
   age (`RunsGrid`). Opening a row opens the page it always had: a workflow run
   on its run page, an Auto conversation in the Auto chat, an agent in its
   overlay; an agent or Auto row keeps its right click menu. The old
@@ -886,7 +889,7 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   run reads Session, Runs, then the agent or run. A row never carries a native
   `title`. The Runs page opens on the Start a run field (`StartRun`), and
   **Start a run** in the New menu (`newForm.startRun`), in a session's ⌘K
-  verbs (`session.startRun`) and ⌘K **Start a run from** a preset
+  verbs (`session.startRun`) and ⌘K **Start from** a preset
   (`startRunFromPresetEntries`) all call `openStartRun`: it navigates to Runs,
   clears the run focus and, after navigation, sends the text to the field
   (`startRunEventName`). The Runs header holds no other start; the field is also the empty state. A
@@ -981,7 +984,10 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   its worktree (tooltip "Auto resolves 1 file: <path>", from the stop files of
   its history run), `Rebased by Auto` once an Auto branch is clean again until
   every Auto branch of the batch is clean (`rebaseAllBatchSettledOf`), then no
-  chip, `Failed` with the cause in the row tooltip. When Auto has the rest the
+  chip, `Failed` with the cause in the row tooltip. A `Conflict` or `Failed`
+  branch turns `rebased` once git shows the rebase finished outside the flow
+  (`settleStaleRebases`, after the turn ends, on focus and on the poll of
+  `useRebaseStatuses`, mounted by `LevelProjects` and the central model). When Auto has the rest the
   header line reads `Auto has the rest`, still with no list. One function
   (`branchRowChipOf`) owns every chip text and tone. A late
   answer for a batch that is gone is dropped by run id; Abort lets the branch in
@@ -1010,7 +1016,8 @@ characters`, in the warning tone from 90%. A longer draft is blocked before
   status line, only while a git act is due (`BranchStatusLine`: `6 behind main
 · 1 conflict` with `Rebase`, or `Rebasing on main` with `Abort`, the one home
   of Rebase; a failure keeps the line and shows the error under it with Retry,
-  and the stopped-rebase prompt `RebaseConflictPrompt` sits under it); then
+  and a stopped rebase adds one line under it, its title with `Open rebase`, which opens the
+  Branch page of that mount where the full panel lives); then
   its pages (`WorktreeEntries`), open unless you folded them: Pull request
   (Merge request on GitLab, with its number and the branch in mono),
   Comments, Files, Commits, Checks, the one with the open page marked
@@ -1329,10 +1336,13 @@ dot with `Draft in progress` while a written draft waits. The header has no
 `Esc` label and no X: Esc closes the page (`closeSessionDraft`) and lands on
 the place before it, or the board when there was none, which is also the
 parent `up()` goes to (`placeBeforeDraft`). With nothing written Esc leaves at
-once. Text in **Start a run** counts as written: while no session exists the
-draft holds it as `workflowGoal` (`useStartRun` reads and writes it, and a
-door that fills the page writes it: `openNewRunDraft`, `pickIssue`). With text Esc
-raises `Keep this draft?` under the field, inline and without a modal, in the
+once. The task field counts as written: while no session exists the draft holds
+it as `workflowGoal` (`StartTaskField` writes it, and `useStartShape` and
+`useStartRun` read it, and `pickIssue` fills it from Tasks). The
+picked kind lives in the draft too (`startKind`, `startShape`), and a door
+that opens the page on a kind writes it (`openNewSessionAs`); a picked kind
+alone is not content. With text Esc
+raises `Keep this draft?` under the form, inline and without a modal, in the
 column (`SessionKickoff` takes it as its
 `notice`). It holds one action: `Keep draft` (or a second Esc) leaves and keeps
 the draft. The field text is the draft's `workflowGoal`, so leaving keeps it.
@@ -1463,7 +1473,10 @@ Folding the rail leaves the column in place, and a drill never moves it.
   (`launchesOf`: preset runs that are not archived and Auto roots), each with
   its agents under it; picking a launch opens it in the center and keeps the
   panel open (`openSpawned` passes the panel as the navigation's drawer). The
-  tree is drawn on the Activity rail, in the Activity orientation: a **Now**
+  Overview's Now run header (`LiveRunBlock`) opens that exact run page,
+  including an orchestrated run, and Back returns to the Overview. Its step
+  rows and status sentence are status, not parallel links to the Runs list.
+  The tree is drawn on the Activity rail, in the Activity orientation: a **Now**
   marker on top (`SpawnedNowRow`), the spine running down to the oldest
   launch, and inside each launch the children above their parent, newest on
   top, each joined to its parent's lane by the same branch curve
@@ -3592,9 +3605,16 @@ machinery: a frozen preview in line under the header (`PushBanner`, the only
 push one), drift and the result per thread. Under it sits the rebase job banner
 (`JobBanner`, `features/history/JobBanner`): one strip for a rebase
 on main, on every tab of the page, which replaces the red line that used to
-tell a stop. It reads the run of the branch (`historyRuns`), never local state,
-and its stops carry only the actions that exist today (Dismiss, Refresh, Open
-terminal, Open providers, Check again, Undo rewrite, See what it did). A failed push after
+tell a stop. It reads the stop of the branch (`rebaseStopOf`, through `useRebaseStop` and
+`selectRebaseStop`): the run in `historyRuns` while this window has it, else one rebuilt from the
+latest open saved `history_stopped` event and a git read requested after that stop (an older read
+is ignored). The run is never saved, so after a restart, a reload or in a second window the banner,
+the rail prompt and the mount actions read the same rebuilt stop. Never local state,
+and a stopped rebase is one panel (`RebaseStopPanel`, a `Notice` banner): what stopped, the files
+or the new online commits, and one row of verbs with one filled primary and no Dismiss while the
+stop blocks the branch (`useJobBannerActions`, a failed verb keeps the panel with its error and
+Retry). The other states keep the strip (Stash and rebase, Bring them back, Undo rewrite, Retry
+with a note, Open providers, See what it did). A failed push after
 a rebase offers `Fix with agent` (the primary: an Implementer on that worktree briefed with the
 command and git output, `fixPushWithAgent`; it commits the fix and never pushes, Goodboy then
 pushes again with the same lease, `settlePushFix`, and the banner follows it with a link to its
@@ -3872,8 +3892,12 @@ mount's `mountId`, never the active mount. `Rebase on main` replays the
 branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads
 `Rebase on main · N conflicts`. A conflict stops the rebase with the branch as
-it was and asks inline (`RebaseConflictPrompt`): **Resolve with Auto**, **Open
-terminal here** or **Abort rebase**; no agent starts by itself. A clean rebase
+it was and asks in the panel (`RebaseConflictPrompt` inside `RebaseStopPanel`): **Resolve with
+Auto**, **Resolve myself** (`resolveRebaseMyself`: `worktree_start_rebase` in the worktree, then the
+terminal; `worktree_rebase_conflicts` reads each file's markers and `worktree_continue_rebase` finishes
+it) or **Keep branch as it was** (`keepRebaseStop`: it records `history_restored`
+with `reason: 'kept'`, which settles the stop in every window, and only then drops the run; a
+failed save changes nothing and offers Retry); no agent starts by itself. A clean rebase
 moves the branch only after the engine checks the result, with a backup ref and
 a push with lease.
 

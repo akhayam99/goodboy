@@ -14,6 +14,8 @@ import { startRoutedRun } from '../../../startRun/startRoutedRun';
 import type { IssueCandidate } from '../../../../integrations/fetchIssueCandidates';
 import type { SessionDraftMount } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { askWithFileOf } from '../../../startRun/askWithFileOf';
+import { draftStartOf } from '../../../startRun/draftStartOf';
+import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import type { StartRunFile } from '../../../startRun/startRunFileOf';
 
 type Params = {
@@ -204,23 +206,15 @@ export const useStartRun = ({
       const run = async (created: Session): Promise<void> => {
         await startRoutedRun({ sessionId: created.id, result });
       };
-      const [firstTask] = picked;
       await (sessionId === null
         ? startFromDraft({
             workspaceId,
-            start:
-              firstTask === undefined
-                ? { kind: 'workflow-run', goal: result.ask, run }
-                : {
-                    kind: 'task',
-                    candidates: picked,
-                    ...(mount !== null && { mount }),
-                    title: firstTask.title,
-                    goal: result.ask,
-                    then: { kind: 'workflow-run', run },
-                  },
+            start: draftStartOf({ picked, mount, ask: result.ask, run }),
           })
         : startRoutedRun({ sessionId, result }));
+      if (sessionId === null) {
+        rememberLastStart({ workspaceId, last: 'auto' });
+      }
       if (claim.isCurrent()) {
         clearAsked({ asked });
         setFile((current) => (current === file ? null : current));

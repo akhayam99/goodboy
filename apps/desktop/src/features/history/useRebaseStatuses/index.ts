@@ -6,6 +6,7 @@ import {
   readWorktreeStatus,
   subscribe,
 } from '../../../store/slices/worktreeStatuses/cache';
+import { unmergedCount } from '../../../shared/lib/gitStatus';
 import { rebaseStatusTargetsOf } from '../behindBranchesOf';
 
 type Params = {
@@ -23,13 +24,19 @@ type FingerprintParams = {
 const fingerprintOf = ({ status }: FingerprintParams): string =>
   status === null
     ? ''
-    : JSON.stringify([status.head, status.mainDistance, status.inProgress ?? null]);
+    : JSON.stringify([
+        status.head,
+        status.mainDistance,
+        status.inProgress ?? null,
+        unmergedCount({ workingTree: status.workingTree }),
+      ]);
 
 export const useRebaseStatuses = ({
   sessionId,
 }: Params): ReadonlyMap<MountId, WorktreeStatus | null> => {
   const mounts = useAppStore((s) => s.sessionProjectMounts[sessionId] ?? NO_MOUNTS);
   const projects = useAppStore((s) => s.projects);
+  const settleStaleRebases = useAppStore((s) => s.settleStaleRebases);
   const targets = useMemo(() => rebaseStatusTargetsOf({ mounts, projects }), [mounts, projects]);
 
   useEffect(() => {
@@ -50,8 +57,17 @@ export const useRebaseStatuses = ({
     },
     [targets],
   );
-  useSyncExternalStore(watch, () =>
+  const fingerprint = useSyncExternalStore(watch, () =>
     targets.map((target) => fingerprintOf({ status: readWorktreeStatus(target.key) })).join('|'),
   );
+  const events = useAppStore((s) => s.sessionEvents?.[sessionId]);
+  const historyRuns = useAppStore((s) => s.historyRuns);
+  const run = useAppStore((s) => s.rebaseAllRuns[sessionId]);
+  useEffect(() => {
+    if (fingerprint === '') {
+      return;
+    }
+    settleStaleRebases({ sessionId });
+  }, [events, fingerprint, historyRuns, run, sessionId, settleStaleRebases]);
   return new Map(targets.map((target) => [target.mountId, readWorktreeStatus(target.key)]));
 };

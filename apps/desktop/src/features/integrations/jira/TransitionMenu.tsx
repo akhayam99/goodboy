@@ -8,12 +8,14 @@ import {
   ScrollFade,
   tintClasses,
   useDropdown,
+  type MenuEntry,
   type StateTone,
   Tooltip,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useJiraTransitions } from './useJiraTransitions';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { AppMenuList } from '../../actions/AppMenuList';
 
 type CurrentState = {
   readonly label: string;
@@ -33,9 +35,6 @@ type ReasonParams = {
   readonly count: number;
 };
 
-const MENU_ROW =
-  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-label text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
-
 const SCREEN_HINT = 'Jira asks for extra fields on this move. Goodboy sends it without them.';
 
 const blockReason = ({ isLoading, error, count }: ReasonParams): string | null => {
@@ -49,6 +48,21 @@ const blockReason = ({ isLoading, error, count }: ReasonParams): string | null =
     return 'Jira offers no move from this status';
   }
   return null;
+};
+
+type DescribeParams = {
+  readonly to: string | null;
+  readonly hasScreen: boolean;
+};
+
+const describeMove = ({ to, hasScreen }: DescribeParams): string | null => {
+  if (!hasScreen) {
+    return to;
+  }
+  if (to === null) {
+    return SCREEN_HINT;
+  }
+  return `${to}. ${SCREEN_HINT}`;
 };
 
 export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: Props) => {
@@ -78,11 +92,19 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
     }
   };
 
+  const entries: ReadonlyArray<MenuEntry> = transitions.map((transition) => ({
+    kind: 'item',
+    key: transition.id,
+    label: transition.name,
+    description: describeMove({ to: transition.to?.name ?? null, hasScreen: transition.hasScreen }),
+    isDisabled: busyId != null,
+    shouldStayOpen: true,
+    onSelect: () => move(transition.id),
+  }));
+
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel="Move this issue"
       className="flex flex-col"
       hasBackdrop
       trigger={
@@ -110,29 +132,8 @@ export const TransitionMenu = ({ issueKey, workspaceId, onTransition, state }: P
         </Tooltip>
       }
     >
-      <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">
-        {transitions.map((transition) => (
-          <Tooltip
-            key={transition.id}
-            content={transition.hasScreen ? SCREEN_HINT : undefined}
-            anchorClassName="w-full"
-          >
-            <button
-              type="button"
-              role="menuitem"
-              disabled={busyId != null}
-              onClick={() => void move(transition.id)}
-              className={MENU_ROW}
-            >
-              <span className="min-w-0 truncate">{transition.name}</span>
-              {transition.to != null && (
-                <span className="shrink-0 text-meta text-muted-foreground">
-                  {transition.to.name}
-                </span>
-              )}
-            </button>
-          </Tooltip>
-        ))}
+      <ScrollFade className="max-h-64">
+        <AppMenuList label="Move this issue" entries={entries} onClose={close} />
       </ScrollFade>
       {moveError != null && (
         <>

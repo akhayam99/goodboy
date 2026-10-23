@@ -3,11 +3,8 @@ import type { HistoryRun } from '../../store/slices/history/types';
 import { historyStopCause } from './historyStopCause';
 import { pushErrorLine } from './pushErrorLine';
 import { rebaseConflictOf } from './rebaseConflictOf';
-import {
-  conflictFilesLabelOf,
-  rebaseConflictLineOf,
-  rebaseConflictTitleOf,
-} from './rebaseConflictLine';
+import { conflictFilesLabelOf } from './rebaseConflictLine';
+import type { RebaseFileStates } from './rebaseFileStatesOf';
 
 export type RebaseJobState =
   | 'choosing'
@@ -31,8 +28,11 @@ export type RebaseJobState =
   | 'fixing-push'
   | 'blocked'
   | 'conflict'
+  | 'rebasing-here'
+  | 'rebased-here'
   | 'auto-resolving'
   | 'auto-done'
+  | 'pushed'
   | 'failed';
 
 export type RebaseJobTone = 'info' | 'ok' | 'warn' | 'danger';
@@ -57,6 +57,9 @@ type Params = {
   readonly dirtyCount: number | null;
   readonly behind?: number | null;
   readonly isRebasingHere?: boolean;
+  readonly isInSyncWithOrigin?: boolean;
+  readonly files?: RebaseFileStates | null;
+  readonly originCount?: number | null;
 };
 
 type Copy = {
@@ -133,6 +136,66 @@ const commitsOf = ({ count }: CommitsOfParams): string => {
   }
   return `${count} ${count === 1 ? 'commit' : 'commits'}.`;
 };
+
+type CountLabelParams = {
+  readonly count: number;
+  readonly one: string;
+  readonly many: string;
+};
+
+const countLabelOf = ({ count, one, many }: CountLabelParams): string =>
+  `${count} ${count === 1 ? one : many}`;
+
+type StopTitleParams = {
+  readonly files: ReadonlyArray<string>;
+  readonly baseBranch: string;
+  readonly isHook: boolean;
+};
+
+const conflictTitleOf = ({ files, baseBranch, isHook }: StopTitleParams): string => {
+  if (isHook) {
+    return `A commit hook stopped the rebase on ${baseBranch}`;
+  }
+  if (files.length === 0) {
+    return `Rebase on ${baseBranch} stopped on a conflict`;
+  }
+  const verb = files.length === 1 ? 'conflicts' : 'conflict';
+  return `Rebase on ${baseBranch} stopped: ${countLabelOf({ count: files.length, one: 'file', many: 'files' })} ${verb}`;
+};
+
+const CONFLICT_LINE =
+  'Your branch is as it was. The rebase ran on a copy, so nothing changes until you pick.';
+
+type FilesLineParams = {
+  readonly files: RebaseFileStates | null | undefined;
+};
+
+const hereLineOf = ({ files }: FilesLineParams): string => {
+  if (files === null || files === undefined || !files.isKnown || files.total === 0) {
+    return 'Resolve the conflict in the terminal or your editor, then continue here.';
+  }
+  const progress = `${files.left} of ${countLabelOf({ count: files.total, one: 'file', many: 'files' })} left.`;
+  if (files.toStage > 0) {
+    return `${progress} A binary or deleted file has no markers: stage it with git add or git rm and it turns green here.`;
+  }
+  return `${progress} Save a file without conflict markers and it turns green here.`;
+};
+
+const autoLineOf = ({ files }: FilesLineParams): string => {
+  if (files === null || files === undefined || !files.isKnown || files.total === 0) {
+    return 'It asks you in the session when a conflict is not clear.';
+  }
+  return `${files.resolved} of ${countLabelOf({ count: files.total, one: 'file', many: 'files' })} resolved. It asks you here if a conflict is not clear.`;
+};
+
+type OriginTitleParams = {
+  readonly count: number | null | undefined;
+};
+
+const originTitleOf = ({ count }: OriginTitleParams): string =>
+  count === null || count === undefined || count === 0
+    ? 'Rebased here, but someone pushed to origin'
+    : `Rebased here, but origin has ${countLabelOf({ count, one: 'new commit', many: 'new commits' })}`;
 
 type ReplayLineOfParams = {
   readonly run: HistoryRun;
@@ -240,8 +303,11 @@ const WORDS: Readonly<Record<RebaseJobState, string>> = {
   'fixing-push': 'Fixing',
   blocked: 'Stopped',
   conflict: 'Conflict',
+  'rebasing-here': 'Rebasing',
+  'rebased-here': 'Done',
   'auto-resolving': 'Auto',
   'auto-done': 'Done',
+  pushed: 'Done',
   failed: 'Stopped',
 };
 
@@ -266,6 +332,8 @@ const copyOf = ({
   baseBranch,
   commitCount,
   dirtyCount,
+  files,
+  originCount,
 }: Params & { readonly state: RebaseJobState }): Copy => {
   const running = `Rebasing ${projectName} on ${baseBranch}`;
   const stop = run.stop;
@@ -329,7 +397,7 @@ const copyOf = ({
       return {
         tone: 'warn',
         title: dirtyTitleOf({ count: dirtyCount }),
-        line: 'Commit or stash them, then check again.',
+        line: 'Commit or stash them, then retry the rebase.',
       };
     case 'stuck':
       return {
@@ -353,8 +421,8 @@ const copyOf = ({
     case 'origin-moved':
       return {
         tone: 'warn',
-        title: 'Someone pushed to the online copy',
-        line: 'Nothing was pushed.',
+        title: originTitleOf({ count: originCount }),
+        line: 'Someone pushed to this branch while you rebased. Nothing was pushed. Bring them in adds their commits to yours, then pushes.',
       };
     case 'head-moved':
       return { tone: 'warn', title: 'The branch moved', line: 'Nothing was changed.' };
@@ -380,28 +448,45 @@ const copyOf = ({
       };
     case 'conflict': {
       const conflict = rebaseConflictOf({ run });
-      const facts = {
-        files: conflict?.files ?? [],
-        baseBranch: conflict?.baseBranch ?? baseBranch,
-        isHook: conflict?.isHook ?? false,
-      };
       return {
         tone: 'warn',
-        title: rebaseConflictTitleOf(facts),
-        line: rebaseConflictLineOf(facts),
+        title: conflictTitleOf({
+          files: conflict?.files ?? [],
+          baseBranch: conflict?.baseBranch ?? baseBranch,
+          isHook: conflict?.isHook ?? false,
+        }),
+        line: CONFLICT_LINE,
       };
     }
+    case 'rebasing-here':
+      return {
+        tone: 'info',
+        title: `You are rebasing on ${baseBranch} in the terminal`,
+        line: hereLineOf({ files }),
+      };
     case 'auto-resolving':
       return {
         tone: 'info',
-        title: `Auto is rebasing ${projectName} on ${baseBranch}`,
-        line: 'It asks you in the session when a conflict is not clear.',
+        title: `Auto is rebasing on ${baseBranch}`,
+        line: autoLineOf({ files }),
       };
     case 'auto-done':
       return {
         tone: 'ok',
         title: `Rebased on ${baseBranch}`,
-        line: 'Auto resolved the conflict. Push when the branch looks right.',
+        line: `${commitsOf({ count: commitCount })} Auto resolved the conflict. Origin still has the old copy.`.trim(),
+      };
+    case 'rebased-here':
+      return {
+        tone: 'ok',
+        title: `Rebased on ${baseBranch}`,
+        line: `${commitsOf({ count: commitCount })} Origin still has the old copy.`.trim(),
+      };
+    case 'pushed':
+      return {
+        tone: 'ok',
+        title: 'Pushed to origin',
+        line: `The branch is rebased on ${baseBranch} and origin has it.`,
       };
     case 'failed':
       return {
@@ -421,19 +506,28 @@ type RebaseJobStateOfParams = {
   readonly run: HistoryRun;
   readonly behind: number | null;
   readonly isRebasingHere: boolean;
+  readonly isInSyncWithOrigin: boolean;
 };
 
 const rebaseJobStateOf = ({
   run,
   behind,
   isRebasingHere,
+  isInSyncWithOrigin,
 }: RebaseJobStateOfParams): RebaseJobState => {
   const conflict = rebaseConflictOf({ run });
-  if (conflict !== null && conflict.autoAgentId === null) {
-    return 'conflict';
-  }
   if (conflict !== null) {
-    return behind === 0 && !isRebasingHere ? 'auto-done' : 'auto-resolving';
+    const isAuto = conflict.autoAgentId !== null;
+    if (isRebasingHere) {
+      return isAuto ? 'auto-resolving' : 'rebasing-here';
+    }
+    if ((isAuto || conflict.isHere) && behind === 0) {
+      if (isInSyncWithOrigin) {
+        return 'pushed';
+      }
+      return isAuto ? 'auto-done' : 'rebased-here';
+    }
+    return isAuto ? 'auto-resolving' : 'conflict';
   }
   if (run.phase === 'choosing' || run.phase === 'restore-conflict' || run.phase === 'set-aside') {
     return run.phase;
@@ -463,6 +557,7 @@ export const rebaseJobOf = (params: Params): RebaseJob | null => {
     run,
     behind: params.behind ?? null,
     isRebasingHere: params.isRebasingHere ?? false,
+    isInSyncWithOrigin: params.isInSyncWithOrigin ?? false,
   });
   const copy = copyOf({ ...params, state });
   const isRunning =

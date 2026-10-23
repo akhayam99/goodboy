@@ -273,6 +273,7 @@ export const makeFakePorts = ({
       refreshes.push(params);
     },
     loadMounts: async () => mounts,
+    mountTaskFolders: async () => ({ mounted: [], asked: [], failed: [] }),
     resolveRouting: async () => routing,
     isPlanApprovalRequired: () => isApprovalRequired,
     startAutoTurn: async (params) => {

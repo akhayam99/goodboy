@@ -38,6 +38,8 @@ import { workflowAvailabilitySnapshot } from '../../../features/workflows/workfl
 import { workspacePolicyAvailability } from '../providerLimits/workspacePolicyAvailability';
 import { discardUncreatedSession } from './discardUncreatedSession';
 import { rememberMaterializationSeed } from './materializationSeeds';
+import { mountTaskFolders } from '../project-mounts/mountTaskFolders';
+import { taskLinkedProjectIds } from './taskLinkedProjectIds';
 import { resolveSessionProject } from './resolveSessionProject';
 import type { GetFn, SetFn } from './types';
 import { resolveScopedSettings } from '../overrides/selectResolvedSettings';
@@ -74,6 +76,7 @@ type Input = {
   externalTasks?: ReadonlyArray<ExternalTaskInput>;
   attachmentInputs?: ReadonlyArray<AttachmentInput>;
   omitGoalSlot?: boolean;
+  shouldPickFolders?: boolean;
 };
 
 export const createSession = (set: SetFn, get: GetFn) => {
@@ -97,6 +100,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
     externalTasks,
     attachmentInputs,
     omitGoalSlot = false,
+    shouldPickFolders = false,
   }: Input): Promise<{ session: Session }> => {
     const [workspace, projects] = await Promise.all([
       getWorkspaceById({ db: tauriDatabase, id: workspaceId }),
@@ -234,6 +238,49 @@ export const createSession = (set: SetFn, get: GetFn) => {
       } catch (error) {
         await discardUncreatedSession({ set, sessionId: session.id });
         throw error;
+      }
+    }
+    if (shouldPickFolders) {
+      set((state) => ({
+        projects: [
+          ...state.projects,
+          ...projects.filter(
+            (candidate) => !state.projects.some((known) => known.id === candidate.id),
+          ),
+        ],
+      }));
+      const picked = await mountTaskFolders({
+        get,
+        sessionId: session.id,
+        projects,
+        pinnedProjectIds: [
+          ...(project === null ? [] : [project.id]),
+          ...extraProjects.map((extra) => extra.id),
+        ],
+        linkedProjectIds: taskLinkedProjectIds({
+          state: get(),
+          workspaceId,
+          tasks: externalTasks ?? [],
+          projects,
+        }),
+        text: goal,
+        reason: 'the task needs this folder',
+        agentId: null,
+        turnRunId: null,
+        taskIdentifiers: (externalTasks ?? []).map((task) => task.identifier),
+      });
+      const firstFailure = picked.failed[0];
+      if (firstFailure !== undefined) {
+        void get().reportError({
+          severity: 'warning',
+          title: `Couldn't add ${firstFailure.project.name} to this session`,
+          error: picked.failed
+            .map(
+              ({ project: failedProject, error }) => `${failedProject.name}: ${formatError(error)}`,
+            )
+            .join('\n'),
+          sessionId: session.id,
+        });
       }
     }
 

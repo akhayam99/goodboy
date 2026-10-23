@@ -1,5 +1,4 @@
-import { X } from 'lucide-react';
-import { Button, IconButton, Notice, Skeleton, inlineMarkdownText } from '@goodboy/ui';
+import { Button, Chip, Notice, Skeleton, TruncatedText, inlineMarkdownText } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionLoading, useSessionSlots } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -78,16 +77,32 @@ export const GoalTeaser = ({ session }: Props) => {
     );
   }
   if (isEmpty && proposal.linked.length > 0 && !hint.isDismissed) {
+    const source = proposal.linked[0];
     return (
-      <div className="flex min-h-5 items-center gap-2">
-        <span className="min-w-0 text-meta text-muted-foreground">
-          Write the title and goal from {proposal.label}?
-        </span>
-        <Button variant="ghost" size="sm" onClick={() => void proposal.write()}>
-          Write
-        </Button>
-        <IconButton icon={X} label="Not now" size="sm" onClick={hint.dismiss} />
-      </div>
+      <Notice
+        tone="info"
+        placement="inline"
+        icon={CONCEPT_ICONS.goal}
+        title={
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0">Write the title and goal from</span>
+            <Chip tone="neutral" kind="id" label={proposal.label} />
+            {source !== undefined && source.title.trim() !== '' ? (
+              <TruncatedText className="min-w-0 font-normal">{source.title}</TruncatedText>
+            ) : null}
+          </span>
+        }
+        actions={
+          <>
+            <Button size="sm" onClick={() => void proposal.write()}>
+              Write title and goal
+            </Button>
+            <Button variant="ghost" size="sm" onClick={hint.dismiss}>
+              Not now
+            </Button>
+          </>
+        }
+      />
     );
   }
   if (isEmpty) {

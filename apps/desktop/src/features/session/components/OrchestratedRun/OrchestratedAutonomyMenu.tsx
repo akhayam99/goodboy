@@ -1,10 +1,14 @@
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, ROW_INTERACTIVE, cn, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, ROW_INTERACTIVE, cn, useDropdown, type MenuEntry } from '@goodboy/ui';
 import type { SessionId, WorkflowRun } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
-import { RUN_AUTONOMY_HEADER, runAutonomyOf } from '../../../workflows/runAutonomy';
-import { OrchestratedAutonomyItems } from './OrchestratedAutonomyItems';
+import { AppMenuList } from '../../../actions/AppMenuList';
+import {
+  RUN_AUTONOMY_HEADER,
+  RUN_AUTONOMY_OPTIONS,
+  runAutonomyOf,
+} from '../../../workflows/runAutonomy';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -17,17 +21,34 @@ export const OrchestratedAutonomyMenu = ({ sessionId, run }: Props) => {
     align: 'start',
     width: 'w-60',
     expectedWidth: 240,
-    expectedHeight: 140,
+    expectedHeight: 160,
   });
   const current = runAutonomyOf({ autoRun: run.autoRun, autonomy: run.rulesSnapshot?.autonomy });
+  const entries: ReadonlyArray<MenuEntry> = [
+    {
+      kind: 'radio',
+      key: 'autonomy',
+      label: RUN_AUTONOMY_HEADER,
+      choices: RUN_AUTONOMY_OPTIONS.map((option) => ({
+        id: option.key,
+        label: option.label,
+        isCurrent: option.key === current.key,
+        tooltip: option.hint,
+      })),
+      onSelect: (choice) => {
+        const next = RUN_AUTONOMY_OPTIONS.find((option) => option.key === choice);
+        if (next === undefined || next.key === current.key) {
+          return;
+        }
+        void setWorkflowRunAutonomy(sessionId, run.id, next.key);
+      },
+    },
+  ];
 
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel={RUN_AUTONOMY_HEADER}
       anchorClassName="inline-flex"
-      className="py-1"
       trigger={
         <button
           type="button"
@@ -48,16 +69,7 @@ export const OrchestratedAutonomyMenu = ({ sessionId, run }: Props) => {
         </button>
       }
     >
-      <OrchestratedAutonomyItems
-        autonomy={current.key}
-        onChange={(next) => {
-          dropdown.close();
-          if (next === current.key) {
-            return;
-          }
-          void setWorkflowRunAutonomy(sessionId, run.id, next);
-        }}
-      />
+      <AppMenuList label={RUN_AUTONOMY_HEADER} entries={entries} onClose={dropdown.close} />
     </AnchoredPopover>
   );
 };

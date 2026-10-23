@@ -2274,7 +2274,7 @@ const presetRules = ({
     presetName: 'Fix a layout',
     closeness,
     role: null,
-    choice: `Plan from Fix a layout, 2 steps · ${closeness === 'follow' ? 'Follow the preset' : 'Adapt as it goes'}`,
+    choice: `Workflow · Preset Fix a layout · ${closeness === 'follow' ? 'Follow it' : 'Adapt as it goes'}`,
     why: 'you picked it',
   },
   preset: {
@@ -2566,7 +2566,7 @@ describe('resolvePresetChange', () => {
 
     expect(presetRunOf(state).rulesSnapshot?.route).toMatchObject({
       closeness: 'adapt',
-      choice: 'Plan from Fix a layout, 2 steps · Adapt as it goes',
+      choice: 'Workflow · Preset Fix a layout · Adapt as it goes',
     });
   });
 

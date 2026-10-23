@@ -40,8 +40,13 @@ const draw = ({ name }: { readonly name: SceneName }) => {
   );
 };
 
-const answerWith = ({ behind }: { readonly behind: number }): void => {
-  const handlers = prPageHandlers({ behind });
+type AnswerParams = {
+  readonly behind: number;
+  readonly isRebasing?: boolean;
+};
+
+const answerWith = ({ behind, isRebasing = false }: AnswerParams): void => {
+  const handlers = prPageHandlers({ behind, isRebasing });
   vi.mocked(invoke).mockImplementation(async (command: string, args?: unknown) => {
     if (command === 'gh_run') {
       return { stdout: prPageGhStdout({ payload: args }), stderr: '', exitCode: 0 };
@@ -53,7 +58,7 @@ const answerWith = ({ behind }: { readonly behind: number }): void => {
 const properties = (): HTMLElement => screen.getByRole('group', { name: 'Properties' });
 
 describe('the pull request page scenes', () => {
-  it('registers the eight scenes of the plan', () => {
+  it('registers the nine scenes of the plan', () => {
     expect(Object.keys(U23_PR_PAGE_SCENES).sort()).toEqual([
       'branch-pr-draft',
       'branch-pr-editing',
@@ -63,7 +68,22 @@ describe('the pull request page scenes', () => {
       'branch-pr-merged',
       'branch-pr-narrow',
       'branch-pr-none',
+      'branch-pr-rebasing',
     ]);
+  });
+
+  it('branch-pr-rebasing shows the open pull request, not the create form', async () => {
+    answerWith({ behind: 3, isRebasing: true });
+    draw({ name: 'branch-pr-rebasing' });
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Stop retried webhooks posting a second credit',
+      }),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Create pull request' })).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'Opens as' })).toBeNull();
   });
 
   it('branch-pr-github leads with the Pull request tab and its title as the one heading', async () => {

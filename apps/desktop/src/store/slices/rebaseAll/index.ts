@@ -3,6 +3,8 @@ import { abortRebaseAll } from './abortRebaseAll';
 import { dismissRebaseAll } from './dismissRebaseAll';
 import { rebaseAll } from './rebaseAll';
 import { resolveRebaseWithAuto } from './resolveRebaseWithAuto';
+import { settleStaleRebases } from './settleStaleRebases';
+import { updateAll } from './updateAll';
 
 export const createRebaseAllSlice = ({ set, get }: SliceDeps) => {
   return {
@@ -10,5 +12,7 @@ export const createRebaseAllSlice = ({ set, get }: SliceDeps) => {
     abortRebaseAll: abortRebaseAll(set),
     dismissRebaseAll: dismissRebaseAll(set),
     resolveRebaseWithAuto: resolveRebaseWithAuto(set, get),
+    settleStaleRebases: settleStaleRebases(set, get),
+    updateAll: updateAll(get),
   };
 };

@@ -87,14 +87,14 @@ describe('the c09 orchestrated scenes', () => {
     expect(
       within(grid).getByRole('button', { name: /^Open Speed up the export end to end/ }),
     ).toBeDefined();
-    expect(within(grid).getByText('Was an orchestrated run')).toBeDefined();
+    expect(within(grid).getByText('Workflow · Orchestrated')).toBeDefined();
   });
 
   it('c09-orchestrated-empty lands on Runs under its intro, with no orchestrated row', async () => {
     await mount('c09-orchestrated-empty');
 
     expect(screen.getByText(SESSION_PAGE_INTRO.runs[0])).toBeDefined();
-    expect(screen.queryByText('Was an orchestrated run')).toBeNull();
+    expect(screen.queryByText('Workflow · Orchestrated')).toBeNull();
   });
 
   it('c09-orch-running reads as one document with the sidebar on Runs', async () => {

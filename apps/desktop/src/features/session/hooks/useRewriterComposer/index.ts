@@ -1,6 +1,6 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { selectMountById } from '../../../../store/slices/project-mounts/selectors';
+import { selectWritableMounts } from '../../../../store/slices/project-mounts/selectors';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -10,7 +10,7 @@ type Params = {
 
 type RewriterComposer = {
   readonly isLive: boolean;
-  readonly worktreePath: string | null;
+  readonly mountId: MountId | null;
 };
 
 export const useRewriterComposer = ({
@@ -19,16 +19,21 @@ export const useRewriterComposer = ({
   isRewriter,
 }: Params): RewriterComposer | null => {
   const isLive = useAppStore((s) => s.historyRewriters[agentId] !== undefined);
-  const worktreePath = useAppStore((s) => {
+  const mountId = useAppStore((s) => {
     const run = Object.values(s.historyRuns).find((candidate) => candidate.agentId === agentId);
-    const mountId = run?.mountId ?? s.historyRewriters[agentId]?.mountId;
-    if (mountId === undefined) {
-      return null;
-    }
-    return selectMountById({ state: s, sessionId, mountId })?.worktreePath ?? null;
+    const wanted =
+      run?.mountId ??
+      s.historyRewriters[agentId]?.mountId ??
+      (s.sessionEvents?.[sessionId] ?? []).find(
+        (event) => event.kind.startsWith('history_') && event.payload?.agentId === agentId,
+      )?.payload?.mountId;
+    return (
+      selectWritableMounts({ state: s, sessionId }).find((mount) => mount.mountId === wanted)
+        ?.mountId ?? null
+    );
   });
   if (!isRewriter) {
     return null;
   }
-  return { isLive, worktreePath };
+  return { isLive, mountId };
 };

@@ -94,6 +94,7 @@ export type SessionEventPayload = Readonly<{
   deletedBranchId?: string;
   onOrigin?: boolean;
   batchId?: string;
+  head?: string;
 }>;
 
 export type SessionEvent = Readonly<{

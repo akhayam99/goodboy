@@ -192,7 +192,10 @@ describe('LinearIssueDetail', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Change status' }));
     const current = await screen.findByRole('menuitem', { name: 'In Progress' });
-    expect(current.hasAttribute('disabled')).toBe(true);
+    expect(current.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Todo' }));
+    fireEvent.keyDown(screen.getByRole('menu', { name: 'Change status' }), { key: 'End' });
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Done' }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Done' }));
 
     await waitFor(() =>
@@ -222,7 +225,7 @@ describe('LinearIssueDetail', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Change assignee' }));
     const current = await screen.findByRole('menuitem', { name: 'Mara Lin' });
-    expect(current.hasAttribute('disabled')).toBe(true);
+    expect(current.getAttribute('aria-disabled')).toBe('true');
     fireEvent.click(screen.getByRole('menuitem', { name: 'Robin Vale' }));
 
     await waitFor(() =>

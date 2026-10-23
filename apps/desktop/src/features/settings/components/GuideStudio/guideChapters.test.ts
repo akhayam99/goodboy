@@ -260,12 +260,12 @@ describe('the shell chapter', () => {
 
 describe('the start, agent and workflow chapters', () => {
   it('names the one way to start a session and the folder picker', () => {
-    expect(pointOf('kickoff', NAMES.startARun)).toContain(
-      'Auto picks a plan, one agent or a preset',
-    );
-    expect(pointOf('kickoff', 'Start on a task')).toContain('Start a run');
-    expect(pointOf('kickoff', NAMES.folders)).toContain('Suggested');
-    expect(pointOf('kickoff', NAMES.folders)).toContain('All folders');
+    expect(pointOf('kickoff', 'What kind of run?')).toContain('Workflow or Agent');
+    expect(pointOf('kickoff', NAMES.startARun)).toContain('Auto picks a workflow or an agent');
+    expect(pointOf('kickoff', 'Start on a task')).toContain('Pick from Tasks');
+    expect(pointOf('kickoff', 'Where')).toContain('Auto picks');
+    expect(pointOf('kickoff', 'Where')).toContain('Suggested');
+    expect(pointOf('kickoff', 'Where')).toContain('All folders');
   });
 
   it('lists the New menu forms by their titles', () => {
@@ -289,8 +289,8 @@ describe('the start, agent and workflow chapters', () => {
 
   it('says a rebase conflict asks, and Rebase all hands the conflicts to one Auto', () => {
     const asks = pointOf('commits', 'A rebase conflict asks');
-    ['Resolve with Auto', 'Open terminal here', 'Abort rebase', 'never pushes'].forEach((word) =>
-      expect(asks).toContain(word),
+    ['Resolve with Auto', 'Resolve myself', 'Keep branch as it was', 'never pushes'].forEach(
+      (word) => expect(asks).toContain(word),
     );
     const all = pointOf('commits', 'Rebase all');
     expect(all).toContain('one Auto run');

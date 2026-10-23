@@ -361,7 +361,7 @@ export type { IconButtonSize } from './components/IconButton';
 export { SearchField } from './components/SearchField';
 export type { SearchFieldProps } from './components/SearchField';
 export { ChoiceCards } from './components/ChoiceCards';
-export type { ChoiceCardsProps } from './components/ChoiceCards';
+export type { ChoiceCardFact, ChoiceCardOption, ChoiceCardsProps } from './components/ChoiceCards';
 export type { FieldSize } from './components/Input';
 export type { SegmentedTabsSize } from './components/SegmentedTabs';
 export { isChordHint } from './components/Kbd';

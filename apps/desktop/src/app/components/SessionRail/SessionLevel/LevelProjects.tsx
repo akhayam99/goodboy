@@ -13,6 +13,7 @@ import { useLapProject } from '../../../../features/bootstrap/useLapProject';
 import { MountProjectAction } from '../../../../features/session/components/SessionOverviewPane/ProjectMountRows/MountProjectAction';
 import { RebaseAllCard } from '../../../../features/history/RebaseAllCard';
 import { rebaseAllBatchSettledOf } from '../../../../features/history/RebaseAllCard/rebaseAllBatchSettledOf';
+import { useRebaseStatuses } from '../../../../features/history/useRebaseStatuses';
 import { LevelCard } from './LevelCard';
 import { ProjectTree } from './ProjectTree';
 import { CARD_ROW_INSET } from './railInset';
@@ -48,6 +49,7 @@ export const LevelProjects = ({ session, isActive }: Props) => {
   );
   const snapshot = useWorktreeStatusSnapshot({ targets });
   const diffStats = useMountDiffStats(sessionId);
+  useRebaseStatuses({ sessionId });
   const signal = useProjectsSignal({ sessionId, rows: liveRows, statuses: snapshot.statuses });
   const run = useAppStore((state) => state.rebaseAllRuns[sessionId] ?? null);
   const isBatchSettled = rebaseAllBatchSettledOf({

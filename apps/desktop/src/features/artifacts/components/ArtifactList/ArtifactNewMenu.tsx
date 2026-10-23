@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ChevronDown, FileJson, FolderOpen, Plus } from 'lucide-react';
-import { AnchoredPopover, Button, MenuItems, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -8,6 +8,7 @@ import { ARTIFACT_KIND_CONCEPT } from '../../artifactPresentation';
 import { newArtifactEventName } from '../../newArtifactEventName';
 import { openArtifactsFolder } from '../../artifactMirror/artifactMirrorInvoke';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
+import { AppMenuList } from '../../../actions/AppMenuList';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -43,9 +44,6 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel="New artifact"
-      className="py-1"
       trigger={
         <Button
           variant="secondary"
@@ -61,16 +59,18 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
         </Button>
       }
     >
-      <MenuItems
+      <AppMenuList
+        label="New artifact"
         onClose={dropdown.close}
-        items={[
+        entries={[
           {
             kind: 'item',
             key: 'report',
             label: 'Report',
             description: 'Writes up what this session did, from its agents and changes',
             icon: CONCEPT_ICONS[ARTIFACT_KIND_CONCEPT.report],
-            onClick: () => openArtifactCreation({ sessionId, kind: 'report', workflowRunId: null }),
+            onSelect: () =>
+              openArtifactCreation({ sessionId, kind: 'report', workflowRunId: null }),
           },
           {
             kind: 'item',
@@ -78,7 +78,7 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
             label: 'Wireframe',
             description: 'Draws the screens and the flow you describe',
             icon: CONCEPT_ICONS[ARTIFACT_KIND_CONCEPT.wireframe],
-            onClick: () =>
+            onSelect: () =>
               openArtifactCreation({ sessionId, kind: 'wireframe', workflowRunId: null }),
           },
           {
@@ -87,7 +87,7 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
             label: 'Import wireframe JSON…',
             description: 'Import a .json spec',
             icon: FileJson,
-            onClick: onImportWireframe,
+            onSelect: onImportWireframe,
           },
           { kind: 'separator', key: 'folder-separator' },
           {
@@ -95,8 +95,8 @@ export const ArtifactNewMenu = ({ sessionId, onImportWireframe }: Props) => {
             key: 'show-folder',
             label: 'Show in Finder',
             icon: FolderOpen,
-            disabled: workspaceSlug === null,
-            onClick: () => {
+            isDisabled: workspaceSlug === null,
+            onSelect: () => {
               if (workspaceSlug !== null) {
                 void openArtifactsFolder({ workspaceSlug });
               }

@@ -35,17 +35,21 @@ describe('retired names match whatever the casing', () => {
     ['Start an agent', 'start-an-agent'],
     ['Start an auto', 'start-an-auto'],
     ['Run an orchestrator', 'run-an-orchestrator'],
+    ['Run a workflow', 'start-workflow-run'],
     ['Move to Auto', 'move-to-auto'],
   ])('flags the old start label %s', (text, id) => {
     expect(retiredIdsIn({ text })).toContain(id);
   });
 
-  it.each(['Start a run', 'Run a workflow', 'Orchestrated', 'Let Auto take it from here'])(
-    'leaves the start verb %s alone',
-    (text) => {
-      expect(retiredIdsIn({ text })).toEqual([]);
-    },
-  );
+  it.each([
+    'Start a run',
+    'Start workflow',
+    'Start Auto agent',
+    'Orchestrated',
+    'Let Auto take it from here',
+  ])('leaves the start verb %s alone', (text) => {
+    expect(retiredIdsIn({ text })).toEqual([]);
+  });
 
   it.each([
     ['Pair device', 'pair-device'],

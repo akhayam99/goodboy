@@ -15,32 +15,37 @@ type Params = {
   readonly entry: TimelineTopLevelEntry;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly liveAgentIds?: ReadonlySet<string>;
+  readonly settledStopIds?: ReadonlySet<string>;
 };
 
 const hasRecovery = ({
   entry,
   events,
   liveAgentIds,
+  settledStopIds,
 }: {
   readonly entry: TimelineEventEntry;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly liveAgentIds: ReadonlySet<string> | undefined;
+  readonly settledStopIds: ReadonlySet<string> | undefined;
 }): boolean => {
   const { event } = entry;
   if (event.kind === 'branch_deleted') {
     return event.payload?.deletedBranchId !== undefined;
   }
-  return hasHistoryRecovery({ event, events, liveAgentIds });
+  return hasHistoryRecovery({ event, events, liveAgentIds, settledStopIds });
 };
 
 const eventViewOf = ({
   entry,
   events,
   liveAgentIds,
+  settledStopIds,
 }: {
   readonly entry: TimelineEventEntry;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly liveAgentIds: ReadonlySet<string> | undefined;
+  readonly settledStopIds: ReadonlySet<string> | undefined;
 }): ActivityView | null => {
   const { kind } = entry.event;
   if (kind === 'workflow_started') {
@@ -50,12 +55,17 @@ const eventViewOf = ({
     return entry.lane == null ? 'log' : 'activity';
   }
   if (kind === 'history_stopped') {
-    return hasRecovery({ entry, events, liveAgentIds }) ? null : 'log';
+    return hasRecovery({ entry, events, liveAgentIds, settledStopIds }) ? null : 'log';
   }
-  return hasRecovery({ entry, events, liveAgentIds }) ? 'activity' : 'log';
+  return hasRecovery({ entry, events, liveAgentIds, settledStopIds }) ? 'activity' : 'log';
 };
 
-const activityViewOf = ({ entry, events, liveAgentIds }: Params): ActivityView | null => {
+const activityViewOf = ({
+  entry,
+  events,
+  liveAgentIds,
+  settledStopIds,
+}: Params): ActivityView | null => {
   switch (entry.kind) {
     case 'run':
     case 'agent':
@@ -70,7 +80,7 @@ const activityViewOf = ({ entry, events, liveAgentIds }: Params): ActivityView |
       }
       return entry.questions.some((question) => question.status === 'open') ? null : 'log';
     case 'event':
-      return eventViewOf({ entry, events, liveAgentIds });
+      return eventViewOf({ entry, events, liveAgentIds, settledStopIds });
     case 'issue':
     case 'branch':
       return 'log';
@@ -88,13 +98,15 @@ export const entriesOfView = ({
   events,
   view,
   liveAgentIds,
+  settledStopIds,
 }: {
   readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
   readonly events: ReadonlyArray<SessionEvent>;
   readonly view: EntriesView;
   readonly liveAgentIds?: ReadonlySet<string>;
+  readonly settledStopIds?: ReadonlySet<string>;
 }): ReadonlyArray<TimelineTopLevelEntry> =>
   entries.filter((entry) => {
-    const entryView = activityViewOf({ entry, events, liveAgentIds });
+    const entryView = activityViewOf({ entry, events, liveAgentIds, settledStopIds });
     return view === 'all' ? entryView !== null : entryView === view;
   });

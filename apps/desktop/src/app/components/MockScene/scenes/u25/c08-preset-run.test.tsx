@@ -98,12 +98,12 @@ describe('the c08 preset run scenes', () => {
     expect(within(grid).getByRole('heading', { name: 'Archived' })).toBeDefined();
     expect(
       within(grid).getByRole('button', {
-        name: 'Open Fix flaky tests in the ledger export, Plan, Running',
+        name: 'Open Fix flaky tests in the ledger export, Workflow, Running',
       }),
     ).toBeDefined();
     expect(
       within(grid).getByRole('button', {
-        name: 'Open Document the export batching, Plan, Waits to start',
+        name: 'Open Document the export batching, Workflow, Waits to start',
       }),
     ).toBeDefined();
     expect(within(grid).queryByText('First try at the flaky export tests')).toBeNull();

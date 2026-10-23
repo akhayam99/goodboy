@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { AnchoredPopover, Chip, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Chip, useDropdown, type MenuEntry } from '@goodboy/ui';
 import type { CrumbMenuGroup } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { AppMenuList } from '../../../actions/AppMenuList';
 import type { ExploreTarget } from '../../selectExploreMount';
 import { ExploreBranchName } from './ExploreBranchName';
-import { ExploreProjectMenu } from './ExploreProjectMenu';
 
 const MIN_MENU_ROWS = 2;
 const CHIP_CLASS = 'min-w-0 max-w-full shrink';
@@ -59,6 +59,21 @@ const labelOf = ({ target }: LabelParams): ChipLabel | null => {
   };
 };
 
+type EntriesParams = {
+  readonly groups: ReadonlyArray<CrumbMenuGroup>;
+};
+
+const entriesOf = ({ groups }: EntriesParams): ReadonlyArray<MenuEntry> =>
+  groups.map((group) => ({
+    kind: 'radio',
+    key: group.id,
+    label: group.label ?? 'Folders',
+    choices: group.rows.map((row) => ({ id: row.id, label: row.label, isCurrent: row.isCurrent })),
+    onSelect: (choice) => {
+      group.rows.find((row) => row.id === choice)?.onSelect();
+    },
+  }));
+
 export const ExploreProjectChip = ({ target, groups, rowCount }: Props) => {
   const dropdown = useDropdown({
     align: 'start',
@@ -90,8 +105,6 @@ export const ExploreProjectChip = ({ target, groups, rowCount }: Props) => {
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel="Folders"
       anchorClassName="flex min-w-0 max-w-full"
       trigger={
         <Chip
@@ -118,13 +131,7 @@ export const ExploreProjectChip = ({ target, groups, rowCount }: Props) => {
         />
       }
     >
-      <ExploreProjectMenu
-        groups={groups}
-        onChoose={(row) => {
-          dropdown.close();
-          row.onSelect();
-        }}
-      />
+      <AppMenuList label="Folders" entries={entriesOf({ groups })} onClose={dropdown.close} />
     </AnchoredPopover>
   );
 };

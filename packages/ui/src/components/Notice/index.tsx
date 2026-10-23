@@ -14,6 +14,7 @@ type Props = {
   readonly tone: NoticeTone;
   readonly placement: NoticePlacement;
   readonly title: ReactNode;
+  readonly icon?: typeof Info;
   readonly body?: ReactNode;
   readonly detail?: string | null;
   readonly actions?: ReactNode;
@@ -57,6 +58,7 @@ export const Notice = ({
   tone,
   placement,
   title,
+  icon,
   body,
   detail = null,
   actions,
@@ -68,7 +70,7 @@ export const Notice = ({
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const detailId = useId();
   const tint = tintClasses(tone);
-  const Icon = TONE_ICON[tone];
+  const Icon = icon ?? TONE_ICON[tone];
   const hasDetail = detail !== null && detail.trim() !== '';
   const isTitleOnly = !hasContent({ node: body }) && !hasDetail && !hasContent({ node: children });
 

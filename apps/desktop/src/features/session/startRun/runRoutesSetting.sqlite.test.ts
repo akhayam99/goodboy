@@ -20,8 +20,8 @@ const LEAD: RunRoute = {
   presetName: null,
   closeness: null,
   role: null,
-  choice: 'One agent that starts what it needs',
-  why: 'Not sure yet: one agent first',
+  choice: 'Agent · Auto agent',
+  why: 'Not sure yet: an Auto agent first',
 };
 
 const QUESTION: RunRoute = { ...LEAD, row: 5, why: 'A question or a check, and no preset fits' };

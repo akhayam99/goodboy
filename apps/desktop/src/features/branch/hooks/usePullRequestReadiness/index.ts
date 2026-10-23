@@ -7,6 +7,9 @@ import {
 } from '../../../../store/slices/review-source/sessionPullRequestOf';
 import { sessionMergeFacts } from '../../../actions/kinds/pullRequestFacts';
 import { evaluatePrMergeReadiness, type PrMergeReadiness } from '../../../review/prMergeReadiness';
+import { rebaseConflictOf } from '../../../history/rebaseConflictOf';
+import { selectRebaseStop } from '../../../../store/slices/history/selectRebaseStop';
+import { selectWritableMounts } from '../../../../store/slices/project-mounts/selectors';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -28,6 +31,18 @@ export const usePullRequestReadiness = ({ sessionId }: Params): PullRequestReadi
   const threads = useAppStore((state) => state.sessionResolveThreads?.[sessionId] ?? EMPTY_ARRAY);
   const entry = useAppStore((state) => state.pullRequestViews[sessionId] ?? null);
   const view = entry !== null && entry.prNumber === github?.pr?.number ? entry.view : null;
+  const headBranch = github?.pr?.headBranch ?? null;
+  const isRebaseStopOpen = useAppStore((state) => {
+    const mount = selectWritableMounts({ state, sessionId }).find(
+      (candidate) => headBranch !== null && candidate.branch === headBranch,
+    );
+    return (
+      mount !== undefined &&
+      rebaseConflictOf({
+        run: selectRebaseStop({ state, sessionId, mountId: mount.mountId })?.run,
+      }) !== null
+    );
+  });
   return useMemo(() => {
     const facts = sessionMergeFacts({
       sessionId,
@@ -37,8 +52,8 @@ export const usePullRequestReadiness = ({ sessionId }: Params): PullRequestReadi
       mergeView: view,
     });
     return {
-      readiness: evaluatePrMergeReadiness({ facts }),
+      readiness: evaluatePrMergeReadiness({ facts: { ...facts, isRebaseStopOpen } }),
       commentsNeedYou: facts.commentsNeedYou,
     };
-  }, [github, host, sessionId, threads, view]);
+  }, [github, host, isRebaseStopOpen, sessionId, threads, view]);
 };

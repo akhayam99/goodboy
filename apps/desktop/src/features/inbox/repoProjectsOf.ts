@@ -1,11 +1,13 @@
 import type { Project, ProjectId } from '@goodboy/types';
 import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../shared/lib/remoteHost';
+import { remoteHostNameOf } from '../../shared/lib/remoteHostNameOf';
 import type { InboxProvider } from './types';
 
 export type RepoHost = 'github' | 'gitlab';
 
 export type RepoProject = {
   readonly id: ProjectId;
+  readonly hostName: string;
   readonly path: string;
 };
 
@@ -58,5 +60,9 @@ export const repoProjectsOf = ({
       return [];
     }
     const path = projectPathFromRemoteUrl(remote);
-    return path === null ? [] : [{ id: project.id, path: path.toLowerCase() }];
+    const hostName = remote === null ? null : remoteHostNameOf({ url: remote });
+    if (path === null || hostName === null) {
+      return [];
+    }
+    return [{ id: project.id, hostName, path: path.toLowerCase() }];
   });

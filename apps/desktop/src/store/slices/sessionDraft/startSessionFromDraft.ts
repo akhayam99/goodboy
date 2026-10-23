@@ -178,6 +178,7 @@ const runStart = (set: SetFn, get: GetFn) => {
     const attachmentInputs = start.kind === 'workflow-run' ? [] : (start.attachmentInputs ?? []);
     const { session } = await get().createSession({
       workspaceId,
+      shouldPickFolders: true,
       ...(attachmentInputs.length > 0 && { attachmentInputs }),
       goal: goal === '' ? title : goal,
       title,

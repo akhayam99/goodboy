@@ -66,7 +66,7 @@ const ROUTE: RunRoute = {
   presetName: 'Fix a layout',
   closeness: 'adapt',
   role: null,
-  choice: 'Plan from Fix a layout, 1 step · Adapt as it goes',
+  choice: 'Workflow · Preset Fix a layout · Adapt as it goes',
   why: 'Your ask matches the preset',
   ask: 'Center the member pages',
 };
@@ -126,7 +126,7 @@ describe('RunRouteLine', () => {
       .getAllByRole('menuitemradio')
       .filter((row) => row.getAttribute('aria-checked') === 'true')
       .map((row) => row.textContent);
-    expect(checked).toEqual(['A plan with steps', 'Fix a layout', 'Adapt as it goes']);
+    expect(checked).toEqual(['Workflow · Orchestrated', 'Fix a layout', 'Adapt as it goes']);
     screen.getByRole('group', { name: 'Run it as' });
   });
 
@@ -137,11 +137,11 @@ describe('RunRouteLine', () => {
     const menu = screen.getByRole('menu', { name: 'How Auto runs this' });
 
     expect(document.activeElement).toBe(
-      screen.getByRole('menuitemradio', { name: 'A plan with steps' }),
+      screen.getByRole('menuitemradio', { name: 'Workflow · Orchestrated' }),
     );
     fireEvent.keyDown(menu, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(
-      screen.getByRole('menuitemradio', { name: 'One agent that starts what it needs' }),
+      screen.getByRole('menuitemradio', { name: 'Agent · Auto agent' }),
     );
     fireEvent.keyDown(menu, { key: 'End' });
     expect(document.activeElement).toBe(
@@ -149,11 +149,11 @@ describe('RunRouteLine', () => {
     );
   });
 
-  it('switches to Follow the preset from the menu and keeps the run', async () => {
+  it('switches to Follow it from the menu and keeps the run', async () => {
     renderLine({ route: ROUTE });
 
     fireEvent.click(screen.getByRole('button', { name: /Change/ }));
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Follow the preset' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Follow it' }));
 
     await waitFor(() =>
       expect(
@@ -185,7 +185,7 @@ describe('RunRouteLine', () => {
   it('shows what a changed run became instead of Change', () => {
     renderLine({ route: { ...ROUTE, changedTo: 'lead' } });
 
-    screen.getByText('Changed to one agent');
+    screen.getByText('Changed to an Auto agent');
     expect(screen.queryByRole('button', { name: /Change/ })).toBeNull();
   });
 });

@@ -323,12 +323,30 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => heading('New session'),
   },
   {
+    name: 'palette: New workflow session',
+    covers: ['openSessionDraft', 'palette:New workflow session'],
+    open: () => openPalette(/^New workflow session$/),
+    lands: both(
+      () => heading('New session'),
+      () => visible('tablist', 'Which workflow?'),
+    ),
+  },
+  {
+    name: 'palette: New agent session',
+    covers: ['openSessionDraft', 'palette:New agent session'],
+    open: () => openPalette(/^New agent session$/),
+    lands: both(
+      () => heading('New session'),
+      () => visible('tablist', 'Which agent?'),
+    ),
+  },
+  {
     name: 'sidebar: New opens the kickoff',
     covers: ['openSessionDraft', 'button:New'],
     open: () => clickButton(/^New session$/),
     lands: both(
       () => heading('New session'),
-      () => visible('textbox', 'Start a run'),
+      () => visible('textbox', 'Task'),
       () => visible('button', /Start blank/),
     ),
   },

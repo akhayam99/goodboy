@@ -191,10 +191,10 @@ describe('the c06 conversation scenes', () => {
   it('c06-agents-list lists the agents as rows of Runs, and a row opens the agent', async () => {
     await mount({ name: 'c06-agents-list' });
 
-    const rows = screen.getAllByRole('button', { name: /^Open .+, One agent, / });
+    const rows = screen.getAllByRole('button', { name: /^Open .+, Agent, / });
     expect(rows.length).toBe(2);
     const first = rows[0]!;
-    expect(within(first).getByText('Was an agent · Implementer')).toBeDefined();
+    expect(within(first).getByText('Agent · Implementer')).toBeDefined();
     expect(within(first).getAllByText('Running').length).toBeGreaterThan(0);
     expect(within(first).queryAllByRole('button')).toHaveLength(0);
     expect(screen.queryByRole('button', { name: 'Start an agent' })).toBeNull();

@@ -617,6 +617,7 @@ const seedRun = ({ states, phase = 'running' }: RunParams): void => {
       [sessionId]: {
         id: 'run-1',
         sessionId,
+        startedAt: Date.now(),
         shouldTidy: false,
         isAborted: false,
         phase,
@@ -765,6 +766,55 @@ describe('rebase all on the rows', () => {
     expect((await screen.findByTestId('fact-card')).textContent).toContain(
       'origin cannot be reached',
     );
+  });
+
+  it('drops Conflict and Failed once git shows an agent finished the rebase and its turn ended', async () => {
+    const ids = await seedBatch();
+    seedRun({
+      states: ids.map((id, index) => [
+        id,
+        index === 0 ? 'conflict' : index === 1 ? 'failed' : 'rebased',
+        index === 1 ? 'origin cannot be reached' : null,
+      ]),
+      phase: 'done',
+    });
+    await settle();
+    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Conflict');
+    expect(chipOf('payments-api', /branch hl\/two/)?.textContent).toBe('Failed');
+
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({ behind: 0 }),
+      worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+      detect_editors: () => [],
+    });
+    await act(async () => {
+      await useAppStore.getState().recheckSessionMounts({ sessionId, reason: 'turn-end' });
+    });
+    await settle();
+
+    expect(chipOf('payments-api', /branch hl\/one/)).toBeNull();
+    expect(chipOf('payments-api', /branch hl\/two/)).toBeNull();
+    expect(
+      useAppStore.getState().rebaseAllRuns[sessionId]?.branches.map((branch) => branch.state),
+    ).toEqual(ids.map(() => 'rebased'));
+  });
+
+  it('keeps Conflict on a row while git still shows the rebase in progress', async () => {
+    const ids = await seedBatch();
+    seedRun({ states: ids.map((id) => [id, 'conflict', null]), phase: 'done' });
+    await settle();
+
+    stubStoryInvoke({
+      worktree_status: () => worktreeStatusOf({ behind: 0, unmerged: 2, inProgress: 'rebase' }),
+      worktree_remote_url: () => 'git@github.com:harborline/payments-api.git',
+      detect_editors: () => [],
+    });
+    await act(async () => {
+      await useAppStore.getState().recheckSessionMounts({ sessionId, reason: 'turn-end' });
+    });
+    await settle();
+
+    expect(chipOf('payments-api', /branch hl\/one/)?.textContent).toBe('Conflict');
   });
 
   it('offers Dismiss in the header once the batch is done and clears every chip', async () => {

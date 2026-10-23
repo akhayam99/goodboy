@@ -109,7 +109,7 @@ export const ActivityJobsScene = () => {
   useEffect(() => {
     seedActivityRunScene();
     const state = useAppStore.getState();
-    const mount = state.sessionProjectMounts[SESSION.id]?.[0];
+    const mount = state.sessionProjectMounts[SESSION.id]?.[1];
     if (mount === undefined) {
       throw new Error('the activity seed has no mount');
     }

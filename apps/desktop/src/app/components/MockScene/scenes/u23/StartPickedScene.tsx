@@ -40,7 +40,6 @@ export const StartPickedScene = () => {
 
   useEffect(() => {
     seedSessionStart({
-      choice: 'task',
       pickedIssues: [START_CANDIDATE],
       hasPickedStep: true,
     });

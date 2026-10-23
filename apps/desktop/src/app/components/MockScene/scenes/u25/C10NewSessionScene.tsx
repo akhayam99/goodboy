@@ -4,14 +4,13 @@ import { autoTreeLimitKey } from '../../../../../features/auto/autoTreeLimit';
 import { brandedId } from '../../../../../features/history/testing/brandedId';
 import { useAppStore } from '../../../../../store';
 import { EMPTY_SESSION_DRAFT } from '../../../../../store/slices/sessionDraft/state';
-import type { StartChoice } from '../../../../../store/slices/sessionDraft/state';
 import { sceneClock } from '../../sceneClock';
 import { SETTINGS_PROVIDERS } from '../audit/settingsSeed';
 import { WORKSPACE_ID } from '../BoardScene';
-import { NewSessionPageScene } from '../u24/NewSessionPageScene';
+import { NewSessionPageScene, type SceneStartChoice } from '../u24/NewSessionPageScene';
 
 export type C10PageState = {
-  readonly choice: StartChoice;
+  readonly choice: SceneStartChoice;
   readonly isAuto?: boolean;
   readonly isPreset?: boolean;
   readonly goal: string;
@@ -156,7 +155,7 @@ export const C10NewSessionScene = ({ state }: Props) => {
         window.clearInterval(timer);
         return;
       }
-      const trigger = document.querySelector<HTMLElement>('[role="combobox"][aria-label="Folder"]');
+      const trigger = document.querySelector<HTMLElement>('[role="combobox"][aria-label="Where"]');
       if (trigger === null) {
         return;
       }

@@ -1,6 +1,6 @@
 import type { RunRoute, Workflow } from '@goodboy/types';
 import type { AgentKind } from '../agent-kind';
-import { presetRouteOf, shapeRouteOf } from './routeChoiceOf';
+import { presetRouteOf, roleRouteOf, shapeRouteOf } from './routeChoiceOf';
 import type { RunDefault } from './runDefaultSetting';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
 
@@ -199,15 +199,12 @@ export const runRouteOf = ({ facts }: Params): RunRouteResult => {
     role === null ? null : (facts.roles.find((entry) => entry.label === role.name) ?? null);
   if (role !== null && pickedRole !== null) {
     return {
-      route: {
-        shape: 'lead',
-        row: 1,
-        presetName: null,
-        closeness: null,
+      route: roleRouteOf({
         role: pickedRole.kind,
-        choice: pickedRole.label,
+        label: pickedRole.label,
+        row: 1,
         why: RUN_ROUTE_COPY.why.picked,
-      },
+      }),
       ask: role.rest,
       preset: null,
       role: pickedRole.kind,

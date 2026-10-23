@@ -408,8 +408,8 @@ The Runs page (`WorkflowsPane`) lists every run of the session on one
 `ListGrid` (`RunsGrid`, columns in `runsGridColumns.ts`), one row per request
 from `sessionRunsOf`: preset runs, orchestrated runs, Auto conversations and
 the agents you started by hand, newest first. The columns: state dot, shape
-glyph (Plan or One agent), title, origin ("Was a preset run · Fix a layout",
-"Was an orchestrated run", "Was an Auto conversation", "Was an agent ·
+glyph (Workflow or Agent), title, origin ("Workflow · Preset Fix a layout",
+"Workflow · Orchestrated", "Agent · Auto agent", "Agent ·
 Scout"), state word, progress ("Step 2 of 3", "3 steps" once all ran, "2
 agents"), cost and age, every row the same columns. Groups:
 **In progress** (running, waiting on you or failed), **Finished** (the first 30, then **Show all**), **Archived** folded behind **Show**. A row is the button;
@@ -482,7 +482,7 @@ on the session and the run's agents are in the Agents panel.
 Orchestrated runs have no page of their own since ux27 one flow unit 1: they
 are rows of the one Runs page, beside preset runs, Auto conversations and the
 agents you started (`sessionRunsOf`, read by `RunsGrid`), each with its shape
-glyph and "Was an orchestrated run" or "Was a preset run · <preset>". The old
+glyph and "Workflow · Orchestrated" or "Workflow · Preset <preset>". The old
 `orchestrated` lens opens Runs (`foldedLensOf`). Opening a row shows
 [the orchestrated document](#the-orchestrated-document); Esc returns
 to the list (`leaveRunLevel`), and so does going up (`upTo`).

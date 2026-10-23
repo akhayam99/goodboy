@@ -1,3 +1,4 @@
+import { brandId } from '@goodboy/types';
 import type {
   MountId,
   PrCheckRun,
@@ -28,7 +29,15 @@ import {
 } from '../resolveSeed';
 
 export type PrPageVariant =
-  'github' | 'draft' | 'editing' | 'none' | 'merge-blocked' | 'merge-methods' | 'narrow' | 'merged';
+  | 'github'
+  | 'draft'
+  | 'editing'
+  | 'none'
+  | 'merge-blocked'
+  | 'merge-methods'
+  | 'narrow'
+  | 'merged'
+  | 'rebasing';
 
 const PROJECT_ID = 'mock-u23-project-payments-api' as ProjectId;
 const MOUNT_ID = 'mock-u23-mount-fix-duplicate-credit' as MountId;
@@ -60,6 +69,14 @@ const MOUNT: SessionProjectMount = {
   isAttached: true,
   diskState: 'present',
   revision: 1,
+};
+
+const WRITE_MOUNT: SessionProjectMount = {
+  ...MOUNT,
+  mountId: brandId<MountId>({ value: 'mock-u23-mount-feat-ledger-export' }),
+  worktreePath: '~/code/harborline/payments-api-feat-ledger-export',
+  branch: 'hl/feat-ledger-export',
+  parallelIndex: 1,
 };
 
 const run = ({
@@ -266,6 +283,7 @@ const shapeOf = ({ variant }: { readonly variant: PrPageVariant }): Shape => {
     case 'github':
     case 'editing':
     case 'narrow':
+    case 'rebasing':
       return {
         pr: { ...BASE_PR, reviewDecision: 'changes_requested', checks: 'failure' },
         reviews: REVIEWS_BLOCKING,
@@ -450,19 +468,25 @@ export const prPageGhStdout = ({ payload }: { readonly payload: unknown }): stri
   return '[]';
 };
 
-const prPageStatus = ({ behind }: { readonly behind: number }): WorktreeStatus => ({
+type StatusParams = {
+  readonly behind: number;
+  readonly isRebasing?: boolean;
+};
+
+const prPageStatus = ({ behind, isRebasing = false }: StatusParams): WorktreeStatus => ({
   ...CTX_STATUS,
   mainDistance: { kind: 'known', ahead: COMMITS.length, behind },
   upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+  ...(isRebasing && { branch: null, inProgress: 'rebase' }),
 });
 
-export const prPageHandlers = ({ behind }: { readonly behind: number }): FakeHandlers => ({
+export const prPageHandlers = ({ behind, isRebasing = false }: StatusParams): FakeHandlers => ({
   ...handlersFor(BRANCH_FILES_PATCH),
-  worktree_status: () => prPageStatus({ behind }),
+  worktree_status: () => prPageStatus({ behind, isRebasing }),
 });
 
-const installIpc = ({ behind }: { readonly behind: number }): void => {
-  const handlers = prPageHandlers({ behind });
+const installIpc = ({ behind, isRebasing = false }: StatusParams): void => {
+  const handlers = prPageHandlers({ behind, isRebasing });
   mockSceneIpc((command, payload) => {
     if (command === 'gh_run') {
       return { stdout: prPageGhStdout({ payload }), stderr: '', exitCode: 0 };
@@ -481,23 +505,32 @@ export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }
   const detail = detailOf({ shape, base: current.detail });
   const view = viewOf({ shape });
   const mountGithub = githubOf({ pr: shape.pr, detail });
+  const isRebasing = variant === 'rebasing';
+  const writeGithub: MountGithubState = {
+    ...githubOf({ pr: null, detail: null }),
+    mountId: WRITE_MOUNT.mountId,
+    branch: WRITE_MOUNT.branch,
+  };
+  const projected = isRebasing ? writeGithub : mountGithub;
   const noop = async (): Promise<void> => undefined;
   useAppStore.setState({
     projects: [projectOf()],
-    sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
-    sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
+    sessionProjectMounts: { [SESSION_ID]: isRebasing ? [MOUNT, WRITE_MOUNT] : [MOUNT] },
+    sessionActiveMount: { [SESSION_ID]: isRebasing ? WRITE_MOUNT.mountId : MOUNT_ID },
     diffMountPath: { [SESSION_ID]: PR_PAGE_WORKTREE },
     branchTab: { [SESSION_ID]: 'pr' },
     sessionGithub: {
       [SESSION_ID]: {
         ...current,
-        pr: shape.pr,
-        detail,
-        linkedIssues: mountGithub.linkedIssues,
-        detailFetchedAt: detail === null ? null : NOW_ISO,
+        pr: projected.pr,
+        detail: projected.detail,
+        linkedIssues: projected.linkedIssues,
+        detailFetchedAt: projected.detailFetchedAt,
       },
     },
-    mountGithub: { [MOUNT_ID]: mountGithub },
+    mountGithub: isRebasing
+      ? { [MOUNT_ID]: mountGithub, [WRITE_MOUNT.mountId]: writeGithub }
+      : { [MOUNT_ID]: mountGithub },
     pullRequestViews:
       view === null
         ? {}
@@ -518,5 +551,5 @@ export const applyPrPageSeed = ({ variant }: { readonly variant: PrPageVariant }
     refreshSessionPr: noop,
     refreshSessionPrDetail: noop,
   });
-  installIpc({ behind: shape.behind });
+  installIpc({ behind: shape.behind, isRebasing });
 };

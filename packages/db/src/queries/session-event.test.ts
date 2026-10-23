@@ -175,6 +175,7 @@ describe('session_events queries', () => {
           backupRef: 'refs/goodboy/backup/1',
           onOrigin: false,
           batchId: 'batch-1',
+          head: 'f00dcafe1234',
         },
       },
     });

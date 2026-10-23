@@ -58,9 +58,8 @@ describe('ArtifactNewMenu folder item', () => {
     useAppStore.setState({ workspaces: [] });
     openMenu();
 
-    expect(screen.getByRole('menuitem', { name: /Show in Finder/ })).toHaveProperty(
-      'disabled',
-      true,
-    );
+    expect(
+      screen.getByRole('menuitem', { name: /Show in Finder/ }).getAttribute('aria-disabled'),
+    ).toBe('true');
   });
 });

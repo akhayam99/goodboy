@@ -1,6 +1,13 @@
 // @vitest-environment node
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, MountId, SessionProjectMount } from '@goodboy/types';
+import type {
+  AgentId,
+  HistoryRebasePlan,
+  MountId,
+  SessionEvent,
+  SessionEventKind,
+  SessionProjectMount,
+} from '@goodboy/types';
 import {
   aProject,
   aSession,
@@ -25,6 +32,7 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  stubStoryInvoke,
   type StoryStore,
 } from '../../storyHarness';
 
@@ -469,5 +477,213 @@ describe('rebase all', () => {
     expect(store.getState().rebaseAllRuns[SESSION_ID]).toBeDefined();
     store.getState().dismissRebaseAll({ sessionId: SESSION_ID, runId: run?.id ?? '' });
     expect(store.getState().rebaseAllRuns[SESSION_ID]).toBeUndefined();
+  });
+
+  describe('a stop saved before a restart, with no run in this window', () => {
+    type SavedParams = {
+      readonly id: string;
+      readonly kind: SessionEventKind;
+      readonly at: string;
+    };
+
+    const saved = ({ id, kind, at }: SavedParams): SessionEvent => ({
+      id: JSON.parse(JSON.stringify(id)),
+      sessionId: SESSION_ID,
+      kind,
+      payload: {
+        mountId: RELAY_MOUNT,
+        branch: 'hl/relay',
+        origin: 'rebase',
+        reason: 'conflict',
+        files: ['src/relay.ts'],
+        head: 'b0a1c2d3e4f5',
+      },
+      createdAt: JSON.parse(JSON.stringify(at)),
+    });
+
+    const STOP = saved({
+      id: 'ev-stop',
+      kind: 'history_stopped',
+      at: '2026-10-22T10:00:00.000Z',
+    });
+
+    const PLAN: HistoryRebasePlan = {
+      onto: 'c0ffee000000',
+      ontoRef: 'origin/main',
+      mergeBase: 'a0a0a0a0a0a0',
+      head: 'b0a1c2d3e4f5',
+      commits: [],
+      behind: 6,
+      fetchError: null,
+    };
+
+    it('reads the plan again and hands the branch to Auto', async () => {
+      stub({ outcomes: {} });
+      stubStoryInvoke({ history_rebase_plan: () => PLAN });
+      store.setState({ sessionEvents: { [SESSION_ID]: [STOP] } });
+
+      await expect(
+        store
+          .getState()
+          .resolveRebaseWithAuto({ sessionId: SESSION_ID, mountIds: [RELAY_MOUNT], hint: '' }),
+      ).resolves.toEqual({ kind: 'started', agentId: AUTO_ID });
+
+      expect(spawned.at(-1)?.[1].initialPrompt).toContain(
+        'notify-relay, branch hl/relay, worktree /w/relay: rebase on origin/main.',
+      );
+      expect(spawned.at(-1)?.[1].initialPrompt).toContain('src/relay.ts');
+      expect(store.getState().historyRuns[RELAY_MOUNT]?.rebaseConflict).toEqual({
+        ontoRef: 'origin/main',
+        baseBranch: 'main',
+        head: 'b0a1c2d3e4f5',
+        autoAgentId: AUTO_ID,
+      });
+    });
+
+    it('keeps the stop asking when the plan cannot be read, so it can be retried', async () => {
+      stub({ outcomes: {} });
+      stubStoryInvoke({
+        history_rebase_plan: () => {
+          throw new Error('fetch failed');
+        },
+      });
+      store.setState({ sessionEvents: { [SESSION_ID]: [STOP] } });
+
+      await expect(
+        store
+          .getState()
+          .resolveRebaseWithAuto({ sessionId: SESSION_ID, mountIds: [RELAY_MOUNT], hint: '' }),
+      ).rejects.toThrow('fetch failed');
+      expect(spawned).toHaveLength(0);
+      expect(store.getState().historyRuns[RELAY_MOUNT]).toBeUndefined();
+
+      stubStoryInvoke({ history_rebase_plan: () => PLAN });
+      await store
+        .getState()
+        .resolveRebaseWithAuto({ sessionId: SESSION_ID, mountIds: [RELAY_MOUNT], hint: '' });
+      expect(store.getState().historyRuns[RELAY_MOUNT]?.rebaseConflict?.autoAgentId).toBe(AUTO_ID);
+    });
+
+    it('drops a late Auto acceptance once the stop was kept meanwhile', async () => {
+      stubStoryInvoke({ history_rebase_plan: () => PLAN });
+      store.setState({ sessionEvents: { [SESSION_ID]: [STOP] } });
+      const accepted: Array<() => void> = [];
+      store.setState({
+        spawnAgent: vi.fn(async (...call: SpawnCall) => {
+          const onAccepted = call[1].onKickoffAccepted;
+          if (onAccepted !== undefined) {
+            accepted.push(onAccepted);
+          }
+          return AUTO_ID;
+        }),
+      });
+
+      await store
+        .getState()
+        .resolveRebaseWithAuto({ sessionId: SESSION_ID, mountIds: [RELAY_MOUNT], hint: '' });
+      store.setState({
+        sessionEvents: {
+          [SESSION_ID]: [
+            STOP,
+            saved({ id: 'ev-kept', kind: 'history_restored', at: '2026-10-22T10:05:00.000Z' }),
+          ],
+        },
+      });
+      accepted.forEach((accept) => accept());
+
+      expect(store.getState().historyRuns[RELAY_MOUNT]).toBeUndefined();
+    });
+  });
+
+  describe('update all', () => {
+    const UPDATE = {
+      sessionId: SESSION_ID,
+      rebaseMountIds: [LEDGER_MOUNT, RELAY_MOUNT],
+      bringInMountIds: [PAYMENTS_MOUNT],
+    };
+
+    type BringInCall = Parameters<AppStore['bringOriginInAndPush']>[0];
+
+    const broughtIn: Array<BringInCall> = [];
+
+    type BringInParams = {
+      readonly outcome: 'pushed' | Error;
+    };
+
+    const stubBringIn = ({ outcome }: BringInParams): void => {
+      broughtIn.length = 0;
+      store.setState({
+        bringOriginInAndPush: vi.fn(async (input: BringInCall) => {
+          broughtIn.push(input);
+          if (outcome instanceof Error) {
+            throw outcome;
+          }
+          return outcome;
+        }),
+      });
+    };
+
+    it('rebases the clean ones, brings origin in without the rewriter, and never starts Auto', async () => {
+      stub({ outcomes: { [RELAY_MOUNT]: 'conflict' } });
+      stubBringIn({ outcome: 'pushed' });
+
+      await expect(store.getState().updateAll(UPDATE)).resolves.toBe('done');
+
+      expect(spawned).toHaveLength(0);
+      expect(statesOf()).toEqual(['rebased', 'conflict', 'rebased']);
+      expect(broughtIn).toEqual([
+        { sessionId: SESSION_ID, mountId: PAYMENTS_MOUNT, canStartRewriter: false },
+      ]);
+      expect(store.getState().rebaseAllRuns[SESSION_ID]?.phase).toBe('done');
+    });
+
+    it('keeps one failure on its own row with its error and finishes the others', async () => {
+      stub({ outcomes: { [LEDGER_MOUNT]: new Error('git is busy') } });
+      stubBringIn({ outcome: new Error('The working tree has 2 uncommitted files.') });
+
+      await store.getState().updateAll(UPDATE);
+
+      const branches = store.getState().rebaseAllRuns[SESSION_ID]?.branches ?? [];
+      expect(branches.map((branch) => [branch.state, branch.message])).toEqual([
+        ['failed', 'git is busy'],
+        ['rebased', null],
+        ['failed', 'The working tree has 2 uncommitted files.'],
+      ]);
+    });
+
+    it('ignores a second click while it runs', async () => {
+      let release = (): void => undefined;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      stub({ outcomes: {}, onRebase: () => undefined });
+      store.setState({
+        rebaseBranch: vi.fn(async () => {
+          await gate;
+          return 'rebased' as const;
+        }),
+      });
+      stubBringIn({ outcome: 'pushed' });
+
+      const first = store.getState().updateAll(UPDATE);
+      await expect(store.getState().updateAll(UPDATE)).resolves.toBe('busy');
+      release();
+
+      await expect(first).resolves.toBe('done');
+      expect(broughtIn).toHaveLength(1);
+    });
+
+    it('retries after a failure with a new run that updates the branch', async () => {
+      stub({ outcomes: { [LEDGER_MOUNT]: new Error('git is busy') } });
+      stubBringIn({ outcome: 'pushed' });
+      await store.getState().updateAll(UPDATE);
+      const failedRun = store.getState().rebaseAllRuns[SESSION_ID]?.id;
+
+      stub({ outcomes: {} });
+      await store.getState().updateAll(UPDATE);
+
+      expect(store.getState().rebaseAllRuns[SESSION_ID]?.id).not.toBe(failedRun);
+      expect(statesOf()).toEqual(['rebased', 'rebased', 'rebased']);
+    });
   });
 });

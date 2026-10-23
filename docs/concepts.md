@@ -412,10 +412,19 @@ It includes:
   `history_pushed`, `history_stopped` and `history_restored`
 
 History rows carry no verb and no `⋯`; the verbs live on the job banner of the Branch page (`docs/features/branch-history.md`). They stay in Activity only while no
-later outcome of the same branch settled them and, for a stop that names a rewriter
+later outcome of the same branch settled them, while git has not settled a rebase stop
+outside the flow (`settledRebaseStops`, written by `settleStaleRebases` from the stop's
+`head` payload and a git read newer than the stop), while the stop's branch is still an
+open, attached row of the session (Next and Needs you only: a merged or closed pull request,
+or a branch that left the session, takes the stop out, `openMountIds` from
+`useOpenStopMountIds`; **Keep branch as it was** records `history_restored` with
+`reason: 'kept'`, read as "Kept <branch> as it was", which settles it like any later
+outcome) and, for a stop that names a rewriter
 (`agentId`), while that agent still exists: delete the agent and the stop moves to the
 Log and leaves Needs you, and the row opens the Commits
-tab of the Branch page, where the recovery lives. The agent rows of those jobs
+tab of the Branch page, where the recovery lives. It opens the branch by the stop's
+`mountId` (`openMountCommits`), never the branch on screen or the first one: a rebase stop
+reads **Open rebase**, and a row whose branch left the session has no verb. The agent rows of those jobs
 read the job, not the turn of the agent (`jobFactsByAgentId`, the seam beside
 the resolver's in `buildTimelineStream`): History rewriter reads "Rebase on
 main" with the job's word (Replaying, Merging, Checking, Moving, Pushing,
@@ -1702,8 +1711,8 @@ task up again in Goodboy.
 - **Runs** is the tab of a session that lists its runs. A run is one execution
   inside a session. A workflow is the definition you set up in Workflow Studio,
   and it spawns runs. **Workflows** is the studio and the library, and the word
-  stays for definitions you pick ("Run a workflow", "from a workflow"). A verb
-  on one execution says run: **Run a workflow**, **Stop run**, **Archive run**,
+  stays for definitions you pick ("Start workflow", "from a workflow"). A verb
+  on one execution says run: **Start workflow**, **Stop run**, **Archive run**,
   **Delete run**. The ⌘K section that lists them is **Runs**. **Run defaults**
   is the tab of Workflows that sets what
   a new run starts with. A renamed label keeps its old name as a ⌘K alias:

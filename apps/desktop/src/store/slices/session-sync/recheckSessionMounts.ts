@@ -17,7 +17,7 @@ export const recheckSessionMounts = (get: GetFn) => {
     }
     const localRefresh = refreshWorktreeStatuses({
       worktreePaths: listSessionPrFetches({ state, sessionId }).map(({ cwd }) => cwd),
-    });
+    }).then(() => get().settleStaleRebases({ sessionId }));
     if (state.githubStatus?.available !== true) {
       await localRefresh;
       return;

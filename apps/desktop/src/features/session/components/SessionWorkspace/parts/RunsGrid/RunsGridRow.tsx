@@ -1,4 +1,5 @@
 import { ListGridRow, StateDot, formatUsd } from '@goodboy/ui';
+import { NAMES } from '../../../../../../shared/names';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import { formatAge } from '../../../../../../shared/utils/time/formatAge';
@@ -19,8 +20,8 @@ const SHAPE_ICON = {
 } as const;
 
 const SHAPE_LABEL: Readonly<Record<SessionRunShape, string>> = {
-  plan: 'Plan',
-  lead: 'One agent',
+  plan: NAMES.runKind.workflow,
+  lead: NAMES.runKind.agent,
 };
 
 type MenuAgentParams = {

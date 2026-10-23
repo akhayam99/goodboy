@@ -7,8 +7,17 @@ import { tintClasses } from '../tint';
 import type { SegmentedTabOption } from './SegmentedTabs';
 import { moveTabFocus } from './tabListKeys';
 
+export type ChoiceCardFact = {
+  readonly label: string;
+  readonly text: string;
+};
+
+export type ChoiceCardOption<T extends string = string> = SegmentedTabOption<T> & {
+  readonly facts?: ReadonlyArray<ChoiceCardFact>;
+};
+
 export type ChoiceCardsProps<T extends string = string> = {
-  readonly options: ReadonlyArray<SegmentedTabOption<T>>;
+  readonly options: ReadonlyArray<ChoiceCardOption<T>>;
   readonly value: T | null;
   readonly onChange: (value: T) => void;
   readonly ariaLabel: string;
@@ -32,13 +41,14 @@ export const ChoiceCards = <T extends string>({
           options.findIndex((option) => option.disabled !== true),
         )
       : options.findIndex((option) => option.value === value);
+  const isExplained = value === null && options.some((option) => (option.facts ?? []).length > 0);
 
   return (
     <div
       ref={tablistRef}
       role="tablist"
       aria-label={ariaLabel}
-      data-variant="card"
+      data-variant={isExplained ? 'explained' : 'card'}
       className={cn('grid grid-cols-1 gap-2 sm:grid-cols-3', className)}
     >
       {options.map((option, index) => {
@@ -66,7 +76,10 @@ export const ChoiceCards = <T extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => moveTabFocus({ event, index, options, tablistRef, onChange })}
             className={cn(
-              'relative flex min-h-12 items-center gap-3 rounded-md px-3 py-2 text-left motion-safe:transition-colors',
+              'relative flex min-h-12 gap-3 rounded-md px-3 py-2 text-left motion-safe:transition-colors',
+              isExplained
+                ? 'items-start rounded-lg border border-border-soft px-4 py-3 hover:border-border'
+                : 'items-center',
               FOCUS_RING,
               isActive ? 'bg-selected' : 'hover:bg-hover',
               option.disabled === true && 'cursor-not-allowed opacity-50 hover:bg-transparent',
@@ -82,7 +95,7 @@ export const ChoiceCards = <T extends string>({
                 {mark}
               </span>
             )}
-            <span className="flex min-w-0 flex-col">
+            <span className={cn('flex min-w-0 flex-col', isExplained && 'gap-1')}>
               <span className="flex min-w-0 items-center gap-2">
                 <span className="truncate text-row text-foreground">{option.label}</span>
                 {option.badge}
@@ -91,12 +104,22 @@ export const ChoiceCards = <T extends string>({
                 <span
                   className={cn(
                     'text-meta text-muted-foreground',
-                    isHintWrapped ? 'break-words' : 'truncate',
+                    isHintWrapped || isExplained ? 'break-words' : 'truncate',
                   )}
                 >
                   {option.hint}
                 </span>
               )}
+              {isExplained && (option.facts ?? []).length > 0 ? (
+                <span className="flex min-w-0 flex-col">
+                  {(option.facts ?? []).map((fact) => (
+                    <span key={fact.label} className="break-words text-meta">
+                      <span className="text-faint-foreground">{fact.label}</span>{' '}
+                      <span className="text-muted-foreground">{fact.text}</span>
+                    </span>
+                  ))}
+                </span>
+              ) : null}
             </span>
             {isActive && (
               <Check

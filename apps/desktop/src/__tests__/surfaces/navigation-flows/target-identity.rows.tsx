@@ -107,6 +107,20 @@ export const TARGET_IDENTITY_ROWS: ReadonlyArray<Row> = [
     lands: both(branchTab('files'), showsMount({ pick: (mounts) => mounts.second })),
   },
   {
+    name: 'view mount A, open the stopped rebase of mount B by its id: the Commits page shows B',
+    covers: ['openMountCommits', 'target:stop-names-its-mount'],
+    open: async (ctx) => {
+      await viewFirstMountFiles(ctx);
+      const { second } = mountsOf(ctx);
+      await go(() => {
+        useAppStore
+          .getState()
+          .openMountCommits({ sessionId: ctx.sessionId, mountId: second.mountId });
+      });
+    },
+    lands: both(branchTab('commits'), showsMount({ pick: (mounts) => mounts.second })),
+  },
+  {
     name: 'a request without a mount stays without one: the stored address does not copy mount A',
     covers: ['navigate', 'target:no-fill'],
     open: async (ctx) => {

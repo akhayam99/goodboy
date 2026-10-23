@@ -93,7 +93,7 @@ describe('the u26 rebase scenes', () => {
     }
   });
 
-  it('asks inline on a conflict, in the rail and on the Branch page, and starts nothing by itself', async () => {
+  it('asks once on the Branch page, keeps one line in the rail, and starts nothing by itself', async () => {
     const spawnAgent = vi.fn(async () => {
       throw new Error('nothing may start by itself');
     });
@@ -102,20 +102,27 @@ describe('the u26 rebase scenes', () => {
 
     const prompts = screen
       .getAllByRole('alert')
-      .filter((node) => (node.textContent ?? '').includes('2 files conflict with main'));
-    expect(prompts.length).toBe(2);
-    for (const prompt of prompts) {
-      const inPrompt = within(prompt);
-      expect(inPrompt.getByRole('button', { name: 'Resolve with Auto' })).toBeDefined();
-      expect(inPrompt.getByRole('button', { name: 'Open terminal here' })).toBeDefined();
-      expect(inPrompt.getByRole('button', { name: 'Abort rebase' })).toBeDefined();
-      expect(inPrompt.getByRole('button', { name: /Add a hint/ })).toBeDefined();
-      expect(
-        prompt
-          .querySelector('[data-rebase-conflict-count]')
-          ?.getAttribute('data-rebase-conflict-count'),
-      ).toBe('2');
+      .filter((node) =>
+        (node.textContent ?? '').includes('Rebase on main stopped: 2 files conflict'),
+      );
+    expect(prompts.length).toBe(1);
+    const [prompt] = prompts;
+    if (prompt === undefined) {
+      throw new Error('no conflict prompt');
     }
+    const inPrompt = within(prompt);
+    expect(inPrompt.getByRole('button', { name: 'Resolve with Auto' })).toBeDefined();
+    expect(inPrompt.getByRole('button', { name: 'Resolve myself' })).toBeDefined();
+    expect(inPrompt.getByRole('button', { name: 'Keep branch as it was' })).toBeDefined();
+    expect(inPrompt.getByRole('button', { name: /Add a hint/ })).toBeDefined();
+    expect(
+      prompt
+        .querySelector('[data-rebase-conflict-count]')
+        ?.getAttribute('data-rebase-conflict-count'),
+    ).toBe('2');
+    const rail = document.querySelector('[data-rebase-conflict]');
+    expect(rail?.textContent).toContain('Rebase on main stopped: 2 files conflict');
+    expect(rail?.querySelector('button')?.textContent).toBe('Open rebase');
     expect(spawnAgent).not.toHaveBeenCalled();
   });
 
@@ -134,7 +141,7 @@ describe('the u26 rebase scenes', () => {
 
     const [prompt] = screen
       .getAllByRole('alert')
-      .filter((node) => (node.textContent ?? '').includes('conflict with main'));
+      .filter((node) => (node.textContent ?? '').includes('Rebase on main stopped'));
     if (prompt === undefined) {
       throw new Error('no conflict prompt');
     }
@@ -150,19 +157,19 @@ describe('the u26 rebase scenes', () => {
     );
   });
 
-  it('leaves the branch as it was on Abort rebase and closes the prompt', async () => {
+  it('leaves the branch as it was on Keep branch as it was and closes the prompt', async () => {
     await mount({ name: 'u26-rebase-conflict-light' });
     const [prompt] = screen
       .getAllByRole('alert')
-      .filter((node) => (node.textContent ?? '').includes('conflict with main'));
+      .filter((node) => (node.textContent ?? '').includes('Rebase on main stopped'));
     if (prompt === undefined) {
       throw new Error('no conflict prompt');
     }
-    fireEvent.click(within(prompt).getByRole('button', { name: 'Abort rebase' }));
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Keep branch as it was' }));
     await settle();
 
     expect(useAppStore.getState().historyRuns[firstMountId()]).toBeUndefined();
-    expect(screen.queryAllByText(/conflict with main/)).toEqual([]);
+    expect(screen.queryAllByText(/Rebase on main stopped/)).toEqual([]);
   });
 
   it('offers Rebase all on the Projects card when two or more branches are behind', async () => {
@@ -232,6 +239,22 @@ describe('the u26 rebase scenes', () => {
         ?.closest('[data-chip-kind]')
         ?.hasAttribute('data-is-breathing'),
     ).toBe(false);
+  });
+
+  it('drops a stale Conflict and Failed once git shows an agent rebased those branches', async () => {
+    await mount({ name: 'u26-rebase-all-settled-dark' });
+
+    const chipOf = ({ name }: NameParams): string | null => {
+      const row = screen.getByRole('button', { name: new RegExp(`^hl/${name}(,|$)`) });
+      return within(row).queryByTestId('branch-row-chip')?.textContent ?? null;
+    };
+    expect(chipOf({ name: 'delivery-metrics' })).toBeNull();
+    expect(chipOf({ name: 'export-batch' })).toBeNull();
+    expect(
+      useAppStore
+        .getState()
+        .rebaseAllRuns[SESSION_ID]?.branches.every((branch) => branch.state === 'rebased'),
+    ).toBe(true);
   });
 
   it('drops Rebased by Auto once every branch Auto took has settled', async () => {

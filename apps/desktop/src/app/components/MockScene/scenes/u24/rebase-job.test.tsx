@@ -87,14 +87,14 @@ const BANNER_TEXT: Readonly<Record<RebaseJobSceneState, ReadonlyArray<string>>> 
   ],
   done: ['Rebased on main', '7 commits. Your 11 files were not touched. Backup kept for 30 days.'],
   stuck: ['History rewriter needs you', 'It could not merge webhook.ts.'],
-  'origin-moved': ['Someone pushed to the online copy', 'Nothing was pushed.'],
+  'origin-moved': ['Rebased here, but', 'Nothing was pushed.'],
   'head-moved': ['The branch moved', 'Nothing was changed.'],
   'push-failed': ['Rebased, but the push failed', 'pre-push hook declined'],
   'fixing-push': ['Rebased, fixing the push', 'An agent is fixing what stopped it.'],
   'no-provider': ['No provider is connected', 'History rewriter needs one to merge the conflict.'],
   dirty: [
     '11 files have changes that are not committed',
-    'Commit or stash them, then check again.',
+    'Commit or stash them, then retry the rebase.',
   ],
   'result-differs': ['The result did not match your branch', 'Nothing was changed.'],
   failed: ["Couldn't rebase payments-api on main", "Couldn't reach origin: connection reset."],
@@ -128,7 +128,9 @@ describe('the u24 rebase job scenes', () => {
     async (state) => {
       renderScene({ name: 'branch-rebase-job', query: `state=${state}` });
 
-      const region = await screen.findByLabelText('Rebase job', undefined, { timeout: 4_000 });
+      const region = await screen.findByLabelText(/^Rebase( job)?$/, undefined, {
+        timeout: 4_000,
+      });
       await waitForSettledReads();
 
       for (const text of BANNER_TEXT[state]) {
@@ -156,9 +158,7 @@ describe('the u24 rebase job scenes', () => {
     expect(screen.getByText('Stopped: needs you')).toBeDefined();
     expect(screen.getByText('Writing')).toBeDefined();
     expect(screen.getByText('Refresh pull request text')).toBeDefined();
-    expect(
-      screen.getByText('Rebase of hl/fix-webhook-idempotency stopped · needs you'),
-    ).toBeDefined();
+    expect(screen.getByText('Rebase of hl/fix-duplicate-credit stopped · needs you')).toBeDefined();
     expect(screen.getAllByText('Done').length).toBeGreaterThan(0);
     expect(screen.queryByText(/both sides change the retry key/)).toBeNull();
   });

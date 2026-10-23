@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
 import { HistoryArrow } from './HistoryArrow';
-import type { HistoryItem } from './HistoryMenu';
+import type { HistoryItem } from './historyItem';
 import { historyLabel } from './historyLabel';
 
 const HISTORY_MENU_LIMIT = 12;

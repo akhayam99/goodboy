@@ -147,6 +147,27 @@ describe('history activity rows', () => {
     expect(hasHistoryRecovery({ event: stopped, events: [stopped] })).toBe(true);
   });
 
+  it('sends a stopped rebase git already settled to the Log, out of Needs you', () => {
+    const stopped = event({
+      id: 'ev-1',
+      kind: 'history_stopped',
+      at: '2026-09-26T10:00:00.000Z',
+      payload: { origin: 'rebase', reason: 'conflict' },
+    });
+    const entry = {
+      kind: 'event' as const,
+      id: 'event:ev-1',
+      at: stopped.createdAt,
+      event: stopped,
+    };
+    const settledStopIds = new Set(['ev-1']);
+
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped], settledStopIds })).toBe(false);
+    expect(
+      entriesOfView({ entries: [entry], events: [stopped], view: 'log', settledStopIds }),
+    ).toHaveLength(1);
+  });
+
   it('keeps a stopped rewrite that never had an agent when agents are known', () => {
     const stopped = event({
       id: 'ev-1',
@@ -158,5 +179,69 @@ describe('history activity rows', () => {
     expect(hasHistoryRecovery({ event: stopped, events: [stopped], liveAgentIds: new Set() })).toBe(
       true,
     );
+  });
+});
+
+describe('a rebase stop leaves Next once nothing can be done on it', () => {
+  const stopped = event({
+    id: 'ev-stop',
+    kind: 'history_stopped',
+    at: '2026-10-22T10:00:00.000Z',
+    payload: { origin: 'rebase', reason: 'conflict', files: ['src/pages/members/MembersPage.tsx'] },
+  });
+
+  const keptEvent = event({
+    id: 'ev-kept',
+    kind: 'history_restored',
+    at: '2026-10-22T10:05:00.000Z',
+    payload: { origin: 'rebase', reason: 'kept' },
+  });
+
+  it('stays while its branch is open', () => {
+    expect(
+      hasHistoryRecovery({
+        event: stopped,
+        events: [stopped],
+        openMountIds: new Set(['mount-ledger']),
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    ['its pull request merged', new Set(['mount-other'])],
+    ['its pull request closed', new Set<string>()],
+    ['its branch left the session', new Set(['mount-other'])],
+  ])('leaves when %s', (_case, openMountIds) => {
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped], openMountIds })).toBe(false);
+  });
+
+  it('leaves when git settled it', () => {
+    expect(
+      hasHistoryRecovery({
+        event: stopped,
+        events: [stopped],
+        settledStopIds: new Set(['ev-stop']),
+        openMountIds: new Set(['mount-ledger']),
+      }),
+    ).toBe(false);
+  });
+
+  it('leaves once the branch was kept as it was, and says so in the Log', () => {
+    expect(hasHistoryRecovery({ event: stopped, events: [stopped, keptEvent] })).toBe(false);
+    expect(hasHistoryRecovery({ event: keptEvent, events: [stopped, keptEvent] })).toBe(false);
+    expect(text({ value: keptEvent })).toBe('Kept fix/ledger-postings as it was');
+  });
+
+  it('comes back as a new stop when a later rebase stops after Keep', () => {
+    const again = event({
+      id: 'ev-again',
+      kind: 'history_stopped',
+      at: '2026-10-22T11:00:00.000Z',
+      payload: { origin: 'rebase', reason: 'conflict' },
+    });
+    const events = [stopped, keptEvent, again];
+
+    expect(hasHistoryRecovery({ event: stopped, events })).toBe(false);
+    expect(hasHistoryRecovery({ event: again, events })).toBe(true);
   });
 });

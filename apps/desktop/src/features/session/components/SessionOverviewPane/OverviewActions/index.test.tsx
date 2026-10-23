@@ -24,6 +24,7 @@ import type {
 } from '@goodboy/types';
 import { anAgent, aSession } from '@goodboy/types/testing';
 import { pressShortcut } from '../../../../../__tests__/helpers/pressKey';
+import { startRunEventName } from '../../../startRun/startRunEventName';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -84,7 +85,14 @@ describe('OverviewActions', () => {
     expect(screen.queryByRole('menuitem')).toBeNull();
   });
 
-  it('opens Start a run on Runs from the menu, with no drawer', () => {
+  it('opens Start a run on Runs from the menu, with no drawer', async () => {
+    const started = new Promise<unknown>((resolve) => {
+      window.addEventListener(
+        startRunEventName({ sessionId: SESSION_ID }),
+        (event) => resolve(event instanceof CustomEvent ? event.detail : null),
+        { once: true },
+      );
+    });
     render(<OverviewActions session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'New' }));
@@ -92,6 +100,7 @@ describe('OverviewActions', () => {
 
     expect(useAppStore.getState().drawer).toBeNull();
     expect(useAppStore.getState().activeLens[SESSION_ID]).toBe('workflows');
+    await expect(started).resolves.toEqual({ text: '' });
   });
 
   it('opens the menu with the contextual new chord, and the drawer only on a pick', async () => {

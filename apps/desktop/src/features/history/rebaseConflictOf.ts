@@ -6,9 +6,10 @@ export type RebaseConflictView = {
   readonly count: number;
   readonly isHook: boolean;
   readonly baseBranch: string;
-  readonly ontoRef: string;
-  readonly head: string;
+  readonly ontoRef: string | null;
+  readonly head: string | null;
   readonly autoAgentId: AgentId | null;
+  readonly isHere: boolean;
 };
 
 type Params = {
@@ -38,5 +39,6 @@ export const rebaseConflictOf = ({ run }: Params): RebaseConflictView | null => 
     ontoRef: run.rebaseConflict.ontoRef,
     head: run.rebaseConflict.head,
     autoAgentId: run.rebaseConflict.autoAgentId,
+    isHere: run.rebaseConflict.isHere === true,
   };
 };

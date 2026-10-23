@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { UserRound, UserX } from 'lucide-react';
-import { MenuItems, formatError, type OverflowMenuItem } from '@goodboy/ui';
+import { formatError, type MenuEntry } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { linearFetchTeamMembers, type LinearTeamMember } from './client';
+import { AppMenuList } from '../../actions/AppMenuList';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -18,39 +19,30 @@ type Loaded =
   | { readonly kind: 'failed'; readonly message: string }
   | { readonly kind: 'ready'; readonly members: ReadonlyArray<LinearTeamMember> };
 
-type ItemsParams = {
-  readonly loaded: Loaded;
+type EntriesParams = {
+  readonly members: ReadonlyArray<LinearTeamMember>;
   readonly currentName: string | null;
   readonly onPick: (assigneeId: string | null) => void;
 };
 
-const itemsOf = ({ loaded, currentName, onPick }: ItemsParams): ReadonlyArray<OverflowMenuItem> => {
-  if (loaded.kind === 'loading') {
-    return [{ kind: 'empty', key: 'loading', label: 'Loading people' }];
-  }
-  if (loaded.kind === 'failed') {
-    return [{ kind: 'empty', key: 'failed', label: `Couldn't load people: ${loaded.message}` }];
-  }
-  const unassign: OverflowMenuItem = {
+const entriesOf = ({ members, currentName, onPick }: EntriesParams): ReadonlyArray<MenuEntry> => [
+  {
     kind: 'item',
     key: 'unassigned',
     label: 'Unassigned',
     icon: UserX,
-    disabled: currentName === null,
-    onClick: () => onPick(null),
-  };
-  return [
-    unassign,
-    ...loaded.members.map((member): OverflowMenuItem => ({
-      kind: 'item',
-      key: member.id,
-      label: member.name,
-      icon: UserRound,
-      disabled: member.name === currentName,
-      onClick: () => onPick(member.id),
-    })),
-  ];
-};
+    isDisabled: currentName === null,
+    onSelect: () => onPick(null),
+  },
+  ...members.map((member): MenuEntry => ({
+    kind: 'item',
+    key: member.id,
+    label: member.name,
+    icon: UserRound,
+    isDisabled: member.name === currentName,
+    onSelect: () => onPick(member.id),
+  })),
+];
 
 export const LinearAssigneeMenu = ({
   workspaceId,
@@ -80,9 +72,21 @@ export const LinearAssigneeMenu = ({
     };
   }, [workspaceId, issueId, projectId]);
 
+  if (loaded.kind === 'loading') {
+    return <p className="px-3 py-2 text-faint-foreground italic">Loading people</p>;
+  }
+  if (loaded.kind === 'failed') {
+    return (
+      <p role="alert" className="px-3 py-2 text-faint-foreground italic">
+        {`Couldn't load people: ${loaded.message}`}
+      </p>
+    );
+  }
   return (
-    <div className="flex flex-col py-1">
-      <MenuItems items={itemsOf({ loaded, currentName, onPick })} onClose={onClose} />
-    </div>
+    <AppMenuList
+      label="Change assignee"
+      entries={entriesOf({ members: loaded.members, currentName, onPick })}
+      onClose={onClose}
+    />
   );
 };

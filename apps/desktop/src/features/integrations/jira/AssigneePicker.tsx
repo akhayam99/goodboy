@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, UserRound } from 'lucide-react';
+import { UserRound } from 'lucide-react';
 import {
   EmptyLine,
   AnchoredPopover,
@@ -9,14 +9,15 @@ import {
   formatError,
   Input,
   ScrollFade,
-  StatusDot,
   useDropdown,
+  type MenuEntry,
   Tooltip,
 } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import type { JiraUser } from './client';
 import { useJiraAssignableUsers } from './useJiraAssignableUsers';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { AppMenuList } from '../../actions/AppMenuList';
 
 type Props = {
   readonly issueKey: string;
@@ -31,9 +32,6 @@ type FilterParams = {
 };
 
 const UNASSIGN_ROW_ID = 'unassign';
-
-const MENU_ROW =
-  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-label text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
 
 const filterAssignees = ({ users, query }: FilterParams): ReadonlyArray<JiraUser> => {
   const needle = query.trim().toLowerCase();
@@ -70,11 +68,43 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
     }
   };
 
+  const isBusy = busyId != null;
+  const unassign: ReadonlyArray<MenuEntry> =
+    assignee == null
+      ? []
+      : [
+          {
+            kind: 'item',
+            key: UNASSIGN_ROW_ID,
+            label: 'Unassign',
+            isDisabled: isBusy,
+            shouldStayOpen: true,
+            onSelect: () => assign(null),
+          },
+        ];
+  const people: ReadonlyArray<MenuEntry> =
+    filtered.length === 0
+      ? []
+      : [
+          {
+            kind: 'radio',
+            key: 'assignee',
+            label: 'Assign to',
+            choices: filtered.map((user) => ({
+              id: user.accountId,
+              label: user.displayName,
+              isCurrent: user.accountId === assignee?.accountId,
+            })),
+            isDisabled: isBusy,
+            shouldStayOpen: true,
+            onSelect: (accountId) => assign(accountId),
+          },
+        ];
+  const entries = [...unassign, ...people];
+
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
-      ariaLabel="Assign this issue"
       className="flex flex-col"
       hasBackdrop
       trigger={
@@ -83,12 +113,12 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
             type="button"
             aria-haspopup="menu"
             aria-expanded={isOpen}
-            disabled={busyId != null}
+            disabled={isBusy}
             onClick={toggle}
             className="inline-flex items-center gap-1 rounded-sm text-meta text-muted-foreground hover:text-foreground disabled:cursor-not-allowed"
           >
             <UserRound size={ICON_SIZE.row} aria-hidden />
-            <span className={cn(busyId != null && 'text-shimmer')}>
+            <span className={cn(isBusy && 'text-shimmer')}>
               {assignee?.displayName ?? 'Unassigned'}
             </span>
           </button>
@@ -106,35 +136,15 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
         />
       </div>
       <Divider />
-      <ScrollFade className="max-h-64" viewportClassName="flex flex-col gap-0.5 p-1">
-        {assignee != null && (
-          <button
-            type="button"
-            role="menuitem"
-            disabled={busyId != null}
-            onClick={() => void assign(null)}
-            className={MENU_ROW}
-          >
-            <span className="min-w-0 truncate text-muted-foreground">Unassign</span>
-            {busyId === UNASSIGN_ROW_ID && <StatusDot tone="neutral" pulsing />}
-          </button>
+      <ScrollFade className="max-h-64" viewportClassName="flex flex-col">
+        {entries.length === 0 ? null : (
+          <AppMenuList
+            label="Assign this issue"
+            entries={entries}
+            onClose={close}
+            isAutoFocus={false}
+          />
         )}
-        {filtered.map((user) => (
-          <button
-            key={user.accountId}
-            type="button"
-            role="menuitem"
-            disabled={busyId != null}
-            onClick={() => void assign(user.accountId)}
-            className={MENU_ROW}
-          >
-            <span className="min-w-0 truncate">{user.displayName}</span>
-            {busyId === user.accountId && <StatusDot tone="neutral" pulsing />}
-            {busyId !== user.accountId && user.accountId === assignee?.accountId && (
-              <Check size={ICON_SIZE.row} aria-hidden />
-            )}
-          </button>
-        ))}
         {isLoading && (
           <p role="status" className="px-2 py-1 text-meta text-muted-foreground">
             Reading who can take this issue

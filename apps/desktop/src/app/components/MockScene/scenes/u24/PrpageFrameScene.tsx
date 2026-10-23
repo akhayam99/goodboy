@@ -6,6 +6,7 @@ import { BranchPage } from '../../../../../features/branch/components/BranchPage
 import { WorktreeSceneColumn } from '../WorktreeSceneColumn';
 import { StudioBandContext } from '../../../../../shared/components/StudioShell/studioBandContext';
 import { useAppStore } from '../../../../../store';
+import { applyMountGithub } from '../../../../../store/slices/github/mountGithub';
 import { sceneClock } from '../../sceneClock';
 import { PageSheet } from '../PageSheet';
 import { SESSION, SESSION_ID } from '../resolveSeed';
@@ -34,19 +35,17 @@ type Props = {
 
 const queue = (): void => {
   useAppStore.setState((state) => {
-    const current = state.sessionGithub[SESSION_ID];
-    if (current === undefined || current.pr === null) {
+    const mountId = state.sessionActiveMount[SESSION_ID] ?? null;
+    const current = mountId === null ? undefined : state.mountGithub[mountId];
+    if (mountId === null || current === undefined || current.pr === null) {
       return state;
     }
-    return {
-      sessionGithub: {
-        ...state.sessionGithub,
-        [SESSION_ID]: {
-          ...current,
-          pr: { ...current.pr, state: 'queued', mergeQueue: { position: 3 } },
-        },
-      },
-    };
+    return applyMountGithub({
+      state,
+      sessionId: SESSION_ID,
+      mountId,
+      github: { ...current, pr: { ...current.pr, state: 'queued', mergeQueue: { position: 3 } } },
+    });
   });
 };
 

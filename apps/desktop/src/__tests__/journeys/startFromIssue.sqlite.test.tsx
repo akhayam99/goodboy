@@ -130,7 +130,10 @@ const renderKickoff = () =>
     </ToastProvider>,
   );
 
-const field = () => screen.getByRole('textbox', { name: 'Start a run' });
+const field = () => screen.getByRole('textbox', { name: 'Task' });
+
+const autoPicks = () =>
+  fireEvent.click(screen.getByRole('button', { name: 'Not sure? Describe it and Auto picks' }));
 
 const ASK = `@Implementer ${INSTRUCTIONS}`;
 
@@ -153,7 +156,7 @@ const sessionRows = () =>
   rowsOf<{ id: string; goal: string }>({ sql: 'SELECT id, goal FROM sessions' });
 
 describe('journey: start a session from an issue', () => {
-  it('attaches the issue to Start a run, starts, and leaves a linked session with a running agent', async () => {
+  it('puts the issue above the task, starts from Auto picks, and leaves a linked session with a running agent', async () => {
     useAppStore.getState().openSessionDraft();
     expect(draft().pickedIssues).toEqual([]);
     renderKickoff();
@@ -165,6 +168,7 @@ describe('journey: start a session from an issue', () => {
     await waitFor(() => expect(field()).toHaveProperty('value', ISSUE.goal));
 
     fireEvent.change(field(), { target: { value: ASK } });
+    autoPicks();
     expect(await sessionRows()).toEqual([]);
 
     let release: () => void = () => undefined;
@@ -219,6 +223,7 @@ describe('journey: start a session from an issue', () => {
     pickTheIssue();
     await waitFor(() => expect(field()).toHaveProperty('value', ISSUE.goal));
     fireEvent.change(field(), { target: { value: ASK } });
+    autoPicks();
     storySpies.createWorktree.mockRejectedValueOnce(new Error('git worktree add failed'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));

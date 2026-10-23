@@ -168,6 +168,10 @@ describe('PermissionRequestCard', () => {
       'Always allow "pnpm test" everywhere',
       'Deny and tell Implementer why…',
     ]);
+    const menu = screen.getByRole('menu', { name: 'More permission actions' });
+    expect(document.activeElement?.textContent).toBe('Allow all commands in this session');
+    fireEvent.keyDown(menu, { key: 'End' });
+    expect(document.activeElement?.textContent).toBe('Deny and tell Implementer why…');
   });
 
   it('allows all commands in this session from the overflow', async () => {

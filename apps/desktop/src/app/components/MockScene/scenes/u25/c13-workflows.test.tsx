@@ -138,20 +138,26 @@ describe('c13 workflows scenes', () => {
     expect(screen.queryByRole('region', { name: 'Fix flaky tests' })).toBeNull();
   });
 
-  it('offers a first run for a workflow never run, as Start a run with the preset named', async () => {
+  it('offers a first run for a workflow never run, opening the preset form on it', async () => {
     const openSessionDraft = vi.fn();
     store.setState({ openSessionDraft });
     await renderScene('c13-workflows-history-empty');
 
     const empty = screen.getByRole('region', { name: 'Lint and type check' });
     expect(within(empty).getByText('No runs yet')).toBeDefined();
-    fireEvent.click(within(empty).getByRole('button', { name: 'Start a run from this preset' }));
+    fireEvent.click(within(empty).getByRole('button', { name: 'Start from this preset' }));
 
     expect(openSessionDraft).toHaveBeenCalledOnce();
     const workspaceId = store.getState().currentWorkspaceId;
-    expect(
-      workspaceId === null ? null : store.getState().sessionDrafts[workspaceId]?.workflowGoal,
-    ).toBe('~Lint and type check ');
+    const draft = workspaceId === null ? null : store.getState().sessionDrafts[workspaceId];
+    const presets =
+      workspaceId === null ? [] : (store.getState().phaseTemplates[workspaceId] ?? []);
+    const preset = presets.find((workflow) => workflow.name === 'Lint and type check');
+    expect(draft).toMatchObject({
+      startKind: 'workflow',
+      startShape: 'preset',
+      workflowId: preset?.id,
+    });
   });
 
   it('says the runs could not load and retries on Retry', async () => {

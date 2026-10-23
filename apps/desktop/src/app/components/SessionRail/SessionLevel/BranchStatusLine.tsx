@@ -1,4 +1,4 @@
-import { Button, StatusDot, Tooltip } from '@goodboy/ui';
+import { Button, StatusDot, Tooltip, TruncatedText, type Tone } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
@@ -10,8 +10,9 @@ import { useActionControls } from '../../../../features/actions/useActionControl
 import type { MountActionTarget } from '../../../../features/actions/types';
 import { ActionConfirmPanel } from '../../../../features/actions/components/ActionControls/ActionConfirmPanel';
 import { ActionStatusLine } from '../../../../features/actions/components/ActionControls/ActionStatusLine';
-import { RebaseConflictPrompt } from '../../../../features/history/components/RebaseConflictPrompt';
+import { REBASE_STOP_PANEL_STATES } from '../../../../features/history/components/rebaseStopPanelStates';
 import { useRebaseJob } from '../../../../features/history/useRebaseJob';
+import type { RebaseJobTone } from '../../../../features/history/rebaseJob';
 import { branchStatusFactsOf } from './branchStatusFactsOf';
 
 type Props = {
@@ -23,9 +24,17 @@ type Props = {
 
 const VERB_IDS = ['mount.abortRebase', 'mount.rebase'] as const;
 
+const STOP_TONE: Readonly<Record<RebaseJobTone, Tone>> = {
+  info: 'info',
+  ok: 'success',
+  warn: 'warning',
+  danger: 'danger',
+};
+
 export const BranchStatusLine = ({ sessionId, row, status, target }: Props) => {
   const controls = useActionControls({ target });
-  const rebase = useRebaseJob({ sessionId, worktreePath: row.worktreePath });
+  const rebase = useRebaseJob({ sessionId, worktreePath: row.worktreePath, isDetailed: false });
+  const openMountCommits = useAppStore((state) => state.openMountCommits);
   const baseBranch = useAppStore((state) =>
     selectMountBaseBranch({ state, sessionId, path: row.worktreePath }),
   );
@@ -96,9 +105,23 @@ export const BranchStatusLine = ({ sessionId, row, status, target }: Props) => {
           <ActionStatusLine controls={controls} showReasons={false} />
         </div>
       ) : null}
-      {job?.state === 'conflict' ? (
-        <div data-rebase-conflict="" className="flex min-w-0 flex-col pr-1">
-          <RebaseConflictPrompt sessionId={sessionId} worktreePath={row.worktreePath} />
+      {job !== null && job.state !== 'pushed' && REBASE_STOP_PANEL_STATES.has(job.state) ? (
+        <div
+          data-rebase-conflict=""
+          className="flex min-h-7 min-w-0 items-center gap-2 pr-1 text-ui"
+        >
+          <StatusDot tone={STOP_TONE[job.tone]} size="sm" pulsing={job.isRunning} />
+          <TruncatedText className="min-w-0 flex-1 truncate text-muted-foreground">
+            {job.title}
+          </TruncatedText>
+          <Button
+            size="xs"
+            variant="ghost"
+            aria-label={`Open rebase of ${row.branch}`}
+            onClick={() => openMountCommits({ sessionId, mountId: row.mountId })}
+          >
+            Open rebase
+          </Button>
         </div>
       ) : null}
     </div>

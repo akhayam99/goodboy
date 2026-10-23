@@ -64,6 +64,37 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   agent's earlier output into the user's files would be a write nobody asked
   for. Folder projects always keep that directory; no Goodboy action deletes it.
 
+## Who picks the folders
+
+A new session starts from its task, not from a folder. With nothing pinned in **Where**,
+`mountTaskFolders` (`store/slices/project-mounts/mountTaskFolders.ts`) mounts at start the
+folders the task needs, and it is the one rule for this: `createSession` runs it when
+`startSessionFromDraft` passes `shouldPickFolders`, and Auto runs it for a writer with no folder
+(`pickChildMount`, [auto.md](auto.md)).
+
+- **Which folders.** `taskFolderCandidates` picks the workspace's only repo when it has one;
+  otherwise the repo of a linked GitHub or GitLab issue (`issueRepoProjectIds`, the remote host
+  and path must both match, an SSH or https remote alike, through `recordRepoProjectIds`) and
+  every repo the task text names. The linked repos are the task's own project plus the ones its
+  issue URLs name (`taskLinkedProjectIds`), at start and for an Auto writer alike, so a task
+  linked by URL only still mounts its repo. A name matches only as a whole word of
+  the workspace's own project names, compared without case: `ledger-cores` and `billing-core`
+  mount nothing. A name shorter than four characters (`web`, `app`) matches only in backticks
+  or as `owner/repo`, so a plain word in the task mounts nothing. The match is a plain index
+  scan, no regex.
+- **A pin wins.** Any folder pinned in **Where** turns the rule off; only the pins are mounted.
+- **One allowance.** Each candidate goes through `admitProjectMount`, the same gate and proposal
+  step an agent's `<<materialize>>` uses (`materializationGate`): the active project, task-linked
+  projects and two more per session mount at once, and the next becomes a mount proposal the
+  user accepts. At start the issue is not linked to the session yet, so `mountTaskFolders` hands
+  the linked repos to the gate (`linkedProjectIds`): they are allowed by themselves and never
+  spend one of the two.
+- **A failure keeps the session.** A folder that cannot be mounted leaves the session on the
+  workspace and reports "Couldn't add <folder> to this session"; the agent can still ask for it
+  later. A project in its first lap is never picked.
+- The first-lap session and a blank session (`startBlankSession`) do not pass
+  `shouldPickFolders` and start with nothing mounted.
+
 ## The first lap and the bootstrap move
 
 A project made from the empty screen starts in its **first lap**. The phase is

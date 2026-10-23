@@ -172,6 +172,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
   const onOrigin = booleanAt({ source, key: 'onOrigin' });
   const behind = numberAt({ source, key: 'behind' });
   const batchId = stringAt({ source, key: 'batchId' });
+  const head = stringAt({ source, key: 'head' });
   const turnRunId = stringAt({ source, key: 'turnRunId' });
   const questionId = stringAt({ source, key: 'questionId' });
   const deferralCause = deferralCauseAt({ source, key: 'deferralCause' });
@@ -216,6 +217,7 @@ const parsePayload = ({ raw }: ParsePayloadParams): SessionEventPayload | null =
     ...(onOrigin != null ? { onOrigin } : {}),
     ...(behind != null ? { behind } : {}),
     ...(batchId != null ? { batchId } : {}),
+    ...(head != null ? { head } : {}),
     ...(turnRunId != null ? { turnRunId } : {}),
     ...(questionId != null ? { questionId } : {}),
     ...(deferralCause != null ? { deferralCause } : {}),

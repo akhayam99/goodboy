@@ -1,5 +1,9 @@
 import { formatError } from '@goodboy/ui';
-import { readOriginAhead, tryHistoryPlan } from '../../../features/history/historyEngine';
+import {
+  discardHistoryCopy,
+  readOriginAhead,
+  tryHistoryPlan,
+} from '../../../features/history/historyEngine';
 import { worktreeStatus } from '../../../features/worktree/worktree';
 import { assertCleanTree } from './assertCleanTree';
 import { historyTargetOf } from './historyTargetOf';
@@ -14,10 +18,18 @@ import type {
   SetFn,
 } from './types';
 
-export type BringOriginOutcome = ApplyHistoryRewriteOutcome | 'rewriting' | 'nothing';
+export type BringOriginOutcome = ApplyHistoryRewriteOutcome | 'rewriting' | 'nothing' | 'conflict';
+
+export type BringOriginInput = HistoryMountInput & {
+  readonly canStartRewriter?: boolean;
+};
 
 export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
-  return async ({ sessionId, mountId }: HistoryMountInput): Promise<BringOriginOutcome> => {
+  return async ({
+    sessionId,
+    mountId,
+    canStartRewriter = true,
+  }: BringOriginInput): Promise<BringOriginOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
     await assertCleanTree({ worktreePath: target.worktreePath, baseBranch: target.baseBranch });
     const run = get().historyRuns[mountId];
@@ -80,6 +92,24 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
         files: trial.check.unexpectedFiles,
         sha: null,
       });
+    }
+    if ((trial.stop !== null || trial.head === null) && !canStartRewriter) {
+      if (trial.copyPath !== null) {
+        await discardHistoryCopy({
+          worktreePath: target.worktreePath,
+          copyPath: trial.copyPath,
+        }).catch((error: unknown) =>
+          get().reportError({ title: "Couldn't remove the bring in copy", error, sessionId }),
+        );
+      }
+      setHistoryRun({
+        set,
+        sessionId,
+        mountId,
+        origin,
+        patch: { phase: run?.phase ?? 'stopped', stop: run?.stop ?? null },
+      });
+      return 'conflict';
     }
     if (trial.stop !== null || trial.head === null) {
       const started = await get().startHistoryRewriter({

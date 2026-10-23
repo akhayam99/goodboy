@@ -4,7 +4,7 @@ import { describeCopy, scanCopy } from './scanCopy';
 
 const RUN_CALLED_WORKFLOW: ReadonlyArray<RegExp> = [
   /\bworkflow runs?\b/i,
-  /\b(?:Stop|Archive|Delete|Restore|Start) (?:this |the )?workflow\b(?! (?:draft|builder))/,
+  /\b(?:Stop|Archive|Delete|Restore) (?:this |the )?workflow\b(?! (?:draft|builder))/,
   /\bWorkflow (?:blocked|step held back|moved on)\b/i,
   /\b(?:the|this) workflow (?:moved on|has no step left)\b/i,
   /\b(?:Pause|Pauses) workflows\b/,
@@ -28,7 +28,7 @@ describe('a run is never called a workflow', () => {
     expect(callsRunAWorkflow('Stop run')).toBe(false);
     expect(callsRunAWorkflow('Start a run')).toBe(false);
     expect(callsRunAWorkflow('Pauses runs')).toBe(false);
-    expect(callsRunAWorkflow('Run a workflow')).toBe(false);
+    expect(callsRunAWorkflow('Start workflow')).toBe(false);
     expect(callsRunAWorkflow('Start workflow builder')).toBe(false);
   });
 

@@ -466,7 +466,7 @@ describe('c07 Auto scenes', () => {
     expect(screen.queryByRole('textbox', { name: 'Describe the work' })).toBeNull();
     expect(screen.queryByText('No runs yet')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start an auto' })).toBeNull();
-    const rows = within(list).getAllByRole('button', { name: /, One agent, / });
+    const rows = within(list).getAllByRole('button', { name: /, Agent, / });
     expect(rows).toHaveLength(2);
     expect(within(list).getByText('Idle')).toBeDefined();
     expect(within(list).getByText('Done')).toBeDefined();

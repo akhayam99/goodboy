@@ -24,6 +24,8 @@ export type MenuChoice = {
   readonly id: string;
   readonly label: string;
   readonly isCurrent: boolean;
+  readonly hint?: string | null;
+  readonly tooltip?: string | null;
 };
 
 export type MenuItemEntry = {
@@ -36,9 +38,12 @@ export type MenuItemEntry = {
   readonly hint?: string | null;
   readonly isExternal?: boolean;
   readonly description?: string | null;
+  readonly tooltip?: string | null;
+  readonly isActive?: boolean;
   readonly blockedReason?: string | null;
   readonly isDestructive?: boolean;
   readonly isDisabled?: boolean;
+  readonly shouldStayOpen?: boolean;
   readonly confirm?: MenuConfirm | null;
   readonly choices?: ReadonlyArray<MenuChoice> | null;
   readonly onActive?: () => void;
@@ -52,12 +57,21 @@ export type MenuRadioEntry = {
   readonly label: string;
   readonly choices: ReadonlyArray<MenuChoice>;
   readonly isDisabled?: boolean;
+  readonly shouldStayOpen?: boolean;
   readonly onSelect: (choice: string) => void | Promise<void>;
+};
+
+export type MenuGroupEntry = {
+  readonly kind: 'group';
+  readonly key: string;
+  readonly label: string;
+  readonly items: ReadonlyArray<MenuItemEntry>;
 };
 
 export type MenuEntry =
   | MenuItemEntry
   | MenuRadioEntry
+  | MenuGroupEntry
   | { readonly kind: 'separator'; readonly key: string }
   | { readonly kind: 'header'; readonly key: string; readonly label: string };
 

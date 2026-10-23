@@ -9,21 +9,14 @@ const REGISTRY_ROOT = 'features/actions/';
 
 const HAND_BUILT_MENU = /OverflowMenuItem|<OverflowMenu\b|<MenuItems\b|<MenuList\b|<ContextMenu\b/;
 
+const HAND_BUILT_MENU_ROLE =
+  /\srole=(?:["']|\{[^}\n]*?[?:]\s*["'])(?:menu|menuitem|menuitemradio|menuitemcheckbox)["']/;
+
 const ALLOWED: Readonly<Record<string, string>> = {
   'features/branch/components/BranchHeader/BranchOverflow.tsx':
     'branch header menu: its entries come from the pull request and diff kinds of the registry',
-  'features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx':
-    'creation menu: picks the kind of artifact to create',
-  'features/integrations/linear/LinearAssigneeMenu.tsx':
-    'property picker: sets the assignee value from the control that shows it',
-  'features/integrations/linear/LinearStateMenu.tsx':
-    'property picker: sets the state value from the control that shows it',
   'features/settings/components/SettingsStudio/WorkspaceScopePanel.tsx':
     'settings page menu (Restore defaults, Copy from), page chrome',
-  'features/wireframes/components/WireframeViewer/RevisionPicker.tsx':
-    'revision picker inside the wireframe viewer',
-  'features/workflows/components/StepTree/StepEditorMenu.tsx':
-    'step draft actions inside the step editor, a draft is not an object in the map',
   'features/workflows/components/WorkflowStudio/WorkflowEditor/EditorTrail.tsx':
     'workflow editor band actions, studio chrome',
   'features/search/components/SearchMode/SearchHitActions.tsx':
@@ -53,6 +46,11 @@ const offenders = (): ReadonlyArray<string> =>
     .map((path) => relative(SRC, path).split(sep).join('/'))
     .filter((path) => !path.startsWith(REGISTRY_ROOT))
     .filter((path) => HAND_BUILT_MENU.test(readFileSync(join(SRC, path), 'utf8')));
+
+const roleOffenders = (): ReadonlyArray<string> =>
+  SCANNED_ROOTS.flatMap((root) => walk(join(SRC, root)))
+    .map((path) => relative(SRC, path).split(sep).join('/'))
+    .filter((path) => HAND_BUILT_MENU_ROLE.test(readFileSync(join(SRC, path), 'utf8')));
 
 const ITEMS_OPENING = 'items={[';
 
@@ -133,5 +131,35 @@ describe('object menus come from the action registry', () => {
   it('keeps the allowlist shrinking: every entry still builds a menu by hand', () => {
     const found = new Set(offenders());
     expect(Object.keys(ALLOWED).filter((path) => !found.has(path))).toEqual([]);
+  });
+});
+
+describe('a menu role outside the menu primitives', () => {
+  it('is found on a popover or a row that builds a menu by hand', () => {
+    const fixtures = [
+      `<AnchoredPopover dropdown={dropdown} role="menu" ariaLabel="Group tasks by">`,
+      `<Popover role="menu" ariaLabel="Session actions">`,
+      `<button type="button" role="menuitem" onClick={pick}>`,
+      `<button type="button" role='menuitemradio' aria-checked={isChecked}>`,
+      `<button role="menuitemcheckbox" aria-checked={isOn}>`,
+      `<AnchoredPopover role={view === 'menu' ? 'menu' : 'dialog'}>`,
+    ];
+    expect(fixtures.filter((source) => !HAND_BUILT_MENU_ROLE.test(source))).toEqual([]);
+  });
+
+  it('leaves selectors, other roles and the registry list alone', () => {
+    const fixtures = [
+      `querySelector<HTMLElement>('[role="menuitem"]')`,
+      `const OVERLAYS = ['[role="menu"]', '[role="dialog"]'];`,
+      `<AnchoredPopover dropdown={dropdown} role="dialog" ariaLabel="Assignee">`,
+      `<AnchoredPopover role={view === 'menu' ? undefined : 'dialog'}>`,
+      `<div role="group" aria-label="Show files">`,
+      `<AppMenuList label="History" entries={entries} onClose={close} />`,
+    ];
+    expect(fixtures.filter((source) => HAND_BUILT_MENU_ROLE.test(source))).toEqual([]);
+  });
+
+  it('is written nowhere in the app: every menu renders through the registry list', () => {
+    expect(roleOffenders()).toEqual([]);
   });
 });

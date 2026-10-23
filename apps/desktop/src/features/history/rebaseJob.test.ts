@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { HistoryRunPhase, HistoryStop } from '../../store/slices/history/types';
+import { rebaseFileStatesOf } from './rebaseFileStatesOf';
 import { rebaseJobOf } from './rebaseJob';
 import { A_REBASE_AGENT_ID, aRebaseRun } from './testing/aRebaseRun';
 
@@ -114,7 +115,7 @@ describe('a rebase job that stopped', () => {
       'uncommitted files',
       { reason: 'dirty' },
       '11 files have changes that are not committed',
-      'Commit or stash them, then check again.',
+      'Commit or stash them, then retry the rebase.',
       'Stopped: uncommitted files',
     ],
     [
@@ -141,8 +142,8 @@ describe('a rebase job that stopped', () => {
     [
       'an origin that moved',
       { reason: 'origin-moved' },
-      'Someone pushed to the online copy',
-      'Nothing was pushed.',
+      'Rebased here, but someone pushed to origin',
+      'Someone pushed to this branch while you rebased. Nothing was pushed. Bring them in adds their commits to yours, then pushes.',
       'Stopped: origin moved',
     ],
     [
@@ -244,8 +245,8 @@ describe('a rebase that stopped on a conflict', () => {
     ).toMatchObject({
       state: 'conflict',
       tone: 'warn',
-      title: '2 files conflict with main',
-      line: 'webhook.ts and 1 more. Nothing changed on your branch.',
+      title: 'Rebase on main stopped: 2 files conflict',
+      line: 'Your branch is as it was. The rebase ran on a copy, so nothing changes until you pick.',
       isRunning: false,
     });
   });
@@ -273,6 +274,101 @@ describe('a rebase that stopped on a conflict', () => {
       state: 'auto-done',
       title: 'Rebased on main',
     });
+  });
+
+  it('reads a rebase you started here, then rebased and pushed, from git alone', () => {
+    const here = {
+      run: aRebaseRun({
+        phase: 'stopped',
+        stop: stop({ reason: 'conflict', files: ['webhook.ts', 'dedupe.ts'] }),
+        rebaseConflict: { ...conflict, isHere: true },
+      }),
+      projectName: 'payments-api',
+      baseBranch: 'main',
+      commitCount: 4,
+      dirtyCount: 0,
+    };
+    const files = rebaseFileStatesOf({
+      files: ['webhook.ts', 'dedupe.ts'],
+      conflicts: [
+        { path: 'webhook.ts', hasMarkers: false, isStageOnly: false },
+        { path: 'dedupe.ts', hasMarkers: true, isStageOnly: false },
+      ],
+      isAutoWorking: false,
+    });
+    expect(rebaseJobOf({ ...here, behind: 6, isRebasingHere: true, files })).toMatchObject({
+      state: 'rebasing-here',
+      tone: 'info',
+      title: 'You are rebasing on main in the terminal',
+      line: '1 of 2 files left. Save a file without conflict markers and it turns green here.',
+      isRunning: false,
+    });
+    expect(rebaseJobOf({ ...here, behind: 0, isRebasingHere: false })).toMatchObject({
+      state: 'rebased-here',
+      tone: 'ok',
+      title: 'Rebased on main',
+      line: '4 commits. Origin still has the old copy.',
+    });
+    expect(
+      rebaseJobOf({ ...here, behind: 0, isRebasingHere: false, isInSyncWithOrigin: true }),
+    ).toMatchObject({ state: 'pushed', title: 'Pushed to origin' });
+    expect(rebaseJobOf({ ...here, behind: 6, isRebasingHere: false })?.state).toBe('conflict');
+  });
+
+  it('reads a rebase started in the terminal on a stop as rebasing here', () => {
+    expect(
+      rebaseJobOf({
+        run: aRebaseRun({
+          phase: 'stopped',
+          stop: stop({ reason: 'conflict', files: ['webhook.ts'] }),
+          rebaseConflict: conflict,
+        }),
+        projectName: 'payments-api',
+        baseBranch: 'main',
+        commitCount: null,
+        dirtyCount: 0,
+        behind: 6,
+        isRebasingHere: true,
+      })?.state,
+    ).toBe('rebasing-here');
+  });
+
+  it('counts what Auto resolved and names the new online commits', () => {
+    const files = rebaseFileStatesOf({
+      files: ['webhook.ts', 'dedupe.ts'],
+      conflicts: [{ path: 'dedupe.ts', hasMarkers: true, isStageOnly: false }],
+      isAutoWorking: true,
+    });
+    expect(
+      rebaseJobOf({
+        run: aRebaseRun({
+          phase: 'stopped',
+          stop: stop({ reason: 'conflict', files: ['webhook.ts', 'dedupe.ts'] }),
+          rebaseConflict: { ...conflict, autoAgentId: A_REBASE_AGENT_ID },
+        }),
+        projectName: 'payments-api',
+        baseBranch: 'main',
+        commitCount: null,
+        dirtyCount: 0,
+        behind: 6,
+        isRebasingHere: true,
+        files,
+      }),
+    ).toMatchObject({
+      state: 'auto-resolving',
+      title: 'Auto is rebasing on main',
+      line: '1 of 2 files resolved. It asks you here if a conflict is not clear.',
+    });
+    expect(
+      rebaseJobOf({
+        run: aRebaseRun({ phase: 'stopped', stop: stop({ reason: 'origin-moved' }) }),
+        projectName: 'payments-api',
+        baseBranch: 'main',
+        commitCount: null,
+        dirtyCount: 0,
+        originCount: 1,
+      })?.title,
+    ).toBe('Rebased here, but origin has 1 new commit');
   });
 
   it('keeps a conflict stop without the conflict facts as a failure', () => {

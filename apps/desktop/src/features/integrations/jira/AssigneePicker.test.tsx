@@ -62,20 +62,20 @@ describe('AssigneePicker', () => {
 
     expect(listAssignableUsers).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Grace Hopper' }));
-    await screen.findByRole('menuitem', { name: 'Ada Lovelace' });
+    await screen.findByRole('menuitemradio', { name: 'Ada Lovelace' });
     fireEvent.change(screen.getByLabelText('Filter assignable people'), {
       target: { value: 'ada' },
     });
 
-    expect(screen.queryByRole('menuitem', { name: 'Grace Hopper' })).toBeNull();
-    expect(screen.getByRole('menuitem', { name: 'Ada Lovelace' })).toBeDefined();
+    expect(screen.queryByRole('menuitemradio', { name: 'Grace Hopper' })).toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Ada Lovelace' })).toBeDefined();
   });
 
   it('offers no unassign row when nobody owns the issue', async () => {
     mount({ assignee: null, onAssign: vi.fn(async () => {}) });
 
     fireEvent.click(screen.getByRole('button', { name: 'Unassigned' }));
-    await screen.findByRole('menuitem', { name: 'Ada Lovelace' });
+    await screen.findByRole('menuitemradio', { name: 'Ada Lovelace' });
 
     expect(screen.queryByRole('menuitem', { name: 'Unassign' })).toBeNull();
   });
@@ -89,7 +89,7 @@ describe('AssigneePicker', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Grace Hopper' }));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ada Lovelace' }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Ada Lovelace' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('cannot be assigned');
     await waitFor(() => expect(screen.getByRole('button', { name: 'Grace Hopper' })).toBeDefined());
@@ -109,10 +109,30 @@ describe('AssigneePicker', () => {
 
     const trigger = screen.getByRole<HTMLButtonElement>('button', { name: 'Grace Hopper' });
     fireEvent.click(trigger);
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Ada Lovelace' }));
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: 'Ada Lovelace' }));
 
     await waitFor(() => expect(trigger.disabled).toBe(true));
+    expect(
+      screen.getByRole('menuitemradio', { name: 'Grace Hopper' }).getAttribute('aria-disabled'),
+    ).toBe('true');
     pending.resolve();
     await waitFor(() => expect(trigger.disabled).toBe(false));
+    expect(screen.queryByRole('menu', { name: 'Assign this issue' })).toBeNull();
+  });
+
+  it('checks the current owner and unassigns from the first row', async () => {
+    const onAssign = vi.fn(async () => {});
+    mount({ assignee: GRACE, onAssign });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Grace Hopper' }));
+    const grace = await screen.findByRole('menuitemradio', { name: 'Grace Hopper' });
+    expect(grace.getAttribute('aria-checked')).toBe('true');
+    expect(document.activeElement).toBe(screen.getByLabelText('Filter assignable people'));
+    fireEvent.keyDown(grace, { key: 'Home' });
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Unassign' }));
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Unassign' }));
+
+    expect(onAssign).toHaveBeenCalledWith(null);
   });
 });
