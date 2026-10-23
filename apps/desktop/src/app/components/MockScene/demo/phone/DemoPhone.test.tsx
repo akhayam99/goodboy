@@ -37,12 +37,32 @@ const stubPointer = ({ isCoarse }: PointerParams) => {
 };
 
 type NavigatorParams = {
-  readonly key: 'share' | 'clipboard';
+  readonly key: 'share' | 'clipboard' | 'userAgent' | 'userAgentData';
   readonly value: unknown;
 };
 
 const setNavigator = ({ key, value }: NavigatorParams) => {
   Object.defineProperty(navigator, key, { value, configurable: true, writable: true });
+};
+
+type AgentParams = {
+  readonly userAgent: string;
+  readonly platform: string;
+};
+
+const MAC_AGENT: AgentParams = {
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 15_0) AppleWebKit/605.1.15',
+  platform: 'macOS',
+};
+
+const LINUX_AGENT: AgentParams = {
+  userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
+  platform: 'Linux',
+};
+
+const stubAgent = ({ userAgent, platform }: AgentParams) => {
+  setNavigator({ key: 'userAgent', value: userAgent });
+  setNavigator({ key: 'userAgentData', value: { platform } });
 };
 
 const deferred = (): DeferredCopy => {
@@ -74,6 +94,7 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/');
   setNavigator({ key: 'share', value: undefined });
   setNavigator({ key: 'clipboard', value: undefined });
+  stubAgent(MAC_AGENT);
 });
 
 afterEach(() => {
@@ -121,6 +142,20 @@ describe('demo phone page', () => {
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual(
       Object.values(DEMO_GROUPS).map((group) => `${group.title}${group.line}`),
     );
+  });
+
+  it('names the Mac in the handoff copy on a Mac', () => {
+    stubAgent(MAC_AGENT);
+    render(<DemoPhone />);
+    expect(status()).toBe(COPY_HELPER);
+    screen.getByRole('button', { name: /Open on your Mac/ });
+  });
+
+  it('names a computer in the handoff copy on Linux', () => {
+    stubAgent(LINUX_AGENT);
+    render(<DemoPhone />);
+    expect(status()).toBe('Copy the link to open it on your computer.');
+    screen.getByRole('button', { name: /Open on your computer/ });
   });
 
   it('shares the canonical demo link with the requested chapter', async () => {
