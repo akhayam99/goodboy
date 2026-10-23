@@ -341,7 +341,12 @@ carries a higher generation: the frame restores the store it had before the
 first cue and replays, and every report from an older generation is dropped.
 The stage shows a frame only once it reports `ready`, keeping the previous one
 on screen until then, and a beat moves on `holdMs` after its frame reports
-`complete`. Pointer, key and wheel input inside a frame pause both sides
+`complete`. On the board the card that leaves Running travels once to Needs
+you: `demo/director/travelCard.ts` flies a copy of the card from its old box to
+its new one over the columns (a column's `ScrollFade` would clip the real card)
+and fades the real card in as the copy lands. It runs only in the demo, since
+the app's motion registry in `packages/ui/DESIGN-SYSTEM.md` is closed, and
+under reduced motion or with nothing laid out the card changes column in place. Pointer, key and wheel input inside a frame pause both sides
 without blocking the input; Play after that restarts the beat instead of
 writing cues over the visitor's changes. Under reduced motion the frame settles
 on the seeded scene and autoplay is off. In a directed frame `sendTurn` is
