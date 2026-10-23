@@ -14,6 +14,7 @@ import {
   type IsoDateTime,
 } from '@goodboy/types';
 import { aSession, anAgent } from '@goodboy/types/testing';
+import { validateWireframeDocument } from '@goodboy/core';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -152,5 +153,28 @@ describe('diff notes in the demo', () => {
     expect(store.getState().diffComments[session.id]).toEqual([]);
     expect(await store.getState().undoLastOperation({})).toBe(true);
     expect(store.getState().diffComments[session.id]?.map((entry) => entry.id)).toEqual([note.id]);
+  });
+});
+
+describe('artifact runs in the demo', () => {
+  it('saves a sample wireframe even when the scene seeded none', async () => {
+    seed();
+    expect(store.getState().sessionArtifacts[session.id] ?? []).toEqual([]);
+    const agentId = await store
+      .getState()
+      .spawnWireframeAgent({ sessionId: session.id, brief: 'Sketch the deliveries screen.' });
+    vi.advanceTimersByTime(20000);
+    const saved = (store.getState().sessionArtifacts[session.id] ?? []).filter(
+      (artifact) => artifact.kind === 'wireframe' && artifact.agentId === agentId,
+    );
+    expect(saved).toHaveLength(1);
+    const [wireframe] = saved;
+    if (wireframe === undefined) {
+      throw new Error('no wireframe');
+    }
+    expect(validateWireframeDocument({ value: JSON.parse(wireframe.sourceText) }).status).toBe(
+      'valid',
+    );
+    expect(store.getState().agentTurnState[agentId]?.kind).toBe('idle');
   });
 });
