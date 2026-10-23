@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { cn, PageColumn, tintClasses } from '@goodboy/ui';
 import type { AgentId, Session } from '@goodboy/types';
+import type { ComposerControlSlots } from './composerControlSlots';
 import { RoutingIndicator } from '../RoutingIndicator';
 import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
@@ -37,6 +38,7 @@ type Props = {
   readonly agentId?: AgentId | null;
   readonly providerDisconnected?: boolean;
   readonly placeholderOverride?: string;
+  readonly controlSlots?: ComposerControlSlots;
 };
 
 export const ChatInput = ({
@@ -44,6 +46,7 @@ export const ChatInput = ({
   agentId,
   providerDisconnected = false,
   placeholderOverride,
+  controlSlots,
 }: Props) => {
   const { selectedAgentId, activeAgentKind, sessionWorktree, isFirstTurnForAgent, isRunning } =
     useAgentSelection({ session, agentId });
@@ -269,6 +272,7 @@ export const ChatInput = ({
               routing={routing}
               isBlocked={isBlocked}
               hasPermissionPicker={!isAutoChild}
+              {...(controlSlots !== undefined && { controlSlots })}
               attachmentCount={attachments.length}
               fileInputRef={fileInputRef}
               onFileInputChange={onFileInputChange}

@@ -40,16 +40,13 @@ describe('the activity-run-hover scene', () => {
     expect(MOCK_SCENES['activity-run-hover']).toBe(U21_KEYS_ROWS_SCENES['activity-run-hover']);
   });
 
-  it('shows run rows beside a waiting row and an unread row', async () => {
+  it('shows run rows in the full log with one Mark all seen and no menu', async () => {
     renderHoverScene();
 
-    const activity = await screen.findByRole('region', { name: 'Activity' });
+    const activity = await screen.findByRole('region', { name: 'Log entries' });
     const rows = Array.from(activity.querySelectorAll<HTMLElement>('[data-row-id^="run:"]'));
 
     expect(rows.length).toBeGreaterThan(1);
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    expect(within(needsYou).getAllByRole('button', { name: /^Open: / }).length).toBeGreaterThan(0);
-    expect(within(activity).queryByRole('button', { name: 'Answer' })).toBeNull();
     expect(within(activity).queryByRole('button', { name: 'Activity actions' })).toBeNull();
     expect(within(activity).getByRole('button', { name: 'Mark all seen' })).toBeDefined();
   });

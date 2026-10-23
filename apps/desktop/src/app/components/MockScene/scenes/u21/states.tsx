@@ -198,7 +198,7 @@ export const U21_STATES_SCENES: Readonly<Record<string, ComponentType>> = {
   ),
   'activity-empty': () => (
     <StateScene frame="plain">
-      <SessionOverviewPane session={SESSION} onSelectLens={noop} />
+      <SessionOverviewPane session={SESSION} />
     </StateScene>
   ),
   'notifications-empty': () => (

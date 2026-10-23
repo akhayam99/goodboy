@@ -129,15 +129,9 @@ describe('r4 session rail scenes', () => {
     expect(within(rail()).queryByRole('toolbar', { name: 'Session tools' })).toBeNull();
     expect(within(tools()).getAllByRole('button')).toHaveLength(6);
     const top = within(rail().querySelector<HTMLElement>('[data-rail-top]') ?? rail());
-    expect(top.queryByRole('button', { name: 'More session actions' })).toBeNull();
+    expect(top.getByRole('button', { name: 'More session actions' })).toBeDefined();
     expect(top.getByRole('button', { name: 'Refresh session' })).toBeDefined();
-    const foot = rail().querySelector<HTMLElement>('[data-session-foot]');
-    expect(
-      Array.from(foot?.querySelectorAll('[data-session-foot-action]') ?? []).map((button) =>
-        button.getAttribute('aria-label'),
-      ),
-    ).toEqual(['Archive session', 'Delete session']);
-    expect(foot?.querySelector('[data-session-spend]')).not.toBeNull();
+    expect(rail().querySelector('[data-session-foot]')).toBeNull();
   });
 
   it('r4-rail-session lines the cards up with the page rows, edges, icons and slots', async () => {
@@ -269,10 +263,13 @@ describe('r4 session rail scenes', () => {
     expect(rows.length).toBeGreaterThan(0);
   });
 
-  it('r4-rail-delete opens the delete confirm from the foot', async () => {
+  it('r4-rail-delete opens the delete confirm from the session menu', async () => {
     await mount('r4-rail-delete');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
 
     const dialog = screen.getByRole('dialog', { name: /^Delete .+\?$/ });
-    expect(within(dialog).getByRole('button', { name: 'Delete session' })).toBeDefined();
+    expect(within(dialog).getByRole('button', { name: /^Delete/ })).toBeDefined();
   });
 });

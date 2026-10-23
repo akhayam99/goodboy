@@ -11,9 +11,12 @@ type Props = {
   readonly session: Session;
   readonly view: RunView;
   readonly primary: RunPrimary;
+  readonly variant?: RunPrimaryVariant;
 };
 
-export const RunPrimaryAction = ({ session, view, primary }: Props) => {
+export type RunPrimaryVariant = 'primary' | 'secondary';
+
+export const RunPrimaryAction = ({ session, view, primary, variant = 'primary' }: Props) => {
   const startWorkflowRun = useAppStore((state) => state.startWorkflowRun);
   const navigate = useAppStore((state) => state.navigate);
   switch (primary.kind) {
@@ -23,6 +26,7 @@ export const RunPrimaryAction = ({ session, view, primary }: Props) => {
           sessionId={session.id}
           runId={view.run.id}
           blockReason={view.blockReason}
+          variant={variant}
           onStart={async () => {
             await startWorkflowRun(session.id, view.run.id);
             navigate({ to: sessionPlace({ sessionId: session.id, lens: 'workflows' }) });
@@ -30,9 +34,11 @@ export const RunPrimaryAction = ({ session, view, primary }: Props) => {
         />
       );
     case 'start-step':
-      return <StartStepPrimary session={session} view={view} label={primary.label} />;
+      return (
+        <StartStepPrimary session={session} view={view} label={primary.label} variant={variant} />
+      );
     case 'raise-cap':
-      return <RaiseCapPrimary session={session} view={view} />;
+      return <RaiseCapPrimary session={session} view={view} variant={variant} />;
     case 'review-plan':
     case 'approve-plan':
     case 'answer':
@@ -42,7 +48,13 @@ export const RunPrimaryAction = ({ session, view, primary }: Props) => {
     case 'decide-next':
     case 'restore':
       return (
-        <RunPrimaryButton session={session} view={view} kind={primary.kind} label={primary.label} />
+        <RunPrimaryButton
+          session={session}
+          view={view}
+          kind={primary.kind}
+          label={primary.label}
+          variant={variant}
+        />
       );
     default: {
       const exhaustive: never = primary.kind;

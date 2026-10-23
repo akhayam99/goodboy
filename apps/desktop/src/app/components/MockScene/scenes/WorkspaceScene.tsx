@@ -314,7 +314,7 @@ export const WorkspaceScene = () => {
 
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
-      <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+      <SessionOverviewPane session={SESSION} />
     </main>
   );
 };

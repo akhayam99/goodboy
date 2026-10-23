@@ -106,17 +106,17 @@ const Kickoff = ({ target }: KickoffProps) => {
   );
 };
 
-describe('WorkflowBuilderView on the real store: autonomy', () => {
+describe('WorkflowBuilderView on the real store: Asks you', () => {
   it('asks me by default and starts on autopilot when you choose it', async () => {
     render(<Kickoff target={session} />);
     fireEvent.change(screen.getByPlaceholderText('What should get done?'), {
       target: { value: 'Retry payments through ledger-core' },
     });
 
-    screen.getByRole('button', { name: 'Autonomy: Ask me' });
+    screen.getByRole('button', { name: 'Asks you: Every step' });
     expect(screen.queryByRole('switch', { name: 'Autorun' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Autonomy: Ask me' }));
-    fireEvent.click(screen.getByRole('radio', { name: /^Autopilot/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Asks you: Every step' }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Never/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
     await waitFor(() => expect(attachWorkflowToSession).toHaveBeenCalledTimes(1));
@@ -129,9 +129,9 @@ describe('WorkflowBuilderView on the real store: autonomy', () => {
   it('offers the three names in the pill', () => {
     render(<Kickoff target={session} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Autonomy: Ask me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Asks you: Every step' }));
     expect(
       screen.getAllByRole('radio').map((option) => option.querySelector('span span')?.textContent),
-    ).toEqual(['Ask me', 'Balanced', 'Autopilot']);
+    ).toEqual(['Every step', 'After the plan', 'Never']);
   });
 });

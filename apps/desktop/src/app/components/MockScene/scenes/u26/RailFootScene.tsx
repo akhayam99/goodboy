@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAppStore } from '../../../../../store';
 import { SidebarNavColumnScene } from '../u23/SidebarNavColumnScene';
 import { seedSideInfoValues } from '../u25/seedSideInfoValues';
+import { pickSessionMenuItem } from '../pickSessionMenuItem';
 
 type Props = {
   readonly isArchiveAsking: boolean;
@@ -9,7 +10,7 @@ type Props = {
 
 const CONFIG = { branches: 2, pinCount: 1 } as const;
 
-const OPEN_DELAY_MS = 250;
+const PICK_INTERVAL_MS = 50;
 
 const seed = (): void => {
   seedSideInfoValues();
@@ -31,15 +32,10 @@ export const RailFootScene = ({ isArchiveAsking }: Props) => {
       return;
     }
     const timer = window.setInterval(() => {
-      const archive = document.querySelector<HTMLButtonElement>(
-        '[data-session-foot-action="session.archive"]',
-      );
-      if (archive === null) {
-        return;
+      if (pickSessionMenuItem({ label: 'Archive' })) {
+        window.clearInterval(timer);
       }
-      window.clearInterval(timer);
-      archive.click();
-    }, OPEN_DELAY_MS);
+    }, PICK_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [isArchiveAsking]);
 

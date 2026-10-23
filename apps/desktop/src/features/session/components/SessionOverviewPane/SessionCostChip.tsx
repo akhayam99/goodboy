@@ -15,7 +15,11 @@ import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { SessionSpendPopover } from '../../../budget/components/SessionSpendPopover';
 import { sessionSpendByAgent } from '../../../budget/sessionSpendByAgent';
 import { sessionSpendPresentation } from '../../../budget/sessionSpendPresentation';
-import { SESSION_SPEND_LIMIT_EDIT_EVENT } from '../../../budget/requestSessionSpendLimitEdit';
+import { pendingSpendEdit } from '../../../budget/pendingSpendEdit';
+import {
+  requestSessionSpendLimitEdit,
+  SESSION_SPEND_LIMIT_EDIT_EVENT,
+} from '../../../budget/requestSessionSpendLimitEdit';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { manageDialogFocus } from './manageDialogFocus';
 import { pickKeys } from '../../../../shared/utils/pickKeys';
@@ -139,6 +143,13 @@ export const SessionCostChip = ({ sessionId, placement = 'line' }: Props) => {
     window.addEventListener(SESSION_SPEND_LIMIT_EDIT_EVENT, onEditRequest);
     return () => window.removeEventListener(SESSION_SPEND_LIMIT_EDIT_EVENT, onEditRequest);
   }, [isEditHost, open, sessionId, toggle]);
+
+  useEffect(() => {
+    if (!pendingSpendEdit.take({ sessionId })) {
+      return;
+    }
+    requestAnimationFrame(() => requestSessionSpendLimitEdit({ sessionId }));
+  }, [sessionId]);
 
   useEffect(() => {
     if (!open || popupRef.current == null || triggerRef.current == null) {

@@ -74,7 +74,7 @@ const openRowDrawer = () => {
 const rowPush = (): HTMLElement | null =>
   screen
     .queryAllByRole('button', { name: 'Push' })
-    .find((button) => button.closest('[aria-label="Next steps"]') === null) ?? null;
+    .find((button) => button.closest('[data-row-id]') !== null) ?? null;
 const requireRowPush = (): HTMLElement => {
   const button = rowPush();
   if (button === null) {
@@ -247,19 +247,21 @@ describe('CI fix state scenes', () => {
       .map((mount) => mount.branch);
     expect(branches).toContain('hl/fix-duplicate-credit');
     expect(body).not.toContain('No project yet');
-    const [title] = screen.getAllByText('CI fix · payments-api / test · #318');
-    let row: HTMLElement | null = title?.parentElement ?? null;
-    while (row !== null && !(row.textContent ?? '').includes('Analyze done')) {
-      row = row.parentElement;
-    }
+    const row =
+      screen
+        .getAllByText('CI fix · payments-api / test · #318')
+        .map((title) => title.closest<HTMLElement>('[data-row-id]'))
+        .find((candidate) => (candidate?.textContent ?? '').includes('Analyze done')) ?? null;
     expect(row?.textContent).toContain('Sonnet 5.5');
     expect(row?.textContent).not.toContain('Composer 2.5');
   });
-  it('offers Push on the Activity row of the chain, not as a Next card', () => {
+  it('offers Push on the log row of the chain and once on the Fix row of Needs you', () => {
     show({ name: 'activity-check-fixed-local' });
-    expect(screen.queryByRole('region', { name: 'Next steps' })).toBeNull();
     expect(screen.queryByText('payments-api / test is fixed on your branch')).toBeNull();
-    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
+    expect(rowPush()).not.toBeNull();
+    const needsYou = screen.getByRole('region', { name: 'Needs you' });
+    expect(within(needsYou).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(2);
     expect(screen.queryByText('Review the changes')).toBeNull();
   });
   it('pushes once from the Activity row and then drops the Push', async () => {

@@ -632,17 +632,20 @@ The Now block closes with the branch facts, read by `useBranchFacts`
 - `branchStoryOf` is the one function that turns the facts into the step word,
   the tone, the blocker and the dots. The row, its accessible name
   (`branchSentenceOf`, which starts with the branch) and the rank all read it.
-  Merged and closed branches stay in the list (`useBranchFacts` reads
-  `finishedRows` too), last. The story names a `BranchState` and its tone
+  `useBranchFacts` reads `finishedRows` too, and `branchEntriesOf` hands
+  merged and closed branches back as `finished`, outside the list: the Done
+  card names them in one line. The story names a `BranchState` and its tone
   comes only from `BRANCH_STATE_TONE` (`branchStateTone.ts`), the table in
   [DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md); never from whether the
   branch has a card in Next. An approved branch that cannot merge says
   Conflicts, amber.
-- The order is `branchEntriesOf`: failing first, then a branch with a card in
-  Next (in the card order of `cardOrderOf`, which also maps a Rebase card to
-  each branch it rebases), then a branch where an agent works, then waiting,
-  then local, then merged. The list shows 8 rows and folds the rest into one
-  disclosure row ("12 more branches, 4 merged", `aria-expanded`); with 9
+- The order is `branchEntriesOf`, one rank table (`RANK_OF_STATE`): blocked
+  (checks failing, conflicts, changes requested, remote branch gone), ready to
+  merge, your move (not pushed, no pull request, draft, nothing committed),
+  a branch where an agent works, waiting on others (in review, checks running,
+  in merge queue, open, rebasing, not read yet). Ties keep the order the facts
+  came in; a card in Next never lifts a branch. The list shows 8 rows and folds the rest into one
+  disclosure row ("12 more branches", `aria-expanded`); with 9
   branches all nine show, because the fold row would be as tall as the one
   row it hides.
 - Check names and open conversations come from `PrDetail`. `useBranchDetails`

@@ -428,6 +428,65 @@ describe('New session page', () => {
     );
   });
 
+  it('shows Asks you on the workflow kinds only, named like the run page', async () => {
+    await openPage();
+    await pick({ list: KINDS, name: /^Workflow/ });
+    await pick({ list: 'Which workflow?', name: /^Orchestrated/ });
+    expect(screen.getByRole('button', { name: /^Asks you: Every step, / })).toBeDefined();
+
+    await pick({ list: 'Which workflow?', name: /^Preset/ });
+    expect(screen.getByRole('button', { name: /^Asks you: Every step, / })).toBeDefined();
+
+    await pick({ list: KINDS, name: /^Agent/ });
+    await pick({ list: 'Which agent?', name: /^Auto agent/ });
+    expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+    await pick({ list: 'Which agent?', name: /^Agent/ });
+    expect(screen.queryByRole('button', { name: /^Asks you/ })).toBeNull();
+  });
+
+  it('starts a workflow that asks at every step when Asks you is left alone', async () => {
+    useAppStore.setState({
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+    });
+    await openPage();
+    await pick({ list: KINDS, name: /^Workflow/ });
+    await pick({ list: 'Which workflow?', name: /^Orchestrated/ });
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({
+      autoRun: false,
+      rulesSnapshot: { autonomy: 'step' },
+    });
+  });
+
+  it('starts the workflow with the Asks you you picked', async () => {
+    useAppStore.setState({
+      generateWorkflowTitle: vi.fn(async () => undefined),
+      startSessionFromDraft: startThenRun,
+      loadSetting: noSetting,
+    });
+    await openPage();
+    await pick({ list: KINDS, name: /^Workflow/ });
+    await pick({ list: 'Which workflow?', name: /^Orchestrated/ });
+    fireEvent.click(screen.getByRole('button', { name: /^Asks you: Every step/ }));
+    await settle();
+    fireEvent.click(screen.getByRole('tab', { name: 'Never' }));
+    await settle();
+    expect(screen.getByRole('button', { name: 'Asks you: Never, this run' })).toBeDefined();
+    typeGoal(GOAL);
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(attach).toHaveBeenCalledTimes(1));
+    expect(attach.mock.calls[0]?.[2]).toMatchObject({
+      autoRun: true,
+      rulesSnapshot: { autonomy: 'run' },
+    });
+  });
+
   it('starts the preset you picked and follows it when you say so', async () => {
     useAppStore.setState({
       generateWorkflowTitle: vi.fn(async () => undefined),

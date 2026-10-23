@@ -109,17 +109,37 @@ describe('useAutoTreeLimit', () => {
     expect(await db.select('SELECT updated_at FROM settings')).toEqual(before);
   });
 
-  it('follows the budget of the session and never stores over it', async () => {
+  it('follows a smaller session budget and never stores it as the Auto limit', async () => {
     useAppStore.setState({
-      sessionBudgets: { [SESSION]: { sessionId: SESSION, softCapUsd: 25, onExceed: 'pause' } },
+      sessionBudgets: { [SESSION]: { sessionId: SESSION, softCapUsd: 2, onExceed: 'pause' } },
     });
     render(<Probe sessionId={SESSION} />);
 
     fireEvent.click(screen.getByText('persist'));
     await act(async () => undefined);
 
-    expect(screen.getByTestId('usd').textContent).toBe('25');
+    expect(screen.getByTestId('usd').textContent).toBe('2');
     expect(screen.getByTestId('session').textContent).toBe('true');
     expect(await readAutoTreeLimit({ db, workspaceId: HARBORLINE })).toBeNull();
+  });
+
+  it('does not follow a smaller session budget that only warns', async () => {
+    useAppStore.setState({
+      sessionBudgets: { [SESSION]: { sessionId: SESSION, softCapUsd: 2, onExceed: 'warn' } },
+    });
+    render(<Probe sessionId={SESSION} />);
+
+    expect(screen.getByTestId('usd').textContent).toBe('5');
+    expect(screen.getByTestId('session').textContent).toBe('false');
+  });
+
+  it('keeps the smaller Auto limit under a larger session budget', async () => {
+    useAppStore.setState({
+      sessionBudgets: { [SESSION]: { sessionId: SESSION, softCapUsd: 25, onExceed: 'pause' } },
+    });
+    render(<Probe sessionId={SESSION} />);
+
+    expect(screen.getByTestId('usd').textContent).toBe('5');
+    expect(screen.getByTestId('session').textContent).toBe('false');
   });
 });

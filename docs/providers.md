@@ -166,7 +166,7 @@ uses when you leave a model on **Auto**. It is one page in three parts.
   through `patchWorkspaceOverrides` like the Run defaults tab used to); it is
   disabled with "Needs a provider that reports limits" while no On provider
   reports them. This is the one home of the provider policy: Run defaults shows
-  the summary and a link here. The page header names its scope: the workspace
+  the summary and a link here in its **Models** chip. The page header names its scope: the workspace
   name, or **All workspaces** when none is open
 - **Agents**: one row per role, grouped as Explore and plan, Build, Review and write,
   and Other. If you pin a model on an agent or a workflow step, that pin beats the role

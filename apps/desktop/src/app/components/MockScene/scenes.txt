@@ -941,9 +941,7 @@ u26-p18-drawer-dark
 u26-p18-drawer-light
 u26-p21-drawer-composer-dark
 u26-p21-drawer-composer-light
-u26-rail-foot
 u26-rail-foot-archive
-u26-rail-foot-chip
 u26-rail-projects
 u26-rail-projects-focus
 u26-rail-projects-picker
@@ -973,8 +971,6 @@ u26-spawned-transcript-dark
 u26-spawned-transcript-light
 u26-view-archived-dark
 u26-view-archived-light
-u26-view-classic-dark
-u26-view-classic-light
 u26-view-new-dark
 u26-view-new-light
 u26s-explore-drawer

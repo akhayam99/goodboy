@@ -258,7 +258,7 @@ const PreflightScene = ({ view }: Props) => {
   return (
     <main className="h-screen overflow-hidden bg-background text-foreground">
       {view === 'overview' ? (
-        <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+        <SessionOverviewPane session={SESSION} />
       ) : (
         <CreatePrPanel
           sessionId={SESSION_ID}

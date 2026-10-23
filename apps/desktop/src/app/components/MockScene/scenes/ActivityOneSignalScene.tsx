@@ -27,9 +27,7 @@ export const ActivityOneSignalScene = () => {
     <ShellFrame
       session={ACTIVITY_QUESTION_SESSION}
       sidebar="expanded"
-      main={
-        <SessionOverviewPane session={ACTIVITY_QUESTION_SESSION} onSelectLens={() => undefined} />
-      }
+      main={<SessionOverviewPane session={ACTIVITY_QUESTION_SESSION} />}
     />
   );
 };

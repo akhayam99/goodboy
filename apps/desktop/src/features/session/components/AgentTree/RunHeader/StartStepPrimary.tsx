@@ -6,14 +6,16 @@ import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentRevea
 import { useAppStore } from '../../../../../store';
 import { useStartAnywayConfirm } from '../../../../workflows/useStartAnywayConfirm';
 import type { RunView } from '../useRunView';
+import type { RunPrimaryVariant } from './RunPrimaryAction';
 
 type Props = {
   readonly session: Session;
   readonly view: RunView;
   readonly label: string;
+  readonly variant: RunPrimaryVariant;
 };
 
-export const StartStepPrimary = ({ session, view, label }: Props) => {
+export const StartStepPrimary = ({ session, view, label, variant }: Props) => {
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const agent = view.nextStepAgent;
   const start = useStartAnywayConfirm({
@@ -46,7 +48,7 @@ export const StartStepPrimary = ({ session, view, label }: Props) => {
       onConfirm={start.onConfirm}
       onCancel={start.onCancel}
       trigger={() => (
-        <Button size="sm" variant="primary" isBusy={start.isBusy} onClick={start.onTrigger}>
+        <Button size="sm" variant={variant} isBusy={start.isBusy} onClick={start.onTrigger}>
           {isBlocked ? (
             <AlertTriangle size={ICON_SIZE.control} aria-hidden />
           ) : (

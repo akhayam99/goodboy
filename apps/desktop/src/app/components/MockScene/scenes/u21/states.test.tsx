@@ -104,17 +104,17 @@ describe('the u21 page-state scenes', () => {
     ).toBeDefined();
   });
 
-  it('shows Activity with no runs or agents and points to the log that holds the branch facts', async () => {
+  it('draws no work card and no placeholder on a session where nothing ran yet', async () => {
     renderScene('activity-empty');
 
-    expect(await screen.findByText('Nothing ran yet')).toBeDefined();
+    expect(await screen.findByRole('heading', { level: 1 })).toBeDefined();
+    expect(
+      document.querySelectorAll(
+        '[data-overview-card="needs-you"], [data-overview-card="running"], [data-overview-card="next"]',
+      ),
+    ).toHaveLength(0);
     expect(screen.queryByText('Nothing yet')).toBeNull();
-    await act(async () => {
-      fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
-    });
-
-    expect(screen.queryByText('Nothing ran yet')).toBeNull();
-    expect(screen.queryByText('No log entries yet')).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Log' })).toBeNull();
   });
 
   it('opens the notifications popover on one line with no tabs', async () => {

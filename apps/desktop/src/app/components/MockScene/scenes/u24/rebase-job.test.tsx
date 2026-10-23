@@ -148,7 +148,7 @@ describe('the u24 rebase job scenes', () => {
     expect(sectionRow(/^Pull request/).getAttribute('aria-current')).toBe('page');
   });
 
-  it('draws the Activity rows from the jobs', async () => {
+  it('draws the log rows from the jobs', async () => {
     renderScene({ name: 'activity-jobs' });
 
     await screen.findByText('Pull request text', undefined, { timeout: 4_000 });
@@ -158,7 +158,6 @@ describe('the u24 rebase job scenes', () => {
     expect(screen.getByText('Stopped: needs you')).toBeDefined();
     expect(screen.getByText('Writing')).toBeDefined();
     expect(screen.getByText('Refresh pull request text')).toBeDefined();
-    expect(screen.getByText('Rebase of hl/fix-duplicate-credit stopped · needs you')).toBeDefined();
     expect(screen.getAllByText('Done').length).toBeGreaterThan(0);
     expect(screen.queryByText(/both sides change the retry key/)).toBeNull();
   });

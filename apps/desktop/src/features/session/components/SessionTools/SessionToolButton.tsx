@@ -1,4 +1,4 @@
-import { IconButton, cn, selectedIconClass } from '@goodboy/ui';
+import { Button, ICON_SIZE, Tooltip, cn, selectedIconClass } from '@goodboy/ui';
 import { PRESSED_TOGGLE } from '../../../../shared/components/pressedToggle';
 import { navEntryToneOf } from '../../../../shared/components/navEntryToneOf';
 import type { SessionTool } from './sessionTools';
@@ -16,31 +16,30 @@ type Props = {
 
 export const SessionToolButton = ({ tool, isOpen, signal, tabIndex, onFocus, onToggle }: Props) => {
   const label = signal === null ? tool.label : `${tool.label}, ${signal.note}`;
+  const Icon = tool.icon;
+  const tone = navEntryToneOf({ icon: tool.icon });
   return (
-    <span className="relative flex">
-      <IconButton
-        icon={tool.icon}
-        label={label}
-        tooltip={label}
-        shortcut={tool.shortcut}
-        tooltipSide="left"
+    <Tooltip content={label} shortcut={tool.shortcut} side="left" anchorClassName="flex w-full">
+      <Button
+        variant="quiet"
         size="md"
+        aria-label={label}
         aria-pressed={isOpen}
         tabIndex={tabIndex}
         data-testid={`pane-toggle-${tool.pane}`}
-        data-icon-tone={isOpen ? navEntryToneOf({ icon: tool.icon }) : undefined}
+        data-icon-tone={isOpen ? tone : undefined}
         className={cn(
+          'w-full justify-start',
           PRESSED_TOGGLE,
-          isOpen && selectedIconClass({ tone: navEntryToneOf({ icon: tool.icon }) }),
+          isOpen && selectedIconClass({ tone }),
         )}
         onFocus={onFocus}
         onClick={onToggle}
-      />
-      {signal === null ? null : (
-        <span className="pointer-events-none absolute right-1 top-1 flex">
-          <ToolSignalDot signal={signal} />
-        </span>
-      )}
-    </span>
+      >
+        <Icon size={ICON_SIZE.control} aria-hidden className="shrink-0" />
+        <span className="min-w-0 truncate">{tool.label}</span>
+        {signal === null ? null : <ToolSignalDot signal={signal} />}
+      </Button>
+    </Tooltip>
   );
 };

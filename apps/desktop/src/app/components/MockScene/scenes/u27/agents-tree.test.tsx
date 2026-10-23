@@ -251,11 +251,7 @@ describe('the focused Auto launch', () => {
     }
     expect(now.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(tree.querySelectorAll('[data-spawned-rail]')).toHaveLength(13);
-    const foot = container.querySelector('[data-auto-limit-foot]');
-    if (foot === null) {
-      throw new Error('no limit foot');
-    }
-    expect(tree.compareDocumentPosition(foot) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(container.querySelector('[data-auto-limit-foot]')).toBeNull();
   });
 
   it('moves with the arrows in screen order, Home on the newest, End on the root', async () => {

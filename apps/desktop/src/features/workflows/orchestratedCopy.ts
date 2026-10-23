@@ -27,6 +27,7 @@ export const ORCHESTRATED_COPY = {
   checklist: 'Plan and progress',
   readHint: ({ step }: StepParams): string => `Your hint, read at step ${step}`,
   why: ({ reason }: ReasonParams): string => `Why: ${reason}`,
+  whyThisStep: 'Why this step',
   done: 'Done',
   left: 'Left',
   composerPlaceholder: 'Hint the orchestrator',

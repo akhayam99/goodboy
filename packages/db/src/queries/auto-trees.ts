@@ -545,6 +545,35 @@ export const setAutoTreeCapIfUnchanged = async ({
   return { kind: 'below_used', usedUsd: spend.settledUsd + spend.liveUsd + spend.reservedUsd };
 };
 
+type LowerAutoTreeCapsParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+  readonly capUsd: number;
+  readonly nowMs: number;
+};
+
+export const lowerAutoTreeCapsOfSession = async ({
+  db,
+  sessionId,
+  capUsd,
+  nowMs,
+}: LowerAutoTreeCapsParams): Promise<ReadonlyArray<AutoTreeId>> => {
+  const trees = await listAutoTreesOfSession({ db, sessionId });
+  const lowered: AutoTreeId[] = [];
+  for (const tree of trees) {
+    const result = await db.execute(
+      `UPDATE auto_trees SET cap_usd = ?, updated_at = ?
+       WHERE id = ? AND phase <> 'finished'
+         AND (cap_usd IS NULL OR cap_usd > ? + ${AUTO_USD_EPSILON})`,
+      [capUsd, nowMs, tree.id, capUsd],
+    );
+    if (result.rowsAffected === 1) {
+      lowered.push(tree.id);
+    }
+  }
+  return lowered;
+};
+
 export const AUTO_RESTING_PHASES = ['answering', 'done', 'finished'] as const;
 
 export type AutoRestingPhase = (typeof AUTO_RESTING_PHASES)[number];

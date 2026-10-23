@@ -27,7 +27,6 @@ import type { WorktreeStatus } from '@goodboy/types';
 import type { AutoTreeView } from '../../../../../store/slices/auto-view/state';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
-import { SETTING_OVERVIEW_LAYOUT } from '../../../../../features/settings/settings';
 import { CTX_STATUS } from '../brand/contextBranch';
 import { mockSceneIpc } from '../mockSceneIpc';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
@@ -773,7 +772,6 @@ export const seedCentralColumn = ({ kind }: SeedParams): void => {
   const hasLedger = parts.mounts.length > 1;
   useAppStore.setState({
     projects,
-    settings: { ...useAppStore.getState().settings, [SETTING_OVERVIEW_LAYOUT]: 'new' },
     sessions: [session],
     currentSessionId: SESSION_ID,
     sessionSlots: { [SESSION_ID]: [{ key: 'goal', value: GOAL_LINE, enabled: true }] },

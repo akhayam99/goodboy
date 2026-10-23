@@ -73,7 +73,7 @@ const openBuilder = ({ mode = 'dynamic' }: OpenBuilderParams = {}) =>
     </ToastProvider>,
   );
 
-const autonomyChip = () => screen.getByRole('button', { name: /^Autonomy:/ });
+const autonomyChip = () => screen.getByRole('button', { name: /^Asks you:/ });
 const spendChip = () => screen.getByRole('button', { name: /^Limit:/ });
 
 beforeAll(async () => {
@@ -97,8 +97,8 @@ describe('WorkflowBuilderView and the workflow rules', () => {
   it('opens a new builder from the rules and shows no From your rules row while nothing differs', () => {
     openBuilder();
 
-    expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Balanced');
-    expect(autonomyChip().textContent).toBe('AutonomyBalanced');
+    expect(autonomyChip().getAttribute('aria-label')).toBe('Asks you: After the plan');
+    expect(autonomyChip().textContent).toBe('Asks youAfter the plan');
     expect(spendChip().getAttribute('aria-label')).toBe('Limit: $25.00 · Pause');
     expect(screen.queryByTestId('from-your-rules')).toBeNull();
     expect(screen.queryByRole('img', { name: /Run defaults/ })).toBeNull();
@@ -111,7 +111,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
 
     openBuilder();
 
-    expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Autopilot');
+    expect(autonomyChip().getAttribute('aria-label')).toBe('Asks you: Never');
     expect(spendChip().getAttribute('aria-label')).toBe('Limit: None');
     expect(screen.queryByTestId('from-your-rules')).toBeNull();
   });
@@ -120,13 +120,13 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     openBuilder();
 
     fireEvent.click(autonomyChip());
-    fireEvent.click(screen.getByRole('radio', { name: /Ask me/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /Every step/ }));
 
-    expect(screen.getByRole('img', { name: 'Run defaults: Balanced' })).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Run defaults: After the plan' })).toBeDefined();
     fireEvent.click(autonomyChip());
     fireEvent.click(screen.getByRole('button', { name: /Reset/ }));
 
-    expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Balanced');
+    expect(autonomyChip().getAttribute('aria-label')).toBe('Asks you: After the plan');
     expect(screen.queryByRole('img', { name: /Run defaults/ })).toBeNull();
   });
 
@@ -189,7 +189,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     );
   });
 
-  it('starts a run on the rules autonomy when the chip was left alone', async () => {
+  it('starts a run on the rules Asks you when the chip was left alone', async () => {
     const attach = vi.fn<AppStore['attachWorkflowToSession']>(async () => undefined);
     useAppStore.setState({
       attachWorkflowToSession: attach,
@@ -212,7 +212,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
     await waitFor(() => expect(attach).toHaveBeenCalledOnce());
-    expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Balanced');
+    expect(autonomyChip().getAttribute('aria-label')).toBe('Asks you: After the plan');
     expect(screen.queryByTestId('run-changes')).toBeNull();
     expect(attach.mock.calls[0]?.[2]).toMatchObject({
       autoRun: true,
@@ -220,7 +220,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     });
   });
 
-  it('opens a draft saved before the rules on the rules autonomy', () => {
+  it('opens a draft saved before the rules on the rules Asks you', () => {
     useAppStore.setState({
       workflowDrafts: {
         [SESSION.id]: {
@@ -239,7 +239,7 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     });
     openBuilder();
 
-    expect(autonomyChip().getAttribute('aria-label')).toBe('Autonomy: Balanced');
+    expect(autonomyChip().getAttribute('aria-label')).toBe('Asks you: After the plan');
     expect(screen.queryByTestId('run-changes')).toBeNull();
   });
 
@@ -247,9 +247,9 @@ describe('WorkflowBuilderView and the workflow rules', () => {
     openBuilder();
 
     fireEvent.click(autonomyChip());
-    fireEvent.click(screen.getByRole('radio', { name: /Autopilot/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Never/ }));
 
-    expect(screen.getByRole('img', { name: 'Run defaults: Balanced' })).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Run defaults: After the plan' })).toBeDefined();
     expect(screen.queryByTestId('from-your-rules')).toBeNull();
     expect(screen.queryByText(/Changed for this run/)).toBeNull();
 

@@ -20,7 +20,6 @@ import { useActionControls } from '../../../features/actions/useActionControls';
 import { useColumnPlace } from '../../hooks/useColumnPlace';
 import { useShellFolds } from '../../hooks/useShellFolds';
 import { SessionLevelActions } from './SessionLevel/SessionLevelActions';
-import { SessionLevelFoot } from './SessionLevel/SessionLevelFoot';
 import { SessionRailIcons } from './SessionRailIcons';
 import { SessionRailLevels } from './SessionRailLevels';
 import { SessionRailToggle } from './SessionRailToggle';
@@ -32,8 +31,6 @@ type Props = {
 };
 
 const WIDTH_VAR = '--goodboy-session-rail-width';
-
-const FOOT_ACTION_IDS: ReadonlySet<string> = new Set(['session.archive', 'session.restore']);
 
 const isBackKey = (event: KeyboardEvent): boolean =>
   event.key === '[' && event.metaKey && !event.shiftKey && !event.altKey && !event.ctrlKey;
@@ -61,7 +58,7 @@ export const SessionRail = ({ session }: Props) => {
   const target = useMemo<ObjectTarget>(() => ({ kind: 'session', sessionId }), [sessionId]);
   const controls = useActionControls({ target, scopeKey: sessionId });
   const isSessionChrome = level === 'session' && !fold.isFolded;
-  const isTopFailure = controls.failure !== null && !FOOT_ACTION_IDS.has(controls.failure.actionId);
+  const isTopFailure = controls.failure !== null;
   return (
     <nav
       ref={resizable.targetRef}
@@ -107,9 +104,6 @@ export const SessionRail = ({ session }: Props) => {
         open={
           <div className="flex min-h-0 flex-1 flex-col gap-1">
             <SessionRailLevels session={session} level={level} isStudioOver={isStudioOver} />
-            {level === 'session' ? (
-              <SessionLevelFoot session={session} controls={controls} />
-            ) : null}
           </div>
         }
         folded={

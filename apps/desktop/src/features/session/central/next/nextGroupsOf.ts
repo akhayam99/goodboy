@@ -3,6 +3,7 @@ import { NEXT_GROUP_IDS, type NextGroupId } from './nextGroupIds';
 import { nextKindFactsOf } from './nextKindFactsOf';
 import { nextRowsOf } from './nextRowsOf';
 import { nextSeenKeyOf } from './nextSeenKeyOf';
+import { nextUnblockCountOf } from './nextUnblockCountOf';
 
 export type NextGroupModel = Readonly<{
   id: NextGroupId;
@@ -33,14 +34,21 @@ export const nextGroupsOf = ({ cards, seen }: Params): ReadonlyArray<NextGroupMo
       index,
       group,
       at: seenAt.get(nextSeenKeyOf({ group, card: row })) ?? UNSEEN,
+      unblocks: nextUnblockCountOf({ card: row }),
     };
   });
   return NEXT_GROUP_IDS.flatMap((id) => {
     const rows = placed
       .filter((entry) => entry.group === id)
-      .sort((first, second) =>
-        first.at === second.at ? first.index - second.index : first.at < second.at ? -1 : 1,
-      )
+      .sort((first, second) => {
+        if (first.unblocks !== second.unblocks) {
+          return second.unblocks - first.unblocks;
+        }
+        if (first.at !== second.at) {
+          return first.at < second.at ? -1 : 1;
+        }
+        return first.index - second.index;
+      })
       .map((entry) => entry.row);
     return rows.length === 0 ? [] : [{ id, label: LABEL[id], rows }];
   });

@@ -167,20 +167,10 @@ describe('the u26 shell scenes', () => {
     expect(document.querySelector('[data-filter-dot="active"]')).not.toBeNull();
   });
 
-  it('u26-rail-foot draws the spend, Archive and Delete on one row', async () => {
-    await mount('u26-rail-foot');
-
-    const foot = document.querySelector<HTMLElement>('[data-session-foot]');
-    expect(foot?.querySelector('[data-session-spend]')).not.toBeNull();
-    expect(
-      Array.from(foot?.querySelectorAll('[data-session-foot-action]') ?? []).map((button) =>
-        button.getAttribute('aria-label'),
-      ),
-    ).toEqual(['Archive session', 'Delete session']);
-  });
-
-  it('u26-rail-foot-archive asks before archiving and names the running agent', async () => {
+  it('u26-rail-foot-archive asks from the session menu before archiving and names the running agent', async () => {
     await mount('u26-rail-foot-archive');
+
+    expect(document.querySelector('[data-session-foot]')).toBeNull();
 
     const dialog = within(screen.getByRole('dialog', { name: 'Archive session?' }));
     expect(dialog.getByText(/still running in this session/)).toBeDefined();

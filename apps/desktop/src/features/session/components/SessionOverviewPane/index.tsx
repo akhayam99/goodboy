@@ -1,34 +1,25 @@
 import { PaneShell } from '@goodboy/ui';
 import { useCallback, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import type { LensKind } from '../../../../store';
 import { WorkTimeProvider } from '../../../workTreeModel/WorkTimeProvider';
-import { useOverviewLayout } from '../../overviewLayout/useOverviewLayout';
 import { CentralColumn } from './CentralColumn';
 import { FolderCard } from './FolderCard';
 import { HeaderBand } from './HeaderBand';
 import { OverviewTitle } from './OverviewTitle';
 import { OverviewHeaderActions } from './OverviewHeaderActions';
 import { OverviewNotices } from './OverviewNotices';
-import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { UnassignedNotes } from './UnassignedNotes';
-import { NextStepSlot } from '../../../suggestions/components/NextStepSlot';
 
 type Props = {
   readonly session: Session;
-  readonly onSelectLens: (lens: LensKind) => void;
 };
 
 type LeadChange = {
   readonly hasLead: boolean;
 };
 
-const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
-
-export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
+export const SessionOverviewPane = ({ session }: Props) => {
   const sessionId: SessionId = session.id;
-  const layout = useOverviewLayout();
-  const [shownQuestionIds, setShownQuestionIds] = useState<ReadonlySet<string>>(NO_SHOWN_QUESTIONS);
   const [hasNextLead, setHasNextLead] = useState(false);
   const onLeadChange = useCallback(({ hasLead }: LeadChange) => setHasNextLead(hasLead), []);
   const isArchived = session.archivedAt != null;
@@ -45,26 +36,9 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       {isArchived ? null : <OverviewNotices session={session} />}
       {isArchived ? null : <UnassignedNotes sessionId={sessionId} />}
       {isArchived ? null : <FolderCard sessionId={sessionId} />}
-      {layout === 'new' ? (
-        <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
-          <CentralColumn session={session} onLeadChange={onLeadChange} />
-        </WorkTimeProvider>
-      ) : (
-        <TimelinePane
-          session={session}
-          onShownQuestionsChange={setShownQuestionIds}
-          lead={
-            isArchived ? null : (
-              <NextStepSlot
-                session={session}
-                onSelectLens={onSelectLens}
-                shownQuestionIds={shownQuestionIds}
-                onLeadChange={onLeadChange}
-              />
-            )
-          }
-        />
-      )}
+      <WorkTimeProvider sessionId={sessionId} workspaceId={session.workspaceId}>
+        <CentralColumn session={session} onLeadChange={onLeadChange} />
+      </WorkTimeProvider>
     </PaneShell>
   );
 };

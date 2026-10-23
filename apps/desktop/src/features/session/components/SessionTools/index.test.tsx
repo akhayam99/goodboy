@@ -66,7 +66,7 @@ const README: ExploreEntry = {
 };
 
 describe('SessionTools', () => {
-  it('stacks Ask, Terminal, Explore, Context, Agents and Scripts as icons in a vertical toolbar', () => {
+  it('stacks Ask, Terminal, Explore, Context, Agents and Scripts with their words in a vertical toolbar', () => {
     renderCluster();
     const toolbar = screen.getByRole('toolbar', { name: 'Session tools' });
     expect(toolbar.getAttribute('aria-orientation')).toBe('vertical');
@@ -79,7 +79,14 @@ describe('SessionTools', () => {
       'Agents',
       'Scripts',
     ]);
-    expect(buttons.every((button) => button.textContent === '')).toBe(true);
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      'Ask',
+      'Terminal',
+      'Explore',
+      'Context',
+      'Agents',
+      'Scripts',
+    ]);
     expect(within(toolbar).queryByRole('button', { name: /^More/ })).toBeNull();
   });
 

@@ -35,9 +35,7 @@ export const SpendLimitFields = ({
       </span>
       <Input
         id={inputId}
-        type="number"
-        min="0"
-        step="1"
+        type="text"
         inputMode="decimal"
         value={amount}
         placeholder="no limit"

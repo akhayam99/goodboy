@@ -12,7 +12,7 @@ export const CentralColumnPane = () => {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
       <ScrollFade className="min-h-0 flex-1">
-        <SessionOverviewPane session={session} onSelectLens={() => undefined} />
+        <SessionOverviewPane session={session} />
       </ScrollFade>
     </div>
   );

@@ -18,7 +18,7 @@ Get from install to a first agent. Check the agents on this Mac, make a workspac
 
 [More on set up](docs/features/setup.md)
 
-<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
+<a id="start-a-run"></a><a id="what-auto-chose-and-change"></a><a id="the-kind-chip"></a><a id="the-new-session-page"></a><a id="start-on-a-task"></a><a id="how-do-you-want-to-start"></a><a id="pick-up-a-task-with-a-drafted-brief"></a><a id="review-a-pull-request"></a><a id="run-a-workflow"></a><a id="ask-an-agent"></a><a id="start-an-agent"></a><a id="start-more-work-in-a-session"></a><a id="start-blank"></a><a id="named-by-goodboy"></a><a id="undo-an-unlink"></a><a id="move-an-issue-between-the-session-and-a-branch"></a><a id="start-one-session-from-several-issues"></a><a id="star-an-issue-from-link-work"></a>
 
 ## Start a task
 
@@ -31,15 +31,15 @@ Begin from an issue, a workflow or a question. Everything starts as one draft, a
 
 [More on starting a task](docs/features/start.md)
 
-<a id="session-overview"></a><a id="refresh-a-session"></a><a id="activity"></a><a id="new-session-overview-experimental"></a><a id="next"></a><a id="time-left"></a><a id="changes"></a><a id="file-versions"></a>
+<a id="session-overview"></a><a id="refresh-a-session"></a><a id="activity"></a><a id="full-log"></a><a id="cards"></a><a id="new-session-overview-experimental"></a><a id="next"></a><a id="time-left"></a><a id="changes"></a><a id="file-versions"></a>
 
 ## Overview and activity
 
 Open a session to see what it is for, what needs you and what happened so far.
 
 - Session overview
-- Activity
-- New session overview (experimental)
+- Cards
+- Full log
 - Next
 
 [More on overview and activity](docs/features/overview.md)
@@ -120,7 +120,7 @@ The board shows every session of a workspace in lanes by stage, so you see where
 
 [More on the board](docs/features/board.md)
 
-<a id="start-a-workflow"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="pause-resume-and-skip"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
+<a id="start-a-workflow"></a><a id="workflow-builder"></a><a id="orchestrated"></a><a id="a-preset-as-the-plan-a-run-starts-from"></a><a id="preset-and-custom"></a><a id="built-in-workflows"></a><a id="runs-of-a-workflow"></a><a id="saved-steps"></a><a id="model-per-step"></a><a id="when-to-ask"></a><a id="autonomy"></a><a id="asks-you"></a><a id="pause-resume-and-skip"></a><a id="run-defaults"></a><a id="workflow-rules"></a><a id="spend-cap"></a><a id="limit"></a><a id="chained-starts"></a><a id="workflow-run"></a><a id="hints-to-the-orchestrator"></a><a id="why-each-step-and-the-run-recap"></a><a id="step-handoff-summary"></a><a id="open-questions"></a><a id="let-an-agent-decide"></a><a id="import-workflows"></a>
 
 ## Workflows
 

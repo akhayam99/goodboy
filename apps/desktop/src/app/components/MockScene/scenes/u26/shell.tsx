@@ -16,6 +16,5 @@ export const U26_SHELL_SCENES = {
   'u26-sidebar-impact': U23_FRAME_SCENES['frame-studio-impact'],
   'u26-filter-default': () => <FilterScene isActive={false} />,
   'u26-filter-active': () => <FilterScene isActive />,
-  'u26-rail-foot': () => <RailFootScene isArchiveAsking={false} />,
   'u26-rail-foot-archive': () => <RailFootScene isArchiveAsking />,
 };

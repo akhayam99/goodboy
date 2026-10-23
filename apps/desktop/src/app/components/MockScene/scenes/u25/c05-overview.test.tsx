@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import { installFakeResizeObserver } from '../../../../../test/fakeResizeObserver';
 import {
@@ -80,11 +80,17 @@ const present = ({ value, what }: PresentParams): HTMLElement => {
   return value;
 };
 
-const nextRows = (): ReadonlyArray<HTMLElement> =>
-  Array.from(
-    screen
-      .getByRole('region', { name: 'Next steps' })
-      .querySelectorAll<HTMLElement>('[data-testid^="next-step-"]'),
+const nextRows = (): ReadonlyArray<HTMLElement> => {
+  const next = screen.getByRole('region', { name: 'Next' });
+  for (const fold of next.querySelectorAll<HTMLElement>('button[aria-expanded="false"]')) {
+    fireEvent.click(fold);
+  }
+  return Array.from(next.querySelectorAll<HTMLElement>('[data-action-card]'));
+};
+
+const cardOrder = (): ReadonlyArray<string> =>
+  Array.from(document.querySelectorAll('[data-overview-card]')).map(
+    (card) => card.getAttribute('data-overview-card') ?? '',
   );
 
 describe('the c05 overview scenes', () => {
@@ -94,26 +100,24 @@ describe('the c05 overview scenes', () => {
     );
   });
 
-  it('c05-overview-running puts Needs you above Next and Activity, rows without an Open word', async () => {
+  it('c05-overview-running puts Needs you first when it has rows, rows without an Open word', async () => {
     await mount('c05-overview-running');
 
-    const order = sectionOrder();
-    const needsYouAt = order.indexOf('Needs you');
-    const activityAt = order.indexOf('Activity');
-    expect(needsYouAt).toBeGreaterThanOrEqual(0);
-    expect(activityAt).toBeGreaterThan(needsYouAt);
-    expect(order.indexOf('Next') === -1 || order.indexOf('Next') > needsYouAt).toBe(true);
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    const rows = within(needsYou).getAllByRole('button');
+    const order = cardOrder();
+    expect(order.length).toBeGreaterThan(0);
+    expect(order.indexOf('needs-you')).toBeLessThanOrEqual(0);
+    expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
+    const first = document.querySelector<HTMLElement>('[data-overview-card]');
+    const rows = within(present({ value: first, what: 'the first card' })).getAllByRole('button');
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.map((row) => row.textContent)).not.toContain('Open');
     expect(screen.queryByRole('region', { name: 'Projects' })).toBeNull();
   });
 
-  it('c05-overview-lanes draws every Activity row on one gutter with the step number in its slot', async () => {
+  it('c05-overview-lanes draws every log row on one gutter with the step number in its slot', async () => {
     await mount('c05-overview-lanes');
 
-    const activity = screen.getByRole('region', { name: 'Activity' });
+    const activity = screen.getByRole('region', { name: 'Log entries' });
     const widths = new Set(
       Array.from(activity.querySelectorAll('[data-row-id]')).map((row) => {
         const rail = row.children[1];
@@ -136,9 +140,6 @@ describe('the c05 overview scenes', () => {
       name: 'Remove worktree',
     });
     expect(remove.textContent).toBe('Remove');
-    within(present({ value: row, what: 'the cleanup row' })).getByRole('button', {
-      name: 'Not now',
-    });
     expect(screen.queryByRole('button', { name: 'Keep' })).toBeNull();
   });
 
@@ -167,7 +168,7 @@ describe('the c05 overview scenes', () => {
     await mount('c05-overview-blank');
 
     screen.getByRole('button', { name: 'Add a goal' });
-    const hasNext = screen.queryByRole('region', { name: 'Next steps' }) !== null;
+    const hasNext = cardOrder().some((card) => card === 'needs-you' || card === 'next');
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('data-variant')).toBe(
       hasNext ? 'secondary' : 'primary',
     );

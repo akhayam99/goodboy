@@ -149,11 +149,15 @@ const openRunHeldForItsPlan = async (ctx: Ctx): Promise<void> => {
 
 const reviewThenApproveFromTheDrawer = async (ctx: Ctx): Promise<void> => {
   await openRunHeldForItsPlan(ctx);
-  const entry = await within(await screen.findByRole('region', RUN_TAIL, WAIT)).findByRole(
-    'button',
-    { name: 'Review plan' },
-    WAIT,
-  );
+  await screen.findByRole('region', RUN_TAIL, WAIT);
+  const actions = await waitFor(() => {
+    const node = document.querySelector<HTMLElement>('[data-run-header-actions]');
+    if (node === null) {
+      throw new Error('the run page has no header actions');
+    }
+    return node;
+  }, WAIT);
+  const entry = await within(actions).findByRole('button', { name: 'Review plan' }, WAIT);
   fireEvent.click(entry);
   await settle();
   await waitFor(

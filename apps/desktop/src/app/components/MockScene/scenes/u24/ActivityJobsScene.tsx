@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import type { Agent, AgentId, IsoDateTime, SessionEvent, SessionEventId } from '@goodboy/types';
-import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
+import { LogPane } from '../../../../../features/session/central/log/LogPane';
 import { useAppStore } from '../../../../../store';
 import type { ScribeWork } from '../../../../../store/slices/scribe/types';
 import { NOW, SESSION, seedActivityRunScene } from '../activityRunSeed';
@@ -181,7 +181,7 @@ export const ActivityJobsScene = () => {
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <ScrollFade className="min-h-0 flex-1">
         <div className="px-6 py-4">
-          <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+          <LogPane session={SESSION} />
         </div>
       </ScrollFade>
     </main>

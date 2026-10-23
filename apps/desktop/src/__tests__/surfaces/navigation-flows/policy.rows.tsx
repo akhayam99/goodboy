@@ -59,7 +59,8 @@ const flipSpreadInProviders = async (): Promise<void> => {
 
 const runDefaultsShowsALink = async (): Promise<void> => {
   await heading('Run defaults');
-  const band = await screen.findByRole('region', { name: 'Providers' });
+  await click(await screen.findByRole('button', { name: /^Models: / }));
+  const band = await screen.findByRole('dialog', { name: 'Models' });
   expect(within(band).getByRole('button', { name: 'Open Providers and models' })).toBeDefined();
   expect(within(band).getByTestId('rules-policy-summary').textContent).toMatch(/^Claude, Codex/);
   expect(within(band).queryAllByRole('switch')).toEqual([]);

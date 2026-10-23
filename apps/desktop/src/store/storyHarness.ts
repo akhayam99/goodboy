@@ -590,6 +590,7 @@ export const storyDbStubs = () => ({
   insertAgentHandoff: vi.fn(async () => undefined),
   countUserTextEvents: vi.fn(async () => 0),
   isAutoChildAgent: vi.fn(async () => false),
+  lowerAutoTreeCapsOfSession: vi.fn(async () => []),
   listSessionDecisions: vi.fn(async () => []),
   getSessionContextSeenAt: vi.fn(async (): Promise<string | null> => null),
   setSessionContextSeenAt: vi.fn(async () => undefined),

@@ -45,8 +45,8 @@ it. From the top:
 - **Mode**, with one line under it that says what the mode does, and the
   mode's own control on the right of the same row.
 - **Plan**: the steps as a tree that reads top down, step 1 first and **Add step** last.
-- **Launch bar**: when it starts, when to ask (**Ask me** or
-  **Autopilot**), the limit or **Save as preset**, and **Start
+- **Launch bar**: when it starts, when it asks you (**Every step** or
+  **Never**), the limit or **Save as preset**, and **Start
   workflow**. The reason Start is off shows under it.
 
 The three modes:
@@ -142,12 +142,15 @@ The **Starts** chip in the launch bar picks one:
 - **Manually**, when you press start
 - **After** another run that is still going, and then it carries on by itself
 
-Autonomy comes from the workspace rules, **Ask me** until you
-change them: the run waits for your go after each step so you can review it.
-**Balanced** runs on its own but holds once when the plan is written,
-until you press **Approve plan**. **Autopilot** starts each next step by
-itself. The choice is stored as the run's autorun flag plus the run's copy of
-the rules, and can change later from the run's ⋯ menu.
+**Asks you** (it was Autonomy) comes from the workspace rules, **Every step**
+until you change them: the run waits for your go after each step so you can
+review it. **After the plan** (it was Balanced) runs on its own but holds once
+when the plan is written, until you press **Approve plan**. **Never** (it was
+Autopilot for a run) starts each next step by itself. The words live in
+`NAMES` (`asksYou`, `everyStep`, `afterThePlan`, `asksNever`) and the old ones
+stay findable through `FORMER_NAMES`. The choice is stored as the run's autorun
+flag plus the run's copy of the rules, and can change later from the run's
+**Asks you** chip.
 
 ## Workflow rules
 
@@ -156,18 +159,25 @@ Rules are the workspace defaults every new run starts from. They live only in th
 them. The all-pages Restore defaults and Copy from in the workspace settings menu
 still carry them and list them as Workflow rules in the preview.
 
-The tab is titled **Run defaults**: three controls and one text field, in this
-order, each with one line of copy at most.
+The tab is titled **Run defaults**: one chip line, the same chips and popovers
+as on a run page (`SettingChip`, now in `shared/components/SettingChip`, with
+`useLimitAmountDraft` in `shared/hooks`), then the guidance field. Each chip
+reads "new runs" as its source; a change reaches new runs only, since every run
+keeps its own copy of the rules (`attachWorkflowToSession` copies them at start).
 
-- **Autonomy**: Ask me, Balanced or Autopilot. The
-  hints are the ones the builder shows (`RUN_AUTONOMY_OPTIONS`)
-- **Limit**: a switch, the amount per run and what happens at the limit, pause
-  or warn
-- **Providers**: a row **When a provider is out** with the policy in one line
-  ("Claude, Codex · Cursor as backup") and a link, **Open Providers and models**.
-  It holds no switch and lists no provider: the order and the **Send new steps
-  to the provider with the most room** option live in Settings > Providers and
-  models, the one home of the provider policy
+- **Asks you** (`DefaultAsksSetting`): Every step, After the plan or Never, applied
+  on click. The hints are the ones the builder shows (`RUN_AUTONOMY_OPTIONS`)
+- **Limit** (`DefaultLimitSetting`): the amount per run, applied on Enter or
+  close (a blank amount is no limit), and what happens at the limit, Pause or
+  Warn only, applied on click
+- **Models** (`DefaultModelsSetting`): the policy in one line ("Claude, Codex ·
+  Cursor as backup") and **Open Providers and models**. It holds no switch and
+  lists no provider: the order and the **Send new steps to the provider with
+  the most room** option live in Settings > Providers and models, the one home
+  of the provider policy
+- **Auto limit** (`DefaultAutoLimitSetting`): what a new Auto starts on
+  (`auto.treeLimitUsd.<workspace id>`, `writeAutoTreeLimit`), "default" until
+  you set one; the smaller of it and the session limit pauses Auto
 - **Guidance**: text every run starts with, with its own **Polish**
 
 ### Guidance
@@ -273,17 +283,32 @@ with **Orchestrated** selected and the center is one document
 (`OrchestratedRunPage`, in `features/session/components/OrchestratedRun`),
 read top to bottom at the conversation measure:
 
-- **Header.** The run title, **Pause run** (or **Resume run**) and **Stop run**
-  while the run lives, then the run `⋯`. The header stays fixed above the
+- **Header.** The run title, the one primary of the run (`runHeaderPrimaryOf`): an open question makes it
+  **Answer**, a run paused at the limit **Raise limit**, else the `runPrimaryOf`
+  verb through `RunPrimaryAction` (**Review plan**, **Approve plan**,
+  **Decide next step**, **Start step 2**, **Start run**, **Retry**, **Continue
+  the run**, **Restore**), else **Pause run** or **Resume run** as a quiet word
+  (`RunLiveVerbs`); then the run `⋯`. The header stays fixed above the
   scroll, the composer docks below it. The right click on the title lists the
-  same items. Autonomy is not in this menu: the facts line holds it. An archived run shows
+  same items. Asks you is not in this menu: its chip holds it. An archived run shows
   **Restore** and reads dimmed, with no composer.
-- **Goal** (`OrchestratedGoal`). The goal as prose, then one gray facts line
-  (`OrchestratedFacts`): "Autonomy Balanced · Can use Claude, Codex · Limit
-  $3.00 · $1.12 spent", and the time left while the run lives
-  (`useRunTimeLeft`). The autonomy word is today's run autonomy menu
-  (`OrchestratedAutonomyMenu`: Ask me, Balanced, Autopilot, each hint in its
-  tooltip), shown while the run lives. **Limit** opens `RunSpendLimitPopover`. The workflow's
+- **Goal** (`OrchestratedGoal`). The goal as prose, then the run settings line
+  (`OrchestratedFacts`, the same on a preset run's Overview): one chip per
+  setting while the run lives (`RunSettingsLine`), each reading its label, its
+  value and where it comes from, as "Limit $0.92 of $5.00 this run". A chip
+  opens only its own popover on `AnchoredPopover` (320px): the setting, one
+  line of help, the control and, last, where it comes from ("This run $5.00,
+  then session $8.00. $5.00 comes first.", `runSettingsOf`). There is no Save
+  or Done: a choice applies on click, the limit on Enter or when the popover
+  closes. Every limit field (the run, the session, Run defaults and Auto) is a
+  text field with a decimal keypad, so cents such as `2.50` (or `2,50`) go
+  through and Enter is never stopped by a browser step rule; `parseSpendLimit`
+  in `features/budget/` is the one rule for what counts as an amount. A failed write keeps the old value with the error under the
+  field (or in the log when the popover already closed). **Models** switches
+  each provider the run may use (`setWorkflowRunProviderPool`, latest answer
+  wins, Undo puts the old providers back); a change applies from the next
+  step. Under the chips, the preset the run came from and the time left while
+  the run lives (`useRunTimeLeft`). The workflow's
   process text and the run's standing guidance sit behind **Show guidance** as
   the one text the orchestrator reads (`orchestratorProcessText`), so guidance
   the builder saved in both shows once;
@@ -311,20 +336,20 @@ read top to bottom at the conversation measure:
   talk to the step from **Open full**.
 - **Tail** (`OrchestratedTail`, phrases and verbs in `orchestratedTailOf`).
   The thinking line speaks the phase of `resolveOrchestratorState` once, at the
-  end of the content, after the result: "Waiting on step 3 · Tester" with its clock (the step's active time, the value of its row) and **Stop step
+  end of the content, after the result: "Step 3 is running: Tester" with its clock (the step's active time, the value of its row; the line reads as working, since "Waiting" is kept for a run that waits on you), "Step 4 starts next: Tester" for a pending step, and **Stop step
   3** (asks first, `stopWorkflowRunNow`), "Choosing the next step", "Waiting
-  for your go" with **Decide next step**, "Waiting for your answer on step 4"
-  with **Answer**, "Paused at the limit" with
-  **Raise limit**, "Last decision failed: ..." (model ids read as display
-  names, `modelNamesIn`) with **Retry** and **View
-  transcript**, a failed step with **Restart step**, a stopped step with
+  for your go", "Waiting for your answer on step 4", "Paused at the limit",
+  "Last decision failed: ..." (model ids read as display
+  names, `modelNamesIn`) with **View
+  transcript**; the move each of those waits for is the header primary, never a
+  second button on the tail, a failed step with **Restart step**, a stopped step with
   **Continue step**, "No output for 15 min" with **Ask it to continue**, agents
   a restart stopped with **Resume**, "Run complete" on a
   finished run. An archived run has no tail. Queued hints on a finished run add **Read 2 queued**; after
-  **Stop step** the verb is **Resume and read 2 queued**. Under the line, one
-  gray line gives the latest decision's reason ("Why: ..."), hidden while the
-  run is failed; older reasons sit at the top of each step's pane. While the
-  plan pane is open, **Review plan** on the tail goes quiet. The verbs of `runPrimaryOf` go through
+  **Stop step** the verb is **Resume and read 2 queued**. Under the line, a
+  folded **Why this step** (`Disclosure`) opens the latest decision's reason,
+  hidden while the run is failed; older reasons sit at the top of each step's pane. While the
+  plan pane is open, **Review plan** in the header goes quiet. The verbs of `runPrimaryOf` go through
   today's `RunPrimaryAction`, so their gates and confirms are the same.
 - **Result** (`OrchestratedResult`), on a finished run: the closing reason,
   the recap's **Done** and **Left** lists, **Create report** and **Create
@@ -349,17 +374,18 @@ read top to bottom at the conversation measure:
   **Send now** (⌘Enter) reads it now, with today's `readNowCopy` tooltips. The
   routing pill for the orchestrator's model and effort sits in the composer's
   footer, its only place (`OrchestratorRoutingRow`).
-- **The run header** shows **Pause run** and **Stop run** (asks first) as
-  words while the run lives (`RunLiveVerbs`), so stopping never hides in a
-  menu. Once paused, **Resume run** (`workflowRun.resume`) takes the place of
-  Pause run and Stop run stays beside it; the tail then says Paused by you
-  with no verb of its own, so Resume shows once.
+- **The run header** holds one primary. With no move waiting it shows **Pause
+  run**, and once paused **Resume run** (`workflowRun.resume`) in its place;
+  the tail then says Paused by you with no verb of its own, so Resume shows
+  once.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
-  the header carry: View diff, Step routing (opens the model per step panel,
-  `OrchestratedRouting`), Autonomy, **Skip step N** for the step in flight,
-  Save as preset, Copy run summary, Archive run, Delete run.
+  the header carry, in the order See, Steer, Settings, Copy, End: View diff,
+  **Skip step N** for the step in flight (and Pause or Resume run while the
+  header holds another primary), Step routing (opens the model per step panel,
+  `OrchestratedRouting`), Save as preset, Copy run summary, **Stop run** (asks
+  first), Archive run, Delete run.
 
-A plan the run is held for is offered once, as **Review plan** on the tail,
+A plan the run is held for is offered once, as **Review plan** in the header,
 which opens the plan drawer (`openPlanDrawer`); a plan question or a step
 question makes **Answer** the verb. The `plan-revising` phase reads "The
 planner is revising the plan" with no verb. **Approve** (`useApproveRunPlan`,
@@ -388,12 +414,12 @@ Asking for a certain provider or model on a step is a hint too.
 ### Limit
 
 Each run can have a limit in dollars. You set it on the run (the limit
-in the foot of the Agents panel on a run or the orchestrated facts line) or in the creation form. You also choose what happens when
+in the foot of the Agents panel on a run or the **Limit** chip of the run page) or in the creation form. You also choose what happens when
 the run reaches it: **Pause workflows** or **Warn only**, the same editor
 and words as the session's limit. The limit starts at unlimited. The
 orchestrator decides how many steps to plan based on the goal.
 
-A session has its own limit, set from the spend line at the session rail foot. With
+A session has its own limit, set from the session spend popover or an agent page's **Limit** chip. With
 **Pause workflows** (the default) every workflow of the session stops at the
 limit and its strip says `Paused at the $10.00 limit for this session.`
 with **Raise limit**, which opens the spend popover on the editor. With **Warn only**
@@ -451,12 +477,14 @@ rides in the run's rules snapshot as `rules.route`, parsed by
 `parseWorkflowRules`, so no migration. One agent goes to `spawnAgent` and keeps
 its route in the settings key `runs.routes.<sessionId>`, one entry per agent,
 written compare and swap (`writeRunRoute`) so two windows starting at once both
-keep theirs. The route also keeps the ask, so Change can restart it.
+keep theirs. The route also keeps the ask, so a second run can start from it.
 
-`RunRouteLine` (`features/session/components/RunRoute/`) shows the stored route
-on the orchestrated document and on an agent's page, with the count of
-`rules.planChanges` after the choice ("Adapt as it goes · 1 change"); the facts
-line then leaves the preset out, so it is said once. Change calls
+`RunKindChip` (`features/session/components/RunRoute/`) shows the stored route
+as the first chip of the run settings line (`OrchestratedFacts` passes it in)
+and on an agent's page, named by `runKindOfRoute`; its popover holds the why
+with the count of `rules.planChanges` ("Why: Your ask matches the preset · 1
+change"), the closeness and the other kinds (`runKindChoicesOf`). The facts
+line then leaves the preset out, so it is said once. A pick calls
 `changeRunRoute`. Follow or Adapt, and a new preset before the first step, only
 rewrite `rules.route` (`updateWorkflowRunRules`) and the run's `processText`.
 Every rules write (route, plan changes, the preset answer, autonomy) goes
@@ -466,9 +494,8 @@ compare and swap on the stored `rules_snapshot` text
 when another window saved first, so no write drops another.
 A change after work started calls `startRoutedRun` with the findings
 (`runFindingsOf`: the run summary's done entries and the settled steps'
-summaries), then `stopWorkflowRunNow` on the first run and writes
-`route.changedTo`; for one agent it stops the Auto tree through the tree stop
-port and writes `changedTo` into `runs.routes.<sessionId>`. The defaults live in
+summaries) and leaves the first run or Auto tree going; nothing new is written
+to it (`route.changedTo` is only parsed, for older runs). The defaults live in
 the settings keys `runs.defaultShape.session.<sessionId>` and
 `runs.defaultShape.<workspaceId>` (`runDefaultSetting.ts`), read by row 1
 through `runDefaultOf`; `changeRunDefault` writes compare and swap and records
@@ -515,19 +542,18 @@ an agent, with its role glyph), never a joined tooltip line.
   the end of the content, once: nothing while the step on screen runs (its
   own thinking line speaks), else "Step 2 · Implementer is working" with **Open
   step 2**, "No output for 15 min" with **Ask it to continue**, the open
-  question with **Answer**, a failed or stuck step with **Restart step**, "Paused
-  at the limit" with **Raise limit** (a step that never started also reads "Not
-  started, the run paused at the limit."), then the `runPrimaryOf` verb with
-  today's gates (`StartStepPrimary` and its Start anyway confirm,
-  `WorkflowRunStartButton`, **Review plan**, **Approve plan**, **Resume**),
-  a stopped step with **Continue step**, "Run finished" or "Stopped by you"
-  with no verb (the Agents panel's **Add step** is its home). An archived run has no tail. While the run lives the header holds only **Pause run**
-  (or **Resume run** once paused, in the same place) and **Stop run** (asks
-  first, `RunLiveVerbs`) as words; every other verb
-  is on the tail or in the menu.
+  question, a failed or stuck step with **Restart step**, "Paused
+  at the limit" (a step that never started also reads "Not
+  started, the run paused at the limit."), the step that is ready, a stopped
+  step with **Continue step**, "Run finished" or "Stopped by you"
+  with no verb (the Agents panel's **Add step** is its home). An archived run has no tail. The header holds the one primary
+  (`runHeaderPrimaryOf`: **Answer**, **Raise limit**, the `runPrimaryOf` verb
+  with today's gates, `StartStepPrimary` and its Start anyway confirm,
+  `WorkflowRunStartButton`, **Review plan**, **Approve plan**, or else **Pause
+  run** and **Resume run**); every other verb is on the tail or in the menu.
 - **The run `⋯`** is the `workflowRun` registry minus the verbs the tail and
-  the header carry: View diff, Autonomy (Ask me, Balanced, Autopilot, a
-  `choices` item), **Skip step N** for the selected step while it has not
+  the header carry: View diff, Asks you (Every step, After the plan, Never, a
+  `choices` item, left out of the run pages' menus since its chip holds it), **Skip step N** for the selected step while it has not
   finished (asks first, `skipStepDescription`), Copy run summary, Save as
   preset, Archive run, Delete run.
 - **Add step** in the Agents panel opens the Overview and asks `WorkflowAddStep`
@@ -747,7 +773,8 @@ run and its agents restorable.
 ### Hands-free runs
 
 **Autopilot** makes a run hands-free. Each next step starts without you
-clicking. You can turn it on for one run, or for the whole session with
+clicking. One run goes hands-free with **Asks you** set to **Never**; the
+whole session does with
 **Turn on Autopilot** in the session `⋯` (the registry verbs
 `session.autopilotOn` and `session.autopilotOff` in
 `features/actions/kinds/session.ts`, also in the right click and the palette;
@@ -902,7 +929,7 @@ An open question and a failed step both still show with autorun on, because
 autorun stops on both. `maybeAutoAdvanceWorkflow` skips a run with open
 questions and a paused run.
 
-### Balanced
+### After the plan
 
 A run whose copy of the rules says `plan` holds once a plan for that run exists
 (`active` or `consumed`). The hold is a saved stop,

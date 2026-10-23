@@ -50,7 +50,7 @@ const railLabels = (): ReadonlyArray<string> =>
     .getAllByRole('treeitem')
     .map((item) => item.getAttribute('aria-label') ?? '');
 
-const limitFoot = () => screen.getByRole('region', { name: 'Limit' });
+const limitChip = () => screen.getByRole('button', { name: /^Limit: / });
 
 describe('the Auto chat scenes', () => {
   it('registers every scene for the capture', () => {
@@ -130,39 +130,29 @@ describe('the Auto chat scenes', () => {
     expect(within(work).queryByText(/subagents/i)).toBeNull();
     expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
     expect(screen.queryByText(/Reserved up to/)).toBeNull();
-    const foot = limitFoot();
-    expect(within(foot).getByRole('button', { name: 'Limit $10.00 · $5.23 left' })).toBeDefined();
-    expect(within(foot).queryByText(/Spent|Reserved/)).toBeNull();
+    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.27 of \$10\.00/);
+    expect(limitChip().textContent).not.toMatch(/Spent|Reserved/);
   });
 
-  it('auto-chat-working opens the limit popover from the rail foot', async () => {
+  it('auto-chat-working opens the limit popover from the chip line', async () => {
     mount({ id: 'auto-chat-working' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    fireEvent.click(within(limitFoot()).getByRole('button', { name: 'Limit $10.00 · $5.23 left' }));
+    fireEvent.click(limitChip());
 
-    const popover = screen.getByRole('dialog', { name: 'Limit for this Auto run' });
+    const popover = screen.getByRole('dialog', { name: 'Limit' });
     expect(within(popover).getByText('$0.27')).toBeDefined();
     expect(within(popover).getByText('$4.50')).toBeDefined();
-    expect(within(popover).getByRole('button', { name: '$10' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    fireEvent.click(within(popover).getByRole('button', { name: 'Custom' }));
-    fireEvent.change(within(popover).getByLabelText('Custom limit in dollars'), {
-      target: { value: '4' },
-    });
-    expect(
-      within(popover).getByText('The limit must cover spent and reserved usage.'),
-    ).toBeDefined();
+    expect(within(popover).getByRole('form', { name: 'Limit for this Auto' })).toBeDefined();
+    expect(popover.textContent).toContain('comes first');
   });
 
-  it('auto-chat-nocap reads No limit in the foot with what is spent and no left', async () => {
+  it('auto-chat-nocap reads what is spent on the chip and no left', async () => {
     mount({ id: 'auto-chat-nocap' });
 
     await screen.findAllByRole('list', { name: 'Delegations' }, WAIT);
-    const foot = limitFoot();
-    expect(within(foot).getByRole('button', { name: 'No limit · $0.27 spent' })).toBeDefined();
-    expect(within(foot).queryByText(/left/)).toBeNull();
+    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.27 spent/);
+    expect(limitChip().textContent).not.toMatch(/left/);
   });
 
   it('auto-chat-revising shows the revision on the same Planner', async () => {
@@ -205,9 +195,7 @@ describe('the Auto chat scenes', () => {
     expect(within(rail()).getAllByRole('treeitem')).toHaveLength(5);
     expect(screen.getAllByRole('button', { name: /^Open / })).toHaveLength(4);
     expect(screen.queryByRole('button', { name: 'Change approach' })).toBeNull();
-    expect(
-      within(limitFoot()).getByRole('button', { name: 'Limit $10.00 · $9.47 left' }),
-    ).toBeDefined();
+    expect(limitChip().getAttribute('aria-label')).toMatch(/^Limit: \$0\.53 of \$10\.00/);
   });
 
   it('auto-chat-done says Idle in the rail with no tail, and Mark finished in the header once', async () => {
@@ -241,12 +229,14 @@ describe('the Auto chat scenes', () => {
     expect(screen.getByRole('textbox')).toBeDefined();
   });
 
-  it('auto-overview-row draws one row for the tree and none for its children', async () => {
+  it('auto-overview-row draws the Auto tree once in Running, its agents under it', async () => {
     mount({ id: 'auto-overview-row' });
 
-    expect(await screen.findByText('Auto', undefined, WAIT)).toBeDefined();
-    expect(screen.getByText('Waiting for Implementer and Tester')).toBeDefined();
-    expect(screen.queryByText('Implementer')).toBeNull();
-    expect(screen.queryByText('Tester')).toBeNull();
+    const running = await screen.findByRole('region', { name: 'Running' }, WAIT);
+    expect(within(running).getByText('Waiting for Implementer and Tester')).toBeDefined();
+    expect(within(running).getAllByRole('button', { name: 'Open Auto chat' })).toHaveLength(1);
+    expect(running.textContent).toContain(
+      'Post one credit per retry in postCredit and applyCredit',
+    );
   });
 });

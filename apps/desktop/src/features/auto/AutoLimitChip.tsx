@@ -59,9 +59,7 @@ export const AutoLimitChip = ({ usd, isFromSession, isDisabled, onChange }: Prop
       </p>
       <Input
         id={INPUT_ID}
-        type="number"
-        min="0"
-        step="1"
+        type="text"
         inputMode="decimal"
         value={draft}
         aria-invalid={parsed === null}

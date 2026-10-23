@@ -18,7 +18,7 @@ const treeOf = async (state: Awaited<ReturnType<typeof worldWithAutoAgent>>) =>
   getAutoTreeByRootAgent({ db: state.world.db, rootAgentId: AUTO_AGENT });
 
 describe('starting the tree of an Auto agent', () => {
-  it('caps it at the budget of the session before anything else', async () => {
+  it('caps it at the smallest of the session budget and the workspace Auto limit', async () => {
     const state = await worldWithAutoAgent();
 
     const created = await startAutoTrees({
@@ -29,7 +29,7 @@ describe('starting the tree of an Auto agent', () => {
 
     expect(created).toBe(1);
     expect(await treeOf(state)).toMatchObject({
-      capUsd: 25,
+      capUsd: 8,
       sessionId: AUTO_SEED_SESSION,
       primaryMountId: 'mount-ledger-core',
     });

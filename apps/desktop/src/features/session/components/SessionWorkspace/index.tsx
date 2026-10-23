@@ -116,7 +116,7 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             <PageTrailContext.Provider value={showLens && surface !== 'overview' ? trail : null}>
               {surface === 'overview' ? (
                 isOverviewLoaded ? (
-                  <SessionOverviewPane session={session} onSelectLens={onSelectLens} />
+                  <SessionOverviewPane session={session} />
                 ) : (
                   <SessionOverviewLoading
                     isFreshLayout={isFreshOverviewLayout}

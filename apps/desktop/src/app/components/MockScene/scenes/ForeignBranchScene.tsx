@@ -387,7 +387,7 @@ export const ForeignBranchScene = ({ state = 'stranded' }: Props) => {
           </div>
         </div>
       ) : (
-        <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+        <SessionOverviewPane session={SESSION} />
       )}
     </main>
   );

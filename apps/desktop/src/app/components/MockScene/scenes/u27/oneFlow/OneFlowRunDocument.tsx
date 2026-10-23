@@ -9,16 +9,14 @@ import { OrchestratedComposer } from '../../../../../../features/session/compone
 import { OrchestratedGoal } from '../../../../../../features/session/components/OrchestratedRun/OrchestratedGoal';
 import { OrchestratedTail } from '../../../../../../features/session/components/OrchestratedRun/OrchestratedTail';
 import { RunPageActions } from '../../../../../../features/session/components/PresetRun/RunPageActions';
-import { OneFlowRouteLine, type OneFlowRoute } from './OneFlowRouteLine';
 
 type Props = {
   readonly session: Session;
-  readonly route: OneFlowRoute;
   readonly run: WorkflowRun;
   readonly workflow: Workflow;
 };
 
-export const OneFlowRunDocument = ({ session, route, run, workflow }: Props) => {
+export const OneFlowRunDocument = ({ session, run, workflow }: Props) => {
   const view = useRunView({ session, run, workflow });
   const sessionId = session.id;
   const runningStep =
@@ -32,12 +30,7 @@ export const OneFlowRunDocument = ({ session, route, run, workflow }: Props) => 
           <AgentHeader
             title={<span className="min-w-0 truncate">{view.name}</span>}
             actions={
-              <RunPageActions
-                session={session}
-                view={view}
-                stepAgentId={runningStep?.id ?? null}
-                isOrchestrated
-              />
+              <RunPageActions session={session} view={view} stepAgentId={runningStep?.id ?? null} />
             }
           />
         }
@@ -51,10 +44,6 @@ export const OneFlowRunDocument = ({ session, route, run, workflow }: Props) => 
           aria-label={view.name}
           className="flex min-w-0 flex-col gap-6"
         >
-          <OneFlowRouteLine
-            route={route}
-            changeCount={run.rulesSnapshot?.planChanges?.length ?? 0}
-          />
           <OrchestratedGoal session={session} view={view} />
           <RunWriteDestination sessionId={sessionId} />
           <OrchestratedChecklist session={session} view={view} />

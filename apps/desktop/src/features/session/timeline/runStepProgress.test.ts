@@ -175,6 +175,24 @@ describe('runStepStates', () => {
     ).toEqual(['done', 'waiting', 'notStarted']);
   });
 
+  it('marks the step at a ready gate as waiting for your go', () => {
+    const readyAdvance: WorkflowAdvanceState = JSON.parse(
+      JSON.stringify({ kind: 'ready', step: { id: 'step-1' } }),
+    );
+    expect(
+      runStepStates({
+        entry: statesEntryOf({
+          stepCount: 3,
+          agents: [
+            { stepId: 'step-0', status: 'completed' },
+            { stepId: 'step-1', status: 'pending' },
+          ],
+        }),
+        advance: readyAdvance,
+      }),
+    ).toEqual(['done', 'waiting', 'notStarted']);
+  });
+
   it('leaves deleted steps out', () => {
     expect(
       runStepStates({ entry: statesEntryOf({ stepCount: 6, agents: [] }), advance: null }),

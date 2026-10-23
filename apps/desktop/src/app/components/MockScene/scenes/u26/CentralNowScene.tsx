@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { branchEntriesOf } from '../../../../../features/session/central/branches/branchStoryOf';
-import { cardOrderOf } from '../../../../../features/session/central/branches/cardOrderOf';
 import { liveGroupsOf } from '../../../../../features/session/central/now/liveGroupsOf';
 import { needsYouCountOf } from '../../../../../features/session/central/now/needsYouCountOf';
 import { nowStateOf } from '../../../../../features/session/central/now/nowStateOf';
@@ -30,15 +29,10 @@ export const CentralNowScene = ({ theme, variant }: Props) => {
     () => liveGroupsOf({ model: seed.model, agents: seed.agents, now: NOW_CLOCK }),
     [seed],
   );
-  const entries = useMemo(
-    () =>
-      branchEntriesOf({
-        facts: seed.facts,
-        cardOrderByMountId: cardOrderOf({ cards: seed.branchCards }),
-        detailByMountId: new Map(),
-      }),
-    [seed],
-  );
+  const entries = useMemo(() => {
+    const { live, finished } = branchEntriesOf({ facts: seed.facts, detailByMountId: new Map() });
+    return [...live, ...finished];
+  }, [seed]);
   useEffect(() => {
     applyDocumentTheme({ theme });
     setIsReady(true);

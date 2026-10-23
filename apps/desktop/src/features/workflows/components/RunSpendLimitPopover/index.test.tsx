@@ -59,23 +59,23 @@ describe('RunSpendLimitPopover', () => {
     expect(screen.queryByRole('tab', { name: /pause/i })).toBeNull();
   });
 
-  it('ends the popover with remove and save inline, never in a footer bar', () => {
+  it('has no Save button and no footer bar, only the field and Remove limit', () => {
     renderPopover(run({ spendLimitUsd: 12.5 }));
 
     openPopover();
-    const save = screen.getByTestId('run-spend-limit-save');
-    expect(save.closest('[data-slot="form-actions"]')).not.toBeNull();
-    expect(save.closest('footer')).toBeNull();
-    expect(screen.getByTestId('run-spend-limit-remove').parentElement).toBe(save.parentElement);
+    expect(screen.queryByTestId('run-spend-limit-save')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    expect(screen.getByRole('dialog').querySelector('footer')).toBeNull();
+    screen.getByTestId('run-spend-limit-remove');
   });
 
-  it('saves the amount with the mode that says what happens at the limit', async () => {
+  it('applies the amount and its mode on Enter and keeps the popover open', () => {
     renderPopover();
 
     openPopover();
     fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '25' } });
     fireEvent.click(screen.getByRole('tab', { name: /Warn only/ }));
-    fireEvent.click(screen.getByTestId('run-spend-limit-save'));
+    fireEvent.submit(screen.getByRole('form', { name: 'Limit for this run' }));
 
     expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(
       SESSION_ID,
@@ -83,8 +83,26 @@ describe('RunSpendLimitPopover', () => {
       25,
       'notify',
     );
-    await screen.findByTestId('run-spend-limit-trigger');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('applies the amount when the popover closes, and nothing when nothing changed', () => {
+    renderPopover();
+
+    openPopover();
+    openPopover();
+    expect(storeState['setWorkflowRunSpendLimit']).not.toHaveBeenCalled();
+
+    openPopover();
+    fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '8' } });
+    openPopover();
+
+    expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(
+      SESSION_ID,
+      RUN_ID,
+      8,
+      'pause',
+    );
   });
 
   it('carries the limit already set into the trigger and the field', () => {
@@ -118,7 +136,7 @@ describe('RunSpendLimitPopover', () => {
 
     openPopover();
     fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '' } });
-    fireEvent.click(screen.getByTestId('run-spend-limit-save'));
+    fireEvent.submit(screen.getByRole('form', { name: 'Limit for this run' }));
 
     expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(
       SESSION_ID,

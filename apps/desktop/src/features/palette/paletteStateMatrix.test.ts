@@ -151,6 +151,8 @@ describe('palette verbs follow the session state', () => {
       'Open comments',
       'Open files',
       'Open in editor',
+      'Open the full log',
+      'Spend and limit',
       'Open ledger-core in terminal',
       'Rename',
       'Pin session',
@@ -179,6 +181,8 @@ describe('palette verbs follow the session state', () => {
 
     expect(sessionView({ facts, query: '' })).toEqual([
       'Open comments',
+      'Open the full log',
+      'Spend and limit',
       'Rename',
       'Pin session',
       'Refresh session',
@@ -210,6 +214,7 @@ describe('palette verbs follow the session state', () => {
     const facts = { ...LIVE, isArchived: true };
 
     expect(sessionView({ facts, query: '' })).toEqual([
+      'Open the full log',
       'Restore',
       'Copy title',
       'Copy worktree path',

@@ -7,17 +7,15 @@ import type { LiveGroupModel } from '../../../../../features/session/central/now
 
 const NO_GROUPS: ReadonlyArray<LiveGroupModel> = [];
 
-const NO_ORDER: ReadonlyMap<string, number> = new Map();
-
 type Props = {
   readonly sessionId: SessionId;
 };
 
 export const SceneCentralBranches = ({ sessionId }: Props) => {
   const { facts } = useBranchFacts({ sessionId, groups: NO_GROUPS });
-  const entries = useMemo(
-    () => branchEntriesOf({ facts, cardOrderByMountId: NO_ORDER, detailByMountId: new Map() }),
-    [facts],
-  );
+  const entries = useMemo(() => {
+    const { live, finished } = branchEntriesOf({ facts, detailByMountId: new Map() });
+    return [...live, ...finished];
+  }, [facts]);
   return <BranchList sessionId={sessionId} entries={entries} />;
 };

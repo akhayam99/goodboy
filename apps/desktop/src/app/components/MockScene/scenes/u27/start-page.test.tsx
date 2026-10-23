@@ -105,6 +105,7 @@ describe('the u27 start page scenes', () => {
     expect(within(form).getByRole('combobox', { name: 'Role' }).textContent).toContain('Scout');
     expect(within(form).getByRole('button', { name: /^Model: / })).toBeDefined();
     expect(within(form).queryByText(/Limit/)).toBeNull();
+    expect(within(form).queryByRole('button', { name: /^Asks you/ })).toBeNull();
     expect(within(form).getByRole('button', { name: 'Start Scout' })).toBeDefined();
     expect(screen.queryByRole('region', { name: 'Start a run' })).toBeNull();
   });
@@ -120,6 +121,7 @@ describe('the u27 start page scenes', () => {
       within(within(form).getByRole('list', { name: 'Preset steps' })).getAllByRole('listitem'),
     ).toHaveLength(3);
     expect(within(form).getByRole('tablist', { name: 'With the preset' })).toBeDefined();
+    expect(within(form).getByRole('button', { name: /^Asks you: Every step/ })).toBeDefined();
     expect(screen.getByText('Member pages drift left on wide screens')).toBeDefined();
     expect(within(form).getByRole('button', { name: 'Start workflow' })).toBeDefined();
     expect(screen.getByRole('combobox', { name: 'Where' }).textContent).toContain('harbor-portal');

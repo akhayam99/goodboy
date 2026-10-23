@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button, EmptyState, formatError } from '@goodboy/ui';
 import {
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
-  PROVIDER_CAPABILITIES,
   clampEffortForModel,
   isAgentStatusHalted,
   runsForWorkflowRun,
 } from '@goodboy/core';
 import { ORCHESTRATED_WORKFLOW_NAME, uniqueWorkflowName } from '../../uniqueWorkflowName';
+import { runProvidersOf } from '../../runProvidersOf';
 import { useResolution } from '../../../providers/hooks/useResolution';
 import { autoModelOn } from '../../../providers/autoModelOn';
 import { roleResolutionOf } from '../../../providers/roleResolution';
@@ -306,17 +306,10 @@ export const WorkflowBuilderView = (props: Props) => {
   );
 
   const workspacePolicy = workspaceOverrides?.providerPool ?? null;
-  const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(() => {
-    const capable = connectedProviders.filter(
-      (candidate) => PROVIDER_CAPABILITIES[candidate].models.length > 0,
-    );
-    if (workspacePolicy === null) {
-      return capable;
-    }
-    return workspacePolicy
-      .filter((entry) => entry.state !== 'off' && capable.includes(entry.id))
-      .map((entry) => entry.id);
-  }, [connectedProviders, workspacePolicy]);
+  const orchestratorProviders = useMemo<ReadonlyArray<ProviderId>>(
+    () => runProvidersOf({ connected: connectedProviders, policy: workspacePolicy }),
+    [connectedProviders, workspacePolicy],
+  );
   const effectivePool = effectiveProviderPool({
     providers: orchestratorProviders,
     pool: providerPool,

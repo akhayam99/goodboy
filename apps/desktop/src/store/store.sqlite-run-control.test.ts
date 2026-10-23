@@ -320,7 +320,7 @@ describe('store on sqlite: pausing a run', () => {
     expect(runOf(workflowRunId)?.orchestrationStop?.kind).toBe('paused');
   });
 
-  it('keeps the pause across a restart and resumes where it was without touching autonomy', async () => {
+  it('keeps the pause across a restart and resumes where it was without touching Asks you', async () => {
     await useAppStore
       .getState()
       .attachWorkflowToSession(sessionId, WORKFLOW_ID, { autoRun: true, triggerMode: 'immediate' });

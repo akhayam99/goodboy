@@ -16,7 +16,7 @@ const markOneRowUnread = () => {
   }));
 };
 
-const ActivityRunHoverScene = () => <ActivityRunScene onSeeded={markOneRowUnread} />;
+const ActivityRunHoverScene = () => <ActivityRunScene onSeeded={markOneRowUnread} isLogShown />;
 
 export const U21_KEYS_ROWS_SCENES = {
   'activity-run-hover': ActivityRunHoverScene,

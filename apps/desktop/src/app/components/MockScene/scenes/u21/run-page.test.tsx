@@ -102,14 +102,16 @@ describe('the u21 run page scenes on the orchestrated document', () => {
     expect(screen.queryByText('Queue waits for the next decision.')).toBeNull();
   });
 
-  it('names its two Stops: Stop step on the tail, Stop run in the header', async () => {
+  it('names its two Stops: Stop step on the tail, Stop run in the run menu', async () => {
     renderScene('workflow-run-scrolled');
 
     await screen.findByTestId('run-tree');
     expect(within(tail()).getByRole('button', { name: /^Stop step \d+$/ })).toBeDefined();
-    expect(within(header()).getByRole('button', { name: 'Stop run' })).toBeDefined();
+    expect(within(header()).queryByRole('button', { name: 'Stop run' })).toBeNull();
     fireEvent.click(within(header()).getByRole('button', { name: /run actions$/ }));
-    expect(within(screen.getByRole('menu')).queryByText('Stop run')).toBeNull();
+    expect(
+      within(screen.getByRole('menu')).getByRole('menuitem', { name: /^Stop run/ }),
+    ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
   });
 
@@ -139,8 +141,8 @@ describe('the u21 run page scenes on the orchestrated document', () => {
       }),
     );
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('plan-approval');
-    expect(within(tail()).getByRole('button', { name: 'Review plan' })).toBeDefined();
-    expect(within(header()).queryByRole('button', { name: 'Review plan' })).toBeNull();
+    expect(within(header()).getByRole('button', { name: 'Review plan' })).toBeDefined();
+    expect(within(tail()).queryByRole('button', { name: 'Review plan' })).toBeNull();
     expect(within(header()).queryByRole('button', { name: 'Approve plan' })).toBeNull();
     expect((await screen.findByTestId('plan-primary')).textContent).toBe('Approve');
   });
@@ -181,7 +183,7 @@ describe('the u21 run page scenes on the orchestrated document', () => {
     expect(screen.getByRole('button', { name: 'Send to planner' })).toBeDefined();
   });
 
-  it('says what the planner asked on the tail and offers Answer once, there', async () => {
+  it('says what the planner asked on the tail and offers Answer once, in the header', async () => {
     renderScene('workflow-run-plan-question');
 
     await screen.findByTestId('run-tree');
@@ -189,7 +191,7 @@ describe('the u21 run page scenes on the orchestrated document', () => {
     expect(tail().textContent).toContain(
       'The planner asked: Should the plan keep the retry window',
     );
-    expect(within(tail()).getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(within(header()).getByRole('button', { name: 'Answer' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Review plan' })).toBeNull();
   });
@@ -203,7 +205,14 @@ describe('the u21 run page scenes on the orchestrated document', () => {
     );
 
     const runTail = await screen.findByRole('region', { name: 'Run state' });
-    expect(within(runTail).getByRole('button', { name: 'Review plan' })).toBeDefined();
+    const titleRow = screen
+      .getByRole('button', { name: /run actions$/ })
+      .closest<HTMLElement>('[data-slot="pane-title-row"]');
+    if (titleRow === null) {
+      throw new Error('the run page has no title row');
+    }
+    expect(within(titleRow).getByRole('button', { name: 'Review plan' })).toBeDefined();
+    expect(within(runTail).queryByRole('button', { name: 'Review plan' })).toBeNull();
     expect(screen.queryByTestId('run-header')).toBeNull();
     expect(screen.queryByTestId('orchestrator-strip')).toBeNull();
     expect(screen.queryByTestId('orchestrator-hint-input')).toBeNull();

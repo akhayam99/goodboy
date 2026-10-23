@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { RunRoute } from '@goodboy/types';
-import { RunRouteLine } from '../../../../../../features/session/components/RunRoute/RunRouteLine';
+import { RunKindChip } from '../../../../../../features/session/components/RunRoute/RunKindChip';
 import type { RunRouteTarget } from '../../../../../../features/session/startRun/changeRunRoute';
 import { SESSION, SESSION_ID } from '../../activityRunSeed';
 import type { OneFlowCloseness, OneFlowShape } from './oneFlowCopy';
@@ -40,11 +40,12 @@ export const OneFlowRouteLine = ({ route, changeCount }: Props) => {
   );
   return (
     <div data-one-flow-change="" className="flex min-w-0">
-      <RunRouteLine
+      <RunKindChip
         workspaceId={SESSION.workspaceId}
         target={target}
         route={stored}
         changeCount={changeCount}
+        hasStarted
       />
     </div>
   );

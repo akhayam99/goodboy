@@ -12,14 +12,12 @@ import {
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
-import { tauriDatabase } from '../../../shared/lib/db';
-import { currentTreeStopPort } from '../../auto/treeStopPort';
 import { presetSnapshotOf } from './presetSnapshotOf';
 import { presetRouteOf, shapeRouteOf } from './routeChoiceOf';
 import { runFindingsOf } from './runFindingsOf';
 import { RUN_ROUTE_COPY } from './runRouteCopy';
 import type { RunRouteResult } from './runRouteOf';
-import { parseRunRoutes, runRoutesKey, writeRunRoute } from './runRoutesSetting';
+import { parseRunRoutes, runRoutesKey } from './runRoutesSetting';
 import { startRoutedRun } from './startRoutedRun';
 
 export type RunRouteTarget =
@@ -38,14 +36,6 @@ type Params = {
   readonly target: RunRouteTarget;
   readonly choice: RunRouteChoice;
 };
-
-const LIVE_TREE_PHASES: ReadonlySet<string> = new Set([
-  'answering',
-  'deciding',
-  'delegating',
-  'waiting',
-  'merging',
-]);
 
 type ResultParams = {
   readonly choice: RunRouteChoice;
@@ -129,14 +119,6 @@ const changePlanRun = async ({ sessionId, runId, choice }: PlanParams): Promise<
       .map((agent) => ({ name: agent.name, summary: agent.outputSummary })),
   });
   await startRoutedRun({ sessionId, result: next, findings });
-  await useAppStore.getState().stopWorkflowRunNow(sessionId, runId);
-  await useAppStore.getState().updateWorkflowRunRules(sessionId, runId, (rules) => ({
-    ...rules,
-    route: {
-      ...(rules.route ?? shapeRouteOf({ shape: 'plan', row: 6, why: '' })),
-      changedTo: choice.shape,
-    },
-  }));
   return 'second-run';
 };
 
@@ -180,26 +162,6 @@ const changeLeadRun = async ({
     result: chosenResultOf({ choice, ask, presets }),
     findings,
   });
-  const view = (useAppStore.getState().autoTreeViews[sessionId] ?? []).find(
-    (candidate) => candidate.tree.rootAgentId === agentId,
-  );
-  if (view !== undefined && LIVE_TREE_PHASES.has(view.tree.phase)) {
-    const port = currentTreeStopPort();
-    const stopped = port === null ? 'stuck' : await port({ treeId: view.tree.id });
-    if (stopped !== 'stopped') {
-      throw new Error('The new run started. Stop the first one from its page.');
-    }
-  }
-  await writeRunRoute({
-    db: tauriDatabase,
-    sessionId,
-    agentId,
-    route: {
-      ...(route ?? shapeRouteOf({ shape: 'lead', row: 6, why: '' })),
-      changedTo: choice.shape,
-    },
-  });
-  await useAppStore.getState().loadSetting(runRoutesKey({ sessionId }));
   return 'second-run';
 };
 

@@ -36,6 +36,7 @@ import { saveStepDef } from './saveStepDef';
 import { advanceScoutTree, joinFanOutParent } from './scoutTree';
 import { skipStuckStepAndAdvance } from './skipStuckStepAndAdvance';
 import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
+import { setWorkflowRunProviderPool } from './setWorkflowRunProviderPool';
 import { setWorkflowRunSpendLimit } from './setWorkflowRunSpendLimit';
 import { startWorkflowRun } from './startWorkflowRun';
 import { sweepIdleRuns } from './sweepIdleRuns';
@@ -71,6 +72,7 @@ export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
     setWorkflowRunAutonomy: setWorkflowRunAutonomy(set, get),
     updateWorkflowRunRules: updateWorkflowRunRules(set, get),
     resolvePresetChange: resolvePresetChange(set, get),
+    setWorkflowRunProviderPool: setWorkflowRunProviderPool(set, get),
     setWorkflowRunSpendLimit: setWorkflowRunSpendLimit(set, get),
     startWorkflowRun: startWorkflowRun(set, get),
     stopWorkflowRunNow: stopWorkflowRunNow(set, get),

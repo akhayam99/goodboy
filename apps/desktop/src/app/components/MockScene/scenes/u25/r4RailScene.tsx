@@ -9,6 +9,7 @@ import { ActivityRunScene } from '../ActivityRunScene';
 import { SESSION_ID } from '../activityRunSeed';
 import { useSceneRailFold } from '../useSceneRailFold';
 import { seedR4Rail } from './r4RailSeed';
+import { pickSessionMenuItem } from '../pickSessionMenuItem';
 
 export type R4RailState =
   | 'session'
@@ -25,7 +26,7 @@ const BACKFILL_WORKTREE = '~/code/harborline/payments-api-backfill';
 
 const NAVIGATE = useAppStore.getState().navigate;
 
-const DELETE_TRIGGER = '[data-session-foot-action="session.delete"]';
+const PICK_INTERVAL_MS = 50;
 
 const ROW_MENU_TRIGGER =
   '[data-worktree-open] [data-worktree-actions] button[aria-haspopup="menu"]';
@@ -78,10 +79,12 @@ export const R4RailScene = ({ state }: Props) => {
     if (state !== 'delete') {
       return;
     }
-    const timer = window.setTimeout(() => {
-      document.querySelector<HTMLElement>(DELETE_TRIGGER)?.click();
-    }, 600);
-    return () => window.clearTimeout(timer);
+    const timer = window.setInterval(() => {
+      if (pickSessionMenuItem({ label: 'Delete' })) {
+        window.clearInterval(timer);
+      }
+    }, PICK_INTERVAL_MS);
+    return () => window.clearInterval(timer);
   }, [state]);
   useEffect(() => {
     if (state !== 'tree-menu') {

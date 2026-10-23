@@ -8,26 +8,26 @@ export type RunAutonomyOption = {
   readonly autoRun: boolean;
 };
 
-export const RUN_AUTONOMY_HEADER = NAMES.autonomy;
+export const RUN_AUTONOMY_HEADER = NAMES.asksYou;
 
 const ASK_ME: RunAutonomyOption = {
   key: 'step',
-  label: NAMES.askMe,
-  hint: 'Pauses after every step.',
+  label: NAMES.everyStep,
+  hint: 'Stops for your go after every step.',
   autoRun: false,
 };
 
 const BALANCED: RunAutonomyOption = {
   key: 'plan',
-  label: NAMES.balanced,
-  hint: 'Pauses once, after the plan.',
+  label: NAMES.afterThePlan,
+  hint: 'Stops once, when the plan is written.',
   autoRun: true,
 };
 
 const AUTOPILOT: RunAutonomyOption = {
   key: 'run',
-  label: NAMES.autopilot,
-  hint: 'Never pauses.',
+  label: NAMES.asksNever,
+  hint: 'Runs to the end without stopping.',
   autoRun: true,
 };
 

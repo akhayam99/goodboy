@@ -25,6 +25,7 @@ import { useAgentHeaderRouting } from '../../../../shared/hooks/useAgentHeaderRo
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import type { TranscriptInsertion } from '../../../../shared/types/transcriptInsertion';
 import { AgentRunRoute } from '../RunRoute/AgentRunRoute';
+import { AgentSettingsLine } from '../AgentSettingsLine';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
 import { AgentConversationEnd } from './AgentConversationEnd';
 import { AgentHeader } from './AgentHeader';
@@ -89,6 +90,8 @@ export const AgentDetailPane = ({
   const adoption = membership.adoption;
   const [isMoveOpen, setIsMoveOpen] = useState(false);
   const [hasNextAction, setHasNextAction] = useState(false);
+  const [asksSlot, setAsksSlot] = useState<HTMLElement | null>(null);
+  const [modelsSlot, setModelsSlot] = useState<HTMLElement | null>(null);
   const navigateTo = useAppStore((state) => state.navigate);
   const openDrawer = useAppStore((state) => state.openDrawer);
   const toggleDrawer = useAppStore((state) => state.toggleDrawer);
@@ -181,10 +184,23 @@ export const AgentDetailPane = ({
     anchorKey: `agent-header:${agent.id}`,
   });
   const isInWorkflowRun = runStep !== undefined || hasNextAction;
+  const autoView = isAutoRoot ? (autoChat.tree?.view ?? null) : null;
+  const autoBudget =
+    autoView === null || autoView.budget === null
+      ? null
+      : { treeId: autoView.tree.id, facts: autoView.budget };
   const lead = (
     <>
       {context}
-      {runStep === undefined ? <AgentRunRoute session={session} agentId={agent.id} /> : null}
+      {runStep === undefined ? (
+        <AgentSettingsLine
+          session={session}
+          kind={<AgentRunRoute session={session} agentId={agent.id} />}
+          auto={autoBudget}
+          asksSlotRef={setAsksSlot}
+          modelsSlotRef={setModelsSlot}
+        />
+      ) : null}
       {isInWorkflowRun ? null : (
         <AgentStoppedNotice
           session={session}
@@ -262,6 +278,7 @@ export const AgentDetailPane = ({
         mode="conversation"
         onOpenTranscript={openTranscript}
         hasAdvanceRow={runStep === undefined}
+        {...(runStep === undefined && { controlSlots: { asks: asksSlot, models: modelsSlot } })}
         {...(runStep?.stopLabel !== undefined && { stopLabel: runStep.stopLabel })}
         {...(runStep !== undefined && agent.stepId != null && { clockStepAgentId: agent.id })}
         hasComposer={!isPinned && !isRewriterFinished && adoption === null && !isMoveOpen}

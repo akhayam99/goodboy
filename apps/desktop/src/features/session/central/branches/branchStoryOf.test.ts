@@ -96,14 +96,22 @@ const status = ({
 
 type StoryParams = {
   readonly fact: BranchFacts;
-  readonly hasCard?: boolean;
   readonly detail?: BranchDetailWords | null;
 };
 
-const storyOf = ({ fact, hasCard = false, detail = null }: StoryParams) => {
-  const [entry] = branchEntriesOf({
+type EntriesParams = {
+  readonly facts: ReadonlyArray<BranchFacts>;
+  readonly detailByMountId?: ReadonlyMap<string, BranchDetailWords>;
+};
+
+const allEntriesOf = ({ facts, detailByMountId = new Map() }: EntriesParams) => {
+  const { live, finished } = branchEntriesOf({ facts, detailByMountId });
+  return [...live, ...finished];
+};
+
+const storyOf = ({ fact, detail = null }: StoryParams) => {
+  const [entry] = allEntriesOf({
     facts: [fact],
-    cardOrderByMountId: hasCard ? new Map([[fact.mountId, 0]]) : new Map(),
     detailByMountId: detail === null ? new Map() : new Map([[fact.mountId, detail]]),
   });
   if (entry === undefined) {
@@ -133,7 +141,7 @@ describe('branchStoryOf, no pull request', () => {
     const story = storyOf({ fact });
     expect(story.word).toBe('Not pushed');
     expect(story.blocker).toBe('3 commits to push');
-    expect(story.rank).toBe(4);
+    expect(story.rank).toBe(2);
   });
 
   it('says No pull request once pushed, in a neutral tone', () => {
@@ -224,7 +232,6 @@ describe('branchStoryOf, pull request', () => {
   it('ends the story on Merged and keeps it last', () => {
     const story = storyOf({
       fact: factOf({ request: { state: 'merged' }, isFinished: true }),
-      hasCard: true,
     });
     expect(story.word).toBe('Merged');
     expect(story.tone).toBe('merged');
@@ -313,31 +320,37 @@ describe('branchEntriesOf and branchFoldOf', () => {
   });
   const merged = factOf({ key: 'merged', request: { state: 'merged' }, isFinished: true });
 
-  it('ranks failing, your move, local, merged and breaks ties by the card order', () => {
-    const entries = branchEntriesOf({
-      facts: [merged, local, ready, failing],
-      cardOrderByMountId: new Map([[ready.mountId, 0]]),
+  it('ranks blocked, ready, your move, an agent at work, waiting on others, merged out', () => {
+    const inReview = factOf({
+      key: 'review',
+      request: { checks: 'success', reviewDecision: 'review_required' },
+      status: status({}),
+    });
+    const working = factOf({ key: 'working', request: { checks: 'pending' }, liveCount: 1 });
+    const { live, finished } = branchEntriesOf({
+      facts: [merged, inReview, local, working, ready, failing],
       detailByMountId: new Map(),
     });
-    expect(entries.map((entry) => entry.fact.branch)).toEqual([
-      'ak/eng-1190-failing',
-      'ak/eng-1190-ready',
-      'ak/eng-1190-local',
-      'ak/eng-1190-merged',
+    expect(live.map((entry) => [entry.fact.branch, entry.story.rank])).toEqual([
+      ['ak/eng-1190-failing', 0],
+      ['ak/eng-1190-ready', 1],
+      ['ak/eng-1190-local', 2],
+      ['ak/eng-1190-working', 3],
+      ['ak/eng-1190-review', 4],
     ]);
+    expect(finished.map((entry) => entry.fact.branch)).toEqual(['ak/eng-1190-merged']);
   });
 
-  it('lifts a local branch with a card above one without', () => {
+  it('keeps the first seen order between two branches of one rank, a Next card moves nothing', () => {
     const other = factOf({
       key: 'other',
       status: status({ push: { kind: 'not-pushed', commits: 1 }, ahead: 1 }),
     });
-    const entries = branchEntriesOf({
-      facts: [other, local],
-      cardOrderByMountId: new Map([[local.mountId, 0]]),
-      detailByMountId: new Map(),
-    });
-    expect(entries[0]?.fact.branch).toBe('ak/eng-1190-local');
+    const { live } = branchEntriesOf({ facts: [other, local], detailByMountId: new Map() });
+    expect(live.map((entry) => entry.fact.branch)).toEqual([
+      'ak/eng-1190-other',
+      'ak/eng-1190-local',
+    ]);
   });
 
   it('does not fold up to the cap and counts what it hides past it', () => {
@@ -348,11 +361,7 @@ describe('branchEntriesOf and branchFoldOf', () => {
         isFinished: index >= BRANCH_ROW_CAP + 1,
       }),
     );
-    const entries = branchEntriesOf({
-      facts,
-      cardOrderByMountId: new Map(),
-      detailByMountId: new Map(),
-    });
+    const entries = allEntriesOf({ facts });
     expect(branchFoldOf({ entries: entries.slice(0, BRANCH_ROW_CAP) }).label).toBeNull();
     const oneOver = branchFoldOf({ entries: entries.slice(0, BRANCH_ROW_CAP + 1) });
     expect(oneOver.label).toBeNull();
@@ -393,11 +402,7 @@ describe('branchEntriesOf and branchFoldOf', () => {
   });
 
   it('writes the row name as a sentence that starts with the branch, without the card', () => {
-    const [entry] = branchEntriesOf({
-      facts: [failing],
-      cardOrderByMountId: new Map([[failing.mountId, 0]]),
-      detailByMountId: new Map(),
-    });
+    const [entry] = allEntriesOf({ facts: [failing] });
     if (entry === undefined) {
       throw new Error('One fact gives one entry.');
     }
@@ -408,11 +413,7 @@ describe('branchEntriesOf and branchFoldOf', () => {
 });
 
 const sentenceOf = ({ fact }: StoryParams): string => {
-  const [entry] = branchEntriesOf({
-    facts: [fact],
-    cardOrderByMountId: new Map(),
-    detailByMountId: new Map(),
-  });
+  const [entry] = allEntriesOf({ facts: [fact] });
   if (entry === undefined) {
     throw new Error('One fact gives one entry.');
   }

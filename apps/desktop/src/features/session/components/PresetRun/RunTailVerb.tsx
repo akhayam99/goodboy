@@ -53,7 +53,7 @@ export const RunTailVerb = ({ session, view, verb }: Props) => {
     case 'primary':
       return <RunPrimaryAction session={session} view={view} primary={verb.primary} />;
     case 'raiseCap':
-      return <RaiseCapPrimary session={session} view={view} />;
+      return <RaiseCapPrimary session={session} view={view} variant="primary" />;
     case 'answer':
       return (
         <Button size="sm" variant="primary" onClick={() => answer({ question: verb.question })}>

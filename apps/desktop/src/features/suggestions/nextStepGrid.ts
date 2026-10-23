@@ -1,5 +1,3 @@
-export const NEXT_STEP_LIST = 'group/next flex flex-col gap-1';
-
 export const NEXT_STEP_GRID =
   'grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_6.5rem_4.5rem] items-center gap-x-2 rounded-md bg-subtle px-2 group-has-[[data-column=menu]>*]/next:grid-cols-[1.75rem_minmax(0,1fr)_6.5rem_4.5rem_1.75rem]';
 

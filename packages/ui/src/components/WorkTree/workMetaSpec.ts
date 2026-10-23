@@ -2,7 +2,7 @@ export const WORK_ROW = {
   container: '@container',
   pointerLayer: 'pointer-events-auto flex shrink-0 cursor-pointer items-center',
   title: 'min-w-16',
-  label: 'min-w-40 @max-[440px]:min-w-0',
+  label: 'min-w-40 @max-[640px]:min-w-0',
   state: '@max-[320px]:hidden',
   stateSlot:
     'flex min-w-28 max-w-64 shrink-0 items-center justify-end whitespace-nowrap @max-[790px]:min-w-24 @max-[320px]:hidden',

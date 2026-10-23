@@ -90,7 +90,7 @@ export const TaskLinksScene = ({ state = 'idle' }: Props) => {
     <ShellFrame
       session={session}
       sidebar="expanded"
-      main={<SessionOverviewPane session={session} onSelectLens={() => undefined} />}
+      main={<SessionOverviewPane session={session} />}
     />
   );
 };

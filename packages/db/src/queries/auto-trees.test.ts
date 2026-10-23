@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { brandId, type AutoTreeId } from '@goodboy/types';
+import type { Database } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   AUTO_SEED_NOW,
@@ -16,6 +17,7 @@ import {
   insertAutoTree,
   listAutoTreesOfSession,
   listAutoTreesToRecover,
+  lowerAutoTreeCapsOfSession,
   recordAutoRefusal,
   releaseAutoTree,
   setAutoTreeCapIfUnchanged,
@@ -278,5 +280,88 @@ describe('auto trees', () => {
     });
     const found = await listAutoTreesToRecover({ db });
     expect(found.map((tree) => tree.id)).toEqual([treeId]);
+  });
+});
+
+type RacingParams = {
+  readonly db: Database;
+  readonly otherWrite: string;
+};
+
+const racing = ({ db, otherWrite }: RacingParams): Database => {
+  let hasRaced = false;
+  return {
+    ...db,
+    select: async <T>(sql: string, params?: ReadonlyArray<unknown>) => {
+      const rows = await db.select<T>(sql, params);
+      if (!hasRaced) {
+        hasRaced = true;
+        await db.execute(otherWrite);
+      }
+      return rows;
+    },
+  };
+};
+
+describe('lowering the Auto limits of a session', () => {
+  it('ends at the smaller limit when another window lowered the cap after the read', async () => {
+    const { db } = await world();
+    const loser = racing({ db, otherWrite: 'UPDATE auto_trees SET cap_usd = 3' });
+
+    expect(
+      await lowerAutoTreeCapsOfSession({
+        db: loser,
+        sessionId: AUTO_SEED_SESSION,
+        capUsd: 2,
+        nowMs: AUTO_SEED_NOW,
+      }),
+    ).toEqual([treeId]);
+    expect((await getAutoTree({ db, treeId }))?.capUsd).toBe(2);
+  });
+
+  it('leaves a tree that finished after the read as it ended', async () => {
+    const { db } = await world();
+    const loser = racing({ db, otherWrite: `UPDATE auto_trees SET phase = 'finished'` });
+
+    expect(
+      await lowerAutoTreeCapsOfSession({
+        db: loser,
+        sessionId: AUTO_SEED_SESSION,
+        capUsd: 2,
+        nowMs: AUTO_SEED_NOW,
+      }),
+    ).toEqual([]);
+    expect(await getAutoTree({ db, treeId })).toMatchObject({ capUsd: 5, phase: 'finished' });
+  });
+
+  it('lowers a cap another window raised over the session limit after the read', async () => {
+    const { db } = await world();
+    await db.execute('UPDATE auto_trees SET cap_usd = 1');
+    const loser = racing({ db, otherWrite: 'UPDATE auto_trees SET cap_usd = 5' });
+
+    expect(
+      await lowerAutoTreeCapsOfSession({
+        db: loser,
+        sessionId: AUTO_SEED_SESSION,
+        capUsd: 2,
+        nowMs: AUTO_SEED_NOW,
+      }),
+    ).toEqual([treeId]);
+    expect((await getAutoTree({ db, treeId }))?.capUsd).toBe(2);
+  });
+
+  it('never raises a cap another window lowered under the session limit', async () => {
+    const { db } = await world();
+    const loser = racing({ db, otherWrite: 'UPDATE auto_trees SET cap_usd = 1' });
+
+    expect(
+      await lowerAutoTreeCapsOfSession({
+        db: loser,
+        sessionId: AUTO_SEED_SESSION,
+        capUsd: 2,
+        nowMs: AUTO_SEED_NOW,
+      }),
+    ).toEqual([]);
+    expect((await getAutoTree({ db, treeId }))?.capUsd).toBe(1);
   });
 });

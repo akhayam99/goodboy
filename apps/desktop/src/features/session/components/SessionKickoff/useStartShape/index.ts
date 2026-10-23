@@ -9,6 +9,7 @@ import { rememberLastStart } from '../../../startKind/rememberLastStart';
 import { draftStartOf } from '../../../startRun/draftStartOf';
 import { pickedRouteOf } from '../../../startRun/pickedRouteOf';
 import { startRoutedRun } from '../../../startRun/startRoutedRun';
+import { hasAsksGate } from '../hasAsksGate';
 import { useStartFromDraft } from '../useStartFromDraft';
 
 type Params = {
@@ -80,8 +81,9 @@ export const useStartShape = ({ workspaceId, mount, prepare }: Params): StartSha
         role: draft.agentKind,
       });
       const routing = shape === 'agent' ? draft.agentRouting : null;
+      const autonomy = hasAsksGate({ shape }) ? draft.autonomy : null;
       const run = async (created: Session): Promise<void> => {
-        await startRoutedRun({ sessionId: created.id, result, routing });
+        await startRoutedRun({ sessionId: created.id, result, routing, autonomy });
       };
       await startFromDraft({
         workspaceId,

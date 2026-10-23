@@ -6,6 +6,5 @@
   "apps/desktop/src/features/settings/components/SettingsStudio/FlowSourcePicker.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/AutonomyChip.tsx": 1,
   "apps/desktop/src/features/workflows/components/WorkflowBuilderView/parts/StartsChip.tsx": 1,
-  "apps/desktop/src/features/workflows/components/WorkflowRulesPanel/RulesAutonomyBand.tsx": 1,
   "apps/desktop/src/features/workspace/components/ConvertWorkspaceFlow/index.tsx": 1
 }

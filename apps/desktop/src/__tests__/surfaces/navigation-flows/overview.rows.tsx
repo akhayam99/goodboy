@@ -1,5 +1,4 @@
-import { expect, vi } from 'vitest';
-import { invoke } from '@tauri-apps/api/core';
+import { expect } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import {
   brandId,
@@ -14,7 +13,6 @@ import {
   type WorkflowRunId,
 } from '@goodboy/types';
 import { openQuestionFor } from '../../../features/workspace/testing/sessionColumn';
-import { SETTING_OVERVIEW_LAYOUT } from '../../../features/settings/settings';
 import {
   type Row,
   WAIT,
@@ -83,7 +81,6 @@ const seedOrchestratedRun = ({ sessionId }: SeedParams): void => {
     startedAt: STARTED_AT,
   };
   useAppStore.setState({
-    settings: { ...state.settings, [SETTING_OVERVIEW_LAYOUT]: 'new' },
     sessions: state.sessions.map((candidate) =>
       candidate.id === sessionId ? { ...candidate, workflowRuns: [run] } : candidate,
     ),
@@ -131,53 +128,26 @@ export const OVERVIEW_ROWS: ReadonlyArray<Row> = [
     },
     lands: async (ctx) => {
       const card = await screen.findByRole('region', { name: 'Needs you' }, WAIT);
-      const activity = screen.getByRole('region', { name: 'Activity' });
-      expect(within(activity).queryAllByRole('button', { name: 'Answer' })).toHaveLength(0);
-      expect(within(card).getAllByRole('button', { name: /^Open/ })).toHaveLength(1);
-
-      await clickButton(/^Open: /);
+      expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
+      for (const answer of screen.queryAllByRole('button', { name: 'Answer' })) {
+        expect(card.contains(answer)).toBe(true);
+      }
+      const [title] = within(card).getAllByRole('link');
+      if (title === undefined) {
+        throw new Error('the question row has no title that opens it');
+      }
+      await click(title);
 
       await lens('questions')(ctx);
     },
   },
-];
-
-const hasReadLayout = (): boolean =>
-  vi
-    .mocked(invoke)
-    .mock.calls.some(
-      ([command, args]) =>
-        command === 'db_select' &&
-        JSON.stringify(args ?? null).includes('"params":["overview.layout"]'),
-    );
-
-type EntryParams = {
-  readonly label: RegExp;
-  readonly query: string;
-};
-
-const openLayoutEntry = async ({ label, query }: EntryParams): Promise<void> => {
-  vi.mocked(invoke).mockClear();
-  await openPalette(label, query);
-};
-
-export const OVERVIEW_LAYOUT_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'palette: Use the new session overview starts the save of the setting',
-    covers: ['palette:Use the new session overview'],
-    open: () =>
-      openLayoutEntry({ label: /^Use the new session overview/, query: 'session overview' }),
+    name: 'palette: Open the full log opens the log drawer beside the Overview',
+    covers: ['palette:Open the full log'],
+    open: () => openPalette(/^Open the full log/, 'full log'),
     lands: async () => {
-      await waitFor(() => expect(hasReadLayout()).toBe(true));
-    },
-  },
-  {
-    name: 'palette: Use the classic session overview starts the save of the setting',
-    covers: ['palette:Use the classic session overview'],
-    open: () =>
-      openLayoutEntry({ label: /^Use the classic session overview/, query: 'session overview' }),
-    lands: async () => {
-      await waitFor(() => expect(hasReadLayout()).toBe(true));
+      expect(await screen.findByRole('region', { name: 'Log entries' }, WAIT)).toBeDefined();
+      expect(document.querySelector('[data-page="overview"]')).not.toBeNull();
     },
   },
 ];

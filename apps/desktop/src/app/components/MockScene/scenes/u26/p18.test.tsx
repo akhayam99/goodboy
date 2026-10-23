@@ -78,7 +78,7 @@ describe('the u26 p18 child drawer scenes', () => {
     mount({ id: 'u26-p18-drawer-dark' });
 
     await drawerOf();
-    const accessButtons = screen.getAllByRole('button', { name: 'Permission mode: Full access' });
+    const accessButtons = screen.getAllByRole('button', { name: 'Asks you: Full access' });
     const modelButtons = screen.getAllByRole('button', { name: /^Model routing:/ });
     expect(accessButtons).toHaveLength(1);
     expect(modelButtons.length).toBeGreaterThanOrEqual(2);

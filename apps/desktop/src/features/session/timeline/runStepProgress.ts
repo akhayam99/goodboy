@@ -84,6 +84,9 @@ const stepStateOf = ({ step, child, advance }: StepStateParams): RunStepState =>
   ) {
     return 'waiting';
   }
+  if (advance?.kind === 'ready' && advance.step.id === step.id) {
+    return 'waiting';
+  }
   if (child === null) {
     return 'notStarted';
   }

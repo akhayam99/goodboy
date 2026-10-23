@@ -1171,12 +1171,21 @@ export const WORLD_ROWS: ReadonlyArray<WorldRow> = [
     id: 'activity.openRun',
     world: 'run',
     open: async () => {
+      const sessionId = useAppStore.getState().currentSessionId;
+      if (sessionId === null) {
+        throw new Error('the run world has no current session');
+      }
+      useAppStore.getState().openDrawer({
+        kind: 'session-log',
+        sessionId,
+        payload: { focusEntryId: null },
+      });
       await settle(4);
       const lane = Array.from(
         document.querySelectorAll<HTMLElement>('button[aria-keyshortcuts="Shift+Enter"]'),
       ).find((button) => /Open run/.test(button.getAttribute('aria-description') ?? ''));
       if (lane === undefined) {
-        throw new Error('the activity feed has no run row');
+        throw new Error('the full log has no run row');
       }
       lane.focus();
       await pressed('activity.openRun', lane);
@@ -1576,7 +1585,7 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
       const composer = await openAgentChat(ctx);
       await pressed('session.permissions', composer);
     },
-    lands: () => visible('dialog', 'Permission mode'),
+    lands: () => visible('dialog', 'Asks you'),
   }),
   keyRow({
     id: 'composer.newLine',

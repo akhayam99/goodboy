@@ -261,7 +261,7 @@ const presetChip = () => screen.getByRole('button', { name: /^Preset:/ });
 const orchestratorPicker = () => screen.getByRole('group', { name: /orchestrator routing/i });
 
 const chooseAutonomy = (name: string) => {
-  fireEvent.click(screen.getByRole('button', { name: /^autonomy:/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^Asks you:/ }));
   fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${name}`, 'i') }));
 };
 
@@ -446,13 +446,13 @@ describe('WorkflowBuilderView (orchestrate)', () => {
     expect(mockGenerateWorkflowTitle).not.toHaveBeenCalled();
   });
 
-  it('pauses after each step by default and lets Autopilot opt out', async () => {
+  it('pauses after each step by default and lets Never opt out', async () => {
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
     setGoal();
 
-    screen.getByRole('button', { name: 'Autonomy: Ask me' });
-    chooseAutonomy('Autopilot');
-    screen.getByRole('button', { name: 'Autonomy: Autopilot' });
+    screen.getByRole('button', { name: 'Asks you: Every step' });
+    chooseAutonomy('Never');
+    screen.getByRole('button', { name: 'Asks you: Never' });
     fireEvent.click(startBtn());
 
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
@@ -748,7 +748,7 @@ describe('WorkflowBuilderView (preset)', () => {
     expect(labels[1]).toMatch(/^Step 2 of 2 Implementer · (?!Auto)/);
   });
 
-  it('draws the real steps with one model chip each and the pause the autonomy asks for', () => {
+  it('draws the real steps with one model chip each and the pause Asks you sets', () => {
     storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-preset-1', 'Ship It')] };
     render(<WorkflowBuilderView mode={currentMode} session={session} onClose={vi.fn()} />);
     setGoal();
@@ -1111,7 +1111,7 @@ describe('WorkflowBuilderView (docked in a drawer)', () => {
     );
 
     expect(within(dock).getByRole('button', { name: 'Start workflow' })).toBeDefined();
-    expect(within(dock).getByRole('button', { name: /^autonomy:/i })).toBeDefined();
+    expect(within(dock).getByRole('button', { name: /^Asks you:/ })).toBeDefined();
     expect(within(dock).getByRole('button', { name: /^starts:/i })).toBeDefined();
     expect(within(dock).getByRole('button', { name: /^limit:/i })).toBeDefined();
     expect(within(dock).queryByRole('button', { name: /^discard$/i })).toBeNull();
@@ -1262,8 +1262,8 @@ describe('WorkflowBuilderView (kickoff, before the session exists)', () => {
   it('keeps its draft under the workspace kickoff, not a session', () => {
     render(<KickoffHarness start={kickoffStart()} />);
     fireEvent.change(kickoffGoal(), { target: { value: 'test goal' } });
-    fireEvent.click(screen.getByRole('button', { name: /autonomy/i }));
-    fireEvent.click(screen.getByRole('radio', { name: /^Autopilot/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Asks you/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /^Never/ }));
 
     expect(storeState.workflowDrafts['kickoff:ws-1']?.mode).toBe('dynamic');
     expect(storeState.workflowDrafts['sess-1']).toBeUndefined();

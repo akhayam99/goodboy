@@ -1,7 +1,6 @@
 import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { SpawnedAutoFocus } from '../../../SpawnedPanel/SpawnedAutoFocus';
-import { SpawnedFocusFoot } from '../../../SpawnedPanel/SpawnedFocusFoot';
 import { WorkTimeProvider } from '../../../../../features/workTreeModel/components/WorkTimeProvider';
 
 type Props = {
@@ -25,7 +24,6 @@ export const SceneAutoTreeNav = ({ session, rootAgentId }: Props) => {
           />
         </div>
       </WorkTimeProvider>
-      <SpawnedFocusFoot session={session} focus={{ kind: 'auto', rootAgentId }} />
     </nav>
   );
 };

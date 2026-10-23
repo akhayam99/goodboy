@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../../store';
 import { requestSessionSpendLimitEdit } from '../../../../budget/requestSessionSpendLimitEdit';
 import { isBudgetBlocked } from '../../../../../store/slices/workflows/budgetBlock';
 import type { RunView } from '../useRunView';
+import type { RunPrimaryVariant } from './RunPrimaryAction';
 import { RunSpendLimitPopover } from '../../../../workflows/components/RunSpendLimitPopover';
 
 const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
@@ -13,9 +14,10 @@ const EMPTY_ALERTS: ReadonlyArray<BudgetAlert> = [];
 type Props = {
   readonly session: Session;
   readonly view: RunView;
+  readonly variant: RunPrimaryVariant;
 };
 
-export const RaiseCapPrimary = ({ session, view }: Props) => {
+export const RaiseCapPrimary = ({ session, view, variant }: Props) => {
   const isSessionBlocked = useAppStore((state) =>
     isBudgetBlocked({
       alerts: state.budgetAlerts ?? EMPTY_ALERTS,
@@ -27,13 +29,18 @@ export const RaiseCapPrimary = ({ session, view }: Props) => {
   return isSessionBlocked ? (
     <Button
       size="sm"
-      variant="primary"
+      variant={variant}
       onClick={() => requestSessionSpendLimitEdit({ sessionId: session.id })}
     >
       <Wallet size={ICON_SIZE.control} aria-hidden />
       Raise limit
     </Button>
   ) : (
-    <RunSpendLimitPopover sessionId={session.id} run={view.run} variant="primary" />
+    <RunSpendLimitPopover
+      sessionId={session.id}
+      run={view.run}
+      variant="primary"
+      buttonVariant={variant}
+    />
   );
 };

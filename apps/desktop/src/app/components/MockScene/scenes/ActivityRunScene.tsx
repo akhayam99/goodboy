@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { IsoDateTime, ProviderRunId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
+import { LogPane } from '../../../../features/session/central/log/LogPane';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { SessionWorkspace } from '../../../../features/session/components/SessionWorkspace';
 import {
@@ -88,6 +89,7 @@ type Props = {
   readonly isPageFollowed?: boolean;
   readonly isContextRead?: boolean;
   readonly seedRuns?: () => void;
+  readonly isLogShown?: boolean;
 };
 
 const IDLE_SESSION: Session = {
@@ -102,6 +104,7 @@ export const ActivityRunScene = ({
   isPageFollowed = false,
   isContextRead = false,
   seedRuns = seedActivityRunScene,
+  isLogShown = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -159,8 +162,10 @@ export const ActivityRunScene = ({
           <div className="relative h-full w-full">
             <SessionWorkspace session={session} isActive />
           </div>
+        ) : isLogShown ? (
+          <LogPane session={session} />
         ) : (
-          <SessionOverviewPane session={session} onSelectLens={() => undefined} />
+          <SessionOverviewPane session={session} />
         )
       }
     />

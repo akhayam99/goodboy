@@ -116,6 +116,8 @@ const runLevel = () => within(nodeOf('[data-spawned-panel="run"]'));
 
 const tail = () => within(nodeOf('[data-run-tail]'));
 
+const header = () => within(nodeOf('[data-run-header-actions]'));
+
 type AgentPatch = {
   readonly id: AgentId;
   readonly patch: Partial<Agent>;
@@ -154,6 +156,8 @@ const patchRun = ({ patch }: RunPatch): void => {
     }));
   });
 };
+
+const menuOrder = ['Skip step 2', 'Copy run summary', 'Stop run', 'Archive run', 'Delete run'];
 
 const openMenu = async (): Promise<HTMLElement> => {
   await press(screen.getByRole('button', { name: /run actions$/ }));
@@ -212,11 +216,12 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(document.querySelector('[data-slot="pane-meta"]')).toBeNull();
   });
 
-  it('Queued manual run: the list says it waits, its tail starts it', async () => {
+  it('Queued manual run: the list says it waits, its one header primary starts it', async () => {
     await mount('c08-runs');
     await press(screen.getByRole('button', { name: /^Open Document the export batching/ }));
     expect(tail().getByText('Waits to start')).toBeDefined();
-    expect(tail().getByRole('button', { name: 'Start run' })).toBeDefined();
+    expect(header().getByRole('button', { name: 'Start run' })).toBeDefined();
+    expect(tail().queryByRole('button', { name: 'Start run' })).toBeNull();
   });
 
   it('Archived runs fold in the list and restore from their header', async () => {
@@ -232,23 +237,19 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(runLevel().getByRole('textbox', { name: 'Run name' })).toBeDefined();
   });
 
-  it('Pause run and Stop run with its confirm sit in the header, Autonomy and Skip step N in the run menu', async () => {
+  it('Pause run is the one header button; Stop run with its confirm and Skip step N sit in the run menu', async () => {
     await mount('c08-run-working');
     const live = within(
       document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
     );
     expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
+    expect(live.queryByRole('button', { name: 'Stop run' })).toBeNull();
     const menu = within(await openMenu());
     expect(menu.queryByText('Pause run')).toBeNull();
-    expect(menu.queryByText('Stop run')).toBeNull();
-    expect(menu.getByText('Copy run summary')).toBeDefined();
-    expect(menu.getByText('Archive run')).toBeDefined();
-    expect(menu.getByText('Delete run')).toBeDefined();
-    expect(menu.getByText('Skip step 2')).toBeDefined();
-    expect(menu.getByText('Autonomy')).toBeDefined();
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
-    await settle();
-    await press(live.getByRole('button', { name: 'Stop run' }));
+    expect(
+      menu.getAllByRole('menuitem').map((item) => item.textContent?.replace(/…$/, '')),
+    ).toEqual(menuOrder);
+    await press(menu.getByRole('menuitem', { name: /^Stop run/ }));
     expect(screen.getByText('Stop this run?')).toBeDefined();
   });
 
@@ -273,7 +274,6 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(runStop()?.kind).toBe('paused');
     expect(document.querySelector('[data-run-verb="workflowRun.pause"]')).toBeNull();
     expect(live().getByRole('button', { name: 'Resume run' })).toBeDefined();
-    expect(live().getByRole('button', { name: 'Stop run' })).toBeDefined();
   });
 
   it('Resume run takes the place of Pause run: a failed write keeps it paused, pressing again resumes', async () => {
@@ -292,7 +292,7 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
       Array.from(document.querySelectorAll('[data-run-live-verbs] [data-run-verb]')).map((verb) =>
         verb.getAttribute('data-run-verb'),
       );
-    expect(verbs()).toEqual(['workflowRun.resume', 'workflowRun.close']);
+    expect(verbs()).toEqual(['workflowRun.resume']);
     const writes = failWritesWith({ marker: 'orchestration_stop_kind' });
 
     await press(live().getByRole('button', { name: 'Resume run' }));
@@ -302,7 +302,7 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     writes.heal();
     await press(live().getByRole('button', { name: 'Resume run' }));
     expect(runStop() ?? null).toBeNull();
-    expect(verbs()).toEqual(['workflowRun.pause', 'workflowRun.close']);
+    expect(verbs()).toEqual(['workflowRun.pause']);
   });
 
   it('Continue step after an interrupted step, on the tail', async () => {
@@ -330,9 +330,10 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(live.getByRole('button', { name: 'Resume run' })).toBeDefined();
   });
 
-  it('Next step: Start step 3 on the tail once step 2 is done', async () => {
+  it('Next step: Start step 3 is the header primary once step 2 is done', async () => {
     await mount('c08-run-ready');
-    expect(tail().getByRole('button', { name: 'Start step 3' })).toBeDefined();
+    expect(header().getByRole('button', { name: 'Start step 3' })).toBeDefined();
+    expect(tail().queryByRole('button', { name: 'Start step 3' })).toBeNull();
   });
 
   it('Sub agents sit under their step in the Agents panel', async () => {
@@ -390,18 +391,19 @@ describe('SPEC3 9.4 run rows stay reachable from the preset run level', () => {
     expect(screen.getByRole('button', { name: /^Create wireframe/ })).toBeDefined();
   });
 
-  it('Plan approval waits on the tail', async () => {
+  it('Plan approval is the header primary', async () => {
     await mount('c08-run-approval');
-    expect(tail().getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    expect(header().getByRole('button', { name: 'Approve plan' })).toBeDefined();
   });
 
-  it('Answer a step question from the tail', async () => {
+  it('Answer a step question from the header', async () => {
     await mount('c08-run-ready');
     act(() => {
       useAppStore.setState({ sessionOpenQuestions: { [C08_SESSION_ID]: [QUESTION] } });
     });
     await settle();
-    expect(tail().getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(header().getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(tail().queryByRole('button', { name: 'Answer' })).toBeNull();
   });
 
   it('Step model sits in the step footer of the embedded conversation', async () => {

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Disclosure } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRestart';
@@ -25,6 +27,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
     (hint) => hint.consumedAt == null && !readingIds.includes(hint.id),
   ).length;
   const quiet = useQuietStep({ agents });
+  const [isWhyOpen, setIsWhyOpen] = useState(false);
   const tail = orchestratedTailOf({
     orchestrator: view.orchestrator.state,
     agents,
@@ -41,6 +44,7 @@ export const OrchestratedTail = ({ session, view }: Props) => {
   if (tail === null) {
     return null;
   }
+  const tailVerbs = tail.verbs.filter((verb) => verb.kind !== 'primary');
   const phase = view.orchestrator.state.phase;
   const latest = decisionEntries({ run, steps: workflow.steps }).decisions[0] ?? null;
   const isReasonShown =
@@ -62,17 +66,26 @@ export const OrchestratedTail = ({ session, view }: Props) => {
         }}
         onAction={() => undefined}
         verbs={
-          tail.verbs.length === 0
+          tailVerbs.length === 0
             ? null
-            : tail.verbs.map((verb) => (
+            : tailVerbs.map((verb) => (
                 <OrchestratedTailVerb key={verb.kind} session={session} view={view} verb={verb} />
               ))
         }
       />
       {isReasonShown ? (
-        <p data-orchestrated-reason="" className="min-w-0 text-ui text-muted-foreground">
-          {ORCHESTRATED_COPY.why({ reason: latest.reason })}
-        </p>
+        <Disclosure
+          label={
+            <span className="text-ui text-muted-foreground">{ORCHESTRATED_COPY.whyThisStep}</span>
+          }
+          isOpen={isWhyOpen}
+          onToggle={() => setIsWhyOpen((isOpen) => !isOpen)}
+          className="self-start"
+        >
+          <p data-orchestrated-reason="" className="min-w-0 text-ui text-muted-foreground">
+            {latest.reason}
+          </p>
+        </Disclosure>
       ) : null}
     </section>
   );

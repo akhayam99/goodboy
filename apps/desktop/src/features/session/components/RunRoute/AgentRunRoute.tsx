@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import type { AgentId, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { parseRunRoutes, runRoutesKey } from '../../startRun/runRoutesSetting';
-import { RunRouteLine } from './RunRouteLine';
+import { RunKindChip } from './RunKindChip';
 
 type Props = {
   readonly session: Session;
@@ -32,6 +32,12 @@ export const AgentRunRoute = ({ session, agentId }: Props) => {
     return null;
   }
   return (
-    <RunRouteLine workspaceId={session.workspaceId} target={target} route={route} changeCount={0} />
+    <RunKindChip
+      workspaceId={session.workspaceId}
+      target={target}
+      route={route}
+      changeCount={0}
+      hasStarted
+    />
   );
 };

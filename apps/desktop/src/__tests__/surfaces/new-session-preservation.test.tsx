@@ -145,7 +145,9 @@ describe('SPEC3 9.2 New session draft and the New forms, after one flow unit 5',
   it('keeps the Overview New button filled only while Next holds no primary', async () => {
     await mountScene({ name: 'c05-overview-blank' });
 
-    const hasNext = screen.queryByRole('region', { name: 'Next steps' }) !== null;
+    const hasNext =
+      document.querySelector('[data-overview-card="needs-you"], [data-overview-card="next"]') !==
+      null;
     expect(screen.getByRole('button', { name: 'New' }).getAttribute('data-variant')).toBe(
       hasNext ? 'secondary' : 'primary',
     );

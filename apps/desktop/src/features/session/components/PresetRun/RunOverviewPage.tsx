@@ -5,6 +5,7 @@ import { RunFinishedActions } from '../AgentTree/RunFinishedActions';
 import { RunGoal } from '../AgentTree/RunGoal';
 import { RunWriteDestination } from '../AgentTree/RunWriteDestination';
 import type { RunView } from '../AgentTree/useRunView';
+import { OrchestratedFacts } from '../OrchestratedRun/OrchestratedFacts';
 import { RunPageActions } from './RunPageActions';
 import { RunTail } from './RunTail';
 
@@ -30,6 +31,7 @@ export const RunOverviewPage = ({ session, view }: Props) => {
         className={cn('flex min-w-0 flex-col gap-6', isDiscarded && TERMINAL_DIM)}
       >
         <RunGoal run={run} workflow={workflow} />
+        <OrchestratedFacts session={session} view={view} />
         {isDiscarded ? null : <RunWriteDestination sessionId={sessionId} />}
         {isCompleted ? <RunFinishedActions sessionId={sessionId} workflowRunId={run.id} /> : null}
         {isDiscarded ? null : (

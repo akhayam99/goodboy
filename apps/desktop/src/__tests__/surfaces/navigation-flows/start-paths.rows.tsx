@@ -154,9 +154,9 @@ const installFakes = ({ sessionId }: Ctx): void => {
 };
 
 const inboxRowButton = (identifier: string): HTMLElement => {
-  const row = Array.from(document.querySelectorAll<HTMLElement>('[data-row-key]')).find(
-    (candidate) => candidate.textContent?.includes(identifier),
-  );
+  const row = Array.from(
+    document.querySelectorAll<HTMLElement>('[role="option"][data-row-key]'),
+  ).find((candidate) => candidate.textContent?.includes(identifier));
   const button = row ?? null;
   if (button === null) {
     throw new Error(`the inbox lists no ${identifier}`);

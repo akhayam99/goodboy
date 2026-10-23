@@ -65,6 +65,7 @@ import { isTurnThinking } from '../../utils/isTurnThinking';
 import { turnStateOf } from './turnStateOf';
 import { waitingForOf } from './waitingForOf';
 import type { OpenTranscriptAt } from '../../openTranscriptAt';
+import type { ComposerControlSlots } from '../ChatInput/composerControlSlots';
 
 type Props = {
   readonly session: Session;
@@ -77,6 +78,7 @@ type Props = {
   readonly briefLabel?: string;
   readonly insertions?: ReadonlyArray<TranscriptInsertion>;
   readonly composerLead?: ReactNode;
+  readonly controlSlots?: ComposerControlSlots;
   readonly mode?: ChatViewMode;
   readonly onOpenTranscript?: OpenTranscriptAt;
   readonly hasAdvanceRow?: boolean;
@@ -148,6 +150,7 @@ export const ChatView = ({
   briefLabel,
   insertions,
   composerLead,
+  controlSlots,
   mode = 'record',
   onOpenTranscript,
   hasAdvanceRow = true,
@@ -706,6 +709,7 @@ export const ChatView = ({
           agentId={agentId}
           providerDisconnected={isProviderDisconnected}
           placeholderOverride={composerPlaceholder}
+          {...(controlSlots !== undefined && { controlSlots })}
         />
       ) : null}
     </div>

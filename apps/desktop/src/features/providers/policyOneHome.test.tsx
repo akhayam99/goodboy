@@ -99,6 +99,7 @@ const openPopover = () => {
 beforeEach(async () => {
   await resetStoryStore();
   stubStoryInvoke({ set_workspace_overrides: null });
+  useAppStore.setState({ loadSetting: vi.fn(async (): Promise<string | null> => null) });
 });
 
 afterEach(cleanup);
@@ -145,7 +146,8 @@ describe('the provider policy has one home', () => {
     seed({ policy: POLICY, rules: { spreadByHeadroom: true } });
     render(<WorkflowRulesPanel workspaceId={WORKSPACE.id} />);
 
-    const band = screen.getByRole('region', { name: 'Providers' });
+    fireEvent.click(screen.getByRole('button', { name: /^Models: / }));
+    const band = screen.getByRole('dialog', { name: 'Models' });
     expect(within(band).queryAllByRole('switch')).toEqual([]);
     expect(within(band).getByRole('button', { name: 'Open Providers and models' })).toBeDefined();
     expect(within(band).getByTestId('rules-policy-summary').textContent).toBe(
@@ -167,6 +169,7 @@ describe('the provider policy has one home', () => {
     render(<WorkflowRulesPanel workspaceId={WORKSPACE.id} />);
 
     expect(screen.queryAllByRole('switch', { name: SPREAD_LABEL })).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: /^Models: / }));
     expect(screen.getByTestId('rules-policy-summary')).toBeDefined();
     cleanup();
     const reopened = openPopover();

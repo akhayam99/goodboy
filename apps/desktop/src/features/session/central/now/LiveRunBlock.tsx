@@ -1,20 +1,28 @@
-import { useContext, type ReactNode } from 'react';
-import { ROW_INTERACTIVE, cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
-import { sessionPlace, useAppStore } from '../../../../store';
+import { useContext } from 'react';
+import type { MeasuredTurnSpan, Session, SessionId } from '@goodboy/types';
+import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NAMES } from '../../../../shared/names';
 import type { RowPhase } from '../../../workTreeModel/rowState';
 import { WorkTimeContext } from '../../../workTreeModel/workTimeSource';
 import { runWorkTime } from '../../timeline/runWorkTime';
-import { LiveChildLine } from './LiveChildLine';
+import { agentModelLineOf } from './agentModelLineOf';
+import { LiveChildren } from './LiveChildren';
 import type { LiveGroupState, LiveRunGroup } from './liveGroupsOf';
-import { runPositionOf } from './runPositionOf';
+import { LiveRow } from './LiveRow';
+import { LiveRunEnd } from './LiveRunEnd';
+import { LiveStateWord } from './LiveStateWord';
+import { LIVE_TONE } from './liveTone';
+import { runStepCardOf } from './runStepCardOf';
 import { StepMeter } from './StepMeter';
 import { stepMeterLabelOf } from './stepMeterLabelOf';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly session: Session | null;
   readonly group: LiveRunGroup;
-  readonly chip?: ReactNode;
+  readonly where: string | null;
+  readonly isLead: boolean;
 };
 
 const PHASE_OF_STATE: Record<LiveGroupState, RowPhase> = {
@@ -24,18 +32,16 @@ const PHASE_OF_STATE: Record<LiveGroupState, RowPhase> = {
   deciding: 'running',
 };
 
+const NO_SPANS: ReadonlyArray<MeasuredTurnSpan> = [];
+
 type TimeParams = {
   readonly label: string | null;
 };
 
-const timeTextOf = ({ label }: TimeParams): string | null => {
-  if (label === null || label === '') {
-    return null;
-  }
-  return label.endsWith(' left') ? label : `${label} in`;
-};
+const timeTextOf = ({ label }: TimeParams): string | null =>
+  label === null || label === '' ? null : label;
 
-export const LiveRunBlock = ({ sessionId, group, chip }: Props) => {
+export const LiveRunBlock = ({ sessionId, session, group, where, isLead }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
   const source = useContext(WorkTimeContext);
   const time =
@@ -49,17 +55,19 @@ export const LiveRunBlock = ({ sessionId, group, chip }: Props) => {
           sessionProvider: null,
           sessionEffort: null,
         });
-  const position = runPositionOf({ group });
-  const detail = [
-    position === null || group.currentStep === null
-      ? 'Not started'
-      : `${position}, ${group.currentStep.title}`,
-    timeTextOf({ label: time?.label ?? null }),
-  ]
-    .filter((part) => part !== null)
-    .join(' · ');
+  const timeText = timeTextOf({ label: time?.label ?? null });
   const isOrchestrated = group.kind === 'orchestrated';
-  const open = () =>
+  const Glyph = isOrchestrated ? CONCEPT_ICONS.orchestrator : CONCEPT_ICONS.workflows;
+  const runningAgent =
+    group.entry.children.flatMap((child) =>
+      child.kind === 'agent' && child.agent.status === 'running' ? [child.agent] : [],
+    )[0] ?? null;
+  const model =
+    runningAgent === null
+      ? null
+      : agentModelLineOf({ agent: runningAgent, spans: source?.spans ?? NO_SPANS, isLive: true });
+  const card = runStepCardOf({ group, model, time: timeText });
+  const openRun = () =>
     navigate({
       to: sessionPlace({
         sessionId,
@@ -67,43 +75,57 @@ export const LiveRunBlock = ({ sessionId, group, chip }: Props) => {
         target: { kind: 'run', runId: group.entry.run.id },
       }),
     });
+  const openStep = () => {
+    if (runningAgent === null) {
+      openRun();
+      return;
+    }
+    navigate({ to: agentPlace({ sessionId, agentId: runningAgent.id }) });
+  };
+  const waitingWord =
+    group.state === 'waiting' && group.waitingStepNumber !== null
+      ? `Waits for your go on step ${group.waitingStepNumber}`
+      : null;
+  const stateSpec = LIVE_TONE.state[group.state];
+  const stateWord = <LiveStateWord tone={stateSpec.tone} word={waitingWord ?? stateSpec.word} />;
   return (
     <section
-      aria-label={group.title}
+      aria-label={`${NAMES.runKind.workflow}: ${group.title}`}
       data-live-group={group.kind}
       data-state={group.state}
-      className="flex min-w-0 flex-col gap-1"
+      className="flex min-w-0 flex-col"
     >
-      <button
-        type="button"
-        aria-label={`Open ${group.title}`}
-        onClick={open}
-        className={cn(
-          'flex min-w-0 flex-col gap-0.5 rounded-md px-1 py-1 text-left',
-          ROW_INTERACTIVE,
-        )}
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="min-w-0 truncate text-label text-foreground">{group.title}</span>
-          {isOrchestrated || group.stepStates.length === 0 ? null : (
-            <StepMeter states={group.stepStates} label={stepMeterLabelOf({ group })} />
-          )}
-          {chip}
-        </span>
-        <span className="min-w-0 truncate text-meta text-muted-foreground">{detail}</span>
-        {isOrchestrated && group.doneCount > 0 ? (
-          <span className="text-meta text-faint-foreground">
-            {group.doneCount === 1 ? '1 step done' : `${group.doneCount} steps done`}
-          </span>
-        ) : null}
-      </button>
-      {group.children.length === 0 ? null : (
-        <ul aria-label="Running now" className="flex min-w-0 list-none flex-col gap-0.5">
-          {group.children.map((child) => (
-            <LiveChildLine key={child.agentId} child={child} />
-          ))}
-        </ul>
-      )}
+      <LiveRow
+        glyph={<Glyph size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />}
+        kindWord={NAMES.runKind.workflow}
+        title={group.title}
+        openLabel={`Open ${group.title}`}
+        onOpen={openRun}
+        meter={
+          group.steps.length === 0 ? null : (
+            <StepMeter
+              steps={group.steps}
+              label={stepMeterLabelOf({ group })}
+              card={card}
+              onOpen={openStep}
+            />
+          )
+        }
+        where={where}
+        end={
+          session === null ? (
+            stateWord
+          ) : (
+            <LiveRunEnd session={session} group={group} fallback={stateWord} isLead={isLead} />
+          )
+        }
+        time={
+          timeText === null ? null : (
+            <span className="text-meta tabular-nums text-faint-foreground">{timeText}</span>
+          )
+        }
+      />
+      <LiveChildren sessionId={sessionId} parentTitle={group.title} items={group.children} />
       {group.isDeciding ? (
         <div className="flex min-w-0 gap-1">
           <span aria-hidden className="w-6 shrink-0" />

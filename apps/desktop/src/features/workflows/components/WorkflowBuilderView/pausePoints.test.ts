@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pausePointsOf } from './pausePoints';
 
 describe('pausePointsOf', () => {
-  it('pauses after every step but the last with Ask me', () => {
+  it('pauses after every step but the last with Every step', () => {
     expect(pausePointsOf({ autonomy: 'step', kinds: ['scout', 'planner', 'implementer'] })).toEqual(
       [
         { afterIndex: 0, text: 'Waits for you to continue' },
@@ -11,13 +11,13 @@ describe('pausePointsOf', () => {
     );
   });
 
-  it('pauses once after the plan with Balanced', () => {
+  it('pauses once after the plan with After the plan', () => {
     expect(pausePointsOf({ autonomy: 'plan', kinds: ['scout', 'planner', 'implementer'] })).toEqual(
       [{ afterIndex: 1, text: 'Waits for you to approve the plan' }],
     );
   });
 
-  it('does not pause with Autopilot', () => {
+  it('does not pause with Never', () => {
     expect(pausePointsOf({ autonomy: 'run', kinds: ['scout', 'planner', 'implementer'] })).toEqual(
       [],
     );
@@ -28,7 +28,7 @@ describe('pausePointsOf', () => {
     expect(pausePointsOf({ autonomy: 'plan', kinds: ['scout', 'planner'] })).toEqual([]);
   });
 
-  it('has nothing to pause on an empty or single-step run with Ask me', () => {
+  it('has nothing to pause on an empty or single-step run with Every step', () => {
     expect(pausePointsOf({ autonomy: 'step', kinds: [] })).toEqual([]);
     expect(pausePointsOf({ autonomy: 'step', kinds: ['scout'] })).toEqual([]);
   });

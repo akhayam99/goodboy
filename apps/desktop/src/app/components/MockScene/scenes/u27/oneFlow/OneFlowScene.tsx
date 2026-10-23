@@ -8,7 +8,7 @@ import { OneFlowRunCenter } from './OneFlowRunCenter';
 import { seedOneFlow, type SeedParams } from './oneFlowSeed';
 
 export type OneFlowCenter = Readonly<
-  { kind: 'app' } | { kind: 'run'; route: OneFlowRoute } | { kind: 'lead'; route: OneFlowRoute }
+  { kind: 'app' } | { kind: 'run' } | { kind: 'lead'; route: OneFlowRoute }
 >;
 
 export type OneFlowClicks = Readonly<{
@@ -31,7 +31,7 @@ type CenterParams = {
 
 const centerOf = ({ session, center }: CenterParams) => {
   if (center.kind === 'run') {
-    return <OneFlowRunCenter session={session} route={center.route} />;
+    return <OneFlowRunCenter session={session} />;
   }
   if (center.kind === 'lead') {
     return <OneFlowLeadCenter session={session} route={center.route} />;

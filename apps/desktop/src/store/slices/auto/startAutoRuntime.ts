@@ -8,6 +8,7 @@ import {
   registerAutoUserTurnPort,
 } from '../../../features/auto/autoUserTurnPort';
 import { readAutoTreeLimit } from '../../../features/auto/autoTreeLimit';
+import { pausingSessionCapOf } from '../../../features/budget/pausingSessionCapOf';
 import {
   currentChecksRerunPort,
   registerChecksRerunPort,
@@ -195,7 +196,7 @@ export const startAutoRuntime = async ({
   const runtime = runtimeOf();
   const treeCaps = {
     sessionCapUsd: ({ sessionId }: SessionCapParams) =>
-      getState().sessionBudgets[sessionId]?.softCapUsd ?? null,
+      pausingSessionCapOf({ budget: getState().sessionBudgets[sessionId] }),
     workspaceLimitUsd: ({ workspaceId }: WorkspaceLimitParams) =>
       readAutoTreeLimit({ db, workspaceId: brandId<WorkspaceId>({ value: workspaceId }) }),
   };

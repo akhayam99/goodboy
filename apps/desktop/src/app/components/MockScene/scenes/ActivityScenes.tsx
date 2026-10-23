@@ -17,7 +17,7 @@ export const ActivityTimelineScene = () => {
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
-        <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+        <SessionOverviewPane session={SESSION} />
       </div>
     </main>
   );

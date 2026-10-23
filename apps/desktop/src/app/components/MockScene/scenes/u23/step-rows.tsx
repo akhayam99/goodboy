@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Agent, AgentId, MeasuredTurnSpan } from '@goodboy/types';
-import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
+import { LogPane } from '../../../../../features/session/central/log/LogPane';
 import { SceneRunsSurface } from '../SceneRunsSurface';
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
@@ -163,7 +163,7 @@ const StepRowsScene = ({ surface }: SceneProps) => {
           {surface === 'runs' ? (
             <SceneRunsSurface session={FLOW_SESSION} />
           ) : (
-            <SessionOverviewPane session={FLOW_SESSION} onSelectLens={() => undefined} />
+            <LogPane session={FLOW_SESSION} />
           )}
         </div>
       }
