@@ -62,22 +62,54 @@ native IPC during that first mount.
 Do not include private values in `VITE_*` or `TAURI_ENV_*` variables: the
 `envPrefix` in `apps/desktop/vite.config.ts` exposes those prefixes to the client.
 
-Preview with `pnpm --dir apps/desktop exec vite preview --outDir dist-demo --port 5194 --strictPort`.
-Open `http://localhost:5194/?scene=demo` for the playground, or
-`http://localhost:5194/?scene=chat-shell` for a single frame. The default
-without a query is owned by `MockScene/index.tsx`; until its fallback changes
-from `workspace` to `demo`, the explicit query is required.
+Mode `demo` also changes the scene a bare URL opens: `MockScene/index.tsx`
+falls back to `demo` (the playground) in that mode and to `workspace` in mock
+dev. Preview with `pnpm --dir apps/desktop exec vite preview --outDir dist-demo --port 5194 --strictPort`
+and open `http://localhost:5194/` for the playground, or
+`http://localhost:5194/?scene=chat-shell` for a single frame.
 
 For a host that removes trailing slashes, build with
 `pnpm --dir apps/desktop build:demo --base /demo/`. An absolute asset base
 keeps `/demo` and `/demo/` working with the same files. Keep source maps off
-for public output and inspect all mock fixtures for private paths and data
-before publishing: the scene registry includes fixtures beyond the playground.
-The eager registry in `MockScene/registry/index.ts` includes home-path literals
-from `scenes/resolveBitbucketSeed.ts`, `scenes/activityResolvesSeed.ts`,
-`scenes/brand/StorageScene.tsx`, `scenes/audit/CrashThrower.tsx` and
-`scenes/audit/ReportScenes.tsx`. Those fixtures need sanitizing before this
-output is public.
+for public output. The eager registry in `MockScene/registry/index.ts` bundles
+every scene fixture, not only the playground's, so every fixture is public:
+paths are `~/code/<mock company>/<repo>` (never `/Users/` or `/home/`), email
+addresses sit on a mock company or reserved domain, and nothing is shaped like
+a provider or GitHub token. `__tests__/regressions/scene-fixtures-are-public-safe.test.ts`
+fails CI on any of the three under `MockScene/`.
+
+### Published demo
+
+The demo lives at `demo.goodboy-ai.dev`, a Vercel project of its own next to
+the website's. `apps/desktop/vercel.json` holds the build: no framework,
+`pnpm install --frozen-lockfile --ignore-scripts` (the root `prepare` runs
+`lefthook install`, which fails without a `.git` folder, and the demo needs no
+other install script), `pnpm build:demo`, output `dist-demo`, clean URLs, a
+year of `immutable` cache on the hashed `/assets/`, revalidation on every
+other path, and headers that allow framing by the same origin only (the
+playground iframes its own beats). The file sits outside `dist/` and
+`src-tauri/`, so the Tauri build never reads it. The demo bundle carries no
+analytics, no telemetry and no cookie.
+
+Production deploys only on a release commit, so the demo always matches the
+version on the download page. The project's `ignoreCommand` runs
+`scripts/demo-ignore-build.mjs`: on `VERCEL_ENV=production` it builds only when
+the first line of `VERCEL_GIT_COMMIT_MESSAGE` is a release subject
+(`chore(repo): release X.Y.Z`, with or without ` (#N)`), and it skips every
+other push to `main`. Preview deployments of other branches always build.
+`scripts/demo-ignore-build.test.mjs` pins both answers.
+
+The owner sets these by hand in the Vercel project, since `vercel.json` cannot:
+
+- Git repository `akhayam99/goodboy`, Root Directory `apps/desktop`, "Include
+  files outside the root directory in the Build Step" on (the default), so the
+  install reaches the workspace root and `scripts/`.
+- Production Branch `main`, Node.js version 22.x or later.
+- Environment variable `ENABLE_EXPERIMENTAL_COREPACK=1`, so the build uses the
+  `packageManager` pin in the root `package.json`.
+- Domain `demo.goodboy-ai.dev`, with the DNS record Vercel asks for.
+- Web Analytics and Speed Insights off. Leave every other environment
+  variable empty: anything named `VITE_*` would ship in the bundle.
 
 ## Reuse the real components, never rebuild the UI
 

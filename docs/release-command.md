@@ -91,6 +91,8 @@ Below, `X` is the new version and `X-1` is the current latest.
    never skips the required checks. Never advance, check out or pull local
    `main` ([AGENTS.md](../AGENTS.md) → Forbidden patterns). Use
    `git fetch origin main` to get the merge SHA, then tag that SHA directly.
+   The merge commit's `chore(repo): release X (#N)` subject also redeploys the
+   demo at `demo.goodboy-ai.dev` ([release.md](release.md#how-it-works)).
 4. rc dry-run (a practice release):
    `git tag vX-rc.1 <merge-sha> && git push origin vX-rc.1`.
    Wait for `release.yml` to finish green. VERIFY notarization: download the
