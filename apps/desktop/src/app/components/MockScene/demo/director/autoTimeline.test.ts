@@ -17,6 +17,7 @@ import { AUTO_ROOT_ID, AUTO_SESSION, IMPLEMENTER_ID } from '../../scenes/u24/aut
 import { autoTimeline } from './autoTimeline';
 import { createSimulatedSend } from './createSimulatedSend';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
+import { currentTreeStopPort } from '../../../../../features/auto/treeStopPort';
 
 let store: StoryStore;
 
@@ -104,5 +105,32 @@ describe('the simulated Auto approval', () => {
     });
     vi.advanceTimersByTime(30000);
     expect(phaseOf()).toBe('waiting');
+  });
+});
+
+describe('stopping Auto in the demo', () => {
+  it('stops the helpers once and leaves nothing running', async () => {
+    install({ state: 'plan', place: 'auto' });
+    await store.getState().sendTurn({
+      sessionId: AUTO_SESSION.id,
+      agentId: AUTO_ROOT_ID,
+      content: 'Approved plan v1.',
+    });
+    vi.advanceTimersByTime(1500);
+    const port = currentTreeStopPort();
+    if (port === null) {
+      throw new Error('no stop port');
+    }
+    await expect(port({ treeId: 'demo-tree' })).resolves.toBe('stopped');
+    expect(store.getState().agentTurnState[IMPLEMENTER_ID]?.kind).toBe('idle');
+    expect(store.getState().agentTurnState[AUTO_ROOT_ID]?.kind).toBe('idle');
+    vi.advanceTimersByTime(30000);
+    expect(phaseOf()).toBe('done');
+    const running = store
+      .getState()
+      .autoTreeViews[AUTO_SESSION.id]?.[0]?.delegations.filter(
+        (entry) => entry.state === 'running',
+      );
+    expect(running).toEqual([]);
   });
 });

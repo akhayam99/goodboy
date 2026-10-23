@@ -324,8 +324,9 @@ Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With
 it, `MockScene` mounts `demo/DemoDirector`, which waits for fonts and two
 painted frames, then builds the scene's timeline from the seeded store
-(`demo/director/demoTimelines.ts`: `chat-shell`, `c08-run-working`,
-`board-shell`; any other scene gets an empty one). A timeline rewinds the
+(`demo/director/demoTimelines.ts`: `chat-shell`, the `c08-run-*` and `c07-auto-*`
+beats, `board-shell`, the artifact, diff and resolve beats and `brand-limits`; any
+other scene gets an empty one). A timeline rewinds the
 seeded state in `prepare` and replays it as cues `{ atMs, apply }` against the
 real `useAppStore`, on a playback clock that leaves pauses out. Assistant text
 marks the live text registry first, so it streams through the product's own
@@ -349,7 +350,24 @@ writing cues over the visitor's changes. Under reduced motion the frame settles
 on the seeded scene and autoplay is off. In a directed frame `sendTurn` is
 simulated: it appends the user turn, runs the agent and streams a reply
 through the same live text path, so a composer never reaches IPC, and
-`useFakeTauri` keeps its fake boundary for the whole visit. `&theme=dark`
+`useFakeTauri` keeps its fake boundary for the whole visit.
+
+A directed frame also installs one demo IPC boundary before the scene mounts
+(`demo/director/installDemoIpc.ts`). A scene's own handlers (`useFakeTauri`,
+`mockIPC`) stack on top of it; the boundary answers settings from a local table,
+accepts writes, answers a few list and status commands, and parks every other
+read until a scene handler can answer it, so a seeded store is never wiped and
+nothing throws. Commands that would leave the mock world (`git_push`, GitHub
+writes, links, editor and Finder opens, chat replies) show a calm Demo playground
+notice through the undo toast bridge instead (`demoExitNotices.ts`). A timeline's
+`setup` swaps the store actions a flow needs for local simulations that change
+the real store only as their simulated step lands: run steps
+(`runActions.ts`), Auto start, approval, stop and retry (`autoTimeline.ts`),
+board cards (`installBoardActions.ts`), plan comments, diff notes, pins, Stop,
+report runs (`installDemoWorld.ts`), review comment fixes from working to a
+drafted reply that stays ready to publish (`installResolveActions.ts`), and the
+limits handoff, where Claude hits its usage limit and Codex finishes the same
+brief (`limitsTimeline.ts`). Publishing a reply never leaves the page. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
