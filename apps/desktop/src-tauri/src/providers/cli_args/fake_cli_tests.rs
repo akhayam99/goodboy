@@ -110,7 +110,8 @@ fn cursor_side_jobs_spawn_in_plan_mode_without_force() {
                     "--output-format",
                     "stream-json",
                     "--mode",
-                    "plan"
+                    "plan",
+                    "--trust"
                 ]
             ),
             "{job:?}"

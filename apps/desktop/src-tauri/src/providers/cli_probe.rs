@@ -3,7 +3,9 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use crate::proc::probe;
-use crate::providers::cli_args::{partial_output_flag, role_access, Cli, RoleAccess};
+use crate::providers::cli_args::{
+    needs_workspace_trust, partial_output_flag, role_access, Cli, RoleAccess, CURSOR_TRUST_FLAG,
+};
 
 const PROBE_TIMEOUT: Duration = Duration::from_secs(8);
 const AUTO_ROLE: &str = "auto";
@@ -151,6 +153,14 @@ pub(crate) fn partial_output_args(binary: &str) -> Vec<String> {
         Some(flag) if lists_flag(binary, flag) => vec![flag.to_string()],
         _ => Vec::new(),
     }
+}
+
+pub(crate) fn workspace_trust_args(binary: &str, argv: &[String]) -> Vec<String> {
+    if needs_workspace_trust(Cli::of_binary(binary), argv) && lists_flag(binary, CURSOR_TRUST_FLAG)
+    {
+        return vec![CURSOR_TRUST_FLAG.to_string()];
+    }
+    Vec::new()
 }
 
 #[cfg(test)]
@@ -338,6 +348,41 @@ mod tests {
             vec!["--stream-partial-output".to_string()]
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn workspace_trust_is_passed_when_the_cursor_help_lists_it_and_no_force_is_set() {
+        let dir = std::env::temp_dir().join(format!("goodboy-trust-probe-{}", std::process::id()));
+        let old_dir = dir.join("old");
+        let new_dir = dir.join("new");
+        std::fs::create_dir_all(&old_dir).expect("temp dir");
+        std::fs::create_dir_all(&new_dir).expect("temp dir");
+        let old = script_with_help(&old_dir, "cursor-agent", "--mode --stream-partial-output");
+        let current = script_with_help(&new_dir, "cursor-agent", "--mode --force --trust");
+        let read_only: Vec<String> = ["-p", "x", "--mode", "plan"]
+            .iter()
+            .map(|part| part.to_string())
+            .collect();
+        let writer: Vec<String> = ["-p", "x", "--force"]
+            .iter()
+            .map(|part| part.to_string())
+            .collect();
+        assert_eq!(
+            workspace_trust_args(&current, &read_only),
+            vec!["--trust".to_string()]
+        );
+        assert!(workspace_trust_args(&current, &writer).is_empty());
+        assert!(workspace_trust_args(&old, &read_only).is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn workspace_trust_is_never_asked_of_another_cli_or_a_missing_binary() {
+        let argv: Vec<String> = vec!["-p".to_string(), "x".to_string()];
+        assert!(workspace_trust_args("/nonexistent/cursor-agent", &argv).is_empty());
+        assert!(workspace_trust_args("/nonexistent/claude", &argv).is_empty());
+        assert!(workspace_trust_args("codex", &argv).is_empty());
     }
 
     #[test]

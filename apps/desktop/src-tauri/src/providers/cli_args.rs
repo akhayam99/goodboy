@@ -40,6 +40,16 @@ impl Cli {
     }
 }
 
+pub(crate) const CURSOR_TRUST_FLAG: &str = "--trust";
+
+pub(crate) fn needs_workspace_trust(cli: Cli, argv: &[String]) -> bool {
+    if cli != Cli::Cursor {
+        return false;
+    }
+    let skips_prompt = ["--force", "-f", "--yolo", CURSOR_TRUST_FLAG];
+    !argv.iter().any(|arg| skips_prompt.contains(&arg.as_str()))
+}
+
 pub(crate) fn partial_output_flag(cli: Cli) -> Option<&'static str> {
     match cli {
         Cli::Claude => Some("--include-partial-messages"),
@@ -565,6 +575,26 @@ mod tests {
         for cli in [Cli::Agy, Cli::Codex, Cli::Opencode] {
             assert_eq!(partial_output_flag(cli), None);
         }
+    }
+
+    #[test]
+    fn only_a_cursor_run_without_force_needs_workspace_trust() {
+        let read_only = strings(&["-p", "x", "--mode", "plan"]);
+        assert!(needs_workspace_trust(Cli::Cursor, &read_only));
+        for skip in ["--force", "-f", "--yolo", "--trust"] {
+            let argv = strings(&["-p", "x", skip]);
+            assert!(!needs_workspace_trust(Cli::Cursor, &argv), "{skip}");
+        }
+        for cli in [Cli::Claude, Cli::Agy, Cli::Codex, Cli::Opencode] {
+            assert!(!needs_workspace_trust(cli, &read_only));
+        }
+    }
+
+    #[test]
+    fn the_trust_flag_is_not_a_read_only_violation() {
+        let argv = strings(&["-p", "x", "--mode", "plan", "--trust"]);
+        assert!(read_only_violations(Cli::Cursor, Job::Planner, &argv).is_empty());
+        assert!(read_only_violations(Cli::Cursor, Job::Turn, &argv).is_empty());
     }
 
     #[test]

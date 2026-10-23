@@ -377,6 +377,8 @@ fn spawn_one<E: TurnEmitter>(
     cli_args.extend(crate::providers::cli_probe::partial_output_args(
         args.binary,
     ));
+    let trust = crate::providers::cli_probe::workspace_trust_args(args.binary, &cli_args);
+    cli_args.extend(trust);
     for a in &cli_args {
         command.arg(a);
     }

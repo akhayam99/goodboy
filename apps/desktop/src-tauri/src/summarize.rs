@@ -107,7 +107,9 @@ pub(crate) fn run_summarize(
     registry: &ChildRegistry,
     args: SummarizeArgs,
 ) -> Result<SummarizeResult, SummarizeError> {
-    let cli_args = build_cli_args(&args)?;
+    let mut cli_args = build_cli_args(&args)?;
+    let trust = crate::providers::cli_probe::workspace_trust_args(&args.binary, &cli_args);
+    cli_args.extend(trust);
 
     let mut command = crate::path_env::command(&args.binary);
     crate::aux_spawn::scrub_nested_session_env(&mut command);

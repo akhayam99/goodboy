@@ -814,6 +814,10 @@ A fresh span exists only while the block is the last one and its piece is alive.
 
 With `--include-partial-messages` (Claude) the same text arrives as `text_delta` stream events and again as the whole `assistant` line; Cursor with `--stream-partial-output` does the same with timestamped lines and a line without a timestamp. `takeStreamedBlock` drops the whole block only when it is contained in the text still pending in `ctx.streamedText`, so a CLI that changes the final text (trimming, a different join) shows it twice. `ctx.streamedText` resets on `message_start` and `result`, never between a delta and its whole line. The flag is added by `partial_output_args` after the probe, not by `turn_args`, so `turn_args` tests stay pure and a fake CLI must list the flag in its `--help`. `queueTurnEventInsert` merges the stored deltas by agent and run and writes the held text before the next event of that agent, so a new event kind needs no special case, but a path that writes `turn_events` without it would reorder text.
 
+## A read-only Cursor run needs `--trust`, a writer needs `--force`
+
+`cursor-agent` 2026.10.22 and later asks for workspace trust in headless mode and the turn ends with "Workspace Trust Required" unless the argument list has `--force` or `--trust`. `turn_args` and `side_job_args` stay pure and never carry `--trust`; `workspace_trust_args` adds it after the probe, like `partial_output_args`, so a fake Cursor CLI must list `--trust` in its `--help` and a new Cursor spawn site must call it. Never replace `--trust` with `--force` on a read-only job: `--force` grants shell and write rights.
+
 ## Hover card triggers
 
 - A `FactCard` or `Tooltip` trigger must be a DOM element that takes a ref, pointer handlers and `aria-describedby`. A component wrapper drops them silently and the card never opens; spread the span props onto the element (`TimelineRunGlyph`) or wrap a native element.

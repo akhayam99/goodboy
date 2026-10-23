@@ -742,7 +742,11 @@ fn spawn_chat_turn(
     prepared: PreparedChatTurn,
     cleanup_root: Option<PathBuf>,
 ) -> Result<String, ChatError> {
-    let partial = crate::providers::cli_probe::partial_output_args(prepared.binary);
+    let mut partial = crate::providers::cli_probe::partial_output_args(prepared.binary);
+    partial.extend(crate::providers::cli_probe::workspace_trust_args(
+        prepared.binary,
+        &prepared.cli,
+    ));
     let cli = with_partial_output(prepared.cli, &partial);
     let mut command = crate::path_env::command(prepared.binary);
     command.current_dir(&prepared.working_dir);
