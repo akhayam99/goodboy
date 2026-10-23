@@ -84,7 +84,19 @@ Below, `X` is the new version and `X-1` is the current latest.
    - Commit the edits and the new JSON in the release PR.
 2. Create the release branch following the branch-naming rule in
    [CONVENTIONS.md](../CONVENTIONS.md). Commit
-   `chore(repo): bump version to X`, push, open PR.
+   `chore(repo): bump version to X`, push, open PR. Before the merge,
+   whoever cuts the release owns the demo for X. The release commit is what
+   redeploys `demo.goodboy-ai.dev`, so a broken demo ships with the release.
+   On the release branch:
+   - Every new or changed main feature in X is in a chapter or scene of
+     `MockScene/demo/demoChapters.ts`, or consciously left out.
+   - `pnpm --filter @goodboy/desktop build:demo` passes.
+   - In a `vite preview` of `dist-demo`
+     ([mock-screenshots.md](mock-screenshots.md#static-demo-build)), every
+     chapter plays to the end with no console error and no control that does
+     nothing.
+   - The version chip in the demo top bar shows `vX`.
+   - The demo still works in a phone-width window.
 3. Wait until ALL CI checks are green (`gh pr checks`). Then merge on the
    server (`gh pr merge --squash --admin`). `main` asks collaborator PRs for
    one approving review and the owner bypasses only that rule, so `--admin`
