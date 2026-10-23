@@ -227,12 +227,12 @@ describe('the shell chapter', () => {
     [NAMES.projects, 'Linked'].forEach((word) => expect(rail).toContain(word));
   });
 
-  it('puts both adds on the rows they act on and the spend on one line with Archive and Delete', () => {
-    const foot = pointOf('shell', 'Rail foot and +');
-    expect(foot).toContain('+ on the Projects card');
-    expect(foot).toContain('+ on a folder row starts a new branch');
-    expect(foot).toContain('$2 / $10');
-    expect(foot).toContain('Archive and Delete');
+  it('puts both adds on the rows they act on and Archive and Delete in the session menu', () => {
+    const actions = pointOf('shell', 'Session actions and +');
+    expect(actions).toContain('+ on the Projects card');
+    expect(actions).toContain('+ on a folder row starts a new branch');
+    expect(actions).toContain('More session actions');
+    expect(actions).toContain('Archive and Delete');
   });
 
   it('shows what a run and Auto started in the Agents panel, with its key and no rail level', () => {
@@ -297,8 +297,16 @@ describe('the start, agent and workflow chapters', () => {
     expect(all).toContain('Also tidy commits with Auto');
   });
 
-  it('says Next leaves the follow ups of a run to its Activity row', () => {
-    expect(pointOf('agents', 'Next')).toContain("that run's Activity row");
+  it('says Next leaves the follow ups of a run to its Running row', () => {
+    expect(pointOf('agents', 'Next')).toContain("that run's Running row");
+  });
+
+  it('names the five Overview cards and drops the Classic switch', () => {
+    const cards = pointOf('agents', 'Overview cards');
+    ['Needs you', 'Running', 'Next', 'Branches', 'Done'].forEach((card) =>
+      expect(cards).toContain(card),
+    );
+    expect(cards).not.toContain('Classic');
   });
 });
 

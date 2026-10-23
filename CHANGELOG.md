@@ -12,6 +12,72 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.13
+
+The Pull request page leads with its one next step, the Overview sorts a session into five cards, and Asks you sets when a run stops for you.
+
+### New
+
+#### The Pull request page leads with its next step
+<!-- gb area=review -->
+
+The branch header's one button is the next step: Request review, Fix checks, Fix comments, Mark ready for review, the merge method, Push or Rebase on main. Other actions wait in the ⋯ menu with their reason. A strip under the title says Checks, Review, Merge and Branch once, and Checks opens its tab.
+
+Reviewers sit in a side column with their verdict, bots that only commented are listed apart, and bot comments in a row fold into one activity event.
+
+#### A branch with no pull request gets its own page
+<!-- gb area=review -->
+
+Every branch row lands on Pull request. With no pull request yet, the page names the branch, says whether it is pushed and how far ahead or behind it is, and offers Push or Rebase on main. Its strip shows Local checks: Passed or Declined from the last pre-push hook since Goodboy started, else Not run. The create form below reads the branch on screen.
+
+#### The Overview sorts a session into five cards
+<!-- gb area=sessions -->
+
+Needs you, Running, Next, Branches and Done, in that order, each with its count, and an empty card stays hidden. Running rows show the kind, the step bar and the run's own primary button. Branches rank what blocks you first, and Next puts the row that unblocks the most on top.
+
+Open the full log, in the session menu and `⌘K`, shows the whole log.
+
+#### Asks you sets when a run stops for you
+<!-- gb area=workflows -->
+
+Asks you replaces Autonomy, and its values Every step, After the plan and Never replace Ask me, Balanced and Autopilot for runs. Search still finds the old names, and the session's own Autopilot keeps its name.
+
+Asks you is a chip on the run page, in Run defaults and on the New session page for Orchestrated and Preset workflows, where it opens on Every step.
+
+### Improved
+
+#### Each run setting opens its own popover
+<!-- gb area=workflows -->
+
+The run page shows a line of chips: Kind, Asks you, Limit and Models, each with one popover that names where its value comes from. A limit applies on Enter or when the popover closes, and a Models change has Undo. Once work started, the Kind chip starts a second run with the same goal, and the first one keeps going.
+
+#### One button leads each run page
+<!-- gb area=workflows -->
+
+The run header shows one primary: Answer, Raise limit, the next step, or Pause and Resume run. Stop run moved to the ⋯ menu, behind its confirm.
+
+#### Agent and Auto pages share the chip line
+<!-- gb area=agents -->
+
+Agent and Auto agent pages show their settings as chips above the composer, which keeps only the message. An Auto limit never passes the session limit: the smaller one wins, and lowering the session limit pauses a running Auto at its next turn once it reaches the new limit.
+
+#### Run defaults use the same chips
+<!-- gb area=settings -->
+
+Settings, Run defaults sets Asks you, Limit, Models and the Auto limit with the run page's chips. While a session is open, New runs in this session start as sets that session's default, with Undo.
+
+#### Session tools say their names
+<!-- gb area=sessions -->
+
+Session tools show a word beside the icon. Archive, Delete and Restore moved from the rail foot to More session actions next to Pin, and Spend and limit opens the session spend.
+
+### Fixed
+
+- The branch header gives up its button and push while the rebase panel shows a stop, and Push works the same from both. <!-- gb area=sessions -->
+- On GitLab, the merge request form opens from the branch on screen, with its title and description filled in. <!-- gb area=review -->
+- Branch tabs, Checks and pull request actions read the branch on screen, not the session's write branch. <!-- gb area=review -->
+- A merge held by an open rebase stop says to resolve the stop instead of pointing at a hidden Rebase button. <!-- gb area=review -->
+
 ## Goodboy v0.27.12
 
 New session starts from the task and asks what kind of run, agents pick the folders they need, and a stopped rebase lands where you can act on it.
