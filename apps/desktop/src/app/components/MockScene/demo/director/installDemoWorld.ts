@@ -1,6 +1,7 @@
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import type { DirectorStore } from './directorTypes';
 import { installArtifactComments } from './installArtifactComments';
+import { installDiffNotes } from './installDiffNotes';
 
 type Params = {
   readonly store: DirectorStore;
@@ -25,6 +26,7 @@ const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
 
 export const installDemoWorld = ({ store }: Params): void => {
   installArtifactComments({ store });
+  installDiffNotes({ store });
   if (store.getState().providers.some((provider) => provider.connection === 'connected')) {
     return;
   }

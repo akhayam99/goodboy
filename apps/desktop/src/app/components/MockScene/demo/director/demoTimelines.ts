@@ -5,6 +5,8 @@ import { boardTimeline } from './boardTimeline';
 import { autoTimeline } from './autoTimeline';
 import { runFlowTimeline } from './runFlowTimeline';
 import { worldTimeline } from './worldTimeline';
+import { resolveTimeline } from './resolveTimeline';
+import { resolveWorkingTimeline } from './resolveWorkingTimeline';
 
 export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => DemoTimeline | null> =
   new Map([
@@ -20,4 +22,8 @@ export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => Dem
     ['c07-auto-child-done', autoTimeline],
     ['artifacts-lens-shell', worldTimeline],
     ['artifact-report', worldTimeline],
+    ['brand-diff', worldTimeline],
+    ['resolve-queue-shell', resolveTimeline],
+    ['resolve-fix-working', resolveWorkingTimeline],
+    ['resolve-fix-ready', resolveTimeline],
   ]);
