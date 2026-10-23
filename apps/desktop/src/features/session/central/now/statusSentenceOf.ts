@@ -1,4 +1,5 @@
 import { autoStuckKindOf } from '../../../auto/autoStuckKindOf';
+import { isAutoChildStuck } from '../../../auto/isAutoChildStuck';
 import { autoStuckLineOf } from '../../../auto/autoStuckLineOf';
 import { AGENT_KIND_META } from '../../agent-kind';
 import type { BranchFacts } from '../branches/branchFactsOf';
@@ -86,7 +87,7 @@ const autoWaitingPhraseOf = ({ group, isLead }: AutoPhraseParams): string | null
 const autoPhraseOf = ({ group, isLead }: AutoPhraseParams): string => {
   if (group.state === 'stuck') {
     const stuck = group.children.flatMap((child) => {
-      const kind = autoStuckKindOf({ state: child.state });
+      const kind = isAutoChildStuck({ child }) ? autoStuckKindOf({ state: child.state }) : null;
       return kind === null ? [] : [{ title: child.label, kind }];
     });
     const [first] = stuck;

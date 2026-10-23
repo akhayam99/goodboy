@@ -308,4 +308,47 @@ describe('autoGroupOf', () => {
     );
     expect(group?.children[0]?.asked).toBe('work for fixer');
   });
+
+  describe('a child whose agent is gone', () => {
+    const failed = () =>
+      aView({
+        phase: 'waiting',
+        delegations: [
+          aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+        ],
+      });
+
+    it('is not stuck, so the group neither reads Stuck nor asks for a retry', () => {
+      const group = autoGroupOf({ view: failed(), agents: [ROOT], now: FIXTURE_NOW });
+
+      expect(group?.isStuck).toBe(false);
+      expect(group?.word).not.toBe('Stuck');
+      expect(group?.children[0]?.isGone).toBe(true);
+    });
+
+    it('is stuck again while its agent is in the session', () => {
+      const group = autoGroupOf({
+        view: failed(),
+        agents: [ROOT, anAgent({ id: childId('scout'), parentAgentId: FIXTURE_ROOT })],
+        now: FIXTURE_NOW,
+      });
+
+      expect(group?.isStuck).toBe(true);
+      expect(group?.children[0]?.isGone).toBeUndefined();
+    });
+
+    it('never counts a child that has not started, since it has no agent yet', () => {
+      const group = autoGroupOf({
+        view: aView({
+          phase: 'waiting',
+          delegations: [aDelegation({ key: 'fixer', role: 'implementer', state: 'accepted' })],
+        }),
+        agents: [ROOT],
+        now: FIXTURE_NOW + 120_000,
+      });
+
+      expect(group?.isStuck).toBe(true);
+      expect(group?.children[0]?.isGone).toBeUndefined();
+    });
+  });
 });

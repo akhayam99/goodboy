@@ -252,6 +252,13 @@ export const agentPurgeStatements = ({
           WHERE id ${agentMatch}`,
       params: [...prefixParams, deletedAt, ...matchParams],
     },
+    {
+      sql: `${prefix} UPDATE auto_trees
+          SET phase = 'stopped', stop_state = 'confirmed', blocked_reason = 'agent_deleted',
+              phase_rev = phase_rev + 1, updated_at = ?
+          WHERE root_agent_id ${agentMatch} AND phase NOT IN ('finished', 'stopped')`,
+      params: [...prefixParams, deletedAt, ...matchParams],
+    },
   ];
 };
 

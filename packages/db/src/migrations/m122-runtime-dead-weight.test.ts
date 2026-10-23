@@ -121,6 +121,11 @@ const columnsFor = async ({ db, table }: DbParams & { readonly table: string }) 
   return rows.map((row) => row.name);
 };
 
+const AUTO_TREES_STUB = `CREATE TABLE auto_trees (
+  root_agent_id TEXT, phase TEXT, stop_state TEXT, blocked_reason TEXT,
+  phase_rev INTEGER, updated_at INTEGER
+)`;
+
 describe('m122 runtime dead weight', () => {
   it('replaces the session payload and stores providers as JSON', async () => {
     const db = await seedThrough121();
@@ -177,6 +182,7 @@ describe('m122 runtime dead weight', () => {
   it('preserves every surviving workflow-run field through reordering', async () => {
     const db = await seedThrough121();
     await migrate(db, through165);
+    await db.execute(AUTO_TREES_STUB);
 
     await updateWorkflowOrder(
       db,

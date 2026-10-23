@@ -11,6 +11,7 @@ const { listArtifactRevisions, approveAutoPlan } = vi.hoisted(() => ({
 vi.mock('../../artifacts', () => ({ listArtifactRevisions }));
 vi.mock('../../../auto/plan/approveAutoPlan', () => ({ approveAutoPlan }));
 
+import { anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../../../store';
 import { agentPlace } from '../../../../store/slices/navigation/place';
 import { ToastProvider } from '../../../../shared/components/Toast';
@@ -33,6 +34,9 @@ const seedAutoPlan = ({
   seedPlanDrawer({});
   const row = aPlanRow({ approvalState, approvedRevision, openRevise, revision: 2 });
   useAppStore.setState({
+    sessionPhaseRuns: {
+      [PLAN_FIXTURE_SESSION]: [anAgent({ id: FIXTURE_ROOT, sessionId: PLAN_FIXTURE_SESSION })],
+    },
     autoTreeViews: {
       [PLAN_FIXTURE_SESSION]: [
         aView({
@@ -201,6 +205,16 @@ describe('the plan drawer of an Auto plan', () => {
     expect(navigate).toHaveBeenCalledWith({
       to: agentPlace({ sessionId: PLAN_FIXTURE_SESSION, agentId: FIXTURE_ROOT }),
     });
+  });
+
+  it('keeps the plan readable without Approve when the Auto agent that owned it is gone', () => {
+    seedAutoPlan();
+    useAppStore.setState({ sessionPhaseRuns: { [PLAN_FIXTURE_SESSION]: [] } });
+
+    renderDrawer();
+
+    expect(screen.queryByTestId('auto-plan-toolbar')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve plan' })).toBeNull();
   });
 
   it('keeps the plan toolbar of today for a plan that no Auto tree owns', () => {

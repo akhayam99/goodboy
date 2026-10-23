@@ -1,6 +1,7 @@
 import type { AutoDelegation, AutoTree } from '@goodboy/db';
 import {
   brandId,
+  type Agent,
   type AgentId,
   type AutoDelegationId,
   type AutoTreeId,
@@ -260,6 +261,27 @@ const rebaseStoppedOf = ({ mount, minute }: RebaseParams): NeedsYouOwner => {
   };
 };
 
+type SceneAgentParams = {
+  readonly id: AgentId;
+  readonly parentAgentId?: AgentId;
+};
+
+const sceneAgentOf = ({ id, parentAgentId }: SceneAgentParams): Agent => ({
+  id,
+  sessionId: SESSION_ID,
+  ordinal: 0,
+  name: id,
+  status: 'running',
+  ...(parentAgentId === undefined ? {} : { parentAgentId }),
+});
+
+const AGENTS: ReadonlyArray<Agent> = VIEWS.flatMap((view) => [
+  sceneAgentOf({ id: view.tree.rootAgentId }),
+  ...view.delegations.map((delegation) =>
+    sceneAgentOf({ id: delegation.childAgentId, parentAgentId: view.tree.rootAgentId }),
+  ),
+]);
+
 export const NEXT_LIST_BUILT_SOURCES: NextListSources = {
   owners: [
     rebaseStoppedOf({ mount: home, minute: 12 }),
@@ -275,5 +297,5 @@ export const NEXT_LIST_BUILT_SOURCES: NextListSources = {
     }
     return suggestion;
   }),
-  autoTargets: autoRetryTargetsOf({ views: VIEWS, agents: [], now: FIXTURE_NOW }),
+  autoTargets: autoRetryTargetsOf({ views: VIEWS, agents: AGENTS, now: FIXTURE_NOW }),
 };

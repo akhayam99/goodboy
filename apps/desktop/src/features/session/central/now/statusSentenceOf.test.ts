@@ -87,11 +87,11 @@ const orchestratedGroups = ({
 const autoGroups = ({
   state,
 }: {
-  readonly state: 'running' | 'neverStarted' | 'twoRunning' | 'blocked';
+  readonly state: 'running' | 'neverStarted' | 'twoRunning' | 'blocked' | 'goneBlocked';
 }): ReadonlyArray<LiveGroupModel> => {
   const isRunning = state !== 'neverStarted';
   const fixer =
-    state === 'blocked'
+    state === 'blocked' || state === 'goneBlocked'
       ? {
           ...aDelegation({
             key: 'fixer',
@@ -127,7 +127,10 @@ const autoGroups = ({
     status: 'running',
     startedAt: NOW_STARTED_AT,
   });
-  const agents = [root];
+  const agents =
+    state === 'blocked'
+      ? [root, anAgent({ id: fixer.childAgentId, sessionId: NOW_SESSION, parentAgentId: root.id })]
+      : [root];
   const view = aView({
     phase: 'waiting',
     delegations: [fixer, ...second],
@@ -223,6 +226,12 @@ describe('statusSentenceOf', () => {
     const said = sentence({ groups: autoGroups({ state: 'blocked' }) });
     expect(said).toBe('Auto is stuck: "work for fixer" is blocked.');
     expect(said).not.toContain('declared_blocked');
+  });
+
+  it('does not call Auto stuck for a blocked child whose agent is gone', () => {
+    const said = sentence({ groups: autoGroups({ state: 'goneBlocked' }) });
+
+    expect(said).not.toContain('stuck');
   });
 
   it('counts the open children when Auto waits for more than one', () => {

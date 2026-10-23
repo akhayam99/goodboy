@@ -507,6 +507,14 @@ stops it is a guard that protects the user:
   per delegation, the no progress streak and the wall clock hours;
 - four open children and four per batch.
 
+Deleting the root agent of a tree settles the tree in the same write (`agentPurgeStatements`:
+phase `stopped`, stop state `confirmed`, reason `agent_deleted`), and the lists read only trees
+whose root agent is still in the session (`liveAutoViewsOf`, through `useAutoTreeViews`): a tree
+left open on an agent that was deleted or moved raises no **Needs you** card, no **Auto is stuck**
+line and no count. A child whose agent is gone is not stuck (`isAutoChildStuck`); a child Auto
+accepted and has not started has no agent yet and still counts. Plans stay readable in the plan
+list.
+
 The limit never throws away work. At the limit no new child is admitted and
 Auto's next turn waits (`turnGate`, blocked with the budget reason), but nothing
 running is stopped: a child that runs keeps running, finishes its turn and settles

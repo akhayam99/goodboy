@@ -49,6 +49,11 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
         .catch(() => undefined);
     }
     const refreshed = await invokeAgentList(sessionId);
+    await get()
+      .loadAutoTrees({ sessionId })
+      .catch((error: unknown) => {
+        void get().reportError({ title: "Couldn't read the Auto agents", error, sessionId });
+      });
     let derived: ReturnType<typeof deriveSessionState> | null = null;
     dropPendingTurnEvents({ agentIds: [agentId] });
     set((s) => {

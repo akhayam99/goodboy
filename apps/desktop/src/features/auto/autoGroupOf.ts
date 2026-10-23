@@ -6,9 +6,10 @@ import { AGENT_KIND_META, classifyAgent, kindForRole, type AgentKind } from '../
 import type { RowPhase } from '../workTreeModel/rowState';
 import { autoChildLabelsOf } from './autoChildLabelsOf';
 import { autoRowFacts } from './autoRowFacts';
-import { autoStuckKindOf } from './autoStuckKindOf';
+import { isAutoChildStuck } from './isAutoChildStuck';
 import { recordField, textField } from './chat/readJson';
 import { delegationReasonTextOf } from './delegationReasonTextOf';
+import { isAutoChildGone } from './isAutoChildGone';
 import { isAutoChildNeverStarted } from './isAutoChildNeverStarted';
 
 export type AutoChildState =
@@ -37,6 +38,7 @@ export type AutoGroupChild = Readonly<{
   createdAt: number | null;
   startedAt: number | null;
   finishedAt: number | null;
+  isGone?: boolean;
 }>;
 
 export type AutoGroup = Readonly<{
@@ -311,10 +313,13 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
   const fromLinks = agents
     .filter((agent) => agent.parentAgentId === rootAgentId && !known.has(agent.id))
     .map((agent) => childOfLinkedAgent({ agent, results: view.deliveredResults }));
-  const children = [...fromDelegations, ...fromLinks];
+  const children = [...fromDelegations, ...fromLinks].map((child) =>
+    isAutoChildGone({ state: child.state, hasAgent: byId.has(child.agentId) })
+      ? { ...child, isGone: true }
+      : child,
+  );
   const isLive = facts.phase === 'running' || facts.phase === 'waiting';
-  const isStuck =
-    isLive && children.some((child) => autoStuckKindOf({ state: child.state }) !== null);
+  const isStuck = isLive && children.some((child) => isAutoChildStuck({ child }));
   return {
     sessionId: view.tree.sessionId,
     rootAgentId,

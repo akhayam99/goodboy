@@ -33,6 +33,8 @@ const hoisted = vi.hoisted(() => ({
   emitNotification: vi.fn(async () => undefined),
   loadSessionOpenQuestions: vi.fn(async () => undefined),
   loadSessionSlots: vi.fn(async () => undefined),
+  loadAutoTrees: vi.fn(async () => undefined),
+  reportError: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../features/chat/turn', () => ({
@@ -166,6 +168,8 @@ const makeStore = ({ isMounted = true }: { readonly isMounted?: boolean } = {}) 
     emitNotification: hoisted.emitNotification,
     loadSessionOpenQuestions: hoisted.loadSessionOpenQuestions,
     loadSessionSlots: hoisted.loadSessionSlots,
+    loadAutoTrees: hoisted.loadAutoTrees,
+    reportError: hoisted.reportError,
   };
   const get = (() => state) as unknown as GetFn;
   const set = ((u: unknown) => {
@@ -299,6 +303,29 @@ describe('deleteAgent', () => {
     ]);
     expect(hoisted.loadSessionSlots).toHaveBeenCalledWith(SID);
     expect(hoisted.loadSessionOpenQuestions).toHaveBeenCalledWith(SID);
+  });
+
+  it('reads the Auto trees of the session again, so the tree the agent rooted leaves the lists', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(hoisted.loadAutoTrees).toHaveBeenCalledWith({ sessionId: SID });
+  });
+
+  it('says so when the Auto trees cannot be read after the delete, and still finishes it', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+    hoisted.loadAutoTrees.mockRejectedValueOnce(new Error('database is locked'));
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(hoisted.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Couldn't read the Auto agents", sessionId: SID }),
+    );
   });
 
   it('leaves the context slot alone when the agent held no open question', async () => {

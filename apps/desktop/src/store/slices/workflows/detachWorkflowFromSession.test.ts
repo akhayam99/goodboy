@@ -205,6 +205,7 @@ const buildHarness = ({ executionMode, isPreset, agents, runningId }: HarnessPar
     emitNotification: emitSpy,
     loadSessionSlots: loadSessionSlotsSpy,
     loadSessionOpenQuestions: loadSessionOpenQuestionsSpy,
+    loadAutoTrees: vi.fn(async () => undefined),
   };
   invokeAgentListSpy.mockResolvedValueOnce(SURVIVORS.map(agent));
   const set = vi.fn((updater: (s: typeof state) => Partial<typeof state>) => {
