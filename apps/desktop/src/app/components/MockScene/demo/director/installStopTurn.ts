@@ -2,7 +2,7 @@ import type { AppStore } from '../../../../../store/store';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import type { DirectorStore } from './directorTypes';
 import { appendTurnEvents } from './appendTurnEvents';
-import { stopDemoRuns } from './demoRunRegistry';
+import { demoRuns } from './demoRunRegistry';
 import { finishAgentTurn } from './finishAgentTurn';
 import { patchAgent } from './patchAgent';
 
@@ -20,7 +20,7 @@ export const installStopTurn = ({ store }: Params): void => {
     if (turn?.kind !== 'running') {
       return;
     }
-    stopDemoRuns({ agentId: target });
+    demoRuns.stop({ agentId: target });
     const at = nowIso({});
     appendTurnEvents({ store, agentId: target, events: [{ kind: 'done', runId: turn.runId, at }] });
     finishAgentTurn({ store, sessionId, agentId: target, at, isViewed: true });

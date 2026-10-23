@@ -8,6 +8,7 @@ import type {
 import type { AppStore } from '../../../../../store/store';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import type { DirectorStore } from './directorTypes';
+import { scheduleCues } from './scheduleCues';
 
 type Params = {
   readonly store: DirectorStore;
@@ -131,14 +132,23 @@ export const installArtifactComments = ({ store }: Params): void => {
     patchComments({ store, sessionId, patch: withStatus({ ids, status: 'sent', at: nowIso({}) }) });
     const content = drafts.map((comment) => comment.body).join('\n');
     await store.getState().sendTurn({ sessionId, agentId: plan.agentId, content });
-    setTimeout(() => {
-      patchComments({
-        store,
-        sessionId,
-        patch: withStatus({ ids, status: 'addressed', at: nowIso({}) }),
-      });
-      putSending({ store, artifactId: plan.id, isSending: false });
-    }, ADDRESS_MS);
+    scheduleCues({
+      store,
+      now: () => nowIso({}),
+      cues: [
+        {
+          atMs: ADDRESS_MS,
+          apply: ({ at }) => {
+            patchComments({
+              store,
+              sessionId,
+              patch: withStatus({ ids, status: 'addressed', at }),
+            });
+            putSending({ store, artifactId: plan.id, isSending: false });
+          },
+        },
+      ],
+    });
     return { kind: 'unchanged' };
   };
   store.setState({

@@ -15,6 +15,7 @@ import type { DirectorStore } from './directorTypes';
 import { appendTurnEvents } from './appendTurnEvents';
 import { resolveFixCues } from './resolveFixCues';
 import { scheduleCues } from './scheduleCues';
+import { demoRuns } from './demoRunRegistry';
 import { showDemoNotice } from './showDemoNotice';
 import { startAgentTurn } from './startAgentTurn';
 import { finishAgentTurn } from './finishAgentTurn';
@@ -75,8 +76,6 @@ const attemptOf = ({ base, agentId, sessionId, threadIds }: AttemptParams): Reso
   };
 };
 
-const runningFixes = new Map<AgentId, () => void>();
-
 type StopParams = {
   readonly store: DirectorStore;
   readonly sessionId: SessionId;
@@ -84,8 +83,7 @@ type StopParams = {
 };
 
 const stopFix = ({ store, sessionId, agentId }: StopParams): void => {
-  runningFixes.get(agentId)?.();
-  runningFixes.delete(agentId);
+  demoRuns.stop({ agentId });
   const attempts = (store.getState().sessionResolveAttempts[sessionId] ?? []).filter(
     (attempt) => attempt.agentId === agentId && attempt.phase === 'running',
   );
@@ -165,13 +163,12 @@ const spawnResolver = ({ store, sessionId, threadIds, name, prompt }: SpawnParam
   });
   appendTurnEvents({ store, agentId, events: [{ kind: 'user_text', runId, text: prompt, at }] });
   startAgentTurn({ store, sessionId, agentId, runId, at });
-  const cancel = scheduleCues({
+  scheduleCues({
     store,
     cues: resolveFixCues({ sessionId, agentId, runId, attemptId: attempt.id, threadIds }),
     now: () => nowIso({}),
     agentId,
   });
-  runningFixes.set(agentId, cancel);
   return agentId;
 };
 

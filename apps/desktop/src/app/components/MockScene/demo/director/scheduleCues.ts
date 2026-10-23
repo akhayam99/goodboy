@@ -1,5 +1,5 @@
 import type { AgentId, IsoDateTime } from '@goodboy/types';
-import { trackDemoRun } from './demoRunRegistry';
+import { demoRuns } from './demoRunRegistry';
 import type { DemoCue, DirectorStore } from './directorTypes';
 
 type Params = {
@@ -10,18 +10,33 @@ type Params = {
 };
 
 export const scheduleCues = ({ store, cues, now, agentId }: Params): (() => void) => {
-  const timers = cues.map((cue) =>
-    setTimeout(() => {
-      cue.apply({ store, at: now(), hint: () => undefined });
-    }, cue.atMs),
-  );
-  const cancel = (): void => {
+  const generation = demoRuns.generation();
+  const timers = new Set<ReturnType<typeof setTimeout>>();
+  const clearTimers = (): void => {
     for (const timer of timers) {
       clearTimeout(timer);
     }
+    timers.clear();
   };
-  if (agentId !== undefined) {
-    trackDemoRun({ agentId, cancel });
+  const untrack = demoRuns.track({ agentId, cancel: clearTimers });
+  for (const cue of cues) {
+    const timer = setTimeout(() => {
+      timers.delete(timer);
+      if (timers.size === 0) {
+        untrack();
+      }
+      if (!demoRuns.isCurrent({ generation })) {
+        return;
+      }
+      cue.apply({ store, at: now(), hint: () => undefined });
+    }, cue.atMs);
+    timers.add(timer);
   }
-  return cancel;
+  if (timers.size === 0) {
+    untrack();
+  }
+  return () => {
+    clearTimers();
+    untrack();
+  };
 };
