@@ -22,6 +22,7 @@ import {
   updateWorkflowRunOrchestrationOutcome,
   updateWorkflowRunOrchestrationStop,
   updateWorkflowRunOrchestratorRouting,
+  updateWorkflowRunProviderPool,
   updateWorkflowRunSpendLimit,
   updateGeneratedWorkflowRunTitle,
   updateUserWorkflowRunTitle,
@@ -498,6 +499,31 @@ describe('session_workflows trigger-mode queries', () => {
       const uncapped = (await readRunsNewestFirst({ db }))[0]!;
       expect(uncapped.spendLimitUsd).toBeUndefined();
       expect(uncapped.spendLimitMode).toBe('pause');
+    });
+
+    it('round-trips the providers set on the run and clears them', async () => {
+      const runId: WorkflowRunId = JSON.parse('"run-1"');
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: runId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await updateWorkflowRunProviderPool({
+        db,
+        workflowRunId: runId,
+        pool: ['anthropic', 'codex'],
+      });
+      expect((await readRunsNewestFirst({ db }))[0]?.providerPool).toEqual(['anthropic', 'codex']);
+
+      await updateWorkflowRunProviderPool({
+        db,
+        workflowRunId: runId,
+        pool: null,
+      });
+      expect((await readRunsNewestFirst({ db }))[0]?.providerPool).toBeUndefined();
     });
 
     it('keeps the limit when runs are reordered', async () => {

@@ -78,25 +78,23 @@ describe('the central column scenes', () => {
     await show({ name: 'u26-central-log-light' });
 
     screen.getByRole('region', { name: 'Log' });
-    screen.getByRole('region', { name: 'Now' });
+    screen.getByRole('region', { name: 'Running' });
   });
 
-  it('draws the Now, Next and What was done sections on the mid scene', async () => {
+  it('draws the Running, Next and Done cards on the mid scene, the run gate on its row', async () => {
     await show({ name: 'u26-central-mid-light' });
 
-    for (const name of ['Now', 'Next steps', 'What was done']) {
+    for (const name of ['Running', 'Next', 'Done']) {
       screen.getByRole('region', { name });
     }
+    expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
   });
 
-  it('says Stuck once, names the blocked agent and offers the stuck line on the blocked scene', async () => {
+  it('says Stuck once on the Auto row and offers the stuck line in Running on the blocked scene', async () => {
     await show({ name: 'u26-central-blocked-light' });
 
-    const now = screen.getByRole('region', { name: 'Now' });
-    expect(now.getAttribute('data-now-state')).toBe('stuck');
-    expect(now.querySelector('[data-now-sentence]')?.textContent).toBe(
-      'Auto is stuck: "Fix the two doc mismatches in ledger-core" is blocked.',
-    );
+    const now = screen.getByRole('region', { name: 'Running' });
+    expect(now.querySelector('[data-now-sentence]')).toBeNull();
     expect(now.querySelector('[data-auto-word]')?.textContent).toBe('Stuck');
     expect(now.textContent).not.toContain('Deciding');
     expect(now.textContent).not.toContain('declared_blocked');
@@ -106,7 +104,7 @@ describe('the central column scenes', () => {
     inNow.getByRole('button', { name: retryName });
     inNow.getByRole('button', { name: 'Answer Auto in its chat' });
     inNow.getByRole('button', { name: 'Stop Auto and its agents' });
-    within(screen.getByRole('region', { name: 'Next steps' })).getByRole('button', {
+    within(screen.getByRole('region', { name: 'Needs you' })).getByRole('button', {
       name: retryName,
     });
   });
@@ -147,7 +145,7 @@ describe('the central column scenes', () => {
       }
 
       expect(detailReads() - before).toBe(1);
-      screen.getByRole('region', { name: 'Now' });
+      expect(document.querySelector('[data-overview-card="branches"]')).not.toBeNull();
     } finally {
       vi.useRealTimers();
     }

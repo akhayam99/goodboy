@@ -77,6 +77,8 @@ const nodeOf = (selector: string): HTMLElement => {
 
 const tail = () => within(nodeOf('[data-orchestrated-tail]'));
 
+const header = () => within(nodeOf('[data-run-header-actions]'));
+
 const checklist = () => within(nodeOf('section[aria-label="Plan and progress"]'));
 
 const openMenu = async (): Promise<HTMLElement> => {
@@ -155,7 +157,7 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(Object.keys(NEW_DRAWER_FORMS)).toEqual(['report', 'wireframe']);
   });
 
-  it('Run header: Pause run and Stop run confirmed; overflow: Step routing, View diff, Save as preset, Copy run summary, Archive, Delete', async () => {
+  it('Run header: Pause run; overflow: View diff, Step routing, Save as preset, Copy run summary, Stop run confirmed, Archive, Delete', async () => {
     await mount('c09-orch-running');
     act(() => {
       useAppStore.setState({ sessionProjectMounts: { [C09_SESSION_ID]: [mountOf({ index: 0 })] } });
@@ -173,9 +175,8 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(menu.getByText('Archive run')).toBeDefined();
     expect(menu.getByText('Delete run')).toBeDefined();
     expect(menu.getByText('Save as preset')).toBeDefined();
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
-    await settle();
-    await press(live.getByRole('button', { name: 'Stop run' }));
+    expect(live.queryByRole('button', { name: 'Stop run' })).toBeNull();
+    await press(menu.getByRole('menuitem', { name: /^Stop run/ }));
     expect(screen.getByText('Stop this run?')).toBeDefined();
   });
 
@@ -233,10 +234,14 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(tail().getByRole('button', { name: 'Resume and read 1 queued' })).toBeDefined();
   });
 
-  it('Why each step: the latest reason under the tail, older ones in the step pane', async () => {
+  it('Why each step: the latest reason folded under the tail, older ones in the step pane', async () => {
     await mount('c09-orch-step');
+    expect(document.querySelector('[data-orchestrated-reason]')).toBeNull();
+    act(() => {
+      tail().getByRole('button', { name: 'Why this step' }).click();
+    });
     expect(
-      tail().getByText('Why: The batching must be proven on 12,000 rows before any CSV work.'),
+      tail().getByText('The batching must be proven on 12,000 rows before any CSV work.'),
     ).toBeDefined();
     expect(document.querySelector('[data-step-reason]')).toBeNull();
     act(() => {
@@ -282,12 +287,13 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     expect(checklist().getByText('Prove the batching on 12,000 rows')).toBeDefined();
   });
 
-  it('Decide next step only on a ready tail, Retry on a failed decision', async () => {
+  it('Decide next step only on a ready run, Retry on a failed decision, both in the header', async () => {
     await mount('c09-orch-ready');
-    expect(tail().getByRole('button', { name: 'Decide next step' })).toBeDefined();
+    expect(header().getByRole('button', { name: 'Decide next step' })).toBeDefined();
+    expect(tail().queryByRole('button', { name: 'Decide next step' })).toBeNull();
     cleanup();
     await mount('c09-orch-failed');
-    expect(tail().getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(header().getByRole('button', { name: 'Retry' })).toBeDefined();
   });
 
   it('Step routing: the run menu opens the model per step panel', async () => {
@@ -346,10 +352,11 @@ describe('SPEC3 9.4 orchestrated rows stay reachable from the orchestrated docum
     });
   });
 
-  it('Limit and spent: the facts line opens the run spend limit', async () => {
+  it('Limit and spent: the Limit chip opens the run limit alone', async () => {
     await mount('c09-orch-running');
     const facts = within(nodeOf('[data-orchestrated-facts]'));
-    await press(facts.getByTestId('run-spend-limit-trigger'));
-    expect(screen.getByRole('dialog', { name: 'Limit for this run' })).toBeDefined();
+    await press(facts.getByRole('button', { name: /^Limit: / }));
+    const popover = screen.getByRole('dialog', { name: 'Limit' });
+    expect(within(popover).getByRole('form', { name: 'Limit for this run' })).toBeDefined();
   });
 });

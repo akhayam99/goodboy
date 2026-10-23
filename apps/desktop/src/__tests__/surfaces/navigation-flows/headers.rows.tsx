@@ -50,19 +50,14 @@ const headerPush = (): HTMLElement => {
 
 export const HEADERS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'headers: Delete session lives at the session rail foot and confirms in a popover above it',
+    name: 'headers: Delete session lives in the session menu and confirms in a popover',
     covers: [],
     open: async () => {
       await settle();
-      const footDelete = await screen.findByRole('button', { name: 'Delete session' }, WAIT);
-      expect(screen.getAllByRole('button', { name: 'Delete session' })).toHaveLength(1);
-      expect(footDelete.closest('[data-session-foot]')).not.toBeNull();
-      expect(
-        screen.getByRole('button', { name: 'Archive session' }).closest('[data-session-foot]'),
-      ).not.toBeNull();
-      expect(screen.queryByRole('button', { name: 'More session actions' })).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Delete…' })).toBeNull();
-      await click(footDelete);
+      const more = await screen.findByRole('button', { name: 'More session actions' }, WAIT);
+      expect(document.querySelector('[data-session-foot]')).toBeNull();
+      await click(more);
+      await click(await screen.findByRole('menuitem', { name: /^Delete/ }, WAIT));
     },
     lands: async (ctx) => {
       const deleteTask = vi.fn(async () => {
@@ -79,11 +74,11 @@ export const HEADERS_ROWS: ReadonlyArray<Row> = [
       within(confirm).getByRole('button', { name: 'Cancel' }).focus();
       await userEvent.keyboard('{Escape}');
       expect(screen.queryByRole('dialog')).toBeNull();
-      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Delete session' }));
 
-      await click(screen.getByRole('button', { name: 'Delete session' }));
+      await click(screen.getByRole('button', { name: 'More session actions' }));
+      await click(await screen.findByRole('menuitem', { name: /^Delete/ }, WAIT));
       const again = await screen.findByRole('dialog', { name: /^Delete .+\?$/ }, WAIT);
-      await click(within(again).getByRole('button', { name: 'Delete session' }));
+      await click(within(again).getByRole('button', { name: /^Delete/ }));
 
       await waitFor(() => expect(deleteTask).toHaveBeenCalledTimes(1), WAIT);
       expect(deleteTask).toHaveBeenCalledWith(ctx.sessionId);

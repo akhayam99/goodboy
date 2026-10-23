@@ -50,6 +50,7 @@ export const SESSION_EVICTION = [
   { key: 'mountSelectedPr', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'mountDetailFailures', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyRuns', keyedBy: 'mount', evictOn: 'archive' },
+  { key: 'mountLocalChecks', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyDrafts', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyLiveSessions', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyRewriters', keyedBy: 'agent', evictOn: 'archive' },

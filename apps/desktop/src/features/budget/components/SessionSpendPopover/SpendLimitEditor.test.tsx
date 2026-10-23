@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { SessionBudget, SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
@@ -41,6 +42,17 @@ describe('SpendLimitEditor', () => {
     fireEvent.click(save);
     await waitFor(() => expect(h.setSessionBudget).toHaveBeenCalledWith(SESSION_ID, 20, 'pause'));
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+  });
+
+  it('saves a session limit with cents typed into the field', async () => {
+    const user = userEvent.setup();
+    render(<SpendLimitEditor sessionId={SESSION_ID} limit={LIMIT} onDone={vi.fn()} />);
+
+    await user.clear(screen.getByLabelText('Limit in dollars'));
+    await user.type(screen.getByLabelText('Limit in dollars'), '2.50');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(h.setSessionBudget).toHaveBeenCalledWith(SESSION_ID, 2.5, 'pause'));
   });
 
   it('cancels without touching the limit', () => {

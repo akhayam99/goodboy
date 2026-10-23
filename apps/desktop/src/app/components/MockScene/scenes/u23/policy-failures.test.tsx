@@ -117,10 +117,14 @@ describe('the policy and failure scenes', () => {
   it('settings-run-defaults-link shows the policy as a summary and a link, with no switch for it', async () => {
     await mount('settings-run-defaults-link');
 
-    const band = screen.getByRole('region', { name: 'Providers' });
-    expect(within(band).getByText('When a provider is out')).toBeDefined();
-    expect(within(band).getByRole('button', { name: 'Open Providers and models' })).toBeDefined();
-    expect(within(band).queryAllByRole('switch')).toEqual([]);
+    const line = screen.getByRole('group', { name: 'Run defaults' });
+    fireEvent.click(within(line).getByRole('button', { name: /^Models:/ }));
+    const popover = screen.getByRole('dialog', { name: 'Models' });
+    expect(within(popover).getByTestId('rules-policy-summary')).toBeDefined();
+    expect(
+      within(popover).getByRole('button', { name: 'Open Providers and models' }),
+    ).toBeDefined();
+    expect(within(popover).queryAllByRole('switch')).toEqual([]);
   });
 
   it('wireframe-failed explains the failure in a notice and keeps the raw message behind Details', async () => {

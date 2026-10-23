@@ -41,7 +41,7 @@ const SCENE_IDS = [
 
 const LIVE_IDS = ['run-header-held', 'run-header-failed'] as const;
 
-const TAIL_VERB_OF = {
+const HEADER_VERB_OF = {
   'run-header-held': 'Review plan',
   'run-header-failed': 'Retry',
 } as const satisfies Record<(typeof LIVE_IDS)[number], string>;
@@ -81,14 +81,15 @@ describe('the run header scenes on the orchestrated document', () => {
   });
 
   it.each(LIVE_IDS)(
-    'draws one h1, no header primary and the verb on the tail in %s',
+    'draws one h1 and the run primary as the one header primary, off the tail, in %s',
     async (id) => {
       renderScene(id);
 
       const bar = await header();
       expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
-      expect(bar.querySelectorAll('button[data-variant="primary"]')).toHaveLength(0);
-      expect(within(tail()).getByRole('button', { name: TAIL_VERB_OF[id] })).toBeDefined();
+      const primaries = Array.from(bar.querySelectorAll('button[data-variant="primary"]'));
+      expect(primaries.map((button) => button.textContent)).toEqual([HEADER_VERB_OF[id]]);
+      expect(within(tail()).queryByRole('button', { name: HEADER_VERB_OF[id] })).toBeNull();
     },
   );
 
@@ -108,16 +109,16 @@ describe('the run header scenes on the orchestrated document', () => {
     expect(screen.queryByRole('button', { name: 'Show run summary' })).toBeNull();
   });
 
-  it('offers the plan once on the held run, on the tail and nowhere else', async () => {
+  it('offers the plan once on the held run, in the header and nowhere else', async () => {
     renderScene('run-header-held');
 
-    await header();
+    const bar = await header();
     const entries = screen.queryAllByRole('button', { name: /^(Review|Open|Approve) plan$/ });
     expect(entries.map((entry) => entry.textContent)).toEqual(['Review plan']);
-    expect(tail().contains(entries[0] ?? null)).toBe(true);
+    expect(bar.contains(entries[0] ?? null)).toBe(true);
   });
 
-  it('shows Resume run where Pause run was and Stop run beside it, both off the menu', async () => {
+  it('shows Resume run where Pause run was, with Stop run in the menu', async () => {
     renderScene('run-header-paused');
 
     const bar = await header();
@@ -130,13 +131,12 @@ describe('the run header scenes on the orchestrated document', () => {
       Array.from(verbs?.querySelectorAll('[data-run-verb]') ?? []).map((verb) =>
         verb.getAttribute('data-run-verb'),
       ),
-    ).toEqual(['workflowRun.resume', 'workflowRun.close']);
+    ).toEqual(['workflowRun.resume']);
     expect(within(bar).queryByRole('button', { name: 'Pause run' })).toBeNull();
+    expect(within(bar).queryByRole('button', { name: 'Stop run' })).toBeNull();
     fireEvent.click(within(bar).getByRole('button', { name: /run actions$/ }));
-    expect(within(screen.getByRole('menu')).queryByText('Stop run')).toBeNull();
     expect(within(screen.getByRole('menu')).queryByText('Resume run')).toBeNull();
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
-    fireEvent.click(within(bar).getByRole('button', { name: 'Stop run' }));
+    fireEvent.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: /^Stop run/ }));
     expect(await screen.findByText('Stop this run?')).toBeDefined();
   });
 });

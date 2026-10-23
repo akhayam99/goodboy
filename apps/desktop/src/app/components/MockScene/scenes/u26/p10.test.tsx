@@ -84,23 +84,6 @@ describe('the u26 p10 scenes', () => {
     expect(within(screen.getByRole('toolbar')).getByText('3 selected')).toBeDefined();
   });
 
-  it('u26-rail-foot-chip reads the compact spend and opens the full sentence', async () => {
-    await mount('u26-rail-foot-chip');
-
-    const chip = document.querySelector<HTMLElement>('[data-session-spend]');
-    expect(chip?.textContent).toMatch(/^\$[0-9.]+ \/ \$10$/);
-    expect(chip?.getAttribute('aria-label')).toMatch(/^Spend \$[0-9.]+ of \$10\.00 limit$/);
-    expect(screen.getByRole('tooltip').textContent).toMatch(
-      /^\$[0-9.]+ spent of the \$10\.00 limit in this session$/,
-    );
-    const foot = document.querySelector<HTMLElement>('[data-session-foot]');
-    expect(
-      Array.from(foot?.querySelectorAll('[data-session-foot-action]') ?? []).map((button) =>
-        button.getAttribute('aria-label'),
-      ),
-    ).toEqual(['Archive session', 'Delete session']);
-  });
-
   it.each(NAMES)('%s has no accessibility violation', async (name) => {
     const container = await mount(name);
     vi.useRealTimers();

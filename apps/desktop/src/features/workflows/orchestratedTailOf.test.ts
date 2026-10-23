@@ -97,16 +97,16 @@ describe('orchestratedTailOf', () => {
     expect(tail?.verbs).toEqual([]);
   });
 
-  it('waits on the running step with Stop step N and its clock', () => {
+  it('reads the running step as working, with Stop step N and its clock', () => {
     const tail = tailOf({
       orchestrator: stateOf({
         phase: 'waiting',
-        sentence: 'Waiting on step 2 · tester',
+        sentence: 'Step 2 is running: tester',
         waitingOnAgentId: RUNNING.id,
       }),
       agents: [DONE, RUNNING, CHILD],
     });
-    expect(tail.state).toBe('waiting');
+    expect(tail.state).toBe('working');
     expect(tail.stepAgentId).toBe(RUNNING.id);
     expect(tail?.verbs).toEqual([{ kind: 'stopStep', agent: RUNNING, number: 2 }]);
   });
@@ -184,7 +184,7 @@ describe('orchestratedTailOf', () => {
 
   it('asks a quiet step to continue before anything else', () => {
     const tail = orchestratedTailOf({
-      orchestrator: stateOf({ phase: 'waiting', sentence: 'Waiting on step 2 · tester' }),
+      orchestrator: stateOf({ phase: 'waiting', sentence: 'Step 2 is running: tester' }),
       agents: [DONE, RUNNING],
       primary: null,
       queuedCount: 0,

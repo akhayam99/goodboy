@@ -30,9 +30,7 @@ export const ActivityGroupsScene = () => {
     <ShellFrame
       session={ACTIVITY_RESOLVES_SESSION}
       sidebar="expanded"
-      main={
-        <SessionOverviewPane session={ACTIVITY_RESOLVES_SESSION} onSelectLens={() => undefined} />
-      }
+      main={<SessionOverviewPane session={ACTIVITY_RESOLVES_SESSION} />}
     />
   );
 };

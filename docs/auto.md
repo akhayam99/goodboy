@@ -78,8 +78,22 @@ with `@` in the field, which starts that role at once with no Auto turn first.
 - Auto runs on any connected provider that can confine a read-only agent
   (`AUTO_OWN_PROVIDERS`: not the opencode family, see Providers), with the route
   the workspace picks for the role.
-- The **Limit** chip proposes 5 USD, or shows the budget of the session when
-  there is one ("Limit for this Auto run" in its popover). The first start stores the cap for the workspace
+- The **Limit** chip proposes 5 USD, or the budget of the session when that is
+  smaller and pauses ("Limit for this Auto run" in its popover). The smallest
+  limit pauses Auto, as for runs. A session budget that only warns caps no
+  Auto run: every path reads the session cap through `pausingSessionCapOf`
+  (`apps/desktop/src/features/budget/`), which gives `null` for one. A new tree
+  starts on the smaller of that cap and the workspace's Auto limit
+  (`autoTreeLimitOf` in `packages/core/src/auto/`, which also names the winner;
+  `startAutoRuntime`, `moveToAuto`, `useAutoTreeLimit` and `setSessionBudget`
+  read the session cap this way), and
+  setting a session budget that pauses under a running Auto's limit lowers that limit
+  (`setSessionBudget` calls `lowerAutoLimitsToSession`, one write per tree
+  that lowers only a cap still above the new limit on a tree not finished at
+  write time; only the write checks the cap and the phase, never the earlier
+  read, so a cap another window lowered first still ends at the smaller one
+  and is never raised, and a cap raised after the read is lowered too), so the next turn pauses on what is
+  already spent. The first start stores the cap for the workspace
   (`auto.treeLimitUsd.<workspace id>`, compare and swap), so the next start is
   not asked again; a person can change it from the chip.
 - A Next card that starts a role gets **Talk it through with Auto** as the last
@@ -232,30 +246,36 @@ writing to it reopens it to **Deciding**.
   before a tree exists) and "No agents started yet". Every state word is gray beside its toned node and comes from
   one word map (`autoTreeWordOf` for Auto, `delegationCardOf` for a child):
   **Needs you**, **Running**, **Idle** (gray dot), **Done** (green check),
-  **Stopped**; the Auto agents list reads the same words. The foot is one
-  button holding the line, **Limit $10.00 · $5.23 left** (no limit:
-  **No limit · $3.82 spent**, nothing left: **Limit reached**), from
-  `autoBudgetOf`; Spent, Reserved and turns are in the limit popover.
-- **Changing the limit.** The **Limit** in the rail foot is a button. Its popover
-  offers $5, $10, $20 or a custom amount (at most 2 decimals) and applies it on
-  **Set limit**, also while the tree runs. An amount under spent plus reserved
-  shows "The limit must cover spent and reserved usage." and cannot be set.
+  **Stopped**; the Auto agents list reads the same words.
+- **Changing the limit.** The Auto page's settings line (`AgentSettingsLine`)
+  holds **Limit** "$0.85 of $5.00 from Harborline" (`autoLimitWordsOf`: the
+  source names the winner, "this Auto" once you set its own, and the popover's
+  last line reads the chain, "This Auto $5.00, then session $8.00, then
+  Harborline $5.00. $5.00 comes first."). Its popover takes an amount and applies
+  it on Enter or when it closes (`AutoLimitSetting`), also while the tree runs,
+  with **Undo** in the toast; **Raise limit** on the tail opens it
+  (`autoLimitOpenEvent`). An amount over a session budget that pauses, or a
+  blank field while one exists, says the session limit comes first. A session
+  budget that only warns does not count here (`AgentSettingsLine` reads it
+  through `pausingSessionCapOf`), so the source and the chain name this Auto or
+  the workspace and a raise over it goes through. An amount under spent
+  plus reserved is refused by the write.
   `setAutoTreeCap` (`store/slices/auto/setAutoTreeCap.ts`) writes it in one
   statement that compares the cap it read and checks spent plus reserved in the
   same write, so a reservation cannot slip in between; a lost compare says "The
   limit changed in another window." and a failed save keeps the popover open with
-  "Could not save the limit. Try again." It leaves `phase_rev` alone, so a running
+  "Could not save the limit. Try again." under the field. It leaves `phase_rev` alone, so a running
   turn keeps its next step, then drives the tree, so a tree paused at the limit
   resumes after a raise. The cap changes only this conversation; the workspace
   cap stays the start value of the next one.
-- **No limit.** The popover also offers **No limit**, stored as a NULL `cap_usd`
-  (m231), never a sentinel. The foot then reads **No limit** with what is spent
-  and no **Left**, and the prompt line says "no cap" and
+- **No limit.** A blank amount is **No limit**, stored as a NULL `cap_usd`
+  (m231), never a sentinel. The chip then reads what is spent, and the prompt
+  line says "no cap" and
   never prints a left. The root turn claim and child admission pass a NULL cap
   (`autoBudgetCoversSql`), and the gates read it as unbounded
   (`autoRemainingForGates`). A child has no dollar ceiling of its own, with or
-  without a limit: it runs until it is done. While a session budget exists, No limit is off and says the
-  session budget sets the limit. A tree is only created with a number; NULL
+  without a limit: it runs until it is done. While a session budget exists, No limit is
+  refused: the session limit comes first. A tree is only created with a number; NULL
   comes only from this choice.
 - **The page.** The header is the goal as the title and the provider mark, with
   no role, Experimental or state chip; **Mark finished** shows there as a
@@ -357,8 +377,8 @@ writing to it reopens it to **Deciding**.
   Implementer and Tester** with **Change approach** and **Stop Auto and its
   agents** (just **Stop** while no child exists), **Starting agents**, **Reading the results**, **Deciding what to do
   next**, a refused hand over in the user voice, **Paused at the limit: $4.80
-  of $5.00** with **Raise to $10**, **Change limit** (opens the limit
-  popover of the rail foot) and **Stop**, plus a line on the agents still
+  of $5.00** with **Raise to $10**, **Change limit** (opens the Limit chip's
+  popover on the Auto page) and **Stop**, plus a line on the agents still
   running when there are any, **Blocked: <reason>** with **Retry** and **View
   transcript** (a block at the budget offers **Raise limit**, **Change limit**
   and **Stop** instead, one at the time limit only **View transcript**). Only `deciding` reads

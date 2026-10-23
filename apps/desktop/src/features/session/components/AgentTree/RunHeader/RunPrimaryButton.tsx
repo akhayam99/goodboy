@@ -9,6 +9,7 @@ import type { RunPrimaryKind } from '../../../../workflows/runPrimaryOf';
 import { useAnswerQuestion } from '../../../../workflows/useAnswerQuestion';
 import { useApproveRunPlan } from '../../../../workflows/useApproveRunPlan';
 import type { RunView } from '../useRunView';
+import type { RunPrimaryVariant } from './RunPrimaryAction';
 
 type RunButtonKind = Exclude<RunPrimaryKind, 'start-run' | 'start-step' | 'raise-cap'>;
 
@@ -17,6 +18,7 @@ type Props = {
   readonly view: RunView;
   readonly kind: RunButtonKind;
   readonly label: string;
+  readonly variant: RunPrimaryVariant;
 };
 
 type Spec = {
@@ -26,7 +28,7 @@ type Spec = {
   readonly run: () => void | Promise<void>;
 };
 
-export const RunPrimaryButton = ({ session, view, kind, label }: Props) => {
+export const RunPrimaryButton = ({ session, view, kind, label, variant }: Props) => {
   const sessionId = session.id;
   const runId = view.run.id;
   const [isBusy, setIsBusy] = useState(false);
@@ -127,7 +129,7 @@ export const RunPrimaryButton = ({ session, view, kind, label }: Props) => {
       <span className="inline-flex">
         <Button
           size="sm"
-          variant={isQuiet ? 'quiet' : 'primary'}
+          variant={isQuiet ? 'quiet' : variant}
           isBusy={isBusy}
           onClick={() => void press()}
         >

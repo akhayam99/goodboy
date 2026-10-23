@@ -7,19 +7,23 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  type StoryStore,
 } from '../../../../../store/storyHarness';
 import { findSectionRow, sectionNames } from '../../../../../test/branchRail';
 import { U23_PR_PAGE_SCENES } from './pr-page';
+import { SESSION_ID } from '../resolveSeed';
 import { prPageGhStdout, prPageHandlers } from './prPageSeed';
 
+let store: StoryStore;
+
 beforeAll(async () => {
-  await importStore();
+  store = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
 beforeEach(async () => {
@@ -56,6 +60,13 @@ const answerWith = ({ behind, isRebasing = false }: AnswerParams): void => {
 };
 
 const properties = (): HTMLElement => screen.getByRole('group', { name: 'Properties' });
+
+type CellParams = {
+  readonly id: string;
+};
+
+const cellText = ({ id }: CellParams): string =>
+  document.querySelector(`[data-pr-status-strip] [data-cell="${id}"]`)?.textContent ?? '';
 
 describe('the pull request page scenes', () => {
   it('registers the nine scenes of the plan', () => {
@@ -96,20 +107,21 @@ describe('the pull request page scenes', () => {
     );
   });
 
-  it('branch-pr-github reads readiness, reviewers, checks, linked issues and base in the property block, with no Rebase', async () => {
+  it('branch-pr-github says checks, review, merge and branch once in the strip, people and links on the side', async () => {
     draw({ name: 'branch-pr-github' });
     await screen.findByRole('group', { name: 'Properties' });
     const side = within(properties());
 
-    expect(screen.getByTestId('pr-readiness').textContent).toContain('lint');
+    await waitFor(() => expect(cellText({ id: 'checks' })).toContain('1 failing'));
+    expect(cellText({ id: 'checks' })).toContain('lint');
+    expect(cellText({ id: 'review' })).toContain('Changes requested');
+    expect(cellText({ id: 'merge' })).toContain('Blocked');
+    expect(cellText({ id: 'branch' })).toContain('3 behind main');
     expect(side.getByText('#412')).toBeDefined();
     expect(side.getByText('Closes')).toBeDefined();
     expect(side.getByText('kenji-w')).toBeDefined();
-    expect(side.getByText('Approved')).toBeDefined();
-    expect(side.getByText('Changes requested')).toBeDefined();
-    expect(side.getByText('Pending')).toBeDefined();
-    expect(side.getByText('1 failing')).toBeDefined();
-    expect(side.getByRole('region', { name: 'Base' }).textContent).toContain('main');
+    expect(side.queryByRole('region', { name: 'Base' })).toBeNull();
+    expect(side.queryByRole('region', { name: 'Readiness' })).toBeNull();
     expect(side.queryByRole('button', { name: /Rebase/ })).toBeNull();
     expect(side.queryByRole('region', { name: 'Status' })).toBeNull();
     expect(side.queryByRole('region', { name: 'Files changed' })).toBeNull();
@@ -139,7 +151,7 @@ describe('the pull request page scenes', () => {
 
     const side = within(await screen.findByRole('group', { name: 'Properties' }));
     expect(document.querySelector('[data-slot="branch-state"]')?.textContent).toBe('Draft');
-    expect(side.getByText('None requested')).toBeDefined();
+    expect(side.getByText('Nobody asked yet')).toBeDefined();
   });
 
   it('branch-pr-editing opens the title and the description editors', async () => {
@@ -174,11 +186,16 @@ describe('the pull request page scenes', () => {
     answerWith({ behind: 0 });
     draw({ name: 'branch-pr-merge-blocked' });
 
-    expect((await screen.findByTestId('pr-readiness')).textContent).toContain(
-      'lint, contract tests',
+    await waitFor(() => expect(cellText({ id: 'checks' })).toContain('lint, contract tests'));
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
+      ).toBe('tab.checks'),
     );
-    expect((screen.getByRole('button', { name: /^Merge/ }) as HTMLButtonElement).disabled).toBe(
-      true,
+    expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Branch actions' }));
+    expect(screen.getByRole('menuitem', { name: /Merge/ }).getAttribute('aria-disabled')).toBe(
+      'true',
     );
   });
 
@@ -221,5 +238,104 @@ describe('the pull request page scenes', () => {
       ),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: /^Merge/ })).toBeNull();
+  });
+});
+
+describe('the branch page of a branch with no pull request', () => {
+  const header = (): HTMLElement => {
+    const line = document.querySelector<HTMLElement>('[data-branch-start-line]');
+    if (line === null) {
+      throw new Error('the header has a branch line');
+    }
+    return line;
+  };
+
+  it('names the branch, says it is behind and leads with Rebase, keeping Create secondary', async () => {
+    draw({ name: 'branch-pr-none' });
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'hl/fix-duplicate-credit' }),
+    ).toBeDefined();
+    expect(header().textContent).toBe('Pushed5 ahead, 3 behind main');
+    await waitFor(() =>
+      expect(
+        document.querySelector('[data-branch-primary]')?.getAttribute('data-branch-primary'),
+      ).toBe('diff.rebase'),
+    );
+    const create = screen.getByRole('button', { name: 'Create pull request' });
+    expect(create.getAttribute('data-create-submit')).toBe('secondary');
+    const strip = screen.getByRole('group', { name: 'Status' });
+    expect(within(strip).getByText('3 behind')).toBeDefined();
+    expect(within(strip).getByText('None yet')).toBeDefined();
+  });
+
+  it('makes Create the one primary once the branch is pushed and up to date', async () => {
+    answerWith({ behind: 0 });
+    draw({ name: 'branch-pr-none' });
+
+    const create = await screen.findByRole('button', { name: 'Create pull request' });
+    expect(create.getAttribute('data-create-submit')).toBe('primary');
+    expect(document.querySelector('[data-branch-primary]')).toBeNull();
+    expect(header().getAttribute('data-branch-start-line')).toBe('pushed');
+  });
+
+  it('prefills the title from the commits instead of the session goal', async () => {
+    answerWith({ behind: 0 });
+    draw({ name: 'branch-pr-none' });
+
+    const title = await screen.findByRole('textbox', { name: 'Pull request title' });
+    await waitFor(() =>
+      expect(title instanceof HTMLInputElement ? title.value : '').toContain(
+        'Keep the processor event id on every credit row',
+      ),
+    );
+    expect(
+      within(screen.getByRole('region', { name: 'In this branch' })).getByText('5 commits'),
+    ).toBeDefined();
+  });
+
+  it('hides the form while a rebase is stopped and lists the conflicts instead', async () => {
+    answerWith({ behind: 3, isRebasing: true });
+    draw({ name: 'branch-pr-none' });
+
+    expect(await screen.findByRole('region', { name: 'Conflicts' })).toBeDefined();
+    expect(screen.queryByRole('textbox', { name: 'Pull request title' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /create pull request/i })).toBeNull();
+    expect(header().textContent).toContain('Rebasing');
+    const strip = screen.getByRole('group', { name: 'Status' });
+    const branch = strip.querySelector('[data-cell="branch"]');
+    expect(branch?.getAttribute('data-tone')).toBe('warning');
+    expect(branch?.textContent).toContain('Conflicts');
+  });
+
+  it('opens the pull request from the shown branch, not the branch the session writes to', async () => {
+    answerWith({ behind: 0 });
+    draw({ name: 'branch-pr-rebasing' });
+    await screen.findByRole('heading', { level: 1 });
+    const shown = store.getState().sessionProjectMounts[SESSION_ID]?.[0];
+    const active = store.getState().sessionActiveMount[SESSION_ID];
+    if (shown === undefined || active === undefined || shown.mountId === active) {
+      throw new Error('the scene shows a branch that is not the write destination');
+    }
+    const github = store.getState().mountGithub[shown.mountId];
+    if (github === undefined) {
+      throw new Error('the scene seeds the shown branch on GitHub');
+    }
+    const createPrForSession = vi.fn(async () => ({ number: 319, url: null }));
+    act(() =>
+      store.setState((state) => ({
+        createPrForSession,
+        mountGithub: { ...state.mountGithub, [shown.mountId]: { ...github, pr: null, prs: [] } },
+      })),
+    );
+    answerWith({ behind: 0 });
+
+    const create = await screen.findByRole('button', { name: 'Create pull request' });
+    fireEvent.click(create);
+
+    await waitFor(() => expect(createPrForSession).toHaveBeenCalledTimes(1));
+    expect(createPrForSession).toHaveBeenCalledWith(
+      expect.objectContaining({ mountId: shown.mountId }),
+    );
   });
 });

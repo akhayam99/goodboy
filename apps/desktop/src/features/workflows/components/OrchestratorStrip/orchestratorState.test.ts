@@ -98,7 +98,7 @@ describe('resolveOrchestratorState', () => {
     const state = resolve({ agents: [running] });
 
     expect(state.phase).toBe('waiting');
-    expect(state.sentence).toBe('Waiting on step 1 · Generalist');
+    expect(state.sentence).toBe('Step 1 is running: Generalist');
     expect(state.waitingOnAgentId).toBe(running.id);
   });
 
@@ -250,7 +250,7 @@ describe('resolveOrchestratorState', () => {
     });
 
     expect(state.phase).toBe('waiting');
-    expect(state.sentence).toBe('Waiting on step 2 · Generalist');
+    expect(state.sentence).toBe('Step 2 is running: Generalist');
     expect(state.waitingOnAgentId).toBe(running.id);
   });
 
@@ -292,11 +292,11 @@ describe('resolveOrchestratorState', () => {
     expect(state.waitingOnAgentId).toBeNull();
   });
 
-  it('keeps Waiting on step while the running step has no question', () => {
+  it('says the step is running while it has no question', () => {
     const state = resolve({ agents: [makeAgent(0, 'running')] });
 
     expect(state.phase).toBe('waiting');
-    expect(state.sentence).toBe('Waiting on step 1 · Generalist');
+    expect(state.sentence).toBe('Step 1 is running: Generalist');
   });
 
   it('still shows a spend pause over an open question', () => {
@@ -345,11 +345,11 @@ describe('resolveOrchestratorState', () => {
     expect(state.sentence).toBe('Step 1 stopped by restart · Generalist');
   });
 
-  it('waits on a pending step without a running agent', () => {
+  it('names the pending step that starts next', () => {
     const state = resolve({ agents: [makeAgent(0, 'completed'), makeAgent(1, 'pending')] });
 
     expect(state.phase).toBe('waiting');
-    expect(state.sentence).toBe('Waiting on step 2 · Generalist');
+    expect(state.sentence).toBe('Step 2 starts next: Generalist');
     expect(state.waitingOnAgentId).toBeNull();
   });
 
@@ -375,7 +375,7 @@ describe('resolveOrchestratorState', () => {
       agents: [makeAgent(2, 'pending'), makeAgent(0, 'completed'), makeAgent(1, 'completed')],
     });
 
-    expect(state.sentence).toBe('Waiting on step 3 · Generalist');
+    expect(state.sentence).toBe('Step 3 starts next: Generalist');
   });
 });
 

@@ -72,6 +72,14 @@ const runDock = (): HTMLElement => {
   return foot;
 };
 
+const header = (): HTMLElement => {
+  const node = document.querySelector<HTMLElement>('[data-run-header-actions]');
+  if (node === null) {
+    throw new Error('The run page has no header actions');
+  }
+  return node;
+};
+
 const tail = (): HTMLElement => {
   const node = document.querySelector<HTMLElement>('[data-run-tail]');
   if (node === null) {
@@ -150,26 +158,26 @@ describe('the c08 preset run scenes', () => {
     expect(tail().getAttribute('data-run-tail')).toBe('openStep');
   });
 
-  it('c08-run-ready carries Start step 3 on the tail, not in the header', async () => {
+  it('c08-run-ready says the step is done on the tail and carries Start step 3 in the header', async () => {
     await mount('c08-run-ready');
 
     expect(within(tail()).getByText('Step 2 done · ready to continue')).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'Start step 3' })).toBeDefined();
+    expect(within(header()).getByRole('button', { name: 'Start step 3' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Start step 3' })).toHaveLength(1);
   });
 
-  it('c08-run-approval asks for the plan on the tail', async () => {
+  it('c08-run-approval says the plan waits on the tail and asks for it in the header', async () => {
     await mount('c08-run-approval');
 
     expect(within(tail()).getByText('The plan waits for your review')).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'Approve plan' })).toBeDefined();
+    expect(within(header()).getByRole('button', { name: 'Approve plan' })).toBeDefined();
   });
 
-  it('c08-run-capped offers to raise the limit on the tail and shows the foot', async () => {
+  it('c08-run-capped says it paused at the limit, offers to raise it in the header and shows the foot', async () => {
     await mount('c08-run-capped');
 
     expect(within(tail()).getByText('Paused at the limit')).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'Raise limit' })).toBeDefined();
+    expect(within(header()).getByRole('button', { name: 'Raise limit' })).toBeDefined();
     expect(within(runDock()).getByText('$3.00 spent')).toBeDefined();
   });
 
@@ -206,18 +214,18 @@ describe('the c08 preset run scenes', () => {
     expect(document.querySelector('[data-run-tail]')).toBeNull();
   });
 
-  it('c08-run-menu opens the run actions with Autonomy and Skip step 2, Pause and Stop in the header', async () => {
+  it('c08-run-menu holds Skip step 2 and Stop run, Asks you sits on its chip, Pause run alone in the header', async () => {
     await mount('c08-run-menu');
 
     const menu = screen.getByRole('menu');
-    expect(within(menu).getByText('Autonomy')).toBeDefined();
+    expect(within(menu).queryByText('Asks you')).toBeNull();
     expect(within(menu).getByText('Skip step 2')).toBeDefined();
-    expect(within(menu).queryByText('Stop run')).toBeNull();
+    expect(within(menu).getByText('Stop run')).toBeDefined();
     const live = within(
       document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
     );
     expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
-    expect(live.getByRole('button', { name: 'Stop run' })).toBeDefined();
+    expect(live.queryByRole('button', { name: 'Stop run' })).toBeNull();
     expect(within(menu).getByText('Archive run')).toBeDefined();
   });
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { pausingSessionCapOf } from '../../budget/pausingSessionCapOf';
 import {
   AUTO_TREE_LIMIT_DEFAULT_USD,
   autoTreeLimitKey,
@@ -26,7 +27,7 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
   const key = workspaceId === null ? null : autoTreeLimitKey({ workspaceId });
   const raw = useAppStore((state) => (key === null ? undefined : state.settings[key]));
   const sessionCapUsd = useAppStore((state) =>
-    sessionId === null ? null : (state.sessionBudgets[sessionId]?.softCapUsd ?? null),
+    sessionId === null ? null : pausingSessionCapOf({ budget: state.sessionBudgets[sessionId] }),
   );
   const loadSetting = useAppStore((state) => state.loadSetting);
   const reportError = useAppStore((state) => state.reportError);
@@ -43,20 +44,21 @@ export const useAutoTreeLimit = ({ workspaceId, sessionId = null }: Params): Aut
   }, [key, loadSetting, reportError]);
 
   const usd = draftUsd ?? storedUsd ?? AUTO_TREE_LIMIT_DEFAULT_USD;
+  const isFromSession = sessionCapUsd !== null && sessionCapUsd < usd;
 
   const persist = useCallback(async (): Promise<void> => {
     const isNothingToSave = draftUsd === null && storedUsd !== null;
-    if (workspaceId === null || key === null || sessionCapUsd !== null || isNothingToSave) {
+    if (workspaceId === null || key === null || isFromSession || isNothingToSave) {
       return;
     }
     await writeAutoTreeLimit({ db: tauriDatabase, workspaceId, usd });
     await loadSetting(key);
     setDraftUsd(null);
-  }, [draftUsd, key, loadSetting, sessionCapUsd, storedUsd, usd, workspaceId]);
+  }, [draftUsd, isFromSession, key, loadSetting, storedUsd, usd, workspaceId]);
 
   return {
-    usd: sessionCapUsd ?? usd,
-    isFromSession: sessionCapUsd !== null,
+    usd: isFromSession ? sessionCapUsd : usd,
+    isFromSession,
     isStored: storedUsd !== null,
     change: setDraftUsd,
     persist,

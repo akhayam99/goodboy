@@ -511,19 +511,36 @@ describe('the session level projects and linked work', () => {
   });
 });
 
-describe('the session rail top row and foot', () => {
-  it('holds the fold toggle, then Pin and Refresh as icons, with no menu and no Autopilot', () => {
+const openSessionMenu = (): HTMLElement => {
+  fireEvent.click(
+    within(elementOf('[data-rail-top]', rail())).getByRole('button', {
+      name: 'More session actions',
+    }),
+  );
+  return screen.getByRole('menu');
+};
+
+type MenuItemParams = {
+  readonly name: RegExp;
+};
+
+const menuItem = ({ name }: MenuItemParams): HTMLElement =>
+  within(openSessionMenu()).getByRole('menuitem', { name });
+
+describe('the session rail top row and its menu', () => {
+  it('holds the fold toggle, then Pin, Refresh and the session menu, with no foot', () => {
     seed();
     mountColumn();
     expect(sessionLayer().querySelector('[data-level-identity]')).toBeNull();
     const top = within(elementOf('[data-rail-top]', rail()));
 
-    expect(top.queryByRole('button', { name: 'More session actions' })).toBeNull();
     expect(top.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
       'Fold session rail',
       'Pin session',
       'Refresh session',
+      'More session actions',
     ]);
+    expect(rail().querySelector('[data-session-foot]')).toBeNull();
     expect(top.getByRole('button', { name: 'Pin session' }).getAttribute('aria-pressed')).toBe(
       'false',
     );
@@ -576,31 +593,16 @@ describe('the session rail top row and foot', () => {
     expect(within(rail()).queryByText(/database is locked/)).toBeNull();
   });
 
-  it('puts the spend, Archive and Delete on one row, Archive and Delete as icons', () => {
+  it('holds Archive and Delete in the session menu, Delete as the danger entry', () => {
     seed();
-    useAppStore.setState({
-      sessionBudgets: { [openId]: { sessionId: openId, softCapUsd: 10, onExceed: 'pause' } },
-    });
     mountColumn();
-    const footRow = elementOf('[data-session-foot]', rail());
-    const foot = within(footRow);
 
-    expect(elementOf('[data-session-spend]', footRow).textContent).toBe('$0 / $10');
-    expect(elementOf('[data-session-spend]', footRow).getAttribute('aria-label')).toBe(
-      'Spend $0 of $10.00 limit',
-    );
-    const icons = Array.from(footRow.querySelectorAll('[data-session-foot-action]'));
-    expect(icons.map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Archive session',
-      'Delete session',
-    ]);
-    expect(icons.every((button) => button.textContent === '')).toBe(true);
-    expect(icons.every((button) => button.querySelector('svg') !== null)).toBe(true);
-    expect(footRow.textContent).not.toContain('\u2026');
-    expect(foot.getByRole('button', { name: 'Delete session' }).className).toContain('danger');
-    expect(foot.getByRole('button', { name: 'Archive session' }).className).not.toContain('danger');
-    fireEvent.click(elementOf('[data-session-spend]', footRow));
-    expect(screen.getByRole('dialog', { name: 'Session spend' })).toBeDefined();
+    const menu = openSessionMenu();
+    const labels = within(menu)
+      .getAllByRole('menuitem')
+      .map((item) => item.textContent ?? '');
+    expect(labels.some((label) => label.startsWith('Archive'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Delete'))).toBe(true);
   });
 
   it('keeps Delete behind its confirm', async () => {
@@ -608,13 +610,12 @@ describe('the session rail top row and foot', () => {
     const deleteTask = vi.fn(async () => undefined);
     useAppStore.setState({ deleteTask });
     mountColumn();
-    const foot = within(elementOf('[data-session-foot]', rail()));
 
-    fireEvent.click(foot.getByRole('button', { name: 'Delete session' }));
-    const dialog = within(screen.getByRole('dialog', { name: /^Delete .+\?$/ }));
+    fireEvent.click(menuItem({ name: /^Delete/ }));
+    const dialog = within(await screen.findByRole('dialog', { name: /^Delete .+\?$/ }));
     expect(deleteTask).not.toHaveBeenCalled();
     await act(async () => {
-      fireEvent.click(dialog.getByRole('button', { name: 'Delete session' }));
+      fireEvent.click(dialog.getByRole('button', { name: /^Delete/ }));
     });
     expect(deleteTask).toHaveBeenCalledTimes(1);
     expect(deleteTask).toHaveBeenCalledWith(openId);
@@ -625,10 +626,9 @@ describe('the session rail top row and foot', () => {
     const bulkArchiveTask = vi.fn<AppStore['bulkArchiveTask']>();
     useAppStore.setState({ bulkArchiveTask });
     mountColumn();
-    const foot = within(elementOf('[data-session-foot]', rail()));
 
-    fireEvent.click(foot.getByRole('button', { name: 'Archive session' }));
-    const dialog = within(screen.getByRole('dialog', { name: 'Archive session?' }));
+    fireEvent.click(menuItem({ name: /^Archive/ }));
+    const dialog = within(await screen.findByRole('dialog', { name: 'Archive session?' }));
     expect(dialog.getByText(/stay on disk/)).toBeDefined();
     expect(dialog.queryByText(/running/)).toBeNull();
     await act(async () => {
@@ -654,10 +654,9 @@ describe('the session rail top row and foot', () => {
     }));
     useAppStore.setState({ bulkArchiveTask, bulkUnarchiveTask });
     mountColumn();
-    const foot = within(elementOf('[data-session-foot]', rail()));
 
-    fireEvent.click(foot.getByRole('button', { name: 'Archive session' }));
-    const dialog = within(screen.getByRole('dialog', { name: 'Archive session?' }));
+    fireEvent.click(menuItem({ name: /^Archive/ }));
+    const dialog = within(await screen.findByRole('dialog', { name: 'Archive session?' }));
     expect(
       dialog.getByText(
         /1 agent is still running in this session and keeps running after you archive it/,
@@ -674,7 +673,7 @@ describe('the session rail top row and foot', () => {
     expect(bulkUnarchiveTask).toHaveBeenCalledWith([openId]);
   });
 
-  it('says why Archive failed at the foot, keeps the session live and retries', async () => {
+  it('says why Archive failed under the top row, keeps the session live and retries', async () => {
     seed();
     const bulkArchiveTask = vi
       .fn<AppStore['bulkArchiveTask']>()
@@ -682,30 +681,22 @@ describe('the session rail top row and foot', () => {
       .mockResolvedValueOnce({ succeeded: [], failed: [] });
     useAppStore.setState({ bulkArchiveTask });
     mountColumn();
-    const foot = within(elementOf('[data-session-foot]', rail()));
 
-    fireEvent.click(foot.getByRole('button', { name: 'Archive session' }));
+    fireEvent.click(menuItem({ name: /^Archive/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Archive session?' });
     await act(async () => {
-      fireEvent.click(
-        within(screen.getByRole('dialog', { name: 'Archive session?' })).getByRole('button', {
-          name: 'Archive session',
-        }),
-      );
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Archive session' }));
     });
-    const footArea = elementOf('[data-session-foot]', rail()).parentElement ?? rail();
-    expect(within(footArea).getByText(/database is locked/)).toBeDefined();
-    expect(
-      within(elementOf('[data-rail-top]', rail())).queryByText(/database is locked/),
-    ).toBeNull();
+    expect(within(rail()).getByText(/database is locked/)).toBeDefined();
 
     await act(async () => {
-      fireEvent.click(within(footArea).getByRole('button', { name: 'Retry' }));
+      fireEvent.click(within(rail()).getByRole('button', { name: 'Retry' }));
     });
     expect(bulkArchiveTask).toHaveBeenCalledTimes(2);
     expect(bulkArchiveTask).toHaveBeenLastCalledWith([openId]);
   });
 
-  it('offers Restore at the foot of an archived session with no confirm and no top row actions', async () => {
+  it('offers Restore in the menu of an archived session, with no Pin or Refresh', async () => {
     seed({
       session: {
         ...open,
@@ -719,15 +710,11 @@ describe('the session rail top row and foot', () => {
     useAppStore.setState({ bulkUnarchiveTask });
     mountColumn();
 
-    const footRow = elementOf('[data-session-foot]', rail());
-    expect(
-      Array.from(footRow.querySelectorAll('[data-session-foot-action]')).map((button) =>
-        button.getAttribute('aria-label'),
-      ),
-    ).toEqual(['Restore session', 'Delete session']);
-    expect(rail().querySelector('[data-session-actions]')).toBeNull();
+    const top = within(elementOf('[data-rail-top]', rail()));
+    expect(top.queryByRole('button', { name: 'Pin session' })).toBeNull();
+    const restore = menuItem({ name: /^Restore/ });
     await act(async () => {
-      fireEvent.click(within(footRow).getByRole('button', { name: 'Restore session' }));
+      fireEvent.click(restore);
     });
     expect(screen.queryByRole('dialog', { name: 'Archive session?' })).toBeNull();
     expect(bulkUnarchiveTask).toHaveBeenCalledWith([openId]);

@@ -140,10 +140,7 @@ export const ChatRoomScene = ({ chat, activity }: Props) => {
     <>
       {!isChatOpen && openSession !== null ? (
         <div data-scene-view="session" className="contents">
-          <ShellFrame
-            session={openSession}
-            main={<SessionOverviewPane session={openSession} onSelectLens={noop} />}
-          />
+          <ShellFrame session={openSession} main={<SessionOverviewPane session={openSession} />} />
         </div>
       ) : (
         <div data-scene-view="chat" className="contents">

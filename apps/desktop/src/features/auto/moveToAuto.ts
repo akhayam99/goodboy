@@ -8,6 +8,7 @@ import {
   type WorkspaceId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../shared/lib/db';
+import { pausingSessionCapOf } from '../budget/pausingSessionCapOf';
 import { useAppStore } from '../../store';
 import { adoptAgent, type AdoptOutcome } from '../../store/slices/auto/adoptAgent';
 import { scopedKindRouting } from '../../store/slices/agents/scopedKindRouting';
@@ -95,7 +96,7 @@ export const moveToAuto = async ({
   const settings = selectResolvedSettings({ state, sessionId });
   const routing = scopedKindRouting({ state, settings, kind: 'auto' });
   const capUsd = autoTreeCapUsd({
-    sessionCapUsd: state.sessionBudgets[sessionId]?.softCapUsd ?? null,
+    sessionCapUsd: pausingSessionCapOf({ budget: state.sessionBudgets[sessionId] }),
     workspaceLimitUsd: await readAutoTreeLimit({
       db,
       workspaceId: brandId<WorkspaceId>({ value: session.workspaceId }),

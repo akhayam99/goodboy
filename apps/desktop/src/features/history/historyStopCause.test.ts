@@ -24,6 +24,15 @@ describe('historyStopCause', () => {
     expect(historyStopCause({ reason: 'push-failed', message: undefined })).toBe('push failed');
   });
 
+  it('reads a remote pre-receive decline as a failed push, not a local hook', () => {
+    expect(
+      historyStopCause({
+        reason: 'push-failed',
+        message: ' ! [remote rejected] main -> main (pre-receive hook declined)',
+      }),
+    ).toBe('push failed');
+  });
+
   it('has nothing to say for a reason it does not know', () => {
     expect(historyStopCause({ reason: undefined, message: undefined })).toBeNull();
     expect(historyStopCause({ reason: 'unheard-of', message: '' })).toBeNull();

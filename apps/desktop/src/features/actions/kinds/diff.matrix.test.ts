@@ -75,6 +75,7 @@ const STATES: ReadonlyArray<{
     facts: facts({ ...NO_PR, ahead: 3, unpushed: 3 }),
     expected: [
       ...TOOLS,
+      'diff.push menu',
       'diff.createPullRequest primary',
       'diff.rewriteHistory secondary',
       'diff.changeBase menu',

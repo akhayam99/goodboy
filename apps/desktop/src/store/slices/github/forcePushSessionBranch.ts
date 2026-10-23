@@ -70,8 +70,14 @@ export const forcePushSessionBranch = async ({
     return { ok: false, error: ORIGIN_MOVED_MESSAGE };
   }
   if (pushed.kind === 'failed') {
+    get().recordLocalCheck({
+      mountId,
+      answer: { error: pushed.message },
+      at: Date.now(),
+    });
     return { ok: false, error: pushed.message };
   }
+  get().recordLocalCheck({ mountId, answer: { error: null }, at: Date.now() });
   void get().refreshSessionPr(sessionId, { mountId, force: true, silent: true });
   return { ok: true };
 };

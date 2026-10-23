@@ -46,14 +46,14 @@ describe('PermissionModePicker', () => {
 
   it('keeps the mode name for assistive tech and an icon when the label collapses', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
-    const trigger = screen.getByRole('button', { name: 'Permission mode: Ask first' });
+    const trigger = screen.getByRole('button', { name: 'Asks you: Ask first' });
     expect(trigger.querySelector('svg')).not.toBeNull();
   });
 
   it('offers four modes and leaves out do not ask', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     openPicker();
-    expect(screen.getByRole('dialog', { name: /permission mode/i })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: /^Asks you$/ })).toBeDefined();
     expect(screen.getByText('Read only')).toBeDefined();
     expect(screen.getByText('Edits allowed')).toBeDefined();
     expect(screen.getByText('Full access')).toBeDefined();
@@ -117,22 +117,22 @@ describe('PermissionModePicker', () => {
   it('closes on Escape', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     openPicker();
-    expect(screen.getByRole('dialog', { name: /permission mode/i })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: /^Asks you$/ })).toBeDefined();
     fireEvent.keyDown(document.body, { key: 'Escape' });
-    expect(screen.queryByRole('dialog', { name: /permission mode/i })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /^Asks you$/ })).toBeNull();
   });
 
   it('closes on a mousedown outside the picker', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     openPicker();
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByRole('dialog', { name: /permission mode/i })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /^Asks you$/ })).toBeNull();
   });
 
   it('escapes clipping ancestors through a fixed body portal', () => {
     render(<PermissionModePicker session={makeSession()} activeProvider="anthropic" />);
     openPicker();
-    const panel = screen.getByRole('dialog', { name: /permission mode/i });
+    const panel = screen.getByRole('dialog', { name: /^Asks you$/ });
     expect(panel.className).toContain('fixed');
     expect(panel.className).toContain('z-popover');
     expect(panel.closest('[data-dropdown-portal]')?.parentElement).toBe(document.body);
@@ -143,6 +143,6 @@ describe('PermissionModePicker', () => {
     act(() => {
       window.dispatchEvent(new CustomEvent('goodboy:open-permission-picker'));
     });
-    expect(screen.getByRole('dialog', { name: /permission mode/i })).toBeDefined();
+    expect(screen.getByRole('dialog', { name: /^Asks you$/ })).toBeDefined();
   });
 });

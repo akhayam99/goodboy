@@ -39,7 +39,7 @@ const NewDrawerScene = ({ state }: Props) => {
         main={
           <ScrollFade className="min-h-0 flex-1">
             <div className="px-6 py-4">
-              <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+              <SessionOverviewPane session={SESSION} />
             </div>
           </ScrollFade>
         }

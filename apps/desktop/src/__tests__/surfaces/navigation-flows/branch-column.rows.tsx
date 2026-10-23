@@ -135,14 +135,11 @@ export const BRANCH_COLUMN_ROWS: ReadonlyArray<Row> = [
       await waitFor(
         () =>
           expect(useAppStore.getState().branchTab[ctx.sessionId]).toBe(
-            branchLandingTabOf({ hasPullRequest: false, deepLink: null }),
+            branchLandingTabOf({ deepLink: null }),
           ),
         WAIT,
       );
-      await waitFor(
-        () => expect(paneHeading()).toMatch(/^(Files|Commits|New pull request)$/),
-        WAIT,
-      );
+      await waitFor(() => expect(paneHeading()).toBe(SECOND_BRANCH), WAIT);
       await waitFor(() => expect(currentWorktree()).toContain(SECOND_BRANCH), WAIT);
       expect(trailBands()).toBe(0);
     },

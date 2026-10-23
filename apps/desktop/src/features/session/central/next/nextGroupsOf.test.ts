@@ -159,4 +159,63 @@ describe('nextGroupsOf', () => {
 
     expect(needsYouCountOf({ cards })).toBe(2);
   });
+
+  it('puts what unblocks most first inside a group, then what was seen first', () => {
+    const rebaseAll: SessionSuggestion = {
+      id: 'rebase-project:harbor',
+      kind: 'rebase-project',
+      priority: 30,
+      band: 2,
+      title: 'Rebase 3 branches on main',
+      sessionId: SESSION_ID,
+      fingerprint: 'rebase-project:harbor',
+      targetKey: 'project:harbor',
+      payload: {
+        targets: ['home', 'billing', 'team'].map((page) => ({
+          id: `target-${page}`,
+          mountId: mountOf({ page }),
+          projectId: brandId({ value: 'project-harbor' }),
+          projectName: 'harbor-portal',
+          branch: `hl/feat-center-${page}-page`,
+          worktreePath: `/work/${page}`,
+          baseBranch: 'main',
+          behind: 2,
+          dirtyCount: 0,
+        })),
+      },
+    };
+    const cards = cardsOf({
+      autoTargets: [],
+      suggestions: [pushOf({ page: 'settings' }), rebaseAll],
+    });
+    const seen = nextGroupsOf({
+      cards: cardsOf({ autoTargets: [], suggestions: [pushOf({ page: 'settings' })] }),
+      seen: [],
+    }).flatMap((group) => group.rows.map((card) => nextSeenKeyOf({ group: group.id, card })));
+    expect(seen).toHaveLength(1);
+
+    expect(shapeOf({ cards, seen })).toEqual([
+      ['update', ['suggestion:rebase-project:harbor', 'suggestion:push-branch:settings']],
+    ]);
+  });
+
+  it('keeps rows of the same reach in the order they were first seen across a refresh', () => {
+    const before = cardsOf({
+      autoTargets: [
+        childOf({ page: 'search', kind: 'neverStarted' }),
+        childOf({ page: 'billing', kind: 'neverStarted' }),
+      ],
+    });
+    const seen = nextGroupsOf({ cards: before, seen: [] }).flatMap((group) =>
+      group.rows.map((card) => nextSeenKeyOf({ group: group.id, card })),
+    );
+    const after = cardsOf({
+      autoTargets: [
+        childOf({ page: 'billing', kind: 'neverStarted' }),
+        childOf({ page: 'search', kind: 'neverStarted' }),
+      ],
+    });
+
+    expect(shapeOf({ cards: after, seen })).toEqual(shapeOf({ cards: before, seen }));
+  });
 });

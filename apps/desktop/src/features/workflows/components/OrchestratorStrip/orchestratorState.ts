@@ -294,7 +294,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'waiting',
       tone: 'neutral',
-      sentence: `Waiting on step ${runningIndex + 1} · ${roleOf({ agent })}`,
+      sentence: `Step ${runningIndex + 1} is running: ${roleOf({ agent })}`,
       waitingOnAgentId: agent.id,
     };
   }
@@ -326,7 +326,7 @@ export const resolveOrchestratorState = ({
       ...base,
       phase: 'waiting',
       tone: 'neutral',
-      sentence: `Waiting on step ${pendingIndex + 1} · ${roleOf({ agent })}`,
+      sentence: `Step ${pendingIndex + 1} starts next: ${roleOf({ agent })}`,
     };
   }
   if (run.autoRun) {

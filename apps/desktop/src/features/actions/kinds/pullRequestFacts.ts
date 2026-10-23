@@ -1,4 +1,5 @@
 import type {
+  MountId,
   PrCheckRun,
   PrComment,
   PrDetailRead,
@@ -21,6 +22,7 @@ type PullRequestChecksPhase = 'none' | 'pending' | 'failing' | 'green' | 'unknow
 
 export type PullRequestFacts = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
   readonly host: PullRequestHost;
   readonly pr: PullRequestState | null;
   readonly number: number | null;
@@ -42,6 +44,7 @@ export type PullRequestFacts = {
   readonly mergeMethods: ReadonlyArray<PrMergeMethod>;
   readonly mergeMethodReasons: Readonly<Partial<Record<PrMergeMethod, string>>>;
   readonly commitCount: number | null;
+  readonly isRebaseStopOpen: boolean;
 };
 
 type FixSignals = {
@@ -71,6 +74,7 @@ export const ALL_MERGE_METHODS: ReadonlyArray<PrMergeMethod> = ['squash', 'merge
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
   readonly host?: PullRequestHost;
   readonly pr: PullRequestState | null;
   readonly checks: ReadonlyArray<PrCheckRun> | null;
@@ -86,6 +90,7 @@ type Params = {
   readonly mergeMethods?: ReadonlyArray<PrMergeMethod>;
   readonly mergeMethodReasons?: Readonly<Partial<Record<PrMergeMethod, string>>>;
   readonly commitCount?: number | null;
+  readonly isRebaseStopOpen?: boolean;
 };
 
 const phaseOf = ({ pr }: { readonly pr: PullRequestState | null }): PullRequestPhase => {
@@ -151,6 +156,7 @@ const changesRequestedByOf = ({
 
 export const pullRequestFacts = ({
   sessionId,
+  mountId = null,
   host = 'github',
   pr,
   checks,
@@ -166,6 +172,7 @@ export const pullRequestFacts = ({
   mergeMethods = ALL_MERGE_METHODS,
   mergeMethodReasons = {},
   commitCount = null,
+  isRebaseStopOpen = false,
 }: Params): PullRequestFacts => {
   const runs = checks ?? [];
   const groups = checksGroupsOf({ checks: runs });
@@ -173,6 +180,7 @@ export const pullRequestFacts = ({
   const author = pr?.author ?? null;
   return {
     sessionId,
+    mountId,
     host,
     pr,
     number: pr?.number ?? null,
@@ -194,6 +202,7 @@ export const pullRequestFacts = ({
     mergeMethods,
     mergeMethodReasons,
     commitCount,
+    isRebaseStopOpen,
   };
 };
 
@@ -203,6 +212,7 @@ type SessionMergeParams = {
   readonly github: Pick<SessionGithubState, 'pr' | 'detail'> | null;
   readonly threads: ReadonlyArray<ResolveThread>;
   readonly mergeView?: PullRequestView | null;
+  readonly isRebaseStopOpen?: boolean;
 };
 
 export const sessionMergeFacts = ({
@@ -211,6 +221,7 @@ export const sessionMergeFacts = ({
   github,
   threads,
   mergeView = null,
+  isRebaseStopOpen = false,
 }: SessionMergeParams): PullRequestFacts => {
   const pr = github?.pr ?? null;
   const detail =
@@ -226,6 +237,7 @@ export const sessionMergeFacts = ({
     viewer: null,
     writeInFlight: null,
     isScribeWriting: false,
+    isRebaseStopOpen,
     ...fixSignalsOf({ threads }),
     ...(mergeView === null
       ? {}

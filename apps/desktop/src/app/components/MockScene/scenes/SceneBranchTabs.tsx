@@ -21,7 +21,8 @@ type Props = {
 export const SceneBranchTabs = ({ sessionId }: Props) => {
   const identity = useBranchIdentity({ sessionId });
   const storedTab = useBranchTab({ sessionId, mountPath: identity.mountPath });
-  const scope = useAppStore(useShallow((state) => branchScopeOf({ state, sessionId })));
+  const mountId = identity.mount?.mountId ?? null;
+  const scope = useAppStore(useShallow((state) => branchScopeOf({ state, sessionId, mountId })));
   const navigate = useAppStore((state) => state.navigate);
   const facts = useWorktreeEntryFacts({ sessionId });
   const current = resolveBranchTab({ tab: storedTab, scope });

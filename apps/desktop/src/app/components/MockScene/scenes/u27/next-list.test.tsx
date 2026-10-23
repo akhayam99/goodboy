@@ -121,7 +121,7 @@ describe('the u27 Next list scenes', () => {
       groups.map((group) => group.querySelector('button[aria-controls]')?.textContent),
     ).toEqual([
       'Decide2',
-      'Fix4hl/feat-center-billing-page, hl/feat-center-home-page, hl/feat-center-search-page, hl/feat-center-about-page',
+      'Fix4hl/feat-center-home-page, hl/feat-center-billing-page, hl/feat-center-search-page, hl/feat-center-about-page',
       'Update2Rebase harbor-portal, hl/feat-center-settings-page',
       'Ship5hl/feat-center-faq-page, hl/feat-center-search-page, hl/feat-center-pricing-page, hl/feat-center-careers-page, Remove the harbor-portal worktree',
     ]);

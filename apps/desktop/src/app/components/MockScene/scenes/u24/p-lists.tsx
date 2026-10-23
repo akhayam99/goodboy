@@ -28,6 +28,6 @@ const markOneAgentUnseen = () => {
 
 export const U24_P_LISTS_SCENES = {
   'notifications-delete-all': () => <NotificationsScene openLabels={DELETE_ALL_CLICKS} />,
-  'activity-mark-seen': () => <ActivityRunScene onSeeded={markOneAgentUnseen} />,
+  'activity-mark-seen': () => <ActivityRunScene onSeeded={markOneAgentUnseen} isLogShown />,
   'tasks-cursor': () => <InboxScene isDrawerClosed />,
 };

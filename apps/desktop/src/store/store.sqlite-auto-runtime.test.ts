@@ -241,7 +241,7 @@ describe('the tree an Auto agent starts with', () => {
     return rows[0]?.cap_usd;
   };
 
-  it('is capped at the budget of its session, ahead of the spend cap of the workspace', async () => {
+  it('keeps the spend cap of the workspace when the session budget is larger', async () => {
     const db = await seedSessionWithAutoAgent({ kind: 'auto' });
     await writeAutoTreeLimit({
       db,
@@ -256,7 +256,43 @@ describe('the tree an Auto agent starts with', () => {
 
     stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
 
-    expect(await capOfTree(db)).toBe(25);
+    expect(await capOfTree(db)).toBe(8);
+  });
+
+  it('is capped at the budget of its session when it is smaller than the workspace cap', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: 'auto' });
+    await writeAutoTreeLimit({
+      db,
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+      usd: 8,
+    });
+    useAppStore.setState({
+      sessionBudgets: {
+        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 5, onExceed: 'pause' },
+      },
+    });
+
+    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
+
+    expect(await capOfTree(db)).toBe(5);
+  });
+
+  it('keeps the workspace cap under a smaller session budget that only warns', async () => {
+    const db = await seedSessionWithAutoAgent({ kind: 'auto' });
+    await writeAutoTreeLimit({
+      db,
+      workspaceId: brandId<WorkspaceId>({ value: 'workspace-harborline' }),
+      usd: 8,
+    });
+    useAppStore.setState({
+      sessionBudgets: {
+        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 5, onExceed: 'warn' },
+      },
+    });
+
+    stops.push(await startAutoRuntime({ isEnabled: true, tickMs: 10 }));
+
+    expect(await capOfTree(db)).toBe(8);
   });
 
   it('is capped at the spend cap of the workspace when the session has no budget', async () => {

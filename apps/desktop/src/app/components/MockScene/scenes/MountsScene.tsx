@@ -888,7 +888,7 @@ export const MountsScene = ({ variant = DEFAULT_VARIANT }: Props) => {
     <ShellFrame
       session={session}
       sidebar="expanded"
-      main={<SessionOverviewPane session={session} onSelectLens={() => undefined} />}
+      main={<SessionOverviewPane session={session} />}
     />
   );
 };

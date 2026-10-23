@@ -14,7 +14,8 @@ import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { ToastProvider } from '../../shared/components/Toast';
 import { brandedId } from '../../features/history/testing/brandedId';
 import { resetWorktreeStatusCache } from '../../store/slices/worktreeStatuses/cache';
-import { NextStepSlot } from '../../features/suggestions/components/NextStepSlot';
+import { CentralColumn } from '../../features/session/components/SessionOverviewPane/CentralColumn';
+import { WorkTimeProvider } from '../../features/workTreeModel/WorkTimeProvider';
 import {
   buildStoryProject,
   buildStoryWorkspace,
@@ -163,10 +164,23 @@ const showNext = (view: RenderResult): string => {
   }
   view.rerender(
     <ToastProvider>
-      <NextStepSlot session={session} onSelectLens={() => undefined} />
+      <WorkTimeProvider sessionId={session.id} workspaceId={session.workspaceId}>
+        <CentralColumn session={session} onLeadChange={() => undefined} />
+      </WorkTimeProvider>
     </ToastProvider>,
   );
-  return view.container.textContent ?? '';
+  return nextCardOf(view)?.textContent ?? '';
+};
+
+const nextCardOf = (view: RenderResult): HTMLElement | null =>
+  view.container.querySelector<HTMLElement>('[data-overview-card="next"]');
+
+const nextCard = (view: RenderResult): HTMLElement => {
+  const card = nextCardOf(view);
+  if (card === null) {
+    throw new Error('the Next card is not drawn');
+  }
+  return card;
 };
 
 const mountRows = () =>
@@ -217,11 +231,11 @@ const clickLastButton = ({ name }: { readonly name: string }) => {
 };
 
 const confirmRemoval = (view: RenderResult) => {
-  fireEvent.click(within(view.container).getByRole('button', { name: 'Remove worktree' }));
-  clickLastButton({ name: 'Remove worktree' });
+  fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Remove/ }));
+  clickLastButton({ name: 'Remove' });
 };
 
-describe('journey: remove a merged worktree from NEXT', () => {
+describe('journey: remove a merged worktree from the Next card', () => {
   it('offers the removal once the pull request merges, and removes the worktree on confirm', async () => {
     const view = render(<ToastProvider>{null}</ToastProvider>);
     await useAppStore.getState().loadSessionMounts({ sessionId });
@@ -234,15 +248,14 @@ describe('journey: remove a merged worktree from NEXT', () => {
 
     const card = showNext(view);
     expect(card).toContain('#418 merged · 1.0 KB');
-    expect(card).toContain('Not now');
     expect(useAppStore.getState().mountCleanupProposals[sessionId]).toHaveLength(1);
     expect(await operationRows()).toEqual([{ kind: 'remove', status: 'pending' }]);
     expect(storySpies.removeWorktreeChecked).not.toHaveBeenCalled();
 
-    fireEvent.click(within(view.container).getByRole('button', { name: 'Remove worktree' }));
+    fireEvent.click(within(nextCard(view)).getByRole('button', { name: /^Remove/ }));
     expect(screen.getByText('Remove worktree?')).toBeDefined();
     expect(storySpies.removeWorktreeChecked).not.toHaveBeenCalled();
-    clickLastButton({ name: 'Remove worktree' });
+    clickLastButton({ name: 'Remove' });
 
     await vi.waitFor(() =>
       expect(useAppStore.getState().mountCleanupProposals[sessionId]).toEqual([]),
@@ -307,16 +320,12 @@ describe('journey: remove a merged worktree from NEXT', () => {
 
     confirmRemoval(view);
 
-    await vi.waitFor(() =>
-      expect(useAppStore.getState().notifications).toEqual([
-        expect.objectContaining({
-          kind: 'error',
-          title: "Couldn't remove the worktree",
-          body: 'git worktree remove failed',
-          sessionId,
-        }),
-      ]),
-    );
+    await vi.waitFor(() => {
+      showNext(view);
+      expect(within(nextCard(view)).getByRole('alert').textContent).toContain(
+        'git worktree remove failed',
+      );
+    });
     expect(useAppStore.getState().mountCleanupProposals[sessionId]).toHaveLength(1);
     expect(await mountRows()).toEqual([
       { worktree_path: WORKTREE.worktreePath, is_attached: 1, disk_state: 'unchecked' },
@@ -329,7 +338,8 @@ describe('journey: remove a merged worktree from NEXT', () => {
     expect(await detachEvents()).toEqual([]);
     expect(showNext(view)).toContain(REMOVE_NOTE);
 
-    confirmRemoval(view);
+    fireEvent.click(within(nextCard(view)).getByRole('button', { name: 'Retry Remove worktree' }));
+    clickLastButton({ name: 'Retry' });
 
     await vi.waitFor(() =>
       expect(useAppStore.getState().mountCleanupProposals[sessionId]).toEqual([]),

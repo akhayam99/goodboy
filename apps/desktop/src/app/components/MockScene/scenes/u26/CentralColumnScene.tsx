@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AutoReleaseContext } from '../../../../../features/auto/autoReleaseContext';
 import { brandId, type IsoDateTime } from '@goodboy/types';
-import { SETTING_OVERVIEW_LAYOUT } from '../../../../../features/settings/settings';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
 import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDrawerPanel';
@@ -17,7 +16,6 @@ type Props = {
   readonly theme: 'dark' | 'light';
   readonly kind: ColumnKind;
   readonly isLogOpen?: boolean;
-  readonly layout?: 'new' | 'classic';
   readonly isArchived?: boolean;
 };
 
@@ -32,7 +30,6 @@ export const CentralColumnScene = ({
   theme,
   kind,
   isLogOpen = false,
-  layout = 'new',
   isArchived = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
@@ -43,7 +40,6 @@ export const CentralColumnScene = ({
     applyDocumentTheme({ theme });
     seedCentralColumn({ kind });
     useAppStore.setState((state) => ({
-      settings: { ...state.settings, [SETTING_OVERVIEW_LAYOUT]: layout },
       sessions: state.sessions.map((session) =>
         session.id === COLUMN_SESSION_ID && isArchived
           ? { ...session, archivedAt: ARCHIVED_AT }
@@ -58,7 +54,7 @@ export const CentralColumnScene = ({
       });
     }
     setIsReady(true);
-  }, [theme, kind, isLogOpen, layout, isArchived]);
+  }, [theme, kind, isLogOpen, isArchived]);
   if (!isReady) {
     return null;
   }

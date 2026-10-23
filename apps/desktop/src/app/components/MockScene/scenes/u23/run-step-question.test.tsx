@@ -37,7 +37,7 @@ describe('the run step question scene', () => {
     expect(Object.keys(U23_RUN_STEP_QUESTION_SCENES)).toEqual(['workflow-run-step-question']);
   });
 
-  it('says which running step waits on you instead of waiting on it, and offers Answer on the tail', async () => {
+  it('says which running step waits on you, with Answer as the one header primary', async () => {
     const Scene = U23_RUN_STEP_QUESTION_SCENES['workflow-run-step-question'];
     if (Scene === undefined) {
       throw new Error('no workflow-run-step-question scene');
@@ -57,8 +57,8 @@ describe('the run step question scene', () => {
       throw new Error('no orchestrated tail');
     }
     expect(tail.textContent).toContain('Waiting for your answer on step 4');
-    expect(tail.textContent).not.toContain('Waiting on step');
-    expect(within(tail).getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(tail.textContent).not.toContain('is running');
+    expect(within(tail).queryByRole('button', { name: 'Answer' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
   });
 });

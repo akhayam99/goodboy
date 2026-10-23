@@ -216,6 +216,17 @@ describe('one tree for every branch', () => {
     ]);
   });
 
+  it('names the pull request entry by its number alone, so the label is never cut by the reference', async () => {
+    seedTwoProjects({ status: worktreeStatusOf({}) });
+    await openWorktree();
+    await mountRail();
+
+    const reference = entriesOf('payments-api').querySelector('[data-entry-reference]');
+    expect(reference?.textContent).toBe('#418');
+    const label = reference?.parentElement?.querySelector('[data-entry-label]');
+    expect(label?.textContent).toBe('Pull request');
+  });
+
   it('collapses and expands the current branch from its row and stays on its page', async () => {
     seedTwoProjects({ status: worktreeStatusOf({}) });
     await openWorktree();

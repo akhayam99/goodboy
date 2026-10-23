@@ -115,10 +115,10 @@ describe('SPEC3 9.6 Branch page capabilities from the branch tree', () => {
     expect(document.querySelector('[data-branch-primary="pullRequest.markReady"]')).not.toBeNull();
   });
 
-  it('merge readiness reads in words in the Readiness property', async () => {
+  it('merge readiness reads in words in the Merge cell of the status strip', async () => {
     await mount('c04-worktree-pr-behind');
 
-    expect(screen.getByTestId('pr-readiness').textContent).toMatch(/[A-Za-z]/);
+    expect(document.querySelector('[data-cell="merge"]')?.textContent).toMatch(/[A-Za-z]/);
   });
 
   it('the Branch actions menu keeps Close pull request, the worktree menu the branch actions', async () => {
@@ -158,7 +158,7 @@ describe('SPEC3 9.6 Branch page capabilities from the branch tree', () => {
   it('no pull request yet keeps Create pull request and Write it', async () => {
     await mount('c04-worktree-no-pr');
 
-    expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /create pull request$/i })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Write with Scribe' })).toBeDefined();
   });
 

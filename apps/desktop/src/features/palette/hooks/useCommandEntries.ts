@@ -43,8 +43,6 @@ import { guidePaletteEntries } from '../../settings/guidePaletteEntries';
 import { checkForUpdatesNow } from '../../updater/checkForUpdatesNow';
 import type { SettingsFocus } from '../../settings/settingsFocus';
 import { useToast } from '../../../shared/components/Toast';
-import { overviewLayoutEntries } from '../../session/overviewLayout/overviewLayoutEntries';
-import { useSwitchOverviewLayout } from '../../session/overviewLayout/useSwitchOverviewLayout';
 import { agentEntries } from '../sources/agentEntries';
 import { startRunFromPresetEntries } from '../sources/startRunFromPresetEntries';
 import { openStartRun } from '../../session/startRun/openStartRun';
@@ -151,7 +149,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
   const scriptPins = useScriptPins({ projectIds: workspaceProjects.map((project) => project.id) });
   const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
-  const { switchTo: switchOverviewLayout } = useSwitchOverviewLayout();
   const theme = getAppliedTheme();
   const innerColumn = useCurrentInnerColumn();
   const isInMainWindow = useIsMainWindow();
@@ -572,7 +569,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
         secondary: ['theme appearance'],
         run: () => switchTheme({ to: oppositeOfApplied() }),
       },
-      ...overviewLayoutEntries({ switchTo: switchOverviewLayout }),
       {
         key: 'action:check-updates',
         label: 'Check for updates',
@@ -672,7 +668,6 @@ export const useCommandEntries = (): ReadonlyArray<PaletteEntry> => {
     runScript,
     reportError,
     showToast,
-    switchOverviewLayout,
     theme,
     settingsGroups,
     innerColumn,

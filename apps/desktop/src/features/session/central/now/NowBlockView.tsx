@@ -1,16 +1,14 @@
 import type { ReactNode } from 'react';
 import { Eyebrow, StatusDot, cn, type Tone } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 import { BranchList } from '../branches/BranchList';
 import type { BranchEntry } from '../branches/branchStoryOf';
 import { LiveGroup } from './LiveGroup';
 import { NeedsYouCount } from './NeedsYouCount';
 import type { LiveGroupModel } from './liveGroupsOf';
 import { NOW_STATE_WORD, type NowState } from './nowStateOf';
-
-export type NowChipParams = {
-  readonly group: LiveGroupModel;
-};
 
 type Props = {
   readonly sessionId: SessionId;
@@ -21,7 +19,6 @@ type Props = {
   readonly actions?: ReactNode;
   readonly groups: ReadonlyArray<LiveGroupModel>;
   readonly entries: ReadonlyArray<BranchEntry>;
-  readonly chipFor?: (params: NowChipParams) => ReactNode;
 };
 
 const STATE_TONE: Record<NowState, Tone> = {
@@ -49,8 +46,8 @@ export const NowBlockView = ({
   actions,
   groups,
   entries,
-  chipFor,
 }: Props) => {
+  const session = useAppStore((store) => sessionById(store.sessions, sessionId) ?? null);
   return (
     <section
       aria-label="Now"
@@ -72,13 +69,14 @@ export const NowBlockView = ({
       </p>
       {actions}
       {groups.length === 0 ? null : (
-        <div className="flex min-w-0 flex-col gap-2">
+        <div className="@container flex min-w-0 flex-col gap-2">
           {groups.map((group) => (
             <LiveGroup
               key={`${group.kind}:${group.id}`}
               sessionId={sessionId}
+              session={session}
               group={group}
-              chip={chipFor?.({ group })}
+              where={null}
             />
           ))}
         </div>

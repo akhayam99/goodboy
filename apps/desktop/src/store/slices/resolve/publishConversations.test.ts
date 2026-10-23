@@ -391,6 +391,7 @@ const makeStore = ({ sessionId = SESSION_ID }: { readonly sessionId?: SessionId 
     refreshSessionPrDetail: vi.fn(async () => undefined),
     refreshReviewSource: vi.fn(async () => undefined),
     refreshSessionPr: vi.fn(async () => undefined),
+    recordLocalCheck: vi.fn(),
   }));
   const set = store.setState as unknown as SetFn;
   const get = store.getState as unknown as GetFn;

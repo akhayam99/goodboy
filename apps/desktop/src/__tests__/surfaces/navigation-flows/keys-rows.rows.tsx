@@ -65,12 +65,18 @@ const tabToRunRow = async (): Promise<void> => {
 
 export const KEYS_ROWS_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'activity: Tab to a run row and Enter opens its run page',
+    name: 'full log: Tab to a run row and Enter opens its run page',
     covers: ['navigate', 'row:activity-run'],
     open: async (ctx) => {
       seedRunInActivity(ctx);
       await settle();
-      await screen.findByRole('region', { name: 'Activity' });
+      useAppStore.getState().openDrawer({
+        kind: 'session-log',
+        sessionId: ctx.sessionId,
+        payload: { focusEntryId: null },
+      });
+      await settle();
+      await screen.findByRole('region', { name: 'Log entries' });
       await tabToRunRow();
       await userEvent.setup().keyboard('{Enter}');
       await settle();

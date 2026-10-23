@@ -209,10 +209,10 @@ const toneOf = ({
   if (facts.phase !== 'open') {
     return 'neutral';
   }
-  if (facts.hasConflicts || facts.checks === 'failing') {
+  if (facts.checks === 'failing') {
     return 'danger';
   }
-  if (facts.review === 'changes_requested' || facts.commentsNeedYou > 0) {
+  if (facts.hasConflicts || facts.review === 'changes_requested' || facts.commentsNeedYou > 0) {
     return 'warning';
   }
   if (blockers.length > 0) {

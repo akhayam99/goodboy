@@ -176,7 +176,7 @@ describe('liveGroupsOf', () => {
     ).toEqual([]);
   });
 
-  it('orders by start time only, so a state change moves nothing', () => {
+  it('orders by state first, stuck then waiting then working, and by start time inside a state', () => {
     type MinuteParams = { readonly minute: number };
     const startedAt = ({ minute }: MinuteParams) =>
       brandId<IsoDateTime>({ value: `2026-05-01T10:0${minute}:00.000Z` });
@@ -207,14 +207,43 @@ describe('liveGroupsOf', () => {
       ['Rebuild the index', 'working'],
     ]);
     expect(groupsWith({ status: 'blocked' })).toEqual([
-      ['Add the limit table', 'working'],
       ['Check the docs', 'waiting'],
+      ['Add the limit table', 'working'],
       ['Rebuild the index', 'working'],
     ]);
     expect(groupsWith({ status: 'failed' })).toEqual([
-      ['Add the limit table', 'working'],
       ['Check the docs', 'stuck'],
+      ['Add the limit table', 'working'],
       ['Rebuild the index', 'working'],
     ]);
+  });
+
+  it('names the role and the state of every step, from its agent or its name', () => {
+    const attached = buildRun();
+    const agents = [
+      aNowStepAgent({ attached, stepIndex: 0, status: 'completed', name: 'Scope', kind: 'scout' }),
+      aNowStepAgent({
+        attached,
+        stepIndex: 1,
+        status: 'running',
+        name: 'Tests',
+        kind: 'tester',
+      }),
+    ];
+    const [group] = liveGroupsOf({
+      model: nowModelOf({ agents, runs: [attached] }),
+      agents,
+      now: FIXTURE_NOW,
+    });
+    if (group?.kind !== 'run') {
+      throw new Error('the Build run must be a run group');
+    }
+
+    expect(group.steps.slice(0, 2)).toEqual([
+      { number: 1, title: 'Scope', kind: 'scout', state: 'done' },
+      { number: 2, title: 'Tests', kind: 'tester', state: 'running' },
+    ]);
+    expect(group.steps).toHaveLength(BUILD_STEPS.length);
+    expect(group.steps[2]?.state).toBe('notStarted');
   });
 });

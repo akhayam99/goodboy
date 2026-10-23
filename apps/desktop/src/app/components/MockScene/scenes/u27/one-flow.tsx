@@ -1,38 +1,20 @@
 import type { ComponentType } from 'react';
 import { NewSessionPageScene } from '../u24/NewSessionPageScene';
 import { OneFlowScene, type OneFlowCenter, type OneFlowClicks } from './oneFlow/OneFlowScene';
-import { ONE_FLOW_GOAL, PRESET_NAME } from './oneFlow/oneFlowSeed';
+import { ONE_FLOW_GOAL } from './oneFlow/oneFlowSeed';
 
 const APP: OneFlowCenter = { kind: 'app' };
 
 const NEW_MENU: OneFlowClicks = { labels: ['New'], selector: 'button[aria-haspopup="menu"]' };
 
 const CHANGE_MENU: OneFlowClicks = {
-  labels: ['Change'],
-  selector: '[data-one-flow-change] button[aria-haspopup="menu"]',
+  labels: ['Workflow'],
+  selector: 'button[data-setting-chip="Kind"]',
 };
 
 const GOAL = `${ONE_FLOW_GOAL} of harbor-portal on every width, and keep the 390px layout working.`;
 
-const ROUTED: OneFlowCenter = {
-  kind: 'run',
-  route: {
-    shape: 'plan',
-    closeness: 'adapt',
-    choice: `Plan from ${PRESET_NAME}, 3 steps · Adapt as it goes`,
-    why: 'Your ask matches the preset and changes six pages',
-  },
-};
-
-const ADAPTED: OneFlowCenter = {
-  kind: 'run',
-  route: {
-    shape: 'plan',
-    closeness: 'adapt',
-    choice: `Plan from ${PRESET_NAME}, 4 steps · Adapt as it goes`,
-    why: 'Step 3 added for the billing table',
-  },
-};
+const RUN: OneFlowCenter = { kind: 'run' };
 
 const LEAD: OneFlowCenter = {
   kind: 'lead',
@@ -72,14 +54,14 @@ export const U27_ONE_FLOW_SCENES = {
   'u27-one-flow-after-routed': () => (
     <OneFlowScene
       seed={{ era: 'after', place: 'orchestrated', isJustStarted: true }}
-      center={ROUTED}
+      center={RUN}
       clicks={CHANGE_MENU}
     />
   ),
   'u27-one-flow-after-preset': () => (
     <OneFlowScene
       seed={{ era: 'after', place: 'orchestrated', drawerStepKey: 'plan-billing' }}
-      center={ADAPTED}
+      center={RUN}
     />
   ),
   'u27-one-flow-after-single-agent': () => (

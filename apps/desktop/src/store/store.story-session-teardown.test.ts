@@ -574,6 +574,32 @@ describe('story: a two-project session routes git work through the active mount'
     });
   });
 
+  it('keeps the result of the pre-push hook for the pushed mount, in memory only', async () => {
+    const store = twoProjectStore(WEB_PROJECT_ID);
+    gitPush.mockResolvedValueOnce({
+      stdout: '',
+      stderr: 'pre-push hook declined: lint failed',
+      exitCode: 1,
+    });
+
+    const declined = await pushSessionBranch({
+      get: () => store,
+      sessionId: SESSION_ID,
+      mountId: WEB_MOUNT_ID,
+    });
+
+    expect(declined.ok).toBe(false);
+    expect(useAppStore.getState().mountLocalChecks[WEB_MOUNT_ID]).toMatchObject({
+      outcome: 'declined',
+      message: 'pre-push hook declined: lint failed',
+    });
+
+    await pushSessionBranch({ get: () => store, sessionId: SESSION_ID, mountId: WEB_MOUNT_ID });
+
+    expect(useAppStore.getState().mountLocalChecks[WEB_MOUNT_ID]?.outcome).toBe('passed');
+    expect(useAppStore.getState().mountLocalChecks[API_MOUNT_ID]).toBeUndefined();
+  });
+
   it('hands a scoped sha to the push', async () => {
     const store = twoProjectStore(WEB_PROJECT_ID);
 

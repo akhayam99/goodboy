@@ -3,7 +3,7 @@ import type { Agent, AgentId } from '@goodboy/types';
 import { AppShell, ScrollFade } from '@goodboy/ui';
 import { applyDocumentTheme } from '../../../../../shared/lib/theme';
 import { useAppStore } from '../../../../../store';
-import { SessionOverviewPane } from '../../../../../features/session/components/SessionOverviewPane';
+import { LogPane } from '../../../../../features/session/central/log/LogPane';
 import { shellArrangement } from '../../../../shellArrangement';
 import { SESSION, SESSION_ID, seedActivityRunScene } from '../activityRunSeed';
 
@@ -71,7 +71,7 @@ export const ActivityKindsScene = ({ theme }: Props) => {
         main={
           <ScrollFade className="min-h-0 flex-1">
             <div className="px-6 py-4">
-              <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+              <LogPane session={SESSION} />
             </div>
           </ScrollFade>
         }

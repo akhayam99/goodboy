@@ -13,6 +13,7 @@ import {
   pickerModeOf,
 } from '../../modeCopy';
 import { openPermissionSettings } from '../../openPermissionSettings';
+import { NAMES } from '../../../../shared/names';
 
 type Props = {
   readonly session: Session;
@@ -59,7 +60,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
     <AnchoredPopover
       dropdown={dropdown}
       role="dialog"
-      ariaLabel="Permission mode"
+      ariaLabel={NAMES.asksYou}
       className="rounded-lg border-0 bg-subtle py-2 ring-1 ring-border-soft"
       trigger={
         <Tooltip content={tooltipLabel} shortcut="session.permissions" isSuppressed={open}>
@@ -71,7 +72,7 @@ export const PermissionModePicker = ({ session, activeProvider }: Props) => {
             onClick={toggle}
             hasPopup="dialog"
             expanded={open}
-            ariaLabel={`Permission mode: ${current.label}`}
+            ariaLabel={`${NAMES.asksYou}: ${current.label}`}
             className="gap-2 whitespace-nowrap bg-subtle px-3 py-0.5 hover:bg-hover hover:opacity-100 @max-sm:px-2"
             icon={
               <CurrentIcon

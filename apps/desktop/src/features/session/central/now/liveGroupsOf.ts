@@ -1,7 +1,7 @@
 import type { AutoPhase } from '@goodboy/db';
 import type { Agent, AgentId, MountId, Step } from '@goodboy/types';
 import { autoGroupOf, type AutoGroup } from '../../../auto/autoGroupOf';
-import type { AgentKind } from '../../agent-kind';
+import { classifyStep, type AgentKind } from '../../agent-kind';
 import {
   resolveAgentRowState,
   type RowPhase,
@@ -44,12 +44,19 @@ type LiveRunStep = Readonly<{
   title: string;
 }>;
 
+export type LiveRunStepModel = LiveRunStep &
+  Readonly<{
+    kind: AgentKind;
+    state: RunStepState;
+  }>;
+
 export type LiveRunGroup = LiveGroupBase &
   Readonly<{
     kind: 'run' | 'orchestrated';
     entry: TimelineRunEntry;
     counts: RunStepCounts;
     stepStates: ReadonlyArray<RunStepState>;
+    steps: ReadonlyArray<LiveRunStepModel>;
     doneCount: number;
     currentStep: LiveRunStep | null;
     waitingStepNumber: number | null;
@@ -219,6 +226,14 @@ const runGroupOf = ({ entry, rowState, model }: RunParams): LiveRunGroup | null 
     entry,
     counts,
     stepStates,
+    steps: steps.map((step, index) => ({
+      number: index + 1,
+      title: step.name,
+      kind:
+        stepAgents.find((child) => child.agent.stepId === step.id)?.agentKind ??
+        classifyStep({ step }),
+      state: stepStates[index] ?? 'notStarted',
+    })),
     doneCount: stepStates.filter((stepState) => stepState === 'done').length,
     currentStep: currentIndex === -1 ? null : stepOf({ steps, index: currentIndex }),
     waitingStepNumber: waitingIndex === -1 ? null : waitingIndex + 1,
@@ -335,8 +350,15 @@ const groupOfEntry = ({ entry, rowState, model }: EntryParams): LiveGroupModel |
   return null;
 };
 
+const STATE_RANK: Readonly<Record<LiveGroupState, number>> = {
+  stuck: 0,
+  waiting: 1,
+  deciding: 2,
+  working: 3,
+};
+
 const compareGroups = (first: LiveGroupModel, second: LiveGroupModel): number =>
-  first.startedAt - second.startedAt;
+  STATE_RANK[first.state] - STATE_RANK[second.state] || first.startedAt - second.startedAt;
 
 export const liveGroupsOf = ({ model, agents, now }: Params): ReadonlyArray<LiveGroupModel> => {
   const rowStates = rowStatesOf({ model });

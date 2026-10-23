@@ -1,4 +1,11 @@
-import type { PrCheckRun, PullRequestState, PullRequestView, ResolveThread } from '@goodboy/types';
+import type {
+  BranchCommit,
+  PrCheckRun,
+  PullRequestState,
+  PullRequestView,
+  ResolveThread,
+  WorktreeStatus,
+} from '@goodboy/types';
 import type { SessionGithubState } from '../../../../store/types';
 import type { MountRowView } from '../../../../store/slices/project-mounts/mountRowModel';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
@@ -10,6 +17,7 @@ import {
   type WorktreeEntryFacts,
 } from '../../../../features/branch/worktreeEntryFacts';
 import { checksRunsOf } from '../../../../features/integrations/github/checksRollup';
+import { notPushedOf } from '../../../../features/branch/notPushedOf';
 import { commentsCountOf } from '../../../../features/resolve/commentsCountOf';
 import { requestStateOf } from './requestStateOf';
 
@@ -26,6 +34,9 @@ type Params = {
   readonly diff: EntryDiffStat | null;
   readonly view: PullRequestView | null;
   readonly scope: BranchScope | null;
+  readonly status: WorktreeStatus | null;
+  readonly commits: ReadonlyArray<BranchCommit> | null;
+  readonly hasRemoteHead: boolean;
 };
 
 const UNREAD_CHECKS = 'Checks unknown: this token cannot read them';
@@ -71,6 +82,9 @@ export const worktreeCardEntriesOf = ({
   diff,
   view,
   scope,
+  status,
+  commits,
+  hasRemoteHead,
 }: Params): ReadonlyArray<WorktreeCardEntry> => {
   const request = row.request;
   const pullRequestState = requestStateOf({ request });
@@ -88,7 +102,7 @@ export const worktreeCardEntriesOf = ({
     commentsNeedYou: commentsCountOf({ threads: ownThreads }).needsYou,
     files: null,
     diff,
-    notPushed: null,
+    notPushed: notPushedOf({ status, commits, hasRemoteHead }),
     checks: runsOf({ github, view, pr }),
     checksUnreadReason: unreadReasonOf({ view, pr }),
   });

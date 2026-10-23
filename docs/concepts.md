@@ -510,15 +510,12 @@ whether you clicked it on the board or in the session overview.
   rebase title names the folder, or the branch when two or more mounts of
   the session share a folder (`mountLabelOf`); the open-pr title always
   names the branch.
-- **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
-  in the session overview, above Activity, outside its views and its
-  grouping: a suggestion is not activity, it is a pointer to what activity
-  should happen next. A new session shows the kickoff instead; the two never
-  compete for the same moment. Its heading reads Next, but its landmark is
-  named "Next steps" so it never collides with the summary's Next block in
-  the same pane.
-- Every row has the same five columns (`NEXT_STEP_GRID` and `NEXT_STEP_CELLS`
-  in `features/suggestions/components/NextStepSlot/nextStepGrid.ts`): tile,
+- The overview cards **Needs you** and **Next** (`features/session/central/cards/`) hold the
+  suggestions: a suggestion is not activity, it is a pointer to what activity
+  should happen next. **Needs you** holds the Decide and Fix groups, **Next**
+  the Update and Ship groups (`OVERVIEW_CARD_OF_GROUP`).
+- A `NextStepRow` has the same five columns (`NEXT_STEP_GRID` and `NEXT_STEP_CELLS`
+  in `features/suggestions/nextStepGrid.ts`): tile,
   text, primary, **Not now**, **⋯**. The primary and **Not now** have a fixed
   width, so they line up across rows; every primary is `secondary`, never
   filled (filled buttons stay on forms). A busy row fades
@@ -539,13 +536,13 @@ whether you clicked it on the board or in the session overview.
   role the primary starts (`agentKind`) and `useIsAutoOn`, so the alternatives
   come from the card and not from closures of `useSuggestionActions`. Hovering
   or focusing one shows its `preview` role on the tile, and closing the menu
-  puts the primary's role back. `NextStepSlot` wraps each alternative with
+  puts the primary's role back. `useSuggestionRunner` wraps each alternative with
   `track` (the accepted outcome, a pending key per action id, the failure title
   of the primary), so the primary and the menu are held while one runs. With
   fewer than two entries the cell stays empty, because the menu needs two
   rows.
 - **Not now** registers an `undoable` operation on the app undo stack
-  (`NextStepSlot`), so the toast says Dismissed with **Undo** and the
+  (`useSuggestionRunner`), so the toast says Dismissed with **Undo** and the
   `app.undo` chord, and ⌘Z (Ctrl+Z off macOS) restores dismissals in reverse
   order. It yields while a text field has focus, like every undo. Undo deletes
   the `next:<kind>` row written for the dismissal (`revertNextStepOutcome`,
@@ -1626,7 +1623,11 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
   provider or ends
 - **Budgets**: a monthly budget per provider, counted across all workspaces on a
   UTC calendar month, and a limit per session that pauses workflows or
-  only warns, with an alert before you reach them
+  only warns, with an alert before you reach them. Only a limit that pauses
+  caps an Auto run of the session; one that only warns caps nothing
+  (`pausingSessionCapOf` in `apps/desktop/src/features/budget/`). **Spend and
+  limit** on any session's menu opens that session with its limit editor open
+  (`openSessionSpendLimitEdit`)
 - **Ask**: every answer is recorded as telemetry kind `ask` on its session
   (m227). It counts in the session cost, today's spend, provider budgets and
   the session limit alert, and shows as its own **Ask** row in the session
@@ -1744,8 +1745,11 @@ task up again in Goodboy.
 - **Add a plain folder** and **Add existing** put a folder or a repository
   under a project. **Link** stays for tying a ticket to a session or a pull
   request. Tools connect from Settings > Integrations.
-- **Autonomy** is the setting that decides how often a run stops for you.
-  Its top choice is **Autopilot** (it was Autorun, Run on its own and When to ask).
+- **Asks you** is the setting that decides how often a run stops for you:
+  **Every step**, **After the plan** or **Never** (it was Autonomy with Ask me,
+  Balanced and Autopilot, and before that Autorun, Run on its own and When to
+  ask). An agent's permission mode sits under the same chip on its page, with
+  **Ask first** as its asking word. The session's **Autopilot** keeps its name.
 - **Needs you** is the one name for anything that waits on you: the top bar
   group, the board column, the questions list and the Overview section above
   Next.

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, Notice, Tooltip, formatError } from '@goodboy/ui';
 import type { MountId, SessionExternalTask, SessionId } from '@goodboy/types';
@@ -46,6 +46,8 @@ type Props = {
   readonly create: (input: CreateReviewInput) => Promise<CreatedReview>;
   readonly requestReviewers: (params: RequestReviewersParams) => Promise<void>;
   readonly onCreated: (created: CreatedReview) => void;
+  readonly submitVariant?: 'primary' | 'secondary';
+  readonly trailing?: ReactNode;
 };
 
 type Phase =
@@ -78,9 +80,11 @@ export const CreateReviewForm = ({
   create,
   requestReviewers,
   onCreated,
+  submitVariant = 'primary',
+  trailing = null,
 }: Props) => {
   const { showToast } = useToast();
-  const repo = useSessionRepo({ sessionId });
+  const repo = useSessionRepo({ sessionId, mountId });
   const branch = repo?.branch ?? null;
   const scribeMountId = mountId ?? repo?.mountId ?? null;
   const job = useScribeJob({ mountId: scribeMountId });
@@ -108,6 +112,14 @@ export const CreateReviewForm = ({
   const appliedStamp = useRef(0);
   const latest = useRef<TextSnapshot>({ title, body, scribeBody });
   latest.current = { title, body, scribeBody };
+  const defaults = useRef({ title: defaultTitle, body: defaultBody });
+
+  useEffect(() => {
+    const previous = defaults.current;
+    defaults.current = { title: defaultTitle, body: defaultBody };
+    setTitle((current) => (current === previous.title ? defaultTitle : current));
+    setBody((current) => (current === previous.body ? defaultBody : current));
+  }, [defaultBody, defaultTitle]);
 
   useEffect(() => {
     if (!isRoutingTouched) {
@@ -279,7 +291,11 @@ export const CreateReviewForm = ({
   const onReferenceRemove = (reference: ClosingIssueReference) =>
     setDismissed((current) => [...current, reference.number]);
 
-  const createLabel = canSetDraft && isDraft ? nouns.createDraft : nouns.create;
+  const draftLabel = canSetDraft && isDraft ? nouns.createDraft : nouns.create;
+  const createLabel =
+    hasPushStep && unpushed > 0
+      ? `Push and ${draftLabel.charAt(0).toLowerCase()}${draftLabel.slice(1)}`
+      : draftLabel;
   const isCreateDisabled = isLocked || title.trim().length === 0;
 
   return (
@@ -326,7 +342,7 @@ export const CreateReviewForm = ({
             detail={phase.message}
           />
         )}
-        {unpushed > 0 && (
+        {!hasPushStep && unpushed > 0 && (
           <p className="text-meta text-faint-foreground">
             {`Pushes ${unpushed} local ${unpushed === 1 ? 'commit' : 'commits'} first.`}
           </p>
@@ -344,11 +360,18 @@ export const CreateReviewForm = ({
             </Button>
           )}
           <Tooltip content={SCRIBE_WRITING_REASON} isSuppressed={!isWriting} side="top">
-            <Button size="md" disabled={isCreateDisabled} onClick={() => void onCreate()}>
+            <Button
+              size="md"
+              variant={submitVariant}
+              data-create-submit={submitVariant}
+              disabled={isCreateDisabled}
+              onClick={() => void onCreate()}
+            >
               {createLabel}
             </Button>
           </Tooltip>
         </div>
+        {trailing}
       </div>
       <ReviewSettings
         sessionId={sessionId}

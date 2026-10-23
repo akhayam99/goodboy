@@ -78,7 +78,7 @@ const showColumn = async ({ kind }: KindParams) => {
   const view = render(
     <ToastProvider>
       <AutoReleaseContext.Provider value>
-        <SessionOverviewPane session={mountedSession()} onSelectLens={vi.fn()} />
+        <SessionOverviewPane session={mountedSession()} />
       </AutoReleaseContext.Provider>
     </ToastProvider>,
   );
@@ -87,20 +87,20 @@ const showColumn = async ({ kind }: KindParams) => {
 };
 
 type Facts = {
-  readonly state: string | null;
-  readonly sentence: string | null;
+  readonly cards: ReadonlyArray<string>;
   readonly primary: string | null;
-  readonly doneTitle: string | null;
+  readonly done: string | null;
 };
 
 const factsOf = (): Facts => {
-  const firstCard = document.querySelector('[data-action-card]');
-  const done = screen.queryByRole('region', { name: 'What was done' });
+  const primaries = document.querySelectorAll('[data-central-column] [data-variant="primary"]');
+  expect(primaries.length).toBeLessThanOrEqual(1);
   return {
-    state: document.querySelector('[data-now-state]')?.getAttribute('data-now-state') ?? null,
-    sentence: document.querySelector('[data-now-sentence]')?.textContent ?? null,
-    primary: firstCard?.querySelector('[data-variant="primary"]')?.textContent ?? null,
-    doneTitle: done?.querySelector('li .text-row')?.textContent ?? null,
+    cards: [...document.querySelectorAll('[data-overview-card]')].map(
+      (card) => card.getAttribute('data-overview-card') ?? '',
+    ),
+    primary: primaries[0]?.textContent ?? null,
+    done: document.querySelector('[data-done-line]')?.textContent ?? null,
   };
 };
 
@@ -113,65 +113,56 @@ const CASES: ReadonlyArray<Case> = [
   {
     kind: 'mid',
     facts: {
-      state: 'waiting',
-      sentence:
-        'Build step 3 waits on your answer. Auto is waiting for "Fix the two doc mismatches in ledger-core".',
+      cards: ['running', 'next', 'branches', 'done'],
       primary: 'Answer',
-      doneTitle: 'Scoped the change and wrote the tests first',
+      done: '4 finished runs and agents are in the full log.',
     },
   },
   {
     kind: 'finished',
     facts: {
-      state: 'done',
-      sentence: 'Checks passed on #309. Still a draft.',
+      cards: ['next', 'branches', 'done'],
       primary: 'Mark ready',
-      doneTitle: 'Fixed the failing static-analysis check',
+      done: '5 finished runs and agents are in the full log.',
     },
   },
   {
     kind: 'stuck',
     facts: {
-      state: 'stuck',
-      sentence: 'Auto is stuck: "Fix the two doc mismatches in ledger-core" never started.',
+      cards: ['needs-you', 'running', 'branches', 'done'],
       primary: 'Retry',
-      doneTitle: 'Summarised the plan',
+      done: '3 finished runs and agents are in the full log.',
     },
   },
   {
     kind: 'orchestrated',
     facts: {
-      state: 'working',
-      sentence: 'The orchestrator is deciding the next step.',
+      cards: ['running', 'branches', 'done'],
       primary: null,
-      doneTitle: 'Build the limit table',
+      done: '4 finished runs and agents are in the full log.',
     },
   },
   {
     kind: 'agent',
     facts: {
-      state: 'waiting',
-      sentence: 'Implementer is working on Add the limit table.',
+      cards: ['needs-you', 'running', 'branches', 'done'],
       primary: 'Review',
-      doneTitle: 'Summarised the plan',
+      done: '3 finished runs and agents are in the full log.',
     },
   },
   {
     kind: 'branches',
     facts: {
-      state: 'waiting',
-      sentence: 'Build step 3 waits on your answer. Implementer is working on Add the limit table.',
+      cards: ['running', 'next', 'branches', 'done'],
       primary: 'Answer',
-      doneTitle: 'Scoped the change and wrote the tests first',
+      done: '4 finished runs and agents are in the full log.',
     },
   },
 ];
 
-const CHIP_SELECTOR = '[data-central-column] [data-testid="branch-chip"]';
-
 describe('the central column, kind by kind', () => {
   it.each(CASES)(
-    '$kind: state word, sentence, first primary and first done row',
+    '$kind: the cards in order, the one filled button and the done line',
     async ({ kind, facts }) => {
       await showColumn({ kind });
 
@@ -179,42 +170,53 @@ describe('the central column, kind by kind', () => {
     },
   );
 
-  it('orders the column Now, Next, What was done, with no Activity or Needs you region', async () => {
+  it('draws the cards Needs you, Running, Next, Branches, Done, with no Now and no Activity', async () => {
     const { container } = await showColumn({ kind: 'mid' });
 
     const column = container.querySelector('[data-central-column]');
-    const names = [...(column?.querySelectorAll(':scope > section') ?? [])].map((section) =>
-      section.getAttribute('aria-label'),
+    const ids = [...(column?.querySelectorAll(':scope > [data-overview-card]') ?? [])].map((card) =>
+      card.getAttribute('data-overview-card'),
     );
-    expect(names).toEqual(['Now', 'Next steps', 'What was done']);
+    const order = ['needs-you', 'running', 'next', 'branches', 'done'];
+    expect(ids.length).toBeGreaterThan(0);
+    expect(
+      [...ids].sort((first, second) => order.indexOf(first ?? '') - order.indexOf(second ?? '')),
+    ).toEqual(ids);
     expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Needs you' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
+    expect(document.querySelector('[data-now-sentence]')).toBeNull();
   });
 
-  it('scrolls to Next from the one count in the Now header', async () => {
-    await showColumn({ kind: 'mid' });
-    const scroll = vi.mocked(Element.prototype.scrollIntoView);
-    scroll.mockClear();
+  it('counts the Needs you rows in its own header', async () => {
+    await showColumn({ kind: 'agent' });
 
-    const count = within(screen.getByRole('region', { name: 'Now' })).getByRole('button', {
-      name: /wait(s)? on you, go to Next$/,
-    });
-    fireEvent.click(count);
-
-    expect(scroll).toHaveBeenCalledTimes(1);
-    expect(scroll.mock.contexts[0]).toBe(screen.getByRole('region', { name: 'Next steps' }));
+    const card = screen.getByRole('region', { name: 'Needs you' });
+    const rows = card.querySelectorAll('[data-action-card]').length;
+    expect(card.querySelector('[data-overview-count]')?.textContent).toBe(String(rows));
   });
 
-  it('draws a branch chip only when the session has several branches', async () => {
+  it('gives every running row one Where cell, with the project only across two projects', async () => {
     const { unmount } = await showColumn({ kind: 'mid' });
-    expect(document.querySelector(CHIP_SELECTOR)).toBeNull();
+    const wheres = () =>
+      [...document.querySelectorAll('[data-overview-card="running"] [data-live-row]')].map((row) =>
+        [...row.querySelectorAll('[data-live-where]')].map((cell) => cell.textContent),
+      );
+    expect(wheres().every((cells) => cells.length === 1)).toBe(true);
+    expect(
+      wheres()
+        .flat()
+        .some((where) => (where ?? '').includes(' · ')),
+    ).toBe(false);
+    expect(
+      document.querySelector('[data-overview-card="running"] [data-testid="branch-chip"]'),
+    ).toBeNull();
     unmount();
 
     await showColumn({ kind: 'branches' });
-    expect(document.querySelectorAll(CHIP_SELECTOR).length).toBeGreaterThan(0);
+    expect(wheres().flat()).toContain('ledger-core · ak/eng-1190-ledger-limits');
   });
 
-  it('keeps What was done and drops Now and Next on an archived session', async () => {
+  it('keeps only the Done card on an archived session', async () => {
     seedCentralColumn({ kind: 'mid' });
     useAppStore.setState((state) => ({
       sessions: state.sessions.map((session) => ({
@@ -224,14 +226,16 @@ describe('the central column, kind by kind', () => {
     }));
     render(
       <ToastProvider>
-        <SessionOverviewPane session={mountedSession()} onSelectLens={vi.fn()} />
+        <SessionOverviewPane session={mountedSession()} />
       </ToastProvider>,
     );
     await settle();
 
-    expect(screen.queryByRole('region', { name: 'Now' })).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Next steps' })).toBeNull();
-    screen.getByRole('region', { name: 'What was done' });
+    const ids = [...document.querySelectorAll('[data-overview-card]')].map((card) =>
+      card.getAttribute('data-overview-card'),
+    );
+    expect(ids).toEqual(['done']);
+    screen.getByRole('button', { name: 'Full log' });
   });
 });
 
@@ -280,7 +284,7 @@ const pressRetry = async () => {
   });
 };
 
-describe('the stuck line in Now', () => {
+describe('the stuck line in Running', () => {
   afterEach(() => {
     registerTreeStopPort({ port: null });
   });
@@ -316,7 +320,7 @@ describe('the stuck line in Now', () => {
     await pressRetry();
 
     expect(stuckLine().getByRole('alert').textContent).toBe('Auto is not running yet.');
-    expect(screen.getByRole('region', { name: 'Next steps' }).textContent).toContain(
+    expect(screen.getByRole('region', { name: 'Needs you' }).textContent).toContain(
       'Auto is not running yet.',
     );
 

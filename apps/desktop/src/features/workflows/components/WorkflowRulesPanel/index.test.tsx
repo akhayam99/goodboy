@@ -17,7 +17,7 @@ import {
   type WorkflowRules,
   type Workspace,
 } from '@goodboy/types';
-import { aWorkspace, EMPTY_OVERRIDES } from '@goodboy/types/testing';
+import { aSession, aWorkflowRun, aWorkspace, EMPTY_OVERRIDES } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -82,6 +82,11 @@ const claudeAt = ({ used }: { readonly used: number }): ProviderLimits => ({
 
 const panel = () => render(<WorkflowRulesPanel workspaceId={HARBORLINE.id} />);
 
+const chip = (label: string) =>
+  within(screen.getByRole('group', { name: 'Run defaults' })).getByRole('button', {
+    name: new RegExp(`^${label}:`),
+  });
+
 beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
@@ -92,6 +97,7 @@ beforeEach(async () => {
   useAppStore.setState({
     workspaces: [HARBORLINE],
     currentWorkspaceId: HARBORLINE.id,
+    loadSetting: vi.fn(async (): Promise<string | null> => null),
     ...connectedProviders(),
     workspaceOverrides: {
       [HARBORLINE.id]: {
@@ -130,87 +136,115 @@ const withRules = (rules: Partial<WorkflowRules>) =>
   }));
 
 describe('WorkflowRulesPanel', () => {
-  it('starts on the defaults with three controls and a text field', () => {
+  it('starts on the defaults with one chip per setting and the guidance field', () => {
     panel();
 
     expect(screen.getByRole('heading', { level: 2, name: 'Run defaults' })).toBeDefined();
-    expect(screen.getByText('Each run keeps its own copy.')).toBeDefined();
-    expect(screen.getAllByRole('radio').map((radio) => radio.getAttribute('aria-checked'))).toEqual(
-      ['true', 'false', 'false'],
-    );
-    expect(screen.getByRole('switch', { name: 'Limit' }).getAttribute('aria-checked')).toBe(
-      'false',
-    );
+    expect(
+      within(screen.getByRole('group', { name: 'Run defaults' }))
+        .getAllByRole('button')
+        .map((chip) => chip.getAttribute('aria-label')),
+    ).toEqual([
+      'Asks you: Every step, new runs',
+      'Limit: none, new runs',
+      'Models: Claude, Codex · Cursor as backup, new runs',
+      'Auto limit: $5.00, default',
+    ]);
     expect(screen.getByRole('textbox', { name: 'Guidance' })).toBeDefined();
   });
 
-  it('orders the bands autonomy, spend cap, providers, guidance', () => {
+  it('opens one popover per chip, the same as on a run, with no Save', () => {
     panel();
 
+    fireEvent.click(chip('Asks you'));
+    const popover = screen.getByRole('dialog', { name: 'Asks you' });
     expect(
-      screen.getAllByRole('region').map((region) => region.getAttribute('aria-label')),
-    ).toEqual(['Autonomy', 'Limit', 'Providers', 'Guidance']);
+      within(popover)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent),
+    ).toEqual(RUN_AUTONOMY_OPTIONS.map((option) => option.label));
+    expect(within(popover).queryByRole('button', { name: 'Save' })).toBeNull();
   });
 
-  it('shows the same autonomy hints the builder shows', () => {
+  it('saves Asks you for new runs as soon as you pick it', async () => {
     panel();
 
-    for (const option of RUN_AUTONOMY_OPTIONS) {
-      expect(screen.getByText(option.hint)).toBeDefined();
-    }
-  });
-
-  it('saves the autonomy for new runs as soon as you pick it', async () => {
-    panel();
-
-    fireEvent.click(screen.getByRole('radio', { name: /Balanced/ }));
+    fireEvent.click(chip('Asks you'));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Asks you' })).getByRole('tab', {
+        name: /After the plan/,
+      }),
+    );
 
     await waitFor(() => expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['plan']));
     expect(useAppStore.getState().workspaceOverrides[HARBORLINE.id]?.workflowRules?.autonomy).toBe(
       'plan',
     );
-    expect(screen.getByRole('radio', { name: /Balanced/ }).getAttribute('aria-checked')).toBe(
-      'true',
-    );
   });
 
-  it('turns the spend cap on, keeps a typed amount and the behaviour at the limit', async () => {
+  it('reaches new runs only: a run already going keeps its own copy', async () => {
+    const run = aWorkflowRun({
+      rulesSnapshot: { ...DEFAULT_WORKFLOW_RULES, autonomy: 'step', spendLimitUsd: 5 },
+    });
+    useAppStore.setState({
+      sessions: [aSession({ workspaceId: HARBORLINE.id, workflowRuns: [run] })],
+    });
     panel();
 
-    fireEvent.click(screen.getByRole('switch', { name: 'Limit' }));
-    const amount = await screen.findByRole('textbox', { name: 'Amount per run' });
-    fireEvent.change(amount, { target: { value: '40' } });
-    fireEvent.blur(amount);
-    fireEvent.click(screen.getByRole('tab', { name: 'Warn only' }));
+    fireEvent.click(chip('Asks you'));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Asks you' })).getByRole('tab', {
+        name: /^Never/,
+      }),
+    );
+
+    await waitFor(() => expect(savedRules().map((rules) => rules?.autonomy)).toEqual(['run']));
+    expect(useAppStore.getState().sessions[0]?.workflowRuns[0]?.rulesSnapshot).toMatchObject({
+      autonomy: 'step',
+      spendLimitUsd: 5,
+    });
+  });
+
+  it('applies the limit for new runs on Enter and the behaviour at the limit on click', async () => {
+    panel();
+
+    fireEvent.click(chip('Limit'));
+    const popover = screen.getByRole('dialog', { name: 'Limit' });
+    fireEvent.change(within(popover).getByLabelText('Limit in dollars'), {
+      target: { value: '40' },
+    });
+    fireEvent.submit(within(popover).getByRole('form', { name: 'Limit for new runs' }));
+    await waitFor(() => expect(savedRules().at(-1)).toMatchObject({ spendLimitUsd: 40 }));
+    fireEvent.click(within(popover).getByRole('tab', { name: 'Warn only' }));
 
     await waitFor(() =>
       expect(savedRules().at(-1)).toMatchObject({ spendLimitUsd: 40, spendLimitMode: 'notify' }),
     );
-    expect(savedRules()[0]).toMatchObject({ spendLimitUsd: 25, spendLimitMode: 'pause' });
   });
 
-  it('opens Providers and models from the providers band', () => {
+  it('opens Providers and models from the Models chip', () => {
     const received: Array<unknown> = [];
     const listener = (event: Event) => received.push((event as CustomEvent).detail);
     window.addEventListener('goodboy:open-settings', listener);
     panel();
 
+    fireEvent.click(chip('Models'));
     fireEvent.click(screen.getByRole('button', { name: 'Open Providers and models' }));
     window.removeEventListener('goodboy:open-settings', listener);
 
     expect(received).toEqual([{ scope: 'providers', section: undefined }]);
   });
 
-  it('shows the policy in one line and a link, with no switch and no provider list', () => {
+  it('shows the policy in one line, with no switch and no provider list', () => {
     panel();
-    const band = screen.getByRole('region', { name: 'Providers' });
 
-    expect(within(band).queryAllByRole('switch')).toHaveLength(0);
-    expect(within(band).getByText('When a provider is out')).toBeDefined();
+    fireEvent.click(chip('Models'));
+    const popover = screen.getByRole('dialog', { name: 'Models' });
+    expect(within(popover).queryAllByRole('switch')).toHaveLength(0);
     expect(screen.getByTestId('rules-policy-summary').textContent).toBe(
       'Claude, Codex · Cursor as backup',
     );
-    expect(band.textContent).not.toMatch(/most room|room left/);
+    expect(popover.textContent).not.toMatch(/most room|room left/);
   });
 
   it('saves guidance, polishes it into one rule per line and undoes the polish', async () => {

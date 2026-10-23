@@ -27,6 +27,8 @@ const PR: PullRequestState = {
 
 const facts = (overrides: Partial<PullRequestFacts> = {}): PullRequestFacts => ({
   sessionId: SESSION,
+  mountId: null,
+  isRebaseStopOpen: false,
   host: 'github',
   pr: PR,
   number: 318,

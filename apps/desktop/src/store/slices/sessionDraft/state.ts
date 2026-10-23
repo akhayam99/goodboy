@@ -2,6 +2,7 @@ import type {
   ProjectId,
   RunRouteCloseness,
   SessionId,
+  WorkflowAutonomy,
   WorkflowId,
   WorkspaceId,
 } from '@goodboy/types';
@@ -17,6 +18,7 @@ export type SessionDraft = {
   readonly startShape: StartShape | null;
   readonly hasChosenStart: boolean;
   readonly presetCloseness: RunRouteCloseness;
+  readonly autonomy: WorkflowAutonomy;
   readonly issueQuery: string;
   readonly pickedIssues: ReadonlyArray<IssueCandidate>;
   readonly focusedIssueKey: string | null;
@@ -38,6 +40,7 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   startShape: null,
   hasChosenStart: false,
   presetCloseness: 'adapt',
+  autonomy: 'step',
   issueQuery: '',
   pickedIssues: [],
   focusedIssueKey: null,

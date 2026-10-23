@@ -161,6 +161,27 @@ describe('a rebase job that stopped', () => {
       'Stopped: hook stopped the push',
     ],
     [
+      'a remote pre-receive hook that declined',
+      {
+        reason: 'push-failed',
+        message:
+          " ! [remote rejected] hl/ledger-export -> hl/ledger-export (pre-receive hook declined)\nerror: failed to push some refs to 'github.com:acme/payments-api.git'",
+      },
+      'Rebased, but the push failed',
+      '[remote rejected] hl/ledger-export -> hl/ledger-export (pre-receive hook declined)',
+      'Stopped: push failed',
+    ],
+    [
+      'a remote decline with only noise lines',
+      {
+        reason: 'push-failed',
+        message: 'To github.com:acme/payments-api.git (pre-receive hook declined)',
+      },
+      'Rebased, but the push failed',
+      'The online copy was not updated.',
+      'Stopped: push failed',
+    ],
+    [
       'a push without a hook',
       { reason: 'push-failed', message: 'remote unreachable' },
       'Rebased, but the push failed',

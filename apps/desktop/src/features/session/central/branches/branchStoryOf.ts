@@ -43,8 +43,35 @@ type Standing = Readonly<{
   branchState: BranchState;
   word: string;
   blocker: string;
-  rank: BranchRank;
 }>;
+
+const BLOCKED: BranchRank = 0;
+const READY: BranchRank = 1;
+const YOUR_MOVE: BranchRank = 2;
+const AGENT_WORKS: BranchRank = 3;
+const WAITING_ON_OTHERS: BranchRank = 4;
+const OVER: BranchRank = 5;
+
+const RANK_OF_STATE: Readonly<Record<BranchState, BranchRank>> = {
+  'checks-failing': BLOCKED,
+  conflicts: BLOCKED,
+  'changes-requested': BLOCKED,
+  gone: BLOCKED,
+  approved: READY,
+  ready: READY,
+  'not-pushed': YOUR_MOVE,
+  'no-request': YOUR_MOVE,
+  draft: YOUR_MOVE,
+  'nothing-committed': YOUR_MOVE,
+  'in-review': WAITING_ON_OTHERS,
+  'checks-running': WAITING_ON_OTHERS,
+  queued: WAITING_ON_OTHERS,
+  open: WAITING_ON_OTHERS,
+  rebasing: WAITING_ON_OTHERS,
+  unread: WAITING_ON_OTHERS,
+  merged: OVER,
+  closed: OVER,
+};
 
 type FactParams = {
   readonly fact: BranchFacts;
@@ -118,7 +145,7 @@ const readyBlockerOf = ({ request, isChecksSkipped, isReviewSkipped }: ReadyPara
 const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
   const request = fact.request;
   if (request === null) {
-    return { at: 0, branchState: 'unread', word: 'Branch', blocker: '', rank: 4 };
+    return { at: 0, branchState: 'unread', word: 'Branch', blocker: '' };
   }
   if (request.state === 'merged') {
     return {
@@ -126,7 +153,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'merged',
       word: 'Merged',
       blocker: `Into ${fact.baseBranch}`,
-      rank: 5,
     };
   }
   if (request.state === 'closed') {
@@ -135,7 +161,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'closed',
       word: 'Closed',
       blocker: 'Not merged',
-      rank: 5,
     };
   }
   if (fact.isStale) {
@@ -144,7 +169,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: request.isDraft ? 'draft' : 'open',
       word: request.isDraft ? 'Draft' : 'Open',
       blocker: fact.checkedAgo === null ? 'Not checked lately' : `Checked ${fact.checkedAgo}`,
-      rank: 3,
     };
   }
   if (request.state === 'queued') {
@@ -153,7 +177,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'queued',
       word: 'In merge queue',
       blocker: `Merging into ${fact.baseBranch}`,
-      rank: 3,
     };
   }
   if (request.checks === 'failure') {
@@ -162,7 +185,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'checks-failing',
       word: 'Checks failing',
       blocker: failingBlockerOf({ detail }),
-      rank: 0,
     };
   }
   if (request.checks === 'pending') {
@@ -171,7 +193,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'checks-running',
       word: 'Checks running',
       blocker: request.isDraft ? 'Then mark it ready' : 'Review comes next',
-      rank: 3,
     };
   }
   if (request.reviewDecision === 'changes_requested') {
@@ -180,7 +201,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'changes-requested',
       word: 'Changes requested',
       blocker: changesBlockerOf({ detail }),
-      rank: 0,
     };
   }
   if (request.isDraft) {
@@ -189,7 +209,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'draft',
       word: 'Draft',
       blocker: request.checks === 'success' ? 'Checks passed' : 'Not ready for review',
-      rank: 3,
     };
   }
   if (request.reviewDecision === 'review_required') {
@@ -198,7 +217,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'in-review',
       word: 'In review',
       blocker: 'Waiting for a reviewer',
-      rank: 3,
     };
   }
   if (request.isMergeable === false) {
@@ -208,7 +226,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: 'conflicts',
       word: 'Conflicts',
       blocker: behind ?? 'Needs a rebase',
-      rank: 1,
     };
   }
   const skips = skipsOf({ fact });
@@ -225,7 +242,6 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
       branchState: isApproved ? 'approved' : 'ready',
       word: isApproved ? 'Approved' : 'Ready to merge',
       blocker: readyBlockerOf({ request, isChecksSkipped, isReviewSkipped }),
-      rank: 1,
     };
   }
   return {
@@ -233,14 +249,13 @@ const requestStandingOf = ({ fact, detail }: DetailParams): Standing => {
     branchState: 'open',
     word: 'Open',
     blocker: isChecksSkipped ? 'No checks on this repo' : 'No check results yet',
-    rank: 3,
   };
 };
 
 const localStandingOf = ({ fact }: FactParams): Standing => {
   const status = fact.status;
   if (status === null) {
-    return { at: 0, branchState: 'unread', word: 'Branch', blocker: '', rank: 4 };
+    return { at: 0, branchState: 'unread', word: 'Branch', blocker: '' };
   }
   const ahead = status.ahead ?? 0;
   const push = status.push;
@@ -250,7 +265,6 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
       branchState: 'rebasing',
       word: 'Rebasing',
       blocker: `Onto ${fact.baseBranch}`,
-      rank: 3,
     };
   }
   if (push.kind === 'gone') {
@@ -259,7 +273,6 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
       branchState: 'gone',
       word: 'Branch gone',
       blocker: 'Remote branch deleted',
-      rank: 4,
     };
   }
   if (ahead === 0 && (push.kind === 'not-pushed' || push.kind === 'unknown')) {
@@ -272,7 +285,6 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
         changed > 0
           ? plural({ count: changed, one: 'file changed', many: 'files changed' })
           : 'No commits yet',
-      rank: 4,
     };
   }
   if (push.kind === 'not-pushed') {
@@ -281,7 +293,6 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
       branchState: 'not-pushed',
       word: 'Not pushed',
       blocker: `${plural({ count: ahead, one: 'commit', many: 'commits' })} to push`,
-      rank: 4,
     };
   }
   if (push.kind === 'ahead' || push.kind === 'diverged') {
@@ -290,7 +301,6 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
       branchState: 'not-pushed',
       word: 'Not pushed',
       blocker: `${plural({ count: push.ahead, one: 'commit', many: 'commits' })} to push`,
-      rank: 4,
     };
   }
   return {
@@ -298,12 +308,10 @@ const localStandingOf = ({ fact }: FactParams): Standing => {
     branchState: 'no-request',
     word: 'No pull request',
     blocker: `${plural({ count: ahead, one: 'commit', many: 'commits' })} pushed`,
-    rank: 4,
   };
 };
 
 type StoryParams = FactParams & {
-  readonly hasCard: boolean;
   readonly detail: BranchDetailWords | null;
 };
 
@@ -333,7 +341,7 @@ type JoinParams = {
 const joinedOf = ({ parts }: JoinParams): string =>
   parts.filter((part): part is string => part !== null && part !== '').join(', ');
 
-const branchStoryOf = ({ fact, hasCard, detail }: StoryParams): BranchStory => {
+const branchStoryOf = ({ fact, detail }: StoryParams): BranchStory => {
   const standing =
     fact.request === null ? localStandingOf({ fact }) : requestStandingOf({ fact, detail });
   const isOver = fact.request?.state === 'merged' || fact.request?.state === 'closed';
@@ -344,13 +352,8 @@ const branchStoryOf = ({ fact, hasCard, detail }: StoryParams): BranchStory => {
       : `${fact.liveTitle ?? 'An agent'} is working`;
   const staleNote = fact.isStale && fact.checkedAgo !== null ? `checked ${fact.checkedAgo}` : null;
   const blocker = isLive ? joinedOf({ parts: [liveWords, staleNote] }) : standing.blocker;
-  let rank = standing.rank;
-  if (rank > 1 && hasCard && !isOver) {
-    rank = 1;
-  }
-  if (rank > 2 && isLive) {
-    rank = 2;
-  }
+  const stateRank = RANK_OF_STATE[standing.branchState];
+  const rank = isLive && stateRank > AGENT_WORKS ? AGENT_WORKS : stateRank;
   return {
     steps: stepsOf({ standing, skips: skipsOf({ fact }) }),
     state: standing.branchState,
@@ -380,40 +383,31 @@ export type BranchEntry = Readonly<{
   story: BranchStory;
 }>;
 
+export type BranchEntries = Readonly<{
+  live: ReadonlyArray<BranchEntry>;
+  finished: ReadonlyArray<BranchEntry>;
+}>;
+
 type EntriesParams = {
   readonly facts: ReadonlyArray<BranchFacts>;
-  readonly cardOrderByMountId: ReadonlyMap<string, number>;
   readonly detailByMountId: ReadonlyMap<string, BranchDetailWords>;
 };
 
-type OrderParams = {
-  readonly entry: BranchEntry;
-};
-
-export const branchEntriesOf = ({
-  facts,
-  cardOrderByMountId,
-  detailByMountId,
-}: EntriesParams): ReadonlyArray<BranchEntry> => {
+export const branchEntriesOf = ({ facts, detailByMountId }: EntriesParams): BranchEntries => {
   const entries = facts.map((fact) => ({
     fact,
-    story: branchStoryOf({
-      fact,
-      hasCard: cardOrderByMountId.has(fact.mountId),
-      detail: detailByMountId.get(fact.mountId) ?? null,
-    }),
+    story: branchStoryOf({ fact, detail: detailByMountId.get(fact.mountId) ?? null }),
   }));
-  const orderOf = ({ entry }: OrderParams): number =>
-    cardOrderByMountId.get(entry.fact.mountId) ?? Number.MAX_SAFE_INTEGER;
-  return entries
+  const finished = entries.filter((entry) => entry.story.rank === OVER);
+  const live = entries
     .map((entry, index) => ({ entry, index }))
+    .filter(({ entry }) => entry.story.rank !== OVER)
     .sort(
       (first, second) =>
-        first.entry.story.rank - second.entry.story.rank ||
-        orderOf({ entry: first.entry }) - orderOf({ entry: second.entry }) ||
-        first.index - second.index,
+        first.entry.story.rank - second.entry.story.rank || first.index - second.index,
     )
     .map(({ entry }) => entry);
+  return { live, finished };
 };
 
 const BRANCH_ROW_CAP = 8;

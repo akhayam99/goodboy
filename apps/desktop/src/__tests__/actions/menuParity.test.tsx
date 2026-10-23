@@ -308,7 +308,7 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).toEqual(fromOverflow);
   });
 
-  it('run page: the right click lists every action, the header shows Pause and Stop, and the ⋯ keeps the rest', async () => {
+  it('run page: the right click lists every action, the header shows Pause, and the ⋯ keeps the rest in See, Steer, Settings, Copy, End order', async () => {
     const session = sessionFixture({ workflowRuns: [runFixture({ executionMode: 'dynamic' })] });
     seedActionState({
       useAppStore,
@@ -348,17 +348,18 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext).not.toContain('Open run');
     expect(fromOverflow).toEqual([
       'View diff',
-      'Step routing',
       'Skip step 1',
+      'Step routing',
       'Save as preset',
       'Copy run summary',
+      'Stop run',
       'Archive run',
       'Delete run',
     ]);
     const live = screen
       .getAllByRole('button')
       .filter((button) => button.hasAttribute('data-run-verb'));
-    expect(live.map((button) => button.textContent)).toEqual(['Pause run', 'Stop run']);
+    expect(live.map((button) => button.textContent)).toEqual(['Pause run']);
     expect(fromOverflow.filter((label) => !fromContext.includes(label))).toEqual([]);
   });
 

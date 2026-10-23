@@ -1,29 +1,42 @@
 import { useMemo } from 'react';
-import type { SessionId } from '@goodboy/types';
+import {
+  pullRequestReviewerGroupsOf,
+  pullRequestReviewersOf,
+  type PullRequestReviewerGroups,
+} from '@goodboy/core';
+import type { MountId, PullRequestReviewer, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import {
   sessionPullRequestHostOf,
   sessionPullRequestOf,
 } from '../../../../store/slices/review-source/sessionPullRequestOf';
-import { sessionMergeFacts } from '../../../actions/kinds/pullRequestFacts';
+import { sessionMergeFacts, type PullRequestFacts } from '../../../actions/kinds/pullRequestFacts';
 import { evaluatePrMergeReadiness, type PrMergeReadiness } from '../../../review/prMergeReadiness';
-import { rebaseConflictOf } from '../../../history/rebaseConflictOf';
-import { selectRebaseStop } from '../../../../store/slices/history/selectRebaseStop';
-import { selectWritableMounts } from '../../../../store/slices/project-mounts/selectors';
 
 type Params = {
   readonly sessionId: SessionId;
+  readonly mountId: MountId | null;
+  readonly isRebaseStopOpen: boolean;
 };
 
 export type PullRequestReadiness = {
   readonly readiness: PrMergeReadiness;
+  readonly facts: PullRequestFacts;
   readonly commentsNeedYou: number;
+  readonly reviewers: PullRequestReviewerGroups;
 };
 
-export const usePullRequestReadiness = ({ sessionId }: Params): PullRequestReadiness => {
-  const githubState = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
-  const pr = useAppStore((state) => sessionPullRequestOf({ state, sessionId }));
-  const host = useAppStore((state) => sessionPullRequestHostOf({ state, sessionId }));
+const NO_REVIEWERS: ReadonlyArray<PullRequestReviewer> = [];
+
+export const usePullRequestReadiness = ({
+  sessionId,
+  mountId,
+  isRebaseStopOpen,
+}: Params): PullRequestReadiness => {
+  const githubState = useAppStore((state) => branchGithubOf({ state, sessionId, mountId }));
+  const pr = useAppStore((state) => sessionPullRequestOf({ state, sessionId, mountId }));
+  const host = useAppStore((state) => sessionPullRequestHostOf({ state, sessionId, mountId }));
   const github = useMemo(
     () => (githubState?.pr != null ? githubState : pr === null ? null : { pr, detail: null }),
     [githubState, pr],
@@ -31,18 +44,6 @@ export const usePullRequestReadiness = ({ sessionId }: Params): PullRequestReadi
   const threads = useAppStore((state) => state.sessionResolveThreads?.[sessionId] ?? EMPTY_ARRAY);
   const entry = useAppStore((state) => state.pullRequestViews[sessionId] ?? null);
   const view = entry !== null && entry.prNumber === github?.pr?.number ? entry.view : null;
-  const headBranch = github?.pr?.headBranch ?? null;
-  const isRebaseStopOpen = useAppStore((state) => {
-    const mount = selectWritableMounts({ state, sessionId }).find(
-      (candidate) => headBranch !== null && candidate.branch === headBranch,
-    );
-    return (
-      mount !== undefined &&
-      rebaseConflictOf({
-        run: selectRebaseStop({ state, sessionId, mountId: mount.mountId })?.run,
-      }) !== null
-    );
-  });
   return useMemo(() => {
     const facts = sessionMergeFacts({
       sessionId,
@@ -50,10 +51,18 @@ export const usePullRequestReadiness = ({ sessionId }: Params): PullRequestReadi
       github,
       threads,
       mergeView: view,
+      isRebaseStopOpen,
     });
+    const detail = github?.detail ?? null;
+    const reviewers =
+      detail !== null && detail.prNumber === github?.pr?.number
+        ? pullRequestReviewersOf({ reviews: detail.reviews, requests: detail.reviewRequests })
+        : (view?.reviewers ?? NO_REVIEWERS);
     return {
-      readiness: evaluatePrMergeReadiness({ facts: { ...facts, isRebaseStopOpen } }),
+      readiness: evaluatePrMergeReadiness({ facts }),
+      facts,
       commentsNeedYou: facts.commentsNeedYou,
+      reviewers: pullRequestReviewerGroupsOf({ reviewers }),
     };
   }, [github, host, isRebaseStopOpen, sessionId, threads, view]);
 };

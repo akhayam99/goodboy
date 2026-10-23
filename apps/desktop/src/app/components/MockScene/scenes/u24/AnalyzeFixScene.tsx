@@ -21,6 +21,7 @@ type Props = {
   readonly surface: 'checks' | 'activity' | 'timeline';
   readonly shouldOpenDrawer?: boolean;
   readonly isDetailUnloaded?: boolean;
+  readonly isLogOpen?: boolean;
 };
 
 export const AnalyzeFixScene = ({
@@ -28,6 +29,7 @@ export const AnalyzeFixScene = ({
   surface,
   shouldOpenDrawer = false,
   isDetailUnloaded = false,
+  isLogOpen = false,
 }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
@@ -36,8 +38,15 @@ export const AnalyzeFixScene = ({
     if (isDetailUnloaded) {
       unloadedDetailSeed();
     }
+    if (isLogOpen) {
+      useAppStore.getState().openDrawer({
+        kind: 'session-log',
+        sessionId: SESSION_ID,
+        payload: { focusEntryId: null },
+      });
+    }
     setIsReady(true);
-  }, [phase, shouldOpenDrawer, isDetailUnloaded]);
+  }, [phase, shouldOpenDrawer, isDetailUnloaded, isLogOpen]);
   if (!isReady) {
     return null;
   }
@@ -49,7 +58,7 @@ export const AnalyzeFixScene = ({
     ) : surface === 'activity' ? (
       <ScrollFade className="min-h-0 flex-1">
         <div className="px-6 py-4">
-          <SessionOverviewPane session={SESSION} onSelectLens={() => undefined} />
+          <SessionOverviewPane session={SESSION} />
         </div>
       </ScrollFade>
     ) : (

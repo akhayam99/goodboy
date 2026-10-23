@@ -9,7 +9,9 @@ import { AutoLimitChip } from '../../../auto/AutoLimitChip';
 import type { AutoTreeLimitModel } from '../../../auto/useAutoTreeLimit';
 import { AGENT_KIND_META } from '../../agent-kind';
 import { START_KIND_COPY } from '../../startKind/startKindCopy';
+import { hasAsksGate } from './hasAsksGate';
 import { StartAgentFields } from './StartAgentFields';
+import { StartAsksSetting } from './StartAsksSetting';
 import { StartPresetFields } from './StartPresetFields';
 import type { StartShapeModel } from './useStartShape';
 
@@ -78,12 +80,17 @@ export const StartShapeForm = ({ workspaceId, shape, run, limit }: Props) => {
           shape === 'agent' ? (
             <StartAgentFields workspaceId={workspaceId} isDisabled={run.isStarting} />
           ) : (
-            <AutoLimitChip
-              usd={limit.usd}
-              isFromSession={limit.isFromSession}
-              isDisabled={run.isStarting}
-              onChange={limit.change}
-            />
+            <div className="flex min-w-0 flex-wrap items-center gap-1">
+              {hasAsksGate({ shape }) ? (
+                <StartAsksSetting workspaceId={workspaceId} isDisabled={run.isStarting} />
+              ) : null}
+              <AutoLimitChip
+                usd={limit.usd}
+                isFromSession={limit.isFromSession}
+                isDisabled={run.isStarting}
+                onChange={limit.change}
+              />
+            </div>
           )
         }
         error={run.error}

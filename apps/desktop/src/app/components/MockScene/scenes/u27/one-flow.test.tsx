@@ -70,26 +70,31 @@ describe('the u27 one flow scenes', () => {
     expect(current.textContent?.startsWith('Runs')).toBe(true);
   });
 
-  it('says what Auto chose on a run and offers the change of shape, preset and closeness', async () => {
+  it('names the run kind on a chip whose popover starts a second run as another kind', async () => {
     mount({ id: 'u27-one-flow-after-routed' });
 
-    const route = await screen.findByRole('group', { name: 'How Auto runs this' }, WAIT);
-    expect(route.textContent).toContain('Plan from Fix a layout, 3 steps');
-    fireEvent.click(within(route).getByRole('button', { name: /Change/ }));
-    const menu = await screen.findByRole('menu', { name: 'How Auto runs this' }, WAIT);
+    const chip = await screen.findByRole(
+      'button',
+      { name: 'Kind: Workflow · Preset Fix a layout, set at start' },
+      WAIT,
+    );
+    fireEvent.click(chip);
+    const popover = await screen.findByRole('dialog', { name: 'Kind' }, WAIT);
+    const startAs = within(popover).getByRole('group', { name: 'Start a new run as' });
     expect(
-      [...menu.querySelectorAll('[role="menuitem"], [role="menuitemradio"]')].map(
-        (item) => item.textContent,
-      ),
-    ).toEqual([
-      'Workflow · Orchestrated',
-      'Agent · Auto agent',
-      'Fix a layout',
-      'No preset',
-      'Follow it',
-      'Adapt as it goes',
-      'Start every run in this session like this',
-    ]);
+      within(startAs)
+        .getAllByRole('button')
+        .map((item) => item.textContent),
+    ).toEqual(['Workflow · Orchestrated', 'Agent · Auto agent']);
+    expect(
+      within(popover)
+        .getAllByRole('tab')
+        .map((item) => item.textContent),
+    ).toEqual(['Follow it', 'Adapt as it goes']);
+    expect(popover.textContent).toContain(
+      'Starts a second run with the same goal. This one keeps going.',
+    );
+    expect(popover.textContent).not.toContain('Start every run in this session');
   });
 
   it('shows the step Auto added to the preset with its reason', async () => {
@@ -102,10 +107,10 @@ describe('the u27 one flow scenes', () => {
         WAIT,
       ),
     ).toBeDefined();
-    const route = screen.getByRole('group', { name: 'How Auto runs this' });
-    expect(route.textContent).toContain('Adapt as it goes·1 change');
+    fireEvent.click(screen.getByRole('button', { name: /^Kind: Workflow · Preset Fix a layout/ }));
+    const popover = await screen.findByRole('dialog', { name: 'Kind' }, WAIT);
+    expect(popover.querySelector('[data-run-kind-why]')?.textContent).toContain('· 1 change');
     expect(document.querySelector('[data-preset-facts]')).toBeNull();
-    expect(screen.getAllByText('1 change')).toHaveLength(1);
     const tag = document.querySelector('[data-plan-change="added"]');
     expect(tag?.textContent).toBe('Added');
   });

@@ -799,8 +799,8 @@ and draw as skipped when you closed the parent. The row states come from each
 row's `RowState` in `buildTimelineStream`, not from a second status check.
 
 Suggestions are not scheduled work, so they never draw a dash and never sit in
-the activity feed. They live in the Next steps slot (`NextStepSlot`) above
-Activity, outside both views, as `docs/concepts.md` (Next steps) describes.
+the activity feed. They live in the **Needs you** and **Next** cards of the
+Overview, outside the log, as `docs/concepts.md` (Next steps) describes.
 
 A second rule covers what Activity shows: **a finished launch is one row and
 one count row, opened one level**. Nothing inside a finished launch is a row
@@ -1078,9 +1078,11 @@ on a disagreement.
 | done agent or step                                     | neutral | a muted check, never green   |
 
 Green for an open pull request would make approved stop standing out, so open
-is `info`. A done segment of `StepMeter` fills `muted-foreground` and a done
-child in `LiveChildLine` draws a muted check; the shared `WorkNode` done node
-keeps its violet disc.
+is `info`. A done segment of `StepMeter` fills `muted-foreground`, the running
+segment takes the color of its role (`AGENT_KIND_PALETTE`), never `info`, and a
+step at a ready gate or a question is `warning`. The children of a Running row
+hang from one 1px `border` lane with a quarter elbow each (`LiveSpine`); the
+shared `WorkNode` done node keeps its violet disc.
 
 `StageTrack` draws where a branch stands as one 80px line of stages (Commit,
 Push, Pull request, Checks, Review, Merge on a Now card branch row). A 1px
@@ -1227,7 +1229,9 @@ run order. An agent that ran on two models shows the one it ended on with "from
 Kimi K3" on line 2, and "3 models" from three. A run row shows the model with
 most steps and "+ 2 models" under it. The card lists each model in order. The
 name truncates before the title does, and under 640px the lines go and the
-glyph cell stays. A live agent ends on its current routing; an agent that has
+glyph cell stays. The title keeps a 160px floor (`WORK_ROW.label`) down to a
+640px row; under it the title truncates first, so a state word never pushes
+the model and the stack past the edge the other rows end on. A live agent ends on its current routing; an agent that has
 not started shows its planned model in faint. Every row holds the model and the
 stack, empty when it has nothing to say, so duration and cost line up down the
 feed. The action column is a fixed 80px, `justify-end`, and a feed draws it on
@@ -1404,7 +1408,7 @@ toggle. The command
 centre says `Search` with its chord as bare text; the workspace name lives in its
 tooltip. The Limits overflow chip prints a word, `+2 providers`, never a bare
 number. The trail keeps the first crumb's word until every other ancestor has
-shrunk to an icon and folded (`compactTrail`). `Trail` has no lead slot: nothing sits before the first segment, and no crumb carries a back glyph. The bell's count badge sits 2px
+shrunk to an icon and folded (`compactTrail`). A fold holds two crumbs or more: a lone ancestor stays an icon, which is as wide as the fold. `Trail` has no lead slot: nothing sits before the first segment, and no crumb carries a back glyph. The bell's count badge sits 2px
 inside the bell's box. The session trail band keeps its 24 controls, and trail,
 rail and tree-row buttons are 24.
 
@@ -2014,7 +2018,7 @@ a quiet no-op: the pull request writes resolve their target through
 `prWriteContext`, which logs and throws `ReportedError` when the session,
 workspace, pull request or repository is missing. Every next-step suggestion
 runs through the runner: `SuggestionAction.run` returns a promise and carries its `failureTitle`, and
-`NextStepSlot` owns the runner (`useSuggestionActions` test guards every kind).
+`useSuggestionRunner` owns the runner (`useSuggestionActions` test guards every kind).
 A suggestion's `choices` (a rebase target, "Start tester instead") render as
 ghost buttons beside the primary in `NextStepRow`, run through the same runner
 under their own key, and hold the row's other controls while one runs.
@@ -2230,7 +2234,7 @@ it:
   pairs with the primary's `aria-describedby` through `reasonId`; `error` does
   the same for a failure: the cause in default text after a 14px danger glyph
   (never a red sentence), and the caller relabels the primary "Retry" while the
-  draft stays. Leading holds the options (Model, Limit, Autonomy, Starts);
+  draft stays. Leading holds the options (Model, Limit, Asks you, Starts);
   trailing is "Discard" (ghost) then the primary, and an empty estimate slot
   collapses so Discard always touches the primary.
 
@@ -2406,17 +2410,22 @@ on its right, the crumb band, the header with its state chip and one 640 + 296 g
 that ends at the column's right edge: Linear's pull request page in our register. The main column
 is the description (`SectionHeader` with `Edit` beside it, a markdown editor with
 Write and Preview and `Save`, `Cancel` at its end) and the Activity: plain rows
-of a 20px glyph, one muted line with the person in `text-row`, and the age at the
+of a 20px glyph on a round `bg-subtle` dot joined by a 1px `border-soft` spine, comments as
+`bg-subtle` cards clamped to two lines, one muted line with the person in `text-row`, and the age at the
 right in `tabular-nums`; a row that opens something takes `ROW_INTERACTIVE` and
 says what it opens (`Open Comments`, `View checks`), a row that opens nothing has
 no hover. The title is the page's `h1` in the fixed 32px title row
 (`PaneTitleRow`): editing swaps its content for an input of the same height, so
-the page never jumps. The properties column is 296px from 800px of pane
-(`@container` query, not the window) and follows the main column below it. Each block is a
-faint label, one value row of 28px or more and nothing else: Reviewers, Checks as one line (`4
-passed · 1 failing`, a `StatusDot` only where the tone says something: danger for a failing
-check, info for a live run, a check for passed), Linked issues with their relation and Base.
-The state is the chip after the title, never a block. Labels are not headings, so the outline reads `h1`, then
+the page never jumps. The side column is 224px beside a reading column of at most a prose measure (`max-w-prose`, 65ch) from an 880px page
+container (`@container` query, not the window); below it the side column sits above the
+reading column as one wrapping row. Each block is a faint `text-meta` label over its value rows
+of 28px or more and nothing else: Reviewers (the verdict right after the name, not pinned to
+the edge), Bots that commented (no verdict), Author and Linked issues with their relation.
+The state is the chip in the line under the title, never a block, and the status strip sits
+between the header and the columns: four cells on `bg-subtle` split by 1px `border-soft`
+gaps in one `rounded-lg` frame, each a `text-meta` label, a `text-label` word after a
+`StatusDot` and one faint `text-meta` detail; the cells take their tones from the branch state
+map (conflicts `warning`, a failing check `danger`). Labels are not headings, so the outline reads `h1`, then
 the `h2`s of Description and Activity.
 
 **The capability rule.** The page never branches on the host. It reads the
@@ -2426,9 +2435,10 @@ no draft pull requests`, `Turned off in payments-api`, `Set by the project`), a
 control for a concept the host does not have is left out. The merge
 confirm is an inline panel with one `ChoiceCards` group (`ActionConfirm.choice`):
 the option cards carry the effect sentence, draw no icon tile when they have no
-icon, and a forbidden one is disabled with its reason. A card hugs its content: a title line with an optional `badge` tag, then one muted `hint` line. States follow the five of Empty states: no pull request is a page
-`EmptyState` over the create form, the activity loads as a `SkeletonRow`, a
-failed read is an inline danger `Notice` with Retry.
+icon, and a forbidden one is disabled with its reason. A card hugs its content: a title line with an optional `badge` tag, then one muted `hint` line. States follow the five of Empty states: no pull request is the branch page
+(the branch as the title, its pushed state and distance as the line under it, the
+status strip, then the create form with `In this branch` under it), the activity
+loads as a `SkeletonRow`, a failed read is an inline danger `Notice` with Retry.
 
 ## Workspace chat
 

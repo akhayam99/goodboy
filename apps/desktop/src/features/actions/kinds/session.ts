@@ -30,6 +30,7 @@ import { runningAgentCountOf } from '../../../store/slices/live-work/runningAgen
 import { openStartRun } from '../../session/startRun/openStartRun';
 import { RUN_ROUTE_COPY } from '../../session/startRun/runRouteCopy';
 import { refreshSession } from '../../session/refreshSession';
+import { openSessionSpendLimitEdit } from '../../budget/openSessionSpendLimitEdit';
 import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
 import { requestSelect } from '../selectRequest';
 import { ALL_CHOICES_ID } from '../types';
@@ -294,6 +295,28 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
         void openInConfiguredEditor({ path: facts.worktreePath, state: env.getState() });
       }
     },
+  },
+  {
+    id: 'session.openLog',
+    label: 'Open the full log',
+    icon: CONCEPT_ICONS.timeline,
+    group: 'open',
+    when: () => true,
+    run: ({ facts, env }) =>
+      env.getState().openDrawer({
+        kind: 'session-log',
+        sessionId: facts.sessionId,
+        payload: { focusEntryId: null },
+      }),
+  },
+  {
+    id: 'session.spend',
+    label: 'Spend and limit',
+    icon: CONCEPT_ICONS.budget,
+    group: 'open',
+    when: ({ facts }) => !facts.isArchived,
+    run: ({ facts, env }) =>
+      openSessionSpendLimitEdit({ state: env.getState(), sessionId: facts.sessionId }),
   },
   {
     id: 'session.rename',

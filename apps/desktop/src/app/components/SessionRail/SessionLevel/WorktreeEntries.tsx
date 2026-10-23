@@ -61,9 +61,9 @@ export const WorktreeEntries = ({
                   {isReference ? (
                     <span
                       data-entry-reference=""
-                      className="min-w-0 max-w-32 truncate text-code text-faint-foreground"
+                      className="shrink-0 text-meta text-faint-foreground"
                     >
-                      {number} {branch}
+                      {number}
                     </span>
                   ) : null}
                   <WorktreeEntrySlot fact={entry.fact} />

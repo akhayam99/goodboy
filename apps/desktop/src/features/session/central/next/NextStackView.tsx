@@ -4,6 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { NextGroupChoice } from '../../../../store/slices/next-view/state';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
+import { OVERVIEW_CARD_OF_GROUP, type NextOverviewCardId } from '../cards/overviewCardOfGroup';
 import type { ActionCardModel } from './actionCardsOf';
 import { NextGroup } from './NextGroup';
 import type { RebaseStopRowFor } from '../../../history/useRebaseStopRows';
@@ -29,7 +30,13 @@ type Props = {
   readonly nameFor?: (params: NextCardParams) => string | null;
   readonly branchFor?: (params: NextCardParams) => NextBranchName | null;
   readonly stopRowFor?: RebaseStopRowFor;
+  readonly overviewCard?: NextOverviewCardId | null;
+  readonly hasHeader?: boolean;
+  readonly openByDefault?: NextOpenDefault;
+  readonly canLead?: boolean;
 };
+
+type NextOpenDefault = 'first' | 'all' | 'none';
 
 type GroupParams = {
   readonly group: NextGroupModel;
@@ -51,6 +58,10 @@ export const NextStackView = ({
   nameFor,
   branchFor,
   stopRowFor,
+  overviewCard = null,
+  hasHeader = true,
+  openByDefault = 'first',
+  canLead = true,
 }: Props) => {
   const { ref: observe, width: observedWidth } = useElementWidth();
   const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
@@ -68,27 +79,31 @@ export const NextStackView = ({
   );
   const groups = useMemo(
     () =>
-      nextGroupsOf({ cards, seen }).map((group) => ({
-        ...group,
-        rows: group.rows.map((row) =>
-          nextRowCopyOf({
-            row,
-            group: group.id,
-            branch: branchFor?.({ card: row }) ?? null,
-            stopLine:
-              row.kind === 'rebase'
-                ? (stopRowFor?.({ mountId: row.mountId })?.sentence ?? null)
-                : null,
-          }),
-        ),
-      })),
-    [branchFor, cards, seen, stopRowFor],
+      nextGroupsOf({ cards, seen })
+        .filter(
+          (group) => overviewCard === null || OVERVIEW_CARD_OF_GROUP[group.id] === overviewCard,
+        )
+        .map((group) => ({
+          ...group,
+          rows: group.rows.map((row) =>
+            nextRowCopyOf({
+              row,
+              group: group.id,
+              branch: branchFor?.({ card: row }) ?? null,
+              stopLine:
+                row.kind === 'rebase'
+                  ? (stopRowFor?.({ mountId: row.mountId })?.sentence ?? null)
+                  : null,
+            }),
+          ),
+        })),
+    [branchFor, cards, overviewCard, seen, stopRowFor],
   );
   useEffect(() => {
     noteNextSubjects({
       sessionId,
       keys: groups.flatMap((group) =>
-        group.rows.map((card) => nextSeenKeyOf({ group: group.id, card })),
+        group.rows.map((row) => nextSeenKeyOf({ group: group.id, card: row })),
       ),
     });
   }, [groups, noteNextSubjects, sessionId]);
@@ -98,21 +113,26 @@ export const NextStackView = ({
     return null;
   }
   const firstId = groups[0]?.id;
-  const isOpenOf = ({ group }: GroupParams): boolean => choice[group.id] ?? group.id === firstId;
-  const leadId = groups.find((group) => isOpenOf({ group }))?.id ?? null;
+  const isOpenByDefault = ({ group }: GroupParams): boolean =>
+    openByDefault === 'all' || (openByDefault === 'first' && group.id === firstId);
+  const isOpenOf = ({ group }: GroupParams): boolean =>
+    choice[group.id] ?? isOpenByDefault({ group });
+  const leadId = canLead ? (groups.find((group) => isOpenOf({ group }))?.id ?? null) : null;
   const total = groups.reduce((sum, group) => sum + group.rows.length, 0);
   return (
     <section
       ref={ref}
-      aria-label="Next steps"
+      aria-label={hasHeader ? 'Next steps' : undefined}
       data-next-stack=""
       className="flex min-w-0 flex-col gap-2"
     >
-      <SectionHeader
-        label="Next"
-        headingLevel={2}
-        meta={<span className="text-label text-faint-foreground">{total}</span>}
-      />
+      {hasHeader ? (
+        <SectionHeader
+          label="Next"
+          headingLevel={2}
+          meta={<span className="text-label text-faint-foreground">{total}</span>}
+        />
+      ) : null}
       <div className="flex min-w-0 flex-col gap-1">
         {groups.map((group) => {
           const isOpen = isOpenOf({ group });

@@ -322,8 +322,8 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Overview, Runs, Artifacts and Questions, with counts; Runs holds plans, presets, Auto and agents. Then the Projects card, one tree of folders and branches, and the Linked card.',
       },
       {
-        term: 'Rail foot and +',
-        desc: 'The + on the Projects card adds or connects a folder, and the + on a folder row starts a new branch in it. The foot reads the spend, such as $2 / $10, with Archive and Delete.',
+        term: 'Session actions and +',
+        desc: 'The + on the Projects card adds or connects a folder, and the + on a folder row starts a new branch in it. More session actions, next to Pin, holds Archive and Delete.',
       },
       {
         term: 'Agents panel',
@@ -363,12 +363,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Hands Auto an older agent you started yourself; Detach from Auto takes it back. When Auto cannot decide, it reads Blocked with Retry.',
       },
       {
-        term: 'Activity',
-        desc: 'One row per launch in the Overview, with its model, time and cost. Needs you sits above it, and Log keeps links and branches. Classic and New switches to the experimental overview: Now, Next, What was done and Full log.',
+        term: 'Overview cards',
+        desc: "The Overview shows Needs you, Running, Next, Branches and Done, each with its count, and hides an empty card. A Running row carries the run's own button. The full log sits in the session menu.",
       },
       {
         term: 'Next',
-        desc: "Up to three moves that unblock the task, such as Start, Analyze or Push. It offers only what starts something; what follows sits on that run's Activity row. Not now hides one, and ⌘Z brings it back.",
+        desc: "Up to three moves that unblock the task, such as Start, Analyze or Push. It offers only what starts something; what follows sits on that run's Running row. Not now hides one, and ⌘Z brings it back.",
       },
     ],
     links: [],
@@ -396,12 +396,12 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Orchestrated is not Auto: the orchestrator only picks the next step and you steer with hints. Auto is one agent that delegates to children, and only Auto carries the Experimental marker.',
       },
       {
-        term: 'Autonomy and pause',
-        desc: 'Ask me, Balanced or Autopilot sets how often a run stops for you. Pause run lets the step in flight finish, and Stop run asks first.',
+        term: 'Asks you and pause',
+        desc: 'Asks you: Every step, After the plan or Never sets how often a run stops for you. Pause run lets the step in flight finish, and Stop run asks first.',
       },
       {
         term: NAMES.runDefaults,
-        desc: 'This tab in Workflows sets what new runs start with: autonomy, a limit and guidance. A run keeps the rules it started with.',
+        desc: 'This tab in Workflows sets what new runs start with: when it asks you, a limit and guidance. A run keeps the rules it started with.',
       },
       {
         term: 'Open questions',

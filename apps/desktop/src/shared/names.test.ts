@@ -14,8 +14,8 @@ import { RETIRED_NAMES } from '../__tests__/regressions/retiredNames';
 import { NAMES, formerNamesOf } from './names';
 
 describe('names', () => {
-  it('feeds the lens, role, handoff, stage, autonomy and reply length labels', () => {
-    expect(RUN_AUTONOMY_HEADER).toBe(NAMES.autonomy);
+  it('feeds the lens, role, handoff, stage, Asks you and reply length labels', () => {
+    expect(RUN_AUTONOMY_HEADER).toBe(NAMES.asksYou);
     expect(ROLE_LABEL).toEqual(NAMES.role);
     expect(LENS_LABEL.questions).toBe(NAMES.questions);
     expect(LENS_LABEL.agents).toBe(NAMES.agents);
@@ -148,16 +148,18 @@ describe('names', () => {
     expect(formerNamesOf(NAMES.removeFromSession)).toContain('Detach project');
   });
 
-  it('names the three autonomy levels Ask me, Balanced and Autopilot', () => {
-    expect([NAMES.askMe, NAMES.balanced, NAMES.autopilot]).toEqual([
-      'Ask me',
-      'Balanced',
-      'Autopilot',
+  it('names when a run asks you Every step, After the plan or Never, and finds the old words', () => {
+    expect([NAMES.asksYou, NAMES.everyStep, NAMES.afterThePlan, NAMES.asksNever]).toEqual([
+      'Asks you',
+      'Every step',
+      'After the plan',
+      'Never',
     ]);
-    expect(formerNamesOf(NAMES.askMe)).toEqual(['Ask before each step']);
-    expect(formerNamesOf(NAMES.balanced)).toEqual(['Ask after the plan']);
+    expect(formerNamesOf(NAMES.asksYou)).toEqual(['Autonomy', 'When to ask']);
+    expect(formerNamesOf(NAMES.everyStep)).toEqual(['Ask me', 'Ask before each step']);
+    expect(formerNamesOf(NAMES.afterThePlan)).toEqual(['Balanced', 'Ask after the plan']);
+    expect(formerNamesOf(NAMES.asksNever)).toEqual(['Autopilot', 'Autorun']);
     expect(formerNamesOf(NAMES.autopilot)).toEqual(['Autorun', 'Run on its own']);
-    expect(formerNamesOf(NAMES.autonomy)).toEqual(['When to ask']);
   });
 
   it.each([

@@ -74,6 +74,11 @@ export const compactTrail = ({
       states[index] = 'folded';
     }
   }
+  const folded = states.flatMap((state, index) => (state === 'folded' ? [index] : []));
+  const lone = folded.length === 1 ? folded[0] : undefined;
+  if (lone !== undefined) {
+    states[lone] = 'icon';
+  }
   if (total() > available) {
     shrink(0);
   }

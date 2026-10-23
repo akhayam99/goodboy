@@ -107,7 +107,7 @@ describe('the c04 worktree level scenes', () => {
     expect(level.getByRole('button', { name: /^Rebase on main/ })).toBeDefined();
     expect(sectionNames()).toEqual(['Pull request', 'Comments', 'Files', 'Commits', 'Checks']);
     expect(screen.getByRole('group', { name: 'Properties' })).toBeDefined();
-    expect(screen.getByTestId('pr-readiness').textContent).not.toBe('');
+    expect(screen.getByRole('group', { name: 'Status' }).textContent).toContain('6 behind main');
   });
 
   it('c04-worktree-pr-draft reads Draft in the entry and the State property', async () => {
@@ -123,7 +123,7 @@ describe('the c04 worktree level scenes', () => {
     await mount('c04-worktree-no-pr');
 
     expect(within(worktreeLayer()).getByRole('button', { name: 'Pull request' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Create pull request' })).toBeDefined();
+    expect(screen.getByRole('button', { name: /create pull request$/i })).toBeDefined();
   });
 
   it('c04-worktree-files selects Files and docks the file list on the right of the diff', async () => {

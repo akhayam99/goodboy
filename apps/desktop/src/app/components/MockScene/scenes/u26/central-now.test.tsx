@@ -57,7 +57,7 @@ describe('central now scenes', () => {
     );
     screen.getByRole('button', { name: '1 thing waits on you, go to Next' });
     expect(document.querySelectorAll('[data-testid="tone-bar"]')).toHaveLength(0);
-    screen.getByRole('img', {
+    screen.getByRole('button', {
       name: 'Step 3 of 6, Implement running, step 4 waits on you',
     });
   });
@@ -81,10 +81,10 @@ describe('central now scenes', () => {
     expect(sentenceOf()).toBe('Implementer is working on Add the limit table.');
   });
 
-  it('shows the model name and the effort word of the agent, not the raw id', () => {
+  it('leads the agent row with its kind and never shows the raw model id', () => {
     show({ name: 'u26-central-now-agent-light' });
     const group = document.querySelector('[data-live-group="agent"]');
-    expect(group?.textContent).toContain('High');
+    expect(group?.getAttribute('aria-label')).toBe('Implementer: Add the limit table');
     expect(group?.textContent).not.toContain('claude-opus-5-5');
   });
 

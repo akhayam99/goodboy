@@ -302,6 +302,7 @@ export type RecordActionTarget = {
 export type PullRequestActionTarget = {
   readonly kind: 'pullRequest';
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
   readonly prNumber: number | null;
   readonly host?: PullRequestHost;
 };

@@ -23,8 +23,6 @@ import { MOCK_SCENES } from '../..';
 import { U26_VIEW_SCENES } from './view';
 
 const COLUMN_KEYS = [
-  'u26-view-classic-light',
-  'u26-view-classic-dark',
   'u26-view-new-light',
   'u26-view-new-dark',
   'u26-view-archived-light',
@@ -79,37 +77,21 @@ describe('the view switch scenes', () => {
     }
   });
 
-  it('draws the toggle on New left of the New button on the new overview', async () => {
+  it('draws the cards with no overview toggle beside New', async () => {
     await show({ name: 'u26-view-new-light' });
 
-    const toggle = screen.getByRole('tablist', { name: 'Overview' });
-    const create = screen.getByRole('button', { name: 'New' });
-
-    expect(toggle.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'New' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('button', { name: 'New' })).toBeDefined();
+    expect(screen.queryByRole('tablist', { name: 'Overview' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
     expect(document.querySelector('[data-central-column]')).not.toBeNull();
   });
 
-  it('draws the classic overview with the toggle on Classic left of New', async () => {
-    await show({ name: 'u26-view-classic-light' });
-
-    const toggle = screen.getByRole('tablist', { name: 'Overview' });
-    const create = screen.getByRole('button', { name: 'New' });
-
-    expect(toggle.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Classic' }).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
-    expect(document.querySelector('[data-central-column]')).toBeNull();
-  });
-
-  it('draws the toggle left of Restore on an archived session', async () => {
+  it('keeps Restore and no toggle on an archived session', async () => {
     await show({ name: 'u26-view-archived-light' });
 
-    const toggle = screen.getByRole('tablist', { name: 'Overview' });
-    const restore = screen.getByRole('button', { name: /Restore/ });
-
     expect(screen.queryByRole('button', { name: 'New' })).toBeNull();
-    expect(toggle.compareDocumentPosition(restore) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Restore/ })).toBeDefined();
+    expect(screen.queryByRole('tablist', { name: 'Overview' })).toBeNull();
   });
 
   it.each(COLUMN_KEYS)('%s has no accessibility violations', async (name) => {

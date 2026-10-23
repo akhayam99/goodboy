@@ -17,6 +17,7 @@ type Props = {
   readonly runId: WorkflowRunId;
   readonly blockReason: WorkflowBlockReason | null;
   readonly onStart: () => void | Promise<void>;
+  readonly variant?: 'primary' | 'secondary';
 };
 
 type AtPlaceParams = {
@@ -27,7 +28,13 @@ const isAtPlace = ({ place }: AtPlaceParams): boolean =>
   locationKey({ place: captureLocation({ state: useAppStore.getState() }).place }) ===
   locationKey({ place });
 
-export const WorkflowRunStartButton = ({ sessionId, runId, blockReason, onStart }: Props) => {
+export const WorkflowRunStartButton = ({
+  sessionId,
+  runId,
+  blockReason,
+  onStart,
+  variant = 'primary',
+}: Props) => {
   const followRun = useFollowToast();
   const start = useStartAnywayConfirm({
     blockReason,
@@ -64,7 +71,7 @@ export const WorkflowRunStartButton = ({ sessionId, runId, blockReason, onStart 
       onConfirm={start.onConfirm}
       onCancel={start.onCancel}
       trigger={() => (
-        <Button size="sm" variant="primary" isBusy={start.isBusy} onClick={start.onTrigger}>
+        <Button size="sm" variant={variant} isBusy={start.isBusy} onClick={start.onTrigger}>
           {isBlocked ? (
             <AlertTriangle size={ICON_SIZE.control} aria-hidden />
           ) : (

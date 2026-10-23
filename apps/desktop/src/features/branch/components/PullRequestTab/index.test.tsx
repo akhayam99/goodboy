@@ -179,6 +179,32 @@ describe('the description', () => {
     expect(screen.getByRole('textbox', { name: 'Description, markdown' })).toBeDefined();
   });
 
+  it('reads body headings as bold lead-ins under the one Description heading', async () => {
+    await show();
+    act(() => {
+      patchShownPr({
+        patch: (pr) => ({
+          ...pr,
+          body: '## Description\n\nSplits the route.\n\n## Scope\nThe guard.',
+        }),
+      });
+    });
+
+    await waitFor(() => expect(within(description()).getByText('Scope').tagName).toBe('STRONG'));
+    expect(within(description()).getAllByRole('heading')).toHaveLength(1);
+    expect(within(description()).getByText('Splits the route.')).toBeDefined();
+  });
+
+  it('keeps the source headings in the edit preview', async () => {
+    await show();
+
+    startEditing();
+    typeBody('## Scope\nThe guard.');
+    fireEvent.click(screen.getByRole('tab', { name: 'Preview' }));
+
+    expect(within(description()).getByRole('heading', { name: 'Scope' })).toBeDefined();
+  });
+
   it('cancels with the button or Escape and writes nothing', async () => {
     await show();
 
@@ -310,6 +336,11 @@ describe('the draft and merged pull requests', () => {
   });
 });
 
+type BotReviewParams = {
+  readonly author: string;
+  readonly minute: number;
+};
+
 describe('the Overview grid', () => {
   const grid = (): HTMLElement => {
     const element = document.querySelector<HTMLElement>('[data-slot="overview-grid"]');
@@ -320,33 +351,125 @@ describe('the Overview grid', () => {
   };
 
   it.each(['github', 'draft', 'merged'] as const)(
-    'puts the property block first and the description and the activity under it in the %s state',
+    'puts the status strip on top, then the reading column and the side column in the %s state',
     async (variant) => {
       await show({ variant });
 
       const children = [...grid().children];
-      expect(children).toHaveLength(2);
-      expect(children[0]).toBe(screen.getByRole('group', { name: 'Properties' }));
-      expect(children[1]?.contains(description())).toBe(true);
+      expect(children[0]).toBe(screen.getByRole('group', { name: 'Status' }));
+      const columns = children[1];
+      const reading = columns?.querySelector('[data-slot="reading-column"]');
+      expect(reading?.contains(description())).toBe(true);
+      const side = screen.getByRole('group', { name: 'Properties' });
+      expect(columns?.getAttribute('data-slot')).toBe('page-columns');
+      expect(columns?.contains(side)).toBe(true);
+      expect(side.getAttribute('data-slot')).toBe('side-column');
+      expect(side.compareDocumentPosition(description()) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
     },
   );
 
-  it('groups the properties as State, People and Links, with no Rebase among them', async () => {
+  it('keeps Reviewers, Author and Linked issues on the side, with no State, Base, Checks or Readiness', async () => {
     await show();
 
     const properties = screen.getByRole('group', { name: 'Properties' });
-    const groups = [...properties.querySelectorAll('[data-property-group]')].map((group) => [
-      group.getAttribute('data-property-group'),
-      [...group.querySelectorAll('section')].map((field) => field.getAttribute('aria-label')),
-    ]);
-    expect(groups[0]).toEqual(['state', ['State', 'Base', 'Checks', 'Readiness']]);
-    expect(groups[1]?.[0]).toBe('people');
-    expect(groups[1]?.[1]).toContain('Reviewers');
-    expect(groups[2]?.[0]).toBe('links');
+    const names = [...properties.querySelectorAll('section')].map((field) =>
+      field.getAttribute('aria-label'),
+    );
+    expect(names).toContain('Reviewers');
+    expect(names).toContain('Author');
+    for (const name of ['State', 'Base', 'Checks', 'Readiness']) {
+      expect(names).not.toContain(name);
+    }
     expect(within(properties).queryByRole('button', { name: /Rebase/ })).toBeNull();
   });
 
-  it('says the readiness in words and the queue of a queued pull request', async () => {
+  it('folds the bots that commented in a row into one activity event on the spine', async () => {
+    await show();
+    act(() => {
+      useAppStore.setState((state) => {
+        const mountId = state.sessionProjectMounts[SESSION.id]?.[0]?.mountId;
+        const current = mountId === undefined ? undefined : state.mountGithub[mountId];
+        if (mountId === undefined || current === undefined || current.detail === null) {
+          return state;
+        }
+        const botReview = ({ author, minute }: BotReviewParams) => ({
+          id: `review-${author}`,
+          author,
+          authorAvatarUrl: null,
+          state: 'commented' as const,
+          submittedAt: `2026-09-27T10:0${minute}:00Z`,
+          body: `${author} has a note.`,
+        });
+        return applyMountGithub({
+          state,
+          sessionId: SESSION.id,
+          mountId,
+          github: {
+            ...current,
+            detail: {
+              ...current.detail,
+              reviews: [
+                ...current.detail.reviews,
+                botReview({ author: 'portal-preview[bot]', minute: 1 }),
+                botReview({ author: 'size-watch[bot]', minute: 2 }),
+              ],
+            },
+          },
+        });
+      });
+    });
+
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    const group = await within(activity).findByText('2 bots commented');
+    const row = group.closest('[data-activity]');
+    expect(row?.getAttribute('data-activity')).toBe('bots');
+    expect(row?.textContent).toContain('portal-preview[bot]');
+    const rows = activity.querySelectorAll('[data-activity]');
+    expect(activity.querySelectorAll('[data-slot="activity-spine"]')).toHaveLength(rows.length - 1);
+  });
+
+  it('puts the asked reviewer first with the verdict beside the name, and the bots apart', async () => {
+    await show();
+    act(() => {
+      useAppStore.setState((state) => {
+        const mountId = state.sessionProjectMounts[SESSION.id]?.[0]?.mountId;
+        const current = mountId === undefined ? undefined : state.mountGithub[mountId];
+        if (mountId === undefined || current === undefined || current.detail === null) {
+          return state;
+        }
+        const bot = {
+          id: 'review-bot',
+          author: 'portal-preview[bot]',
+          authorAvatarUrl: null,
+          state: 'commented' as const,
+          submittedAt: '2026-10-01T10:00:00Z',
+          body: 'Preview deploy ready.',
+        };
+        return applyMountGithub({
+          state,
+          sessionId: SESSION.id,
+          mountId,
+          github: {
+            ...current,
+            detail: { ...current.detail, reviews: [...current.detail.reviews, bot] },
+          },
+        });
+      });
+    });
+
+    const reviewers = await screen.findByRole('region', { name: 'Reviewers' });
+    const rows = within(reviewers).getAllByRole('listitem');
+    expect(rows[0]?.getAttribute('data-reviewer-state')).toBe('pending');
+    expect(rows[0]?.textContent).toContain('Asked');
+    expect(within(reviewers).queryByText('portal-preview[bot]')).toBeNull();
+    const bots = screen.getByRole('region', { name: 'Bots that commented' });
+    expect(within(bots).getByText('portal-preview[bot]')).toBeDefined();
+    expect(within(bots).queryByText('Commented')).toBeNull();
+  });
+
+  it('says the queue of a queued pull request in the Merge cell', async () => {
     await show();
     act(() => {
       patchShownPr({
@@ -354,25 +477,31 @@ describe('the Overview grid', () => {
       });
     });
 
-    expect((await screen.findByTestId('branch-queue-line')).textContent).toBe(
-      'Queued to merge, 3rd in line',
+    await waitFor(() =>
+      expect(document.querySelector('[data-cell="merge"]')?.textContent).toContain(
+        'Queued to merge, 3rd in line',
+      ),
     );
-    expect(screen.getByTestId('pr-readiness').textContent).not.toBe('');
   });
 
-  it('writes the checks on one line and opens the Checks section from it', async () => {
+  it('opens the Checks section from the Checks cell of the strip', async () => {
     await show();
     useAppStore.setState({ branchTab: { [SESSION.id]: 'pr' } });
 
-    const checks = within(screen.getByRole('region', { name: 'Checks' })).getByRole('button');
-    expect(checks.textContent).toMatch(/passed|failing|running|No checks|Checks unknown/);
-    expect(checks.textContent).not.toMatch(/,/);
+    const strip = screen.getByRole('group', { name: 'Status' });
+    const checks = within(strip).getByRole('button', { name: /^Checks:/ });
+    expect(checks.textContent).toMatch(/passed|failing|Running|No checks|Unknown/);
+    fireEvent.click(checks);
+
+    await waitFor(() => expect(useAppStore.getState().branchTab[SESSION.id]).toBe('checks'));
   });
 
-  it('names the base branch once in the Base block', async () => {
+  it('names the state, the number and the base once, in the line under the title', async () => {
     await show();
 
-    const base = screen.getByRole('region', { name: 'Base' });
-    expect(base.textContent).toContain('main');
+    const line = document.querySelector<HTMLElement>('[data-pr-header-line]');
+    expect(line?.textContent).toContain('#318');
+    expect(line?.textContent).toContain('main');
+    expect(screen.queryByRole('region', { name: 'Base' })).toBeNull();
   });
 });

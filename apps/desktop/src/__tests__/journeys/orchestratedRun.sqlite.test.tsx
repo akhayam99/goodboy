@@ -269,8 +269,8 @@ describe('journey: an orchestrated run to completion', () => {
     ]);
     const first = showPage({ view, workflowRunId });
     expect(first).toContain('Scout the settlement code');
-    expect(first).toContain('Waiting on step 1');
-    expect(first).toContain('Why: The settlement code has not been mapped yet.');
+    expect(first).toContain('Step 1 is running');
+    expect(first).toContain('Why this step');
     expect(first).not.toContain('Run complete');
     expect(runOf(workflowRunId)?.orchestrationOutcome).toBeUndefined();
 
@@ -285,8 +285,8 @@ describe('journey: an orchestrated run to completion', () => {
     expect(runOf(workflowRunId)?.orchestrationOutcome).toBeUndefined();
     const second = showPage({ view, workflowRunId });
     expect(second).toContain('Review the settlement map');
-    expect(second).toContain('Waiting on step 2');
-    expect(second).toContain('Why: The map needs a second read before anyone changes it.');
+    expect(second).toContain('Step 2 is running');
+    expect(second).toContain('Why this step');
     expect(second).not.toContain('Run complete');
 
     held.turns[1]?.finish();
@@ -304,6 +304,6 @@ describe('journey: an orchestrated run to completion', () => {
     const finished = showPage({ view, workflowRunId });
     expect(finished).toContain('Run complete');
     expect(finished).toContain('The settlement flow is mapped and reviewed.');
-    expect(finished).not.toContain('Waiting on step');
+    expect(finished).not.toContain('is running');
   });
 });

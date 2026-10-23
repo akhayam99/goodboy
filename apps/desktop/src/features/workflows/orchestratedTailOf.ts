@@ -125,6 +125,7 @@ export const orchestratedTailOf = ({
     if (running !== undefined && orchestrator.waitingOnAgentId === running.id) {
       return {
         ...base,
+        state: 'working',
         stepAgentId: running.id,
         verbs: [{ kind: 'stopStep', agent: running, number: runningIndex + 1 }],
       };

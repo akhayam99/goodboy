@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { ToastProvider } from '../../../../../shared/components/Toast';
 import {
   importStore,
@@ -49,20 +49,23 @@ const show = ({ name }: Params) => {
   );
 };
 
-const nextText = (): string =>
-  screen.queryByRole('region', { name: 'Next steps' })?.textContent ?? '';
+const needsYou = (): HTMLElement => screen.getByRole('region', { name: 'Needs you' });
 
 describe('next follow-ups scenes', () => {
-  it('leaves Start fix to the Activity row once the analyze run proposed a fix', () => {
+  it('offers Start fix once, on the Fix row of Needs you, once the analyze run proposed a fix', () => {
     show({ name: 'overview-after-analyze-light' });
     expect(screen.getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
-    expect(nextText()).not.toContain('#318');
-    expect(screen.getAllByText('CI fix · payments-api / test · #318').length).toBeGreaterThan(0);
+    expect(within(needsYou()).getAllByRole('button', { name: 'Start fix' })).toHaveLength(1);
+    expect(
+      within(screen.getByRole('region', { name: 'Running' })).getAllByText(
+        'CI fix · payments-api / test · #318',
+      ).length,
+    ).toBeGreaterThan(0);
   });
-  it('leaves Push to the Activity row once the fix committed on the branch', () => {
+  it('offers Push once, on the Fix row of Needs you, once the fix committed on the branch', () => {
     show({ name: 'overview-after-fix-dark' });
     expect(screen.getAllByRole('button', { name: 'Push' })).toHaveLength(1);
-    expect(nextText()).not.toContain('payments-api / test');
+    expect(within(needsYou()).getAllByRole('button', { name: 'Push' })).toHaveLength(1);
   });
   it('registers a light and a dark shot for each moment', () => {
     expect(Object.keys(U26_NEXT_FOLLOW_UPS_SCENES)).toEqual([

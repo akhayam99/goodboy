@@ -7,7 +7,6 @@ const FEATURES = join(__dirname, '..', '..', '..');
 
 const SECTIONS = [
   { name: 'Unassigned notes', file: 'session/components/SessionOverviewPane/UnassignedNotes.tsx' },
-  { name: 'Next', file: 'suggestions/components/NextStepSlot/index.tsx' },
 ];
 
 describe('the Overview section headers', () => {

@@ -89,15 +89,15 @@ describe('c07 Auto scenes', () => {
     }
   });
 
-  it('c07-auto-working keeps the rail on the session and opens the Agents panel with the tree and the limit foot', async () => {
+  it('c07-auto-working keeps the rail on the session and opens the Agents panel with the tree, the limit on the page', async () => {
     mount({ id: 'c07-auto-working' });
 
     const tree = await autoTree();
     expect(levelStack().dataset.levelStack).toBe('session');
     expect(within(tree).getAllByRole('treeitem')).toHaveLength(4);
     expect(within(await panel()).queryByRole('button', { name: /^Back to / })).toBeNull();
-    const foot = within(await panel()).getByRole('region', { name: 'Limit' });
-    expect(within(foot).getByRole('button', { name: 'Limit $10.00 · $5.23 left' })).toBeDefined();
+    expect(within(await panel()).queryByRole('region', { name: 'Limit' })).toBeNull();
+    expect(screen.getByRole('button', { name: /^Limit: \$0\.27 of \$10\.00/ })).toBeDefined();
     expect(screen.getByTestId('pane-toggle-spawned').getAttribute('aria-pressed')).toBe('true');
   });
 
@@ -328,19 +328,17 @@ describe('c07 Auto scenes', () => {
     }
     expect(within(tail).getByRole('button', { name: 'Raise to $20.00' })).toBeDefined();
     fireEvent.click(within(tail).getByRole('button', { name: 'Change limit' }));
-    expect(
-      await screen.findByRole('dialog', { name: 'Limit for this Auto run' }, WAIT),
-    ).toBeDefined();
+    expect(await screen.findByRole('dialog', { name: 'Limit' }, WAIT)).toBeDefined();
   });
 
   it('c07-auto-limit-popover lists spent, reserved and turns under one Limit title', async () => {
     mount({ id: 'c07-auto-limit-popover' });
 
-    const popover = await screen.findByRole('dialog', { name: 'Limit for this Auto run' }, WAIT);
+    const popover = await screen.findByRole('dialog', { name: 'Limit' }, WAIT);
     expect(within(popover).getByText('Spent')).toBeDefined();
     expect(within(popover).getByText('Reserved')).toBeDefined();
     expect(within(popover).getByText('Turns')).toBeDefined();
-    expect(within(popover).getByRole('button', { name: 'No limit' })).toBeDefined();
+    expect(within(popover).getByRole('form', { name: 'Limit for this Auto' })).toBeDefined();
   });
 
   it('c07-auto-working titles the Auto root with its goal and keeps View transcript in the menu', async () => {

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { Button, HeaderActions, HeaderBand, Notice, Tooltip } from '@goodboy/ui';
 import type { PullRequestHost, PullRequestState, SessionId } from '@goodboy/types';
@@ -31,6 +31,7 @@ type Props = {
   readonly isActive?: boolean;
   readonly canEditTitle: boolean;
   readonly pageAction?: ReactNode;
+  readonly line?: ReactNode;
   readonly onMutated: () => void;
 };
 
@@ -52,6 +53,7 @@ export const BranchHeader = ({
   isActive = true,
   canEditTitle,
   pageAction = null,
+  line = null,
   onMutated,
 }: Props) => {
   const { primary, secondary } = controls;
@@ -100,8 +102,9 @@ export const BranchHeader = ({
     );
   };
 
-  const primaryVariant =
-    primary === null || primary.isSecondary || isPrimaryYielding ? 'secondary' : 'primary';
+  const primaryId = primary?.actionId ?? null;
+  const shownIds = useMemo(() => (primaryId === null ? [] : [primaryId]), [primaryId]);
+  const primaryVariant = isPrimaryYielding ? 'secondary' : 'primary';
   return (
     <div className="relative flex min-w-0 flex-col gap-2">
       <HeaderBand
@@ -115,7 +118,9 @@ export const BranchHeader = ({
         meta={
           titleEdit.isEditing ? (
             <span className="text-meta text-muted-foreground">Enter saves, Esc cancels</span>
-          ) : null
+          ) : (
+            line
+          )
         }
         actions={
           <div className="flex min-w-0 items-center gap-2">
@@ -135,6 +140,7 @@ export const BranchHeader = ({
                 <BranchOverflow
                   diffControls={controls.diffControls}
                   pullRequestControls={controls.pullRequestControls}
+                  shownIds={shownIds}
                 />
               }
             />

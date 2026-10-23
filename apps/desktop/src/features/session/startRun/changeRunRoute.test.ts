@@ -236,7 +236,7 @@ describe('changeRunRoute', () => {
     expect(engines.discardWorkflow).toHaveBeenCalledWith(SESSION.id, RUN_ID);
   });
 
-  it('after work started, starts a second run with what the first found and marks the first', async () => {
+  it('after work started, starts a second run with what the first found and the first keeps going', async () => {
     seedPlanRun({ hasWork: true });
     const engines = mockEngines();
 
@@ -250,8 +250,8 @@ describe('changeRunRoute', () => {
     expect(prompt).toContain(ASK);
     expect(prompt).toContain('Found the billing table');
     expect(prompt).toContain('The table scrolls sideways at 390px');
-    expect(engines.stopWorkflowRunNow).toHaveBeenCalledWith(SESSION.id, RUN_ID);
-    expect(runOf()?.rulesSnapshot?.route?.changedTo).toBe('lead');
+    expect(engines.stopWorkflowRunNow).not.toHaveBeenCalled();
+    expect(runOf()?.rulesSnapshot?.route).toEqual(PLAN_ROUTE);
     const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
     expect(JSON.parse(raw ?? '{}')[NEW_AGENT]).toMatchObject({ ask: ASK, shape: 'lead' });
   });
@@ -272,7 +272,7 @@ describe('changeRunRoute', () => {
     expect(runOf()?.rulesSnapshot?.route?.changedTo).toBeUndefined();
   });
 
-  it('turns one agent into a plan with what it found and marks the agent', async () => {
+  it('starts a plan with what one agent found and leaves the agent as it was', async () => {
     const root = anAgent({
       id: ROOT,
       sessionId: SESSION.id,
@@ -309,6 +309,6 @@ describe('changeRunRoute', () => {
     expect(options?.goal).toContain('Three pages share the billing table');
     expect(options?.rulesSnapshot?.route).toMatchObject({ shape: 'plan', ask: ASK });
     const raw = await getSetting(storySqlite(), runRoutesKey({ sessionId: SESSION.id }));
-    expect(JSON.parse(raw ?? '{}')[ROOT]).toMatchObject({ changedTo: 'plan' });
+    expect(JSON.parse(raw ?? '{}')[ROOT]).not.toHaveProperty('changedTo');
   });
 });

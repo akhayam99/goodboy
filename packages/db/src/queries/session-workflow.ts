@@ -534,6 +534,23 @@ export const updateWorkflowRunSpendLimit = async (
   );
 };
 
+type UpdateWorkflowRunProviderPoolParams = {
+  readonly db: Database;
+  readonly workflowRunId: WorkflowRunId;
+  readonly pool: ReadonlyArray<ProviderId> | null;
+};
+
+export const updateWorkflowRunProviderPool = async ({
+  db,
+  workflowRunId,
+  pool,
+}: UpdateWorkflowRunProviderPoolParams): Promise<void> => {
+  await db.execute('UPDATE session_workflows SET provider_pool = ? WHERE workflow_run_id = ?', [
+    serializeProviderPool({ pool }),
+    workflowRunId,
+  ]);
+};
+
 type UpdateWorkflowRunRulesSnapshotParams = {
   readonly db: Database;
   readonly workflowRunId: WorkflowRunId;

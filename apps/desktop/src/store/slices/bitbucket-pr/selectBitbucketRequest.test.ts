@@ -16,7 +16,6 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../storyHarness';
-import { branchHasPullRequest } from '../session-view/branchHasPullRequest';
 import { branchTabOf } from '../session-view/branchTabOf';
 import { selectBitbucketRequest } from './selectBitbucketRequest';
 import type { MountBitbucketPrState } from './state';
@@ -174,22 +173,16 @@ describe('selectBitbucketRequest', () => {
 });
 
 describe('the branch landing tab of a Bitbucket session', () => {
-  it('lands on the Pull request tab once the request is known, and on Files before', () => {
+  it('lands on the Pull request tab before and after the request is known', () => {
     const tabNow = () =>
       branchTabOf({ state: useAppStore.getState(), sessionId: SESSION_ID, mountPath: null });
 
-    expect(branchHasPullRequest({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe(
-      false,
-    );
-    expect(tabNow()).toBe('files');
+    expect(tabNow()).toBe('pr');
 
     useAppStore.setState({
       mountBitbucketPr: { [FIRST]: entry(FIRST, { pr: pr(42), prs: [pr(42)] }) },
     });
 
-    expect(branchHasPullRequest({ state: useAppStore.getState(), sessionId: SESSION_ID })).toBe(
-      true,
-    );
     expect(tabNow()).toBe('pr');
   });
 

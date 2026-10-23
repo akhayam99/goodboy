@@ -1,33 +1,27 @@
-import { useState } from 'react';
 import { CircleDollarSign } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Button,
-  cn,
-  FormActions,
-  formatUsd,
-  PopoverBody,
-  useDropdown,
-} from '@goodboy/ui';
-import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
-import { useAppStore } from '../../../../store/store';
+import { AnchoredPopover, Button, cn, formatUsd, PopoverBody, useDropdown } from '@goodboy/ui';
+import type { SessionId, WorkflowRun } from '@goodboy/types';
 import { useRunSpendUsd } from '../../../../store/slices/sessions/selectors';
-import { SpendLimitFields } from '../../../budget/components/SpendLimitFields';
-import { parseSpendLimit } from '../../../budget/parseSpendLimit';
-import { behaviorOfRunMode, runModeOfBehavior } from '../../../budget/spendLimitBehavior';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { RunLimitFields } from '../RunSettingsLine/RunLimitFields';
+import { useRunLimitDraft } from '../RunSettingsLine/useRunLimitDraft';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly run: WorkflowRun;
   readonly variant: 'primary' | 'meta' | 'foot';
+  readonly buttonVariant?: 'primary' | 'secondary';
 };
 
 const FOOT_TRIGGER =
   'inline-flex h-6 items-center rounded-md text-ui text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring';
 
-export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
-  const setWorkflowRunSpendLimit = useAppStore((state) => state.setWorkflowRunSpendLimit);
+export const RunSpendLimitPopover = ({
+  sessionId,
+  run,
+  variant,
+  buttonVariant = 'primary',
+}: Props) => {
   const spentUsd = useRunSpendUsd(sessionId, run.id);
   const limitUsd = run.spendLimitUsd ?? null;
   const dropdown = useDropdown({
@@ -35,33 +29,9 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
     expectedWidth: 264,
     width: 'w-80',
   });
-  const { open, close, toggle } = dropdown;
-  const [amount, setAmount] = useState('');
-  const [mode, setMode] = useState<WorkflowSpendLimitMode>('pause');
-  const [busy, setBusy] = useState(false);
-
-  const onToggle = () => {
-    setAmount(limitUsd == null ? '' : String(limitUsd));
-    setMode(run.spendLimitMode ?? 'pause');
-    toggle();
-  };
-
-  const commit = async (nextLimit: number | null) => {
-    if (busy) {
-      return;
-    }
-    setBusy(true);
-    try {
-      await setWorkflowRunSpendLimit(sessionId, run.id, nextLimit, mode);
-      close();
-    } finally {
-      setBusy(false);
-    }
-  };
-
+  const { open, toggle } = dropdown;
+  const limit = useRunLimitDraft({ sessionId, run, isOpen: open });
   const metaLabel = limitUsd == null ? 'Set a limit' : `Limit ${formatUsd(limitUsd)}`;
-  const isBlank = amount.trim() === '';
-  const isInvalid = !isBlank && parseSpendLimit(amount) == null;
 
   return (
     <AnchoredPopover
@@ -74,17 +44,17 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
         variant === 'foot' ? (
           <button
             type="button"
-            onClick={onToggle}
+            onClick={toggle}
             aria-expanded={open}
             data-testid="run-spend-limit-trigger"
             className={FOOT_TRIGGER}
           >
-            {limitUsd == null ? 'Set a limit' : `Limit ${formatUsd(limitUsd)}`}
+            {metaLabel}
           </button>
         ) : variant === 'meta' ? (
           <button
             type="button"
-            onClick={onToggle}
+            onClick={toggle}
             aria-expanded={open}
             data-testid="run-spend-limit-trigger"
             className={cn(
@@ -100,10 +70,10 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
         ) : (
           <Button
             size="sm"
-            variant="primary"
+            variant={buttonVariant}
             data-testid="run-spend-limit-trigger"
             aria-expanded={open}
-            onClick={onToggle}
+            onClick={toggle}
           >
             <CircleDollarSign size={ICON_SIZE.control} aria-hidden />
             Raise limit
@@ -113,43 +83,13 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
     >
       <PopoverBody>
         <header className="px-3 pb-1 pt-3 text-row text-foreground">Limit for this run</header>
-        <div className="flex flex-col gap-2 px-3 py-2">
-          <SpendLimitFields
-            amount={amount}
-            behavior={behaviorOfRunMode({ mode })}
-            inputId="run-spend-limit-amount"
-            invalid={isInvalid}
-            onAmount={setAmount}
-            onBehavior={(behavior) => setMode(runModeOfBehavior({ behavior }))}
-          />
+        <div className="flex flex-col gap-2 px-3 pb-3 pt-2">
+          <RunLimitFields run={run} limit={limit} />
           <p className="text-meta leading-relaxed text-muted-foreground">
-            {isInvalid
-              ? 'Enter an amount above zero, or clear the field for no limit.'
-              : `${formatUsd(spentUsd)} spent so far. Leave it empty for no limit.`}
+            {limit.error ??
+              `${formatUsd(spentUsd)} spent so far. Applies when you press Enter or close. Leave it empty for no limit.`}
           </p>
         </div>
-        <FormActions className="px-3 pb-3 pt-1">
-          {limitUsd == null ? null : (
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={busy}
-              data-testid="run-spend-limit-remove"
-              onClick={() => void commit(null)}
-              className="text-muted-foreground"
-            >
-              Remove limit
-            </Button>
-          )}
-          <Button
-            size="sm"
-            disabled={busy || isInvalid}
-            data-testid="run-spend-limit-save"
-            onClick={() => void commit(parseSpendLimit(amount))}
-          >
-            Save
-          </Button>
-        </FormActions>
       </PopoverBody>
     </AnchoredPopover>
   );

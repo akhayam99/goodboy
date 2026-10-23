@@ -41,9 +41,9 @@ Reuse steps across workflows. The built-in steps are read-only, and **Save a cop
 
 Put a light model on a scout and a strong one on the planner. A step follows its role by default, and **Pin a model** gives it its own provider, model and effort, with the same compact provider row as the model picker. Goodboy records what actually ran.
 
-### Autonomy
+### Asks you
 
-Choose how often a run stops for you: **Ask me**, **Balanced** to approve once and then run on, or **Autopilot**. A guard stops an unattended agent after 4 turns in an hour, and anything you write to it resets the count.
+Choose how often a run stops for you: **Every step**, **After the plan** to approve once and then run on, or **Never**. The old names (Autonomy, Ask me, Balanced, Autopilot) still find it in search. A guard stops an unattended agent after 4 turns in an hour, and anything you write to it resets the count.
 
 ### Pause, resume and skip
 
@@ -51,11 +51,11 @@ Choose how often a run stops for you: **Ask me**, **Balanced** to approve once a
 
 ### Run defaults
 
-Set what every new run starts with in the **Run defaults** tab: how it asks, the limit and shared **Guidance** for the agents that write code. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers and models**.
+Set what every new run starts with in the **Run defaults** tab, on the same chips a run page shows: how it asks, the limit, the models, the **Auto limit** and shared **Guidance** for the agents that write code. A change reaches new runs only. The builder opens filled from them, and a **From your rules** line shows where one run differs, with a **Reset** on that control. Provider order lives in **Open Providers and models**.
 
 ### Limit
 
-Cap what a run or a session can spend, and choose **Pause workflows** or **Warn only**. A paused run offers **Raise limit**.
+Cap what a run or a session can spend, and choose **Pause workflows** or **Warn only**. Amounts take cents, such as `2.50`, and Enter applies them. A paused run offers **Raise limit**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-spend-dark.webp">
@@ -77,7 +77,7 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
 
 ### Workflow run
 
-Open a preset run and the session rail steps into it: **Overview**, every step in order with its sub-agents, **Add step** at the end, and the run's limit and spend at the foot. The center shows the step you pick as its conversation. The line at the end says what the run waits for, with the one button that moves it on: **Start step 3**, **Review plan**, **Raise limit**, **Continue step**. **Pause run** and **Stop run** sit as buttons in the run header while the run lives (once paused, **Resume run** takes the place of Pause run), and **Autonomy**, **Skip step** and the rest sit in the run's **⋯**. An orchestrated run lives under **Orchestrated** in the session and reads as one document: the goal with its autonomy, providers and limit, one checklist of the steps it decided, the hints it read and what is left, the line that says what the orchestrator does now with the reason for its last choice, the result once done, and the hint box at the bottom. A step opens beside it. The time on a step row and on the line at the end counts only the time the agents worked, never the time a step waited for you. After a restart, **Resume all** restarts every stopped agent.
+Open a preset run and the session rail steps into it: **Overview**, every step in order with its sub-agents, **Add step** at the end, and the run's limit and spend at the foot. The center shows the step you pick as its conversation. The line at the end says what the run waits for. The run header holds the one button that moves it on, such as **Start step 3**, **Review plan**, **Answer** or **Raise limit**, or **Pause run** while nothing waits on you (once paused, **Resume run** takes its place). Everything else sits in the run's **⋯** in one order: see, steer, settings, copy, then **Stop run** (it asks first), **Archive run** and **Delete run**. An orchestrated run lives under **Orchestrated** in the session and reads as one document: the goal with one chip each for when it asks you, its limit and its models (each opens only its own setting, applied as you pick it), one checklist of the steps it decided, the hints it read and what is left, the line that says what the orchestrator does now with the reason for its last choice, the result once done, and the hint box at the bottom. A step opens beside it. The time on a step row and on the line at the end counts only the time the agents worked, never the time a step waited for you. After a restart, **Resume all** restarts every stopped agent.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-dark.webp">

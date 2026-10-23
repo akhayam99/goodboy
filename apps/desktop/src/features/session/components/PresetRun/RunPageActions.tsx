@@ -1,20 +1,18 @@
 import type { AgentId, Session } from '@goodboy/types';
 import type { ActionViewing, WorkflowRunActionTarget } from '../../../actions/types';
 import { RunOverflowMenu } from '../AgentTree/RunOverflowMenu';
-import { RunPrimaryAction } from '../AgentTree/RunHeader/RunPrimaryAction';
 import type { RunView } from '../AgentTree/useRunView';
-import { RunLiveVerbs } from './RunLiveVerbs';
+import { RunHeaderPrimary } from './RunHeaderPrimary';
+import { runHeaderPrimaryOf } from './runHeaderPrimaryOf';
 import { RUN_LIVE_VERB_IDS } from './runLiveVerbIds';
 
 type Props = {
   readonly session: Session;
   readonly view: RunView;
   readonly stepAgentId: AgentId | null;
-  readonly isOrchestrated?: boolean;
 };
 
 const OFF_THE_MENU: ReadonlyArray<string> = [
-  ...RUN_LIVE_VERB_IDS,
   'workflowRun.open',
   'workflowRun.answer',
   'workflowRun.start',
@@ -22,12 +20,11 @@ const OFF_THE_MENU: ReadonlyArray<string> = [
   'workflowRun.restartStep',
   'workflowRun.nextStep',
   'workflowRun.restore',
+  'workflowRun.autonomy',
 ];
 
-const OFF_THE_ORCHESTRATED_MENU: ReadonlyArray<string> = [...OFF_THE_MENU, 'workflowRun.autonomy'];
-
-export const RunPageActions = ({ session, view, stepAgentId, isOrchestrated = false }: Props) => {
-  const { run, name, primary } = view;
+export const RunPageActions = ({ session, view, stepAgentId }: Props) => {
+  const { run, name } = view;
   const target: WorkflowRunActionTarget = {
     kind: 'workflowRun',
     sessionId: session.id,
@@ -35,17 +32,15 @@ export const RunPageActions = ({ session, view, stepAgentId, isOrchestrated = fa
     stepAgentId,
   };
   const viewing: ActionViewing = { kind: 'workflowRun', id: run.id };
+  const header = runHeaderPrimaryOf({ view });
   return (
-    <div className="flex shrink-0 items-center gap-2">
-      <RunLiveVerbs target={target} />
-      {view.isDiscarded && primary !== null ? (
-        <RunPrimaryAction session={session} view={view} primary={primary} />
-      ) : null}
+    <div data-run-header-actions="" className="flex shrink-0 items-center gap-2">
+      <RunHeaderPrimary session={session} view={view} target={target} header={header} />
       <RunOverflowMenu
         target={target}
         viewing={viewing}
         name={name}
-        omit={isOrchestrated ? OFF_THE_ORCHESTRATED_MENU : OFF_THE_MENU}
+        omit={header.kind === 'live' ? [...OFF_THE_MENU, ...RUN_LIVE_VERB_IDS] : OFF_THE_MENU}
       />
     </div>
   );

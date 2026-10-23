@@ -358,35 +358,6 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       run: ({ facts, env }) => env.getState().resumeWorkflowRun(facts.sessionId, facts.run.id),
     },
     {
-      id: 'workflowRun.routing',
-      label: 'Step routing',
-      icon: CONCEPT_ICONS.providers,
-      group: 'act',
-      when: ({ facts }) => facts.hasStepRouting,
-      run: ({ facts, env }) => showStepRouting({ env, facts }),
-    },
-    {
-      id: 'workflowRun.autonomy',
-      label: NAMES.autonomy,
-      icon: SlidersHorizontal,
-      group: 'act',
-      when: ({ facts }) => isLive({ facts }),
-      choices: ({ facts }) =>
-        RUN_AUTONOMY_OPTIONS.map((option) => ({
-          id: option.key,
-          label: option.label,
-          detail: option.hint,
-          isCurrent: option.key === facts.autonomy,
-        })),
-      run: async ({ facts, env, choice }) => {
-        const picked = RUN_AUTONOMY_OPTIONS.find((option) => option.key === choice);
-        if (picked === undefined || picked.key === facts.autonomy) {
-          return;
-        }
-        await env.getState().setWorkflowRunAutonomy(facts.sessionId, facts.run.id, picked.key);
-      },
-    },
-    {
       id: 'workflowRun.skipStep',
       label: ({ facts }) =>
         facts.skipStep === null ? 'Skip step' : `Skip step ${facts.skipStep.number}`,
@@ -410,6 +381,35 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
           force: true,
           agentId: facts.skipStep.agent.id,
         });
+      },
+    },
+    {
+      id: 'workflowRun.routing',
+      label: 'Step routing',
+      icon: CONCEPT_ICONS.providers,
+      group: 'act',
+      when: ({ facts }) => facts.hasStepRouting,
+      run: ({ facts, env }) => showStepRouting({ env, facts }),
+    },
+    {
+      id: 'workflowRun.autonomy',
+      label: NAMES.asksYou,
+      icon: SlidersHorizontal,
+      group: 'act',
+      when: ({ facts }) => isLive({ facts }),
+      choices: ({ facts }) =>
+        RUN_AUTONOMY_OPTIONS.map((option) => ({
+          id: option.key,
+          label: option.label,
+          detail: option.hint,
+          isCurrent: option.key === facts.autonomy,
+        })),
+      run: async ({ facts, env, choice }) => {
+        const picked = RUN_AUTONOMY_OPTIONS.find((option) => option.key === choice);
+        if (picked === undefined || picked.key === facts.autonomy) {
+          return;
+        }
+        await env.getState().setWorkflowRunAutonomy(facts.sessionId, facts.run.id, picked.key);
       },
     },
     {

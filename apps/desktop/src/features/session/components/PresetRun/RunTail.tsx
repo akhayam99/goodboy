@@ -18,6 +18,8 @@ type Props = {
 
 const MINUTE_MS = 60_000;
 
+const HEADER_VERBS: ReadonlySet<string> = new Set(['primary', 'raiseCap', 'answer']);
+
 export const RunTail = ({ session, view, selectedAgentId }: Props) => {
   const { run, workflow, advance } = view;
   const quiet = useQuietStep({ agents: advance.runAgents });
@@ -96,7 +98,9 @@ export const RunTail = ({ session, view, selectedAgentId }: Props) => {
         }}
         onAction={() => undefined}
         verbs={
-          tail.verb === null ? null : <RunTailVerb session={session} view={view} verb={tail.verb} />
+          tail.verb === null || HEADER_VERBS.has(tail.verb.kind) ? null : (
+            <RunTailVerb session={session} view={view} verb={tail.verb} />
+          )
         }
       />
     </section>

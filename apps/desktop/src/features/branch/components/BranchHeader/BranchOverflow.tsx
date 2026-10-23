@@ -16,13 +16,20 @@ import { BRANCH_MENU_DIFF, BRANCH_MENU_PULL_REQUEST } from '../../branchPrimary'
 type Props = {
   readonly diffControls: ActionControls;
   readonly pullRequestControls: ActionControls;
+  readonly shownIds: ReadonlyArray<string>;
 };
 
 const MENU_LABEL = 'Branch actions';
 const PUSH_ID = 'diff.push';
+const HEADER_RUN: ReadonlySet<string> = new Set([
+  PUSH_ID,
+  'pullRequest.merge',
+  'pullRequest.markReady',
+  'pullRequest.reopen',
+]);
 const MIN_DRAWN_ENTRIES = 2;
 
-export const BranchOverflow = ({ diffControls, pullRequestControls }: Props) => {
+export const BranchOverflow = ({ diffControls, pullRequestControls, shownIds }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
     width: 'min-w-[200px] max-w-sm',
@@ -39,14 +46,26 @@ export const BranchOverflow = ({ diffControls, pullRequestControls }: Props) => 
       const { target } = controls;
       const actions = ids.flatMap((id) => {
         const action = controls.actions.find((candidate) => candidate.id === id);
-        return action === undefined || (id === PUSH_ID && action.slot !== 'menu') ? [] : [action];
+        if (action === undefined || shownIds.includes(id)) {
+          return [];
+        }
+        if (id === PUSH_ID && action.slot !== 'menu') {
+          return [];
+        }
+        return HEADER_RUN.has(id) ? [{ ...action, confirm: null }] : [action];
       });
       return target === null
         ? []
         : toMenuEntries({
             actions,
             env,
-            run: ({ actionId, choice }) => runObjectAction({ target, actionId, env, choice }),
+            run: async ({ actionId, choice }) => {
+              if (HEADER_RUN.has(actionId)) {
+                controls.trigger({ actionId });
+                return;
+              }
+              await runObjectAction({ target, actionId, env, choice });
+            },
           });
     });
     return groups.flatMap((group, index) =>
@@ -54,7 +73,7 @@ export const BranchOverflow = ({ diffControls, pullRequestControls }: Props) => 
         ? [{ kind: 'separator' as const, key: `separator-${index}` }, ...group]
         : group,
     );
-  }, [diffControls, env, pullRequestControls]);
+  }, [diffControls, env, pullRequestControls, shownIds]);
 
   if (entries.filter((entry) => entry.kind === 'item').length < MIN_DRAWN_ENTRIES) {
     return null;

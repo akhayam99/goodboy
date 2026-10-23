@@ -198,6 +198,7 @@ export {
   type AutoLedgerEntry,
 } from './auto/ledger';
 export { autoTreeCapUsd, type AutoTreeCapParams } from './auto/treeCap';
+export { autoTreeLimitOf } from './auto/treeLimitOf';
 export {
   diagnoseResume,
   type DiagnoseResumeParams,
@@ -983,6 +984,9 @@ export {
   isPullRequestPortUnsupported,
   localReviewSource,
   pullRequestReviewersOf,
+  pullRequestReviewerGroupsOf,
+  isBotLogin,
+  type PullRequestReviewerGroups,
   requirePullRequestCapability,
   stripGitlabDraftPrefix,
   type GitlabPullRequestTransport,

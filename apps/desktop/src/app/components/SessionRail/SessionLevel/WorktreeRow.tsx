@@ -54,7 +54,9 @@ export const WorktreeRow = ({
 }: Props) => {
   const entriesId = useId();
   const path = row.worktreePath ?? row.lastWorktreePath;
-  const sessionScope = useAppStore(useShallow((state) => branchScopeOf({ state, sessionId })));
+  const sessionScope = useAppStore(
+    useShallow((state) => branchScopeOf({ state, sessionId, mountId: row.mountId })),
+  );
   const ownState = requestStateOf({ request: row.request });
   const scope = useMemo<BranchScope>(
     () => ({
@@ -68,6 +70,7 @@ export const WorktreeRow = ({
     row,
     diff,
     scope: isOpened ? scope : null,
+    status,
   });
   const livePath = row.isAttached ? row.worktreePath : null;
   const hasEntries = livePath !== null && entries.length > 0;

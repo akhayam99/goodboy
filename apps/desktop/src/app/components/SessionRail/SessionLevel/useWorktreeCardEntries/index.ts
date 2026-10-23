@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { PrCheckRun, SessionId } from '@goodboy/types';
+import type { PrCheckRun, SessionId, WorktreeStatus } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 import type { BranchScope } from '../../../../../features/branch/branchTabs';
@@ -17,6 +17,7 @@ type Params = {
   readonly row: MountRowView;
   readonly diff: EntryDiffStat | null;
   readonly scope: BranchScope | null;
+  readonly status: WorktreeStatus | null;
 };
 
 type WorktreeCardFacts = {
@@ -29,9 +30,14 @@ export const useWorktreeCardEntries = ({
   row,
   diff,
   scope,
+  status,
 }: Params): WorktreeCardFacts => {
   const github = useAppStore((state) =>
     mountReviewGithub({ state, sessionId, mountId: row.mountId }),
+  );
+  const commits = useAppStore((state) => state.historyDrafts[row.mountId]?.commits ?? null);
+  const hasRemoteHead = useAppStore(
+    (state) => state.historyDrafts[row.mountId]?.graph?.remoteSha != null,
   );
   const items = useAppStore((state) => state.sessionResolveQueueItems[sessionId] ?? EMPTY_ARRAY);
   const view = useAppStore((state) =>
@@ -51,9 +57,12 @@ export const useWorktreeCardEntries = ({
         diff,
         view,
         scope,
+        status,
+        commits,
+        hasRemoteHead,
       }),
       runs: checkRunsOf({ row, github, view }),
     }),
-    [row, github, items, diff, view, scope],
+    [row, github, items, diff, view, scope, status, commits, hasRemoteHead],
   );
 };

@@ -64,6 +64,8 @@ const nodeOf = (selector: string): HTMLElement => {
 
 const tail = (): HTMLElement => nodeOf('[data-orchestrated-tail]');
 
+const header = (): HTMLElement => nodeOf('[data-run-header-actions]');
+
 const checklist = (): HTMLElement => nodeOf('section[aria-label="Plan and progress"]');
 
 const currentPage = (): string | null =>
@@ -104,22 +106,24 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.getByRole('heading', { name: 'Speed up the export end to end' })).toBeDefined();
     expect(screen.getByText(/times out over 10k rows/)).toBeDefined();
     const facts = nodeOf('[data-orchestrated-facts]');
-    const autonomy = within(facts).getByRole('button', { name: 'Autonomy: Balanced' });
-    expect(autonomy.textContent).toBe('AutonomyBalanced');
+    const settings = within(facts).getByRole('group', { name: 'Run settings' });
+    const autonomy = within(settings).getByRole('button', { name: /^Asks you: After the plan/ });
     act(() => {
       autonomy.click();
     });
-    const autonomyMenu = screen.getByRole('menu', { name: 'Autonomy' });
+    const asks = screen.getByRole('dialog', { name: 'Asks you' });
     expect(
-      within(autonomyMenu)
-        .getAllByRole('menuitemradio')
+      within(asks)
+        .getAllByRole('tab')
         .map((item) => item.textContent),
-    ).toEqual(['Ask me', 'Balanced', 'Autopilot']);
+    ).toEqual(['Every step', 'After the plan', 'Never']);
     act(() => {
       autonomy.click();
     });
-    expect(facts.textContent).toContain('Can use Claude, Codex');
-    expect(facts.textContent).toContain('Limit $3.00');
+    expect(
+      within(settings).getByRole('button', { name: /^Models: Auto on Claude, Codex/ }),
+    ).toBeDefined();
+    expect(within(settings).getByRole('button', { name: /^Limit: .* of \$3\.00/ })).toBeDefined();
     const rows = within(checklist());
     expect(rows.getByText('Step 3')).toBeDefined();
     expect(rows.getByText('Run the 12k export benchmark')).toBeDefined();
@@ -134,12 +138,13 @@ describe('the c09 orchestrated scenes', () => {
       'ImplementerStream rows to CSV',
     ]);
     expect(tail().getAttribute('data-orchestrated-tail')).toBe('waiting');
-    expect(within(tail()).getByText(/^Waiting on step 3/)).toBeDefined();
+    expect(within(tail()).getByText(/^Step 3 is running: Tester/)).toBeDefined();
     expect(within(tail()).getByRole('button', { name: 'Stop step 3' })).toBeDefined();
+    act(() => {
+      within(tail()).getByRole('button', { name: 'Why this step' }).click();
+    });
     expect(
-      within(tail()).getByText(
-        'Why: The batching must be proven on 12,000 rows before any CSV work.',
-      ),
+      within(tail()).getByText('The batching must be proven on 12,000 rows before any CSV work.'),
     ).toBeDefined();
     const queued = screen.getByRole('list', { name: 'Queued hints' });
     expect(screen.getAllByText('Waits for the next decision')).toHaveLength(1);
@@ -157,8 +162,11 @@ describe('the c09 orchestrated scenes', () => {
 
     expect(screen.getByText('Step 3 · Tester')).toBeDefined();
     expect(document.querySelector('[data-step-reason]')).toBeNull();
+    act(() => {
+      within(tail()).getByRole('button', { name: 'Why this step' }).click();
+    });
     expect(
-      screen.getByText('Why: The batching must be proven on 12,000 rows before any CSV work.', {
+      screen.getByText('The batching must be proven on 12,000 rows before any CSV work.', {
         selector: '[data-orchestrated-reason]',
       }),
     ).toBeDefined();
@@ -185,11 +193,11 @@ describe('the c09 orchestrated scenes', () => {
     );
   });
 
-  it('c09-orch-ready waits for your go with Decide next step on the tail', async () => {
+  it('c09-orch-ready waits for your go on the tail with Decide next step in the header', async () => {
     await mount('c09-orch-ready');
 
     expect(within(tail()).getByText('Waiting for your go')).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'Decide next step' })).toBeDefined();
+    expect(within(header()).getByRole('button', { name: 'Decide next step' })).toBeDefined();
     expect(screen.getAllByRole('button', { name: 'Decide next step' })).toHaveLength(1);
   });
 
@@ -199,7 +207,7 @@ describe('the c09 orchestrated scenes', () => {
     expect(
       within(tail()).getByText('Last decision failed: the orchestrator returned no step.'),
     ).toBeDefined();
-    expect(within(tail()).getByRole('button', { name: 'Retry' })).toBeDefined();
+    expect(within(header()).getByRole('button', { name: 'Retry' })).toBeDefined();
     expect(within(tail()).getByRole('button', { name: 'View transcript' })).toBeDefined();
   });
 
@@ -328,11 +336,11 @@ describe('the c09 orchestrated scenes', () => {
     expect(screen.queryByPlaceholderText('Hint the orchestrator')).toBeNull();
   });
 
-  it('c09-orch-menu holds the run verbs, with Step routing and Skip step 3, Pause and Stop in the header', async () => {
+  it('c09-orch-menu holds the run verbs and Stop run, with Pause run alone in the header', async () => {
     await mount('c09-orch-menu');
 
     const menu = screen.getByRole('menu');
-    expect(within(menu).queryByText('Autonomy')).toBeNull();
+    expect(within(menu).queryByText('Asks you')).toBeNull();
     expect(within(menu).getByText('Step routing')).toBeDefined();
     expect(within(menu).getByText('Skip step 3')).toBeDefined();
     expect(within(menu).getByText('Copy run summary')).toBeDefined();
@@ -341,9 +349,20 @@ describe('the c09 orchestrated scenes', () => {
       document.querySelector<HTMLElement>('[data-run-live-verbs]') ?? document.body,
     );
     expect(live.getByRole('button', { name: 'Pause run' })).toBeDefined();
-    expect(live.getByRole('button', { name: 'Stop run' })).toBeDefined();
-    expect(within(menu).getByText('Archive run')).toBeDefined();
-    expect(within(menu).getByText('Delete run')).toBeDefined();
+    expect(live.queryByRole('button', { name: 'Stop run' })).toBeNull();
+    expect(
+      within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent?.replace(/…$/, '')),
+    ).toEqual([
+      'Skip step 3',
+      'Step routing',
+      'Save as preset',
+      'Copy run summary',
+      'Stop run',
+      'Archive run',
+      'Delete run',
+    ]);
   });
   it('c09-orch-guidance shows the process and the standing guidance under Hide guidance', async () => {
     await mount('c09-orch-guidance');

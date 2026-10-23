@@ -24,7 +24,8 @@ export const RailWorktreeLevel = ({ session }: Props) => {
   const sessionId = session.id;
   const identity = useBranchIdentity({ sessionId });
   const storedTab = useBranchTab({ sessionId, mountPath: identity.mountPath });
-  const scope = useAppStore(useShallow((state) => branchScopeOf({ state, sessionId })));
+  const mountId = identity.mount?.mountId ?? null;
+  const scope = useAppStore(useShallow((state) => branchScopeOf({ state, sessionId, mountId })));
   const navigate = useAppStore((state) => state.navigate);
   const tab = resolveBranchTab({ tab: storedTab, scope });
   const facts = useWorktreeEntryFacts({ sessionId });

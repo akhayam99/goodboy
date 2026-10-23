@@ -147,7 +147,7 @@ export const U24_DRAWERS_SCENES = {
       prepare={prepareContext}
       main={
         <div className="@container flex h-full w-full min-w-0 flex-col">
-          <SessionOverviewPane session={SESSION} onSelectLens={noop} />
+          <SessionOverviewPane session={SESSION} />
         </div>
       }
     />

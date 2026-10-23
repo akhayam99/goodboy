@@ -138,6 +138,38 @@ describe('moving an agent to Auto from the app', () => {
     }
   });
 
+  it('caps the new Auto at a smaller session budget only when that budget pauses', async () => {
+    await setSetting(db, autoTreeLimitKey({ workspaceId: WORKSPACE }), '8');
+    useAppStore.setState({
+      sessionBudgets: {
+        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 3, onExceed: 'pause' },
+      },
+    });
+
+    const outcome = await move();
+
+    expect(outcome.kind).toBe('adopted');
+    if (outcome.kind === 'adopted') {
+      expect((await getAutoTree({ db, treeId: outcome.treeId }))?.capUsd).toBe(3);
+    }
+  });
+
+  it('leaves the new Auto at the workspace limit under a session budget that only warns', async () => {
+    await setSetting(db, autoTreeLimitKey({ workspaceId: WORKSPACE }), '8');
+    useAppStore.setState({
+      sessionBudgets: {
+        [AUTO_SEED_SESSION]: { sessionId: AUTO_SEED_SESSION, softCapUsd: 3, onExceed: 'warn' },
+      },
+    });
+
+    const outcome = await move();
+
+    expect(outcome.kind).toBe('adopted');
+    if (outcome.kind === 'adopted') {
+      expect((await getAutoTree({ db, treeId: outcome.treeId }))?.capUsd).toBe(8);
+    }
+  });
+
   it('refuses while the agent is working, and works once its turn is over', async () => {
     useAppStore.setState({
       agentTurnState: { [SOURCE]: { kind: 'running', runId: RUN, startedAt: AT } },

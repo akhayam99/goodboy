@@ -9,8 +9,7 @@ import { START_HINT_SCOPES } from '../../../store/slices/startHints/startHintSco
 import { StartHint } from '../../../shared/components/StartHint';
 import { START_HINT_COPY } from '../../../shared/components/startHintCopy';
 import { autoUnavailableReason } from '../../auto/autoUnavailableReason';
-import type { ActionConfirm, MountActionTarget } from '../../actions/types';
-import { mountFactsFor } from '../../actions/kinds/mount';
+import type { ActionConfirm, DiffActionTarget } from '../../actions/types';
 import { useActionControls } from '../../actions/useActionControls';
 import type { useJobBannerActions } from '../hooks/useJobBannerActions';
 import type { RebaseJobState, RebaseJobTone } from '../rebaseJob';
@@ -35,7 +34,7 @@ const TONE_OF: Readonly<Record<RebaseJobTone, NoticeTone>> = {
   danger: 'danger',
 };
 
-const PUSH_ID = 'mount.push';
+const PUSH_ID = 'diff.push';
 
 type VerbConfirm = {
   readonly title: string;
@@ -104,16 +103,20 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
   const { job, stop, agentId, status, files, originCommits } = controls;
   const mountId = stop.run.mountId;
   const autoBlocked = useAppStore((state) => autoUnavailableReason({ state }));
-  const target = useMemo<MountActionTarget>(
-    () => ({ kind: 'mount', sessionId, mountId, status, remoteKind: null }),
-    [mountId, sessionId, status],
+  const target = useMemo<DiffActionTarget>(
+    () => ({
+      kind: 'diff',
+      sessionId,
+      worktreePath,
+      status,
+      remoteKind: null,
+      patch: '',
+      rebaseConflicts: 0,
+    }),
+    [sessionId, status, worktreePath],
   );
   const registry = useActionControls({ target });
   const pushAction = registry.actions.find((action) => action.id === PUSH_ID);
-  const canPushPlain = useAppStore((s) => {
-    const facts = mountFactsFor({ state: s, sessionId, mountId, status, remoteKind: null });
-    return facts !== null && facts.pr === null && facts.unpushed > 0 && !facts.isRebasing;
-  });
   const isBusy = actions.pendingKeys.size > 0 || registry.pendingId !== null;
   const openFile = ({ path }: OpenFileParams): void => {
     void openInConfiguredEditor({
@@ -204,10 +207,6 @@ export const RebaseStopPanel = ({ sessionId, worktreePath, controls, actions }: 
                       },
               },
             ],
-          }),
-          ...verbsWhen({
-            isOn: pushAction === undefined && canPushPlain,
-            verbs: [{ key: 'push', label: 'Push', variant: 'primary', run: actions.pushBranch }],
           }),
           ...verbsWhen({
             isOn: state === 'auto-done' && agentId !== null,

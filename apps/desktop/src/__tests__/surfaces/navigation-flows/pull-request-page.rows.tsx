@@ -12,7 +12,6 @@ import {
   openCrumb,
   settle,
   useAppStore,
-  findSection,
   sectionLabels,
 } from './harness';
 import { clearGhWrites, ghWrites } from './pull-request-page.runner';
@@ -125,7 +124,7 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'pull request page: with no pull request the branch lands on Files and the Pull request tab offers Create',
+    name: 'pull request page: with no pull request the branch lands on its branch page and offers Create',
     covers: ['navigate', 'tab:pr', 'pr-page:create'],
     seed: 'issue',
     open: async () => {
@@ -133,8 +132,6 @@ export const PULL_REQUEST_PAGE_ROWS: ReadonlyArray<Row> = [
       await openCrumb(/^Branch/);
     },
     lands: async (ctx) => {
-      await branchTab('files')(ctx);
-      await click(await findSection(/^Pull request/));
       await branchTab('pr')(ctx);
       expect(
         await screen.findByRole('textbox', { name: 'Pull request title' }, WAIT),

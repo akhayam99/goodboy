@@ -41,7 +41,7 @@ export const AutoOverviewScene = ({ state }: Props) => {
       <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         <ScrollFade className="min-h-0 flex-1">
           <div className="px-6 py-4">
-            <SessionOverviewPane session={AUTO_SESSION} onSelectLens={() => undefined} />
+            <SessionOverviewPane session={AUTO_SESSION} />
           </div>
         </ScrollFade>
       </main>

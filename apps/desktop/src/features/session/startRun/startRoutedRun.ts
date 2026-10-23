@@ -5,6 +5,7 @@ import {
   type IsoDateTime,
   type SessionId,
   type Workflow,
+  type WorkflowAutonomy,
   type WorkflowId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../store';
@@ -22,6 +23,7 @@ type Params = {
   readonly result: RunRouteResult;
   readonly findings?: string;
   readonly routing?: AgentKindRouting | null;
+  readonly autonomy?: WorkflowAutonomy | null;
 };
 
 export type RoutedRun =
@@ -32,6 +34,7 @@ export const startRoutedRun = async ({
   result,
   findings = '',
   routing = null,
+  autonomy = null,
 }: Params): Promise<RoutedRun> => {
   const state = useAppStore.getState();
   const session = sessionById(state.sessions, sessionId);
@@ -81,13 +84,15 @@ export const startRoutedRun = async ({
   };
   await state.savePhaseTemplate(workflow);
   const rules = state.workspaceOverrides?.[workspaceId]?.workflowRules ?? DEFAULT_WORKFLOW_RULES;
+  const asks = autonomy ?? (session.autoRun ? 'run' : 'step');
   await useAppStore.getState().attachWorkflowToSession(sessionId, workflowId, {
     navigate: true,
+    autoRun: asks !== 'step',
     goal: work,
     executionMode: 'dynamic',
     rulesSnapshot: {
       ...rules,
-      autonomy: session.autoRun ? 'run' : 'step',
+      autonomy: asks,
       route,
       ...(preset !== null && { preset: presetSnapshotOf({ preset }) }),
     },

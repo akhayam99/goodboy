@@ -15,13 +15,13 @@ import type { SliceDeps } from '../../slice-types';
 export { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses };
 export type { ProviderBudgetStatuses, ProviderSpendEntry } from './types';
 
-export const createBudgetSlice = ({ set }: SliceDeps) => {
+export const createBudgetSlice = ({ set, get }: SliceDeps) => {
   return {
     loadBudgetRules: loadBudgetRules(set),
     saveBudgetRule: saveBudgetRule(set),
     deleteBudgetRule: deleteBudgetRule(set),
     loadSessionBudget: loadSessionBudget(set),
-    setSessionBudget: setSessionBudget(set),
+    setSessionBudget: setSessionBudget(set, get),
     clearSessionBudget: clearSessionBudget(set),
     refreshProviderSpendBreakdown: refreshProviderSpendBreakdown(set),
     refreshProviderBudgetStatus: refreshProviderBudgetStatus(set),

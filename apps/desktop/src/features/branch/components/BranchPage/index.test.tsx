@@ -145,6 +145,31 @@ const seedWorktree = ({ isDiffLoaded }: { readonly isDiffLoaded: boolean }): voi
   }));
 };
 
+const seedShownPullRequest = (): void => {
+  useAppStore.setState((state) => {
+    const github = state.sessionGithub[SESSION.id];
+    if (github === undefined || github.pr === null) {
+      return state;
+    }
+    return {
+      mountGithub: {
+        ...state.mountGithub,
+        [MOUNT_ID]: {
+          ...github,
+          mountId: MOUNT_ID,
+          projectId: PROJECT_ID,
+          revision: 1,
+          repository: null,
+          host: null,
+          branch: MOUNT.branch,
+          prs: [github.pr],
+          links: [],
+        },
+      },
+    };
+  });
+};
+
 const graphWithRemote = ({ remoteSha }: { readonly remoteSha: string }): HistoryGraph => ({
   baseRef: 'origin/main',
   mergeBase: { sha: 'b'.repeat(40), subject: 'Base', author: 'dana-r', timestamp: 1 },
@@ -321,28 +346,28 @@ describe('Branch page sections by state', () => {
     expect(railRow(/^Files/).getAttribute('aria-current')).toBe('page');
   });
 
-  it('puts no primary in the header of a merged pull request and draws its state in the property block', async () => {
+  it('puts no primary in the header of a merged pull request and says its state once, under the title', async () => {
     await mount();
     patchRequest({ state: 'merged', isDraft: false });
     await visit(/^Pull request/);
 
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
-    const header = document.querySelector('[data-slot="pane-header"]');
-    expect(header?.querySelector('[data-slot="branch-state"]') ?? null).toBeNull();
-    expect(document.querySelector('[data-slot="branch-state"]')?.getAttribute('data-tone')).toBe(
-      'merged',
-    );
+    const states = document.querySelectorAll('[data-slot="branch-state"]');
+    expect(states).toHaveLength(1);
+    expect(states[0]?.closest('[data-pr-header-line]')).not.toBeNull();
+    expect(states[0]?.getAttribute('data-tone')).toBe('merged');
+    expect(document.querySelector('[data-cell="merge"]')?.textContent).toContain('Merged');
   });
 
-  it('shows the queue in the Readiness property of a queued pull request and no primary', async () => {
+  it('shows the queue in the Merge cell of a queued pull request and no primary', async () => {
     await mount();
     patchRequest({ state: 'queued', isDraft: false, mergeQueue: { position: 3 } });
     await visit(/^Pull request/);
 
     expect(document.querySelectorAll('[data-branch-primary]')).toHaveLength(0);
-    expect(screen.getByTestId('branch-queue-line').textContent).toBe(
-      'Queued to merge, 3rd in line',
-    );
+    const merge = document.querySelector('[data-cell="merge"]');
+    expect(merge?.textContent).toContain('Queued');
+    expect(merge?.textContent).toContain('Queued to merge, 3rd in line');
   });
 
   it('shows no Rebase and no Apply in the Commits of a merged pull request', async () => {
@@ -475,6 +500,7 @@ describe('Branch page counts', () => {
           [SESSION.id]: { ...state.sessionGithub[SESSION.id]!, detail: null },
         },
       }));
+      seedShownPullRequest();
     });
     render(
       <ToastProvider>
@@ -712,6 +738,8 @@ describe('Branch page entries in the sidebar', () => {
   });
 
   it('keeps Files a plain entry with its count and puts the file list on the right of the page', async () => {
+    seedResolveScene({ expandedThreadId: null });
+    seedShownPullRequest();
     await mountFiles();
     expect(fileRail()).toBeNull();
     expect(railRow(/^Files/).hasAttribute('aria-expanded')).toBe(false);

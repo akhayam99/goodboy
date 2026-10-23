@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { MountId, SessionId } from '@goodboy/types';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import type { AppState } from '../../types';
 import { selectActiveMountId } from '../project-mounts/selectors';
@@ -13,6 +13,10 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
+type SelectedParams = Params & {
+  readonly mountId?: MountId | null;
+};
+
 const GITHUB_REPO = /^https?:\/\/[^/]+\/([^/]+\/[^/]+)\/pull\/\d+/;
 const GITLAB_PROJECT = /^https?:\/\/[^/]+\/(.+?)\/-\/merge_requests\/\d+/;
 
@@ -24,9 +28,13 @@ const isOnActiveMount = ({
   readonly activeMountId: string | null;
 }): boolean => entry.mountId === null || entry.mountId === activeMountId;
 
-export const selectedReviewEntryOf = ({ state, sessionId }: Params): ReviewSourceEntry | null => {
+export const selectedReviewEntryOf = ({
+  state,
+  sessionId,
+  mountId = null,
+}: SelectedParams): ReviewSourceEntry | null => {
   const entries = reviewSourceEntriesOf({ state, sessionId });
-  const activeMountId = selectActiveMountId({ state, sessionId });
+  const activeMountId = mountId ?? selectActiveMountId({ state, sessionId });
   const key = state.reviewSourceKeys?.[sessionId] ?? null;
   const picked = entries.find(
     (entry) => entry.key === key && isOnActiveMount({ entry, activeMountId }),
@@ -43,7 +51,7 @@ export const selectedReviewEntryOf = ({ state, sessionId }: Params): ReviewSourc
     onActive.find((entry) => entry.kind === 'gitlab' && entry.number === gitlab?.iid) ??
     onActive.find((entry) => entry.kind === 'bitbucket' && entry.number === bitbucket?.id) ??
     onActive[0] ??
-    entries[0] ??
+    (mountId === null ? entries[0] : undefined) ??
     null
   );
 };

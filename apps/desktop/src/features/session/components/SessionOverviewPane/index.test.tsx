@@ -21,26 +21,14 @@ vi.mock('./OverviewNotices', () => ({
   OverviewNotices: () => <section aria-label="Notices" />,
 }));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => <button type="button">New</button> }));
-vi.mock('../../../suggestions/components/NextStepSlot', () => ({
-  NextStepSlot: () => <section aria-label="Next steps" />,
-}));
-vi.mock('../SessionWorkspace/parts/TimelinePane', () => ({
-  TimelinePane: ({ lead }: { readonly lead: ReactNode }) => (
-    <>
-      <section aria-label="Needs you" />
-      {lead}
-      <section aria-label="Activity" />
-    </>
-  ),
+vi.mock('./CentralColumn', () => ({
+  CentralColumn: () => <section aria-label="Overview cards" data-central-column="" />,
 }));
 
-import type { ReactNode } from 'react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   IsoDateTime,
-  OpenQuestion,
-  OpenQuestionId,
   Session,
   SessionExternalTask,
   SessionId,
@@ -88,15 +76,15 @@ type PaneParams = {
 };
 
 const renderPane = ({ session = SESSION }: PaneParams = {}) =>
-  render(<SessionOverviewPane session={session} onSelectLens={vi.fn()} />);
+  render(<SessionOverviewPane session={session} />);
 
 describe('SessionOverviewPane', () => {
-  it('stacks goal, notices, Needs you, Next and Activity as body sections in that order', () => {
+  it('stacks the notices and then the overview cards as body sections in that order', () => {
     const { container } = renderPane();
 
     const body = container.querySelector('[data-slot="pane-body"]');
     const header = container.querySelector('[data-slot="pane-header"]');
-    const names = ['Notices', 'Needs you', 'Next steps', 'Activity'];
+    const names = ['Notices', 'Overview cards'];
     const sections = names.map((name) => screen.getByRole('region', { name }));
     sections.forEach((section) => expect(section.parentElement).toBe(body));
     expect(Array.from(body?.querySelectorAll(':scope > section') ?? [])).toEqual(sections);
@@ -104,26 +92,15 @@ describe('SessionOverviewPane', () => {
     expect(header?.getAttribute('data-rhythm')).toBe('section');
   });
 
-  it('says what waits on the user only through the Needs you section of the timeline', () => {
+  it('reads a stored Classic choice as the cards, with no Activity and no toggle', () => {
     useAppStore.setState({
-      sessionOpenQuestions: {
-        [SESSION_ID]: [
-          {
-            id: 'q1' as OpenQuestionId,
-            sessionId: SESSION_ID,
-            text: 'Which ledger?',
-            suggestedAnswers: [],
-            isBlocking: false,
-            userAnswer: null,
-            status: 'open',
-            createdAt: '2026-09-28T09:00:00.000Z' as IsoDateTime,
-          } satisfies OpenQuestion,
-        ],
-      },
+      settings: { ...useAppStore.getState().settings, 'overview.layout': 'classic' },
     });
     renderPane();
 
-    expect(screen.getAllByRole('region', { name: 'Needs you' })).toHaveLength(1);
+    expect(document.querySelector('[data-central-column]')).not.toBeNull();
+    expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'Overview' })).toBeNull();
   });
 
   it('titles the page with the session name, the linked key in mono before it, never Overview', () => {
@@ -168,7 +145,7 @@ describe('SessionOverviewPane', () => {
     );
     const renamed = useAppStore.getState().sessions.find((row) => row.id === SESSION_ID);
     expect(renamed?.goal).toBe('Key redeliveries by event id');
-    rerender(<SessionOverviewPane session={renamed ?? SESSION} onSelectLens={vi.fn()} />);
+    rerender(<SessionOverviewPane session={renamed ?? SESSION} />);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
       'Key redeliveries by event id',
     );

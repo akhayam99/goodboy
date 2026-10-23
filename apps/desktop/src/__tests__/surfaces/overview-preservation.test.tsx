@@ -126,18 +126,22 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
 
   it('turns a mount cleanup proposal into a Next row with Remove worktree and an undoable Not now', async () => {
     await mountScene({ name: 'c05-overview-merged-next' });
-    const row = screen
-      .getByRole('region', { name: 'Next steps' })
-      .querySelector<HTMLElement>(
-        '[data-testid="next-step-close-worktree:mock-mount-ledger-rounding"]',
-      );
-    expect(row).not.toBeNull();
+    const next = screen.getByRole('region', { name: 'Next' });
+    for (const fold of next.querySelectorAll<HTMLElement>('button[aria-expanded="false"]')) {
+      fireEvent.click(fold);
+    }
+    const row =
+      Array.from(next.querySelectorAll<HTMLElement>('[data-action-card]')).find((candidate) =>
+        (candidate.textContent ?? '').includes('Remove the ledger-core worktree'),
+      ) ?? null;
+    const card = within(present({ value: row, what: 'the cleanup row' }));
+    card.getByRole('button', { name: 'Remove worktree' });
 
     fireEvent.click(
-      within(present({ value: row, what: 'the cleanup row' })).getByRole('button', {
-        name: 'Not now',
-      }),
+      card.getByRole('button', { name: 'More options for Remove the ledger-core worktree' }),
     );
+    await advance();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Not now' }));
     await advance();
 
     expect(screen.queryByText('Remove the ledger-core worktree')).toBeNull();
@@ -205,22 +209,41 @@ describe('SPEC3 9.3 Overview capabilities from the c05 Overview', () => {
     screen.getByRole('region', { name: 'Unassigned notes' });
   });
 
-  it('keeps Needs you rows that open the exact ask', async () => {
+  it('keeps the exact ask one press away: Answer on the run row opens the question beside the page', async () => {
     await mountScene({ name: 'c05-overview-running' });
 
-    const needsYou = screen.getByRole('region', { name: 'Needs you' });
-    expect(within(needsYou).getAllByRole('button', { name: /^Open: / }).length).toBeGreaterThan(0);
-  });
-
-  it('keeps the Log with its search, the session spend moved to the rail foot', async () => {
-    await mountScene({ name: 'c05-overview-running' });
-    const activity = within(screen.getByRole('region', { name: 'Activity' }));
-
-    expect(activity.queryByRole('button', { name: /^Spend / })).toBeNull();
-    fireEvent.click(activity.getByRole('tab', { name: 'Log' }));
+    const running = screen.getByRole('region', { name: 'Running' });
+    fireEvent.click(within(running).getByRole('button', { name: 'Answer' }));
     await advance();
 
-    activity.getByRole('searchbox', { name: 'Search the log' });
+    expect(useAppStore.getState().drawer?.kind).toBe('question');
+    expect(document.querySelector('[data-page="overview"]')).not.toBeNull();
+  });
+
+  it('keeps the full log with its search, the session spend moved to the rail foot', async () => {
+    await mountScene({ name: 'c05-overview-running' });
+    const sessionId = useAppStore.getState().currentSessionId;
+    const column = document.querySelector<HTMLElement>('[data-central-column]');
+    expect(
+      within(present({ value: column, what: 'the cards' })).queryByRole('button', {
+        name: /^Spend /,
+      }),
+    ).toBeNull();
+    act(() => {
+      if (sessionId === null) {
+        throw new Error('the scene has no current session');
+      }
+      useAppStore.getState().openDrawer({
+        kind: 'session-log',
+        sessionId,
+        payload: { focusEntryId: null },
+      });
+    });
+    await advance();
+
+    within(screen.getByRole('region', { name: 'Log entries' })).getByRole('searchbox', {
+      name: 'Search the log',
+    });
   });
 
   it('keeps an archived session read only with Restore', async () => {

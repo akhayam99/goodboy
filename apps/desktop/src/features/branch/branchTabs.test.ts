@@ -251,9 +251,8 @@ describe('the door resolver', () => {
   it('lands the former lenses on the section the table says', () => {
     const lens = (name: 'review' | 'pr') => sessionPlace({ sessionId: SESSION, lens: name });
     for (const scope of CASES) {
-      const hasPr = scope.pr !== null;
       expect(landed({ ...scope, request: lens('pr') })).toBe('pr');
-      expect(landed({ ...scope, request: lens('review') })).toBe(hasPr ? 'pr' : 'files');
+      expect(landed({ ...scope, request: lens('review') })).toBe('pr');
     }
   });
 

@@ -6,7 +6,7 @@ const capAmount = ({ usd }: { readonly usd: number }): string =>
   Number.isInteger(usd) ? `$${usd}` : `$${usd.toFixed(2)}`;
 
 const autonomyLabel = ({ rules }: { readonly rules: WorkflowRules }): string =>
-  RUN_AUTONOMY_OPTIONS.find((option) => option.key === rules.autonomy)?.label ?? NAMES.askMe;
+  RUN_AUTONOMY_OPTIONS.find((option) => option.key === rules.autonomy)?.label ?? NAMES.everyStep;
 
 const spendRuleText = ({ rules }: { readonly rules: WorkflowRules }): string =>
   rules.spendLimitUsd === null

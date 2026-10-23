@@ -329,7 +329,7 @@ describe('navigation slice', () => {
 
     store.getState().forward();
     store.getState().forward();
-    expect(keyOf(store)).toBe(`s/${S1}/branch/files`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/pr`);
   });
 
   it('truncates the forward entries on a new push', () => {
@@ -630,14 +630,14 @@ describe('navigation slice', () => {
       },
     });
     store.getState().openStudio({ studio: { kind: 'workflow' } });
-    expect(keyOf(store)).toBe(`s/${S1}/branch/files+workflows`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/pr+workflows`);
 
     store.getState().back();
     expect(store.getState().appStudio).toEqual({
       kind: 'inbox',
       focus: { provider: 'linear', kind: null, recordKey: 'NW-214', sessionId: null },
     });
-    expect(keyOf(store)).toBe(`s/${S1}/branch/files+inbox/linear/NW-214`);
+    expect(keyOf(store)).toBe(`s/${S1}/branch/pr+inbox/linear/NW-214`);
 
     store.getState().back();
     expect(store.getState().appStudio).toBeNull();
@@ -932,7 +932,7 @@ const depthOf = (store: ReturnType<typeof makeStore>): number =>
 describe('Branch page', () => {
   it('opens the canonical Branch address from every former door', () => {
     const doors = [
-      { request: sessionPlace({ sessionId: S1, lens: 'review' }), tab: 'files' },
+      { request: sessionPlace({ sessionId: S1, lens: 'review' }), tab: 'pr' },
       { request: sessionPlace({ sessionId: S1, lens: 'pr' }), tab: 'pr' },
       {
         request: sessionPlace({
