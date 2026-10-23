@@ -10,6 +10,7 @@ import { eventCue } from './eventCue';
 import { appendTurnEvents } from './appendTurnEvents';
 import { startAgentTurn } from './startAgentTurn';
 import { finishAgentTurn } from './finishAgentTurn';
+import { installRunActions } from './runActions';
 
 const TEST_COMMAND = 'pnpm test --filter payments-api export --repeat 20';
 const USAGE = {
@@ -266,6 +267,7 @@ export const runTimeline = ({ state }: TimelineParams): DemoTimeline | null => {
     },
   ];
   return {
+    setup: installRunActions,
     prepare: ({ store }) => {
       store.setState((current) => ({
         sessions: current.sessions.map((session) =>
