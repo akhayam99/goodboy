@@ -35,7 +35,11 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const statusOf = (agentId: string) =>
+type StatusParams = {
+  readonly agentId: string;
+};
+
+const statusOf = ({ agentId }: StatusParams) =>
   (store.getState().sessionPhaseRuns[C08_SESSION_ID] ?? []).find((agent) => agent.id === agentId)
     ?.status;
 
@@ -46,12 +50,12 @@ describe('the simulated run step', () => {
     await store
       .getState()
       .activateWorkflowAgent({ sessionId: C08_SESSION_ID, agentId: C08_REVIEWER_ID });
-    expect(statusOf(C08_REVIEWER_ID)).toBe('running');
+    expect(statusOf({ agentId: C08_REVIEWER_ID })).toBe('running');
     expect(store.getState().agentTurnState[C08_REVIEWER_ID]?.kind).toBe('running');
     vi.advanceTimersByTime(3000);
-    expect(statusOf(C08_REVIEWER_ID)).toBe('running');
+    expect(statusOf({ agentId: C08_REVIEWER_ID })).toBe('running');
     vi.advanceTimersByTime(5000);
-    expect(statusOf(C08_REVIEWER_ID)).toBe('completed');
+    expect(statusOf({ agentId: C08_REVIEWER_ID })).toBe('completed');
     expect(store.getState().transcripts[C08_REVIEWER_ID]?.at(-1)?.kind).toBe('done');
     expect(store.getState().selectedAgentId[C08_SESSION_ID]).toBe(C08_REVIEWER_ID);
   });
@@ -70,7 +74,7 @@ describe('the simulated run step', () => {
     );
     expect(asks).toHaveLength(1);
     vi.advanceTimersByTime(8000);
-    expect(statusOf(C08_IMPLEMENTER_ID)).toBe('completed');
+    expect(statusOf({ agentId: C08_IMPLEMENTER_ID })).toBe('completed');
   });
 
   it('connects the sample providers so the model picker has choices', () => {

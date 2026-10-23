@@ -16,7 +16,15 @@ type SqlArgs = {
   readonly params: ReadonlyArray<unknown>;
 };
 
-const sqlOf = (args: DemoIpcArgs): SqlArgs => {
+type ArgsParams = {
+  readonly args: DemoIpcArgs;
+};
+
+type StatementParams = {
+  readonly statement: SqlArgs;
+};
+
+const sqlOf = ({ args }: ArgsParams): SqlArgs => {
   const sql = args?.sql;
   const params = args?.params;
   return {
@@ -25,19 +33,21 @@ const sqlOf = (args: DemoIpcArgs): SqlArgs => {
   };
 };
 
-const statementsOf = (args: DemoIpcArgs): ReadonlyArray<SqlArgs> => {
+const statementsOf = ({ args }: ArgsParams): ReadonlyArray<SqlArgs> => {
   const statements = args?.statements;
   if (!Array.isArray(statements)) {
     return [];
   }
   return statements.map((statement: unknown) =>
     typeof statement === 'object' && statement !== null
-      ? sqlOf({ sql: Reflect.get(statement, 'sql'), params: Reflect.get(statement, 'params') })
+      ? sqlOf({
+          args: { sql: Reflect.get(statement, 'sql'), params: Reflect.get(statement, 'params') },
+        })
       : { sql: '', params: [] },
   );
 };
 
-const executeOf = (statement: SqlArgs) =>
+const executeOf = ({ statement }: StatementParams) =>
   settings.execute(statement) ?? { rowsAffected: 1, rows: [] };
 
 const EMPTY_LISTS: ReadonlyArray<string> = [
@@ -74,7 +84,7 @@ const exitHandlers = (): ReadonlyArray<readonly [string, Handler]> =>
     },
   ]);
 
-const argsOf = (args: DemoIpcArgs): ReadonlyArray<string> => {
+const argsOf = ({ args }: ArgsParams): ReadonlyArray<string> => {
   const list = args?.args;
   return Array.isArray(list)
     ? list.filter((entry): entry is string => typeof entry === 'string')
@@ -100,7 +110,7 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
   [
     'db_select',
     (args) => {
-      const query = sqlOf(args);
+      const query = sqlOf({ args });
       if (isEmptyRead({ sql: query.sql })) {
         return [];
       }
@@ -110,13 +120,13 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
       );
     },
   ],
-  ['db_execute', (args) => executeOf(sqlOf(args))],
+  ['db_execute', (args) => executeOf({ statement: sqlOf({ args }) })],
   ['db_exec', () => null],
   [
     'db_transaction',
     (args) => ({
       status: 'committed',
-      results: statementsOf(args).map(executeOf),
+      results: statementsOf({ args }).map((statement) => executeOf({ statement })),
     }),
   ],
   [
@@ -145,7 +155,7 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
   [
     'gh_run',
     (args) => {
-      const list = argsOf(args);
+      const list = argsOf({ args });
       if (!isGhWrite({ list })) {
         return recordDemoMiss({ entry: `gh_run ${list.slice(0, 3).join(' ')}` });
       }
