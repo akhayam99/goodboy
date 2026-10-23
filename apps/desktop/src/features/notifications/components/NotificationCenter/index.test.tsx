@@ -15,6 +15,7 @@ const { state } = vi.hoisted(() => ({
     notificationsLoading: false,
     loadNotifications: vi.fn(async () => undefined),
     markNotificationsRead: vi.fn(async () => undefined),
+    markNotificationRead: vi.fn(async (_id: string) => undefined),
     clearNotifications: vi.fn(async () => undefined),
     dismissNotificationGroup: vi.fn(async () => undefined),
     retrySummarizer: vi.fn(),
@@ -88,6 +89,7 @@ beforeEach(() => {
   state.currentSessionId = null;
   state.loadNotifications.mockClear();
   state.markNotificationsRead.mockClear();
+  state.markNotificationRead.mockClear();
   state.dismissNotificationGroup.mockClear();
   state.navigate.mockClear();
   state.reportError.mockClear();
@@ -105,12 +107,12 @@ describe('NotificationCenter', () => {
     );
   });
 
-  it('renders the specified empty state and marks all read on open', async () => {
+  it('renders the specified empty state and marks nothing on open', async () => {
     render(<NotificationCenter />);
     await openCenter();
 
     expect(screen.getByText('No notifications yet')).toBeDefined();
-    expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
+    expect(state.markNotificationsRead).not.toHaveBeenCalled();
   });
 
   it('shows one line and no Unread or All tabs when there is nothing', async () => {
@@ -213,6 +215,143 @@ describe('NotificationCenter', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(8);
     expect(screen.getByText('row 9')).toBeDefined();
     expect(screen.queryByText('row 0')).toBeNull();
+  });
+
+  describe('read means seen', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const unreadRows = ({ count }: { readonly count: number }) =>
+      Array.from({ length: count }, (_, index) =>
+        buildNotification({
+          id: `n${index}`,
+          title: `row ${index}`,
+          coalesceKey: `key-${index}`,
+          ts: new Date(Date.UTC(2026, 7, 31, 12, index)).toISOString(),
+        }),
+      );
+
+    it('marks nothing while it opens and each row after one second on screen', async () => {
+      state.notifications = unreadRows({ count: 3 });
+      render(<NotificationCenter />);
+      await openCenter();
+
+      expect(state.markNotificationsRead).not.toHaveBeenCalled();
+      expect(state.markNotificationRead).not.toHaveBeenCalled();
+      await act(async () => {
+        vi.advanceTimersByTime(999);
+      });
+      expect(state.markNotificationRead).not.toHaveBeenCalled();
+      await act(async () => {
+        vi.advanceTimersByTime(1);
+      });
+
+      expect(state.markNotificationRead.mock.calls.map(([id]) => id).sort()).toEqual([
+        'n0',
+        'n1',
+        'n2',
+      ]);
+      expect(state.markNotificationsRead).not.toHaveBeenCalled();
+    });
+
+    it('leaves a row unread when the bell closes before it was seen', async () => {
+      state.notifications = unreadRows({ count: 2 });
+      render(<NotificationCenter />);
+      await openCenter();
+      await act(async () => {
+        vi.advanceTimersByTime(600);
+      });
+
+      fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+      await act(async () => {
+        vi.advanceTimersByTime(5_000);
+      });
+
+      expect(state.markNotificationRead).not.toHaveBeenCalled();
+    });
+
+    it('never marks a row it does not show', async () => {
+      state.notifications = unreadRows({ count: 11 });
+      render(<NotificationCenter />);
+      await openCenter();
+      await act(async () => {
+        vi.advanceTimersByTime(1_000);
+      });
+
+      expect(state.markNotificationRead).toHaveBeenCalledTimes(8);
+      expect(state.markNotificationRead.mock.calls.map(([id]) => id)).not.toContain('n0');
+    });
+
+    it('marks a coalesced group as one row, every unread entry in it', async () => {
+      state.notifications = [
+        buildNotification({ id: 'n2', title: 'build failed', coalesceKey: 'build' }),
+        buildNotification({ id: 'n1', title: 'build failed', coalesceKey: 'build' }),
+      ];
+      render(<NotificationCenter />);
+      await openCenter();
+      await act(async () => {
+        vi.advanceTimersByTime(1_000);
+      });
+
+      expect(state.markNotificationRead.mock.calls.map(([id]) => id).sort()).toEqual(['n1', 'n2']);
+    });
+
+    it('offers Mark all read while something is unread and marks every entry on press', async () => {
+      state.notifications = unreadRows({ count: 11 });
+      render(<NotificationCenter />);
+      await openCenter();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+
+      expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
+    });
+
+    it('marks nothing at once when the open request comes from the key', async () => {
+      state.notifications = unreadRows({ count: 2 });
+      render(<NotificationCenter />);
+
+      await act(async () => {
+        window.dispatchEvent(new CustomEvent('goodboy:open-notifications'));
+      });
+
+      expect(state.markNotificationsRead).not.toHaveBeenCalled();
+      expect(state.markNotificationRead).not.toHaveBeenCalled();
+      await act(async () => {
+        vi.advanceTimersByTime(1_000);
+      });
+      expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
+    });
+
+    it('says so when a row could not be marked, and does not try it again by itself', async () => {
+      state.notifications = unreadRows({ count: 1 });
+      state.markNotificationRead.mockRejectedValueOnce(new Error('database is locked'));
+      render(<NotificationCenter />);
+      await openCenter();
+
+      await act(async () => {
+        vi.advanceTimersByTime(10_000);
+      });
+
+      expect(state.markNotificationRead).toHaveBeenCalledTimes(1);
+      expect(state.reportError).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Couldn't mark the notification read" }),
+      );
+    });
+
+    it('shows no Mark all read when everything was read', async () => {
+      state.notifications = [
+        buildNotification({ id: 'n1', title: 'old', coalesceKey: 'old', read: true }),
+      ];
+      render(<NotificationCenter />);
+      await openCenter();
+
+      expect(screen.queryByRole('button', { name: 'Mark all read' })).toBeNull();
+    });
   });
 
   it('opens the studio from a row with no session to open', async () => {

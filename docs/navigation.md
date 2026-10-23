@@ -2346,7 +2346,12 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
 - **Notifications have one row and one scope.** `NotificationRow` draws a
   group in the popover (`compact`, one line, eight rows at most, Unread or
   All) and in the studio (`cozy`, opens in place with the body, the older
-  members and Report this). Both lead with the severity glyph alone: unread is
+  members and Report this). Opening the popover marks nothing: a row is read once
+  it has been on screen for one second with the popover open
+  (`useSeenNotifications`, one timer per row, cleared when the row or the
+  popover goes), so a row beyond the eight shown stays unread, and the header's
+  ghost `Mark all read` (only while something is unread) is the explicit way to
+  clear the rest. Both lead with the severity glyph alone: unread is
   the title weight (500 in foreground), read rows recede, and no second leading
   dot. In the studio the time owns the third column and a fixed fourth column
   holds the hover controls (`NotificationRowActions`): the registry's hover
