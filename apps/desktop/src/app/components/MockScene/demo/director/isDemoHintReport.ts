@@ -42,8 +42,15 @@ export const isDemoHintReport = (data: unknown): data is DemoHintReport => {
   if (data.type === 'tried') {
     return isHintId(hintId);
   }
+  if (data.type === 'place') {
+    return isHintId(Reflect.get(data, 'place'));
+  }
   if (data.type !== 'anchor') {
     return false;
   }
-  return (hintId === null || isHintId(hintId)) && isRect(Reflect.get(data, 'rect'));
+  return (
+    (hintId === null || isHintId(hintId)) &&
+    isRect(Reflect.get(data, 'rect')) &&
+    typeof Reflect.get(data, 'isOffscreen') === 'boolean'
+  );
 };

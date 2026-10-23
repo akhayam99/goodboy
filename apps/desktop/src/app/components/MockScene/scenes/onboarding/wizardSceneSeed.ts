@@ -1,3 +1,4 @@
+import { mockWindows } from '@tauri-apps/api/mocks';
 import {
   brandId,
   type IntegrationBinding,
@@ -21,6 +22,8 @@ import { IDLE_CONNECT, INITIAL_CONNECT_MAP } from '../../../../../store/slices/p
 import { useAppStore } from '../../../../../store';
 import { sceneClock } from '../../sceneClock';
 import { mockSceneIpc } from '../mockSceneIpc';
+import { setupSceneAnswer } from './setupSceneAnswer';
+import { startSampleScout } from './startSampleScout';
 
 export type WizardSceneAgents = 'ready' | 'signin' | 'none' | 'error';
 
@@ -242,16 +245,17 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
   const detected = agentsFor({ agents });
   const seeded = SEEDED[ws];
   const { workspace } = seeded;
-  mockSceneIpc((command) => {
+  mockSceneIpc((command, payload) => {
     switch (command) {
       case 'worktree_remote_url':
         return 'git@github.com:acme/acme-web.git';
       case 'linear_fetch_assigned_issues':
         return LINEAR_ISSUES;
       default:
-        return null;
+        return setupSceneAnswer({ command, payload });
     }
   });
+  mockWindows('main');
   useAppStore.setState({
     hydrated: true,
     workspaces: workspace === null ? [] : [workspace],
@@ -283,9 +287,20 @@ export const seedWizardScene = ({ agents, ws, hasLinear }: SeedParams): Seeded =
         : INITIAL_CONNECT_MAP,
     probeAgent: async () => undefined,
     refreshProviders: async () => undefined,
-    connectProvider: async () => undefined,
+    connectProvider: async (providerId) => {
+      if (detected.statuses[providerId]?.available !== true) {
+        return;
+      }
+      const authResults = { ...useAppStore.getState().authResults, [providerId]: SIGNED_IN };
+      useAppStore.setState({
+        authResults,
+        providers: buildProviderList(detected.statuses, authResults, new Set()),
+      });
+    },
     cancelProviderConnect: async () => undefined,
     refreshGithubStatus: async () => undefined,
+    setCurrentWorkspace: async (id) => useAppStore.setState({ currentWorkspaceId: id }),
+    startSessionFromDraft: startSampleScout,
   });
   return seeded;
 };

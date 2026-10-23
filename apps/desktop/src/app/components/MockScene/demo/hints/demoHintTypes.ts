@@ -19,6 +19,7 @@ export type DemoHint = {
   readonly outcome: string | null;
   readonly anchor: HintAnchor;
   readonly side?: HintSide;
+  readonly nextChapterId?: string;
   readonly revealWhen: HintCheck;
   readonly doneWhen: HintCheck;
 };

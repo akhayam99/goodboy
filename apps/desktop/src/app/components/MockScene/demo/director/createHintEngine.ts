@@ -7,16 +7,25 @@ type ReportParams = {
   readonly report: DemoHintReport;
 };
 
+type TrackParams = {
+  readonly chapterId: string;
+};
+
+type PlaceParams = TrackParams & {
+  readonly root: Document;
+};
+
 type Params = {
   readonly store: DirectorStore;
   readonly view: Window;
   readonly generation: () => number;
   readonly hintsOf: (params: TrackParams) => ReadonlyArray<DemoHint>;
+  readonly placeOf: (params: PlaceParams) => string | null;
   readonly onReport: (params: ReportParams) => void;
 };
 
-type TrackParams = {
-  readonly chapterId: string;
+type RevealParams = {
+  readonly hintId: string;
 };
 
 type SetTrackParams = {
@@ -26,6 +35,7 @@ type SetTrackParams = {
 
 export type HintEngine = {
   readonly setTrack: (params: SetTrackParams) => void;
+  readonly reveal: (params: RevealParams) => void;
   readonly reset: () => void;
   readonly dispose: () => void;
 };
@@ -42,14 +52,58 @@ type AnchorParams = {
 
 const WATCHED_EVENTS = ['resize', 'scroll', 'transitionend', 'animationend'] as const;
 
+type Placement = {
+  readonly rect: DemoRect | null;
+  readonly isOffscreen: boolean;
+};
+
+const MISSING: Placement = { rect: null, isOffscreen: false };
+
+type Box = {
+  readonly top: number;
+  readonly left: number;
+  readonly bottom: number;
+  readonly right: number;
+};
+
+type ClipParams = {
+  readonly element: Element;
+  readonly view: Window;
+};
+
+const isClipping = ({ element, view }: ClipParams): boolean => {
+  const style = view.getComputedStyle(element);
+  return style.overflowX !== 'visible' || style.overflowY !== 'visible';
+};
+
+const visibleBoxOf = ({ element, view }: ClipParams): Box => {
+  let box: Box = { top: 0, left: 0, bottom: view.innerHeight, right: view.innerWidth };
+  for (let parent = element.parentElement; parent !== null; parent = parent.parentElement) {
+    if (!isClipping({ element: parent, view })) {
+      continue;
+    }
+    const clip = parent.getBoundingClientRect();
+    box = {
+      top: Math.max(box.top, clip.top),
+      left: Math.max(box.left, clip.left),
+      bottom: Math.min(box.bottom, clip.bottom),
+      right: Math.min(box.right, clip.right),
+    };
+  }
+  return box;
+};
+
 export const createHintEngine = ({
   store,
   view,
   generation,
   hintsOf,
+  placeOf,
   onReport,
 }: Params): HintEngine => {
   const root = view.document;
+  let chapterId: string | null = null;
+  let lastPlace: string | null = null;
   let hints: ReadonlyArray<DemoHint> = [];
   let settled: ReadonlySet<string> = new Set();
   const done = new Set<string>();
@@ -81,33 +135,55 @@ export const createHintEngine = ({
     return root.querySelector(selector);
   };
 
-  const rectOf = (element: Element | null): DemoRect | null => {
+  const placementOf = (element: Element | null): Placement => {
     if (element === null) {
-      return null;
+      return MISSING;
     }
     const box = element.getBoundingClientRect();
     if (box.width <= 0 && box.height <= 0) {
-      return null;
+      return MISSING;
     }
-    const isOutside =
-      box.bottom <= 0 ||
-      box.right <= 0 ||
-      box.top >= view.innerHeight ||
-      box.left >= view.innerWidth;
-    if (isOutside) {
-      return null;
+    const visible = visibleBoxOf({ element, view });
+    const centerX = box.left + box.width / 2;
+    const centerY = box.top + box.height / 2;
+    const isShown =
+      centerX >= visible.left &&
+      centerX <= visible.right &&
+      centerY >= visible.top &&
+      centerY <= visible.bottom;
+    if (!isShown) {
+      return { rect: null, isOffscreen: true };
     }
     return {
-      x: Math.round(box.left),
-      y: Math.round(box.top),
-      width: Math.round(box.width),
-      height: Math.round(box.height),
+      rect: {
+        x: Math.round(box.left),
+        y: Math.round(box.top),
+        width: Math.round(box.width),
+        height: Math.round(box.height),
+      },
+      isOffscreen: false,
     };
+  };
+
+  const reportPlace = (): void => {
+    if (chapterId === null) {
+      return;
+    }
+    const place = placeOf({ chapterId, root });
+    if (place === null || place === lastPlace) {
+      return;
+    }
+    lastPlace = place;
+    onReport({ report: { ...envelope(), type: 'place', place } });
   };
 
   const evaluate = (): void => {
     pending = null;
-    if (isDisposed || hints.length === 0) {
+    if (isDisposed) {
+      return;
+    }
+    reportPlace();
+    if (hints.length === 0) {
       return;
     }
     const state = store.getState();
@@ -131,17 +207,18 @@ export const createHintEngine = ({
       )
       .map((hint) => ({
         hint,
-        rect: rectOf(anchorOf({ hint, probe: probeOf({ hint, state }) })),
+        placement: placementOf(anchorOf({ hint, probe: probeOf({ hint, state }) })),
       }))
-      .find((candidate) => candidate.rect !== null);
-    const rect = current?.rect ?? null;
+      .find((candidate) => candidate.placement.rect !== null || candidate.placement.isOffscreen);
+    const rect = current?.placement.rect ?? null;
+    const isOffscreen = current?.placement.isOffscreen ?? false;
     const hintId = current?.hint.id ?? null;
-    const signature = JSON.stringify({ hintId, rect });
+    const signature = JSON.stringify({ hintId, rect, isOffscreen });
     if (signature === lastSignature) {
       return;
     }
     lastSignature = signature;
-    onReport({ report: { ...envelope(), type: 'anchor', hintId, rect } });
+    onReport({ report: { ...envelope(), type: 'anchor', hintId, rect, isOffscreen } });
   };
 
   const schedule = (): void => {
@@ -175,10 +252,20 @@ export const createHintEngine = ({
   view.addEventListener('click', onClick, { capture: true });
 
   return {
-    setTrack: ({ chapterId, settledIds }) => {
-      hints = hintsOf({ chapterId });
+    setTrack: ({ chapterId: track, settledIds }) => {
+      chapterId = track;
+      hints = hintsOf({ chapterId: track });
       settled = new Set(settledIds);
       lastSignature = '';
+      schedule();
+    },
+    reveal: ({ hintId }) => {
+      const hint = hints.find((entry) => entry.id === hintId);
+      if (hint === undefined) {
+        return;
+      }
+      const anchor = anchorOf({ hint, probe: probeOf({ hint, state: store.getState() }) });
+      anchor?.scrollIntoView({ block: 'center', inline: 'nearest' });
       schedule();
     },
     reset: () => {
@@ -187,6 +274,7 @@ export const createHintEngine = ({
       clicked.clear();
       start = store.getState();
       lastSignature = '';
+      lastPlace = null;
       schedule();
     },
     dispose: () => {

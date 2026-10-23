@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DemoChapter } from '../demoChapters';
-import type { DemoCommandType, DemoReport } from '../director/demoProtocol';
+import type { DemoReport } from '../director/demoProtocol';
 import { beatSrc } from '../beatSrc';
 import { frameKey } from '../frameKey';
 
@@ -9,7 +9,6 @@ type Params = {
   readonly nextChapter: DemoChapter | undefined;
   readonly theme: 'dark' | 'light';
   readonly shownKey: string | undefined;
-  readonly isReducedMotion: boolean;
 };
 
 export type StageFrame = {
@@ -19,13 +18,17 @@ export type StageFrame = {
 
 export type FrameCommand = {
   readonly key: string;
-  readonly generation: number;
-  readonly type: Exclude<DemoCommandType, 'restart'>;
+  readonly type: 'play';
 };
 
 export type FrameReportParams = {
   readonly key: string;
   readonly report: DemoReport;
+};
+
+type FollowParams = {
+  readonly key: string;
+  readonly place: string;
 };
 
 export type BeatFill = {
@@ -37,40 +40,30 @@ type GoToParams = {
   readonly index: number;
 };
 
-type FreshParams = {
-  readonly chapter: DemoChapter;
-  readonly isPlaying: boolean;
-  readonly reports: ReadonlyMap<string, DemoReport>;
+type Followed = {
+  readonly key: string;
+  readonly index: number;
 };
 
 type PlayerState = {
   readonly chapterId: string;
   readonly beatIndex: number;
-  readonly isPlaying: boolean;
-  readonly isFinished: boolean;
   readonly replayKey: number;
-  readonly playToken: number;
-  readonly generation: number;
-  readonly generationKey: string | null;
-  readonly touchedKey: string | null;
+  readonly followed: Followed | null;
   readonly reports: ReadonlyMap<string, DemoReport>;
 };
 
 export type BeatPlayer = {
   readonly beatIndex: number;
-  readonly isPlaying: boolean;
   readonly isRunning: boolean;
-  readonly isFinished: boolean;
-  readonly replayKey: number;
+  readonly isComplete: boolean;
   readonly runKey: string;
   readonly fill: BeatFill;
   readonly frame: StageFrame;
   readonly preloadFrame: StageFrame | undefined;
-  readonly command: FrameCommand;
+  readonly command: FrameCommand | undefined;
   readonly goTo: (params: GoToParams) => void;
-  readonly play: () => void;
-  readonly pause: () => void;
-  readonly interact: () => void;
+  readonly follow: (params: FollowParams) => void;
   readonly replay: () => void;
   readonly report: (params: FrameReportParams) => void;
 };
@@ -105,26 +98,18 @@ const nextFrame = ({
 
 const NO_REPORTS: ReadonlyMap<string, DemoReport> = new Map();
 
-const freshState = ({ chapter, isPlaying, reports }: FreshParams): PlayerState => ({
-  chapterId: chapter.id,
-  beatIndex: 0,
-  isPlaying,
-  isFinished: false,
-  replayKey: 0,
-  playToken: 0,
-  generation: 0,
-  generationKey: null,
-  touchedKey: null,
-  reports,
-});
-
-type GenerationParams = {
-  readonly state: PlayerState;
-  readonly key: string;
+type FreshParams = {
+  readonly chapter: DemoChapter;
+  readonly reports: ReadonlyMap<string, DemoReport>;
 };
 
-const generationOf = ({ state, key }: GenerationParams): number =>
-  state.generationKey === key ? state.generation : 0;
+const freshState = ({ chapter, reports }: FreshParams): PlayerState => ({
+  chapterId: chapter.id,
+  beatIndex: 0,
+  replayKey: 0,
+  followed: null,
+  reports,
+});
 
 type KeepParams = {
   readonly reports: ReadonlyMap<string, DemoReport>;
@@ -136,90 +121,51 @@ const keepReports = ({ reports, keys }: KeepParams): ReadonlyMap<string, DemoRep
   return kept.length === reports.size ? reports : new Map(kept);
 };
 
-type RestartParams = {
-  readonly state: PlayerState;
-  readonly key: string;
-};
-
-const restartInPlace = ({ state, key }: RestartParams): PlayerState => {
-  const reports = new Map(state.reports);
-  reports.delete(key);
-  return {
-    ...state,
-    isPlaying: true,
-    isFinished: false,
-    generation: generationOf({ state, key }) + 1,
-    generationKey: key,
-    touchedKey: null,
-    reports,
-  };
-};
-
-type RestartChapterParams = {
-  readonly state: PlayerState;
-};
-
-const restartChapter = ({ state }: RestartChapterParams): PlayerState => ({
-  ...state,
-  beatIndex: 0,
-  isPlaying: true,
-  isFinished: false,
-  replayKey: state.replayKey + 1,
-  generation: 0,
-  generationKey: null,
-  touchedKey: null,
-});
-
-export const useBeatPlayer = ({
-  chapter,
-  nextChapter,
-  theme,
-  shownKey,
-  isReducedMotion,
-}: Params): BeatPlayer => {
+export const useBeatPlayer = ({ chapter, nextChapter, theme, shownKey }: Params): BeatPlayer => {
   const [state, setState] = useState<PlayerState>(() =>
-    freshState({ chapter, isPlaying: !isReducedMotion, reports: NO_REPORTS }),
+    freshState({ chapter, reports: NO_REPORTS }),
   );
 
   const current =
-    state.chapterId === chapter.id
-      ? state
-      : freshState({ chapter, isPlaying: !isReducedMotion, reports: state.reports });
+    state.chapterId === chapter.id ? state : freshState({ chapter, reports: state.reports });
   if (current !== state) {
     setState(current);
   }
 
   const lastIndex = chapter.beats.length - 1;
-  const beatIndex = Math.min(current.beatIndex, lastIndex);
-  const beat = chapter.beats[beatIndex];
+  const frameIndex = Math.min(current.beatIndex, lastIndex);
+  const beat = chapter.beats[frameIndex];
   const src = beat === undefined ? '' : beatSrc({ beat, theme });
   const key = frameKey({ src, replayKey: current.replayKey });
   const frame = useMemo(() => ({ key, src }), [key, src]);
   const preloadFrame = useMemo(
-    () => nextFrame({ chapter, nextChapter, beatIndex, theme, replayKey: current.replayKey }),
-    [chapter, nextChapter, beatIndex, theme, current.replayKey],
+    () =>
+      nextFrame({
+        chapter,
+        nextChapter,
+        beatIndex: frameIndex,
+        theme,
+        replayKey: current.replayKey,
+      }),
+    [chapter, nextChapter, frameIndex, theme, current.replayKey],
   );
   const keysRef = useRef<ReadonlyArray<string>>([]);
   keysRef.current = preloadFrame === undefined ? [frame.key] : [frame.key, preloadFrame.key];
 
-  const generation = generationOf({ state: current, key: frame.key });
+  const followed = current.followed?.key === frame.key ? current.followed.index : null;
+  const beatIndex = Math.min(followed ?? frameIndex, lastIndex);
   const frameReport = current.reports.get(frame.key);
   const isShown = shownKey === frame.key;
-  const isRunning = current.isPlaying && isShown && frameReport !== undefined;
   const isComplete = frameReport?.type === 'complete';
-  const runKey = `${chapter.id}:${beatIndex}:${current.replayKey}:${generation}:${current.playToken}`;
-  const holdMs = beat?.holdMs ?? 0;
-  const durationMs = frameReport?.durationMs ?? 0;
-  const startMs = isComplete ? durationMs : (frameReport?.elapsedMs ?? 0);
-  const totalMs = durationMs + holdMs;
-  const fill = useMemo(
-    () => ({ totalMs, startMs: current.isFinished ? totalMs : startMs }),
-    [totalMs, startMs, current.isFinished],
-  );
-  const commandType: FrameCommand['type'] = isRunning ? 'play' : 'pause';
+  const isRunning = isShown && frameReport !== undefined && !isComplete;
+  const runKey = `${chapter.id}:${frameIndex}:${current.replayKey}`;
+  const totalMs = frameReport?.durationMs ?? 0;
+  const startMs = isComplete ? totalMs : (frameReport?.elapsedMs ?? 0);
+  const fill = useMemo(() => ({ totalMs, startMs }), [totalMs, startMs]);
+  const isPlayable = isShown && frameReport !== undefined;
   const command = useMemo(
-    () => ({ key: frame.key, generation, type: commandType }),
-    [frame.key, generation, commandType],
+    (): FrameCommand | undefined => (isPlayable ? { key: frame.key, type: 'play' } : undefined),
+    [frame.key, isPlayable],
   );
 
   useEffect(() => {
@@ -229,30 +175,12 @@ export const useBeatPlayer = ({
     });
   }, [frame.key, preloadFrame?.key]);
 
-  useEffect(() => {
-    if (!isRunning || !isComplete) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setState((previous) => {
-        if (previous.beatIndex >= lastIndex) {
-          return { ...previous, isPlaying: false, isFinished: true };
-        }
-        return { ...previous, beatIndex: previous.beatIndex + 1, touchedKey: null };
-      });
-    }, holdMs);
-    return () => window.clearTimeout(timer);
-  }, [isRunning, isComplete, holdMs, lastIndex, runKey]);
-
   const report = useCallback(({ key: reportKey, report: next }: FrameReportParams) => {
     if (next.type === 'hint') {
       return;
     }
     setState((previous) => {
       if (!keysRef.current.includes(reportKey)) {
-        return previous;
-      }
-      if (next.generation !== generationOf({ state: previous, key: reportKey })) {
         return previous;
       }
       const reports = new Map(previous.reports);
@@ -262,67 +190,59 @@ export const useBeatPlayer = ({
   }, []);
 
   const goTo = useCallback(({ index }: GoToParams) => {
-    setState((previous) => ({
-      ...previous,
-      beatIndex: index,
-      isPlaying: false,
-      isFinished: false,
-    }));
-  }, []);
-
-  const replay = useCallback(() => {
     setState((previous) => {
-      const currentKey = keysRef.current[0] ?? '';
-      if (previous.beatIndex === 0 && previous.reports.has(currentKey)) {
-        return restartInPlace({ state: previous, key: currentKey });
-      }
-      return restartChapter({ state: previous });
-    });
-  }, []);
-
-  const play = useCallback(() => {
-    setState((previous) => {
-      if (previous.isFinished) {
-        return restartChapter({ state: previous });
-      }
-      const currentKey = keysRef.current[0] ?? '';
-      const isTouched = previous.touchedKey === currentKey;
-      if (isTouched && previous.reports.get(currentKey)?.type !== 'complete') {
-        return restartInPlace({ state: previous, key: currentKey });
-      }
-      return { ...previous, isPlaying: true, playToken: previous.playToken + 1 };
-    });
-  }, []);
-
-  const pause = useCallback(() => {
-    setState((previous) => (previous.isPlaying ? { ...previous, isPlaying: false } : previous));
-  }, []);
-
-  const interact = useCallback(() => {
-    setState((previous) => {
-      const currentKey = keysRef.current[0] ?? null;
-      if (!previous.isPlaying && previous.touchedKey === currentKey) {
+      const isSameFrame = previous.beatIndex === index;
+      const isWalkedAway = previous.followed !== null && previous.followed.index !== index;
+      if (isSameFrame && !isWalkedAway) {
         return previous;
       }
-      return { ...previous, isPlaying: false, touchedKey: currentKey };
+      return {
+        ...previous,
+        beatIndex: index,
+        followed: null,
+        replayKey: isSameFrame ? previous.replayKey + 1 : previous.replayKey,
+      };
     });
+  }, []);
+
+  const { beats } = chapter;
+  const follow = useCallback(
+    ({ key: placeKey, place }: FollowParams) => {
+      const index = beats.findIndex((entry) => entry.place === place);
+      setState((previous) => {
+        if (index < 0 || placeKey !== keysRef.current[0]) {
+          return previous;
+        }
+        const next = index === previous.beatIndex ? null : { key: placeKey, index };
+        if (next?.index === previous.followed?.index && next?.key === previous.followed?.key) {
+          return previous;
+        }
+        return { ...previous, followed: next };
+      });
+    },
+    [beats],
+  );
+
+  const replay = useCallback(() => {
+    setState((previous) => ({
+      ...previous,
+      beatIndex: 0,
+      followed: null,
+      replayKey: previous.replayKey + 1,
+    }));
   }, []);
 
   return {
     beatIndex,
-    isPlaying: current.isPlaying,
     isRunning,
-    isFinished: current.isFinished,
-    replayKey: current.replayKey,
+    isComplete,
     runKey,
     fill,
     frame,
     preloadFrame,
     command,
     goTo,
-    play,
-    pause,
-    interact,
+    follow,
     replay,
     report,
   };

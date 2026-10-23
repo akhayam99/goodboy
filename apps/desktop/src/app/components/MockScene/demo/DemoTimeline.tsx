@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronLeft, Pause, Play, RotateCcw, Undo2 } from 'lucide-react';
+import { ArrowRight, ChevronLeft, RotateCcw, Undo2 } from 'lucide-react';
 import { Button, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import type { BeatFill, BeatPlayer } from './useBeatPlayer';
@@ -8,6 +8,7 @@ type Props = {
   readonly chapter: DemoChapter;
   readonly player: BeatPlayer;
   readonly onReplay: () => void;
+  readonly isGroupDone: boolean;
   readonly nextChapter: DemoChapter | undefined;
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
@@ -33,6 +34,7 @@ export const DemoTimeline = ({
   chapter,
   player,
   onReplay,
+  isGroupDone,
   nextChapter,
   hasPrevious,
   onPrevious,
@@ -43,34 +45,22 @@ export const DemoTimeline = ({
     <div className="flex shrink-0 items-center gap-1">
       <IconButton
         icon={ChevronLeft}
-        label="Previous chapter"
+        label="Previous group"
         shortcut="←"
         size="md"
         disabled={!hasPrevious}
         onClick={onPrevious}
       />
-      <IconButton
-        icon={player.isPlaying ? Pause : Play}
-        label={player.isPlaying ? 'Pause' : 'Play'}
-        shortcut="Space"
-        size="md"
-        onClick={player.isPlaying ? player.pause : player.play}
-      />
-      <IconButton
-        icon={RotateCcw}
-        label="Replay chapter"
-        shortcut="R"
-        size="md"
-        onClick={onReplay}
-      />
+      <IconButton icon={RotateCcw} label="Replay group" shortcut="R" size="md" onClick={onReplay} />
     </div>
-    <ol aria-label="Steps in this chapter" className="flex min-w-0 flex-1 items-stretch gap-1">
+    <ol aria-label="Steps in this group" className="flex min-w-0 flex-1 items-stretch gap-1">
       {chapter.beats.map((beat, index) => (
         <li key={`${chapter.id}-${beat.label}`} className="flex min-w-0 flex-1">
           <DemoBeatSegment
             beat={beat}
             state={beatState({ index, current: player.beatIndex })}
             isRunning={player.isRunning && index === player.beatIndex}
+            isComplete={player.isComplete && index === player.beatIndex}
             fill={index === player.beatIndex ? player.fill : IDLE_FILL}
             runKey={player.runKey}
             onSelect={() => player.goTo({ index })}
@@ -91,7 +81,7 @@ export const DemoTimeline = ({
       </Button>
     ) : (
       <Button
-        variant={player.isFinished ? 'primary' : 'secondary'}
+        variant={isGroupDone ? 'primary' : 'secondary'}
         size="md"
         aria-label={`Next: ${nextChapter.title}`}
         onClick={onNext}
