@@ -11,6 +11,7 @@ import type {
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
+import { brandId } from '@goodboy/types';
 import { aProject, aSession } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -20,6 +21,7 @@ import {
 } from '../../../../store/storyHarness';
 import type { GitlabMergeRequest } from '../../../integrations/gitlab/client';
 import type { MountGitlabMrState } from '../../../../store/slices/gitlab-mr/state';
+import { applyMountGithub } from '../../../../store/slices/github/mountGithub';
 import { useBranchIdentity } from '.';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -42,6 +44,15 @@ const MOUNT: SessionProjectMount = {
   isAttached: true,
   diskState: 'present',
   revision: 1,
+};
+
+const SECOND_MOUNT: SessionProjectMount = {
+  ...MOUNT,
+  mountId: brandId<MountId>({ value: 'mount-payments-api-2' }),
+  worktreePath: '/worktrees/payments-api-2',
+  lastWorktreePath: '/worktrees/payments-api-2',
+  branch: 'hl/feat-ledger-export',
+  parallelIndex: 1,
 };
 
 const TITLE = 'Stop retried webhooks posting a second credit';
@@ -114,32 +125,78 @@ beforeEach(async () => {
 
 afterEach(cleanup);
 
+type SeedParams = {
+  readonly mount: SessionProjectMount;
+  readonly pr: PullRequestState | null;
+};
+
+const seedGithub = ({ mount, pr }: SeedParams): void => {
+  useAppStore.setState((state) =>
+    applyMountGithub({
+      state,
+      sessionId: SESSION_ID,
+      mountId: mount.mountId,
+      github: {
+        mountId: mount.mountId,
+        projectId: mount.projectId,
+        revision: 1,
+        repository: 'harborline/payments-api',
+        host: 'github.com',
+        branch: mount.branch,
+        prs: pr === null ? [] : [pr],
+        links: [],
+        pr,
+        linkedIssues: [],
+        fetchedAt: STAMP,
+        failedAt: null,
+        loading: false,
+        error: null,
+        detail: null,
+        detailFetchedAt: null,
+        detailLoading: false,
+        detailError: null,
+      },
+    }),
+  );
+};
+
 const identity = () =>
   renderHook(() => useBranchIdentity({ sessionId: SESSION_ID })).result.current;
 
 describe('useBranchIdentity', () => {
   it('gives the GitHub pull request for a GitHub session', () => {
-    useAppStore.setState({
-      sessionGithub: {
-        [SESSION_ID]: {
-          pr: GITHUB_PR,
-          linkedIssues: [],
-          fetchedAt: STAMP,
-          failedAt: null,
-          loading: false,
-          error: null,
-          detail: null,
-          detailFetchedAt: null,
-          detailLoading: false,
-          detailError: null,
-        },
-      },
-    });
+    seedGithub({ mount: MOUNT, pr: GITHUB_PR });
 
     const result = identity();
 
     expect(result.pr).toBe(GITHUB_PR);
     expect(result.label).toBe(`#318 ${TITLE}`);
+  });
+
+  it('gives the pull request of the shown branch, not of the branch writes go to', () => {
+    useAppStore.setState({
+      sessionProjectMounts: { [SESSION_ID]: [MOUNT, SECOND_MOUNT] },
+      sessionActiveMount: { [SESSION_ID]: SECOND_MOUNT.mountId },
+    });
+    seedGithub({ mount: SECOND_MOUNT, pr: null });
+    seedGithub({ mount: MOUNT, pr: GITHUB_PR });
+
+    const result = identity();
+
+    expect(useAppStore.getState().sessionGithub[SESSION_ID]?.pr).toBeNull();
+    expect(result.mountPath).toBe(WORKTREE);
+    expect(result.pr).toBe(GITHUB_PR);
+  });
+
+  it('gives no pull request for a shown branch the provider has none for', () => {
+    useAppStore.setState({
+      sessionProjectMounts: { [SESSION_ID]: [MOUNT, SECOND_MOUNT] },
+      sessionActiveMount: { [SESSION_ID]: SECOND_MOUNT.mountId },
+    });
+    seedGithub({ mount: SECOND_MOUNT, pr: { ...GITHUB_PR, number: 319 } });
+    seedGithub({ mount: MOUNT, pr: null });
+
+    expect(identity().pr).toBeNull();
   });
 
   it('gives the merge request of the mount for a GitLab session', () => {

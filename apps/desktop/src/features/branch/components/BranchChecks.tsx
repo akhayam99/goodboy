@@ -2,11 +2,12 @@ import { useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, EmptyState, PageColumn } from '@goodboy/ui';
-import type { PrCheckRun, SessionId } from '@goodboy/types';
+import type { MountId, PrCheckRun, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/hostIconOf';
 import { openUrl } from '../../../shared/lib/editor';
 import { useAppStore } from '../../../store';
+import { branchGithubOf } from '../../../store/slices/github/branchGithubOf';
 import { selectedReviewEntryOf } from '../../../store/slices/review-source/activeReviewSource';
 import { sessionById } from '../../../store/slices/sessions/sessionIndex';
 import { useSessionRepo } from '../../../store/slices/worktrees/useSessionRepo';
@@ -23,6 +24,7 @@ import { ChecksFailedNotice } from './ChecksFailedNotice';
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly mountId?: MountId | null;
 };
 
 const HOST_NOUN: Readonly<Record<ChecksHost, string>> = {
@@ -36,8 +38,8 @@ const FAILED_CONCLUSIONS: ReadonlySet<PrCheckRun['conclusion']> = new Set<PrChec
   ['failure', 'timed_out', 'cancelled'],
 );
 
-export const BranchChecks = ({ sessionId }: Props) => {
-  const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
+export const BranchChecks = ({ sessionId, mountId = null }: Props) => {
+  const github = useAppStore((s) => branchGithubOf({ state: s, sessionId, mountId }));
   const workspaceId = useAppStore((s) => sessionById(s.sessions, sessionId)?.workspaceId ?? null);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const repo = useSessionRepo({ sessionId });
@@ -82,8 +84,12 @@ export const BranchChecks = ({ sessionId }: Props) => {
     if (prNumber === null || hasDetail) {
       return;
     }
-    void refreshSessionPrDetail(sessionId);
-  }, [hasDetail, prNumber, refreshSessionPrDetail, sessionId]);
+    if (mountId === null) {
+      void refreshSessionPrDetail(sessionId);
+      return;
+    }
+    void refreshSessionPrDetail(sessionId, { mountId });
+  }, [hasDetail, mountId, prNumber, refreshSessionPrDetail, sessionId]);
 
   const reloadPortView = portView.reload;
   const checkAgain = useCallback(() => {
@@ -91,8 +97,11 @@ export const BranchChecks = ({ sessionId }: Props) => {
       reloadPortView();
       return;
     }
-    void refreshSessionPrDetail(sessionId, { force: true });
-  }, [isPortHost, refreshSessionPrDetail, reloadPortView, sessionId]);
+    void refreshSessionPrDetail(sessionId, {
+      force: true,
+      ...(mountId === null ? {} : { mountId }),
+    });
+  }, [isPortHost, mountId, refreshSessionPrDetail, reloadPortView, sessionId]);
 
   const view = checksViewOf({
     hostKind: host.kind,

@@ -286,4 +286,53 @@ describe('refreshSessionPr across mounts', () => {
     const kinds = record.mock.calls.map((call) => (call[0] as { kind: string }).kind);
     expect(kinds).toEqual(['pr_discovered']);
   });
+
+  it('keeps the known request when a later poll of the same branch answers empty', async () => {
+    const { state, set, get } = harness([
+      mountView({ id: M1, branch: 'hl/feat-center-home-page' }),
+    ]);
+    h.listPrsForBranch.mockResolvedValueOnce([
+      makePr({ number: 9995, branch: 'hl/feat-center-home-page' }),
+    ]);
+    await refreshSessionPr(set, get)(SESSION_ID);
+
+    h.listPrsForBranch.mockResolvedValueOnce([]);
+    await refreshSessionPr(set, get)(SESSION_ID, { force: true });
+
+    expect(mountGithubOf(state, M1)?.pr?.number).toBe(9995);
+  });
+
+  it('keeps the known request when a later poll fails', async () => {
+    const { state, set, get } = harness([
+      mountView({ id: M1, branch: 'hl/feat-center-home-page' }),
+    ]);
+    h.listPrsForBranch.mockResolvedValueOnce([
+      makePr({ number: 9995, branch: 'hl/feat-center-home-page' }),
+    ]);
+    await refreshSessionPr(set, get)(SESSION_ID);
+
+    h.listPrsForBranch.mockRejectedValueOnce(new Error('network down'));
+    await refreshSessionPr(set, get)(SESSION_ID, { force: true });
+
+    expect(mountGithubOf(state, M1)?.pr?.number).toBe(9995);
+    expect(mountGithubOf(state, M1)?.error).toBe('network down');
+  });
+
+  it('drops the request when the mount moved to a branch the provider has none for', async () => {
+    const { state, set, get } = harness([
+      mountView({ id: M1, branch: 'hl/feat-center-home-page' }),
+    ]);
+    h.listPrsForBranch.mockResolvedValueOnce([
+      makePr({ number: 9995, branch: 'hl/feat-center-home-page' }),
+    ]);
+    await refreshSessionPr(set, get)(SESSION_ID);
+
+    state.sessionMounts = {
+      [SESSION_ID]: [mountView({ id: M1, branch: 'hl/feat-ledger-export', revision: 2 })],
+    };
+    h.listPrsForBranch.mockResolvedValueOnce([]);
+    await refreshSessionPr(set, get)(SESSION_ID, { force: true });
+
+    expect(mountGithubOf(state, M1)?.pr).toBeNull();
+  });
 });

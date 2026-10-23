@@ -3,6 +3,7 @@ import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import { PageColumn, PaneShell, ScrollFade } from '@goodboy/ui';
 import type { PullRequestHost, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useMountDiffStats } from '../../../../store';
+import { branchGithubOf } from '../../../../store/slices/github/branchGithubOf';
 import { branchPlace } from '../../../../store/slices/navigation/place';
 import type { BranchTab } from '../../../../store/slices/navigation/types';
 import { refreshActiveRequest } from '../../../../store/slices/review-source/refreshActiveRequest';
@@ -61,12 +62,14 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
   const navigate = useAppStore((s) => s.navigate);
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
-  const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
+  const historyMountId = identity.mount?.mountId ?? null;
+  const github = useAppStore((s) =>
+    branchGithubOf({ state: s, sessionId, mountId: historyMountId }),
+  );
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const [tabActionsSlot, setTabActionsSlot] = useState<HTMLElement | null>(null);
   const [page, setPage] = useState<HTMLElement | null>(null);
   const [fileSlot, setFileSlot] = useState<HTMLElement | null>(null);
-  const historyMountId = identity.mount?.mountId ?? null;
   const historyCommits = useAppStore((s) =>
     historyMountId === null ? null : (s.historyDrafts[historyMountId]?.commits ?? null),
   );
@@ -198,6 +201,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
 
   const pullRequestView = usePullRequestView({
     sessionId,
+    mountId: historyMountId,
     isEnabled: pr !== null,
     fallbackNumber: pr?.number ?? null,
   });
@@ -206,10 +210,13 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
   const onMutated = useCallback(() => {
     void refreshActiveRequest({ get: useAppStore.getState, sessionId });
     if (host === 'github') {
-      void refreshSessionPrDetail(sessionId, { force: true });
+      void refreshSessionPrDetail(sessionId, {
+        force: true,
+        ...(historyMountId === null ? {} : { mountId: historyMountId }),
+      });
     }
     reloadPullRequestView();
-  }, [host, refreshSessionPrDetail, reloadPullRequestView, sessionId]);
+  }, [historyMountId, host, refreshSessionPrDetail, reloadPullRequestView, sessionId]);
 
   const onPullRequestCreated = useCallback(() => {
     setPullRequestMode({ sessionId, mode: 'overview' });
@@ -323,7 +330,7 @@ export const BranchPage = ({ session, workingDir, isActive = true }: Props) => {
     if (tab === 'checks') {
       return (
         <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-          <BranchChecks sessionId={sessionId} />
+          <BranchChecks sessionId={sessionId} mountId={historyMountId} />
         </ScrollFade>
       );
     }

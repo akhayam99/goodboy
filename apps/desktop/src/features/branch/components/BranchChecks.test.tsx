@@ -12,10 +12,12 @@ vi.mock('../../../shared/lib/editor', async (importOriginal) => ({
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
+import { brandId } from '@goodboy/types';
 import type {
   GhTokenStatus,
   IntegrationBinding,
   IsoDateTime,
+  MountId,
   PrCheckRun,
   PrDetail,
   PullRequestView,
@@ -190,6 +192,52 @@ describe('Checks tab with runs', () => {
     fireEvent.click(screen.getByRole('button', { name: /unit tests/ }));
 
     expect(openUrl).toHaveBeenCalledWith('https://ci.invalid/3');
+  });
+});
+
+describe('Checks tab on a mount other than the write destination', () => {
+  const SHOWN_MOUNT = brandId<MountId>({ value: 'mount-notify-relay' });
+
+  const showMount = async (): Promise<void> => {
+    render(
+      <ToastProvider>
+        <BranchChecks sessionId={SESSION.id} mountId={SHOWN_MOUNT} />
+      </ToastProvider>,
+    );
+    await settle();
+  };
+
+  const mountGithub = (patch: Partial<SessionGithubState>): void => {
+    act(() => {
+      useAppStore.setState((state) => ({
+        mountGithub: {
+          ...state.mountGithub,
+          [SHOWN_MOUNT]: { ...state.sessionGithub[SESSION.id]!, ...patch },
+        },
+      }));
+    });
+  };
+
+  it('lists the runs of the shown mount, not of the write destination', async () => {
+    github({ detail: detail({ checks: [run({ name: 'build', conclusion: 'success' })] }) });
+    mountGithub({
+      detail: detail({ checks: [run({ name: 'relay smoke', conclusion: 'failure' })] }),
+    });
+
+    await showMount();
+
+    expect(
+      within(screen.getByRole('list', { name: 'Failing checks' })).getByText('relay smoke'),
+    ).toBeDefined();
+    expect(screen.queryByText('build')).toBeNull();
+  });
+
+  it('reads the detail of the shown mount when it has none yet', async () => {
+    mountGithub({ detail: null, detailLoading: true });
+
+    await showMount();
+
+    expect(refresh).toHaveBeenCalledWith(SESSION.id, { mountId: SHOWN_MOUNT });
   });
 });
 

@@ -114,6 +114,12 @@ file holds those explanations. Everything below has been "fixed" at least once a
   (`reviewSourceContract.test.ts`, `pullRequestPortContract.test.ts`). Merge readiness is one
   function, `evaluatePrMergeReadiness`, used by the Branch header and the
   companion alike.
+- `sessionGithub` is a projection of the write destination mount
+  (`sessionActiveMount`), re-derived only when a GitHub write lands. A page
+  about one branch reads `sessionPullRequestOf({ mountId })` or
+  `branchGithubOf({ mountId })` (github slice), keyed by the shown mount, never
+  `sessionGithub` alone: the Pull request page and the Checks tab (`BranchChecks`) both do. `refreshMountPr` keeps the known request when a poll of
+  the same branch and repository answers empty.
 - Review comments come from a `ReviewSource` (`packages/core/src/review-source/`),
   never from `sessionGithub` alone. `activeReviewSourceOf` (review-source slice)
   picks the source of the active mount: its comments, PR or MR number, url,
@@ -735,6 +741,8 @@ The New drawer keeps the Start button in a sticky host at the end of its body (`
 The session rail has no level for a worktree: the open rail stays on the session level, and the row of the mount the Branch page shows (`isOpened` in `SessionLevel/WorktreeRow`, from `useBranchIdentity`, which needs an active mount or a `diffMountPath`) is the only one that draws its status line and its pages. A session with the Branch lens but no resolvable mount draws no pages in the rail at all; a test world must set `sessionActiveMount`. What you fold is remembered per branch in `goodboy:session-rail-tree-open:v1`, so clear it between tests, and a click on a row that is not current writes an open choice (`useRailTreeOpen.open`) or the saved collapse would hide the page it just opened. The pages of the current row navigate with `mode: 'replace'`, as a tab switch always did; a push there makes Back walk through tabs.
 
 Rebase all has one source for per-branch state: the batch in the store (`rebaseAllRuns`, read through `rebaseAllBranchOf`). The row chip (`branchRowChipOf`) and the card header (`rebaseAllSummaryOf`) both read it, so do not keep a second per-branch list. A late answer lands by run id: `patchRun` drops it when the run was cleared or replaced, and Abort lets the branch in flight finish, then marks the queued ones skipped. After a branch is `rebased` the row draws no behind chip even when its git status is stale, which is why the chip reads the batch before the status.
+
+A rebase stop in Goodboy never leaves the worktree mid-rebase: `rebaseBranch` replays on a copy, so a conflict stop has no rebase in progress and no unmerged file in the worktree. "No rebase in progress" alone therefore cannot settle a stale `Conflict`. `isRebaseStopSettled` also needs the branch head to have moved past the head the stop recorded (`HistoryStop.head`, `rebaseConflict.head`, the `head` payload of `history_stopped`), or, with no recorded head, the branch to be level with its base. `settleStaleRebases` uses only a git read that started after the record (`readWorktreeStatusRead().readAt`), so a status fetched before the stop cannot clear it. A mock scene that seeds a conflict run must give the run the same head as its worktree status, or the stop settles on mount. The one exception is **Resolve myself**: it starts the rebase in the worktree on purpose and marks the run `rebaseConflict.isHere`, which `settleStaleRebases` leaves alone (like a run handed to Auto), so the panel can still offer **Push** after `git rebase --continue` moved the head.
 
 ## A tool's health has one author
 

@@ -14,7 +14,9 @@ import {
   type PrPageVariant,
 } from '../../../../app/components/MockScene/scenes/u23/prPageSeed';
 import { PrPageScene } from '../../../../app/components/MockScene/scenes/u23/PrPageScene';
+import type { PullRequestState } from '@goodboy/types';
 import { ToastProvider } from '../../../../shared/components/Toast';
+import { applyMountGithub } from '../../../../store/slices/github/mountGithub';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -56,6 +58,26 @@ type Stubs = {
 };
 
 let stubs: Stubs;
+
+type PatchParams = {
+  readonly patch: (pr: PullRequestState) => PullRequestState;
+};
+
+const patchShownPr = ({ patch }: PatchParams): void => {
+  useAppStore.setState((state) => {
+    const mountId = state.sessionProjectMounts[SESSION.id]?.[0]?.mountId;
+    const current = mountId === undefined ? undefined : state.mountGithub[mountId];
+    if (mountId === undefined || current === undefined || current.pr === null) {
+      return state;
+    }
+    return applyMountGithub({
+      state,
+      sessionId: SESSION.id,
+      mountId,
+      github: { ...current, pr: patch(current.pr) },
+    });
+  });
+};
 
 beforeEach(async () => {
   await resetStoryStore();
@@ -199,15 +221,7 @@ describe('the description', () => {
   it('says there is no description and offers to add one', async () => {
     await show();
     act(() => {
-      useAppStore.setState((state) => ({
-        sessionGithub: {
-          ...state.sessionGithub,
-          [SESSION.id]: {
-            ...state.sessionGithub[SESSION.id]!,
-            pr: { ...state.sessionGithub[SESSION.id]!.pr!, body: '' },
-          },
-        },
-      }));
+      patchShownPr({ patch: (pr) => ({ ...pr, body: '' }) });
     });
 
     expect(within(description()).getByText('No description yet')).toBeDefined();
@@ -335,20 +349,8 @@ describe('the Overview grid', () => {
   it('says the readiness in words and the queue of a queued pull request', async () => {
     await show();
     act(() => {
-      useAppStore.setState((state) => {
-        const current = state.sessionGithub[SESSION.id];
-        if (current === undefined || current.pr === null) {
-          return state;
-        }
-        return {
-          sessionGithub: {
-            ...state.sessionGithub,
-            [SESSION.id]: {
-              ...current,
-              pr: { ...current.pr, state: 'queued', isDraft: false, mergeQueue: { position: 3 } },
-            },
-          },
-        };
+      patchShownPr({
+        patch: (pr) => ({ ...pr, state: 'queued', isDraft: false, mergeQueue: { position: 3 } }),
       });
     });
 

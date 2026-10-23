@@ -112,6 +112,7 @@ branch-pr-merge-methods
 branch-pr-merged
 branch-pr-narrow
 branch-pr-none
+branch-pr-rebasing
 branch-pr-scribe-writing
 branch-push
 branch-push-failed
@@ -951,6 +952,8 @@ u26-rebase-all-auto-light
 u26-rebase-all-idle-dark
 u26-rebase-all-running-dark
 u26-rebase-all-running-light
+u26-rebase-all-settled-dark
+u26-rebase-all-settled-light
 u26-rebase-conflict-dark
 u26-rebase-conflict-light
 u26-rebase-picker-dark
@@ -1062,6 +1065,16 @@ u27-reveal-still-dark
 u27-reveal-still-light
 u27-reveal-table-dark
 u27-reveal-table-light
+u27-start-page-after-agent
+u27-start-page-after-agent-form
+u27-start-page-after-auto-agent-form
+u27-start-page-after-auto-picks
+u27-start-page-after-choice
+u27-start-page-after-orchestrated-form
+u27-start-page-after-preset-form
+u27-start-page-after-workflow
+u27-start-page-before-0-27-10
+u27-start-page-before-0-27-11
 update-card
 update-card-long-version
 update-card-narrow

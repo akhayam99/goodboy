@@ -89,6 +89,8 @@ Click a worktree under **Projects** in a session and the session rail steps into
 
 The **Pull request** entry is the pull request. Its properties come first, grouped as state, people and links: the state and number, the base, the checks, and in plain words whether it can merge, such as **Ready to merge** or **Blocked: 2 checks failing**. Rename it, edit the description and ask for reviewers there. **Merge** offers only the ways the host allows, and on GitLab the page uses GitLab's words, such as **Merge request** and **MR !42**.
 
+The page shows the pull request of the branch you opened, even while a rebase runs on it or the session writes to another branch. The form for a new pull request appears only when the host reports none for that branch; an empty or failed answer keeps the one already known.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-dark.webp">
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-pr-page-light.webp" alt="The Pull request tab of the Branch page for hl/fix-duplicate-credit, between the tabs Pull request, Comments, Files 6, Commits 3 and Checks 1, with the state Open #318, the base, Checks 1 failing, Readiness Blocked by lint, reviewers, the linked issue, the description with its Edit button and the Activity list">

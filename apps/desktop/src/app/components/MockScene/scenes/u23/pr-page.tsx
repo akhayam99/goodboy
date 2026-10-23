@@ -9,4 +9,5 @@ export const U23_PR_PAGE_SCENES = {
   'branch-pr-merge-methods': () => <PrPageScene variant="merge-methods" />,
   'branch-pr-narrow': () => <PrPageScene variant="narrow" />,
   'branch-pr-merged': () => <PrPageScene variant="merged" />,
+  'branch-pr-rebasing': () => <PrPageScene variant="rebasing" />,
 };

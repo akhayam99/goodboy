@@ -7,12 +7,14 @@ import { mapBitbucketPrToPullRequestState } from '../../../features/integrations
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
 import type { AppState } from '../../types';
 import { selectBitbucketRequest } from '../bitbucket-pr/selectBitbucketRequest';
+import { branchGithubOf } from '../github/branchGithubOf';
 import type { BitbucketRequest } from '../bitbucket-pr/selectBitbucketRequest';
 import { selectActiveMountId } from '../project-mounts/selectors';
 
 export type RequestState = Pick<
   AppState,
   | 'sessionGithub'
+  | 'mountGithub'
   | 'mountGitlabMr'
   | 'mountBitbucketPr'
   | 'sessions'
@@ -93,7 +95,7 @@ type HostRequest = {
 };
 
 const hostRequestOf = ({ state, sessionId, mountId, prNumber }: Params): HostRequest => {
-  const github = state.sessionGithub?.[sessionId]?.pr ?? null;
+  const github = branchGithubOf({ state, sessionId, mountId })?.pr ?? null;
   if (github !== null) {
     return { host: 'github', pr: github };
   }
