@@ -329,6 +329,27 @@ export const installResolveActions = ({ store }: Params): void => {
       stopFix({ store, sessionId, agentId: attempt.agentId });
     }
   };
+  const settleResolveSourceChange: AppStore['settleResolveSourceChange'] = async ({
+    sessionId,
+    threadId,
+  }) => {
+    store.setState((current) => {
+      const snapshots = current.sessionResolveSourceSnapshots[sessionId] ?? {};
+      const snapshot = snapshots[threadId];
+      if (snapshot === undefined || snapshot.changed === null) {
+        return {};
+      }
+      return {
+        sessionResolveSourceSnapshots: {
+          ...current.sessionResolveSourceSnapshots,
+          [sessionId]: {
+            ...snapshots,
+            [threadId]: { ...snapshot.changed, replyIds: snapshot.replyIds, changed: null },
+          },
+        },
+      };
+    });
+  };
   const preparePublication: AppStore['preparePublication'] = async ({ sessionId, threadIds }) => {
     const preview = demoPublicationPreview({ state: store.getState(), sessionId, threadIds });
     store.setState((current) => ({
@@ -350,6 +371,7 @@ export const installResolveActions = ({ store }: Params): void => {
     reopenResolveQueueItem,
     deferResolveQueueItem,
     takeUpResolveQueueItem,
+    settleResolveSourceChange,
     spawnAgent,
     createResolveBatch,
     setAgentConfig,

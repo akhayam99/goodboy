@@ -400,7 +400,8 @@ the real store only as their simulated step lands: run steps
 (`runActions.ts`), Auto start, approval, stop and retry (`autoTimeline.ts`),
 board cards (`installBoardActions.ts`), plan comments, diff notes, pins, Stop,
 report and wireframe runs that always save a sample artifact (`installDemoWorld.ts`), review comment fixes from working to a
-drafted reply that stays ready to publish (`installResolveActions.ts`), and the
+drafted reply that stays ready to publish, and Keep the draft on an edited
+comment, which clears the change in place (`installResolveActions.ts`), and the
 limits handoff, where Claude hits its usage limit and Codex finishes the same
 brief (`limitsTimeline.ts`). Push and publish first preview the approved fixes
 and drafted replies from the simulated store (`demoPublicationPreview.ts`), then
