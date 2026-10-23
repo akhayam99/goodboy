@@ -5,6 +5,7 @@ import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 import { RUNNING_CHECKOUT_RETRY } from '../../scenes/BoardScene';
 import type { DemoTimeline, TimelineParams } from './directorTypes';
 import { travelCard } from './travelCard';
+import { installBoardActions } from './installBoardActions';
 
 const MOVE_MS = 2600;
 
@@ -21,6 +22,7 @@ export const boardTimeline = ({ state }: TimelineParams): DemoTimeline | null =>
     return null;
   }
   return {
+    setup: installBoardActions,
     prepare: () => undefined,
     cues: [
       {
