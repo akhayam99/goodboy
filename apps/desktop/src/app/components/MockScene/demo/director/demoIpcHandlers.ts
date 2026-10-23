@@ -3,6 +3,7 @@ import { DEMO_EXIT_NOTICES, DEMO_HOST_NOTICE } from './demoExitNotices';
 import { showDemoNotice } from './showDemoNotice';
 import { recordDemoMiss } from './recordDemoMiss';
 import { isEmptyRead } from './isEmptyRead';
+import { APP_VERSION } from '../../../../../shared/lib/appVersion';
 
 export type DemoIpcArgs = Readonly<Record<string, unknown>> | undefined;
 
@@ -38,6 +39,19 @@ const statementsOf = (args: DemoIpcArgs): ReadonlyArray<SqlArgs> => {
 
 const executeOf = (statement: SqlArgs) =>
   settings.execute(statement) ?? { rowsAffected: 1, rows: [] };
+
+const EMPTY_LISTS: ReadonlyArray<string> = [
+  'detect_editors',
+  'detect_browsers',
+  'explore_list',
+  'process_ledger_list',
+  'project_scripts_scan',
+  'monitor_watched_ports',
+  'terminal_list_live',
+  'budget_rule_list',
+  'budget_alerts_list',
+  'step_def_list',
+];
 
 const SHELL_DONE = { stdout: '', stderr: '', exitCode: 0 };
 const SHELL_COMMANDS: ReadonlySet<string> = new Set(['git_push', 'git_push_with_lease']);
@@ -105,6 +119,26 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
       results: statementsOf(args).map(executeOf),
     }),
   ],
+  [
+    'check_provider_budget',
+    () => ({
+      remainingUsd: null,
+      pct: 0,
+      exceeded: false,
+      overThreshold: false,
+      spentUsd: 0,
+      capUsd: null,
+      thresholdPct: null,
+      windowStartMs: 0,
+      windowEndMs: 0,
+    }),
+  ],
+  ['session_budget_get', () => null],
+  ...EMPTY_LISTS.map((command): readonly [string, Handler] => [command, () => []]),
+  ['gh_status', () => ({ available: true, mode: 'gh-cli', scopes: [] })],
+  ['app_platform', () => ({ os: 'macos', osVersion: null, arch: 'aarch64', buildSha: null })],
+  ['plugin:app|version', () => APP_VERSION],
+  ['scratch_dir_prepare', () => '/mock/scratch'],
   ['plugin:event|listen', (args) => args?.handler ?? 0],
   ['plugin:event|unlisten', () => null],
   ['plugin:event|emit', () => null],

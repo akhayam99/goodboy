@@ -86,6 +86,7 @@ export const installRunActions = ({ store }: Params): void => {
       store,
       cues: runStepCues({ sessionId, agentId, runId, role: roleOf({ kind: agent.kind }) }),
       now: () => nowIso({}),
+      agentId,
     });
   };
   store.setState({ activateWorkflowAgent });

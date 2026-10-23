@@ -7,6 +7,7 @@ import { runFlowTimeline } from './runFlowTimeline';
 import { worldTimeline } from './worldTimeline';
 import { resolveTimeline } from './resolveTimeline';
 import { resolveWorkingTimeline } from './resolveWorkingTimeline';
+import { limitsTimeline } from './limitsTimeline';
 
 export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => DemoTimeline | null> =
   new Map([
@@ -23,6 +24,7 @@ export const DEMO_TIMELINES: ReadonlyMap<string, (params: TimelineParams) => Dem
     ['artifacts-lens-shell', worldTimeline],
     ['artifact-report', worldTimeline],
     ['brand-diff', worldTimeline],
+    ['brand-limits', limitsTimeline],
     ['resolve-queue-shell', resolveTimeline],
     ['resolve-fix-working', resolveWorkingTimeline],
     ['resolve-fix-ready', resolveTimeline],
