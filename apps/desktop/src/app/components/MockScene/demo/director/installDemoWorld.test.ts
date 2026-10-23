@@ -160,9 +160,12 @@ describe('artifact runs in the demo', () => {
   it('saves a sample wireframe even when the scene seeded none', async () => {
     seed();
     expect(store.getState().sessionArtifacts[session.id] ?? []).toEqual([]);
-    const agentId = await store
-      .getState()
-      .spawnWireframeAgent({ sessionId: session.id, brief: 'Sketch the deliveries screen.' });
+    const agentId = await store.getState().spawnWireframeAgent({
+      sessionId: session.id,
+      fidelity: 'low',
+      attachments: [],
+      brief: 'Sketch the deliveries screen.',
+    });
     vi.advanceTimersByTime(20000);
     const saved = (store.getState().sessionArtifacts[session.id] ?? []).filter(
       (artifact) => artifact.kind === 'wireframe' && artifact.agentId === agentId,
