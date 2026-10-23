@@ -48,7 +48,10 @@ There are two targets, both attached to the same draft release:
 - Publishing the draft triggers `.github/workflows/homebrew.yml`, which bumps
   the cask in the tap.
 - The squash merge of the release PR on `main` redeploys `demo.goodboy-ai.dev`
-  from Vercel; no other commit on `main` does. The rule and the project
+  from Vercel; no other commit on `main` does, so a broken demo ships with the
+  release. Whoever cuts the release checks the demo against the new version
+  before that commit, as step 2 of
+  [release-command.md](release-command.md) lists. The rule and the project
   settings are in [mock-screenshots.md](mock-screenshots.md#published-demo).
 
 ## Cargo cache
