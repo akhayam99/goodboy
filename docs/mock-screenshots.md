@@ -399,7 +399,9 @@ board cards (`installBoardActions.ts`), plan comments, diff notes, pins, Stop,
 report runs (`installDemoWorld.ts`), review comment fixes from working to a
 drafted reply that stays ready to publish (`installResolveActions.ts`), and the
 limits handoff, where Claude hits its usage limit and Codex finishes the same
-brief (`limitsTimeline.ts`). Publishing a reply never leaves the page. `&theme=dark`
+brief (`limitsTimeline.ts`). Push and publish first preview the approved fixes
+and drafted replies from the simulated store (`demoPublicationPreview.ts`), then
+say that publishing stays local, so a reply never leaves the page. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
 
