@@ -92,6 +92,10 @@ Start at the [documentation index](./docs/README.md). From there:
 [<img src=".github/contributor-teckperry.png" width="56" height="56" alt="Luca Laudiero">](https://github.com/teckperry)
 &nbsp;
 [<img src=".github/contributor-lucapav01.png" width="56" height="56" alt="LucaPav01">](https://github.com/LucaPav01)
+&nbsp;
+[<img src=".github/contributor-samux01.png" width="56" height="56" alt="Samuele">](https://github.com/Samux01)
+&nbsp;
+[<img src=".github/contributor-stefanozanini.png" width="56" height="56" alt="Stefano Zanini">](https://github.com/stefanozanini)
 
 <br>
 
