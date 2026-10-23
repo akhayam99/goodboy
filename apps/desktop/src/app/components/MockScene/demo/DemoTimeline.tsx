@@ -1,7 +1,7 @@
 import { ArrowRight, ChevronLeft, Pause, Play, RotateCcw, Undo2 } from 'lucide-react';
 import { Button, ICON_SIZE, IconButton } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
-import type { BeatPlayer } from './useBeatPlayer';
+import type { BeatFill, BeatPlayer } from './useBeatPlayer';
 import { DemoBeatSegment } from './DemoBeatSegment';
 
 type Props = {
@@ -13,6 +13,8 @@ type Props = {
   readonly onNext: () => void;
   readonly onRestart: () => void;
 };
+
+const IDLE_FILL: BeatFill = { totalMs: 0, startMs: 0 };
 
 type BeatStateParams = {
   readonly index: number;
@@ -67,7 +69,7 @@ export const DemoTimeline = ({
             beat={beat}
             state={beatState({ index, current: player.beatIndex })}
             isRunning={player.isRunning && index === player.beatIndex}
-            isPending={player.isPlaying && index === player.beatIndex}
+            fill={index === player.beatIndex ? player.fill : IDLE_FILL}
             runKey={player.runKey}
             onSelect={() => player.goTo({ index })}
           />

@@ -16,7 +16,7 @@ type Props = {
 const GROUP_ORDER: ReadonlyArray<DemoChapterGroup> = ['setup', 'flows'];
 
 export const DemoRail = ({ chapters, activeId, visitedIds, onSelect }: Props) => (
-  <nav aria-label="Chapters" className="hidden w-80 shrink-0 flex-col lg:flex">
+  <nav aria-label="Chapters" className="hidden w-64 shrink-0 flex-col lg:flex">
     <ScrollFade className="min-h-0 flex-1" viewportClassName="flex flex-col gap-6 p-4" edge="line">
       {GROUP_ORDER.map((group) => (
         <section key={group} className="flex flex-col gap-2">
