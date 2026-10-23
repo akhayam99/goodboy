@@ -8,7 +8,7 @@ import type {
 import type { AppStore } from '../../../../../store/store';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import type { DirectorStore } from './directorTypes';
-import { scheduleCues } from './scheduleCues';
+import { demoRuns } from './demoRunRegistry';
 
 type Params = {
   readonly store: DirectorStore;
@@ -19,8 +19,6 @@ type PatchParams = {
   readonly sessionId: SessionId;
   readonly patch: (comments: ReadonlyArray<ArtifactComment>) => ReadonlyArray<ArtifactComment>;
 };
-
-const ADDRESS_MS = 3200;
 
 const patchComments = ({ store, sessionId, patch }: PatchParams): void => {
   store.setState((state) => ({
@@ -131,23 +129,23 @@ export const installArtifactComments = ({ store }: Params): void => {
     putSending({ store, artifactId: plan.id, isSending: true });
     patchComments({ store, sessionId, patch: withStatus({ ids, status: 'sent', at: nowIso({}) }) });
     const content = drafts.map((comment) => comment.body).join('\n');
-    await store.getState().sendTurn({ sessionId, agentId: plan.agentId, content });
-    scheduleCues({
-      store,
-      now: () => nowIso({}),
-      cues: [
-        {
-          atMs: ADDRESS_MS,
-          apply: ({ at }) => {
-            patchComments({
-              store,
-              sessionId,
-              patch: withStatus({ ids, status: 'addressed', at }),
-            });
-            putSending({ store, artifactId: plan.id, isSending: false });
-          },
-        },
-      ],
+    const generation = demoRuns.generation();
+    await store.getState().sendTurn({
+      sessionId,
+      agentId: plan.agentId,
+      content,
+      onSettled: ({ hasFailed, wasCancelled }) => {
+        if (!demoRuns.isCurrent({ generation })) {
+          return;
+        }
+        const isAddressed = !hasFailed && !wasCancelled;
+        patchComments({
+          store,
+          sessionId,
+          patch: withStatus({ ids, status: isAddressed ? 'addressed' : 'draft', at: nowIso({}) }),
+        });
+        putSending({ store, artifactId: plan.id, isSending: false });
+      },
     });
     return { kind: 'unchanged' };
   };

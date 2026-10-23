@@ -55,16 +55,21 @@ type RunParams = {
   readonly runId: ProviderRunId;
 };
 
-type StreamParams = RunParams & {
-  readonly untrack: () => void;
+type SettleParams = {
+  readonly wasCancelled: boolean;
 };
 
-type StartParams = RunParams & {
+type StreamParams = RunParams & {
+  readonly untrack: () => void;
+  readonly settle: (params: SettleParams) => void;
+};
+
+type StartParams = StreamParams & {
   readonly content: string;
 };
 
 export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs }: Params) => {
-  const stream = ({ sessionId, agentId, runId, untrack }: StreamParams): void => {
+  const stream = ({ sessionId, agentId, runId, untrack, settle }: StreamParams): void => {
     const sentences = sentencesOf({ text: reply });
     sentences.forEach((delta, index) => {
       runs.later({
@@ -93,10 +98,11 @@ export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs 
           runId,
           onIdle: () => finishAgentTurn({ store, sessionId, agentId, at, isViewed: true }),
         });
+        settle({ wasCancelled: false });
       },
     });
   };
-  const start = ({ sessionId, agentId, runId, content }: StartParams): void => {
+  const start = ({ sessionId, agentId, runId, content, untrack, settle }: StartParams): void => {
     const at = now();
     appendTurnEvents({
       store,
@@ -104,14 +110,14 @@ export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs 
       events: [{ kind: 'user_text', runId, text: content, at }],
     });
     startAgentTurn({ store, sessionId, agentId, runId, at });
-    const untrack = demoRuns.track({ agentId, cancel: () => runs.cancelAgent({ agentId }) });
-    stream({ sessionId, agentId, runId, untrack });
+    stream({ sessionId, agentId, runId, untrack, settle });
   };
   return async ({
     sessionId,
     agentId: requested,
     content,
     onStarted,
+    onSettled,
   }: SendTurnInput): Promise<SendTurnResult> => {
     const agentId = agentOf({ store, sessionId, requested });
     if (agentId === null) {
@@ -125,10 +131,26 @@ export const createSimulatedSend = ({ store, reply, now, shouldClearDraft, runs 
         ),
       }));
     }
+    const settle = ({ wasCancelled }: SettleParams): void => {
+      onSettled?.({
+        runId,
+        assistantText: wasCancelled ? '' : reply,
+        hasFailed: false,
+        wasCancelled,
+        filesTouched: [],
+      });
+    };
+    const untrack = demoRuns.track({
+      agentId,
+      cancel: () => {
+        runs.cancelAgent({ agentId });
+        settle({ wasCancelled: true });
+      },
+    });
     runs.enqueue({
       agentId,
       runId,
-      start: () => start({ sessionId, agentId, runId, content }),
+      start: () => start({ sessionId, agentId, runId, content, untrack, settle }),
     });
     onStarted?.();
     return { blockedOverBudget: false };
