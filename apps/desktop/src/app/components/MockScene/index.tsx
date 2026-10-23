@@ -13,6 +13,7 @@ import { MOCK_SCENES } from './registry';
 import { UnknownScene } from './UnknownScene';
 import { quietSceneRepoCheck } from './scenes/quietSceneRepoCheck';
 import { DemoDirector } from './demo/DemoDirector';
+import { installDemoIpc } from './demo/director/installDemoIpc';
 
 export { MOCK_SCENES } from './registry';
 
@@ -29,6 +30,10 @@ export const MockScene = () => {
   const params = new URLSearchParams(window.location.search);
   const sceneName = params.get('scene') ?? DEFAULT_SCENE;
   const Scene = MOCK_SCENES[sceneName];
+
+  if (params.has('director')) {
+    installDemoIpc();
+  }
 
   if (params.get('brand') === '1') {
     finishOnboarding();
