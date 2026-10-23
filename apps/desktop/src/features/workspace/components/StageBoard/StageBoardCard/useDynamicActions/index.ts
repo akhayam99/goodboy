@@ -219,7 +219,7 @@ export const useDynamicActions = (
         icon: MessageSquare,
         tone: 'primary',
         label: 'unread reply',
-        onClick: () => nav.openAgent(session),
+        onClick: () => nav.openUnreadReply(session),
       });
     }
     return actions;

@@ -1132,7 +1132,8 @@ Closed: the stage line already says In review), the linked task chips, one chip
 per project, the
 agent count, the spend and the age, and one ghost action, **Open what needs
 you**, when the session needs you. That action lands where the palette's Needs
-you rows land (`attentionPlace`). Moving to another row swaps the card at once, with no second
+you rows land (`attentionPlace`), and so does the board card's **unread reply** button
+(`openUnreadReply`): the latest agent with an unread reply, never the first agent. Moving to another row swaps the card at once, with no second
 wait. Esc and opening a session close it, and the pointer may move onto the
 card. The row, the card and the board card all read `useSessionSummary`, so they
 say the same things in the same words. The board card keeps one signal and
