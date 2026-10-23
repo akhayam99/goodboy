@@ -42,8 +42,8 @@ type ShaParams = {
 const shaOf = ({ index }: ShaParams): string =>
   `${(index + 1).toString(16)}c4e2a9f07d1b8365e0f4a2c9d7b1e3f5a8c0d2e`.slice(0, 40);
 
-export const resolveWorkingTimeline = (params: TimelineParams): DemoTimeline => {
-  const target = targetOf({ state: params.state });
+export const resolveWorkingTimeline = ({ state }: TimelineParams): DemoTimeline => {
+  const target = targetOf({ state });
   if (target === null) {
     return { setup: installResolveActions, prepare: () => undefined, cues: [] };
   }

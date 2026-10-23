@@ -178,6 +178,12 @@ const refusePublish = (): never => {
   throw new ReportedError(PUBLISH_NOTICE);
 };
 
+type PatchItemParams = {
+  readonly sessionId: SessionId;
+  readonly itemId: string;
+  readonly change: (entry: ResolveQueueItemWithThread) => ResolveQueueItemWithThread;
+};
+
 const RESOLVE_ANSWERS: Readonly<Record<string, unknown>> = {
   worktree_diff: FAKE_RETRY_DIFF,
 };
@@ -243,15 +249,7 @@ export const installResolveActions = ({ store }: Params): void => {
     }));
     return { acceptedCount: threadIds.length, failures: [] };
   };
-  const patchItem = ({
-    sessionId,
-    itemId,
-    change,
-  }: {
-    readonly sessionId: SessionId;
-    readonly itemId: string;
-    readonly change: (entry: ResolveQueueItemWithThread) => ResolveQueueItemWithThread;
-  }): void => {
+  const patchItem = ({ sessionId, itemId, change }: PatchItemParams): void => {
     store.setState((current) => ({
       sessionResolveQueueItems: {
         ...current.sessionResolveQueueItems,

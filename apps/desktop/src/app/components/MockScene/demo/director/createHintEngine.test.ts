@@ -101,6 +101,10 @@ type EngineParams = {
   readonly hints: ReadonlyArray<DemoHint>;
 };
 
+type GenerationParams = {
+  readonly next: number;
+};
+
 const engineFor = ({ hints }: EngineParams) => {
   const reports: DemoHintReport[] = [];
   let generation = 0;
@@ -118,7 +122,7 @@ const engineFor = ({ hints }: EngineParams) => {
     reports.flatMap((report) => (report.type === 'tried' ? [report.hintId] : []));
   const places = (): ReadonlyArray<string> =>
     reports.flatMap((report) => (report.type === 'place' ? [report.place] : []));
-  const setGeneration = (next: number) => {
+  const setGeneration = ({ next }: GenerationParams) => {
     generation = next;
   };
   return { engine, reports, shown, tried, places, setGeneration };
@@ -250,7 +254,7 @@ describe('the hint engine', () => {
       ?.setAttribute('aria-expanded', 'true');
     await frame();
     expect(tried()).toEqual(['agent-files']);
-    setGeneration(1);
+    setGeneration({ next: 1 });
     document
       .querySelector('button[aria-label^="Operations"]')
       ?.setAttribute('aria-expanded', 'false');
