@@ -84,6 +84,26 @@ describe('onboarding scene', () => {
     expect(connected).toEqual([]);
   });
 
+  it('connects Linear with a mock account and asks for no key', async () => {
+    await mount({ query: '&step=tools' });
+    await act(() => new Promise((resolve) => setTimeout(resolve, SCENE_OPEN_MS)));
+    expect(shownStep()).toBe('tools');
+
+    fireEvent.click(await enabledButton({ name: 'Connect Linear' }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Connect Linear' })).toBeNull(),
+    );
+    expect(screen.queryByRole('textbox')).toBeNull();
+    const state = useAppStore.getState();
+    const workspaceId = state.currentWorkspaceId;
+    expect(
+      (workspaceId === null ? [] : (state.workspaceIntegrations[workspaceId] ?? [])).map(
+        (binding) => binding.provider,
+      ),
+    ).toEqual(['linear']);
+  });
+
   it('falls back to Welcome on an old numbered step', async () => {
     await mount({ query: '&step=1' });
 

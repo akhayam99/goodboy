@@ -5,6 +5,7 @@ import {
   GithubIcon,
   ICON_SIZE,
   IconButton,
+  Input,
   ScrollFade,
   buttonClasses,
   chipClasses,
@@ -47,6 +48,7 @@ const readNoun = () => {
 const STATUS_COPY = {
   shared: 'Link shared',
   copied: 'Link copied',
+  failed: 'Copying did not work. Select the link to copy it yourself.',
 } as const satisfies Record<Exclude<HandoffState, 'idle'>, string>;
 
 type IconParams = {
@@ -55,7 +57,7 @@ type IconParams = {
 };
 
 const handoffIcon = ({ state, canShare }: IconParams): LucideIcon => {
-  if (state !== 'idle') {
+  if (state === 'shared' || state === 'copied') {
     return Check;
   }
   return canShare ? Share : Link2;
@@ -71,6 +73,7 @@ export const DemoPhone = () => {
     text: `Open the Goodboy demo on your ${noun}.`,
   });
   const isDark = theme === 'dark';
+  const hasFailed = state === 'failed';
   const HandoffIcon = handoffIcon({ state, canShare });
   const helper = canShare
     ? `Share the link to open it on your ${noun}.`
@@ -134,11 +137,21 @@ export const DemoPhone = () => {
               className={cn(buttonClasses({ variant: 'secondary', size: 'md' }), TOUCH_BUTTON)}
             >
               <HandoffIcon size={ICON_SIZE.control} aria-hidden />
-              Open on your {noun}
+              {hasFailed ? 'Try again' : `Open on your ${noun}`}
             </button>
             <p role="status" className="text-center text-ui text-muted-foreground">
               {state === 'idle' ? helper : STATUS_COPY[state]}
             </p>
+            {hasFailed ? (
+              <Input
+                readOnly
+                size="md"
+                aria-label="Demo link"
+                value={url}
+                onFocus={(event) => event.currentTarget.select()}
+                className="h-11 text-center"
+              />
+            ) : null}
           </div>
           <section aria-labelledby="demo-phone-groups" className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">

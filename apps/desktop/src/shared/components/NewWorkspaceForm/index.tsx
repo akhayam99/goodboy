@@ -87,7 +87,7 @@ export const NewWorkspaceForm = ({
   const draft = useWorkspaceDraft({ mode, workspaceId, start, onCreated });
   const reasonId = useId();
   const copy = copyOf({ mode, targetName: mode === 'add' ? draft.name : '' });
-  const isReading = draft.readingPath !== null;
+  const isReading = draft.readingPath !== null || draft.isPicking;
   const isBusy = isReading || draft.isCreating;
   const isAdding = mode === 'add';
   const isOpenStage = draft.stage === 'folders' || draft.stage === 'scratch';

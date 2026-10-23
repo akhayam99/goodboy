@@ -22,6 +22,7 @@ type DeferredCopy = {
 const PHONE_QUERY = '(hover: none) and (pointer: coarse)';
 const COPY_HELPER = 'Copy the link to open it on your Mac.';
 const SHARE_HELPER = 'Share the link to open it on your Mac.';
+const FAILED_STATUS = 'Copying did not work. Select the link to copy it yourself.';
 
 const stubPointer = ({ isCoarse }: PointerParams) => {
   vi.stubGlobal(
@@ -172,9 +173,13 @@ describe('demo phone page', () => {
     expect(status()).toBe('Link copied');
   });
 
-  it('leaves a neutral state when the copy fails', async () => {
+  it('shows the link to select and Try again when the copy fails, and recovers on retry', async () => {
     const copy = deferred();
-    setNavigator({ key: 'clipboard', value: { writeText: vi.fn(() => copy.promise) } });
+    const writeText = vi
+      .fn()
+      .mockReturnValueOnce(copy.promise)
+      .mockReturnValueOnce(Promise.resolve());
+    setNavigator({ key: 'clipboard', value: { writeText } });
     render(<DemoPhone />);
 
     pressHandoff();
@@ -182,8 +187,34 @@ describe('demo phone page', () => {
     await flush();
     await flush();
 
-    expect(status()).toBe(COPY_HELPER);
-    expect(screen.queryByText('Link copied')).toBeNull();
+    expect(status()).toBe(FAILED_STATUS);
+    const link = screen.getByRole<HTMLInputElement>('textbox', { name: 'Demo link' });
+    expect(link.value).toBe(PHONE_LINKS.demo);
+    expect(link.readOnly).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: /Try again/ }));
+    await flush();
+
+    expect(status()).toBe('Link copied');
+    expect(screen.queryByRole('textbox', { name: 'Demo link' })).toBeNull();
+  });
+
+  it('keeps a cancelled share neutral even after a failure', async () => {
+    const share = vi
+      .fn()
+      .mockImplementationOnce(() => Promise.reject(new Error('blocked')))
+      .mockImplementationOnce(() => Promise.reject(new DOMException('cancelled', 'AbortError')));
+    setNavigator({ key: 'share', value: share });
+    render(<DemoPhone />);
+
+    pressHandoff();
+    await flush();
+    await flush();
+    expect(status()).toBe(FAILED_STATUS);
+    fireEvent.click(screen.getByRole('button', { name: /Try again/ }));
+    await flush();
+    await flush();
+
+    expect(status()).toBe(SHARE_HELPER);
   });
 
   it('keeps only the latest answer when the visitor presses twice', async () => {
@@ -203,6 +234,6 @@ describe('demo phone page', () => {
     first.resolve();
     await flush();
 
-    expect(status()).toBe(COPY_HELPER);
+    expect(status()).toBe(FAILED_STATUS);
   });
 });

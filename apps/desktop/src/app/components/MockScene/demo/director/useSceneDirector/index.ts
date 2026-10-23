@@ -5,6 +5,7 @@ import { createPlaybackClock } from '../createPlaybackClock';
 import { createSceneDirector, type SceneDirector } from '../createSceneDirector';
 import { createSimulatedSend } from '../createSimulatedSend';
 import { createSimulatedAnswer } from '../createSimulatedAnswer';
+import { createReplyRuns } from '../createReplyRuns';
 import { createHintEngine, type HintEngine } from '../createHintEngine';
 import { DEMO_CHAPTERS } from '../../demoChapters';
 import { DEMO_TIMELINES } from '../demoTimelines';
@@ -58,6 +59,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
     let director: SceneDirector | null = null;
     let hints: HintEngine | null = null;
     let isDisposed = false;
+    const runs = createReplyRuns();
     const isStandalone = window.parent === window;
 
     const boot = async (): Promise<void> => {
@@ -74,6 +76,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
           reply: timeline.reply ?? GENERIC_REPLY,
           now,
           shouldClearDraft: true,
+          runs,
         }),
         answerOpenQuestions: createSimulatedAnswer({
           store,
@@ -82,6 +85,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
             reply: timeline.answerReply ?? GENERIC_ANSWER_REPLY,
             now,
             shouldClearDraft: false,
+            runs,
           }),
           now,
         }),
@@ -134,6 +138,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       const command = event.data;
       if (command.type === 'restart') {
         if (command.generation > director.generation()) {
+          runs.cancel();
           director.restart({ generation: command.generation });
           hints?.reset();
         }
@@ -163,6 +168,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
     void boot();
     return () => {
       isDisposed = true;
+      runs.dispose();
       director?.dispose();
       hints?.dispose();
       window.removeEventListener('message', onMessage);

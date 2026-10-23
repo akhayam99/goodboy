@@ -10,9 +10,12 @@ import { useAppStore } from '../../../../../store';
 import type { StartSessionFromDraftParams } from '../../../../../store/slices/sessionDraft/startSessionFromDraft';
 import { nowIso } from '../../../../../store/slices/project-mounts/nowIso';
 import { draftGoalText } from '../../../../../store/slices/sessionDraft/draftGoalText';
+import { applyAgentTurnState } from '../../../../../store/slices/sessions/sessionMutators';
 import { appendTurnEvents } from '../../demo/director/appendTurnEvents';
 import { finishAgentTurn } from '../../demo/director/finishAgentTurn';
+import { patchAgent } from '../../demo/director/patchAgent';
 import { startAgentTurn } from '../../demo/director/startAgentTurn';
+import { sampleScoutRuns } from './sampleScoutRuns';
 import { seedShellChrome } from '../shellChrome';
 import { sampleScoutReply } from './sampleScoutReply';
 
@@ -53,24 +56,55 @@ const streamReply = ({ sessionId, agentId, runId, reply }: StreamParams): void =
   const store = useAppStore;
   const sentences = sentencesOf({ text: reply });
   sentences.forEach((delta, index) => {
-    window.setTimeout(
-      () => {
+    sampleScoutRuns.later({
+      agentId,
+      runId,
+      delayMs: THINK_MS + index * SENTENCE_MS,
+      run: () => {
         appendTurnEvents({
           store,
           agentId,
           events: [{ kind: 'assistant_text', runId, delta, at: nowIso({}) }],
         });
       },
-      THINK_MS + index * SENTENCE_MS,
-    );
+    });
   });
-  window.setTimeout(
-    () => {
+  sampleScoutRuns.later({
+    agentId,
+    runId,
+    delayMs: THINK_MS + sentences.length * SENTENCE_MS + DONE_MS,
+    run: () => {
       const at = nowIso({});
       appendTurnEvents({ store, agentId, events: [{ kind: 'done', runId, at }] });
-      finishAgentTurn({ store, sessionId, agentId, at, isViewed: true });
+      sampleScoutRuns.finish({
+        agentId,
+        runId,
+        onIdle: () => finishAgentTurn({ store, sessionId, agentId, at, isViewed: true }),
+      });
     },
-    THINK_MS + sentences.length * SENTENCE_MS + DONE_MS,
+  });
+};
+
+type StopParams = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+};
+
+const stopScout = ({ sessionId, agentId }: StopParams): void => {
+  sampleScoutRuns.cancel();
+  const at = nowIso({});
+  patchAgent({
+    store: useAppStore,
+    sessionId,
+    agentId,
+    patch: { status: 'stopped', stoppedAt: at, stoppedBy: 'you' },
+  });
+  applyAgentTurnState(
+    useAppStore.setState,
+    sessionId,
+    agentId,
+    { kind: 'idle', lastActivityAt: at },
+    at,
   );
 };
 
@@ -96,6 +130,7 @@ export const startSampleScout = async ({
   workspaceId,
   start,
 }: StartSessionFromDraftParams): Promise<Session> => {
+  sampleScoutRuns.cancel();
   const state = useAppStore.getState();
   const focus = focusOf({ start }).trim();
   const projectId = state.sessionDrafts[workspaceId]?.projectIds[0] ?? null;
@@ -104,7 +139,7 @@ export const startSampleScout = async ({
   const at = nowIso({});
   const sessionId = brandId<SessionId>({ value: `sample-session-${crypto.randomUUID()}` });
   const agentId = brandId<AgentId>({ value: `sample-agent-${crypto.randomUUID()}` });
-  const runId = brandId<ProviderRunId>({ value: `sample-run-${crypto.randomUUID()}` });
+  const runId = sampleScoutRuns.nextRunId({ agentId });
   const session: Session = {
     id: sessionId,
     workspaceId,
@@ -150,15 +185,27 @@ export const startSampleScout = async ({
     loadAgentTranscript: async () => undefined,
     markAgentViewed: async () => undefined,
     recordSessionEvent: async () => undefined,
+    cancelCurrentTurn: async (targetSessionId) => {
+      if (targetSessionId !== sessionId) {
+        return;
+      }
+      stopScout({ sessionId, agentId });
+    },
   });
-  appendTurnEvents({
-    store: useAppStore,
+  sampleScoutRuns.enqueue({
     agentId,
-    events: [
-      { kind: 'user_text', runId, text: focus, provider: 'anthropic', model: SCOUT_MODEL, at },
-    ],
+    runId,
+    start: () => {
+      appendTurnEvents({
+        store: useAppStore,
+        agentId,
+        events: [
+          { kind: 'user_text', runId, text: focus, provider: 'anthropic', model: SCOUT_MODEL, at },
+        ],
+      });
+      startAgentTurn({ store: useAppStore, sessionId, agentId, runId, at });
+      streamReply({ sessionId, agentId, runId, reply: sampleScoutReply({ focus, folder }) });
+    },
   });
-  startAgentTurn({ store: useAppStore, sessionId, agentId, runId, at });
-  streamReply({ sessionId, agentId, runId, reply: sampleScoutReply({ focus, folder }) });
   return session;
 };
