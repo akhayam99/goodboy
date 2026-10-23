@@ -66,10 +66,10 @@ describe('the demo IPC boundary', () => {
 
   it('parks an unknown read and answers it once a scene registers', async () => {
     const { invoke } = internals();
-    const pending = invoke('demo_test_status', {});
+    const pending = invoke('read_folder_signals', {});
     expect(await settled({ promise: pending })).toBe('PARKED');
     Reflect.set(Reflect.get(window, '__TAURI_INTERNALS__'), 'invoke', async (command: string) =>
-      command === 'demo_test_status' ? { ok: true } : undefined,
+      command === 'read_folder_signals' ? { ok: true } : undefined,
     );
     await expect(pending).resolves.toEqual({ ok: true });
   });
