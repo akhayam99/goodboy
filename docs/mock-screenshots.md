@@ -68,6 +68,16 @@ dev. Preview with `pnpm --dir apps/desktop exec vite preview --outDir dist-demo 
 and open `http://localhost:5194/` for the playground, or
 `http://localhost:5194/?scene=chat-shell` for a single frame.
 
+A phone never gets the playground. When the pointer is coarse and nothing
+hovers (`(hover: none) and (pointer: coarse)`, never a width), `main.tsx`
+lazy-loads `MockScene/demo/phone/DemoPhone` instead of `MockScene`, so no
+scene chunk and no iframe loads. The page says what Goodboy is, stars the
+repository and hands the canonical demo link (with a valid chapter hash) to
+the Web Share API, or copies it and confirms only once the clipboard
+resolves. A tablet with a trackpad reports a fine pointer and gets the
+playground. `shouldOpenDemoPhone.ts` owns the rule and `DemoPhone.test.tsx`
+pins it.
+
 Keep source maps off for public output. The eager registry in `MockScene/registry/index.ts` bundles
 every scene fixture, not only the playground's, so every fixture is public:
 paths are `~/code/<mock company>/<repo>` (never `/Users/` or `/home/`), email
