@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppTopBar } from '../../AppTopBar';
 import { ShellLeft } from '../../SideColumn/ShellLeft';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
 import { useAppStore, useCurrentSession, useSessions } from '../../../../store';
-import { KeepAliveWorkSurface } from '../../KeepAliveWorkSurface';
-import { SessionFrame } from '../../SessionRail/SessionFrame';
 import { isDirectedScene } from '../demo/director/isDirectedScene';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
@@ -15,6 +13,10 @@ import { shellArrangement } from '../../../shellArrangement';
 import { useSceneShell } from './useSceneShell';
 
 const noop = () => undefined;
+
+const BoardSessionView = lazy(() =>
+  import('./BoardSessionView').then((module) => ({ default: module.BoardSessionView })),
+);
 
 const seedBoardChrome = (): void => {
   useAppStore.setState({
@@ -55,7 +57,8 @@ export const BoardShellScene = () => {
 
 const BoardShellSceneContent = () => {
   const sessions = useSessions();
-  const currentSession = useCurrentSession();
+  const current = useCurrentSession();
+  const currentSession = isDirectedScene() ? current : null;
   const arrangement = shellArrangement({
     hasWorkspace: true,
     isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
@@ -92,9 +95,9 @@ const BoardShellSceneContent = () => {
           currentSession === null ? (
             <StageBoard workspaceId={WORKSPACE_ID} sessions={sessions} />
           ) : (
-            <SessionFrame session={currentSession}>
-              <KeepAliveWorkSurface sessionId={currentSession.id} isActive />
-            </SessionFrame>
+            <Suspense fallback={null}>
+              <BoardSessionView session={currentSession} />
+            </Suspense>
           )
         }
       />
