@@ -17,7 +17,7 @@ import { scheduleCues } from './scheduleCues';
 import { startAgentTurn } from './startAgentTurn';
 import { textCues } from './textCues';
 import { textCuesEndMs } from './textCuesEndMs';
-import { stopDemoRuns } from './demoRunRegistry';
+import { demoRuns } from './demoRunRegistry';
 import { registerTreeStopPort } from '../../../../../features/auto/treeStopPort';
 import { registerTreeRetryPort } from '../../../../../features/auto/treeRetryPort';
 
@@ -221,7 +221,7 @@ const installAutoActions = ({ store }: FlowParams): void => {
   };
   registerTreeStopPort({
     port: async () => {
-      stopDemoRuns({ agentId: AUTO_ROOT_ID });
+      demoRuns.stop({ agentId: AUTO_ROOT_ID });
       const at = nowIso({});
       store.setState((current) => ({
         autoTreeViews: {

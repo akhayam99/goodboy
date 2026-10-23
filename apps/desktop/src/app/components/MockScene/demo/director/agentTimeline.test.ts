@@ -25,8 +25,9 @@ import { createSceneDirector } from './createSceneDirector';
 import { createSimulatedSend } from './createSimulatedSend';
 import { createReplyRuns } from './createReplyRuns';
 import { createSimulatedAnswer } from './createSimulatedAnswer';
-import { stopDemoRuns } from './demoRunRegistry';
+import { demoRuns } from './demoRunRegistry';
 import { agentTimeline } from './agentTimeline';
+import { installStopTurn } from './installStopTurn';
 
 let store: StoryStore;
 
@@ -209,6 +210,27 @@ describe('the simulated send', () => {
     expect(store.getState().transcripts[agent.id]).toHaveLength(before);
   });
 
+  it('ends a reply at the Stop button with nothing streamed after it', async () => {
+    seed();
+    installStopTurn({ store });
+    const send = createSimulatedSend({
+      store,
+      reply: 'On it. Done soon.',
+      now: nowIso,
+      shouldClearDraft: true,
+      runs: createReplyRuns(),
+    });
+    await send({ sessionId: session.id, agentId: agent.id, content: 'Log the event id.' });
+    vi.advanceTimersByTime(500);
+    await store.getState().cancelCurrentTurn(session.id, agent.id);
+    vi.advanceTimersByTime(20000);
+    const kinds = (store.getState().transcripts[agent.id] ?? [])
+      .filter((event) => event.runId !== RUN)
+      .map((event) => event.kind);
+    expect(kinds).toEqual(['user_text', 'done']);
+    expect(store.getState().agentTurnState[agent.id]?.kind).toBe('idle');
+  });
+
   it('writes nothing more for a reply the visitor stopped, and runs the next one', async () => {
     seed();
     const runs = createReplyRuns();
@@ -221,7 +243,7 @@ describe('the simulated send', () => {
     });
     await send({ sessionId: session.id, agentId: agent.id, content: 'Log the event id.' });
     const before = store.getState().transcripts[agent.id]?.length ?? 0;
-    stopDemoRuns({ agentId: agent.id });
+    demoRuns.stop({ agentId: agent.id });
     vi.advanceTimersByTime(20000);
     expect(store.getState().transcripts[agent.id]).toHaveLength(before);
     await send({ sessionId: session.id, agentId: agent.id, content: 'Try again.' });

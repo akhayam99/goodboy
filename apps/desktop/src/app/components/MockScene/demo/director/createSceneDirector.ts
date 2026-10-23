@@ -1,6 +1,7 @@
 import type { IsoDateTime } from '@goodboy/types';
 import { DEMO_PROTOCOL, type DemoReport, type DemoReportType } from './demoProtocol';
 import type { PlaybackClock } from './createPlaybackClock';
+import { demoRuns } from './demoRunRegistry';
 import type { CueParams, DemoCue, DemoTimeline, DirectorStore } from './directorTypes';
 
 type ReportParams = {
@@ -156,6 +157,7 @@ export const createSceneDirector = ({
     },
     restart: ({ generation: next }: RestartParams) => {
       clearTimer();
+      demoRuns.cancelAll();
       clock.reset();
       cueIndex = 0;
       generation = next;
@@ -165,6 +167,7 @@ export const createSceneDirector = ({
     },
     dispose: () => {
       clearTimer();
+      demoRuns.cancelAll();
       clock.pause();
     },
   };
