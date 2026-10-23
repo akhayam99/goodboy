@@ -17,6 +17,9 @@ import { scheduleCues } from './scheduleCues';
 import { startAgentTurn } from './startAgentTurn';
 import { textCues } from './textCues';
 import { textCuesEndMs } from './textCuesEndMs';
+import { stopDemoRuns } from './demoRunRegistry';
+import { registerTreeStopPort } from '../../../../../features/auto/treeStopPort';
+import { registerTreeRetryPort } from '../../../../../features/auto/treeRetryPort';
 
 const APPROVAL_PREFIX = 'Approved plan v';
 const PLAN_AT_MS = 1400;
@@ -216,6 +219,44 @@ const installAutoActions = ({ store }: FlowParams): void => {
   ) => {
     await spawnAgent(sessionId, { initialPrompt: options?.goal ?? '' });
   };
+  registerTreeStopPort({
+    port: async () => {
+      stopDemoRuns({ agentId: AUTO_ROOT_ID });
+      const at = nowIso({});
+      store.setState((current) => ({
+        autoTreeViews: {
+          ...current.autoTreeViews,
+          [AUTO_SESSION.id]: (current.autoTreeViews[AUTO_SESSION.id] ?? []).map((view) => ({
+            ...view,
+            tree: { ...view.tree, phase: 'done' },
+            delegations: view.delegations.map((delegation) =>
+              delegation.state === 'running' || delegation.state === 'starting'
+                ? { ...delegation, state: 'settled', outcome: 'stopped', settledAt: Date.now() }
+                : delegation,
+            ),
+          })),
+        },
+      }));
+      for (const agentId of [AUTO_ROOT_ID, IMPLEMENTER_ID]) {
+        if (store.getState().agentTurnState[agentId]?.kind === 'running') {
+          finishAgentTurn({ store, sessionId: AUTO_SESSION.id, agentId, at, isViewed: true });
+        }
+      }
+      return 'stopped';
+    },
+  });
+  registerTreeRetryPort({
+    port: async () => {
+      const runId = runOf({ label: 'retry' });
+      scheduleCues({
+        store,
+        cues: workCues({ runId, isApproval: true }),
+        now: () => nowIso({}),
+        agentId: AUTO_ROOT_ID,
+      });
+      return { kind: 'retried' };
+    },
+  });
   store.setState({
     spawnAgent,
     sendTurn,
