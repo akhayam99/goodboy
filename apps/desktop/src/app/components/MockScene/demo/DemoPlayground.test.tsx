@@ -187,10 +187,10 @@ describe('demo playground', () => {
     expect(document.querySelectorAll('iframe')).toHaveLength(0);
   });
 
-  it('opens Work with an agent on a fresh visit and lists the five groups', () => {
+  it('opens Set up on a fresh visit and lists the five groups', () => {
     render(<DemoPlayground />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Work with an agent');
-    expect(visibleFrame().getAttribute('src')).toContain('scene=chat-shell');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Set up');
+    expect(visibleFrame().getAttribute('src')).toContain('scene=onboarding');
     expect(visibleFrame().getAttribute('src')).toContain('theme=dark');
     const rail = screen.getByRole('navigation', { name: 'Playground groups' });
     expect(Array.from(rail.querySelectorAll('button')).map((row) => row.textContent)).toEqual([
@@ -211,6 +211,7 @@ describe('demo playground', () => {
   });
 
   it('moves to the next group and writes it to the hash', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     fireEvent.click(screen.getByRole('button', { name: 'Next: Orchestrate' }));
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Orchestrate');
@@ -218,6 +219,7 @@ describe('demo playground', () => {
   });
 
   it('moves between groups with the arrow keys', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     fireEvent.keyDown(playgroundRoot(), { key: 'ArrowLeft' });
     expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[0].id}`);
@@ -290,6 +292,7 @@ describe('demo playground', () => {
   });
 
   it('remembers every group the visitor opened', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     fireEvent.click(screen.getByRole('button', { name: 'Next: Orchestrate' }));
     expect(JSON.parse(window.localStorage.getItem(GROUP_VISITS_KEY) ?? '[]')).toEqual([
@@ -377,6 +380,7 @@ describe('demo playground', () => {
   });
 
   it('offers Show control for a hint whose control is scrolled away', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
@@ -419,6 +423,7 @@ describe('demo playground', () => {
     expect(screen.queryByRole('button', { name: 'Switch to dark theme' })).not.toBeNull();
   });
   it('names the group track for the visible frame once it is ready', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
@@ -430,6 +435,7 @@ describe('demo playground', () => {
   });
 
   it('draws the hint over the stage beside its anchor with a callout that takes clicks', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
@@ -442,6 +448,7 @@ describe('demo playground', () => {
   });
 
   it('tracks the hints again and drops a stale hint once the frame reloads', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
@@ -480,6 +487,7 @@ describe('demo playground', () => {
   });
 
   it('hides the hint with Escape and brings it back with H', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
@@ -492,6 +500,7 @@ describe('demo playground', () => {
   });
 
   it('skips a hint, tells the frame and keeps that across a reload', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     const view = render(<DemoPlayground />);
     const frame = visibleFrame();
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
@@ -515,6 +524,7 @@ describe('demo playground', () => {
   });
 
   it('counts tried outcomes in the rail and the header and keeps them in storage', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
@@ -527,6 +537,7 @@ describe('demo playground', () => {
   });
 
   it('follows another tab and never overwrites its progress', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
@@ -552,6 +563,7 @@ describe('demo playground', () => {
   });
 
   it('does not bring back a group another tab replayed', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     window.localStorage.setItem(
       HINT_PROGRESS_KEY,
       JSON.stringify({ agent: { tried: ['agent-answer'], skipped: [], epoch: 0 } }),
@@ -571,6 +583,7 @@ describe('demo playground', () => {
   });
 
   it('starts with the stored progress and resets only this group on replay', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     window.localStorage.setItem(
       HINT_PROGRESS_KEY,
       JSON.stringify({
@@ -586,6 +599,7 @@ describe('demo playground', () => {
   });
 
   it('works without storage', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });

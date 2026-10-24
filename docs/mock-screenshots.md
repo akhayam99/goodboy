@@ -337,8 +337,8 @@ same server (`?scene=<id>&<params>&theme=<dark|light>`) at 1440 by 900 and
 scaled to fit, so every beat gets a clean store and its own timers. The group
 names and their one line live in `MockScene/demo/demoGroups.ts`, which both the
 rail (through `demoChapters.ts`) and the phone page read, so the two never
-drift. `#<group id>` in the URL opens one, and a bare visit opens Work with an
-agent (`defaultGroupId.ts`). The top bar holds the only calls to action
+drift. `#<group id>` in the URL opens one, and a bare visit opens Set up
+(`defaultGroupId.ts`). The top bar holds the only calls to action
 (Star on GitHub, Download for macOS). The rail ends in one quiet line,
 `DemoRailNote`: that everything is mock data and nothing leaves the page, and,
 once every group counts all its outcomes tried (a group without hints counts
