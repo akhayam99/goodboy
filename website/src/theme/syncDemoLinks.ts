@@ -3,7 +3,11 @@ import { currentTheme } from './theme';
 
 const EVENTS = ['click', 'auxclick', 'contextmenu', 'focusin'] as const;
 
-const isDemoHref = (href: string): boolean => {
+type HrefParams = {
+  readonly href: string;
+};
+
+const isDemoHref = ({ href }: HrefParams): boolean => {
   try {
     return new URL(href).origin === new URL(SITE.demo).origin;
   } catch {
@@ -16,7 +20,7 @@ const onLinkEvent = (event: Event): void => {
     return;
   }
   const anchor = event.target.closest('a');
-  if (anchor === null || !isDemoHref(anchor.href)) {
+  if (anchor === null || !isDemoHref({ href: anchor.href })) {
     return;
   }
   const url = new URL(anchor.href);

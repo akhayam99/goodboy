@@ -293,7 +293,8 @@ export const autoTimeline = ({ state }: TimelineParams): DemoTimeline | null => 
   if (state.autoTreeViews[AUTO_SESSION.id] === undefined) {
     return null;
   }
-  const isWorking = state.agentTurnState[IMPLEMENTER_ID]?.kind === 'running';
+  const hasTree = (state.autoTreeViews[AUTO_SESSION.id] ?? []).length > 0;
+  const isWorking = hasTree && state.agentTurnState[IMPLEMENTER_ID]?.kind === 'running';
   return {
     setup: installAutoActions,
     prepare: () => undefined,

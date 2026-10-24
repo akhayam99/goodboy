@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowRight, X } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { Button, FLOATING_SURFACE, ICON_SIZE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
 import type { HintSide } from './hints/demoHintTypes';
@@ -20,10 +20,6 @@ type NextChapter = {
   readonly title: string;
 };
 
-type ChapterParams = {
-  readonly id: string;
-};
-
 type Size = {
   readonly width: number;
   readonly height: number;
@@ -35,7 +31,6 @@ type Props = {
   readonly bounds: Size;
   readonly onSkip: () => void;
   readonly onHide: () => void;
-  readonly onNext: (params: ChapterParams) => void;
 };
 
 const RING_OUTSET = 4;
@@ -89,7 +84,7 @@ const caretStyle = ({ side, target, x, y, height }: CaretParams) => {
   return side === 'right' ? { top, left: CARET_OFFSET } : { top, right: CARET_OFFSET };
 };
 
-export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: Props) => {
+export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) => {
   const { next } = coach;
   const ringRef = useRef<HTMLDivElement>(null);
   const calloutRef = useRef<HTMLDivElement>(null);
@@ -193,15 +188,12 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
             </Button>
           </div>
         ) : (
-          <Button
-            size="xs"
-            variant="primary"
-            className="self-start"
-            onClick={() => onNext({ id: next.id })}
-          >
-            Next: {next.title}
-            <ArrowRight size={ICON_SIZE.control} />
-          </Button>
+          <p className="flex items-center gap-2 text-ui text-muted-foreground">
+            <ArrowLeft size={ICON_SIZE.control} className="shrink-0 text-primary" aria-hidden />
+            <span>
+              Up next in the list: <span className="text-foreground">{next.title}</span>
+            </span>
+          </p>
         )}
       </div>
     </div>

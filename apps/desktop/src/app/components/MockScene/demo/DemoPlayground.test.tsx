@@ -195,7 +195,7 @@ describe('demo playground', () => {
     const rail = screen.getByRole('navigation', { name: 'Playground groups' });
     expect(Array.from(rail.querySelectorAll('button')).map((row) => row.textContent)).toEqual([
       '01Set upOptional0 of 5 tried',
-      '02Work with an agent0 of 4 tried',
+      '02Work with an agentUp next0 of 4 tried',
       '03Orchestrate0 of 6 tried',
       '04Find work and results0 of 3 tried',
       '05Review and ship0 of 3 tried',
@@ -210,10 +210,11 @@ describe('demo playground', () => {
     expect(visibleFrame().getAttribute('src')).toContain('director=1');
   });
 
-  it('moves to the next group and writes it to the hash', () => {
+  it('moves to another group from its rail row and writes it to the hash', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
-    fireEvent.click(screen.getByRole('button', { name: 'Next: Orchestrate' }));
+    expect(screen.queryByRole('button', { name: /^Next/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Orchestrate/ }));
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Orchestrate');
     expect(window.location.hash).toBe('#orchestrate');
   });
@@ -250,7 +251,7 @@ describe('demo playground', () => {
     expect(currentStep()).toBe('Run approval');
   });
 
-  it('shows the download in the rail and again in the top bar only below the large breakpoint', async () => {
+  it('shows the download in the rail and again in the top bar only below the large breakpoint, with nothing up next after the last group', async () => {
     const last = DEMO_CHAPTERS.at(-1);
     window.history.replaceState(null, '', `/?scene=demo#${last?.id ?? ''}`);
     render(<DemoPlayground />);
@@ -261,8 +262,8 @@ describe('demo playground', () => {
     const downloads = screen.getAllByRole('link', { name: /Download for macOS/ });
     expect(downloads).toHaveLength(2);
     expect(downloads.filter((link) => link.className.includes('lg:hidden'))).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Back to the start' }));
-    expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[0].id}`);
+    expect(screen.queryByRole('button', { name: 'Back to the start' })).toBeNull();
+    expect(document.querySelector('[data-up-next]:not([data-up-next="none"])')).toBeNull();
   });
 
   it('says the playground is mock data until every group is tried', () => {
@@ -273,8 +274,8 @@ describe('demo playground', () => {
       }),
     );
     render(<DemoPlayground />);
-    expect(screen.getByText(/Mock data only/).textContent).toBe(
-      'Mock data only. Nothing leaves this page.',
+    expect(screen.getByText(/sample projects/).textContent).toBe(
+      'The real Goodboy on sample projects. Run it on your own code.',
     );
     expect(screen.queryByText(/You have tried every group/)).toBeNull();
   });
@@ -296,7 +297,7 @@ describe('demo playground', () => {
   it('remembers every group the visitor opened', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
-    fireEvent.click(screen.getByRole('button', { name: 'Next: Orchestrate' }));
+    fireEvent.click(screen.getByRole('button', { name: /Orchestrate/ }));
     expect(JSON.parse(window.localStorage.getItem(GROUP_VISITS_KEY) ?? '[]')).toEqual([
       'agent',
       'orchestrate',
@@ -410,7 +411,11 @@ describe('demo playground', () => {
     const note = screen.getByRole('note', { name: 'Group done' });
     expect(note.textContent).toContain('Scout answered your first task');
     expect(screen.queryByRole('button', { name: 'Skip hint' })).toBeNull();
-    fireEvent.click(within(note).getByRole('button', { name: /Next: Work with an agent/ }));
+    expect(within(note).queryByRole('button', { name: /Next/ })).toBeNull();
+    expect(note.textContent).toContain('Up next in the list: Work with an agent');
+    const row = screen.getByRole('button', { name: /Work with an agent/ });
+    expect(row.getAttribute('data-up-next')).toBe('soon');
+    fireEvent.click(row);
     expect(window.location.hash).toBe('#agent');
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Work with an agent');
   });

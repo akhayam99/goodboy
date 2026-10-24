@@ -1,5 +1,5 @@
-import { ArrowRight, ChevronLeft, RotateCcw, Undo2 } from 'lucide-react';
-import { Button, ICON_SIZE, IconButton } from '@goodboy/ui';
+import { ChevronLeft, RotateCcw } from 'lucide-react';
+import { IconButton } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import type { BeatFill, BeatPlayer } from './useBeatPlayer';
 import { DemoBeatSegment } from './DemoBeatSegment';
@@ -8,12 +8,8 @@ type Props = {
   readonly chapter: DemoChapter;
   readonly player: BeatPlayer;
   readonly onReplay: () => void;
-  readonly isGroupDone: boolean;
-  readonly nextChapter: DemoChapter | undefined;
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
-  readonly onNext: () => void;
-  readonly onRestart: () => void;
 };
 
 const IDLE_FILL: BeatFill = { totalMs: 0, startMs: 0 };
@@ -30,17 +26,7 @@ const beatState = ({ index, current }: BeatStateParams): 'past' | 'current' | 'n
   return index === current ? 'current' : 'next';
 };
 
-export const DemoTimeline = ({
-  chapter,
-  player,
-  onReplay,
-  isGroupDone,
-  nextChapter,
-  hasPrevious,
-  onPrevious,
-  onNext,
-  onRestart,
-}: Props) => (
+export const DemoTimeline = ({ chapter, player, onReplay, hasPrevious, onPrevious }: Props) => (
   <div className="flex items-center gap-2 sm:gap-4">
     <div className="flex shrink-0 items-center gap-1">
       <IconButton
@@ -68,30 +54,5 @@ export const DemoTimeline = ({
         </li>
       ))}
     </ol>
-    {nextChapter === undefined ? (
-      <Button
-        variant="secondary"
-        size="md"
-        aria-label="Back to the start"
-        onClick={onRestart}
-        className="shrink-0"
-      >
-        <Undo2 size={ICON_SIZE.control} />
-        <span className="max-sm:hidden">Back to the start</span>
-      </Button>
-    ) : (
-      <Button
-        variant={isGroupDone ? 'primary' : 'secondary'}
-        size="md"
-        aria-label={`Next: ${nextChapter.title}`}
-        onClick={onNext}
-        className="shrink-0"
-      >
-        <span>
-          Next<span className="max-sm:hidden">: {nextChapter.title}</span>
-        </span>
-        <ArrowRight size={ICON_SIZE.control} />
-      </Button>
-    )}
   </div>
 );

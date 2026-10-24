@@ -48,9 +48,16 @@ type NewTurnParams = HintProbe & {
   readonly isApproval: boolean;
 };
 
+const knownTurnsOf = ({ state }: StateParams): ReadonlySet<string> =>
+  new Set(
+    Object.values(state.transcripts).flatMap((events) =>
+      events.flatMap((event) => (event.kind === 'user_text' ? [event.runId] : [])),
+    ),
+  );
+
 const hasNewRootTurn = ({ state, start, isApproval }: NewTurnParams): boolean => {
-  const before = rootTurnsOf({ state: start, isApproval });
-  return [...rootTurnsOf({ state, isApproval })].some((runId) => !before.has(runId));
+  const known = knownTurnsOf({ state: start });
+  return [...rootTurnsOf({ state, isApproval })].some((runId) => !known.has(runId));
 };
 
 const approvedRunsOf = ({ state }: StateParams): ReadonlySet<string> =>

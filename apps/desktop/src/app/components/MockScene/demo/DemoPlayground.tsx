@@ -125,7 +125,7 @@ export const DemoPlayground = () => {
       ref={rootRef}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className="flex h-screen min-h-0 flex-col bg-background text-foreground outline-none"
+      className="flex h-screen min-h-0 flex-col bg-surround text-foreground outline-none"
     >
       <DemoTopBar theme={theme} onToggleTheme={swapTheme} />
       <div className="flex min-h-0 flex-1">
@@ -134,6 +134,8 @@ export const DemoPlayground = () => {
           activeId={chapter.id}
           tallyOf={hints.tallyOf}
           onSelect={goToChapter}
+          upNextId={nextChapter?.id}
+          isUpNextReady={isGroupDone}
           isEveryGroupTried={isEveryGroupTried({
             chapters: DEMO_CHAPTERS,
             tallyOf: hints.tallyOf,
@@ -165,7 +167,6 @@ export const DemoPlayground = () => {
             onSkipHint={hints.skip}
             onHideHint={hints.hide}
             onRevealHint={hints.revealHint}
-            onNextChapter={goToChapter}
           />
           <p className="sr-only" aria-live="polite">
             {hintAnnouncement({ coach: hints.coach, offscreen: hints.offscreen })}
@@ -174,12 +175,8 @@ export const DemoPlayground = () => {
             chapter={chapter}
             player={player}
             onReplay={onReplay}
-            isGroupDone={isGroupDone}
-            nextChapter={nextChapter}
             hasPrevious={previousChapter !== undefined}
             onPrevious={onPrevious}
-            onNext={onNext}
-            onRestart={() => goToChapter({ id: DEMO_CHAPTERS[0].id })}
           />
         </main>
       </div>

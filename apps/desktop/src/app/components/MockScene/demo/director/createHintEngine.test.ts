@@ -34,6 +34,8 @@ import { createPlaybackClock } from './createPlaybackClock';
 import { createSceneDirector } from './createSceneDirector';
 import { limitsTimeline } from './limitsTimeline';
 import { AUTO_ROOT_ID, AUTO_SESSION, autoSceneOf } from '../../scenes/u24/autoSceneSeed';
+import { seedC07 } from '../../scenes/u25/c07/c07AutoSeed';
+import { autoTimeline } from './autoTimeline';
 
 let store: StoryStore;
 
@@ -398,6 +400,33 @@ describe('the hint engine', () => {
     }));
     await frame();
     expect(tried()).toEqual(['auto-start']);
+    engine.dispose();
+  });
+
+  it('credits nothing while the Auto start scene loads cold and plays its own cues', async () => {
+    seedC07({ state: 'working', place: 'start' });
+    document.body.innerHTML = '<textarea aria-label="Start a run"></textarea>';
+    const timeline = autoTimeline({ state: store.getState() });
+    if (timeline === null) {
+      throw new Error('no Auto timeline');
+    }
+    const director = createSceneDirector({
+      timeline,
+      store,
+      clock: createPlaybackClock({ now: () => Date.now() }),
+      isSettled: false,
+      now: () => AT,
+      onReport: () => undefined,
+    });
+    const { engine, tried } = engineFor({ hints: ORCHESTRATE_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    director.start();
+    director.play();
+    await frame();
+    vi.advanceTimersByTime(60000);
+    await frame();
+    expect(tried()).toEqual([]);
+    director.dispose();
     engine.dispose();
   });
 
