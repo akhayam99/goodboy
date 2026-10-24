@@ -100,6 +100,10 @@ playground iframes its own beats). The file sits outside `dist/` and
 `src-tauri/`, so the Tauri build never reads it. The demo bundle carries no
 analytics, no telemetry and no cookie.
 
+The website links it as Live demo from `SITE.demo` in `website/src/site.ts`:
+the yellow pill in the nav actions (a sheet link on narrow screens), the
+hero's text link and the install section on desktop, and the footer.
+
 Production deploys only on a release commit, so the demo always matches the
 version on the download page. The project's `ignoreCommand` runs
 `scripts/demo-ignore-build.mjs`: on `VERCEL_ENV=production` it builds only when

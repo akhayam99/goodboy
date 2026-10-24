@@ -44,8 +44,8 @@ export const Hero = () => {
                 Linux build
               </a>
             ) : null}
-            <a className="heroFeatures" href={SITE.features}>
-              Explore the features
+            <a className="heroFeatures" href={SITE.demo}>
+              Try the live demo
               <span aria-hidden="true">→</span>
             </a>
           </div>
