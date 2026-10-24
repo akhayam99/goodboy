@@ -174,9 +174,10 @@ const workCues = ({ runId, isApproval }: WorkParams): ReadonlyArray<DemoCue> => 
 const installAutoActions = ({ store }: FlowParams): void => {
   installDemoWorld({ store });
   const simulatedSend = store.getState().sendTurn;
+  const simulatedSpawn = store.getState().spawnAgent;
   const spawnAgent: AppStore['spawnAgent'] = async (sessionId, options) => {
     if (sessionId !== AUTO_SESSION.id) {
-      return AUTO_ROOT_ID;
+      return simulatedSpawn(sessionId, options);
     }
     const runId = runOf({ label: 'start' });
     const at = nowIso({});

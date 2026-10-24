@@ -61,8 +61,11 @@ const EMPTY_LISTS: ReadonlyArray<string> = [
   'budget_rule_list',
   'budget_alerts_list',
   'step_def_list',
+  'worktree_changed_files',
 ];
 
+const SEARCH_INDEX_BYTES = 2_621_440;
+const DEFAULT_BRANCH_STDOUT = 'main\n';
 const SHELL_DONE = { stdout: '', stderr: '', exitCode: 0 };
 const SHELL_COMMANDS: ReadonlySet<string> = new Set(['git_push', 'git_push_with_lease']);
 const GH_WRITES: ReadonlyArray<string> = ['POST', 'PATCH', 'PUT', 'DELETE'];
@@ -114,6 +117,9 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
       if (isEmptyRead({ sql: query.sql })) {
         return [];
       }
+      if (query.sql.includes('FROM dbstat')) {
+        return [{ bytes: SEARCH_INDEX_BYTES }];
+      }
       return (
         settings.select(query) ??
         recordDemoMiss({ entry: `db_select ${query.sql.replace(/\s+/g, ' ').slice(0, 90)}` })
@@ -149,6 +155,11 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
   ['app_platform', () => ({ os: 'macos', osVersion: null, arch: 'aarch64', buildSha: null })],
   ['plugin:app|version', () => APP_VERSION],
   ['scratch_dir_prepare', () => '/mock/scratch'],
+  ['plugin:path|resolve_directory', () => '/mock/home'],
+  [
+    'monitor_snapshot',
+    () => ({ listeners: [], processes: [], takenAt: Date.now(), isPlatformSupported: true }),
+  ],
   ['plugin:event|listen', (args) => args?.handler ?? 0],
   ['plugin:event|unlisten', () => null],
   ['plugin:event|emit', () => null],
@@ -156,6 +167,12 @@ export const DEMO_IPC_HANDLERS: ReadonlyMap<string, Handler> = new Map<string, H
     'gh_run',
     (args) => {
       const list = argsOf({ args });
+      if (list[0] === 'repo' && list[1] === 'view') {
+        return { stdout: DEFAULT_BRANCH_STDOUT, stderr: '', exitCode: 0 };
+      }
+      if ((list[0] === 'issue' || list[0] === 'pr') && list[1] === 'list') {
+        return { stdout: '[]', stderr: '', exitCode: 0 };
+      }
       if (!isGhWrite({ list })) {
         return recordDemoMiss({ entry: `gh_run ${list.slice(0, 3).join(' ')}` });
       }

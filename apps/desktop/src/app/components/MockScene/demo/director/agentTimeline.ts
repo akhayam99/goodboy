@@ -6,6 +6,7 @@ import { eventCue } from './eventCue';
 import { appendTurnEvents } from './appendTurnEvents';
 import { startAgentTurn } from './startAgentTurn';
 import { finishAgentTurn } from './finishAgentTurn';
+import { installDemoWorld } from './installDemoWorld';
 
 const READ_ID = 'demo-agent-read';
 const TEST_ID = 'demo-agent-test';
@@ -200,6 +201,7 @@ export const agentTimeline = ({ state }: TimelineParams): DemoTimeline | null =>
   ];
   return {
     setup: ({ store }) => {
+      installDemoWorld({ store });
       store.setState((current) => ({ agentDraft: { ...current.agentDraft, [agentId]: DRAFT } }));
     },
     reply: REPLY,
