@@ -358,7 +358,7 @@ export const DemoStage = ({
     <div ref={ref} className="relative flex min-h-0 min-w-0 flex-1 items-center justify-center">
       {hasRoom ? (
         <div
-          className="flex items-center justify-center rounded-frame border border-frame-edge bg-background"
+          className="flex items-center justify-center"
           style={{
             width: APP_WIDTH * scale + STAGE_INSET * 2,
             height: APP_HEIGHT * scale + STAGE_INSET * 2,
