@@ -8,6 +8,7 @@ import { DEMO_CHAPTERS } from './demoChapters';
 import { DEMO_GROUPS } from './demoGroups';
 import { DEMO_PROTOCOL, type DemoRect, type DemoReportType } from './director/demoProtocol';
 import { HINT_PROGRESS_KEY } from './hints/hintProgressKey';
+import { GROUP_VISITS_KEY } from './hints/groupVisitsKey';
 
 const visibleFrame = (): HTMLIFrameElement => {
   const frame = document.querySelector<HTMLIFrameElement>('iframe[data-shown="true"]');
@@ -286,6 +287,15 @@ describe('demo playground', () => {
     expect(screen.getByText(/every group/).textContent).toBe(
       'You have tried every group. Download is top right.',
     );
+  });
+
+  it('remembers every group the visitor opened', () => {
+    render(<DemoPlayground />);
+    fireEvent.click(screen.getByRole('button', { name: 'Next: Orchestrate' }));
+    expect(JSON.parse(window.localStorage.getItem(GROUP_VISITS_KEY) ?? '[]')).toEqual([
+      'agent',
+      'orchestrate',
+    ]);
   });
 
   it('keeps the mock data line while one group is still untried', () => {

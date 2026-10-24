@@ -13,6 +13,7 @@ import { useChapterHash } from './useChapterHash';
 import { useDemoKeys } from './useDemoKeys';
 import { isEveryGroupTried } from './hints/isEveryGroupTried';
 import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
+import { useGroupVisits } from './useGroupVisits';
 
 type Theme = 'dark' | 'light';
 
@@ -56,6 +57,7 @@ export const DemoPlayground = () => {
   const player = useBeatPlayer({ chapter, nextChapter, theme, shownKey });
 
   const hints = useDemoHints({ chapter, chapters: DEMO_CHAPTERS, frameKey: player.frame.key });
+  const visitedIds = useGroupVisits({ chapterId: chapter.id });
 
   const focusFrame = useCallback(() => {
     rootRef.current?.focus({ preventScroll: true });
@@ -139,7 +141,11 @@ export const DemoPlayground = () => {
           activeId={chapter.id}
           tallyOf={hints.tallyOf}
           onSelect={goToChapter}
-          isEveryGroupTried={isEveryGroupTried({ chapters: DEMO_CHAPTERS, tallyOf: hints.tallyOf })}
+          isEveryGroupTried={isEveryGroupTried({
+            chapters: DEMO_CHAPTERS,
+            tallyOf: hints.tallyOf,
+            visitedIds,
+          })}
         />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
           <DemoChapterHeader

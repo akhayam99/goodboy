@@ -8,11 +8,15 @@ type TallyParams = {
 type Params = {
   readonly chapters: ReadonlyArray<DemoChapter>;
   readonly tallyOf: (params: TallyParams) => HintTally;
+  readonly visitedIds: ReadonlyArray<string>;
 };
 
-export const isEveryGroupTried = ({ chapters, tallyOf }: Params): boolean => {
-  const tallies = chapters
-    .map((chapter) => tallyOf({ chapter }))
-    .filter((tally) => tally.total > 0);
-  return tallies.length > 0 && tallies.every((tally) => tally.tried >= tally.total);
-};
+export const isEveryGroupTried = ({ chapters, tallyOf, visitedIds }: Params): boolean =>
+  chapters.length > 0 &&
+  chapters.every((chapter) => {
+    const tally = tallyOf({ chapter });
+    if (tally.total === 0) {
+      return visitedIds.includes(chapter.id);
+    }
+    return tally.tried >= tally.total;
+  });
