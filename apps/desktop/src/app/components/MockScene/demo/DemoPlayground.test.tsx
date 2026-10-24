@@ -268,9 +268,9 @@ describe('demo playground', () => {
       }),
     );
     render(<DemoPlayground />);
-    expect(
-      screen.getByText('Everything here is mock data, and nothing you do leaves this page.'),
-    ).toBeTruthy();
+    expect(screen.getByText(/mock data/).textContent).toBe(
+      'Everything here is mock data, and nothing you do leaves this page.',
+    );
     expect(screen.queryByText(/You have tried every group/)).toBeNull();
   });
 
@@ -293,7 +293,9 @@ describe('demo playground', () => {
       }),
     );
     render(<DemoPlayground />);
-    expect(screen.getByText('You have tried every group. Download is top right.')).toBeTruthy();
+    expect(screen.getByText(/every group/).textContent).toBe(
+      'You have tried every group. Download is top right.',
+    );
   });
 
   it('shows the loading state until the frame reports ready', () => {
