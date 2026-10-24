@@ -337,6 +337,26 @@ describe('autoGroupOf', () => {
       expect(group?.children[0]?.isGone).toBeUndefined();
     });
 
+    it('stays stuck when its agent could not be created, since there was none to delete', () => {
+      const group = autoGroupOf({
+        view: aView({
+          phase: 'waiting',
+          delegations: [
+            {
+              ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
+              reason: 'agent_not_created: the agents table is locked',
+            },
+          ],
+        }),
+        agents: [ROOT],
+        now: FIXTURE_NOW,
+      });
+
+      expect(group?.isStuck).toBe(true);
+      expect(group?.word).toBe('Stuck');
+      expect(group?.children[0]?.isGone).toBeUndefined();
+    });
+
     it('never counts a child that has not started, since it has no agent yet', () => {
       const group = autoGroupOf({
         view: aView({

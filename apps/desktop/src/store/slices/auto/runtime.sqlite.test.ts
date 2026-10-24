@@ -242,7 +242,7 @@ describe('the whole round trip of a delegation', () => {
       treeId: world.treeId,
     });
     expect(delegations[0]?.outcome).toBe('failed');
-    expect(delegations[0]?.reason).toBe('kickoff_failed: the agents table is locked');
+    expect(delegations[0]?.reason).toBe('agent_not_created: the agents table is locked');
     expect(world.state.ports.childTurns).toHaveLength(0);
   });
 

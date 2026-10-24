@@ -330,6 +330,37 @@ describe('autoRetryTargetsOf', () => {
       ).toEqual(['childBlocked']);
     });
 
+    it('keeps the card of a child whose agent could not be created, since it never existed', () => {
+      const view = aView({
+        phase: 'waiting',
+        delegations: [
+          {
+            ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
+            reason: 'agent_not_created: the agents table is locked',
+          },
+        ],
+      });
+
+      const targets = autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW });
+
+      expect(targets.map((target) => target.kind)).toEqual(['failed']);
+      expect(targets[0]?.reasonCode).toBe('agent_not_created: the agents table is locked');
+    });
+
+    it('still hides a failed child whose agent existed and was deleted', () => {
+      const view = aView({
+        phase: 'waiting',
+        delegations: [
+          {
+            ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
+            reason: 'kickoff_failed: the branch mount changed before the turn could start',
+          },
+        ],
+      });
+
+      expect(autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW })).toEqual([]);
+    });
+
     it('still offers a child that never started, which has no agent yet', () => {
       const view = aView({
         phase: 'waiting',

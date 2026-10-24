@@ -516,7 +516,8 @@ stays and the tree stays unconfirmed; deleting again resumes the stop. The purge
 still in the session (`liveAutoViewsOf`, through `useAutoTreeViews`): a tree
 left open on an agent that was deleted or moved raises no **Needs you** card, no **Auto is stuck**
 line and no count. A child whose agent is gone is not stuck (`isAutoChildStuck`); a child Auto
-accepted and has not started has no agent yet and still counts. Plans stay readable in the plan
+accepted and has not started has no agent yet and still counts, and so does one whose agent could
+not be created (reason `agent_not_created`, `launchChildren`): its failure and retry card stay. Plans stay readable in the plan
 list.
 
 The limit never throws away work. At the limit no new child is admitted and

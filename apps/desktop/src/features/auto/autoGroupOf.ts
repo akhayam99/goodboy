@@ -314,7 +314,11 @@ export const autoGroupOf = ({ view, agents, now }: Params): AutoGroup | null => 
     .filter((agent) => agent.parentAgentId === rootAgentId && !known.has(agent.id))
     .map((agent) => childOfLinkedAgent({ agent, results: view.deliveredResults }));
   const children = [...fromDelegations, ...fromLinks].map((child) =>
-    isAutoChildGone({ state: child.state, hasAgent: byId.has(child.agentId) })
+    isAutoChildGone({
+      state: child.state,
+      hasAgent: byId.has(child.agentId),
+      reasonCode: child.reasonCode,
+    })
       ? { ...child, isGone: true }
       : child,
   );
