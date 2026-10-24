@@ -97,8 +97,12 @@ other install script), `pnpm build:demo`, output `dist-demo`, clean URLs, a
 year of `immutable` cache on the hashed `/assets/`, revalidation on every
 other path, and headers that allow framing by the same origin only (the
 playground iframes its own beats). The file sits outside `dist/` and
-`src-tauri/`, so the Tauri build never reads it. The demo bundle carries no
-analytics, no telemetry and no cookie.
+`src-tauri/`, so the Tauri build never reads it. The demo bundle carries no telemetry and no cookie. Its one
+network call is Vercel Web Analytics, cookieless, added by the `demoPlugins` Vite plugin in
+`apps/desktop/vite/demoHtml.ts`: it runs only for `--mode demo` and only in a build, and adds
+`<script defer src="/_vercel/insights/script.js">` and an early theme script to `dist-demo/index.html`.
+The Tauri build, `pnpm dev` and the app's own `index.html` never carry either, and
+`apps/desktop/vite/demoHtml.test.ts` pins that.
 
 The website links it as Live demo from `SITE.demo` in `website/src/site.ts`:
 the yellow pill in the nav actions (a sheet link on narrow screens), the
@@ -121,8 +125,9 @@ The owner sets these by hand in the Vercel project, since `vercel.json` cannot:
 - Environment variable `ENABLE_EXPERIMENTAL_COREPACK=1`, so the build uses the
   `packageManager` pin in the root `package.json`.
 - Domain `demo.goodboy-ai.dev`, with the DNS record Vercel asks for.
-- Web Analytics and Speed Insights off. Leave every other environment
-  variable empty: anything named `VITE_*` would ship in the bundle.
+- Web Analytics on for this project, which serves `/_vercel/insights/script.js`,
+  and Speed Insights off. Leave every other environment variable empty:
+  anything named `VITE_*` would ship in the bundle.
 
 ## Reuse the real components, never rebuild the UI
 
@@ -338,12 +343,29 @@ scaled to fit, so every beat gets a clean store and its own timers. The group
 names and their one line live in `MockScene/demo/demoGroups.ts`, which both the
 rail (through `demoChapters.ts`) and the phone page read, so the two never
 drift. `#<group id>` in the URL opens one, and a bare visit opens Set up
-(`defaultGroupId.ts`). The top bar holds the only calls to action
-(Star on GitHub, Download for macOS). The rail ends in one quiet line,
-`DemoRailNote`: that everything is mock data and nothing leaves the page, and,
-once every group counts all its outcomes tried (a group without hints counts
-once it was opened, kept under `goodboy-demo-visits` by `useGroupVisits`;
-`hints/isEveryGroupTried.ts`), that Download is top right.
+(`defaultGroupId.ts`). The calls to action sit at the bottom of the rail
+(`DemoRailActions`: Download for macOS as the primary button, Star on GitHub
+under it) below one quiet line, `DemoRailNote`: that this is mock data and
+nothing leaves the page, and, once every group counts all its outcomes tried (a
+group without hints counts once it was opened, kept under `goodboy-demo-visits`
+by `useGroupVisits`; `hints/isEveryGroupTried.ts`), that the visitor has tried
+every group. The rail is hidden below the `lg` breakpoint, so the top bar shows
+a second Download button only there. The top bar's left side holds the logo and
+a goodboy-ai.dev link back to the website (both carry the current `?theme=`),
+its right side only the theme toggle.
+
+The theme has one owner, `useDemoTheme`: the `?theme=dark|light` of the url
+wins on first load, then the choice kept under `goodboy-demo-theme` (every read
+and write survives blocked storage), then dark, and the param is stripped from
+the url right after. The website appends it at click time from its own theme
+(`website/src/theme/syncDemoLinks.ts`, one delegated listener, never read
+during render because the site prerenders). Toggling the theme never reloads a
+frame: frames are keyed by scene, params and replay (`frameKey.ts`), not by
+theme, the stage sends every ready frame a `theme` command, and the frame
+applies it live. The app's own theme control inside a frame reports `theme` to
+the playground (same envelope, origin and source checks, one report per change
+the frame did not receive from the playground), which switches the wrapper and
+sends it on to every other frame.
 
 Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With
@@ -417,6 +439,29 @@ and drafted replies from the simulated store (`demoPublicationPreview.ts`), then
 say that publishing stays local, so a reply never leaves the page. `&theme=dark`
 now forces dark the same way `&theme=light` forces light, so a frame never
 follows a stored preference.
+
+Keys inside a frame: a directed frame registers `palette.open` (Cmd+K),
+`search.open` (Cmd+F) and `column.toggle` (Cmd+B) itself, through
+`scenes/useSceneShortcuts` (palette) and `scenes/useSceneSidebar` (the fold
+state of the shell frames), since `App` and `useAppShortcuts` never mount in a
+scene. When the focus is on the playground and not in the frame, `useDemoKeys`
+hands those three chords to the stage, which focuses the frame and sends a
+`shortcut` command; the frame replays it as a keydown for the same shortcut.
+The wrapper's own keys (arrows, H, R) ignore a text field, and a frame that has
+the focus keeps its keys to itself. Search answers from the simulated store
+(`director/runDemoSearch.ts`: session goals and the visitor's messages), not
+from the search index.
+
+Studios outside the flows answer calmly instead of waiting: the demo boundary
+answers the Impact aggregates, the starred issues, GitHub issue and PR lists,
+the default branch, the monitor snapshot, the folder lookups and the search
+index size (`demoIpcHandlers.ts`, `isEmptyRead.ts`, which only matches the
+Impact queries and never a read that loads the sessions), and a directed frame
+seeds a loaded Context for each session (`installDemoContext.ts`) and a quiet
+Monitoring snapshot (`installDemoMonitor.ts`). Start on a plan, and any next
+step that spawns an agent, runs `createSimulatedSpawn.ts`: it adds the agent to
+the session, opens it and streams a short reply, and a timeline that has its
+own spawn (Auto) keeps it for its session.
 
 A group carries an ordered list of hints (`demo/hints/`, typed in
 `demoHintTypes.ts`): an id, the copy, the outcome it counts toward, an anchor,

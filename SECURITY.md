@@ -13,7 +13,7 @@ Your report stays private until a fix ships.
 
 ### No backend
 
-Goodboy runs only on your machine. There is no server in the middle. No build sends telemetry of any kind. The website at goodboy-ai.dev counts page views with Vercel's cookieless analytics, which keeps no cookie and no identifier. The app is not involved.
+Goodboy runs only on your machine. There is no server in the middle. The app you download sends no telemetry of any kind. The website at goodboy-ai.dev and the mock-data demo at demo.goodboy-ai.dev count page views with Vercel's cookieless Web Analytics, which keeps no cookie and no identifier. The demo script is added to the demo build only: the downloaded app, its Tauri bundle and the development server never carry it.
 
 ### Your keys
 
