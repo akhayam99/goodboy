@@ -711,16 +711,16 @@ fn cursor_asks_for_workspace_trust_only_when_it_does_not_force() {
         .unwrap();
     read_only.turn_events_until_end();
 
-    let trusted = argv_of(&read_only);
+    let plan_argv = argv_of(&read_only);
     assert_eq!(
-        trusted
+        plan_argv
             .iter()
             .filter(|arg| arg.as_str() == "--trust")
             .count(),
         1,
-        "{trusted:?}"
+        "{plan_argv:?}"
     );
-    assert!(!trusted.contains(&"--force".to_string()));
+    assert!(!plan_argv.contains(&"--force".to_string()));
     assert!(!argv_of(&full).contains(&"--trust".to_string()));
 }
 
