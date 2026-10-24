@@ -4,11 +4,13 @@ import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
 import type { ShellArrangement } from '../../../../shellArrangement';
 import { useAppStore, useCurrentSession, useCurrentWorkspace } from '../../../../../store';
+import { useSceneShortcuts } from '../useSceneShortcuts';
 
 const noop = () => undefined;
 
 type Params = {
   readonly arrangement: ShellArrangement;
+  readonly onToggleSidebar?: () => void;
 };
 
 type SceneShell = {
@@ -20,7 +22,7 @@ type SceneShell = {
   readonly settingsSlotRef: (node: HTMLDivElement | null) => void;
 };
 
-export const useSceneShell = ({ arrangement }: Params): SceneShell => {
+export const useSceneShell = ({ arrangement, onToggleSidebar }: Params): SceneShell => {
   const currentWorkspace = useCurrentWorkspace();
   const currentSession = useCurrentSession();
   const isStudioOpen = useAppStore((state) => state.appStudio !== null);
@@ -35,6 +37,10 @@ export const useSceneShell = ({ arrangement }: Params): SceneShell => {
     pinSessionSidebar: noop,
     studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
     settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsSlot : null,
+  });
+  useSceneShortcuts({
+    openPalette: overlays.openPalette,
+    ...(onToggleSidebar === undefined ? {} : { onToggleSidebar }),
   });
   const actions = useMemo<ColumnActions>(
     () => ({

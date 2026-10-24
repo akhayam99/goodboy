@@ -20,6 +20,8 @@ import { selectDrawerPanel } from '../../../../../store/slices/drawer/selectDraw
 import { selectDrawerPlacement } from '../../../../../store/slices/drawer/selectDrawerPlacement';
 import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDrawerSizing';
 import { triggerFrameView } from './frameViews';
+import { useSceneShortcuts } from '../useSceneShortcuts';
+import { isDirectedScene } from '../../demo/director/isDirectedScene';
 
 const noop = () => undefined;
 
@@ -39,7 +41,9 @@ export const AppFrame = ({
   center,
 }: Props) => {
   const [isFoldPicked, setIsFoldPicked] = useState(isRailCollapsed);
-  const isMainCollapsed = hasLiveToggle ? isFoldPicked : isRailCollapsed;
+  const isFoldLive = hasLiveToggle || isDirectedScene();
+  const isMainCollapsed = isFoldLive ? isFoldPicked : isRailCollapsed;
+  const toggleFold = () => setIsFoldPicked((isPicked) => !isPicked);
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
   const drawerPlacement = useAppStore(selectDrawerPlacement);
@@ -64,6 +68,10 @@ export const AppFrame = ({
     pinSessionSidebar: noop,
     studioPlacement: arrangement.studioCoversLeft ? 'cover' : 'content',
     settingsColumnSlot: arrangement.leftSlot === 'column' ? settingsSlot : null,
+  });
+  useSceneShortcuts({
+    openPalette: overlays.openPalette,
+    ...(isFoldLive ? { onToggleSidebar: toggleFold } : {}),
   });
   const actions = useMemo<ColumnActions>(
     () => ({
@@ -109,7 +117,7 @@ export const AppFrame = ({
           <AppTopBar
             sidebar={{
               isCollapsed: isMainCollapsed,
-              onToggle: hasLiveToggle ? () => setIsFoldPicked((isPicked) => !isPicked) : noop,
+              onToggle: isFoldLive ? toggleFold : noop,
             }}
             onOpenSpend={overlays.openSpend}
             onOpenScript={noop}

@@ -2,9 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
 import { useStageScale } from './useStageScale';
 import { DemoStageLoading } from './DemoStageLoading';
-import { STAGE_BACKDROP } from './stageBackdrop';
-import { DEMO_PROTOCOL, type DemoReport } from './director/demoProtocol';
+import {
+  DEMO_PROTOCOL,
+  type DemoReport,
+  type DemoShortcutCode,
+  type DemoTheme,
+} from './director/demoProtocol';
 import { isDemoReport } from './director/isDemoReport';
+import { isDemoThemeMessage } from './director/isDemoThemeMessage';
 import { isDemoHintReport } from './director/isDemoHintReport';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import { DemoHintSlot } from './DemoHintSlot';
@@ -21,7 +26,19 @@ type ShownParams = {
   readonly key: string;
 };
 
+export type ShortcutRequest = {
+  readonly code: DemoShortcutCode;
+  readonly count: number;
+};
+
+type ThemeParams = {
+  readonly theme: DemoTheme;
+};
+
 type Props = {
+  readonly theme: DemoTheme;
+  readonly onThemeChange: (params: ThemeParams) => void;
+  readonly shortcut: ShortcutRequest | undefined;
   readonly frame: StageFrame;
   readonly preloadFrame: StageFrame | undefined;
   readonly command: FrameCommand | undefined;
@@ -76,6 +93,9 @@ const SILENT_REPORT: DemoReport = {
 };
 
 export const DemoStage = ({
+  theme,
+  onThemeChange,
+  shortcut,
   frame: activeFrame,
   preloadFrame,
   command,
@@ -104,7 +124,9 @@ export const DemoStage = ({
   const elements = useRef(new Map<string, HTMLIFrameElement>());
   const sent = useRef(new Map<string, SentCommand>());
   const hintsSent = useRef(new Map<string, string>());
+  const themeSent = useRef(new Map<string, DemoTheme>());
   const revealSent = useRef(0);
+  const shortcutSent = useRef(0);
   const [loadEpoch, setLoadEpoch] = useState(0);
 
   const currentKey = activeFrame.key;
@@ -133,6 +155,12 @@ export const DemoStage = ({
         return;
       }
       const [key] = entry;
+      if (isDemoThemeMessage(event.data)) {
+        if (key === currentKeyRef.current) {
+          onThemeChange({ theme: event.data.theme });
+        }
+        return;
+      }
       if (isDemoHintReport(event.data)) {
         const isCurrent = key === currentKeyRef.current;
         if (isCurrent && event.data.generation === sent.current.get(key)?.generation) {
@@ -148,6 +176,7 @@ export const DemoStage = ({
         const isReload = sent.current.has(key);
         sent.current.set(key, { generation: report.generation, type: null });
         markMounted({ key });
+        themeSent.current.delete(key);
         if (isReload) {
           hintsSent.current.delete(key);
           setLoadEpoch((epoch) => epoch + 1);
@@ -171,7 +200,7 @@ export const DemoStage = ({
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [markMounted, onReport, onHintReport]);
+  }, [markMounted, onReport, onHintReport, onThemeChange]);
 
   useEffect(() => {
     const isPreloading =
@@ -255,6 +284,31 @@ export const DemoStage = ({
   }, [hintTrack, mountedKeys, currentKey, command, loadEpoch]);
 
   useEffect(() => {
+    for (const [key, element] of elements.current) {
+      const generation = sent.current.get(key)?.generation;
+      if (generation === undefined || themeSent.current.get(key) === theme) {
+        continue;
+      }
+      themeSent.current.set(key, theme);
+      postToFrame({ frame: element, message: { generation, type: 'theme', theme } });
+    }
+  }, [theme, mountedKeys, loadEpoch]);
+
+  useEffect(() => {
+    if (shortcut === undefined || shortcut.count === shortcutSent.current) {
+      return;
+    }
+    const element = elements.current.get(currentKey);
+    const generation = sent.current.get(currentKey)?.generation;
+    if (element === undefined || generation === undefined) {
+      return;
+    }
+    shortcutSent.current = shortcut.count;
+    element.focus({ preventScroll: true });
+    postToFrame({ frame: element, message: { generation, type: 'shortcut', code: shortcut.code } });
+  }, [shortcut, currentKey]);
+
+  useEffect(() => {
     if (reveal === undefined || reveal.count === revealSent.current) {
       return;
     }
@@ -295,6 +349,7 @@ export const DemoStage = ({
         elements.current.delete(key);
         sent.current.delete(key);
         hintsSent.current.delete(key);
+        themeSent.current.delete(key);
       }
     }
   }, [frames]);
@@ -303,16 +358,15 @@ export const DemoStage = ({
     <div ref={ref} className="relative flex min-h-0 min-w-0 flex-1 items-center justify-center">
       {hasRoom ? (
         <div
-          className="flex items-center justify-center rounded-frame"
+          className="flex items-center justify-center rounded-frame border border-frame-edge bg-background"
           style={{
-            backgroundImage: STAGE_BACKDROP,
             width: APP_WIDTH * scale + STAGE_INSET * 2,
             height: APP_HEIGHT * scale + STAGE_INSET * 2,
           }}
         >
           <div
             data-testid="demo-stage"
-            className="relative overflow-hidden rounded-lg border border-frame-edge bg-background shadow-lg"
+            className="relative overflow-hidden rounded-lg border border-frame-edge bg-background shadow-md"
             style={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
           >
             {shownKey === undefined ? <DemoStageLoading /> : null}

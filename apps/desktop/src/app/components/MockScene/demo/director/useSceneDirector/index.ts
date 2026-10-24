@@ -1,19 +1,33 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../../../../../../store';
+import {
+  applyDocumentTheme,
+  getAppliedTheme,
+  subscribeAppliedTheme,
+} from '../../../../../../shared/lib/theme';
 import { nowIso } from '../../../../../../store/slices/project-mounts/nowIso';
 import { createPlaybackClock } from '../createPlaybackClock';
 import { createSceneDirector, type SceneDirector } from '../createSceneDirector';
 import { createSimulatedSend } from '../createSimulatedSend';
 import { createSimulatedAnswer } from '../createSimulatedAnswer';
 import { createReplyRuns } from '../createReplyRuns';
+import { installDemoSearch } from '../installDemoSearch';
 import { createHintEngine, type HintEngine } from '../createHintEngine';
 import { DEMO_CHAPTERS } from '../../demoChapters';
 import { DEMO_TIMELINES } from '../demoTimelines';
 import type { DemoTimeline } from '../directorTypes';
-import type { DemoHintReport, DemoReport } from '../demoProtocol';
+import {
+  DEMO_PROTOCOL,
+  type DemoHintReport,
+  type DemoReport,
+  type DemoThemeMessage,
+} from '../demoProtocol';
 import { isDemoCommand } from '../isDemoCommand';
 import { isDemoHintsCommand } from '../isDemoHintsCommand';
 import { isDemoRevealCommand } from '../isDemoRevealCommand';
+import { isDemoThemeMessage } from '../isDemoThemeMessage';
+import { isDemoShortcutCommand } from '../isDemoShortcutCommand';
+import { dispatchDemoShortcut } from '../dispatchDemoShortcut';
 import { waitForPaint } from '../waitForPaint';
 
 type Params = {
@@ -21,7 +35,7 @@ type Params = {
 };
 
 type ReportParams = {
-  readonly report: DemoReport | DemoHintReport;
+  readonly report: DemoReport | DemoHintReport | DemoThemeMessage;
 };
 
 type ChapterParams = {
@@ -59,6 +73,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
     let director: SceneDirector | null = null;
     let hints: HintEngine | null = null;
     let isDisposed = false;
+    let expectedTheme = getAppliedTheme();
     const runs = createReplyRuns();
     const isStandalone = window.parent === window;
 
@@ -70,6 +85,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       const store = useAppStore;
       const timeline = DEMO_TIMELINES.get(sceneName)?.({ state: store.getState() }) ?? STILL;
       const now = () => nowIso({});
+      installDemoSearch({ store });
       store.setState({
         sendTurn: createSimulatedSend({
           store,
@@ -108,6 +124,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         onReport: post,
       });
       director.start();
+      expectedTheme = getAppliedTheme();
       if (isStandalone) {
         director.play();
       }
@@ -129,6 +146,19 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       if (isDemoHintsCommand(event.data)) {
         if (event.data.generation === director.generation()) {
           hints?.setTrack({ chapterId: event.data.chapterId, settledIds: event.data.settledIds });
+        }
+        return;
+      }
+      if (isDemoThemeMessage(event.data)) {
+        if (event.data.generation === director.generation()) {
+          expectedTheme = event.data.theme;
+          applyDocumentTheme({ theme: event.data.theme });
+        }
+        return;
+      }
+      if (isDemoShortcutCommand(event.data)) {
+        if (event.data.generation === director.generation()) {
+          dispatchDemoShortcut({ code: event.data.code });
         }
         return;
       }
@@ -161,6 +191,23 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       director?.settle();
     };
 
+    const unwatchTheme = subscribeAppliedTheme(() => {
+      const applied = getAppliedTheme();
+      if (applied === expectedTheme || director === null) {
+        return;
+      }
+      expectedTheme = applied;
+      post({
+        report: {
+          channel: DEMO_PROTOCOL.channel,
+          version: DEMO_PROTOCOL.version,
+          generation: director.generation(),
+          type: 'theme',
+          theme: applied,
+        },
+      });
+    });
+
     window.addEventListener('message', onMessage);
     for (const type of INPUT_EVENTS) {
       window.addEventListener(type, onInput, { capture: true, passive: true });
@@ -171,6 +218,7 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       runs.dispose();
       director?.dispose();
       hints?.dispose();
+      unwatchTheme();
       window.removeEventListener('message', onMessage);
       for (const type of INPUT_EVENTS) {
         window.removeEventListener(type, onInput, { capture: true });
