@@ -63,6 +63,7 @@ export const AutoPlanAsk = ({ sessionId, link, onOpen }: Props) => {
           </Button>
           <Button
             size="sm"
+            data-demo-anchor="auto-approve"
             disabled={model.isBusy}
             isBusy={model.isBusy}
             busyLabel="Approving"

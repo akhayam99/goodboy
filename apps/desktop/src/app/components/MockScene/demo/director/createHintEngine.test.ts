@@ -22,6 +22,7 @@ import {
 } from '../../../../../store/storyHarness';
 import { AGENT_HINTS } from '../hints/agentHints';
 import { ONBOARDING_HINTS } from '../hints/onboardingHints';
+import { ORCHESTRATE_HINTS } from '../hints/orchestrateHints';
 import type { DemoHint } from '../hints/demoHintTypes';
 import { setupPlace } from '../hints/setupPlace';
 import { createHintEngine } from './createHintEngine';
@@ -29,6 +30,10 @@ import { createSimulatedAnswer } from './createSimulatedAnswer';
 import { createSimulatedSend } from './createSimulatedSend';
 import { createReplyRuns } from './createReplyRuns';
 import type { DemoHintReport } from './demoProtocol';
+import { createPlaybackClock } from './createPlaybackClock';
+import { createSceneDirector } from './createSceneDirector';
+import { limitsTimeline } from './limitsTimeline';
+import { AUTO_ROOT_ID, AUTO_SESSION, autoSceneOf } from '../../scenes/u24/autoSceneSeed';
 
 let store: StoryStore;
 
@@ -361,6 +366,71 @@ describe('the hint engine', () => {
     });
     await frame();
     expect(tried()).toEqual([]);
+    engine.dispose();
+  });
+
+  it('starts Auto only for a new turn, not for the turns its scene seeds late', async () => {
+    document.body.innerHTML = '<textarea aria-label="Start a run"></textarea>';
+    const { engine, tried } = engineFor({ hints: ORCHESTRATE_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    const scene = autoSceneOf({ state: 'done' });
+    store.setState({
+      sessions: [AUTO_SESSION],
+      currentSessionId: AUTO_SESSION.id,
+      autoTreeViews: { [AUTO_SESSION.id]: [scene.view] },
+      transcripts: { [AUTO_ROOT_ID]: scene.events },
+    });
+    await frame();
+    expect(tried()).toEqual([]);
+    store.setState((current) => ({
+      transcripts: {
+        [AUTO_ROOT_ID]: [
+          ...(current.transcripts[AUTO_ROOT_ID] ?? []),
+          {
+            kind: 'user_text',
+            runId: brandId<ProviderRunId>({ value: 'demo-hint-started' }),
+            text: 'Check ledger-core too.',
+            at: AT,
+          },
+        ],
+      },
+    }));
+    await frame();
+    expect(tried()).toEqual(['auto-start']);
+    engine.dispose();
+  });
+
+  it('credits the limits handoff for a visitor message, not for the scripted one', async () => {
+    seed();
+    store.setState({ sessionOpenQuestions: {}, agentDraft: {}, transcripts: { [agent.id]: [] } });
+    document.body.innerHTML = '<textarea aria-label="Message to the agent"></textarea>';
+    const timeline = limitsTimeline({ state: store.getState() });
+    if (timeline === null) {
+      throw new Error('no limits timeline');
+    }
+    const director = createSceneDirector({
+      timeline,
+      store,
+      clock: createPlaybackClock({ now: () => Date.now() }),
+      isSettled: false,
+      now: () => AT,
+      onReport: () => undefined,
+    });
+    const { engine, tried } = engineFor({ hints: AGENT_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    director.start();
+    director.play();
+    vi.advanceTimersByTime(60000);
+    await frame();
+    expect(tried()).toEqual([]);
+    await store
+      .getState()
+      .sendTurn({ sessionId: session.id, agentId: agent.id, content: 'Run the postings suite.' });
+    vi.advanceTimersByTime(60000);
+    await frame();
+    expect(tried()).toEqual(['agent-limits']);
+    director.dispose();
     engine.dispose();
   });
 

@@ -1,4 +1,5 @@
 import { isOpenQuestionAnswerText } from '@goodboy/core';
+import type { TurnEvent } from '@goodboy/types';
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from './demoHintTypes';
 
@@ -57,6 +58,35 @@ const blockingQuestionOf = ({ state }: StateParams): string | null => {
   return question?.id ?? null;
 };
 
+const transcriptOf = ({ state }: StateParams): ReadonlyArray<TurnEvent> => {
+  const sessionId = state.currentSessionId;
+  if (sessionId === null) {
+    return [];
+  }
+  const agentId = state.selectedAgentId[sessionId];
+  if (agentId === null || agentId === undefined) {
+    return [];
+  }
+  return state.transcripts[agentId] ?? [];
+};
+
+const hasHandoff = ({ state }: StateParams): boolean =>
+  transcriptOf({ state }).some((event) => event.kind === 'decision_note');
+
+const isVisitorHandoffDone = ({ state, start }: HintProbe): boolean => {
+  const before = new Set(transcriptOf({ state: start }).map((event) => event.runId));
+  const events = transcriptOf({ state });
+  const visitorRuns = new Set(
+    events.flatMap((event) =>
+      event.kind === 'user_text' && !before.has(event.runId) ? [event.runId] : [],
+    ),
+  );
+  return (
+    !isAgentBusy({ state }) &&
+    events.some((event) => event.kind === 'decision_note' && visitorRuns.has(event.runId))
+  );
+};
+
 const hasSent = ({ state, start }: HintProbe): boolean =>
   userTurnsOf({ state }) > userTurnsOf({ state: start });
 
@@ -83,6 +113,15 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
     side: 'top',
     revealWhen: ({ state }) => blockingQuestionOf({ state }) !== null && !isAgentBusy({ state }),
     doneWhen: ({ state, start }) => answeredOf({ state }) > answeredOf({ state: start }),
+  },
+  {
+    id: 'agent-limits',
+    copy: 'Send a message and watch Codex take over from Claude',
+    outcome: 'task-continued',
+    anchor: 'textarea[aria-label="Message to the agent"]',
+    side: 'top',
+    revealWhen: ({ state }) => hasHandoff({ state }) && !isAgentBusy({ state }),
+    doneWhen: isVisitorHandoffDone,
   },
   {
     id: 'agent-files',

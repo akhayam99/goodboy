@@ -25,6 +25,7 @@ export const FixCommentsLaunchRow = ({ count, startedMode, error, onStart }: Pro
       <Button
         size="sm"
         variant="primary"
+        data-demo-anchor="resolve-start"
         isBusy={startedMode === 'apply'}
         disabled={count === 0 || isStarting}
         onClick={() => onStart('apply')}
