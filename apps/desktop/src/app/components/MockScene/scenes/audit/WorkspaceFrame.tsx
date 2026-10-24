@@ -11,6 +11,7 @@ import { selectDrawerSizing } from '../../../../../store/slices/drawer/selectDra
 import { DrawerHost } from '../../../DrawerHost';
 import { shellArrangement } from '../../../../shellArrangement';
 import { useSceneShell } from '../useSceneShell';
+import { useSceneSidebar } from '../useSceneSidebar';
 import { sceneParam } from './sceneParams';
 
 const noop = () => undefined;
@@ -24,11 +25,12 @@ type Props = {
 export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
   const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const drawerSizing = useAppStore(selectDrawerSizing);
+  const rail = useSceneSidebar({ isCollapsed: sceneParam({ key: 'rail' }) === '1' });
   const arrangement = shellArrangement({
     hasWorkspace: true,
-    isSidebarCollapsed: sceneParam({ key: 'rail' }) === '1',
+    isSidebarCollapsed: rail.isCollapsed,
   });
-  const shell = useSceneShell({ arrangement });
+  const shell = useSceneShell({ arrangement, onToggleSidebar: rail.toggle });
   return (
     <>
       <AppShell
@@ -38,7 +40,7 @@ export const WorkspaceFrame = ({ session, main, hasRail = true }: Props) => {
         studioCoversLeft={arrangement.studioCoversLeft}
         topBar={
           <AppTopBar
-            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: noop }}
+            sidebar={{ isCollapsed: arrangement.isLeftRail, onToggle: rail.toggle }}
             onOpenSpend={noop}
             onOpenScript={noop}
           />

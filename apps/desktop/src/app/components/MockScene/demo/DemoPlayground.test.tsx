@@ -250,7 +250,7 @@ describe('demo playground', () => {
     expect(currentStep()).toBe('Run approval');
   });
 
-  it('keeps the download in the top bar only at the end of the tour', async () => {
+  it('shows the download in the rail and again in the top bar only below the large breakpoint', async () => {
     const last = DEMO_CHAPTERS.at(-1);
     window.history.replaceState(null, '', `/?scene=demo#${last?.id ?? ''}`);
     render(<DemoPlayground />);
@@ -258,7 +258,9 @@ describe('demo playground', () => {
       await vi.advanceTimersByTimeAsync(0);
     });
     expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
-    expect(screen.getAllByRole('link', { name: /Download for macOS/ })).toHaveLength(1);
+    const downloads = screen.getAllByRole('link', { name: /Download for macOS/ });
+    expect(downloads).toHaveLength(2);
+    expect(downloads.filter((link) => link.className.includes('lg:hidden'))).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Back to the start' }));
     expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[0].id}`);
   });
@@ -271,13 +273,13 @@ describe('demo playground', () => {
       }),
     );
     render(<DemoPlayground />);
-    expect(screen.getByText(/mock data/).textContent).toBe(
-      'Everything here is mock data, and nothing you do leaves this page.',
+    expect(screen.getByText(/Mock data only/).textContent).toBe(
+      'Mock data only. Nothing leaves this page.',
     );
     expect(screen.queryByText(/You have tried every group/)).toBeNull();
   });
 
-  it('points at the top right download once every group is tried', () => {
+  it('closes the note on the download once every group is tried', () => {
     const progress = Object.fromEntries(
       DEMO_CHAPTERS.map((chapter) => [
         chapter.id,
@@ -287,7 +289,7 @@ describe('demo playground', () => {
     window.localStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
     render(<DemoPlayground />);
     expect(screen.getByText(/every group/).textContent).toBe(
-      'You have tried every group. Download is top right.',
+      'You have tried every group. Take Goodboy home.',
     );
   });
 
@@ -413,13 +415,13 @@ describe('demo playground', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Work with an agent');
   });
 
-  it('switches the frame and the stage to the light theme', () => {
+  it('switches the stage to the light theme and keeps the frame it shows', () => {
     render(<DemoPlayground />);
+    const before = visibleFrame();
+    const src = before.getAttribute('src');
     fireEvent.click(screen.getByRole('button', { name: 'Switch to light theme' }));
-    const frames = Array.from(document.querySelectorAll('iframe'));
-    expect(frames.some((frame) => (frame.getAttribute('src') ?? '').includes('theme=light'))).toBe(
-      true,
-    );
+    expect(visibleFrame()).toBe(before);
+    expect(visibleFrame().getAttribute('src')).toBe(src);
     expect(screen.queryByRole('button', { name: 'Switch to dark theme' })).not.toBeNull();
   });
   it('names the group track for the visible frame once it is ready', () => {

@@ -3,9 +3,9 @@ type Props = {
 };
 
 export const DemoRailNote = ({ isEveryGroupTried }: Props) => (
-  <p aria-live="polite" className="px-7 text-label text-muted-foreground">
+  <p aria-live="polite" className="px-3 text-label text-muted-foreground">
     {isEveryGroupTried
-      ? 'You have tried every group. Download is top right.'
-      : 'Everything here is mock data, and nothing you do leaves this page.'}
+      ? 'You have tried every group. Take Goodboy home.'
+      : 'Mock data only. Nothing leaves this page.'}
   </p>
 );

@@ -86,14 +86,14 @@ const nextFrame = ({
   const sameChapter = chapter.beats[beatIndex + 1];
   if (sameChapter !== undefined) {
     const src = beatSrc({ beat: sameChapter, theme });
-    return { key: frameKey({ src, replayKey }), src };
+    return { key: frameKey({ beat: sameChapter, replayKey }), src };
   }
   const opening = nextChapter?.beats[0];
   if (opening === undefined) {
     return undefined;
   }
   const src = beatSrc({ beat: opening, theme });
-  return { key: frameKey({ src, replayKey: 0 }), src };
+  return { key: frameKey({ beat: opening, replayKey: 0 }), src };
 };
 
 const NO_REPORTS: ReadonlyMap<string, DemoReport> = new Map();
@@ -136,7 +136,7 @@ export const useBeatPlayer = ({ chapter, nextChapter, theme, shownKey }: Params)
   const frameIndex = Math.min(current.beatIndex, lastIndex);
   const beat = chapter.beats[frameIndex];
   const src = beat === undefined ? '' : beatSrc({ beat, theme });
-  const key = frameKey({ src, replayKey: current.replayKey });
+  const key = beat === undefined ? '' : frameKey({ beat, replayKey: current.replayKey });
   const frame = useMemo(() => ({ key, src }), [key, src]);
   const preloadFrame = useMemo(
     () =>

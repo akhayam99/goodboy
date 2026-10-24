@@ -2,6 +2,7 @@ import { ScrollFade } from '@goodboy/ui';
 import type { DemoChapter } from './demoChapters';
 import { DemoRailRow } from './DemoRailRow';
 import { DemoRailNote } from './DemoRailNote';
+import { DemoRailActions } from './DemoRailActions';
 import type { HintTally } from './hints/hintTally';
 
 type SelectParams = {
@@ -40,6 +41,9 @@ export const DemoRail = ({ chapters, activeId, tallyOf, onSelect, isEveryGroupTr
         ))}
       </ScrollFade>
     </nav>
-    <DemoRailNote isEveryGroupTried={isEveryGroupTried} />
+    <div className="flex flex-col gap-3 px-4">
+      <DemoRailNote isEveryGroupTried={isEveryGroupTried} />
+      <DemoRailActions />
+    </div>
   </div>
 );

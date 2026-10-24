@@ -73,3 +73,23 @@ type DemoTriedReport = {
 };
 
 export type DemoHintReport = DemoAnchorReport | DemoTriedReport | DemoPlaceReport;
+
+export type DemoTheme = 'dark' | 'light';
+
+export type DemoThemeMessage = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'theme';
+  readonly theme: DemoTheme;
+};
+
+export type DemoShortcutCode = 'KeyK' | 'KeyF' | 'KeyB';
+
+export type DemoShortcutCommand = {
+  readonly channel: typeof DEMO_PROTOCOL.channel;
+  readonly version: typeof DEMO_PROTOCOL.version;
+  readonly generation: number;
+  readonly type: 'shortcut';
+  readonly code: DemoShortcutCode;
+};
