@@ -19,7 +19,7 @@ Auto runs on Cursor again, Codex agents can rebase in their worktree, and pull r
 ### Improved
 
 #### The session tool rail shows icons only
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=tool-rail -->
 
 Ask, Terminal, Explore, Context, Agents and Scripts are icons in a narrow rail, with the name and shortcut on hover. The Context dot sits on its icon.
 
