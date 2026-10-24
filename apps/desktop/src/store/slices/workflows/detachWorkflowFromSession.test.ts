@@ -45,6 +45,7 @@ vi.mock('@goodboy/db', async () =>
     purgeAgentForDelete: purgeAgentSpy,
     listResolveAttempts: listResolveAttemptsSpy,
     updateSessionState: vi.fn(async () => undefined),
+    getAutoTreeByRootAgent: vi.fn(async () => null),
   }),
 );
 

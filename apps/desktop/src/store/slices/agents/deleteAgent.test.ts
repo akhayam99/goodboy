@@ -35,6 +35,8 @@ const hoisted = vi.hoisted(() => ({
   loadSessionSlots: vi.fn(async () => undefined),
   loadAutoTrees: vi.fn(async () => undefined),
   reportError: vi.fn(async () => undefined),
+  getAutoTreeByRootAgent: vi.fn(async (): Promise<unknown> => null),
+  stopTree: vi.fn<TreeStopPort>(async () => 'stopped'),
 }));
 
 vi.mock('../../../features/chat/turn', () => ({
@@ -50,6 +52,7 @@ vi.mock('@goodboy/db', async () =>
     updateSessionState: hoisted.updateSessionState,
     listResolveAttempts: hoisted.listResolveAttempts,
     purgeAgentForDelete: hoisted.purgeAgentForDelete,
+    getAutoTreeByRootAgent: hoisted.getAutoTreeByRootAgent,
   }),
 );
 vi.mock('@goodboy/core', () => ({
@@ -62,6 +65,7 @@ vi.mock('../../../features/worktree/worktree', () => ({
 
 import { deleteAgent } from './deleteAgent';
 import { purgedAgentIds } from '../sessions/sessionMutators';
+import { registerTreeStopPort, type TreeStopPort } from '../../../features/auto/treeStopPort';
 
 const SID = 'sess-1' as SessionId;
 const DOOMED = 'resolver-1' as AgentId;
@@ -71,6 +75,7 @@ const MOUNT_TWO = 'mount-two' as MountId;
 const MOUNT_THREE = 'mount-three' as MountId;
 const PATH_TWO = '/repo/two';
 const PATH_THREE = '/repo/three';
+const AUTO_TREE = { id: 'tree-1', phase: 'waiting', stopState: 'none' };
 
 const resolver = (over: Partial<Agent> & { id: AgentId }): Agent => ({
   sessionId: SID,
@@ -189,14 +194,55 @@ beforeEach(() => {
   hoisted.purgeAgentForDelete.mockResolvedValue([]);
   hoisted.removeQuestionsFromSlot.mockReset();
   hoisted.removeQuestionsFromSlot.mockResolvedValue(false);
+  hoisted.getAutoTreeByRootAgent.mockReset();
+  hoisted.getAutoTreeByRootAgent.mockResolvedValue(null);
+  hoisted.stopTree.mockReset();
+  hoisted.stopTree.mockResolvedValue('stopped');
+  registerTreeStopPort({ port: hoisted.stopTree });
 });
 
 afterEach(() => {
+  registerTreeStopPort({ port: null });
   vi.clearAllMocks();
   purgedAgentIds.clear();
 });
 
 describe('deleteAgent', () => {
+  it('stops the Auto tree the agent roots before it cancels the run or purges the rows', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+    hoisted.getAutoTreeByRootAgent.mockResolvedValue(AUTO_TREE);
+
+    await deleteAgent(set, get)(SID, DOOMED);
+
+    expect(hoisted.getAutoTreeByRootAgent).toHaveBeenCalledWith(
+      expect.objectContaining({ rootAgentId: DOOMED }),
+    );
+    expect(hoisted.stopTree).toHaveBeenCalledWith({ treeId: 'tree-1' });
+    expect(hoisted.stopTree.mock.invocationCallOrder[0]).toBeLessThan(
+      hoisted.cancelTurn.mock.invocationCallOrder[0] ?? Infinity,
+    );
+    expect(hoisted.stopTree.mock.invocationCallOrder[0]).toBeLessThan(
+      hoisted.purgeAgentForDelete.mock.invocationCallOrder[0] ?? Infinity,
+    );
+  });
+
+  it('keeps the agent and its rows when the Auto tree cannot be stopped', async () => {
+    const { get, set, state } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([]);
+    hoisted.getAutoTreeByRootAgent.mockResolvedValue(AUTO_TREE);
+    hoisted.stopTree.mockResolvedValue('stuck');
+
+    await expect(deleteAgent(set, get)(SID, DOOMED)).rejects.toThrow('still running');
+
+    expect(hoisted.purgeAgentForDelete).not.toHaveBeenCalled();
+    expect(hoisted.cancelTurn).not.toHaveBeenCalled();
+    expect(purgedAgentIds.has(DOOMED)).toBe(false);
+    expect(state.sessionPhaseRuns).toMatchObject({ [SID]: [{ id: DOOMED }] });
+  });
+
   it('gives back the worktree the agent was writing, not the selected one', async () => {
     const { get, set } = makeStore();
     hoisted.invokeAgentList.mockResolvedValue([]);

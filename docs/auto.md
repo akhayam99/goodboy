@@ -507,9 +507,13 @@ stops it is a guard that protects the user:
   per delegation, the no progress streak and the wall clock hours;
 - four open children and four per batch.
 
-Deleting the root agent of a tree settles the tree in the same write (`agentPurgeStatements`:
-phase `stopped`, stop state `confirmed`, reason `agent_deleted`), and the lists read only trees
-whose root agent is still in the session (`liveAutoViewsOf`, through `useAutoTreeViews`): a tree
+Deleting the root agent of a tree first runs the stop protocol on the tree (`stopAutoTreeForDelete`,
+through the tree stop port and `stopTree`): the generation advances, every running child is
+cancelled and the stop is confirmed only after that cleanup succeeded. If a child does not exit,
+Auto is not running or another window owns the tree, the delete fails with the reason, the agent
+stays and the tree stays unconfirmed; deleting again resumes the stop. The purge itself
+(`agentPurgeStatements`) never touches the tree. The lists read only trees whose root agent is
+still in the session (`liveAutoViewsOf`, through `useAutoTreeViews`): a tree
 left open on an agent that was deleted or moved raises no **Needs you** card, no **Auto is stuck**
 line and no count. A child whose agent is gone is not stuck (`isAutoChildStuck`); a child Auto
 accepted and has not started has no agent yet and still counts. Plans stay readable in the plan

@@ -6,6 +6,7 @@ import { invokeAgentList } from '../../../features/workflows/workflows';
 import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { stopAgentForDelete } from './stopAgentForDelete';
+import { stopAutoTreeForDelete } from './stopAutoTreeForDelete';
 import { releaseAgentFiles } from './releaseAgentFiles';
 import { omitDeletedAgents } from './omitDeletedAgents';
 import type { GetFn, SetFn } from './types';
@@ -14,6 +15,7 @@ import { sessionById } from '../sessions/sessionIndex';
 export const deleteAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId;
+    await stopAutoTreeForDelete({ agentId });
     const runStopped = await stopAgentForDelete({ get, agentId });
     await releaseAgentFiles({ get, sessionId, agentId, isRunStopped: runStopped });
 

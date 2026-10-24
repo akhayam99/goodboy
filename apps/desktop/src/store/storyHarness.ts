@@ -732,6 +732,7 @@ export const storyDbStubs = () => ({
   listAgentRunIdsForSession: vi.fn(async () => new Map()),
   listAgentTurnSpanRoutes: vi.fn(async () => []),
   purgeAgentForDelete: vi.fn(async () => [] as ReadonlyArray<string>),
+  getAutoTreeByRootAgent: vi.fn(async () => null),
   listTurnEventsForAgent: vi.fn(async () => []),
   listTurnEventsForSession: vi.fn(async () => []),
   insertNotification: storySpies.insertNotification,
