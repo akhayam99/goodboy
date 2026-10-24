@@ -153,7 +153,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
       <div
         ref={calloutRef}
         role="note"
-        aria-label={next === undefined ? `Hint ${coach.step} of ${coach.total}` : 'Group done'}
+        aria-label={next === undefined ? `Step ${coach.step} of ${coach.total}` : 'Group done'}
         data-side={side}
         className={cn('pointer-events-auto absolute flex flex-col gap-2 p-3', FLOATING_SURFACE)}
         style={{
@@ -186,7 +186,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide, onNext }: 
         {next === undefined ? (
           <div className="flex items-center justify-between gap-2">
             <span className="text-meta text-faint-foreground">
-              Hint {coach.step} of {coach.total}
+              Step {coach.step} of {coach.total}
             </span>
             <Button size="xs" variant="quiet" onClick={onSkip}>
               Skip hint

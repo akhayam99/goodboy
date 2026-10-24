@@ -35,7 +35,7 @@ const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
 
 export const DemoPlayground = () => {
   const rootRef = useRef<HTMLDivElement>(null);
-  const { theme, choose: chooseTheme, toggle: toggleTheme } = useDemoTheme();
+  const { theme, choose: chooseTheme, toggle: swapTheme } = useDemoTheme();
   const [shortcut, setShortcut] = useState<ShortcutRequest | undefined>(undefined);
   const { chapterId, selectChapter } = useChapterHash({
     chapters: DEMO_CHAPTERS,
@@ -125,9 +125,9 @@ export const DemoPlayground = () => {
       ref={rootRef}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className="flex h-screen min-h-0 flex-col bg-chrome text-foreground outline-none"
+      className="flex h-screen min-h-0 flex-col bg-background text-foreground outline-none"
     >
-      <DemoTopBar theme={theme} onToggleTheme={toggleTheme} />
+      <DemoTopBar theme={theme} onToggleTheme={swapTheme} />
       <div className="flex min-h-0 flex-1">
         <DemoRail
           chapters={DEMO_CHAPTERS}

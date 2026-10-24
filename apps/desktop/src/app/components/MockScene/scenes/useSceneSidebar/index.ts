@@ -16,7 +16,7 @@ export const useSceneSidebar = ({ isCollapsed }: Params): SceneSidebar => {
     if (!isDirectedScene()) {
       return;
     }
-    setIsFolded((current) => !current);
+    setIsFolded((isCurrentlyFolded) => !isCurrentlyFolded);
   }, []);
   return { isCollapsed: isFolded, toggle };
 };
