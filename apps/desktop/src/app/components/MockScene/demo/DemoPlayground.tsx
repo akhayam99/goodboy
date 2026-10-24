@@ -8,10 +8,10 @@ import { DemoRail } from './DemoRail';
 import { DemoChapterHeader } from './DemoChapterHeader';
 import { DemoStage } from './DemoStage';
 import { DemoTimeline } from './DemoTimeline';
-import { DemoClosing } from './DemoClosing';
 import { useBeatPlayer } from './useBeatPlayer';
 import { useChapterHash } from './useChapterHash';
 import { useDemoKeys } from './useDemoKeys';
+import { isEveryGroupTried } from './hints/isEveryGroupTried';
 import { useDemoHints, type DemoHints, type HintReportParams } from './useDemoHints';
 
 type Theme = 'dark' | 'light';
@@ -139,6 +139,7 @@ export const DemoPlayground = () => {
           activeId={chapter.id}
           tallyOf={hints.tallyOf}
           onSelect={goToChapter}
+          isEveryGroupTried={isEveryGroupTried({ chapters: DEMO_CHAPTERS, tallyOf: hints.tallyOf })}
         />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 px-4 pb-4 pt-2 sm:px-6">
           <DemoChapterHeader
@@ -178,7 +179,6 @@ export const DemoPlayground = () => {
             onNext={onNext}
             onRestart={() => goToChapter({ id: DEMO_CHAPTERS[0].id })}
           />
-          {nextChapter === undefined ? <DemoClosing /> : null}
         </main>
       </div>
     </div>
