@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { PullRequestPerson, SessionId } from '@goodboy/types';
+import { brandId, type MountId, type PullRequestPerson, type SessionId } from '@goodboy/types';
 import { U24_PRPAGE_CREATE_SCENES } from '../../../../app/components/MockScene/scenes/u24/prpage-create';
 import { ToastProvider } from '../../../../shared/components/Toast';
 import {
@@ -17,6 +17,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
+import { mockSceneIpc } from '../../../../app/components/MockScene/scenes/mockSceneIpc';
 import { clearSceneInvoke } from '../../../../test/sceneInvoke';
 import { CreatePrPanel } from '../../github/components/PullRequest/CreatePrPanel';
 import { CreateReviewForm } from './CreateReviewForm';
@@ -370,6 +371,85 @@ describe('the create form', () => {
       number: 318,
       logins: ['maya-ortiz'],
     });
+  });
+
+  it('asks for the reviewers in the repository the pull request was created in', async () => {
+    const seeded = renderScene({ name: 'branch-create', state: 'empty' });
+    await titleField();
+    seeded.unmount();
+    const sessionId = firstSessionId();
+    const first = store.getState().sessionProjectMounts[sessionId]?.[0];
+    if (first === undefined) {
+      throw new Error('the scene seeds a mount');
+    }
+    const shown = {
+      ...first,
+      mountId: brandId<MountId>({ value: 'mount-payments-api' }),
+      repoRoot: '/repos/payments-api',
+      worktreePath: '/worktrees/payments-api',
+      lastWorktreePath: '/worktrees/payments-api',
+      parallelIndex: 1,
+    };
+    const firstView = store.getState().sessionMounts[sessionId]?.[0];
+    if (firstView === undefined) {
+      throw new Error('the scene seeds a mount view');
+    }
+    const roots: Array<string> = [];
+    mockSceneIpc((command, payload) => {
+      const args: unknown = typeof payload === 'object' && payload !== null ? payload : null;
+      const line = Array.isArray(Reflect.get(args ?? {}, 'args'))
+        ? String(Reflect.get(args ?? {}, 'args'))
+        : '';
+      if (command !== 'gh_run' || !line.includes('collaborators')) {
+        return null;
+      }
+      roots.push(String(Reflect.get(args ?? {}, 'cwd')));
+      return { stdout: 'maya-ortiz\t\n', stderr: '', exitCode: 0 };
+    });
+    const createPrForSession = vi.fn(async () => ({ number: 44, url: null }));
+    const requestReview = vi.fn(async () => undefined);
+    act(() =>
+      store.setState({
+        sessionProjectMounts: { [sessionId]: [first, shown] },
+        sessionMounts: {
+          [sessionId]: [
+            firstView,
+            {
+              ...firstView,
+              id: shown.mountId,
+              repoRoot: shown.repoRoot,
+              worktreePath: shown.worktreePath,
+              lastWorktreePath: shown.lastWorktreePath,
+              parallelIndex: 1,
+            },
+          ],
+        },
+        createPrForSession,
+        requestReview,
+      }),
+    );
+
+    render(
+      <ToastProvider>
+        <CreatePrPanel
+          sessionId={sessionId}
+          mountId={shown.mountId}
+          defaultTitle="Goal"
+          onCreated={() => undefined}
+        />
+      </ToastProvider>,
+    );
+    await titleField();
+    fireEvent.click(screen.getByRole('button', { name: 'Request review' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'maya-ortiz' }));
+    fireEvent.click(screen.getByRole('button', { name: /create pull request$/i }));
+
+    await waitFor(() =>
+      expect(requestReview).toHaveBeenCalledWith(sessionId, 44, ['maya-ortiz'], {
+        mountId: shown.mountId,
+      }),
+    );
+    expect(roots).toEqual(['/repos/payments-api']);
   });
 
   describe('on GitLab', () => {

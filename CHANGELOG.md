@@ -12,6 +12,31 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.27.14
+
+Auto runs on Cursor again, Codex agents can rebase in their worktree, and pull request writes act on the branch on screen.
+
+### Improved
+
+#### The session tool rail shows icons only
+<!-- gb area=sessions image=tool-rail -->
+
+Ask, Terminal, Explore, Context, Agents and Scripts are icons in a narrow rail, with the name and shortcut on hover. The Context dot sits on its icon.
+
+### Fixed
+
+- Auto runs on Cursor again: read-only Cursor runs pass the workspace trust flag that recent Cursor CLIs ask for, and still get no write rights. <!-- gb area=app -->
+- A Codex agent can now rebase, merge and commit inside a session worktree, where git keeps its own folder outside the worktree. Before, git stopped with Operation not permitted. <!-- gb area=app -->
+- Pull request actions, reviewers, linked issues and Scribe text go to the repository of the branch on screen, and a refused review request says why. <!-- gb area=review -->
+- Needs you no longer asks you to approve a plan, or says Auto is stuck, for an agent that was deleted; deleting an agent closes its Auto run. <!-- gb area=sessions -->
+- Opening the bell no longer marks every notification read: a row is read after a second on screen, and Mark all read clears the rest. <!-- gb area=app -->
+- An Auto agent waiting for your OK or your answer no longer reads Queued with Stop agent; it says what it waits for. <!-- gb area=sessions -->
+- The run's spend cap chip now counts the whole session against the session limit instead of only the run's spend. <!-- gb area=workflows -->
+- Script output keeps accents, check marks and emoji whole, also when a character arrives split across two chunks. <!-- gb area=app -->
+- The unread reply button on a board card now opens the agent that replied, not the first agent of the session. <!-- gb area=sessions -->
+- A review thread's new on origin preview now reads the commit in the thread's own repository and says when it cannot read it. <!-- gb area=review -->
+- Change folder in a terminal clears what is typed on the prompt first, so a half-typed command never runs with the cd glued to it. <!-- gb area=app -->
+
 ## Goodboy v0.27.13
 
 The Pull request page leads with its one next step, the Overview sorts a session into five cards, and Asks you sets when a run stops for you.

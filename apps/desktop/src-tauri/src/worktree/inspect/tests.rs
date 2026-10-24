@@ -1,4 +1,4 @@
-use super::inspect_worktree_with;
+use super::{common_git_dir_with, inspect_worktree_with, worktree_git_dir_with};
 use crate::worktree::git::git;
 use crate::worktree::types::WorktreeInspection;
 use std::path::{Path, PathBuf};
@@ -75,4 +75,27 @@ fn inspection_distinguishes_registered_missing_foreign_and_unavailable() {
         unavailable_result,
         WorktreeInspection::RepositoryUnavailable { .. }
     ));
+}
+
+#[test]
+fn a_linked_worktree_has_its_own_git_dir_inside_the_common_one() {
+    let root = init_repo("git-dir");
+    let target = add_worktree(&root, "linked");
+    let mut run_git = |cwd: &Path, args: &[&str]| git(cwd, args);
+
+    let common = common_git_dir_with(&target, &mut run_git).unwrap();
+    let own = worktree_git_dir_with(&target, &mut run_git).unwrap();
+    let main_own = worktree_git_dir_with(&root, &mut run_git).unwrap();
+
+    assert_eq!(common, std::fs::canonicalize(root.join(".git")).unwrap());
+    assert_eq!(own, common.join("worktrees").join("linked"));
+    assert_eq!(main_own, common);
+}
+
+#[test]
+fn a_folder_outside_any_repository_has_no_git_dir() {
+    let folder = temp_root("git-dir-none");
+    let mut run_git = |cwd: &Path, args: &[&str]| git(cwd, args);
+
+    assert_eq!(worktree_git_dir_with(&folder, &mut run_git), None);
 }

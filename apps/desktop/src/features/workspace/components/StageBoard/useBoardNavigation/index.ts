@@ -1,14 +1,15 @@
 import { useMemo } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { agentPlace, sessionPlace, useAppStore, type LensKind } from '../../../../../store';
+import { useAppStore, type LensKind } from '../../../../../store';
 import { lensPlace } from '../../../../../store/slices/navigation/canonicalLocation';
 import { openInConfiguredEditor } from '../../../../../shared/lib/editorSettings';
 import { openReview } from '../../../../review/openReview';
+import { attentionPlace } from '../../../../session/attentionPlace';
 import { openAgentRevealEvent } from '../../../../../shared/utils/openAgentReveal';
 
 export type BoardNavigation = {
   readonly selectCard: (session: Session) => void;
-  readonly openAgent: (session: Session) => void;
+  readonly openUnreadReply: (session: Session) => void;
   readonly openIDE: (session: Session) => void;
   readonly openQuestions: (session: Session) => void;
   readonly openWorkflows: (session: Session) => void;
@@ -39,14 +40,13 @@ export const useBoardNavigation = (): BoardNavigation => {
       openLens({ session, lens: null });
     };
 
-    const openAgent = (session: Session): void => {
-      const id = session.id as SessionId;
-      const agent = (useAppStore.getState().sessionPhaseRuns[id] ?? [])[0];
+    const openUnreadReply = (session: Session): void => {
       navigate({
-        to:
-          agent === undefined
-            ? sessionPlace({ sessionId: id })
-            : agentPlace({ sessionId: id, agentId: agent.id }),
+        to: attentionPlace({
+          state: useAppStore.getState(),
+          sessionId: session.id as SessionId,
+          reason: 'unread-reply',
+        }),
       });
       window.dispatchEvent(openAgentRevealEvent());
     };
@@ -65,7 +65,7 @@ export const useBoardNavigation = (): BoardNavigation => {
 
     return {
       selectCard,
-      openAgent,
+      openUnreadReply,
       openIDE,
       openQuestions: (session) => openLens({ session, lens: 'questions' }),
       openWorkflows: (session) => openLens({ session, lens: 'workflows' }),

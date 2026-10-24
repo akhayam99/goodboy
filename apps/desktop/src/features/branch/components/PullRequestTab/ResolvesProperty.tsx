@@ -76,6 +76,7 @@ export const ResolvesProperty = ({ sessionId, mountId, pr, view, canEdit }: Prop
     canEdit && hasGithubTasks ? (
       <LinkIssueToPrPopover
         sessionId={sessionId}
+        mountId={mountId}
         prNumber={pr.number}
         body={pr.body}
         candidates={candidates}

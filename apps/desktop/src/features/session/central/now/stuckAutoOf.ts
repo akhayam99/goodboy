@@ -1,5 +1,5 @@
 import type { AutoTreeView } from '../../../../store/slices/auto-view/state';
-import { autoStuckKindOf } from '../../../auto/autoStuckKindOf';
+import { isAutoChildStuck } from '../../../auto/isAutoChildStuck';
 import type { ActionCardModel } from '../next/actionCardsOf';
 import type { LiveAutoGroup, LiveGroupModel } from './liveGroupsOf';
 
@@ -24,7 +24,7 @@ export const stuckAutoOf = ({ groups, cards, views }: Params): StuckAuto | null 
     return null;
   }
   const rootAgentId = group.group.rootAgentId;
-  const child = group.children.find(({ state }) => autoStuckKindOf({ state }) !== null);
+  const child = group.children.find((candidate) => isAutoChildStuck({ child: candidate }));
   const card =
     cards.find(
       (candidate) =>

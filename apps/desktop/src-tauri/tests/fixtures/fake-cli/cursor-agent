@@ -74,7 +74,7 @@ case "$1" in
     esac
     ;;
   --help)
-    printf 'Options:\n  %s  Stream partial output\n' '--stream-partial-output'
+    printf 'Options:\n  %s  Stream partial output\n  %s  Trust the current workspace without prompting\n' '--stream-partial-output' '--trust'
     ;;
   *)
     fake_turn cursor-agent.jsonl "$@"

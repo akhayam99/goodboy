@@ -473,6 +473,7 @@ describe('scribe slice', () => {
     expect(read().editPr).toHaveBeenCalledWith(SESSION_ID, 418, {
       title: 'Guard every posting',
       body: signScribeBody({ body: 'Body\n\nCloses #41' }),
+      mountId: MOUNT_ID,
     });
     expect(read().scribeWork[PR_KEY]).toMatchObject({ status: 'created' });
   });
@@ -518,6 +519,7 @@ describe('scribe slice', () => {
 
     expect(read().editPr).toHaveBeenCalledWith(SESSION_ID, 418, {
       body: signScribeBody({ body: 'New body\n\nCloses #41' }),
+      mountId: MOUNT_ID,
     });
   });
 

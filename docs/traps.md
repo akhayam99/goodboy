@@ -123,7 +123,10 @@ file holds those explanations. Everything below has been "fixed" at least once a
   `selectedReviewEntryOf({ mountId })` (no fallback to another mount's entry) and reads
   `usePullRequestView({ mountId })`, so Analyze starts on the shown branch,
   and so do the branch tabs (`branchScopeOf({ mountId })`) and the `pullRequest` action
-  target (`mountId`, carried into its facts). `refreshMountPr` keeps the known request when a poll of
+  target (`mountId`, carried into its facts). The lifecycle writes of that target (`markPrReady`,
+  `mergePr`, `reopenPr`, `convertPrToDraft`, `closePr`) and their refresh take the same `mountId`
+  through `PrWriteOptions`: a write without one lands on the active mount's repository, where
+  another pull request can carry the same number. So do `requestReview`, `editPr`, the reviewer search port (`usePullRequestPort({ mountId })`), the create form's reviewer step and the Scribe settle (`work.mountId`). `refreshMountPr` keeps the known request when a poll of
   the same branch and repository answers empty.
 - Review comments come from a `ReviewSource` (`packages/core/src/review-source/`),
   never from `sessionGithub` alone. `activeReviewSourceOf` (review-source slice)
@@ -668,6 +671,10 @@ fails silently at runtime.
   Subscribing after the snapshot loses what prints in between; writing every
   event after it prints the overlap twice. Offsets are byte counts, so compare
   them on bytes, never on decoded text.
+  A character can be split across two events: decode the bytes of one run with one
+  streaming `TextDecoder` (`base64Bytes`, then `decode(bytes, { stream: true })`, and a last
+  `decode()` at exit), never `atob` text per event. Script runs and the provider lifecycle
+  runs do.
 - `lsof` exits 1 when it finds nothing: no listener, or a pid that died between
   the two reads. The monitor reads exit 0 and 1 as success and anything else,
   or a timeout, as a failed snapshot; treating 1 as an error would show a
@@ -783,7 +790,7 @@ Auto has one gate and the legacy role grid never lists it. `AUTO_GATES.isDelegat
 - A mock scene that shows an Auto chat must give every agent a `lastViewedAt` after its `lastFinishedAt`; otherwise the chat marks it viewed on every render of the real store.
 - A composer in a drawer never reads the session's `selectedAgentId`. In an Auto session that id is the Auto root, so a `ChatInput` that reads it shows the root's draft, queue and "running" state in a child's drawer and sends the child's message to Auto. `ChatView` passes `agentId` down and `ChatInput` threads it through `useAgentSelection`, `useTurnRouting` and `cleanupSentAttachments`; any new hook in the composer takes the agent id from there, never from the store. The pin is `ChatInput/drawerComposer.test.tsx`, and the toolbar width at the drawer minimum is the `drawer-composer` probe of `validate:scenes`.
 - History: Claude refuses a Bash command holding a variable, even if the allow list names it ("A variable in this command can't be checked before it runs"). That is why the old Auto bridge confinement used an absolute path and not `$GOODBOY_BIN`. Auto no longer holds any Bash rule, but the lesson stands for any future allow rule: a read-only command such as `ls` proves nothing about confinement, because Claude allows it without a rule, so probe with a command that writes.
-- An Auto child that fails to start must say why. `launchChildren` settles it with `code: message` (`kickoff_failed: <the error>`), never the bare code; the row and Auto's next message read that text. Do not drop `outcome.message` when you add a refusal. A `rewriter` agent needs a `historyRewriters` copy binding, so a delegated one always throws in `leaseTurnWriter`: admission refuses it instead of creating a child that can never start.
+- An Auto child that fails to start must say why. `launchChildren` settles it with `code: message` (`kickoff_failed: <the error>`, or `agent_not_created: <the error>` when the child agent itself could not be created), never the bare code; the row and Auto's next message read that text. Do not drop `outcome.message` when you add a refusal. A `rewriter` agent needs a `historyRewriters` copy binding, so a delegated one always throws in `leaseTurnWriter`: admission refuses it instead of creating a child that can never start.
 - A bridge act that publishes work (push, open or merge a request, approve, decline) must join `ACT_VERBS` in `query_bridge/auto_child.rs`, or an Auto child can call it. The refusal keys on the socket peer's pid and its parent chain, never on the run id the request carries. Only `spawn_one` records turn pids (`spawn_turn`): a new spawn path that hands a process the bridge env without `spawn_turn` makes every act from it `caller_unknown`, and one that records an Auto child as `HandStarted` leaves the bridge open to it.
 - An Auto writer attempt records its online branch sha in `baseline_json.remote` only at launch (`attemptToLaunch`); a new launch path that skips it gets no watch, and `result_json.verified.remote` stays absent, which reads as "not watched", never as "unchanged". A failed read must stay `unknown`.
 - A writer's changed files are the status snapshot diff plus the tree diff between its start head and its end head (`readCommittedFilesOf`). Compare trees, never commit ids: a rewrite to the same tree must list nothing, and a failed diff read must fall back to the status list, not to "no change".
@@ -813,6 +820,14 @@ A fresh span exists only while the block is the last one and its piece is alive.
 ## Partial output writes a text twice if the whole line is not dropped
 
 With `--include-partial-messages` (Claude) the same text arrives as `text_delta` stream events and again as the whole `assistant` line; Cursor with `--stream-partial-output` does the same with timestamped lines and a line without a timestamp. `takeStreamedBlock` drops the whole block only when it is contained in the text still pending in `ctx.streamedText`, so a CLI that changes the final text (trimming, a different join) shows it twice. `ctx.streamedText` resets on `message_start` and `result`, never between a delta and its whole line. The flag is added by `partial_output_args` after the probe, not by `turn_args`, so `turn_args` tests stay pure and a fake CLI must list the flag in its `--help`. `queueTurnEventInsert` merges the stored deltas by agent and run and writes the held text before the next event of that agent, so a new event kind needs no special case, but a path that writes `turn_events` without it would reorder text.
+
+## Codex needs the own git folder of a linked worktree, not only the common one
+
+A session worktree keeps its index, `HEAD` and `rebase-merge` in `<repo>/.git/worktrees/<name>`, outside the worktree folder. Codex in `workspace-write` still refuses writes there when only `<repo>/.git` is an `--add-dir` root: a commit fails on `index.lock` and a rebase on `rebase-merge` with "Operation not permitted". Adding the per-worktree folder too makes both work (checked with Codex 0.162.1). `buildTurnWritableRoots` takes `worktreeGitDirs` from `worktree_git_dir` for every writable mount; the common folder stays, because refs and objects live there. A new place that hands a writer its roots calls `resolveTurnWritableRoots`, never rebuilds the list.
+
+## A read-only Cursor run needs `--trust`, a writer needs `--force`
+
+`cursor-agent` 2026.10.22 and later asks for workspace trust in headless mode and the turn ends with "Workspace Trust Required" unless the argument list has `--force` or `--trust`. `turn_args` and `side_job_args` stay pure and never carry `--trust`; `workspace_trust_args` adds it after the probe, like `partial_output_args`, so a fake Cursor CLI must list `--trust` in its `--help` and a new Cursor spawn site must call it. Never replace `--trust` with `--force` on a read-only job: `--force` grants shell and write rights.
 
 ## Hover card triggers
 

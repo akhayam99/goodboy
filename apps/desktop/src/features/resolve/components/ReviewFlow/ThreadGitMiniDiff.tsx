@@ -15,12 +15,19 @@ const MINI_DIFF_LINES = 6;
 
 export const ThreadGitMiniDiff = ({ sessionId, entry }: Props) => {
   const fix = entry.facts?.elsewhere ?? null;
-  const files = useOriginCommitDiff({
+  const { files, hasFailed } = useOriginCommitDiff({
     sessionId,
     sha: fix?.origin === 'commit' ? fix.sha : null,
     path: fix?.path ?? null,
-    fallbackWorktreePath: entry.row.attempt?.mountTarget?.worktreePath ?? null,
+    worktreePath: entry.row.attempt?.mountTarget?.worktreePath ?? null,
   });
+  if (hasFailed) {
+    return (
+      <p role="status" className="text-meta text-muted-foreground">
+        Could not read this commit
+      </p>
+    );
+  }
   const lines = inlineChangePlan({ files }).files[0]?.hunks[0]?.lines.slice(0, MINI_DIFF_LINES);
   if (lines === undefined || lines.length === 0) {
     return null;

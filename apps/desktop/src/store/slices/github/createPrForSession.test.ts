@@ -279,6 +279,7 @@ describe('createPrForSession, issue references', () => {
     expect(createArgs()).toContain('--fill');
     expect(state.editPr).toHaveBeenCalledWith(SESSION_ID, 7, {
       body: 'Generated from the commits.\n\nCloses #41',
+      mountId: MOUNT_ID,
     });
   });
 

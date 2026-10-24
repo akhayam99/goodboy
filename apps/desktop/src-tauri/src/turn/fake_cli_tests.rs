@@ -271,6 +271,8 @@ fn expected_argv(binary: &str, run: &Run) -> Vec<String> {
     argv.extend(crate::providers::cli_probe::partial_output_args(
         &binary_path,
     ));
+    let trust = crate::providers::cli_probe::workspace_trust_args(&binary_path, &argv);
+    argv.extend(trust);
     argv
 }
 
@@ -695,6 +697,31 @@ fn cursor_spawns_with_force_only_for_a_full_access_turn() {
 
     assert!(argv_of(&full).contains(&"--force".to_string()));
     assert!(!argv_of(&read_only).contains(&"--force".to_string()));
+}
+
+#[test]
+fn cursor_asks_for_workspace_trust_only_when_it_does_not_force() {
+    let full = Run::new("ok");
+    full.spawn_full("cursor-agent", PROMPT, "bypassPermissions", None)
+        .unwrap();
+    full.turn_events_until_end();
+    let read_only = Run::new("ok");
+    read_only
+        .spawn_full("cursor-agent", PROMPT, "plan", None)
+        .unwrap();
+    read_only.turn_events_until_end();
+
+    let plan_argv = argv_of(&read_only);
+    assert_eq!(
+        plan_argv
+            .iter()
+            .filter(|arg| arg.as_str() == "--trust")
+            .count(),
+        1,
+        "{plan_argv:?}"
+    );
+    assert!(!plan_argv.contains(&"--force".to_string()));
+    assert!(!argv_of(&full).contains(&"--trust".to_string()));
 }
 
 fn is_gone_within(pid: &str, budget: Duration) -> bool {

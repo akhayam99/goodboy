@@ -40,6 +40,10 @@ export const editPr = (_set: SetFn, get: GetFn) => {
         }
       },
     });
-    await refreshActiveRequest({ get, sessionId });
+    await refreshActiveRequest({
+      get,
+      sessionId,
+      ...(opts.mountId === undefined ? {} : { mountId: opts.mountId }),
+    });
   };
 };

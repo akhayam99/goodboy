@@ -57,6 +57,7 @@ export const openScribePullRequest = (set: SetFn, get: GetFn) => {
       await get().editPr(work.sessionId, pr.number, {
         ...(title === undefined ? {} : { title }),
         ...(body === null ? {} : { body }),
+        mountId: work.mountId,
       });
       patchScribeWork({
         set,

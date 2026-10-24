@@ -331,7 +331,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Session tools',
-        desc: 'The column at the right of the session page holds Ask, Terminal, Explore, Context, Agents and Scripts, each a pane beside the page that Esc closes. Fold session rail, or ⌥⌘B, shrinks the rail.',
+        desc: 'The icon column at the right of the session page holds Ask, Terminal, Explore, Context, Agents and Scripts, named on hover, each a pane beside the page that Esc closes. Fold session rail, or ⌥⌘B, shrinks the rail.',
       },
     ],
     links: [],

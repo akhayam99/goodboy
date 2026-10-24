@@ -4,6 +4,7 @@ import { Bell, ChevronRight } from 'lucide-react';
 import {
   ROW_INTERACTIVE,
   AnchoredPopover,
+  Button,
   cn,
   Divider,
   SegmentedTabs,
@@ -23,6 +24,7 @@ import { NOTIFICATIONS_STUDIO_EVENT } from '../../studioEvent';
 import { notificationGroupKey, sortNotificationGroupsNewestFirst } from '../../grouping';
 import { openNotificationSession } from '../../openNotificationSession';
 import { NotificationRow } from '../NotificationRow';
+import { useSeenNotifications } from './useSeenNotifications';
 
 const DROPDOWN_WIDTH = 384;
 const MAX_ROWS = 8;
@@ -55,6 +57,8 @@ export const NotificationCenter = () => {
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const loadNotifications = useAppStore((s) => s.loadNotifications);
   const markNotificationsRead = useAppStore((s) => s.markNotificationsRead);
+  const markNotificationRead = useAppStore((s) => s.markNotificationRead);
+  const reportError = useAppStore((s) => s.reportError);
   const dismissNotificationGroup = useAppStore((s) => s.dismissNotificationGroup);
   const dropdown = useDropdown({
     align: 'center',
@@ -84,13 +88,12 @@ export const NotificationCenter = () => {
       const keys = unreadGroupKeys({ notifications: useAppStore.getState().notifications });
       setUnreadKeys(keys);
       setView(keys.size > 0 ? 'unread' : 'all');
-      void markNotificationsRead();
     };
     window.addEventListener(OPEN_EVENT, handleOpenRequest);
     return () => {
       window.removeEventListener(OPEN_EVENT, handleOpenRequest);
     };
-  }, [markNotificationsRead]);
+  }, []);
 
   const handleOpen = () => {
     toggle();
@@ -98,7 +101,6 @@ export const NotificationCenter = () => {
       const keys = unreadGroupKeys({ notifications });
       setUnreadKeys(keys);
       setView(keys.size > 0 ? 'unread' : 'all');
-      void markNotificationsRead();
     }
   };
 
@@ -112,6 +114,23 @@ export const NotificationCenter = () => {
       ? groups.filter((group) => unreadKeys.has(notificationGroupKey({ group })))
       : groups
   ).slice(0, MAX_ROWS);
+  const shownUnreadIds = shownGroups.flatMap((group) =>
+    group.filter((notification) => !notification.read).map((notification) => notification.id),
+  );
+  useSeenNotifications({
+    isOpen: open,
+    ids: shownUnreadIds,
+    onSeen: ({ id }) => {
+      markNotificationRead(id).catch((error: unknown) => {
+        void reportError({ title: "Couldn't mark the notification read", error });
+      });
+    },
+  });
+  const markAllRead = () => {
+    markNotificationsRead().catch((error: unknown) => {
+      void reportError({ title: "Couldn't mark the notifications read", error });
+    });
+  };
   const viewOptions: ReadonlyArray<SegmentedTabOption<PopoverView>> = [
     {
       value: 'unread',
@@ -159,13 +178,20 @@ export const NotificationCenter = () => {
         <header className="flex items-center justify-between gap-2 px-3 py-2">
           <span className="text-label font-semibold text-foreground">Notifications</span>
           {notifications.length === 0 ? null : (
-            <SegmentedTabs
-              ariaLabel="Show unread or all notifications"
-              options={viewOptions}
-              value={view}
-              onChange={setView}
-              size="sm"
-            />
+            <div className="flex items-center gap-2">
+              {unread > 0 && (
+                <Button variant="ghost" size="sm" onClick={markAllRead}>
+                  Mark all read
+                </Button>
+              )}
+              <SegmentedTabs
+                ariaLabel="Show unread or all notifications"
+                options={viewOptions}
+                value={view}
+                onChange={setView}
+                size="sm"
+              />
+            </div>
           )}
         </header>
         <Divider />

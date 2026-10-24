@@ -23,6 +23,7 @@ import type { TailFacts } from '../tailFacts';
 const STARTED = brandId<IsoDateTime>({ value: '2026-10-16T09:00:00.000Z' });
 const RUN = brandId<ProviderRunId>({ value: 'run-1' });
 const RUNNING: TurnState = { kind: 'running', runId: RUN, startedAt: STARTED };
+const BLOCKED: TurnState = { kind: 'blocked', runId: RUN, blockedAt: STARTED };
 const IDLE_AGENT = { status: 'running', stoppedBy: undefined, stoppedAt: undefined } as const;
 const STOPPED_AGENT = { status: 'stopped', stoppedBy: 'you', stoppedAt: undefined } as const;
 const BASH = { name: 'Bash', command: 'CI=1 pnpm test --filter ledger-core', path: null };
@@ -253,6 +254,82 @@ describe('autoChildLive', () => {
       project: null,
     });
     expect(idsOf(facts)).toEqual(['stopAgent']);
+  });
+
+  it('reads Queued only for a child Auto accepted and has not started', () => {
+    const facts = autoChildLive({
+      delegation: { state: 'accepted', outcome: null, reason: null },
+      turn: null,
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts).toMatchObject({ state: 'queued', phrase: 'Queued' });
+    expect(idsOf(facts)).toEqual(['stopAgent']);
+  });
+
+  it('reads a child that waits for your OK as needing you, with Confirm and Decline and no Stop', () => {
+    const facts = autoChildLive({
+      delegation: { state: 'awaiting_confirm', outcome: null, reason: null },
+      turn: null,
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts).toMatchObject({ state: 'needsYou', phrase: 'Waiting for your OK' });
+    expect(idsOf(facts)).toEqual(['confirmDelegation', 'declineDelegation']);
+  });
+
+  it.each([
+    { name: 'paused with its turn blocked', state: 'paused', turn: BLOCKED },
+    { name: 'paused before its turn is known', state: 'paused', turn: null },
+    { name: 'running with its turn blocked', state: 'running', turn: BLOCKED },
+  ] as const)('reads a child that asked a question as needing you: $name', ({ state, turn }) => {
+    const facts = autoChildLive({
+      delegation: { state, outcome: null, reason: null },
+      turn,
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts).toMatchObject({ state: 'needsYou', phrase: 'Asked a question' });
+    expect(idsOf(facts)).toEqual([]);
+  });
+
+  it('reads a child whose turn ended in an error as failed, not Queued, with Retry through Auto', () => {
+    const facts = autoChildLive({
+      delegation: { state: 'running', outcome: null, reason: null },
+      turn: { kind: 'error', message: 'the provider exited.', failedAt: STARTED },
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts).toMatchObject({ state: 'failed', phrase: 'Failed: the provider exited.' });
+    expect(idsOf(facts)).toEqual(['retryThroughAuto']);
+  });
+
+  it('reads a started child with no turn read yet as working, with Stop agent', () => {
+    const facts = autoChildLive({
+      delegation: { state: 'starting', outcome: null, reason: null },
+      turn: null,
+      agent: IDLE_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts).toMatchObject({ state: 'working', phrase: 'Working' });
+    expect(idsOf(facts)).toEqual(['stopAgent']);
+  });
+
+  it('reads a child stopped before Auto settled it as stopped, with Retry through Auto', () => {
+    const facts = autoChildLive({
+      delegation: { state: 'running', outcome: null, reason: null },
+      turn: null,
+      agent: STOPPED_AGENT,
+      lastTool: null,
+      project: null,
+    });
+    expect(facts?.state).toBe('stopped');
+    expect(idsOf(facts)).toEqual(['retryThroughAuto']);
   });
 
   it('draws nothing for a completed child', () => {

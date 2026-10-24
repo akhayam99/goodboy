@@ -71,7 +71,7 @@ export const PullRequestPage = ({
   onSelectTab,
 }: PullRequestPageProps) => {
   const sessionId = session.id;
-  const port = usePullRequestPort({ sessionId });
+  const port = usePullRequestPort({ sessionId, mountId });
   const { readiness, commentsNeedYou, facts, reviewers } = prReadiness;
   const runs = pullRequestRunsOf({ pr, detail, view });
   const matched = detail !== null && detail.prNumber === pr.number ? detail : null;

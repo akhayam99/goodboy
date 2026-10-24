@@ -82,8 +82,9 @@ database.
   with a writer `confinedRole` (implementer, tester, docs, scribe, ci-fixer,
   rewriter: the turns of an Auto
   tree, set by the Auto units) takes one lease over its write set before it
-  spawns: its working folder, the sibling mounts of the session and the common
-  metadata folder of each repo, the same list `turnWriteSet` hands to the CLI as
+  spawns: its working folder, the sibling mounts of the session, the common
+  metadata folder of each repo and the own git folder of each linked worktree
+  (`.git/worktrees/<name>`, from `worktree_git_dir`), the same list `turnWriteSet` hands to the CLI as
   `--add-dir` roots, so the roots and the lease keys cannot drift. Rust
   `acquire_write_set` (`worktree_writer.rs`) grants every key or none, in sorted
   canonical order, and leaves nothing behind when a key is busy. The lease is
@@ -718,6 +719,7 @@ Rules the adapters hold, each with a test in `adapters.test.ts`:
 - Stop names its scope: Stop (a turn), Stop agent (a child or a fix), Stop
   step (a run step), Stop Auto and its agents. Stopping offers no Stop.
 - A stopped or failed Auto child offers Retry through Auto, never Continue.
+- An Auto child reads Queued only before it starts. One that waits for your OK is `needsYou` with Confirm and Decline, one that asked a question is `needsYou` with no Stop, and a child whose turn failed reads Failed, not Queued.
 - A finished turn draws no tail: it is read from its summary line.
 
 The terminal has no tail by design (its output is its tail), and dependency

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Workflow } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { buildTimelineGroups } from '../../../../features/session/timeline/buildTimelineGroups';
@@ -65,6 +65,15 @@ const clocksOf = (items: ReadonlyArray<TimelineStreamItem>): ReadonlyArray<strin
   items.flatMap((item) => (item.kind === 'row' && item.at != null ? [item.at] : []));
 
 describe('activity run scene', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 23, 12, 0, 0));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('reads up with every count row opened, clocks never rising and children above parents', () => {
     const { items, groups } = streamOfScene({ expandAll: true });
     const clocks = clocksOf(items);

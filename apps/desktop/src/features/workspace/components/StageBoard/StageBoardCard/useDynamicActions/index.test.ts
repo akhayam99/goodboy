@@ -51,7 +51,7 @@ const nav = {
   openQuestions: vi.fn(),
   openPullRequest: vi.fn(),
   openReview: vi.fn(),
-  openAgent: vi.fn(),
+  openUnreadReply: vi.fn(),
 } as unknown as BoardNavigation;
 
 const sessionWith = (workflowRuns: ReadonlyArray<unknown> = []): Session =>
@@ -112,7 +112,7 @@ beforeEach(() => {
   state.requestReviewLaunch.mockClear();
   state.navigate.mockClear();
   (nav.openReview as ReturnType<typeof vi.fn>).mockClear();
-  (nav.openAgent as ReturnType<typeof vi.fn>).mockClear();
+  (nav.openUnreadReply as ReturnType<typeof vi.fn>).mockClear();
 });
 afterEach(() => vi.clearAllMocks());
 
@@ -140,6 +140,13 @@ describe('useDynamicActions', () => {
     state.hasUnread = true;
     const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
     expect(result.current.some((a) => a.key === 'unread')).toBe(true);
+  });
+
+  it('opens the reply through the board navigation when the unread action is pressed', () => {
+    state.hasUnread = true;
+    const { result } = renderHook(() => useDynamicActions(sessionWith(), nav, 'attention'));
+    result.current.find((a) => a.key === 'unread')?.onClick();
+    expect(nav.openUnreadReply).toHaveBeenCalledWith(sessionWith());
   });
 
   it('speaks the suggester vocabulary on the questions action', () => {

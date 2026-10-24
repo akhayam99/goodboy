@@ -90,7 +90,7 @@ export const settleScribe = (set: SetFn, get: GetFn) => {
         references.length === 0 ? output.prBody : `${output.prBody}\n\n${references.join('\n')}`,
     });
     await get()
-      .editPr(sessionId, pr.number, { body })
+      .editPr(sessionId, pr.number, { body, mountId: work.mountId })
       .catch((error: unknown) => {
         patchScribeWork({ set, key, patch: { error: formatError(error) } });
       });

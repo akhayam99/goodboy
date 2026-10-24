@@ -218,7 +218,9 @@ describe('the Pull request tab on Bitbucket, controls', () => {
     fireEvent.click(screen.getByText('rio-k'));
 
     await waitFor(() => expect(stubs.requestReview).toHaveBeenCalledTimes(1));
-    expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 42, ['rio-k']);
+    expect(stubs.requestReview).toHaveBeenCalledWith(SESSION.id, 42, ['rio-k'], {
+      mountId: expect.any(String),
+    });
   });
 });
 
@@ -240,7 +242,9 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
     fireEvent.click(within(group).getByRole('button', { name: 'Merge' }));
 
     await waitFor(() => expect(stubs.mergePr).toHaveBeenCalledTimes(1));
-    expect(stubs.mergePr).toHaveBeenCalledWith(SESSION.id, 42, 'rebase');
+    expect(stubs.mergePr).toHaveBeenCalledWith(SESSION.id, 42, 'rebase', {
+      mountId: expect.any(String),
+    });
   });
 
   it('closes after a confirm that says a declined pull request cannot be reopened', async () => {
@@ -254,7 +258,7 @@ describe('the Pull request tab on Bitbucket, merge and close', () => {
     fireEvent.click(within(group).getByRole('button', { name: 'Close pull request' }));
 
     await waitFor(() => expect(stubs.closePr).toHaveBeenCalledTimes(1));
-    expect(stubs.closePr).toHaveBeenCalledWith(SESSION.id, 42);
+    expect(stubs.closePr).toHaveBeenCalledWith(SESSION.id, 42, { mountId: expect.any(String) });
   });
 
   it('shows a declined pull request as closed with no Reopen, Close or Merge', async () => {

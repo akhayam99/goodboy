@@ -37,7 +37,7 @@ Know what runs from any screen. The chip in the top bar counts the sessions and 
 
 ### Notifications
 
-Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its limit, lands in one list behind the bell, and **Needs action** shows only what waits on you.
+Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session near its limit, lands in one list behind the bell, and **Needs action** shows only what waits on you. Opening the bell marks nothing read: a row is read after a second on screen, the rows that did not fit stay unread, and **Mark all read** clears the rest.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/switch-notifications-dark.webp">

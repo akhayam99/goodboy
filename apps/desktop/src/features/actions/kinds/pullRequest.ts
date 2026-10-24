@@ -18,6 +18,7 @@ import { openUrl } from '../../../shared/lib/editor';
 import { selectActiveProjectPrs } from '../../../store/slices/github/activeProjectPrs';
 import { branchGithubOf } from '../../../store/slices/github/branchGithubOf';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
+import type { PrWriteOptions } from '../../../store/slices/github/prWriteOptions';
 import { selectPrWrite } from '../../../store/slices/pr-writes/selectPrWrite';
 import {
   sessionPullRequestHostOf,
@@ -158,13 +159,17 @@ const can = ({
 
 const hostLabel = ({ facts }: FactsOnly): string => REVIEW_SOURCE_LABEL[facts.host];
 
+const writeOptionsOf = ({ facts }: FactsOnly): PrWriteOptions =>
+  facts.mountId === null ? {} : { mountId: facts.mountId };
+
 const refresh = ({ env, facts }: { readonly env: ActionEnv; readonly facts: PullRequestFacts }) => {
   const state = env.getState();
-  void refreshActiveRequest({ get: env.getState, sessionId: facts.sessionId });
+  const mountScope = writeOptionsOf({ facts });
+  void refreshActiveRequest({ get: env.getState, sessionId: facts.sessionId, ...mountScope });
   if (facts.host === 'github') {
-    void state.refreshSessionPrDetail(facts.sessionId, { force: true });
+    void state.refreshSessionPrDetail(facts.sessionId, { force: true, ...mountScope });
   }
-  void state.loadPullRequestView({ sessionId: facts.sessionId, force: true });
+  void state.loadPullRequestView({ sessionId: facts.sessionId, force: true, ...mountScope });
 };
 
 const write = async ({
@@ -174,12 +179,15 @@ const write = async ({
 }: {
   readonly env: ActionEnv;
   readonly facts: PullRequestFacts;
-  readonly task: (params: { readonly number: number }) => Promise<void>;
+  readonly task: (params: {
+    readonly number: number;
+    readonly options: PrWriteOptions;
+  }) => Promise<void>;
 }): Promise<void> => {
   if (facts.number === null) {
     return;
   }
-  await task({ number: facts.number });
+  await task({ number: facts.number, options: writeOptionsOf({ facts }) });
   refresh({ env, facts });
 };
 
@@ -282,7 +290,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       await write({
         env,
         facts,
-        task: ({ number }) => env.getState().markPrReady(facts.sessionId, number),
+        task: ({ number, options }) => env.getState().markPrReady(facts.sessionId, number, options),
       });
       readyToast({ env, facts });
     },
@@ -328,13 +336,14 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       await write({
         env,
         facts,
-        task: ({ number }) =>
+        task: ({ number, options }) =>
           env
             .getState()
             .mergePr(
               facts.sessionId,
               number,
               isMergeMethod(choice) ? choice : defaultMergeMethod({ facts }),
+              options,
             ),
       });
       env.showToast({
@@ -367,7 +376,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       write({
         env,
         facts,
-        task: ({ number }) => env.getState().reopenPr(facts.sessionId, number),
+        task: ({ number, options }) => env.getState().reopenPr(facts.sessionId, number, options),
       }),
   },
   {
@@ -416,7 +425,8 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       write({
         env,
         facts,
-        task: ({ number }) => env.getState().convertPrToDraft(facts.sessionId, number),
+        task: ({ number, options }) =>
+          env.getState().convertPrToDraft(facts.sessionId, number, options),
       }),
   },
   {
@@ -466,7 +476,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       write({
         env,
         facts,
-        task: ({ number }) => env.getState().closePr(facts.sessionId, number),
+        task: ({ number, options }) => env.getState().closePr(facts.sessionId, number, options),
       }),
   },
   {

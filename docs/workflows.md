@@ -298,7 +298,10 @@ read top to bottom at the conversation measure:
   value and where it comes from, as "Limit $0.92 of $5.00 this run". A chip
   opens only its own popover on `AnchoredPopover` (320px): the setting, one
   line of help, the control and, last, where it comes from ("This run $5.00,
-  then session $8.00. $5.00 comes first.", `runSettingsOf`). There is no Save
+  then session $8.00. $5.00 comes first.", `runSettingsOf`). The chip counts spend
+  against the limit that comes first: the run's own spend against the run limit, but the
+  whole session's spend against the session cap ("Limit $17.00 of $20.00 from session", the
+  popover adding "$2.00 of it this run"), never the run's spend against the session cap. There is no Save
   or Done: a choice applies on click, the limit on Enter or when the popover
   closes. Every limit field (the run, the session, Run defaults and Auto) is a
   text field with a decimal keypad, so cents such as `2.50` (or `2,50`) go

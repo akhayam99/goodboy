@@ -1,100 +1,148 @@
-import { renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Session, SessionId } from '@goodboy/types';
-import { branchPlace, sessionPlace } from '../../../../../store/slices/navigation/place';
+// @vitest-environment happy-dom
 
-type StoreState = {
-  navigate: ReturnType<typeof vi.fn>;
-  openReviewTarget: ReturnType<typeof vi.fn>;
-  sessionPhaseRuns: Record<string, ReadonlyArray<{ id: string }>>;
-  sessionWorktrees: Record<string, ReadonlyArray<string>>;
-  settings: Record<string, string>;
-  reportError: ReturnType<typeof vi.fn>;
-};
-
-const { navigateMock, openReviewTargetMock, openInEditorMock, store } = vi.hoisted(() => {
-  const navigateMock = vi.fn();
-  const openReviewTargetMock = vi.fn(async () => ({ kind: 'opened' as const }));
-  const store: { state: StoreState } = {
-    state: {
-      navigate: navigateMock,
-      openReviewTarget: openReviewTargetMock,
-      sessionPhaseRuns: {},
-      sessionWorktrees: {},
-      settings: {},
-      reportError: vi.fn(),
-    },
-  };
-  return {
-    navigateMock,
-    openReviewTargetMock,
-    openInEditorMock: vi.fn(),
-    store,
-  };
-});
-
-vi.mock('../../../../../store', async () => ({
-  ...(await import('../../../../../store/slices/navigation/place')),
-  useAppStore: Object.assign((selector: (s: StoreState) => unknown) => selector(store.state), {
-    getState: () => store.state,
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../../../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbModuleMock({
+    markAgentViewed: async () => undefined,
   }),
-}));
+);
+vi.mock('../../../../../shared/lib/db', async () =>
+  (await import('../../../../../store/storyHarness')).dbLibModuleMock(),
+);
 
-vi.mock('../../../../../shared/lib/editor', () => ({
-  openInEditor: openInEditorMock,
-}));
-
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, renderHook } from '@testing-library/react';
+import { brandId, type IsoDateTime } from '@goodboy/types';
+import { anAgent, aSession } from '@goodboy/types/testing';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  storySpies,
+  stubStoryInvoke,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
+import { currentStack } from '../../../../../store/slices/navigation/currentStack';
 import { useBoardNavigation } from './index';
 
-const SESSION_ID = 'sess-1' as SessionId;
-const session = { id: SESSION_ID } as Session;
+const session = aSession();
+const SESSION_ID = session.id;
+const STAMP = brandId<IsoDateTime>({ value: '2026-10-23T09:00:00.000Z' });
+const LATER = brandId<IsoDateTime>({ value: '2026-10-23T10:00:00.000Z' });
 
-const reset = () => {
-  store.state = {
-    navigate: navigateMock,
-    openReviewTarget: openReviewTargetMock,
-    sessionPhaseRuns: {},
-    sessionWorktrees: {},
-    settings: {},
-    reportError: vi.fn(),
-  };
-  navigateMock.mockClear();
-  openReviewTargetMock.mockClear();
-  openInEditorMock.mockClear();
+let useAppStore: StoryStore;
+
+const editorCalls = () =>
+  storySpies.tauriInvoke.mock.calls.filter(([command]) => command === 'open_in_editor');
+
+const landedAt = () => {
+  const stack = currentStack(useAppStore.getState());
+  return stack.entries[stack.index]?.place;
 };
 
+const stackDepth = () => currentStack(useAppStore.getState()).entries.length;
+
+type RecordEventsParams = { readonly type: string };
+
+const recordEvents = ({ type }: RecordEventsParams) => {
+  const seen: Event[] = [];
+  const listener = (event: Event) => {
+    seen.push(event);
+  };
+  window.addEventListener(type, listener);
+  return { seen, stop: () => window.removeEventListener(type, listener) };
+};
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  stubStoryInvoke({ open_in_editor: async () => null, workspaces_with_unread: async () => [] });
+});
+
+afterEach(cleanup);
+
 describe('useBoardNavigation', () => {
-  beforeEach(reset);
-  afterEach(reset);
-
   it('selectCard opens the overview of the card as one history voice', () => {
+    const before = stackDepth();
     const { result } = renderHook(() => useBoardNavigation());
-    result.current.selectCard(session);
-    expect(navigateMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: SESSION_ID }) });
+    act(() => result.current.selectCard(session));
+    expect(stackDepth()).toBe(before + 1);
+    expect(landedAt()).toMatchObject({ at: 'session', sessionId: SESSION_ID });
   });
 
-  it('openAgent opens the first agent then reveals chat', () => {
-    store.state.sessionPhaseRuns = { [SESSION_ID]: [{ id: 'agent-1' }] };
-    const dispatch = vi.spyOn(window, 'dispatchEvent');
-    const { result } = renderHook(() => useBoardNavigation());
-    result.current.openAgent(session);
-    expect(navigateMock).toHaveBeenCalledWith({
-      to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-1' },
+  it('openUnreadReply opens the agent with the reply, not the first agent, then reveals chat', () => {
+    const planner = anAgent({
+      sessionId: SESSION_ID,
+      name: 'Planner',
+      ordinal: 1,
+      lastFinishedAt: STAMP,
+      lastViewedAt: LATER,
     });
-    const revealed = dispatch.mock.calls.some((c) => c[0].type === 'goodboy:reveal-chat');
-    expect(revealed).toBe(true);
-    dispatch.mockRestore();
+    const tester = anAgent({
+      sessionId: SESSION_ID,
+      name: 'Tester',
+      ordinal: 2,
+      lastFinishedAt: LATER,
+      lastViewedAt: STAMP,
+    });
+    act(() => {
+      useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [planner, tester] } });
+    });
+    const reveals = recordEvents({ type: 'goodboy:reveal-chat' });
+    const { result } = renderHook(() => useBoardNavigation());
+    act(() => result.current.openUnreadReply(session));
+    reveals.stop();
+    expect(landedAt()).toMatchObject({ sessionId: SESSION_ID, view: { agentId: tester.id } });
+    expect(reveals.seen).toHaveLength(1);
   });
 
-  it('openAgent with no agents opens the overview and still reveals chat', () => {
-    const dispatch = vi.spyOn(window, 'dispatchEvent');
+  it('openUnreadReply takes the latest agent when several replied', () => {
+    const first = anAgent({
+      sessionId: SESSION_ID,
+      ordinal: 1,
+      lastFinishedAt: LATER,
+    });
+    const second = anAgent({
+      sessionId: SESSION_ID,
+      ordinal: 2,
+      lastFinishedAt: LATER,
+    });
+    act(() => {
+      useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [second, first] } });
+    });
     const { result } = renderHook(() => useBoardNavigation());
-    result.current.openAgent(session);
-    expect(navigateMock).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: SESSION_ID }) });
-    const revealed = dispatch.mock.calls.some((c) => c[0].type === 'goodboy:reveal-chat');
-    expect(revealed).toBe(true);
-    dispatch.mockRestore();
+    act(() => result.current.openUnreadReply(session));
+    expect(landedAt()).toMatchObject({ sessionId: SESSION_ID, view: { agentId: second.id } });
+  });
+
+  it('openUnreadReply with nothing unread opens the overview and still reveals chat', () => {
+    act(() => {
+      useAppStore.setState({
+        sessionPhaseRuns: {
+          [SESSION_ID]: [
+            anAgent({
+              sessionId: SESSION_ID,
+              lastFinishedAt: STAMP,
+              lastViewedAt: LATER,
+            }),
+          ],
+        },
+      });
+    });
+    const reveals = recordEvents({ type: 'goodboy:reveal-chat' });
+    const { result } = renderHook(() => useBoardNavigation());
+    act(() => result.current.openUnreadReply(session));
+    reveals.stop();
+    expect(landedAt()).toMatchObject({ at: 'session', sessionId: SESSION_ID });
+    expect(reveals.seen).toHaveLength(1);
   });
 
   it.each([
@@ -102,62 +150,76 @@ describe('useBoardNavigation', () => {
     ['openWorkflows', 'workflows'],
   ] as const)('%s opens the %s lens', (action, lens) => {
     const { result } = renderHook(() => useBoardNavigation());
-    result.current[action](session);
-    expect(navigateMock).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens }),
+    act(() => result.current[action](session));
+    expect(useAppStore.getState().activeLens[SESSION_ID]).toBe(lens);
+  });
+
+  it('openIDE opens the first worktree path in the default editor', async () => {
+    act(() => {
+      useAppStore.setState({ sessionWorktrees: { [SESSION_ID]: ['/code/ledger-core'] } });
     });
+    const { result } = renderHook(() => useBoardNavigation());
+    act(() => result.current.openIDE(session));
+    await vi.waitFor(() => expect(editorCalls()).toHaveLength(1));
+    expect(editorCalls()[0]?.[1]).toEqual({ path: '/code/ledger-core', editor: 'code' });
   });
 
-  it('openIDE calls openInEditor with the first worktree path and the default editor', () => {
-    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/wt'] };
+  it('openIDE opens the editor chosen in settings', async () => {
+    act(() => {
+      useAppStore.setState({
+        sessionWorktrees: { [SESSION_ID]: ['/code/ledger-core'] },
+        settings: { 'editor.binary': 'zed' },
+      });
+    });
     const { result } = renderHook(() => useBoardNavigation());
-    result.current.openIDE(session);
-    expect(openInEditorMock).toHaveBeenCalledWith({ path: '/tmp/wt', editor: 'code' });
+    act(() => result.current.openIDE(session));
+    await vi.waitFor(() => expect(editorCalls()).toHaveLength(1));
+    expect(editorCalls()[0]?.[1]).toEqual({ path: '/code/ledger-core', editor: 'zed' });
   });
 
-  it('openIDE opens the editor chosen in settings', () => {
-    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/wt'] };
-    store.state.settings = { 'editor.binary': 'zed' };
+  it('openIDE reports a failure to open the editor and opens it again on retry', async () => {
+    act(() => {
+      useAppStore.setState({ sessionWorktrees: { [SESSION_ID]: ['/code/ledger-core'] } });
+    });
+    stubStoryInvoke({
+      open_in_editor: async () => {
+        throw new Error("editor binary 'code' not found in PATH");
+      },
+    });
     const { result } = renderHook(() => useBoardNavigation());
-    result.current.openIDE(session);
-    expect(openInEditorMock).toHaveBeenCalledWith({ path: '/tmp/wt', editor: 'zed' });
-  });
-
-  it('openIDE reports a failure to open the editor', async () => {
-    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/wt'] };
-    openInEditorMock.mockRejectedValueOnce(new Error("editor binary 'code' not found in PATH"));
-    const { result } = renderHook(() => useBoardNavigation());
-    result.current.openIDE(session);
-    await vi.waitFor(() => expect(store.state.reportError).toHaveBeenCalledTimes(1));
+    act(() => result.current.openIDE(session));
+    await vi.waitFor(() => expect(editorCalls()).toHaveLength(1));
+    await vi.waitFor(() =>
+      expect(
+        useAppStore.getState().notifications.some((n) => n.title === "Couldn't open the editor"),
+      ).toBe(true),
+    );
+    stubStoryInvoke({ open_in_editor: async () => null, workspaces_with_unread: async () => [] });
+    act(() => result.current.openIDE(session));
+    await vi.waitFor(() => expect(editorCalls()).toHaveLength(2));
   });
 
   it('openIDE does nothing when no worktree exists', () => {
     const { result } = renderHook(() => useBoardNavigation());
-    result.current.openIDE(session);
-    expect(openInEditorMock).not.toHaveBeenCalled();
+    act(() => result.current.openIDE(session));
+    expect(editorCalls()).toHaveLength(0);
   });
 
   it('openPullRequest lands on the pull request in one push', () => {
+    const before = stackDepth();
     const { result } = renderHook(() => useBoardNavigation());
-    result.current.openPullRequest(session);
-    expect(navigateMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).toHaveBeenCalledWith({
-      to: branchPlace({ sessionId: SESSION_ID, tab: 'pr' }),
-    });
-    expect(openReviewTargetMock).not.toHaveBeenCalled();
+    act(() => result.current.openPullRequest(session));
+    expect(stackDepth()).toBe(before + 1);
+    expect(useAppStore.getState().branchTab[SESSION_ID]).toBe('pr');
   });
 
   it('openReview opens the review target alone, with no studio overlay', () => {
-    const dispatch = vi.spyOn(window, 'dispatchEvent');
+    const before = stackDepth();
+    const overlays = recordEvents({ type: 'goodboy:open-github-session' });
     const { result } = renderHook(() => useBoardNavigation());
-    result.current.openReview(session);
-    expect(navigateMock).not.toHaveBeenCalled();
-    expect(openReviewTargetMock).toHaveBeenCalledWith({ sessionId: SESSION_ID });
-    expect(
-      dispatch.mock.calls
-        .map((c) => c[0])
-        .find((e): e is CustomEvent => e.type === 'goodboy:open-github-session'),
-    ).toBeUndefined();
-    dispatch.mockRestore();
+    act(() => result.current.openReview(session));
+    overlays.stop();
+    expect(overlays.seen).toHaveLength(0);
+    expect(stackDepth()).toBe(before);
   });
 });

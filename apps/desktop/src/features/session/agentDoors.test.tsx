@@ -148,10 +148,18 @@ const DOORS: ReadonlyArray<Door> = [
     },
   },
   {
-    name: 'the Board card',
-    open: () => {
+    name: 'the Board card, for the agent whose reply is unread',
+    open: (agentId) => {
+      useAppStore.setState((state) => ({
+        sessionPhaseRuns: {
+          ...state.sessionPhaseRuns,
+          [SESSION]: (state.sessionPhaseRuns[SESSION] ?? []).map((agent) =>
+            agent.id === agentId ? { ...agent, lastFinishedAt: TEST_NOW } : agent,
+          ),
+        },
+      }));
       const { result } = renderHook(() => useBoardNavigation());
-      result.current.openAgent(useAppStore.getState().sessions[0]!);
+      result.current.openUnreadReply(useAppStore.getState().sessions[0]!);
     },
   },
   {

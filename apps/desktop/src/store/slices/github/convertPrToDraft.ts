@@ -3,14 +3,16 @@ import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
 import { prWriteContext } from './prWriteContext';
 import { runPortWrite } from './runPortWrite';
 import { withPrWriteClaim } from './withPrWriteClaim';
+import type { PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
 
 export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
-  return async (sessionId: SessionId, prNumber?: number) => {
+  return async (sessionId: SessionId, prNumber?: number, { mountId }: PrWriteOptions = {}) => {
     const { num, session, repo, port } = prWriteContext({
       get,
       sessionId,
       prNumber,
+      ...(mountId === undefined ? {} : { mountId }),
       failureTitle: ({ prNumber: target }) =>
         prLifecycleFailureTitle({ action: 'undraft', prNumber: target }),
     });
@@ -27,7 +29,10 @@ export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
           title: `Couldn't convert #${num} to a draft`,
           run: () => port.setDraft({ isDraft: true }),
         });
-        await get().refreshSessionPr(sessionId, { force: true });
+        await get().refreshSessionPr(sessionId, {
+          force: true,
+          ...(mountId === undefined ? {} : { mountId }),
+        });
       },
     });
   };

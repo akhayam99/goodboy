@@ -1104,7 +1104,9 @@ already on `origin/<branch>` reads **Already on origin**: it offers
 more need only a reply) and `preparePublication` pushes only the local threads.
 A comment with no fix of ours whose commented line was changed by a commit on
 origin that Goodboy did not make, or whose fix `git cherry` finds under another
-sha, reads **Looks fixed**: it shows the commit and its author, `Reply and
+sha, reads **Looks fixed**: it shows the commit and its author and a few lines of its change,
+read in the thread's own worktree (`useOriginCommitDiff`, never the mount that takes the
+writes) or **Could not read this commit** when the read fails, `Reply and
 resolve` posts "Handled in <sha> by @<author>", `Fix anyway` puts the comment
 back in the normal flow. It is always a suggestion, never an automatic resolve.
 A reply the user wrote by hand after the draft, whatever its text, reads **You

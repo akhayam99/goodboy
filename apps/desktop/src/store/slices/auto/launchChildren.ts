@@ -15,6 +15,7 @@ import {
   type AutoTree,
 } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
+import { AGENT_NOT_CREATED_REASON } from '../../../features/auto/agentNotCreatedReason';
 import { remoteJson, remoteOf, resumeOf, snapshotJson, snapshotOf } from './attemptBaseline';
 import { carriedSnapshot } from './carriedSnapshot';
 import { childImagesOf } from './childImagesOf';
@@ -233,7 +234,7 @@ const launchOne = async (params: LaunchOneParams): Promise<void> => {
       parentAgentId: tree.rootAgentId,
     });
   } catch (error) {
-    await fail(reasonOf({ code: 'kickoff_failed', message: formatError(error) }));
+    await fail(reasonOf({ code: AGENT_NOT_CREATED_REASON, message: formatError(error) }));
     return;
   }
   const outcome = await startTurn({ ...params, attempt, role, target });

@@ -47,7 +47,7 @@ const targetOfChild = ({
   child,
 }: ChildParams): AutoRetryTarget | null => {
   const kind = autoStuckKindOf({ state: child.state });
-  if (kind === null) {
+  if (kind === null || child.isGone === true) {
     return null;
   }
   return {
@@ -115,6 +115,9 @@ export const autoRetryTargetsOf = ({
       return [];
     }
     const rootAgentId = view.tree.rootAgentId;
+    if (!agents.some((agent) => agent.id === rootAgentId)) {
+      return [];
+    }
     const group = autoGroupOf({ view, agents, now });
     const children = (group?.children ?? []).flatMap((child) => {
       const target = targetOfChild({ views, agents, rootAgentId, child });

@@ -400,8 +400,10 @@ writing to it reopens it to **Deciding**.
   the model (`AutoChildBrief`); then the child's conversation; at the end what
   came back (summary, files changed, checks with their source, open questions,
   `DelegationResult`; the summary is markdown through the shared `Markdown`,
-  with any artifact block dropped by `splitArtifactText`) and its tail (`autoChildLive`: its live line with **Stop
-  agent**, **Failed: ...** or **Stopped** with **Retry through Auto**, or
+  with any artifact block dropped by `splitArtifactText`) and its tail (`autoChildLive`: **Queued** only while Auto has
+  accepted it and not started it, its live line with **Stop agent**, **Waiting for
+  your OK** with **Confirm** and **Decline**, **Asked a question** (the question is in the
+  conversation above), **Failed: ...** or **Stopped** with **Retry through Auto**, or
   **Returned to Auto**). A pane opened from the Agents panel shows **Back to
   agents**. **Open full** puts the child in the center; there the notice reads
   the same and **Open Auto** goes back.
@@ -504,6 +506,19 @@ stops it is a guard that protects the user:
 - `AUTO_TREE_LIMITS`: delegate calls per turn, refused hand overs, question cycles
   per delegation, the no progress streak and the wall clock hours;
 - four open children and four per batch.
+
+Deleting the root agent of a tree first runs the stop protocol on the tree (`stopAutoTreeForDelete`,
+through the tree stop port and `stopTree`): the generation advances, every running child is
+cancelled and the stop is confirmed only after that cleanup succeeded. If a child does not exit,
+Auto is not running or another window owns the tree, the delete fails with the reason, the agent
+stays and the tree stays unconfirmed; deleting again resumes the stop. The purge itself
+(`agentPurgeStatements`) never touches the tree. The lists read only trees whose root agent is
+still in the session (`liveAutoViewsOf`, through `useAutoTreeViews`): a tree
+left open on an agent that was deleted or moved raises no **Needs you** card, no **Auto is stuck**
+line and no count. A child whose agent is gone is not stuck (`isAutoChildStuck`); a child Auto
+accepted and has not started has no agent yet and still counts, and so does one whose agent could
+not be created (reason `agent_not_created`, `launchChildren`): its failure and retry card stay. Plans stay readable in the plan
+list.
 
 The limit never throws away work. At the limit no new child is admitted and
 Auto's next turn waits (`turnGate`, blocked with the budget reason), but nothing

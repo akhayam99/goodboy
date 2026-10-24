@@ -12,7 +12,12 @@ type Props = {
 };
 
 export const ToolSignalDot = ({ signal }: Props) => (
-  <span aria-hidden data-testid="tool-signal" data-signal={signal.kind} className="flex">
+  <span
+    aria-hidden
+    data-testid="tool-signal"
+    data-signal={signal.kind}
+    className="pointer-events-none absolute right-1 top-1 flex"
+  >
     <StatusDot tone={TONE[signal.kind]} size="sm" />
   </span>
 );

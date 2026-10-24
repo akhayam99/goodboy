@@ -6,6 +6,7 @@ import { invokeAgentList } from '../../../features/workflows/workflows';
 import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { stopAgentForDelete } from './stopAgentForDelete';
+import { stopAutoTreeForDelete } from './stopAutoTreeForDelete';
 import { releaseAgentFiles } from './releaseAgentFiles';
 import { omitDeletedAgents } from './omitDeletedAgents';
 import type { GetFn, SetFn } from './types';
@@ -14,6 +15,7 @@ import { sessionById } from '../sessions/sessionIndex';
 export const deleteAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     const workspaceId = sessionById(get().sessions, sessionId)?.workspaceId;
+    await stopAutoTreeForDelete({ agentId });
     const runStopped = await stopAgentForDelete({ get, agentId });
     await releaseAgentFiles({ get, sessionId, agentId, isRunStopped: runStopped });
 
@@ -49,6 +51,11 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
         .catch(() => undefined);
     }
     const refreshed = await invokeAgentList(sessionId);
+    await get()
+      .loadAutoTrees({ sessionId })
+      .catch((error: unknown) => {
+        void get().reportError({ title: "Couldn't read the Auto agents", error, sessionId });
+      });
     let derived: ReturnType<typeof deriveSessionState> | null = null;
     dropPendingTurnEvents({ agentIds: [agentId] });
     set((s) => {

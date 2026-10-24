@@ -28,6 +28,13 @@ const LINKED = anAgent({
   status: 'failed',
 });
 
+type ChildAgentParams = {
+  readonly key: string;
+};
+
+const childAgentOf = ({ key }: ChildAgentParams) =>
+  anAgent({ id: brandId<AgentId>({ value: `agent-${key}` }), parentAgentId: FIXTURE_ROOT });
+
 describe('autoRetryTargetsOf', () => {
   it('targets a child that never started', () => {
     const view = aView({
@@ -77,7 +84,11 @@ describe('autoRetryTargetsOf', () => {
       })),
     });
 
-    const targets = autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW });
+    const targets = autoRetryTargetsOf({
+      views: [view],
+      agents: [ROOT, ...OUTCOMES.map((outcome) => childAgentOf({ key: outcome }))],
+      now: FIXTURE_NOW,
+    });
 
     expect(targets.map((target) => [target.kind, target.reason])).toEqual([
       ['failed', 'The agent ended with an error.'],
@@ -240,11 +251,11 @@ describe('autoRetryTargetsOf', () => {
     });
 
     expect(
-      autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW }).map((target) => [
-        target.noun,
-        target.mountId,
-        target.reasonCode,
-      ]),
+      autoRetryTargetsOf({
+        views: [view],
+        agents: [ROOT, childAgentOf({ key: 'fixer' })],
+        now: FIXTURE_NOW,
+      }).map((target) => [target.noun, target.mountId, target.reasonCode]),
     ).toEqual([['Implementer', 'mount-home', 'declared_blocked']]);
   });
 
@@ -256,5 +267,111 @@ describe('autoRetryTargetsOf', () => {
         (target) => target.kind,
       ),
     ).toEqual(['blocked']);
+  });
+
+  describe('an agent that is gone', () => {
+    const waitingPlan = () =>
+      aView({ phase: 'waiting', artifacts: [aPlanRow({ title: 'Center pages rollout' })] });
+
+    it('offers no approve card for a tree whose root agent was deleted', () => {
+      expect(autoRetryTargetsOf({ views: [waitingPlan()], agents: [], now: FIXTURE_NOW })).toEqual(
+        [],
+      );
+    });
+
+    it('offers no approve card when the root agent belongs to another session', () => {
+      const elsewhere = anAgent({ id: brandId<AgentId>({ value: 'agent-elsewhere' }) });
+
+      expect(
+        autoRetryTargetsOf({ views: [waitingPlan()], agents: [elsewhere], now: FIXTURE_NOW }),
+      ).toEqual([]);
+    });
+
+    it('offers no blocked card for a tree whose root agent is gone', () => {
+      expect(
+        autoRetryTargetsOf({ views: [aView({ phase: 'blocked' })], agents: [], now: FIXTURE_NOW }),
+      ).toEqual([]);
+    });
+
+    it('keeps the card of a sibling tree whose root agent is still there', () => {
+      const gone = aView({ phase: 'blocked' });
+      const other = {
+        ...aView({ phase: 'blocked' }),
+        tree: {
+          ...aView({ phase: 'blocked' }).tree,
+          rootAgentId: brandId<AgentId>({ value: 'agent-auto-second' }),
+        },
+      };
+
+      const targets = autoRetryTargetsOf({
+        views: [gone, other],
+        agents: [anAgent({ id: other.tree.rootAgentId, kind: 'auto' })],
+        now: FIXTURE_NOW,
+      });
+
+      expect(targets.map((target) => target.rootAgentId)).toEqual([other.tree.rootAgentId]);
+    });
+
+    it('offers no stuck card for a child whose agent is gone, though its delegation failed', () => {
+      const view = aView({
+        phase: 'waiting',
+        delegations: [
+          aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'blocked' }),
+        ],
+      });
+
+      expect(autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW })).toEqual([]);
+      expect(
+        autoRetryTargetsOf({
+          views: [view],
+          agents: [ROOT, childAgentOf({ key: 'scout' })],
+          now: FIXTURE_NOW,
+        }).map((target) => target.kind),
+      ).toEqual(['childBlocked']);
+    });
+
+    it('keeps the card of a child whose agent could not be created, since it never existed', () => {
+      const view = aView({
+        phase: 'waiting',
+        delegations: [
+          {
+            ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
+            reason: 'agent_not_created: the agents table is locked',
+          },
+        ],
+      });
+
+      const targets = autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW });
+
+      expect(targets.map((target) => target.kind)).toEqual(['failed']);
+      expect(targets[0]?.reasonCode).toBe('agent_not_created: the agents table is locked');
+    });
+
+    it('still hides a failed child whose agent existed and was deleted', () => {
+      const view = aView({
+        phase: 'waiting',
+        delegations: [
+          {
+            ...aDelegation({ key: 'scout', role: 'scout', state: 'settled', outcome: 'failed' }),
+            reason: 'kickoff_failed: the branch mount changed before the turn could start',
+          },
+        ],
+      });
+
+      expect(autoRetryTargetsOf({ views: [view], agents: [ROOT], now: FIXTURE_NOW })).toEqual([]);
+    });
+
+    it('still offers a child that never started, which has no agent yet', () => {
+      const view = aView({
+        phase: 'waiting',
+        delegations: [aDelegation({ key: 'fixer', role: 'implementer', state: 'accepted' })],
+      });
+
+      expect(
+        autoRetryTargetsOf({ views: [view], agents: [ROOT], now: LATE }).map(
+          (target) => target.kind,
+        ),
+      ).toEqual(['neverStarted']);
+    });
   });
 });

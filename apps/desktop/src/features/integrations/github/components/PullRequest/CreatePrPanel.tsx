@@ -85,8 +85,8 @@ export const CreatePrPanel = ({
 
   const requestReviewers = useCallback(
     ({ sessionId: target, number, logins }: RequestReviewersParams) =>
-      requestReview(target, number, logins),
-    [requestReview],
+      requestReview(target, number, logins, mountId === null ? {} : { mountId }),
+    [mountId, requestReview],
   );
 
   return (

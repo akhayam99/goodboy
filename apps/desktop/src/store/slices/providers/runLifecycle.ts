@@ -16,6 +16,7 @@ import {
 } from '../../../features/providers/provider-lifecycle';
 import { applyProviderProbe, takeProbeSeq } from './applyProviderProbe';
 import { detectAuthUrl } from './detectAuthUrl';
+import { base64Bytes } from '../../../shared/utils/base64Bytes';
 import { stripAnsi } from './stripAnsi';
 import type { GetFn, SetFn } from './types';
 import { ACTIVE_LIFECYCLE_PHASES, IDLE_LIFECYCLE, type ProviderLifecyclePhase } from './types';
@@ -159,6 +160,7 @@ export const runLifecycle = async (
     raw: get().providers.find((provider) => provider.id === providerId)?.version ?? null,
   });
 
+  const decoder = new TextDecoder('utf-8');
   let outputTail = '';
   let authScore = 0;
   let unlistenOutput: () => void = () => undefined;
@@ -168,7 +170,7 @@ export const runLifecycle = async (
     if (payload.runId !== runId) {
       return;
     }
-    const chunk = atob(payload.data);
+    const chunk = decoder.decode(base64Bytes({ data: payload.data }), { stream: true });
     outputTail = (outputTail + chunk).slice(-OUTPUT_TAIL_CAP);
     const match = detectAuthUrl({ text: stripAnsi({ text: outputTail }) });
     if (match === null || match.score <= authScore) {

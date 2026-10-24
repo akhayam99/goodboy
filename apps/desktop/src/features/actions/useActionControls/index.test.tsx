@@ -239,7 +239,7 @@ describe('useActionControls feedback', () => {
 
     act(() => result.current.trigger({ actionId: REOPEN }));
     await waitFor(() => expect(result.current.outcome?.message).toBe('Reopened #319.'));
-    expect(reopenPr).toHaveBeenNthCalledWith(2, SESSION_B.id, LATER_NUMBER);
+    expect(reopenPr).toHaveBeenNthCalledWith(2, SESSION_B.id, LATER_NUMBER, {});
 
     await act(async () => oldGate.resolve());
     expect(result.current.outcome?.message).toBe('Reopened #319.');

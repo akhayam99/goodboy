@@ -45,6 +45,31 @@ const makeStore = () => {
   };
 };
 
+type BytesParams = {
+  readonly bytes: ReadonlyArray<number>;
+};
+
+const base64Of = ({ bytes }: BytesParams): string => btoa(String.fromCharCode(...bytes));
+
+type TextParams = {
+  readonly text: string;
+};
+
+const utf8Of = ({ text }: TextParams): ReadonlyArray<number> => [...new TextEncoder().encode(text)];
+
+const register = async (
+  store: ReturnType<typeof makeStore>,
+  extra: { shouldReplay?: boolean } = {},
+) =>
+  registerScriptRunListeners({
+    ...store.params,
+    sessionId: SESSION_ID,
+    scriptId: 'lint',
+    runId: 'run-1',
+    startedAt: 1,
+    ...extra,
+  });
+
 beforeEach(() => {
   vi.useFakeTimers();
 });
@@ -148,5 +173,92 @@ describe('registerScriptRunListeners', () => {
 
     expect(store.read()?.status).toBe('ok');
     expect(store.read()?.result?.stdout).toBe('built\n');
+  });
+});
+
+describe('registerScriptRunListeners, UTF-8 output', () => {
+  it('decodes a check mark that is split across two chunks', async () => {
+    const store = makeStore();
+    await register(store);
+    const bytes = utf8Of({ text: '✓ 3 passed\n' });
+
+    handlers.output?.({ runId: 'run-1', data: base64Of({ bytes: bytes.slice(0, 2) }), offset: 0 });
+    handlers.output?.({ runId: 'run-1', data: base64Of({ bytes: bytes.slice(2) }), offset: 2 });
+    vi.advanceTimersByTime(100);
+    expect(store.read()?.output).toBe('✓ 3 passed\n');
+
+    handlers.exit?.({ runId: 'run-1', exitCode: 0 });
+    expect(store.read()?.result?.stdout).toBe('✓ 3 passed\n');
+  });
+
+  it('keeps accents and emoji whole when they sit inside one chunk', async () => {
+    const store = makeStore();
+    await register(store);
+
+    handlers.output?.({
+      runId: 'run-1',
+      data: base64Of({ bytes: utf8Of({ text: 'città, 12 file 🎉\n' }) }),
+      offset: 0,
+    });
+    vi.advanceTimersByTime(100);
+
+    expect(store.read()?.output).toBe('città, 12 file 🎉\n');
+  });
+
+  it('cuts the overlap with the snapshot on bytes, never on decoded characters', async () => {
+    const store = makeStore();
+    const snapshot = utf8Of({ text: 'ok ✓\n' });
+    vi.mocked(invokeScriptSnapshot).mockResolvedValueOnce({
+      data: base64Of({ bytes: snapshot }),
+      offset: 0,
+      exitCode: null,
+    });
+    const registered = register(store, { shouldReplay: true });
+    await vi.advanceTimersByTimeAsync(0);
+
+    handlers.output?.({
+      runId: 'run-1',
+      data: base64Of({ bytes: utf8Of({ text: '✓\nnext ✓\n' }) }),
+      offset: 3,
+    });
+    await registered;
+    vi.advanceTimersByTime(100);
+
+    expect(store.read()?.output).toBe('ok ✓\nnext ✓\n');
+  });
+
+  it('joins a character the snapshot ends in the middle of with the byte that follows', async () => {
+    const store = makeStore();
+    const check = utf8Of({ text: '✓' });
+    vi.mocked(invokeScriptSnapshot).mockResolvedValueOnce({
+      data: base64Of({ bytes: [97, ...check.slice(0, 2)] }),
+      offset: 0,
+      exitCode: null,
+    });
+    await register(store, { shouldReplay: true });
+
+    handlers.output?.({
+      runId: 'run-1',
+      data: base64Of({ bytes: [...check.slice(2), 98] }),
+      offset: 3,
+    });
+    vi.advanceTimersByTime(100);
+
+    expect(store.read()?.output).toBe('a✓b');
+  });
+
+  it('turns a character cut off by the exit into one replacement mark, not garbage', async () => {
+    const store = makeStore();
+    await register(store);
+    const check = utf8Of({ text: '✓' });
+
+    handlers.output?.({
+      runId: 'run-1',
+      data: base64Of({ bytes: [97, ...check.slice(0, 2)] }),
+      offset: 0,
+    });
+    handlers.exit?.({ runId: 'run-1', exitCode: 1 });
+
+    expect(store.read()?.result?.stdout).toBe('a\uFFFD');
   });
 });

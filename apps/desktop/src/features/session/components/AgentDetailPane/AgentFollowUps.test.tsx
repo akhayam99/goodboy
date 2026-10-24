@@ -8,8 +8,10 @@ import type { ContinueOutcome } from '../../startRun/continueWithRole';
 
 const state = vi.hoisted(() => {
   const autoTreeViews: Record<string, ReadonlyArray<unknown>> = {};
+  const sessionPhaseRuns: Record<string, ReadonlyArray<unknown>> = {};
   return {
     agentTurnState: {} as Record<string, unknown>,
+    sessionPhaseRuns,
     agentWriterWait: {},
     autoTreeViews,
     openQuestions: [] as ReadonlyArray<OpenQuestion>,

@@ -40,6 +40,27 @@ impl Cli {
     }
 }
 
+pub(crate) const CURSOR_TRUST_FLAG: &str = "--trust";
+
+pub(crate) fn needs_workspace_trust(cli: Cli, argv: &[String]) -> bool {
+    if cli != Cli::Cursor {
+        return false;
+    }
+    let skips_prompt = ["--force", "-f", "--yolo", CURSOR_TRUST_FLAG];
+    let mut after_prompt_flag = false;
+    for arg in argv {
+        if after_prompt_flag {
+            after_prompt_flag = false;
+            continue;
+        }
+        after_prompt_flag = arg == "-p";
+        if skips_prompt.contains(&arg.as_str()) {
+            return false;
+        }
+    }
+    true
+}
+
 pub(crate) fn partial_output_flag(cli: Cli) -> Option<&'static str> {
     match cli {
         Cli::Claude => Some("--include-partial-messages"),
@@ -568,6 +589,28 @@ mod tests {
     }
 
     #[test]
+    fn only_a_cursor_run_without_force_needs_workspace_trust() {
+        let read_only = strings(&["-p", "x", "--mode", "plan"]);
+        assert!(needs_workspace_trust(Cli::Cursor, &read_only));
+        for skip in ["--force", "-f", "--yolo", "--trust"] {
+            let argv = strings(&["-p", "x", skip]);
+            assert!(!needs_workspace_trust(Cli::Cursor, &argv), "{skip}");
+        }
+        for cli in [Cli::Claude, Cli::Agy, Cli::Codex, Cli::Opencode] {
+            assert!(!needs_workspace_trust(cli, &read_only));
+        }
+        let prompt_is_a_flag = strings(&["-p", "--force", "--mode", "plan"]);
+        assert!(needs_workspace_trust(Cli::Cursor, &prompt_is_a_flag));
+    }
+
+    #[test]
+    fn the_trust_flag_is_not_a_read_only_violation() {
+        let argv = strings(&["-p", "x", "--mode", "plan", "--trust"]);
+        assert!(read_only_violations(Cli::Cursor, Job::Planner, &argv).is_empty());
+        assert!(read_only_violations(Cli::Cursor, Job::Turn, &argv).is_empty());
+    }
+
+    #[test]
     fn effort_maps_each_cli_including_gemini() {
         assert_eq!(
             effort_args(Cli::Claude, Some("high")),
@@ -865,6 +908,31 @@ mod tests {
         assert_eq!(
             value_after(&writer_argv, "--add-dir").as_deref(),
             Some("/repo/.meta")
+        );
+    }
+
+    #[test]
+    fn a_codex_writer_in_a_linked_worktree_gets_the_common_and_the_own_git_dir() {
+        let roots = strings(&[
+            "/repo/api/.git",
+            "/repo/api/.git/worktrees/first",
+            "/repo/api/.git/worktrees/second",
+        ]);
+        let args = spawn_args("acceptEdits", Some("implementer"), &[], &[], &roots);
+        let argv = turn_args("codex", &args);
+        let added: Vec<&str> = argv
+            .windows(2)
+            .filter(|pair| pair[0] == "--add-dir")
+            .map(|pair| pair[1].as_str())
+            .collect();
+        assert_eq!(value_after(&argv, "-s").as_deref(), Some("workspace-write"));
+        assert_eq!(
+            added,
+            vec![
+                "/repo/api/.git",
+                "/repo/api/.git/worktrees/first",
+                "/repo/api/.git/worktrees/second"
+            ]
         );
     }
 

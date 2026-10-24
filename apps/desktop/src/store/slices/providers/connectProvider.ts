@@ -20,6 +20,7 @@ import { clearStallTimer, disposeConnectRun, getConnectRun, openConnectRun } fro
 import type { ConnectRun } from './connectRuns';
 import { detectAuthUrl } from './detectAuthUrl';
 import { recordProviderSignedIn } from './recordProviderSignedIn';
+import { base64Bytes } from '../../../shared/utils/base64Bytes';
 import { stripAnsi } from './stripAnsi';
 import {
   ACTIVE_CONNECT_PHASES,
@@ -104,11 +105,12 @@ const attachRun = async ({
   onExit,
 }: AttachParams): Promise<string> => {
   const runId = crypto.randomUUID();
+  const decoder = new TextDecoder('utf-8');
   const unlistenOutput = await listenLifecycleOutput((payload) => {
     if (payload.runId !== runId) {
       return;
     }
-    onOutput(atob(payload.data));
+    onOutput(decoder.decode(base64Bytes({ data: payload.data }), { stream: true }));
   });
   let stopExit: () => void = () => undefined;
   const unlistenExit = await listenLifecycleExit((payload) => {

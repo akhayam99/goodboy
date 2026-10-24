@@ -320,6 +320,14 @@ export const gitCommonDirectory = async ({
   return invokeCommand<string | null>('worktree_git_common_dir', { repoPath });
 };
 
+export const worktreeGitDirectory = async ({
+  worktreePath,
+}: {
+  readonly worktreePath: string;
+}): Promise<string | null> => {
+  return invokeCommand<string | null>('worktree_git_dir', { worktreePath });
+};
+
 type WorktreeDirectorySizeParams = {
   readonly path: string;
 };

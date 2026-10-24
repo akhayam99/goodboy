@@ -784,6 +784,16 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   every planner and summarizer argument list is checked against it before the CLI
   starts, and the fake CLI tests check what really spawns. A new flag for a side job
   goes through that policy, not into `planner.rs` or `summarize.rs`
+- Since `cursor-agent` 2026.10.22 a headless run stops with "Workspace Trust
+  Required" in any directory it has not trusted, unless it gets `--force` or
+  `--trust`. A read-only Cursor run (Auto turn, planner, summarizer, chat) passes
+  neither policy flag, so Goodboy adds `--trust`. `--trust` only marks the folder as
+  trusted, it grants no write or shell right, so `--force`, `-f` and `--yolo` stay
+  forbidden on read-only jobs. `workspace_trust_args` in `providers/cli_probe.rs`
+  adds it after the probe, only when `cursor-agent --help` lists `--trust` and the
+  argument list has no `--force`, `-f`, `--yolo` or `--trust`, so an older Cursor CLI
+  that does not know the flag keeps working. The first CLI version that lists
+  `--trust` is not published in the help text and has not been checked
 
 ### API keys
 

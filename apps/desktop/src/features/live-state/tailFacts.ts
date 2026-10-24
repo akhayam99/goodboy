@@ -15,6 +15,8 @@ export type TailActionId =
   | 'raiseLimit'
   | 'changeLimit'
   | 'answer'
+  | 'confirmDelegation'
+  | 'declineDelegation'
   | 'viewTranscript'
   | 'forceStop';
 

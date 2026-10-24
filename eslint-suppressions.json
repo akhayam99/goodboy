@@ -2014,11 +2014,6 @@
       "count": 5
     }
   },
-  "apps/desktop/src/features/branch/hooks/usePullRequestPort/index.ts": {
-    "react-hooks/exhaustive-deps": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/branch/switchBranchMount.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 2
@@ -6794,11 +6789,6 @@
       "count": 8
     }
   },
-  "apps/desktop/src/features/workflows/components/WorkflowRulesPanel/RulesSpendBand.tsx": {
-    "@typescript-eslint/naming-convention": {
-      "count": 1
-    }
-  },
   "apps/desktop/src/features/workflows/components/WorkflowRulesPanel/index.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
@@ -7400,14 +7390,6 @@
   "apps/desktop/src/features/workspace/components/StageBoard/selection.test.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 4
-    }
-  },
-  "apps/desktop/src/features/workspace/components/StageBoard/useBoardNavigation/index.test.ts": {
-    "@typescript-eslint/consistent-type-assertions": {
-      "count": 2
-    },
-    "@typescript-eslint/naming-convention": {
-      "count": 2
     }
   },
   "apps/desktop/src/features/workspace/components/StageBoard/useBoardNavigation/index.ts": {

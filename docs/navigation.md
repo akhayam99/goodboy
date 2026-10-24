@@ -1132,7 +1132,8 @@ Closed: the stage line already says In review), the linked task chips, one chip
 per project, the
 agent count, the spend and the age, and one ghost action, **Open what needs
 you**, when the session needs you. That action lands where the palette's Needs
-you rows land (`attentionPlace`). Moving to another row swaps the card at once, with no second
+you rows land (`attentionPlace`), and so does the board card's **unread reply** button
+(`openUnreadReply`): the latest agent with an unread reply, never the first agent. Moving to another row swaps the card at once, with no second
 wait. Esc and opening a session close it, and the pointer may move onto the
 card. The row, the card and the board card all read `useSessionSummary`, so they
 say the same things in the same words. The board card keeps one signal and
@@ -1431,17 +1432,17 @@ activity yet show the plain overview with its actions.
 
 ## The session tools
 
-One labeled column at the right edge of the session content, between the
+One icon-only column at the right edge of the session content, between the
 page and the open drawer, the same on every rail level and in this order:
 **Ask** (⌘L), **Terminal** (⌘⌥T), **Explore** (⌘⌥X), **Context** (⌘⌥C),
 **Agents** (⌘⌥L) and **Scripts** (⌘⌥S) (`SESSION_TOOLS`). `SessionTools`
 (`features/session/components/SessionTools`) is mounted by `SessionFrame`
-after the page, 128px wide on the sheet background, its buttons starting on the
-rail top row's line. Each tool is a `md` quiet `Button` with its icon and its
-word (`SessionToolButton`), its chord in a left tooltip, its accessible name
+after the page, one icon button plus its inset wide (40px) on the sheet background, its buttons starting on the
+rail top row's line. Each tool is a square `md` `IconButton` with its icon only
+(`SessionToolButton`), its name and chord in a left tooltip, its accessible name
 reading the word and any note ("Context, Decisions changed since you last
 looked" while a dot shows), `aria-pressed` with the `bg-selected` fill while
-its drawer is open (`openPaneOf`). The Context dot sits after the word: info while the
+its drawer is open (`openPaneOf`). The Context dot is a badge on the icon's top right corner: info while the
 summary runs, danger when it failed, primary when the context changed since
 you looked. The column is a `toolbar` (`aria-orientation="vertical"`, named
 Session tools) with one tab stop; Up, Down, Home and End move it
@@ -2346,7 +2347,13 @@ terminal` and `⌘⌥T` (`session.terminal`, toggles the drawer on the active wo
 - **Notifications have one row and one scope.** `NotificationRow` draws a
   group in the popover (`compact`, one line, eight rows at most, Unread or
   All) and in the studio (`cozy`, opens in place with the body, the older
-  members and Report this). Both lead with the severity glyph alone: unread is
+  members and Report this). Opening the popover marks nothing: a row is read once
+  it has been on screen for one second with the popover open
+  (`useSeenNotifications`, one timer per row, cleared when the row, the
+  popover or the window visibility goes: a hidden document restarts every second
+  when it is visible again), so a row beyond the eight shown stays unread, and the header's
+  ghost `Mark all read` (only while something is unread) is the explicit way to
+  clear the rest. Both lead with the severity glyph alone: unread is
   the title weight (500 in foreground), read rows recede, and no second leading
   dot. In the studio the time owns the third column and a fixed fourth column
   holds the hover controls (`NotificationRowActions`): the registry's hover
