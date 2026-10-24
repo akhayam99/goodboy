@@ -424,7 +424,9 @@ it `hints` (the group id and the hint ids already tried or skipped); the frame's
 resize in one animation frame and reports `anchor` (the first untried hint whose
 control exists, with its rect, or `isOffscreen` when a scroll container or the
 viewport hides it) and `tried` (a hint whose done check held after its reveal
-check did). Reports carry the frame's generation and the stage
+check did). The done check compares against the store as it was when the reveal
+check first held, so data a scene seeds after the engine starts never counts as
+the visitor's action; a reveal check therefore waits for its control to render. Reports carry the frame's generation and the stage
 drops any from an older generation or another frame. A frame that reports
 `ready` again (it reloaded) loses its note, and the stage sends it `play` and
 `hints` again. The stage draws one note

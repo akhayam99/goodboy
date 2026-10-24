@@ -113,7 +113,7 @@ export const createHintEngine = ({
   const done = new Set<string>();
   const armed = new Set<string>();
   const clicked = new Set<string>();
-  let start = store.getState();
+  const baselines = new Map<string, AppStore>();
   let lastSignature = '';
   let pending: number | null = null;
   let isDisposed = false;
@@ -126,7 +126,7 @@ export const createHintEngine = ({
 
   const probeOf = ({ hint, state }: ProbeParams): HintProbe => ({
     state,
-    start,
+    start: baselines.get(hint.id) ?? state,
     root,
     isAnchorClicked: clicked.has(hint.id),
   });
@@ -198,6 +198,7 @@ export const createHintEngine = ({
       const probe = probeOf({ hint, state });
       if (!armed.has(hint.id) && hint.revealWhen(probe)) {
         armed.add(hint.id);
+        baselines.set(hint.id, state);
       }
       if (armed.has(hint.id) && hint.doneWhen(probe)) {
         done.add(hint.id);
@@ -276,7 +277,7 @@ export const createHintEngine = ({
       done.clear();
       armed.clear();
       clicked.clear();
-      start = store.getState();
+      baselines.clear();
       lastSignature = '';
       lastPlace = null;
       schedule();

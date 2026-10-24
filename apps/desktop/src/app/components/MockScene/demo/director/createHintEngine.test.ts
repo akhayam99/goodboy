@@ -341,6 +341,29 @@ describe('the hint engine', () => {
     engine.dispose();
   });
 
+  it('counts from when a hint became eligible, not from a store that was still loading', async () => {
+    document.body.innerHTML = CHAT_DOM;
+    const { engine, tried } = engineFor({ hints: AGENT_HINTS });
+    engine.setTrack({ chapterId: 'test', settledIds: [] });
+    await frame();
+    seed();
+    store.setState({
+      sessionAnsweredQuestions: {
+        [session.id]: [
+          {
+            ...QUESTION,
+            id: brandId<OpenQuestionId>({ value: 'demo-hint-answered' }),
+            status: 'answered',
+            userAnswer: 'Banner',
+          },
+        ],
+      },
+    });
+    await frame();
+    expect(tried()).toEqual([]);
+    engine.dispose();
+  });
+
   it('flags a control scrolled out of view and scrolls it in on request', async () => {
     document.body.innerHTML = `
       <div aria-label="Goodboy setup" data-step="tools">
