@@ -28,8 +28,8 @@ import {
 import { isDemoCommand } from '../isDemoCommand';
 import { isDemoHintsCommand } from '../isDemoHintsCommand';
 import { isDemoRevealCommand } from '../isDemoRevealCommand';
-import { isDemoThemeMessage } from '../isDemoThemeMessage';
-import { isDemoShortcutCommand } from '../isDemoShortcutCommand';
+import { readDemoThemeMessage } from '../readDemoThemeMessage';
+import { readDemoShortcutCommand } from '../readDemoShortcutCommand';
 import { dispatchDemoShortcut } from '../dispatchDemoShortcut';
 import { waitForPaint } from '../waitForPaint';
 
@@ -167,16 +167,18 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
         }
         return;
       }
-      if (isDemoThemeMessage(event.data)) {
-        if (event.data.generation === director.generation()) {
-          expectedTheme = event.data.theme;
-          applyDocumentTheme({ theme: event.data.theme });
+      const themeMessage = readDemoThemeMessage({ data: event.data });
+      if (themeMessage !== null) {
+        if (themeMessage.generation === director.generation()) {
+          expectedTheme = themeMessage.theme;
+          applyDocumentTheme({ theme: themeMessage.theme });
         }
         return;
       }
-      if (isDemoShortcutCommand(event.data)) {
-        if (event.data.generation === director.generation()) {
-          dispatchDemoShortcut({ code: event.data.code });
+      const shortcutCommand = readDemoShortcutCommand({ data: event.data });
+      if (shortcutCommand !== null) {
+        if (shortcutCommand.generation === director.generation()) {
+          dispatchDemoShortcut({ code: shortcutCommand.code });
         }
         return;
       }

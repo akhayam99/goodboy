@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { DemoPlayground } from './DemoPlayground';
 import { DEMO_THEME_KEY } from './demoThemeKey';
+import { HINT_PROGRESS_KEY } from './hints/hintProgressKey';
+import { DEMO_CHAPTERS } from './demoChapters';
 import { DEMO_PROTOCOL } from './director/demoProtocol';
 import { currentPlatform } from '../../../../shared/platform';
 
@@ -173,6 +175,42 @@ describe('demo playground chrome', () => {
     expect(codes).toEqual(['KeyK', 'KeyF', 'KeyB']);
   });
 
+  it('holds a shortcut pressed while the frame loads and sends it once the frame is ready', () => {
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
+    const isMac = currentPlatform() === 'darwin';
+    fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac });
+    expect(post.mock.calls.some(([message]) => message?.type === 'shortcut')).toBe(false);
+    ready({ frame });
+    const sent = post.mock.calls.filter(([message]) => message?.type === 'shortcut');
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.[0]).toMatchObject({ code: 'KeyK' });
+    ready({ frame });
+    expect(post.mock.calls.filter(([message]) => message?.type === 'shortcut')).toHaveLength(1);
+  });
+
+  it('drops a held shortcut when another group opens before its frame is ready', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const first = visibleFrame();
+    const isMac = currentPlatform() === 'darwin';
+    fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK', metaKey: isMac, ctrlKey: !isMac });
+    fireEvent.click(screen.getByRole('button', { name: /Orchestrate/ }));
+    const frames = Array.from(document.querySelectorAll('iframe')).filter(
+      (entry) => entry !== first,
+    );
+    const posts = [first, ...frames].map((entry) =>
+      vi.spyOn(entry.contentWindow ?? window, 'postMessage'),
+    );
+    for (const entry of [first, ...frames]) {
+      ready({ frame: entry });
+    }
+    expect(
+      posts.some((post) => post.mock.calls.some(([message]) => message?.type === 'shortcut')),
+    ).toBe(false);
+  });
+
   it('leaves a plain letter and a text field alone', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
@@ -184,5 +222,34 @@ describe('demo playground chrome', () => {
     fireEvent.keyDown(rootOf(), { key: 'k', code: 'KeyK' });
     expect(window.location.hash).not.toBe('#agent');
     expect(post.mock.calls.some(([message]) => message?.type === 'shortcut')).toBe(false);
+  });
+
+  it('marks the next group up next, brighter once the open group is tried, and the last one never', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    const agent = DEMO_CHAPTERS.find((chapter) => chapter.id === 'agent');
+    window.localStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({
+        agent: { tried: (agent?.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
+      }),
+    );
+    render(<DemoPlayground />);
+    const rows = screen
+      .getByRole('navigation', { name: 'Playground groups' })
+      .querySelectorAll('button');
+    expect(Array.from(rows).map((row) => row.getAttribute('data-up-next'))).toEqual([
+      'none',
+      'none',
+      'ready',
+      'none',
+      'none',
+    ]);
+  });
+
+  it('keeps the arrow keys moving between groups without a next button', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    fireEvent.keyDown(rootOf(), { key: 'ArrowRight', code: 'ArrowRight' });
+    expect(window.location.hash).toBe('#orchestrate');
   });
 });

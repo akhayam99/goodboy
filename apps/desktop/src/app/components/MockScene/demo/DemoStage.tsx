@@ -9,7 +9,7 @@ import {
   type DemoTheme,
 } from './director/demoProtocol';
 import { isDemoReport } from './director/isDemoReport';
-import { isDemoThemeMessage } from './director/isDemoThemeMessage';
+import { readDemoThemeMessage } from './director/readDemoThemeMessage';
 import { isDemoHintReport } from './director/isDemoHintReport';
 import { DemoCoachMark, type CoachMark } from './DemoCoachMark';
 import { DemoHintSlot } from './DemoHintSlot';
@@ -29,6 +29,11 @@ type ShownParams = {
 export type ShortcutRequest = {
   readonly code: DemoShortcutCode;
   readonly count: number;
+};
+
+type PendingShortcut = {
+  readonly code: DemoShortcutCode;
+  readonly key: string;
 };
 
 type ThemeParams = {
@@ -53,11 +58,6 @@ type Props = {
   readonly onSkipHint: () => void;
   readonly onHideHint: () => void;
   readonly onRevealHint: () => void;
-  readonly onNextChapter: (params: ChapterParams) => void;
-};
-
-type ChapterParams = {
-  readonly id: string;
 };
 
 type WatchParams = {
@@ -110,7 +110,6 @@ export const DemoStage = ({
   onSkipHint,
   onHideHint,
   onRevealHint,
-  onNextChapter,
 }: Props) => {
   const { ref, scale, hasRoom } = useStageScale({
     width: APP_WIDTH,
@@ -126,7 +125,8 @@ export const DemoStage = ({
   const hintsSent = useRef(new Map<string, string>());
   const themeSent = useRef(new Map<string, DemoTheme>());
   const revealSent = useRef(0);
-  const shortcutSent = useRef(0);
+  const shortcutSeen = useRef(0);
+  const pendingShortcut = useRef<PendingShortcut | null>(null);
   const [loadEpoch, setLoadEpoch] = useState(0);
 
   const currentKey = activeFrame.key;
@@ -155,9 +155,10 @@ export const DemoStage = ({
         return;
       }
       const [key] = entry;
-      if (isDemoThemeMessage(event.data)) {
+      const themeMessage = readDemoThemeMessage({ data: event.data });
+      if (themeMessage !== null) {
         if (key === currentKeyRef.current) {
-          onThemeChange({ theme: event.data.theme });
+          onThemeChange({ theme: themeMessage.theme });
         }
         return;
       }
@@ -295,18 +296,31 @@ export const DemoStage = ({
   }, [theme, mountedKeys, loadEpoch]);
 
   useEffect(() => {
-    if (shortcut === undefined || shortcut.count === shortcutSent.current) {
+    if (shortcut === undefined || shortcut.count === shortcutSeen.current) {
+      return;
+    }
+    shortcutSeen.current = shortcut.count;
+    pendingShortcut.current = { code: shortcut.code, key: currentKeyRef.current };
+  }, [shortcut]);
+
+  useEffect(() => {
+    const pending = pendingShortcut.current;
+    if (pending === null) {
+      return;
+    }
+    if (pending.key !== currentKey) {
+      pendingShortcut.current = null;
       return;
     }
     const element = elements.current.get(currentKey);
     const generation = sent.current.get(currentKey)?.generation;
-    if (element === undefined || generation === undefined) {
+    if (element === undefined || generation === undefined || !mountedKeys.has(currentKey)) {
       return;
     }
-    shortcutSent.current = shortcut.count;
+    pendingShortcut.current = null;
     element.focus({ preventScroll: true });
-    postToFrame({ frame: element, message: { generation, type: 'shortcut', code: shortcut.code } });
-  }, [shortcut, currentKey]);
+    postToFrame({ frame: element, message: { generation, type: 'shortcut', code: pending.code } });
+  }, [shortcut, currentKey, mountedKeys, loadEpoch]);
 
   useEffect(() => {
     if (reveal === undefined || reveal.count === revealSent.current) {
@@ -377,7 +391,6 @@ export const DemoStage = ({
                 bounds={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
                 onSkip={onSkipHint}
                 onHide={onHideHint}
-                onNext={onNextChapter}
               />
             ) : null}
             {offscreen !== undefined && shownKey === currentKey ? (

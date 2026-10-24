@@ -25,6 +25,7 @@
      < elevated (cards) < floating (popovers, menus, dialogs, toasts).
      fill is one step inside whatever parent it sits on: brighter here, darker in light.
      idle is the single grey for pending, queued and off. */
+  --color-surround: oklch(0.155 0.005 255);
   --color-chrome: oklch(0.17 0.006 255);
   --color-background: oklch(0.205 0.006 255);
   --color-drawer: oklch(0.187 0.006 255);
@@ -566,6 +567,7 @@ html[data-theme-switching] *::after {
    Nothing is brighter than white, so above elevated the lift is shadow-lg.
    Nesting (what sits inside): background > subtle > muted > fill. */
 html[data-theme='light'] {
+  --color-surround: oklch(0.905 0.006 250);
   --color-chrome: oklch(0.952 0.005 250);
   --color-background: oklch(0.975 0.004 250);
   --color-drawer: oklch(0.964 0.0045 250);

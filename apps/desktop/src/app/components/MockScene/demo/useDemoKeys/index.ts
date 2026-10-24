@@ -21,7 +21,11 @@ const FRAME_SHORTCUTS: ReadonlyMap<string, DemoShortcutCode> = new Map<string, D
   ['KeyB', 'KeyB'],
 ]);
 
-const frameShortcutOf = (event: KeyboardEvent<HTMLElement>): DemoShortcutCode | undefined => {
+type ShortcutOfParams = {
+  readonly event: KeyboardEvent<HTMLElement>;
+};
+
+const frameShortcutOf = ({ event }: ShortcutOfParams): DemoShortcutCode | undefined => {
   const isMac = currentPlatform() === 'darwin';
   const hasModifier = isMac ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
   if (!hasModifier || event.altKey || event.shiftKey) {
@@ -42,7 +46,7 @@ export const useDemoKeys = ({
       if (isTypingTarget(event.target)) {
         return;
       }
-      const shortcut = frameShortcutOf(event);
+      const shortcut = frameShortcutOf({ event });
       if (shortcut !== undefined) {
         event.preventDefault();
         onFrameShortcut({ code: shortcut });

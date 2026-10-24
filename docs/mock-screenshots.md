@@ -345,14 +345,24 @@ rail (through `demoChapters.ts`) and the phone page read, so the two never
 drift. `#<group id>` in the URL opens one, and a bare visit opens Set up
 (`defaultGroupId.ts`). The calls to action sit at the bottom of the rail
 (`DemoRailActions`: Download for macOS as the primary button, Star on GitHub
-under it) below one quiet line, `DemoRailNote`: that this is mock data and
-nothing leaves the page, and, once every group counts all its outcomes tried (a
+under it) below one quiet line, `DemoRailNote`: that this is the real Goodboy on
+sample projects, and, once every group counts all its outcomes tried (a
 group without hints counts once it was opened, kept under `goodboy-demo-visits`
 by `useGroupVisits`; `hints/isEveryGroupTried.ts`), that the visitor has tried
 every group. The rail is hidden below the `lg` breakpoint, so the top bar shows
 a second Download button only there. The top bar's left side holds the logo and
 a goodboy-ai.dev link back to the website (both carry the current `?theme=`),
 its right side only the theme toggle.
+
+Nothing in the bottom bar moves to another group: it holds the previous chevron,
+Replay and the steps. The rail row is the way to move, and the arrow keys keep
+working. The row after the open group carries an "Up next" label and a soft
+ring (`DemoRailRow`, `data-up-next="soon"`). Once the open group counts all its
+outcomes tried (or, for a group without hints, its last step has completed) the
+ring turns solid and the row pulses once, motion-safe only
+(`data-up-next="ready"`). The last group has no row up next. The page behind the
+stage uses the `surround` surface, darker than any app surface, so the app frame
+reads as a window.
 
 The theme has one owner, `useDemoTheme`: the `?theme=dark|light` of the url
 wins on first load, then the choice kept under `goodboy-demo-theme` (every read
@@ -486,7 +496,7 @@ callout takes clicks. A control scrolled out of view gets a note at the bottom
 of the stage with Show control, which sends `reveal` so the frame scrolls it
 into view once. Escape hides either note, H brings it back, Skip hint settles
 it. A hint with `nextChapterId` is the closing note of a group: it counts no
-outcome and offers Next to that group instead of Skip. The rail and the header count distinct
+outcome and points at that group's rail row ("Up next in the list") instead of offering Skip. The rail and the header count distinct
 outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
 (every read and write survives blocked storage), and Replay clears the open
 group only. Every change reads the stored progress first and writes one

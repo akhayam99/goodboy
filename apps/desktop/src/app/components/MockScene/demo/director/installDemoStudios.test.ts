@@ -20,8 +20,8 @@ import { createSimulatedSpawn } from './createSimulatedSpawn';
 import { installDemoContext } from './installDemoContext';
 import { installDemoMonitor } from './installDemoMonitor';
 import { installDemoSearch } from './installDemoSearch';
-import { isDemoShortcutCommand } from './isDemoShortcutCommand';
-import { isDemoThemeMessage } from './isDemoThemeMessage';
+import { readDemoShortcutCommand } from './readDemoShortcutCommand';
+import { readDemoThemeMessage } from './readDemoThemeMessage';
 import { isEmptyRead } from './isEmptyRead';
 import { DEMO_PROTOCOL } from './demoProtocol';
 
@@ -174,15 +174,25 @@ describe('the frame messages', () => {
   };
 
   it('accepts a theme message only with a known theme', () => {
-    expect(isDemoThemeMessage({ ...envelope, type: 'theme', theme: 'light' })).toBe(true);
-    expect(isDemoThemeMessage({ ...envelope, type: 'theme', theme: 'sepia' })).toBe(false);
-    expect(isDemoThemeMessage({ ...envelope, type: 'play', theme: 'light' })).toBe(false);
-    expect(isDemoThemeMessage({ type: 'theme', theme: 'light' })).toBe(false);
+    expect(
+      readDemoThemeMessage({ data: { ...envelope, type: 'theme', theme: 'light' } }),
+    ).toMatchObject({ theme: 'light' });
+    expect(
+      readDemoThemeMessage({ data: { ...envelope, type: 'theme', theme: 'sepia' } }),
+    ).toBeNull();
+    expect(
+      readDemoThemeMessage({ data: { ...envelope, type: 'play', theme: 'light' } }),
+    ).toBeNull();
+    expect(readDemoThemeMessage({ data: { type: 'theme', theme: 'light' } })).toBeNull();
   });
 
   it('accepts a shortcut command only for the palette, find and sidebar keys', () => {
-    expect(isDemoShortcutCommand({ ...envelope, type: 'shortcut', code: 'KeyK' })).toBe(true);
-    expect(isDemoShortcutCommand({ ...envelope, type: 'shortcut', code: 'KeyW' })).toBe(false);
-    expect(isDemoShortcutCommand({ ...envelope, type: 'shortcut' })).toBe(false);
+    expect(
+      readDemoShortcutCommand({ data: { ...envelope, type: 'shortcut', code: 'KeyK' } }),
+    ).toMatchObject({ code: 'KeyK' });
+    expect(
+      readDemoShortcutCommand({ data: { ...envelope, type: 'shortcut', code: 'KeyW' } }),
+    ).toBeNull();
+    expect(readDemoShortcutCommand({ data: { ...envelope, type: 'shortcut' } })).toBeNull();
   });
 });
