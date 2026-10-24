@@ -12,6 +12,9 @@ import { createSimulatedSend } from '../createSimulatedSend';
 import { createSimulatedAnswer } from '../createSimulatedAnswer';
 import { createReplyRuns } from '../createReplyRuns';
 import { installDemoSearch } from '../installDemoSearch';
+import { installDemoMonitor } from '../installDemoMonitor';
+import { installDemoContext } from '../installDemoContext';
+import { createSimulatedSpawn } from '../createSimulatedSpawn';
 import { createHintEngine, type HintEngine } from '../createHintEngine';
 import { DEMO_CHAPTERS } from '../../demoChapters';
 import { DEMO_TIMELINES } from '../demoTimelines';
@@ -47,6 +50,8 @@ const INPUT_EVENTS = ['pointerdown', 'keydown'] as const;
 const STILL: DemoTimeline = { prepare: () => undefined, cues: [] };
 const GENERIC_REPLY =
   'On it. In the app I would read the code this touches first, then report back here before anything is pushed.';
+const GENERIC_SPAWN_REPLY =
+  'Starting from the plan. In the app I would make the change, run the tests it touches and report back here before anything is pushed.';
 const GENERIC_ANSWER_REPLY = 'Thanks, that settles it. Carrying on with that choice.';
 
 const isReducedMotion = (): boolean =>
@@ -86,6 +91,8 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
       const timeline = DEMO_TIMELINES.get(sceneName)?.({ state: store.getState() }) ?? STILL;
       const now = () => nowIso({});
       installDemoSearch({ store });
+      installDemoMonitor({ store });
+      installDemoContext({ store });
       store.setState({
         sendTurn: createSimulatedSend({
           store,
@@ -99,6 +106,17 @@ export const useSceneDirector = ({ sceneName }: Params): void => {
           send: createSimulatedSend({
             store,
             reply: timeline.answerReply ?? GENERIC_ANSWER_REPLY,
+            now,
+            shouldClearDraft: false,
+            runs,
+          }),
+          now,
+        }),
+        spawnAgent: createSimulatedSpawn({
+          store,
+          send: createSimulatedSend({
+            store,
+            reply: GENERIC_SPAWN_REPLY,
             now,
             shouldClearDraft: false,
             runs,
