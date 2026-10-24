@@ -10,7 +10,7 @@ export const SITE = {
   latestApi: 'https://api.github.com/repos/akhayam99/goodboy/releases/latest',
   features: '/features',
   demo: 'https://demo.goodboy-ai.dev',
-  howItWorks: '/#two-ways',
+  howItWorks: '/#tour',
   issues: `${REPO}/issues`,
   newIssue: `${REPO}/issues/new`,
   docs: '/docs',
