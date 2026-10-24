@@ -91,6 +91,9 @@ export const Install = () => {
                 </button>
               </p>
             ) : null}
+            <p className="installAlt">
+              Not ready to install? <a href={SITE.demo}>Try the live demo</a> in your browser.
+            </p>
           </div>
           <div className="onlyCoarse">
             <StarButton />

@@ -32,6 +32,10 @@ export const Nav = ({ current }: Props) => {
     href: link.href,
     isCurrent: link.section !== 'none' && link.section === current,
   }));
+  const sheetLinks: readonly NavMenuLink[] = [
+    ...menuLinks,
+    { label: 'Live demo', href: SITE.demo },
+  ];
 
   return (
     <header className={isScrolled ? 'nav scrolled' : 'nav'} id="top">
@@ -51,12 +55,16 @@ export const Nav = ({ current }: Props) => {
           </nav>
           <span className="navSpacer" />
           <div className="navActions">
+            <a className="navDemo" href={SITE.demo}>
+              <span className="navDemoDot" aria-hidden="true" />
+              Live demo
+            </a>
             <a className="iconButton navGithub" href={SITE.repo} aria-label="Goodboy on GitHub">
               <BrandMark brand="github" size={18} />
             </a>
             <ThemeToggle />
           </div>
-          <NavMenu links={menuLinks} />
+          <NavMenu links={sheetLinks} />
         </div>
       </div>
     </header>

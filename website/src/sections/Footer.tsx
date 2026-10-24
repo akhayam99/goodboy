@@ -19,6 +19,7 @@ const COLUMNS: readonly Column[] = [
     title: 'Product',
     links: [
       { label: 'All features', href: SITE.features },
+      { label: 'Live demo', href: SITE.demo },
       { label: 'How it works', href: SITE.howItWorks },
       { label: 'Workflows', href: `${SITE.features}#workflows` },
       { label: 'Changelog', href: SITE.changelog },

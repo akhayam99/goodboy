@@ -58,6 +58,48 @@
   color: var(--t1);
 }
 
+.navDemo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r-btn);
+  font: var(--t-nav);
+  font-weight: 600;
+  color: var(--demo-ink);
+  background: var(--star);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.06),
+    0 4px 14px -6px var(--star);
+  transition: background 0.16s ease-out;
+}
+
+.navDemo:hover {
+  background: color-mix(in srgb, var(--star) 86%, #ffffff);
+  transition: none;
+}
+
+.navDemoDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--demo-ink);
+  animation: navDemoPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes navDemoPulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navDemoDot {
+    animation: none;
+  }
+}
+
 .navSpacer {
   flex: 1;
 }
