@@ -16,12 +16,12 @@ const FILTER = '[data-page="board"] button[aria-label="Filter sessions"]';
 const PLAN_ROW = 'button[data-artifact-row][aria-label^="Plan "]';
 
 const waitingCardOf = ({ state }: StateParams): string => {
-  const waiting = state.sessions.find((session) =>
-    (state.sessionOpenQuestions[session.id] ?? []).some((question) => question.status === 'open'),
+  const waiting = Object.entries(state.sessionOpenQuestions).find(([, questions]) =>
+    questions.some((question) => question.status === 'open'),
   );
   return waiting === undefined
     ? `${CARD} button`
-    : `${CARD}[data-select-id="${CSS.escape(waiting.id)}"] button`;
+    : `${CARD}[data-select-id="${CSS.escape(waiting[0])}"] button`;
 };
 
 const filtersOf = ({ state }: StateParams): string =>
