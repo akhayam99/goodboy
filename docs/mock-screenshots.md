@@ -334,7 +334,11 @@ scaled to fit, so every beat gets a clean store and its own timers. The group
 names and their one line live in `MockScene/demo/demoGroups.ts`, which both the
 rail (through `demoChapters.ts`) and the phone page read, so the two never
 drift. `#<group id>` in the URL opens one, and a bare visit opens Work with an
-agent (`defaultGroupId.ts`).
+agent (`defaultGroupId.ts`). The top bar holds the only calls to action
+(Star on GitHub, Download for macOS). The rail ends in one quiet line,
+`DemoRailNote`: that everything is mock data and nothing leaves the page, and,
+once every group with hints counts all of them tried
+(`hints/isEveryGroupTried.ts`), that Download is top right.
 
 Every beat frame carries `&director=1`. Without that param a scene stays as
 static as before, so screenshots and the a11y suite never see a director. With

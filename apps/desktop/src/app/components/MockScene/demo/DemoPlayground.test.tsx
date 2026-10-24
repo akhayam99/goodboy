@@ -247,17 +247,53 @@ describe('demo playground', () => {
     expect(currentStep()).toBe('Run approval');
   });
 
-  it('offers the download at the end of the tour', async () => {
+  it('keeps the download in the top bar only at the end of the tour', async () => {
     const last = DEMO_CHAPTERS.at(-1);
     window.history.replaceState(null, '', `/?scene=demo#${last?.id ?? ''}`);
     render(<DemoPlayground />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
-    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('That is the tour');
-    expect(screen.getAllByRole('link', { name: /Download for macOS/ })).toHaveLength(2);
+    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
+    expect(screen.getAllByRole('link', { name: /Download for macOS/ })).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Back to the start' }));
     expect(window.location.hash).toBe(`#${DEMO_CHAPTERS[0].id}`);
+  });
+
+  it('says the playground is mock data until every group is tried', () => {
+    window.localStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({
+        agent: { tried: ['agent-send', 'agent-answer', 'agent-files'], skipped: [], epoch: 0 },
+      }),
+    );
+    render(<DemoPlayground />);
+    expect(
+      screen.getByText('Everything here is mock data, and nothing you do leaves this page.'),
+    ).toBeTruthy();
+    expect(screen.queryByText(/You have tried every group/)).toBeNull();
+  });
+
+  it('points at the top right download once every group is tried', () => {
+    window.localStorage.setItem(
+      HINT_PROGRESS_KEY,
+      JSON.stringify({
+        agent: { tried: ['agent-send', 'agent-answer', 'agent-files'], skipped: [], epoch: 0 },
+        setup: {
+          tried: [
+            'setup-start',
+            'setup-agents',
+            'setup-create',
+            'setup-tools',
+            'setup-first-start',
+          ],
+          skipped: [],
+          epoch: 0,
+        },
+      }),
+    );
+    render(<DemoPlayground />);
+    expect(screen.getByText('You have tried every group. Download is top right.')).toBeTruthy();
   });
 
   it('shows the loading state until the frame reports ready', () => {
