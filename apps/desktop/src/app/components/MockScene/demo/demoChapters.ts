@@ -1,6 +1,9 @@
 import type { DemoHint } from './hints/demoHintTypes';
 import { ONBOARDING_HINTS } from './hints/onboardingHints';
 import { AGENT_HINTS } from './hints/agentHints';
+import { ORCHESTRATE_HINTS } from './hints/orchestrateHints';
+import { FIND_HINTS } from './hints/findHints';
+import { REVIEW_HINTS } from './hints/reviewHints';
 import { setupPlace } from './hints/setupPlace';
 import { DEMO_GROUPS, type DemoGroup } from './demoGroups';
 
@@ -65,6 +68,7 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     summary:
       'Let Auto plan and delegate, or run a saved workflow that stops when a step needs you.',
     tryThis: 'Read the plan, then follow a helper agent.',
+    hints: ORCHESTRATE_HINTS,
     beats: [
       { label: 'Auto starts', scene: 'c07-auto-start' },
       { label: 'Auto plans', scene: 'c07-auto-plan' },
@@ -79,7 +83,8 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     ...DEMO_GROUPS.find,
     summary:
       'Every session on one board, grouped by what needs you, and every report next to its code.',
-    tryThis: 'Open the card that needs you, then a report from the library.',
+    tryThis: 'Open the card that needs you, then comment on a plan in the library.',
+    hints: FIND_HINTS,
     beats: [
       { label: 'Board', scene: 'board-shell' },
       { label: 'Library', scene: 'artifacts-lens-shell' },
@@ -90,6 +95,7 @@ export const DEMO_CHAPTERS: readonly [DemoChapter, ...ReadonlyArray<DemoChapter>
     ...DEMO_GROUPS.review,
     summary: 'Read every change before it is pushed, and turn review comments into fixes.',
     tryThis: 'Switch between files, then pick a comment and start a fix.',
+    hints: REVIEW_HINTS,
     beats: [
       { label: 'Diff', scene: 'brand-diff' },
       { label: 'Comments', scene: 'resolve-queue-shell' },

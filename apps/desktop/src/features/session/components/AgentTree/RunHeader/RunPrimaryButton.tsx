@@ -130,6 +130,7 @@ export const RunPrimaryButton = ({ session, view, kind, label, variant }: Props)
         <Button
           size="sm"
           variant={isQuiet ? 'quiet' : variant}
+          data-demo-anchor={`run-${kind}`}
           isBusy={isBusy}
           onClick={() => void press()}
         >

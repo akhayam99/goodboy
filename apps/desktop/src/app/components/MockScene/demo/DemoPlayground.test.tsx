@@ -194,10 +194,10 @@ describe('demo playground', () => {
     const rail = screen.getByRole('navigation', { name: 'Playground groups' });
     expect(Array.from(rail.querySelectorAll('button')).map((row) => row.textContent)).toEqual([
       '01Set upOptional0 of 5 tried',
-      '02Work with an agent0 of 3 tried',
-      '03Orchestrate',
-      '04Find work and results',
-      '05Review and ship',
+      '02Work with an agent0 of 4 tried',
+      '03Orchestrate0 of 6 tried',
+      '04Find work and results0 of 3 tried',
+      '05Review and ship0 of 3 tried',
     ]);
   });
 
@@ -275,27 +275,29 @@ describe('demo playground', () => {
   });
 
   it('points at the top right download once every group is tried', () => {
-    window.localStorage.setItem(
-      HINT_PROGRESS_KEY,
-      JSON.stringify({
-        agent: { tried: ['agent-send', 'agent-answer', 'agent-files'], skipped: [], epoch: 0 },
-        setup: {
-          tried: [
-            'setup-start',
-            'setup-agents',
-            'setup-create',
-            'setup-tools',
-            'setup-first-start',
-          ],
-          skipped: [],
-          epoch: 0,
-        },
-      }),
+    const progress = Object.fromEntries(
+      DEMO_CHAPTERS.map((chapter) => [
+        chapter.id,
+        { tried: (chapter.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
+      ]),
     );
+    window.localStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
     render(<DemoPlayground />);
     expect(screen.getByText(/every group/).textContent).toBe(
       'You have tried every group. Download is top right.',
     );
+  });
+
+  it('keeps the mock data line while one group is still untried', () => {
+    const progress = Object.fromEntries(
+      DEMO_CHAPTERS.filter((chapter) => chapter.id !== 'review').map((chapter) => [
+        chapter.id,
+        { tried: (chapter.hints ?? []).map((entry) => entry.id), skipped: [], epoch: 0 },
+      ]),
+    );
+    window.localStorage.setItem(HINT_PROGRESS_KEY, JSON.stringify(progress));
+    render(<DemoPlayground />);
+    expect(screen.queryByText(/You have tried every group/)).toBeNull();
   });
 
   it('shows the loading state until the frame reports ready', () => {
@@ -380,7 +382,7 @@ describe('demo playground', () => {
     );
     hint({ frame, hintId: 'agent-send' });
     expect(screen.queryByRole('note', { name: 'Hint' })).toBeNull();
-    expect(screen.getByRole('note', { name: 'Hint 1 of 3' })).not.toBeNull();
+    expect(screen.getByRole('note', { name: 'Hint 1 of 4' })).not.toBeNull();
   });
 
   it('celebrates the end of setup and points to Work with an agent', () => {
@@ -422,7 +424,7 @@ describe('demo playground', () => {
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send' });
-    const note = screen.getByRole('note', { name: 'Hint 1 of 3' });
+    const note = screen.getByRole('note', { name: 'Hint 1 of 4' });
     expect(note.textContent).toContain('Send this follow-up to the agent');
     expect(screen.getByTestId('demo-coach-mark').contains(note)).toBe(true);
     fireEvent.click(within(note).getByRole('button', { name: 'Skip hint' }));
@@ -435,7 +437,7 @@ describe('demo playground', () => {
     const post = vi.spyOn(frame.contentWindow ?? window, 'postMessage');
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send' });
-    expect(screen.getByRole('note', { name: 'Hint 1 of 3' })).not.toBeNull();
+    expect(screen.getByRole('note', { name: 'Hint 1 of 4' })).not.toBeNull();
     report({ frame, type: 'ready' });
     expect(screen.queryByRole('note')).toBeNull();
     const tracks = post.mock.calls.filter(
@@ -476,7 +478,7 @@ describe('demo playground', () => {
     expect(screen.queryByRole('note')).toBeNull();
     expect(screen.getByRole('button', { name: /Show hint/ })).not.toBeNull();
     fireEvent.keyDown(playgroundRoot(), { key: 'h' });
-    expect(screen.getByRole('note', { name: 'Hint 1 of 3' })).not.toBeNull();
+    expect(screen.getByRole('note', { name: 'Hint 1 of 4' })).not.toBeNull();
   });
 
   it('skips a hint, tells the frame and keeps that across a reload', () => {
@@ -508,7 +510,7 @@ describe('demo playground', () => {
     report({ frame, type: 'ready' });
     tried({ frame, hintId: 'agent-answer' });
     tried({ frame, hintId: 'agent-answer' });
-    expect(screen.getAllByText(/1 of 3/)).toHaveLength(2);
+    expect(screen.getAllByText(/1 of 4/)).toHaveLength(2);
     expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
       agent: { tried: ['agent-answer'], skipped: [], epoch: 0 },
     });
@@ -528,7 +530,7 @@ describe('demo playground', () => {
       agent: { tried: ['agent-files', 'agent-answer'], skipped: [], epoch: 0 },
       setup: { tried: ['setup-start'], skipped: [], epoch: 0 },
     });
-    expect(screen.getAllByText(/2 of 3/)).toHaveLength(2);
+    expect(screen.getAllByText(/2 of 4/)).toHaveLength(2);
     act(() => {
       window.localStorage.setItem(
         HINT_PROGRESS_KEY,
@@ -536,7 +538,7 @@ describe('demo playground', () => {
       );
       window.dispatchEvent(new StorageEvent('storage', { key: HINT_PROGRESS_KEY }));
     });
-    expect(screen.getAllByText(/0 of 3/)).toHaveLength(2);
+    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
   });
 
   it('does not bring back a group another tab replayed', () => {
@@ -555,7 +557,7 @@ describe('demo playground', () => {
     expect(JSON.parse(window.localStorage.getItem(HINT_PROGRESS_KEY) ?? '{}')).toEqual({
       agent: { tried: [], skipped: [], epoch: 1 },
     });
-    expect(screen.getAllByText(/0 of 3/)).toHaveLength(2);
+    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
   });
 
   it('starts with the stored progress and resets only this group on replay', () => {
@@ -567,9 +569,9 @@ describe('demo playground', () => {
       }),
     );
     render(<DemoPlayground />);
-    expect(screen.getAllByText(/2 of 3/)).toHaveLength(2);
+    expect(screen.getAllByText(/2 of 4/)).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Replay group' }));
-    expect(screen.getAllByText(/0 of 3/)).toHaveLength(2);
+    expect(screen.getAllByText(/0 of 4/)).toHaveLength(2);
     expect(screen.getByText('1 of 5 tried').textContent).toBe('1 of 5 tried');
   });
 
@@ -584,6 +586,6 @@ describe('demo playground', () => {
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
     tried({ frame, hintId: 'agent-answer' });
-    expect(screen.getAllByText(/1 of 3/)).toHaveLength(2);
+    expect(screen.getAllByText(/1 of 4/)).toHaveLength(2);
   });
 });

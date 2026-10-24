@@ -442,7 +442,14 @@ outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
 group only. Every change reads the stored progress first and writes one
 group back, so two tabs never overwrite each other, and a `storage` event
 updates the other tab. Replay bumps the group's `epoch`; a mark made against
-an older epoch is dropped, so a stale tab cannot bring a replayed group back. Another group gets hints by adding a data file and a `hints` entry.
+an older epoch is dropped, so a stale tab cannot bring a replayed group back. Every group has its data file: `onboardingHints.ts`, `agentHints.ts` (with the
+limits handoff), `orchestrateHints.ts` (Auto start, plan approval and a helper,
+then the run approval, a step and a model), `findHints.ts` (board filter, the
+card that needs you, a plan and its comment) and `reviewHints.ts` (the webhook
+handler, a line note, then one review comment fixed, ready with its drafted
+reply and applied). `data-demo-anchor` marks only controls with no stable name:
+the setup buttons, Auto's Approve plan, the run header action (`run-<kind>`) and
+Start fix.
 In a directed frame `answerOpenQuestions` is simulated too: it marks the
 answer, keeps the unsent draft and streams a short acknowledgment.
 
