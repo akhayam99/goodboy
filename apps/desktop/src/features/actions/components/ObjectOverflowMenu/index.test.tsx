@@ -153,4 +153,40 @@ describe('ObjectOverflowMenu', () => {
     expect(onArm.mock.calls[0]?.[0].action.id).toBe('agent.delete');
     expect(screen.queryByRole('group', { name: 'Delete agent?' })).toBeNull();
   });
+
+  it('caps a menu of long rebase stops at the menu width and clamps their detail', () => {
+    const verbs = [
+      {
+        id: 'stop-a',
+        label: 'Rebase of hl/feat-center-members-page stopped',
+        description: 'Conflict in SideBarFooter.tsx, PastDue.tsx and 3 more',
+        run: vi.fn(),
+      },
+      {
+        id: 'stop-b',
+        label: 'Rebase of hl/feat-center-profile-page stopped',
+        description: 'Origin moved',
+        run: vi.fn(),
+      },
+    ];
+    render(
+      <ObjectOverflowMenu
+        target={{ kind: 'actionCard', sessionId: SESSION, verbs }}
+        label="More options for Rebase ledger-core"
+        size="control"
+        hideWhenEmpty
+        minEntries={1}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'More options for Rebase ledger-core' }));
+
+    const popup = document.querySelector<HTMLElement>('[data-dropdown-portal] > *');
+    expect(popup?.style.maxWidth).toMatch(/^\d+px$/);
+    expect(Number.parseFloat(popup?.style.maxWidth ?? '0')).toBeLessThanOrEqual(384);
+    const row = screen.getByRole('menuitem', {
+      name: /Rebase of hl\/feat-center-members-page stopped/,
+    });
+    expect(row.textContent).toContain('Conflict in SideBarFooter.tsx, PastDue.tsx and 3 more');
+  });
 });

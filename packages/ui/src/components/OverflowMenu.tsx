@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Ellipsis } from 'lucide-react';
 import { AnchoredPopover } from './AnchoredPopover';
 import { MenuTriggerButton, type MenuTriggerSize } from './MenuTriggerButton';
+import { MENU_MAX_WIDTH } from '../menuMaxWidth';
 import { isProduction } from '../isProduction';
 import { useDropdown } from '../useDropdown';
 import { MenuItems, type OverflowMenuItem } from './MenuItems';
@@ -33,6 +34,7 @@ export const OverflowMenu = ({
     disabled,
     align: align === 'right' ? 'end' : 'start',
     width: 'min-w-50',
+    maxWidth: MENU_MAX_WIDTH,
     expectedHeight: 220,
   });
   const drawn = items.filter((item) => item.kind === 'item').length;

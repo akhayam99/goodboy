@@ -32,12 +32,32 @@ type Case = {
 
 const CASES: ReadonlyArray<Case> = [
   {
+    name: 'stripControlMarkers on repeated complete block openers without a close',
+    run: () => stripControlMarkers('<<plan>>'.repeat(64_000)),
+  },
+  {
     name: 'stripControlMarkers on repeated unrecognized opening tags',
     run: () => stripControlMarkers('<<ctx-widget '.repeat(8_000)),
   },
   {
     name: 'stripControlMarkers on repeated block opening tags without a close',
     run: () => stripControlMarkers('<<plan '.repeat(8_000)),
+  },
+  {
+    name: 'stripControlMarkers on self markers whose quotes never pair',
+    run: () => stripControlMarkers('<<handoff "x>>"'.repeat(8_000)),
+  },
+  {
+    name: 'stripControlMarkers on a partial tag tail behind many brackets',
+    run: () => stripControlMarkers(`${'<< x'.repeat(8_000)}>x`),
+  },
+  {
+    name: 'stripControlMarkers on many repeated closed blocks',
+    run: () => stripControlMarkers('a <<plan>>x<</plan>> b '.repeat(8_000)),
+  },
+  {
+    name: 'stripControlMarkers on runs of closing brackets after self markers',
+    run: () => stripControlMarkers('<<handoff kind=a>>>>>'.repeat(8_000)),
   },
   {
     name: 'unwrapEdgeFence on tabs after an opening fence',
@@ -84,5 +104,19 @@ describe('pathological input stays linear', () => {
     const started = performance.now();
     run();
     expect(performance.now() - started).toBeLessThan(budgetMs);
+  });
+
+  it('stripControlMarkers time grows linearly with unclosed block openers', () => {
+    type MeasureParams = { readonly count: number };
+    const measure = ({ count }: MeasureParams) => {
+      const input = '<<plan>>'.repeat(count);
+      const started = performance.now();
+      stripControlMarkers(input);
+      return performance.now() - started;
+    };
+    measure({ count: 8_000 });
+    const small = Math.max(measure({ count: 32_000 }), 1);
+    const large = measure({ count: 64_000 });
+    expect(large / small).toBeLessThan(3);
   });
 });

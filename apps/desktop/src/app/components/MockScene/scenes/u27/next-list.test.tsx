@@ -177,6 +177,27 @@ describe('the u27 Next list scenes', () => {
     expect(within(update).getByRole('button', { name: 'Rebase all' })).toBeDefined();
   });
 
+  it('lists each folded stop in the behind card menu as a title with a short detail', async () => {
+    mount({ id: 'u27-next-list-after-light' });
+
+    const stack = await nextStack();
+    fireEvent.click(within(stack).getByRole('button', { name: /^Update/ }));
+    const update = within(stack).getByRole('region', { name: 'Update' });
+    fireEvent.click(within(update).getAllByRole('button', { name: /^More options for / })[0]!);
+
+    const rows = screen
+      .getAllByRole('menuitem')
+      .filter((row) => (row.textContent ?? '').includes('stopped'));
+    expect(rows).toHaveLength(3);
+    for (const row of rows) {
+      expect(row.textContent).toMatch(
+        /^Rebase of hl\/feat-center-[a-z]+-page stoppedOrigin moved$/,
+      );
+    }
+    const popup = document.querySelector<HTMLElement>('[data-dropdown-portal] > *');
+    expect(Number.parseFloat(popup?.style.maxWidth ?? '0')).toBeLessThanOrEqual(384);
+  });
+
   it.each(Object.keys(U27_NEXT_LIST_SCENES))('%s has no accessibility violations', async (id) => {
     const { container } = mount({ id });
     await nextStack();

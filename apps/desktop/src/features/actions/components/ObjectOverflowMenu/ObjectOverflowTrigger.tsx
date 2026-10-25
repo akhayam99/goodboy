@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
-import { AnchoredPopover, MenuTriggerButton, useDropdown, type MenuTriggerSize } from '@goodboy/ui';
+import {
+  AnchoredPopover,
+  MENU_MAX_WIDTH,
+  MenuTriggerButton,
+  useDropdown,
+  type MenuTriggerSize,
+} from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ActionMenuBehavior, ActionViewing, ObjectTarget } from '../../types';
 import type { OnArm } from '../../../../shared/components/HeaderConfirm/armedAction';
@@ -45,7 +51,8 @@ export const ObjectOverflowTrigger = ({
   const dropdown = useDropdown({
     disabled,
     align: align === 'right' ? 'end' : 'start',
-    width: 'min-w-[200px] max-w-sm',
+    width: 'min-w-[200px]',
+    maxWidth: MENU_MAX_WIDTH,
     expectedHeight: 320,
     expectedWidth: 240,
   });

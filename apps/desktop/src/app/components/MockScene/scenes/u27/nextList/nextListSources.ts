@@ -9,9 +9,11 @@ import { delegationReasonTextOf } from '../../../../../../features/auto/delegati
 import type { AutoActionTarget } from '../../../../../../features/session/central/next/actionCardsOf';
 import type { NeedsYouOwner } from '../../../../../../features/session/timeline/needsYou';
 import {
+  historyStopTitleOf,
   segmentsToText,
   sessionEventLabel,
 } from '../../../../../../features/session/timeline/sessionEventPresentation';
+import { historyStopDetailOf } from '../../../../../../features/history/historyStopDetailOf';
 import type { SessionSuggestion } from '../../../../../../features/suggestions/types';
 import { SESSION_ID } from '../../resolveSeed';
 import { NEXT_LIST_MOUNTS, type NextListMount } from './nextListMounts';
@@ -138,6 +140,10 @@ const rebaseStoppedOf = ({ mount, minute }: RebaseParams): NeedsYouOwner => {
     prNumber: null,
     owed: null,
     mountId: null,
+    stopLines: {
+      title: historyStopTitleOf({ event }),
+      detail: historyStopDetailOf({ payload: event.payload }),
+    },
   };
 };
 

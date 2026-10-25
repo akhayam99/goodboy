@@ -19,6 +19,7 @@ import {
   aView,
 } from '../../../../auto/testing/autoViewFixtures';
 import type { SessionSuggestion } from '../../../../suggestions/types';
+import type { NeedsYouOwner } from '../../../timeline/needsYou';
 import { actionCardsOf, type AutoActionTarget } from '../actionCardsOf';
 
 const { runs } = vi.hoisted(() => ({
@@ -287,6 +288,43 @@ describe('a card that holds folded cards', () => {
 
     expect(result.current.actionsFor({ card }).failure).toBe('Auto is not running');
     expect(continueStoppedAgent).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('a card that folds a stopped rebase', () => {
+  it('lists the stop by its title with the short detail as the second line', () => {
+    const owner: NeedsYouOwner = {
+      id: 'event:ev-ledger-stop',
+      kind: 'rebase',
+      text: 'Rebase of hl/feat-ledger-postings stopped · conflict in apps/web/src/a/SideBarFooter.tsx, apps/web/src/b/PastDue.tsx, c.tsx',
+      where: null,
+      at: '2026-10-22T10:00:00.000Z',
+      item: null,
+      question: null,
+      questionIds: [],
+      prNumber: null,
+      owed: null,
+      mountId: null,
+      stopLines: {
+        title: 'Rebase of hl/feat-ledger-postings stopped',
+        detail: 'Conflict in SideBarFooter.tsx, PastDue.tsx and 1 more',
+      },
+    };
+    const [stop] = actionCardsOf({ owners: [owner], suggestions: [], autoTargets: [] });
+    if (stop === undefined) {
+      throw new Error('Expected the stop card');
+    }
+    const { result } = renderHook(() => useActionCardActions({ session: SESSION }), { wrapper });
+    const card = { ...suggestionCard(), folded: [stop] };
+
+    const verbs = result.current.actionsFor({ card }).menu?.target.foldedVerbs ?? [];
+
+    expect(verbs.map((verb) => [verb.label, verb.description])).toEqual([
+      [
+        'Rebase of hl/feat-ledger-postings stopped',
+        'Conflict in SideBarFooter.tsx, PastDue.tsx and 1 more',
+      ],
+    ]);
   });
 });
 

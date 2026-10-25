@@ -1,3 +1,4 @@
+import { foldedVerbOf } from '../../../../../../features/session/central/next/foldedVerbOf';
 import { foldVerbs } from '../../../../../../features/session/central/next/foldVerbs';
 import type { ActionCardActions } from '../../../../../../features/session/central/next/useActionCardActions';
 import { SESSION_ID } from '../../resolveSeed';
@@ -15,10 +16,6 @@ export const nextListBuiltActionsFor: ActionCardActions['actionsFor'] = ({
   return foldVerbs({
     actions: { ...actions, main },
     sessionId: SESSION_ID,
-    verbs: card.folded.map((folded) => ({
-      id: `folded:${folded.id}`,
-      label: folded.title,
-      run: () => undefined,
-    })),
+    verbs: card.folded.map((folded) => foldedVerbOf({ card: folded, run: () => undefined })),
   });
 };

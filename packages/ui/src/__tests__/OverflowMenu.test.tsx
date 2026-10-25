@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { OverflowMenu } from '../components/OverflowMenu';
+import { MENU_MAX_WIDTH } from '../menuMaxWidth';
 import type { OverflowMenuItem } from '../components/MenuItems';
 
 afterEach(cleanup);
@@ -150,5 +151,12 @@ describe('OverflowMenu', () => {
     render(<OverflowMenu items={TWO} disabled />);
     fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
     expect(screen.queryByRole('menuitem')).toBeNull();
+  });
+
+  it('caps its popup at the menu width so a long row never spreads across the window', () => {
+    render(<OverflowMenu items={TWO} />);
+    fireEvent.click(screen.getByRole('button', { name: /more actions/i }));
+    const popup = screen.getByRole('menu').closest<HTMLElement>('[class*="z-popover"]');
+    expect(popup?.style.maxWidth).toBe(`${MENU_MAX_WIDTH}px`);
   });
 });

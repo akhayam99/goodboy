@@ -229,6 +229,28 @@ const stopDetail = ({ payload }: PayloadParams): string => {
   return cause === null ? '' : ` · ${cause}`;
 };
 
+type StopLeadParams = {
+  readonly isRebase: boolean;
+};
+
+const historyStopLead = ({ isRebase }: StopLeadParams): TimelineLabelSegment => ({
+  kind: 'text',
+  text: isRebase ? 'Rebase of ' : 'Rewrite of ',
+});
+
+type StopTitleParams = {
+  readonly event: SessionEvent;
+};
+
+export const historyStopTitleOf = ({ event }: StopTitleParams): string =>
+  [
+    historyStopLead({ isRebase: event.payload?.origin === 'rebase' }),
+    branchSegment({ payload: event.payload }),
+    { kind: 'text', text: ' stopped' } satisfies TimelineLabelSegment,
+  ]
+    .map((segment) => segment.text)
+    .join('');
+
 const historyEventLabel = ({
   kind,
   payload,
@@ -270,7 +292,7 @@ const historyEventLabel = ({
   }
   if (kind === 'history_stopped') {
     return [
-      { kind: 'text', text: isRebase ? 'Rebase of ' : 'Rewrite of ' },
+      historyStopLead({ isRebase }),
       branchSegment({ payload }),
       {
         kind: 'text',
