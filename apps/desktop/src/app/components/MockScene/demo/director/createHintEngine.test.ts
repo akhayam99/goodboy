@@ -142,6 +142,11 @@ const frame = async (): Promise<void> => {
   vi.advanceTimersByTime(20);
 };
 
+const dwell = async (): Promise<void> => {
+  await Promise.resolve();
+  vi.advanceTimersByTime(2700);
+};
+
 const sendOf = () =>
   createSimulatedSend({
     store,
@@ -324,6 +329,7 @@ describe('the hint engine', () => {
     }
     wizard.innerHTML = '<button type="submit" data-demo-anchor="setup-create">Create</button>';
     await frame();
+    await dwell();
     expect(shown().at(-1)).toBe('setup-create');
     expect(tried()).toEqual(['setup-workspace']);
     wizard.setAttribute('data-step', 'tools');
@@ -346,6 +352,7 @@ describe('the hint engine', () => {
     seed();
     await frame();
     expect(tried()).toEqual(['setup-first-start']);
+    await dwell();
     expect(shown().at(-1)).toBe('setup-done');
     engine.dispose();
   });

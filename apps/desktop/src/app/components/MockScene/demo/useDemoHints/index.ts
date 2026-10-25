@@ -3,6 +3,8 @@ import type { DemoChapter } from '../demoChapters';
 import type { CoachMark } from '../DemoCoachMark';
 import type { DemoHintReport, DemoRect } from '../director/demoProtocol';
 import { hintTally, type HintTally } from '../hints/hintTally';
+import { isHoleTooBig } from '../hints/isHoleTooBig';
+import { APP_SIZE } from '../appSize';
 import { useHintProgress } from '../useHintProgress';
 
 type Params = {
@@ -136,7 +138,10 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
       side: hint.side ?? 'right',
       rect: current.rect,
       focus: current.focus,
-      isSpotlit: nextChapter === undefined && !current.isClicked,
+      isSpotlit:
+        nextChapter === undefined &&
+        !current.isClicked &&
+        !isHoleTooBig({ anchor: current.rect, focus: current.focus, bounds: APP_SIZE }),
       next:
         nextChapter === undefined ? undefined : { id: nextChapter.id, title: nextChapter.title },
     };

@@ -326,6 +326,62 @@ describe('demo playground', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('selects the group row and shows the loading state at once when the next frame is not ready', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    report({ frame: visibleFrame(), type: 'ready' });
+    expect(screen.queryByRole('status')).toBeNull();
+    const row = screen.getByRole('button', { name: /Find work and results/ });
+    fireEvent.click(row);
+    expect(row.getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('status').textContent).toBe('Opening Goodboy');
+    const next = document.querySelector<HTMLIFrameElement>('iframe[data-shown="false"]');
+    if (next === null) {
+      throw new Error('no frame loading');
+    }
+    report({ frame: next, type: 'ready' });
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(visibleFrame()).toBe(next);
+  });
+
+  it('loads the frame of a group while the pointer is on its row', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    report({ frame: visibleFrame(), type: 'ready' });
+    const sources = (): ReadonlyArray<string> =>
+      Array.from(document.querySelectorAll('iframe')).map((entry) => entry.src);
+    const before = sources();
+    fireEvent.pointerEnter(screen.getByRole('button', { name: /Review and ship/ }));
+    const after = sources();
+    expect(after).toHaveLength(before.length);
+    expect(after.some((src) => !before.includes(src))).toBe(true);
+  });
+
+  it('never moves focus when a hint opens, hides or lifts', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    const before = document.activeElement;
+    hint({ frame, hintId: 'agent-send' });
+    expect(document.activeElement).toBe(before);
+    fireEvent.click(screen.getByRole('button', { name: 'Skip hint' }));
+    hint({ frame, hintId: 'agent-answer' });
+    expect(document.activeElement).toBe(before);
+  });
+
+  it('shows no hint and no spotlight while the frame holds the next one back', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-limits-peek' });
+    expect(screen.queryByTestId('demo-spotlight')).not.toBeNull();
+    hint({ frame, hintId: null, rect: null });
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+  });
+
   it('ignores a report from a window that is not one of its frames', () => {
     render(<DemoPlayground />);
     report({ frame: visibleFrame(), type: 'ready', source: window });
@@ -541,10 +597,20 @@ describe('demo playground', () => {
     render(<DemoPlayground />);
     const frame = visibleFrame();
     report({ frame, type: 'ready' });
-    hint({ frame, hintId: 'agent-send', focus: { x: -200, y: -200, width: 4000, height: 4000 } });
+    hint({ frame, hintId: 'agent-send', focus: { x: -200, y: -200, width: 900, height: 700 } });
     const hole = holeBox();
     expect(hole.left).toBe(0);
     expect(hole.top).toBe(0);
+  });
+
+  it('does not dim the stage when the hole would cover most of it', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send', focus: { x: 0, y: 0, width: 1400, height: 880 } });
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
+    expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
   });
 
   it('removes the spotlight once the control is clicked, hidden, skipped or done', () => {
