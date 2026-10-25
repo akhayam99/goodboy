@@ -149,7 +149,6 @@ export const DemoPlayground = () => {
             chapter={chapter}
             tally={hints.tally}
             isHintHidden={hints.isHidden}
-            isQuiet={isSpotlit}
             onShowHint={hints.show}
           />
           <DemoStage
