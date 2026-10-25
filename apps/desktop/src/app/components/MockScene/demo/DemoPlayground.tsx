@@ -26,10 +26,11 @@ type ShownParams = {
 type AnnouncementParams = {
   readonly coach: DemoHints['coach'];
   readonly offscreen: DemoHints['offscreen'];
+  readonly closing: DemoHints['closing'];
 };
 
-const hintAnnouncement = ({ coach, offscreen }: AnnouncementParams): string => {
-  const copy = coach?.copy ?? offscreen?.copy;
+const hintAnnouncement = ({ coach, offscreen, closing }: AnnouncementParams): string => {
+  const copy = coach?.copy ?? offscreen?.copy ?? closing?.copy;
   return copy === undefined ? '' : `Hint: ${copy}`;
 };
 
@@ -147,6 +148,7 @@ export const DemoPlayground = () => {
           upNextId={nextChapter?.id}
           isUpNextReady={isGroupDone}
           isQuiet={isSpotlit}
+          closing={hints.closing}
           isEveryGroupTried={isEveryGroupTried({
             chapters: DEMO_CHAPTERS,
             tallyOf: hints.tallyOf,
@@ -180,7 +182,11 @@ export const DemoPlayground = () => {
             onRevealHint={hints.revealHint}
           />
           <p className="sr-only" aria-live="polite">
-            {hintAnnouncement({ coach: hints.coach, offscreen: hints.offscreen })}
+            {hintAnnouncement({
+              coach: hints.coach,
+              offscreen: hints.offscreen,
+              closing: hints.closing,
+            })}
           </p>
           <DemoTimeline
             chapter={chapter}

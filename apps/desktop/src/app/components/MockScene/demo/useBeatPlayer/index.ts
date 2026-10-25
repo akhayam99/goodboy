@@ -15,6 +15,7 @@ type Params = {
 export type StageFrame = {
   readonly key: string;
   readonly src: string;
+  readonly label: string;
 };
 
 export type FrameCommand = {
@@ -89,14 +90,14 @@ const nextFrame = ({
   const sameChapter = chapter.beats[beatIndex + 1];
   if (sameChapter !== undefined && !isIntent) {
     const src = beatSrc({ beat: sameChapter, theme });
-    return { key: frameKey({ beat: sameChapter, replayKey }), src };
+    return { key: frameKey({ beat: sameChapter, replayKey }), src, label: sameChapter.label };
   }
   const opening = nextChapter?.beats[0];
-  if (opening === undefined) {
+  if (nextChapter === undefined || opening === undefined) {
     return undefined;
   }
   const src = beatSrc({ beat: opening, theme });
-  return { key: frameKey({ beat: opening, replayKey: 0 }), src };
+  return { key: frameKey({ beat: opening, replayKey: 0 }), src, label: nextChapter.title };
 };
 
 const NO_REPORTS: ReadonlyMap<string, DemoReport> = new Map();
@@ -146,7 +147,8 @@ export const useBeatPlayer = ({
   const beat = chapter.beats[frameIndex];
   const src = beat === undefined ? '' : beatSrc({ beat, theme });
   const key = beat === undefined ? '' : frameKey({ beat, replayKey: current.replayKey });
-  const frame = useMemo(() => ({ key, src }), [key, src]);
+  const label = frameIndex === 0 ? chapter.title : (beat?.label ?? chapter.title);
+  const frame = useMemo(() => ({ key, src, label }), [key, src, label]);
   const preloadFrame = useMemo(
     () =>
       nextFrame({

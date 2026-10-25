@@ -496,7 +496,11 @@ callout takes clicks. A control scrolled out of view gets a note at the bottom
 of the stage with Show control, which sends `reveal` so the frame scrolls it
 into view once. Escape hides either note, H brings it back, Skip hint settles
 it. A hint with `nextChapterId` is the closing note of a group: it counts no
-outcome and points at that group's rail row ("Up next in the list") instead of offering Skip. The rail and the header count distinct
+outcome and is not drawn on the stage: no ring, no callout, no pointer into the
+app. `useDemoHints` returns it as `closing` and the rail shows it under the Up
+next row (`DemoClosingNote`) with a "Go to <group>" button. Hint copy is a short
+imperative that names the control and says why; simulated replies speak as the
+agent on the sample project and never mention the app or the demo. The rail and the header count distinct
 outcomes as "n of m tried", kept in `localStorage` under `goodboy-demo-hints`
 (every read and write survives blocked storage), and Replay clears the open
 group only. Every change reads the stored progress first and writes one
@@ -569,7 +573,9 @@ focus (the real app focuses the composer on opening a helper; that stays in the
 app and is refused only in the demo frame).
 A group switch answers at once: the rail row is selected, and `DemoStageLoading`
 covers the stage until the new frame reports ready, whether it is the first one
-or a switch. Hovering, focusing or pressing a rail row preloads that group's
+or a switch. It names what is loading ("Loading Work with an agent" for the
+opening beat of a group, "Loading Limits" for another beat; `StageFrame.label`).
+Hovering, focusing or pressing a rail row preloads that group's
 opening frame (`intentChapter` in `useBeatPlayer`), in place of the next group,
 so the wait is a few frames when the pointer lingered.
 In the demo the Goodboy menu never opens itself after the first task, the chip

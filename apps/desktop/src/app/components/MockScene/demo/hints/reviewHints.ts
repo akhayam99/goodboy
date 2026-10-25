@@ -97,7 +97,7 @@ const acceptedCountOf = ({ state }: StateParams): number =>
 export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'diff-file',
-    copy: 'Open the webhook handler',
+    copy: 'Open applyWebhook.ts to read what changed',
     outcome: null,
     anchor: `${HANDLER_ROW} > button`,
     focus: 'nav[aria-label="Changed files"]',
@@ -108,7 +108,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'diff-note',
-    copy: 'Click a line number to leave a note',
+    copy: 'Click a line number to leave a note on that code',
     outcome: 'note-left',
     anchor: LINE_NOTE,
     revealWhen: ({ root }) => hasElement({ root, selector: LINE_NOTE }),
@@ -116,7 +116,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-pick',
-    copy: 'Open the comment about the retry constant',
+    copy: 'Open this review comment to read it next to the code',
     outcome: null,
     anchor: 'button[data-thread-id="PRRT_thread_retry_constant"]',
     revealWhen: ({ root }) =>
@@ -125,7 +125,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-fix',
-    copy: 'Ask an agent to fix this comment',
+    copy: 'Ask an agent to draft a fix for this comment',
     outcome: null,
     anchor: FIX,
     side: 'top',
@@ -135,7 +135,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-start',
-    copy: 'Start the fix, then read its drafted reply',
+    copy: 'Press Start fix: the agent changes the code and drafts a reply',
     outcome: 'fix-ready',
     anchor: START_FIX,
     side: 'top',
@@ -144,7 +144,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-read',
-    copy: 'Open a comment with a drafted reply',
+    copy: 'Open a fixed comment to read the reply the agent drafted',
     outcome: 'fix-ready',
     anchor: ({ state }) => readyRowOf({ state }),
     side: 'right',
@@ -161,7 +161,7 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'resolve-keep',
-    copy: 'Read the drafted reply, then apply the fix',
+    copy: 'Read the drafted reply, then keep the fix if it looks right',
     outcome: 'fix-kept',
     anchor: keepAnchorOf,
     side: 'top',

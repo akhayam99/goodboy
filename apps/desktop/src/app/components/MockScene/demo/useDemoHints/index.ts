@@ -42,6 +42,15 @@ export type OffscreenHint = {
   readonly copy: string;
 };
 
+export type ClosingNote = {
+  readonly hintId: string;
+  readonly copy: string;
+  readonly next: {
+    readonly id: string;
+    readonly title: string;
+  };
+};
+
 export type HintReveal = {
   readonly hintId: string;
   readonly count: number;
@@ -51,6 +60,7 @@ export type DemoHints = {
   readonly track: HintTrack | undefined;
   readonly coach: CoachMark | undefined;
   readonly offscreen: OffscreenHint | undefined;
+  readonly closing: ClosingNote | undefined;
   readonly reveal: HintReveal | undefined;
   readonly tally: HintTally;
   readonly isHidden: boolean;
@@ -127,7 +137,13 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
       : chapters.find((entry) => entry.id === hint.nextChapterId);
 
   const coach = useMemo((): CoachMark | undefined => {
-    if (!isOpen || hint === undefined || current === null || current.rect === null) {
+    if (
+      !isOpen ||
+      hint === undefined ||
+      current === null ||
+      current.rect === null ||
+      nextChapter !== undefined
+    ) {
       return undefined;
     }
     return {
@@ -139,20 +155,34 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
       rect: current.rect,
       focus: current.focus,
       isSpotlit:
-        nextChapter === undefined &&
         !current.isClicked &&
         !isHoleTooBig({ anchor: current.rect, focus: current.focus, bounds: APP_SIZE }),
-      next:
-        nextChapter === undefined ? undefined : { id: nextChapter.id, title: nextChapter.title },
     };
   }, [isOpen, hint, current, index, steps.length, nextChapter]);
 
+  const closing = useMemo((): ClosingNote | undefined => {
+    if (!isOpen || hint === undefined || nextChapter === undefined) {
+      return undefined;
+    }
+    return {
+      hintId: hint.id,
+      copy: hint.copy,
+      next: { id: nextChapter.id, title: nextChapter.title },
+    };
+  }, [isOpen, hint, nextChapter]);
+
   const offscreen = useMemo((): OffscreenHint | undefined => {
-    if (!isOpen || hint === undefined || current === null || !current.isOffscreen) {
+    if (
+      !isOpen ||
+      hint === undefined ||
+      current === null ||
+      !current.isOffscreen ||
+      nextChapter !== undefined
+    ) {
       return undefined;
     }
     return { hintId: hint.id, copy: hint.copy };
-  }, [isOpen, hint, current]);
+  }, [isOpen, hint, current, nextChapter]);
 
   const skip = useCallback(() => {
     if (currentId === null) {
@@ -192,6 +222,7 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
     track,
     coach,
     offscreen,
+    closing,
     reveal,
     tally: hintTally({ chapter, progress }),
     isHidden,

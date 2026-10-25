@@ -63,7 +63,7 @@ const WORKSPACE_CREATE = '[data-step="workspace"] [data-demo-anchor="setup-creat
 export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'setup-start',
-    copy: 'See the agents ready to use',
+    copy: 'Press Get started to begin a one minute setup',
     outcome: 'setup-opened',
     anchor: '[data-step="welcome"] [data-demo-anchor="setup-start"]',
     focus: WELCOME,
@@ -72,7 +72,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'setup-agents',
-    copy: 'Continue with your ready agents',
+    copy: 'Press Continue: these agents are ready to use',
     outcome: 'agents-ready',
     anchor: '[data-step="agents"] [data-demo-anchor="setup-continue"]',
     focus: WIZARD_COLUMN,
@@ -81,7 +81,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'setup-workspace',
-    copy: 'Choose the sample Harborline folder',
+    copy: 'Press Choose folder to add the sample Harborline code',
     outcome: null,
     anchor: '[data-step="workspace"] [data-demo-anchor="setup-choose-folder"]',
     focus: WIZARD_COLUMN,
@@ -92,7 +92,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'setup-create',
-    copy: 'Create a workspace from these repositories',
+    copy: 'Create the workspace so Goodboy can work on these repositories',
     outcome: 'workspace-created',
     anchor: WORKSPACE_CREATE,
     focus: WIZARD_COLUMN,
@@ -101,7 +101,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'setup-tools',
-    copy: 'Sample tools are ready. Continue',
+    copy: 'Press Continue: the sample tools are connected',
     outcome: 'tools-tried',
     anchor: '[data-step="tools"] [data-demo-anchor="setup-continue"]',
     focus: WIZARD_COLUMN,
@@ -110,7 +110,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'setup-first-start',
-    copy: 'Pick a starter task, then start it',
+    copy: 'Pick a starter task, then press Start to hand it to an agent',
     outcome: 'first-task',
     anchor: '[data-step="first-session"] [data-demo-anchor="setup-first-start"]',
     focus: WIZARD_COLUMN,
@@ -119,7 +119,7 @@ export const ONBOARDING_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'setup-done',
-    copy: 'Scout answered your first task. You are set up',
+    copy: 'Scout answered your first task. Setup is done.',
     outcome: null,
     anchor: 'textarea[aria-label="Message to the agent"]',
     side: 'left',

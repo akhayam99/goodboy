@@ -98,7 +98,7 @@ const MODEL = 'button[aria-label^="Model routing"]';
 export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   {
     id: 'agent-send',
-    copy: 'Send this follow-up to the agent',
+    copy: 'Press Send to give the agent this follow-up',
     outcome: 'turn-replied',
     anchor: 'button[aria-label="Send message"]',
     side: 'left',
@@ -107,7 +107,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-answer',
-    copy: 'Answer the agent’s question',
+    copy: 'The agent paused to ask you. Pick an answer',
     outcome: 'question-answered',
     anchor: ({ state }) => {
       const id = blockingQuestionOf({ state });
@@ -119,7 +119,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-limits-peek',
-    copy: 'Open the Claude limits',
+    copy: 'Open the limits chip to see how much Claude you have left',
     outcome: null,
     anchor: CLAUDE_LIMITS,
     side: 'bottom',
@@ -129,7 +129,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-limits',
-    copy: 'Send a message and watch Codex take over from Claude',
+    copy: 'Claude hit its limit. Send a message and Codex takes over',
     outcome: 'task-continued',
     anchor: 'textarea[aria-label="Message to the agent"]',
     side: 'top',
@@ -138,7 +138,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-files',
-    copy: 'Open the files it edited',
+    copy: 'Open Operations to see the files the agent edited',
     outcome: 'files-opened',
     anchor: OPERATIONS,
     revealWhen: ({ state }) => !isAgentBusy({ state }),
@@ -147,7 +147,7 @@ export const AGENT_HINTS: ReadonlyArray<DemoHint> = [
   },
   {
     id: 'agent-model',
-    copy: 'Open the model picker',
+    copy: 'Open the model picker to choose which model answers next',
     outcome: null,
     anchor: MODEL,
     side: 'top',
