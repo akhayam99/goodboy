@@ -14144,7 +14144,7 @@
   },
   "website/src/components/NavMenu.tsx": {
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
+      "count": 6
     }
   },
   "website/src/components/mocks/DiffReviewTree.tsx": {
@@ -14211,6 +14211,11 @@
       "count": 1
     }
   },
+  "website/src/components/mocks/useStepLoop/index.ts": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 3
+    }
+  },
   "website/src/data/downloads.ts": {
     "@typescript-eslint/consistent-type-assertions": {
       "count": 5
@@ -14234,6 +14239,11 @@
       "count": 1
     }
   },
+  "website/src/mountRoot.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
   "website/src/pages/features/Cluster.tsx": {
     "@typescript-eslint/naming-convention": {
       "count": 2
@@ -14241,6 +14251,16 @@
   },
   "website/src/pages/features/FeaturesPage.tsx": {
     "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    }
+  },
+  "website/src/sections/Install.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    }
+  },
+  "website/src/sections/Nav.tsx": {
+    "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     }
   },
