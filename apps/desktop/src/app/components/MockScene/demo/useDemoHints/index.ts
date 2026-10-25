@@ -30,6 +30,7 @@ type AnchorState = {
   readonly chapterId: string;
   readonly hintId: string | null;
   readonly rect: DemoRect | null;
+  readonly focus: DemoRect | null;
   readonly isOffscreen: boolean;
   readonly isClicked: boolean;
 };
@@ -100,6 +101,7 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
         chapterId: chapter.id,
         hintId: report.hintId,
         rect: report.rect,
+        focus: report.focus ?? null,
         isOffscreen: report.isOffscreen,
         isClicked: report.isClicked === true,
       });
@@ -133,6 +135,7 @@ export const useDemoHints = ({ chapter, chapters, frameKey }: Params): DemoHints
       total: steps.length,
       side: hint.side ?? 'right',
       rect: current.rect,
+      focus: current.focus,
       isSpotlit: nextChapter === undefined && !current.isClicked,
       next:
         nextChapter === undefined ? undefined : { id: nextChapter.id, title: nextChapter.title },

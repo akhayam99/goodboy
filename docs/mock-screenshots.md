@@ -523,16 +523,32 @@ its full count in a test (`groupHints.twin.test.tsx`, `createHintEngine.test.ts`
 the orchestrate and find walks must run before the review ones in the file, as
 the resolve overlay stays installed once a review test has run.
 
-While a hint that asks for a click is shown, the stage dims and lightly blurs
-everything around the control (`DemoSpotlight`, four `bg-scrim` panels with
-`backdrop-blur-sm` around the control's box, drawn inside the coach layer, never
-taking a click, faded in only when `canAnimate` allows). The note and the
-control stay sharp. The frame reports `isClicked` on the anchor report once the
-visitor pressed the control, and the spotlight lifts then, and on Escape, Skip
-hint or when the hint is done. The closing note of a group never dims. While it
-is on, the rail rows other than the next group, the rail note, the group summary
-and the top bar links recede to 40 percent (`quietClasses`, `data-quiet`); the
-calls to action and the steps never do, and hover or focus brings a row back.
+While a hint points at something on screen, the stage dims and lightly blurs
+everything except the context of the step (`DemoSpotlight`): one `bg-surround`
+layer at 50 percent with `backdrop-blur-xs`, cut by a single rounded SVG mask,
+so there is no seam. The hole is the control plus its region, padded by 8px
+(`hints/holeOf.ts`), drawn inside the coach layer, never taking a click, faded
+in only when `canAnimate` allows. The frame reports the region as `focus` on
+the anchor report. A hint names it with an optional `focus` selector, resolved
+as `anchor.closest(focus)`; without one `director/focusRegionOf.ts` takes the
+nearest ancestor that is a form, section, list item, dialog, group or bordered
+and rounded surface, then, failing that, the nearest wide short band (a page
+header or toolbar), as long as it is bigger than the control and under 60
+percent of the screen. No region means the control alone. The callout is placed
+beside the hole, not the control, so it never covers what is lit, and it is
+never dimmed. A control below the fold or cut by an edge is scrolled to the
+centre of its pane once per hint (`scrolled` in `createHintEngine`) before it
+is lit, and the report follows scroll and resize, so the hole stays aligned.
+A hint with no visible anchor (a closing note, a control that could not be
+scrolled in) never dims, and offers Show control. The frame reports `isClicked`
+once the visitor pressed the control, and the spotlight lifts then, and on
+Escape, Skip hint or when the hint is done. The closing note of a group never
+dims. While it is on, only the secondary chrome recedes to 65 percent
+(`quietClasses`, `data-quiet`): the rail rows other than the open group and
+the next one, the version chip and the link back to the site. The group title,
+its summary or Try this line, the step counter, the rail note, Download, Star,
+Up next and the coach mark stay at full strength, and hover or focus brings a
+quiet row back.
 In the demo the Goodboy menu never opens itself after the first task, the chip
 stays at rest and the menu holds no setup checklist (`isDirectedScene`).
 In a directed frame `answerOpenQuestions` is simulated too: it marks the

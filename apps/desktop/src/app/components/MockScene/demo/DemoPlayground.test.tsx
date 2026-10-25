@@ -65,6 +65,7 @@ type HintParams = {
   readonly frame: HTMLIFrameElement;
   readonly hintId: string | null;
   readonly rect?: DemoRect | null;
+  readonly focus?: DemoRect | null;
   readonly isOffscreen?: boolean;
   readonly generation?: number;
   readonly source?: MessageEventSource | null;
@@ -74,6 +75,7 @@ const hint = ({
   frame,
   hintId,
   rect = { x: 900, y: 700, width: 28, height: 28 },
+  focus = null,
   isOffscreen = false,
   generation = 0,
   source = frame.contentWindow,
@@ -88,6 +90,7 @@ const hint = ({
           type: 'anchor',
           hintId,
           rect,
+          focus,
           isOffscreen,
         },
         origin: window.location.origin,
@@ -390,6 +393,7 @@ describe('demo playground', () => {
     report({ frame, type: 'ready' });
     hint({ frame, hintId: 'agent-send', rect: null, isOffscreen: true });
     expect(screen.queryByTestId('demo-coach-mark')).toBeNull();
+    expect(screen.queryByTestId('demo-spotlight')).toBeNull();
     const slot = screen.getByRole('note', { name: 'Hint' });
     expect(slot.textContent).toContain('Send this follow-up to the agent');
     fireEvent.click(screen.getByRole('button', { name: 'Show control' }));
@@ -463,10 +467,84 @@ describe('demo playground', () => {
     hint({ frame, hintId: 'agent-send' });
     const spotlight = screen.getByTestId('demo-spotlight');
     expect(spotlight.getAttribute('aria-hidden')).toBe('true');
-    expect(spotlight.children).toHaveLength(4);
+    expect(spotlight.children).toHaveLength(0);
     expect(spotlight.querySelector('button, a, [tabindex]')).toBeNull();
     expect(spotlight.contains(screen.getByRole('note'))).toBe(false);
     expect(screen.getByTestId('demo-coach-mark').contains(spotlight)).toBe(true);
+  });
+
+  type Box = {
+    readonly left: number;
+    readonly top: number;
+    readonly right: number;
+    readonly bottom: number;
+  };
+
+  const holeBox = (): Box => {
+    const [x = 0, y = 0, width = 0, height = 0] = (
+      screen.getByTestId('demo-spotlight').getAttribute('data-hole') ?? ''
+    )
+      .split(' ')
+      .map(Number);
+    return { left: x, top: y, right: x + width, bottom: y + height };
+  };
+
+  const ringBox = (): Box => {
+    const ring = screen.getByTestId('demo-coach-mark').querySelector<HTMLElement>('.ring-2');
+    const left = parseFloat(ring?.style.left ?? '0');
+    const top = parseFloat(ring?.style.top ?? '0');
+    return {
+      left,
+      top,
+      right: left + parseFloat(ring?.style.width ?? '0'),
+      bottom: top + parseFloat(ring?.style.height ?? '0'),
+    };
+  };
+
+  it('cuts the hole around the focus region as well as the control, with a little room', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send' });
+    const alone = holeBox();
+    const ring = ringBox();
+    expect(alone.left).toBeLessThan(ring.left);
+    expect(alone.top).toBeLessThan(ring.top);
+    expect(alone.right).toBeGreaterThanOrEqual(ring.right);
+    expect(alone.bottom).toBeGreaterThanOrEqual(ring.bottom);
+    const focus = { x: 400, y: 600, width: 540, height: 200 };
+    hint({ frame, hintId: 'agent-send', focus });
+    const wide = holeBox();
+    const scale = (ring.right - ring.left - 8) / 28;
+    expect(wide.left).toBeLessThan(focus.x * scale);
+    expect(wide.top).toBeLessThan(focus.y * scale);
+    expect(wide.right).toBeGreaterThan((focus.x + focus.width) * scale);
+    expect(wide.bottom).toBeGreaterThan((focus.y + focus.height) * scale);
+    expect(wide.right - wide.left).toBeGreaterThan(alone.right - alone.left);
+  });
+
+  it('falls back to the control alone when the frame reports no region', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send', focus: null });
+    const hole = holeBox();
+    const ring = ringBox();
+    expect(hole.right - hole.left).toBeLessThan(ring.right - ring.left + 16);
+    expect(hole.bottom - hole.top).toBeLessThan(ring.bottom - ring.top + 16);
+  });
+
+  it('keeps the hole inside the stage when the region reaches past it', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send', focus: { x: -200, y: -200, width: 4000, height: 4000 } });
+    const hole = holeBox();
+    expect(hole.left).toBe(0);
+    expect(hole.top).toBe(0);
   });
 
   it('removes the spotlight once the control is clicked, hidden, skipped or done', () => {
@@ -520,7 +598,7 @@ describe('demo playground', () => {
     expect(screen.queryByTestId('demo-spotlight')).toBeNull();
   });
 
-  it('quiets the rail and the wrapper copy while the spotlight is on, never the calls to action', () => {
+  it('quiets only the secondary chrome while the spotlight is on and keeps what must be read at full strength', () => {
     window.history.replaceState(null, '', '/?scene=demo#agent');
     render(<DemoPlayground />);
     const frame = visibleFrame();
@@ -534,21 +612,35 @@ describe('demo playground', () => {
       }
       return row;
     };
+    const title = screen.getByRole('heading', { level: 1 });
     const summary = screen.getByText(DEMO_CHAPTERS[1]?.summary ?? '');
+    const counter = within(title.closest('header') ?? document.body).getByText(/0 of 4/);
     const note = screen.getByText(/The real Goodboy on sample projects/);
     const download = screen.getAllByRole('link', { name: /Download for macOS/ });
-    expect(summary.getAttribute('data-quiet')).toBe('false');
+    const star = screen.getByRole('link', { name: /Star on GitHub/ });
+    const version = screen.getByRole('link', { name: /What is new in/ });
+    const back = screen.getAllByRole('link', { name: /goodboy-ai.dev/ });
     hint({ frame, hintId: 'agent-send' });
-    expect(summary.getAttribute('data-quiet')).toBe('true');
     expect(rowOf({ title: DEMO_GROUPS.setup.title }).getAttribute('data-quiet')).toBe('true');
-    expect(note.parentElement?.getAttribute('data-quiet')).toBe('true');
-    for (const link of download) {
-      expect(link.closest('[data-quiet="true"]')).toBeNull();
+    expect(version.closest('[data-quiet="true"]')).not.toBeNull();
+    expect(back.some((link) => link.closest('[data-quiet="true"]') !== null)).toBe(true);
+    const full = [
+      title,
+      summary,
+      counter,
+      note,
+      star,
+      screen.getByRole('note', { name: 'Step 1 of 6' }),
+      rowOf({ title: DEMO_GROUPS.agent.title }),
+      ...download,
+    ];
+    for (const element of full) {
+      expect(element.closest('[data-quiet="true"]')).toBeNull();
     }
     const upNext = document.querySelector('[data-up-next="soon"]');
     expect(upNext?.parentElement?.getAttribute('data-quiet')).toBe('false');
     fireEvent.keyDown(playgroundRoot(), { key: 'Escape' });
-    expect(summary.getAttribute('data-quiet')).toBe('false');
+    expect(document.querySelector('[data-quiet="true"]')).toBeNull();
   });
 
   it('tracks the hints again and drops a stale hint once the frame reloads', () => {

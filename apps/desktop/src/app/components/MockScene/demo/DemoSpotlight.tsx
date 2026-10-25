@@ -8,17 +8,34 @@ type Size = {
 };
 
 type Props = {
-  readonly target: DemoRect;
+  readonly hole: DemoRect;
   readonly bounds: Size;
 };
 
-const ENTER_MS = 160;
-const PANEL = 'absolute bg-scrim opacity-60 backdrop-blur-sm';
+type MaskParams = Props & {
+  readonly radius: number;
+};
 
-export const DemoSpotlight = ({ target, bounds }: Props) => {
+const ENTER_MS = 160;
+const RADIUS = 12;
+
+const maskOf = ({ hole, bounds, radius }: MaskParams): string => {
+  const r = Math.min(radius, hole.width / 2, hole.height / 2);
+  const right = hole.x + hole.width;
+  const bottom = hole.y + hole.height;
+  const frame = `M0 0H${bounds.width}V${bounds.height}H0Z`;
+  const cut =
+    `M${hole.x + r} ${hole.y}A${r} ${r} 0 0 0 ${hole.x} ${hole.y + r}` +
+    `V${bottom - r}A${r} ${r} 0 0 0 ${hole.x + r} ${bottom}H${right - r}` +
+    `A${r} ${r} 0 0 0 ${right} ${bottom - r}V${hole.y + r}A${r} ${r} 0 0 0 ${right - r} ${hole.y}Z`;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${bounds.width}" height="${bounds.height}">` +
+    `<path d="${frame}${cut}"/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+};
+
+export const DemoSpotlight = ({ hole, bounds }: Props) => {
   const ref = useRef<HTMLDivElement>(null);
-  const right = target.x + target.width;
-  const bottom = target.y + target.height;
 
   useEffect(() => {
     const layer = ref.current;
@@ -32,34 +49,23 @@ export const DemoSpotlight = ({ target, bounds }: Props) => {
     return () => fade.cancel();
   }, []);
 
+  const mask = maskOf({ hole, bounds, radius: RADIUS });
+
   return (
-    <div ref={ref} data-testid="demo-spotlight" aria-hidden className="absolute inset-0">
-      <div
-        className={PANEL}
-        style={{ left: 0, top: 0, width: bounds.width, height: Math.max(0, target.y) }}
-      />
-      <div
-        className={PANEL}
-        style={{
-          left: 0,
-          top: bottom,
-          width: bounds.width,
-          height: Math.max(0, bounds.height - bottom),
-        }}
-      />
-      <div
-        className={PANEL}
-        style={{ left: 0, top: target.y, width: Math.max(0, target.x), height: target.height }}
-      />
-      <div
-        className={PANEL}
-        style={{
-          left: right,
-          top: target.y,
-          width: Math.max(0, bounds.width - right),
-          height: target.height,
-        }}
-      />
-    </div>
+    <div
+      ref={ref}
+      data-testid="demo-spotlight"
+      data-hole={`${hole.x} ${hole.y} ${hole.width} ${hole.height}`}
+      aria-hidden
+      className="absolute inset-0 bg-surround/50 backdrop-blur-xs"
+      style={{
+        maskImage: mask,
+        WebkitMaskImage: mask,
+        maskSize: '100% 100%',
+        WebkitMaskSize: '100% 100%',
+        maskRepeat: 'no-repeat',
+        WebkitMaskRepeat: 'no-repeat',
+      }}
+    />
   );
 };

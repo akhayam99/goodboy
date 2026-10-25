@@ -3,6 +3,7 @@ import { ArrowLeft, X } from 'lucide-react';
 import { Button, FLOATING_SURFACE, ICON_SIZE, IconButton, canAnimate, cn } from '@goodboy/ui';
 import type { DemoRect } from './director/demoProtocol';
 import type { HintSide } from './hints/demoHintTypes';
+import { holeOf } from './hints/holeOf';
 import { placeCallout } from './hints/placeCallout';
 import { DemoSpotlight } from './DemoSpotlight';
 
@@ -13,6 +14,7 @@ export type CoachMark = {
   readonly total: number;
   readonly side: HintSide;
   readonly rect: DemoRect;
+  readonly focus: DemoRect | null;
   readonly isSpotlit: boolean;
   readonly next?: NextChapter;
 };
@@ -36,6 +38,7 @@ type Props = {
 };
 
 const RING_OUTSET = 4;
+const HOLE_PAD = 8;
 const GAP = 12;
 const MARGIN = 16;
 const CALLOUT_WIDTH = 240;
@@ -99,6 +102,26 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
     height: coach.rect.height * scale + RING_OUTSET * 2,
   };
 
+  const hole = holeOf({
+    anchor: {
+      x: coach.rect.x * scale,
+      y: coach.rect.y * scale,
+      width: coach.rect.width * scale,
+      height: coach.rect.height * scale,
+    },
+    focus:
+      coach.focus === null
+        ? null
+        : {
+            x: coach.focus.x * scale,
+            y: coach.focus.y * scale,
+            width: coach.focus.width * scale,
+            height: coach.focus.height * scale,
+          },
+    bounds,
+    pad: HOLE_PAD,
+  });
+
   useLayoutEffect(() => {
     setHeight(calloutRef.current?.offsetHeight ?? null);
   }, [coach.hintId, coach.copy]);
@@ -107,7 +130,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
     height === null
       ? null
       : placeCallout({
-          target,
+          target: coach.isSpotlit ? hole : target,
           callout: { width: CALLOUT_WIDTH, height },
           bounds,
           side: coach.side,
@@ -141,7 +164,7 @@ export const DemoCoachMark = ({ coach, scale, bounds, onSkip, onHide }: Props) =
 
   return (
     <div data-testid="demo-coach-mark" className="pointer-events-none absolute inset-0 z-20">
-      {coach.isSpotlit ? <DemoSpotlight target={target} bounds={bounds} /> : null}
+      {coach.isSpotlit ? <DemoSpotlight hole={hole} bounds={bounds} /> : null}
       <div
         ref={ringRef}
         aria-hidden
