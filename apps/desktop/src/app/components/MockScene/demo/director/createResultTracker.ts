@@ -29,8 +29,9 @@ const MIN_WIDTH = 48;
 const MIN_HEIGHT = 24;
 const MAX_SHARE = 0.6;
 const COMPOSER = 'textarea[aria-label="Message to the agent"]';
-const SEND = 'button[aria-label="Send message"]';
+const MIN_BUTTONS = 2;
 const FOCUS_STEAL_MS = 3000;
+const POINTER_ACTIVE_MS = 1500;
 
 export const createResultTracker = ({ view, onChange }: Params): ResultTracker => {
   const root = view.document;
@@ -40,10 +41,10 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
   let clickedAt = 0;
   let collectUntil = 0;
   let settleTimer: number | null = null;
-  let previousFocus: Element | null = null;
   let isPointerKnown = false;
   let pointer: PointParams = { x: 0, y: 0 };
   let wasHovered = false;
+  let movedAt = 0;
 
   const boxOf = ({ element }: ElementParams): DOMRect => element.getBoundingClientRect();
 
@@ -115,7 +116,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
   };
 
   const isOverResult = (): boolean => {
-    if (!isPointerKnown) {
+    if (!isPointerKnown || Date.now() - movedAt > POINTER_ACTIVE_MS) {
       return false;
     }
     return live().some((element) => {
@@ -135,7 +136,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
       return false;
     }
     let card: Element = composer;
-    while (card.parentElement !== null && card.querySelector(SEND) === null) {
+    while (card.parentElement !== null && card.querySelectorAll('button').length < MIN_BUTTONS) {
       card = card.parentElement;
     }
     return card.contains(target);
@@ -169,6 +170,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
       return;
     }
     isPointerKnown = true;
+    movedAt = Date.now();
     pointer = { x: event.clientX, y: event.clientY };
     const isHovered = isOverResult();
     if (isHovered !== wasHovered) {
@@ -177,32 +179,22 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
     }
   };
 
-  const onFocusIn = (event: FocusEvent): void => {
-    const target = event.target;
-    if (!(target instanceof Element)) {
+  const isStealing = ({ element }: ElementParams): boolean =>
+    element.matches(COMPOSER) &&
+    Date.now() - clickedAt <= FOCUS_STEAL_MS &&
+    !isInsideComposer(clickTarget);
+
+  const nativeFocus = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions): void {
+    if (isStealing({ element: this })) {
       return;
     }
-    const isComposer = target.matches(COMPOSER);
-    const keep = previousFocus;
-    const isStolen =
-      isComposer &&
-      Date.now() - clickedAt <= FOCUS_STEAL_MS &&
-      keep instanceof HTMLElement &&
-      keep.isConnected &&
-      !isInsideComposer(clickTarget);
-    if (isStolen) {
-      keep.focus({ preventScroll: true });
-      return;
-    }
-    if (!isComposer) {
-      previousFocus = target;
-    }
+    nativeFocus.call(this, options);
   };
 
   view.addEventListener('pointerdown', onPress, { capture: true });
   view.addEventListener('click', onPress, { capture: true });
   view.addEventListener('pointermove', onPointerMove, { capture: true, passive: true });
-  view.addEventListener('focusin', onFocusIn, { capture: true });
 
   return {
     rects: () =>
@@ -240,7 +232,7 @@ export const createResultTracker = ({ view, onChange }: Params): ResultTracker =
       view.removeEventListener('pointerdown', onPress, { capture: true });
       view.removeEventListener('click', onPress, { capture: true });
       view.removeEventListener('pointermove', onPointerMove, { capture: true });
-      view.removeEventListener('focusin', onFocusIn, { capture: true });
+      HTMLElement.prototype.focus = nativeFocus;
     },
   };
 };

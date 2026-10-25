@@ -33,6 +33,7 @@ beforeEach(async () => {
     <button type="button" id="second">Second</button>
     <div>
       <textarea aria-label="Message to the agent"></textarea>
+      <button type="button" aria-label="Attach">+</button>
       <button type="button" aria-label="Send message">Send</button>
     </div>
   `;
@@ -181,13 +182,25 @@ describe('the hint engine dwell', () => {
     visitorClick({ selector: '#first' });
     openPopover();
     await elapse({ ms: 1000 });
-    pointerAt({ x: 350, y: 350 });
-    await elapse({ ms: 2400 });
-    expect(last()).toMatchObject({ hintId: null });
-    await elapse({ ms: 2000 });
-    expect(last()).toMatchObject({ hintId: null });
+    for (let step = 0; step < 5; step += 1) {
+      pointerAt({ x: 350 + step, y: 350 });
+      await elapse({ ms: 1000 });
+      expect(last()).toMatchObject({ hintId: null });
+    }
     pointerAt({ x: 20, y: 20 });
     await elapse({ ms: 900 });
+    expect(last()).toMatchObject({ hintId: 'second' });
+    engine.dispose();
+  });
+
+  it('does not wait on a pointer that stopped over the result', async () => {
+    const { engine, last } = start();
+    await elapse({ ms: 40 });
+    visitorClick({ selector: '#first' });
+    openPopover();
+    await elapse({ ms: 1000 });
+    pointerAt({ x: 350, y: 350 });
+    await elapse({ ms: 4500 });
     expect(last()).toMatchObject({ hintId: 'second' });
     engine.dispose();
   });
@@ -216,6 +229,29 @@ describe('the hint engine dwell', () => {
     visitorClick({ selector: '#first' });
     await elapse({ ms: 3000 });
     expect(document.activeElement).toBe(field);
+    engine.dispose();
+  });
+
+  it('does not hand focus to the composer when the control that opened a view is gone', async () => {
+    const control = document.querySelector<HTMLElement>('#first');
+    const composer = document.querySelector<HTMLElement>('textarea');
+    const { engine } = start();
+    control?.focus();
+    await elapse({ ms: 40 });
+    visitorClick({ selector: '#first' });
+    control?.remove();
+    composer?.focus();
+    expect(document.activeElement).not.toBe(composer);
+    engine.dispose();
+  });
+
+  it('lets the visitor use the composer on purpose', async () => {
+    const composer = document.querySelector<HTMLElement>('textarea');
+    const { engine } = start();
+    await elapse({ ms: 40 });
+    visitorClick({ selector: 'textarea' });
+    composer?.focus();
+    expect(document.activeElement).toBe(composer);
     engine.dispose();
   });
 
