@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { OverflowMenu } from '../components/OverflowMenu';
-import { MENU_MAX_WIDTH } from '../floatingSurface';
+import { MENU_MAX_WIDTH } from '../menuMaxWidth';
 import type { OverflowMenuItem } from '../components/MenuItems';
 
 afterEach(cleanup);

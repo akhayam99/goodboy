@@ -2,7 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { Ellipsis } from 'lucide-react';
 import { AnchoredPopover } from './AnchoredPopover';
 import { MenuTriggerButton, type MenuTriggerSize } from './MenuTriggerButton';
-import { MENU_MAX_WIDTH } from '../floatingSurface';
+import { MENU_MAX_WIDTH } from '../menuMaxWidth';
 import { isProduction } from '../isProduction';
 import { useDropdown } from '../useDropdown';
 import { MenuItems, type OverflowMenuItem } from './MenuItems';
