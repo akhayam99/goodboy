@@ -54,28 +54,29 @@ export const DemoRail = ({
         viewportClassName="flex flex-col gap-0.5 p-4"
         edge="line"
       >
-        {chapters.map((chapter, index) => (
-          <div
-            key={chapter.id}
-            data-quiet={isQuiet && chapter.id !== upNextId ? 'true' : 'false'}
-            className={quietClasses({ isQuiet: isQuiet && chapter.id !== upNextId })}
-          >
-            <DemoRailRow
-              chapter={chapter}
-              ordinal={index + 1}
-              isActive={chapter.id === activeId}
-              upNext={upNextOf({ isUpNext: chapter.id === upNextId, isReady: isUpNextReady })}
-              tally={tallyOf({ chapter })}
-              onSelect={() => onSelect({ id: chapter.id })}
-            />
-          </div>
-        ))}
+        {chapters.map((chapter, index) => {
+          const isRowQuiet = isQuiet && chapter.id !== upNextId && chapter.id !== activeId;
+          return (
+            <div
+              key={chapter.id}
+              data-quiet={isRowQuiet ? 'true' : 'false'}
+              className={quietClasses({ isQuiet: isRowQuiet })}
+            >
+              <DemoRailRow
+                chapter={chapter}
+                ordinal={index + 1}
+                isActive={chapter.id === activeId}
+                upNext={upNextOf({ isUpNext: chapter.id === upNextId, isReady: isUpNextReady })}
+                tally={tallyOf({ chapter })}
+                onSelect={() => onSelect({ id: chapter.id })}
+              />
+            </div>
+          );
+        })}
       </ScrollFade>
     </nav>
     <div className="flex flex-col gap-3 px-4">
-      <div data-quiet={isQuiet ? 'true' : 'false'} className={quietClasses({ isQuiet })}>
-        <DemoRailNote isEveryGroupTried={isEveryGroupTried} />
-      </div>
+      <DemoRailNote isEveryGroupTried={isEveryGroupTried} />
       <DemoRailActions />
     </div>
   </div>
