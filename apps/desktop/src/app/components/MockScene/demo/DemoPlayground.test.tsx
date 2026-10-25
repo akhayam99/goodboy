@@ -462,6 +462,18 @@ describe('demo playground', () => {
     expect(screen.getByRole('note', { name: 'Step 1 of 6' })).not.toBeNull();
   });
 
+  it('lets the visitor skip a hint whose control is scrolled away', () => {
+    window.history.replaceState(null, '', '/?scene=demo#agent');
+    render(<DemoPlayground />);
+    const frame = visibleFrame();
+    report({ frame, type: 'ready' });
+    hint({ frame, hintId: 'agent-send', rect: null, isOffscreen: true });
+    fireEvent.click(
+      within(screen.getByRole('note', { name: 'Hint' })).getByRole('button', { name: 'Skip hint' }),
+    );
+    expect(screen.queryByRole('note', { name: 'Hint' })).toBeNull();
+  });
+
   it('celebrates the end of setup and points to Work with an agent', () => {
     window.history.replaceState(null, '', '/?scene=demo#setup');
     render(<DemoPlayground />);

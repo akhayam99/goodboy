@@ -549,6 +549,29 @@ the next one, the version chip and the link back to the site. The group title,
 its summary or Try this line, the step counter, the rail note, Download, Star,
 Up next and the coach mark stay at full strength, and hover or focus brings a
 quiet row back.
+A step is done only once its result has been shown. When a hint is done, or the
+hint the visitor pressed gives way to another, `createHintEngine` holds the next
+one for 2.5 seconds (`DWELL_MS`) and reports no hint, so nothing dims and no
+callout moves while the result is read; the wait grows while the pointer keeps
+moving over the result, up to 8 seconds, and a pointer that stopped does not
+hold it. Skip hint and a reset never wait. `director/createResultTracker.ts`
+finds the result: what appeared in the 450ms after a trusted press (a popover
+portal whose wrapper has no height counts through its visible children), kept
+until the visitor presses somewhere else or it closes. The next hint's hole is
+the control, its region and the open result (`director/unionOf.ts`); when that
+covers more than 60 percent of the stage (`hints/isHoleTooBig.ts`) the hint
+shows without a spotlight instead of dimming the result. The engine never
+scrolls to the next control while a result is open; Show control still does,
+and the hint in that state also offers Skip hint. Hints never take focus. After
+a press, the demo frame ignores a programmatic `focus()` on the composer for
+3 seconds unless the press was inside the composer, so the opened view keeps
+focus (the real app focuses the composer on opening a helper; that stays in the
+app and is refused only in the demo frame).
+A group switch answers at once: the rail row is selected, and `DemoStageLoading`
+covers the stage until the new frame reports ready, whether it is the first one
+or a switch. Hovering, focusing or pressing a rail row preloads that group's
+opening frame (`intentChapter` in `useBeatPlayer`), in place of the next group,
+so the wait is a few frames when the pointer lingered.
 In the demo the Goodboy menu never opens itself after the first task, the chip
 stays at rest and the menu holds no setup checklist (`isDirectedScene`).
 In a directed frame `answerOpenQuestions` is simulated too: it marks the

@@ -395,7 +395,12 @@ export const DemoStage = ({
               />
             ) : null}
             {offscreen !== undefined && shownKey === currentKey ? (
-              <DemoHintSlot hint={offscreen} onReveal={onRevealHint} onHide={onHideHint} />
+              <DemoHintSlot
+                hint={offscreen}
+                onReveal={onRevealHint}
+                onSkip={onSkipHint}
+                onHide={onHideHint}
+              />
             ) : null}
             {frames.map((frame) => {
               const isVisible = frame.key === visibleKey && shownKey !== undefined;
