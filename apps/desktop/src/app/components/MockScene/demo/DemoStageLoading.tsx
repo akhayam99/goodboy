@@ -5,7 +5,7 @@ const TILE_PX = 44;
 export const DemoStageLoading = () => (
   <div
     role="status"
-    className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background motion-safe:animate-fade-in"
+    className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-background motion-safe:animate-fade-in"
   >
     <BrandTile
       size={TILE_PX}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@goodboy/ui';
 import { useStageScale } from './useStageScale';
+import { APP_SIZE } from './appSize';
 import { DemoStageLoading } from './DemoStageLoading';
 import {
   DEMO_PROTOCOL,
@@ -16,8 +17,8 @@ import { DemoHintSlot } from './DemoHintSlot';
 import type { FrameCommand, FrameReportParams, StageFrame } from './useBeatPlayer';
 import type { HintReportParams, HintReveal, HintTrack, OffscreenHint } from './useDemoHints';
 
-const APP_WIDTH = 1440;
-const APP_HEIGHT = 900;
+const APP_WIDTH = APP_SIZE.width;
+const APP_HEIGHT = APP_SIZE.height;
 const STAGE_INSET = 16;
 const SILENT_LIMIT_MS = 20000;
 const FADE_MS = 320;
@@ -383,7 +384,7 @@ export const DemoStage = ({
             className="relative overflow-hidden rounded-lg border border-frame-edge bg-background shadow-md"
             style={{ width: APP_WIDTH * scale, height: APP_HEIGHT * scale }}
           >
-            {shownKey === undefined ? <DemoStageLoading /> : null}
+            {mountedKeys.has(currentKey) ? null : <DemoStageLoading />}
             {coach !== undefined && shownKey === currentKey ? (
               <DemoCoachMark
                 coach={coach}

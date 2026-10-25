@@ -31,6 +31,7 @@ type Props = {
   readonly activeId: string;
   readonly tallyOf: (params: TallyParams) => HintTally;
   readonly onSelect: (params: SelectParams) => void;
+  readonly onIntent: (params: SelectParams) => void;
   readonly isEveryGroupTried: boolean;
   readonly upNextId: string | undefined;
   readonly isUpNextReady: boolean;
@@ -42,6 +43,7 @@ export const DemoRail = ({
   activeId,
   tallyOf,
   onSelect,
+  onIntent,
   isEveryGroupTried,
   upNextId,
   isUpNextReady,
@@ -69,6 +71,7 @@ export const DemoRail = ({
                 upNext={upNextOf({ isUpNext: chapter.id === upNextId, isReady: isUpNextReady })}
                 tally={tallyOf({ chapter })}
                 onSelect={() => onSelect({ id: chapter.id })}
+                onIntent={() => onIntent({ id: chapter.id })}
               />
             </div>
           );

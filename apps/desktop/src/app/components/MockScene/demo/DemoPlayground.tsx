@@ -50,7 +50,12 @@ export const DemoPlayground = () => {
   const chapter = DEMO_CHAPTERS[chapterIndex] ?? DEMO_CHAPTERS[0];
   const previousChapter = DEMO_CHAPTERS[chapterIndex - 1];
   const nextChapter = DEMO_CHAPTERS[chapterIndex + 1];
-  const player = useBeatPlayer({ chapter, nextChapter, theme, shownKey });
+  const [intentId, setIntentId] = useState<string | undefined>(undefined);
+  const intentChapter =
+    intentId === undefined || intentId === chapter.id
+      ? undefined
+      : DEMO_CHAPTERS.find((entry) => entry.id === intentId);
+  const player = useBeatPlayer({ chapter, nextChapter, intentChapter, theme, shownKey });
 
   const hints = useDemoHints({ chapter, chapters: DEMO_CHAPTERS, frameKey: player.frame.key });
   const visitedIds = useGroupVisits({ chapterId: chapter.id });
@@ -66,10 +71,13 @@ export const DemoPlayground = () => {
   const goToChapter = useCallback(
     ({ id }: ChapterParams) => {
       selectChapter({ id });
+      setIntentId(undefined);
       focusFrame();
     },
     [selectChapter, focusFrame],
   );
+
+  const onIntent = useCallback(({ id }: ChapterParams) => setIntentId(id), []);
 
   const onPrevious = useCallback(() => {
     if (previousChapter === undefined) {
@@ -135,6 +143,7 @@ export const DemoPlayground = () => {
           activeId={chapter.id}
           tallyOf={hints.tallyOf}
           onSelect={goToChapter}
+          onIntent={onIntent}
           upNextId={nextChapter?.id}
           isUpNextReady={isGroupDone}
           isQuiet={isSpotlit}
