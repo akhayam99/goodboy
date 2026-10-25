@@ -30,7 +30,7 @@ type FixRunOwed = {
   readonly target: FixRunTarget | null;
 };
 
-export type NeedsYouStopLines = {
+type NeedsYouStopLines = {
   readonly title: string;
   readonly detail: string | null;
 };
