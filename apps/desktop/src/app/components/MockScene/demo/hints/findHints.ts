@@ -13,6 +13,8 @@ type RootParams = {
 const PLAN_PROSE = '[data-testid="plan-prose-comments"]';
 const CARD = 'article[data-select-id]';
 const FILTER = '[data-page="board"] button[aria-label="Filter sessions"]';
+const NEW_ARTIFACT = 'button[data-testid="artifact-new"]';
+const REPORT_DETAILS = 'button[data-testid="artifact-drawer-details"]';
 const PLAN_ROW = 'button[data-artifact-row][aria-label^="Plan "]';
 
 const waitingCardOf = ({ state }: StateParams): string => {
@@ -70,5 +72,24 @@ export const FIND_HINTS: ReadonlyArray<DemoHint> = [
     anchor: PLAN_PROSE,
     revealWhen: isPlanOpen,
     doneWhen: hasCommented,
+  },
+  {
+    id: 'library-new',
+    copy: 'Open New to start a plan or a report',
+    outcome: null,
+    anchor: NEW_ARTIFACT,
+    side: 'bottom',
+    revealWhen: ({ root }) => hasElement({ root, selector: NEW_ARTIFACT }),
+    doneWhen: ({ root, isAnchorClicked }) =>
+      isAnchorClicked || root.querySelector(`${NEW_ARTIFACT}[aria-expanded="true"]`) !== null,
+  },
+  {
+    id: 'report-details',
+    copy: 'Open the report details',
+    outcome: null,
+    anchor: REPORT_DETAILS,
+    side: 'bottom',
+    revealWhen: ({ root }) => hasElement({ root, selector: REPORT_DETAILS }),
+    doneWhen: ({ isAnchorClicked }) => isAnchorClicked,
   },
 ];

@@ -1,4 +1,4 @@
-import type { ResolveQueueItemWithThread } from '@goodboy/types';
+import type { ResolveAttempt, ResolveQueueItemWithThread } from '@goodboy/types';
 import type { AppStore } from '../../../../../store/store';
 import type { DemoHint, HintProbe } from './demoHintTypes';
 import { hasElement } from './hasElement';
@@ -35,23 +35,42 @@ type EntryParams = {
 const isDrafted = ({ entry }: EntryParams): boolean =>
   entry.thread.stage === 'proposed' && (entry.thread.replyDraft ?? '').trim().length > 0;
 
-const hasDraftedFix = ({ state, start }: HintProbe): boolean => {
-  const before = new Set(
-    Object.values(start.sessionResolveAttempts)
-      .flat()
-      .map((attempt) => attempt.id),
+const attemptsOf = ({ state }: StateParams): ReadonlyArray<ResolveAttempt> =>
+  Object.values(state.sessionResolveAttempts).flat();
+
+type SinceParams = StateParams & {
+  readonly start: AppStore;
+};
+
+const isNewFixRunning = ({ state, start }: SinceParams): boolean => {
+  const before = new Set(attemptsOf({ state: start }).map((attempt) => attempt.id));
+  return attemptsOf({ state }).some(
+    (attempt) => attempt.phase === 'running' && !before.has(attempt.id),
   );
+};
+
+const hasFinishedFix = ({ state }: StateParams): boolean =>
+  attemptsOf({ state }).some((attempt) => attempt.phase === 'finished');
+
+const hasDraftedFix = ({ state, start }: HintProbe): boolean => {
+  const before = new Set(attemptsOf({ state: start }).map((attempt) => attempt.id));
   const drafted = new Set(
     itemsOf({ state }).flatMap((entry) => (isDrafted({ entry }) ? [entry.thread.threadId] : [])),
   );
-  return Object.values(state.sessionResolveAttempts)
-    .flat()
-    .some(
-      (attempt) =>
-        !before.has(attempt.id) &&
-        attempt.phase === 'finished' &&
-        attempt.threadIds.some((threadId) => drafted.has(threadId)),
-    );
+  return attemptsOf({ state }).some(
+    (attempt) =>
+      !before.has(attempt.id) &&
+      attempt.phase === 'finished' &&
+      attempt.threadIds.some((threadId) => drafted.has(threadId)),
+  );
+};
+
+const isDraftedRowOpen = ({ state, root }: StateParams & RootParams): boolean => {
+  const open = root.querySelector(CURRENT_COMMENT)?.getAttribute('data-thread-id') ?? null;
+  return (
+    open !== null &&
+    itemsOf({ state }).some((entry) => entry.thread.threadId === open && isDrafted({ entry }))
+  );
 };
 
 const readyRowOf = ({ state }: StateParams): string | null => {
@@ -121,6 +140,23 @@ export const REVIEW_HINTS: ReadonlyArray<DemoHint> = [
     side: 'top',
     revealWhen: ({ root }) => hasElement({ root, selector: START_FIX }),
     doneWhen: hasDraftedFix,
+  },
+  {
+    id: 'resolve-read',
+    copy: 'Open a comment with a drafted reply',
+    outcome: 'fix-ready',
+    anchor: ({ state }) => readyRowOf({ state }),
+    side: 'right',
+    revealWhen: ({ state, start, root }) => {
+      const anchor = readyRowOf({ state });
+      return (
+        hasFinishedFix({ state }) &&
+        !isNewFixRunning({ state, start }) &&
+        anchor !== null &&
+        hasElement({ root, selector: anchor })
+      );
+    },
+    doneWhen: isDraftedRowOpen,
   },
   {
     id: 'resolve-keep',

@@ -6,6 +6,7 @@ import { finishAgentTurn } from './finishAgentTurn';
 import { installResolveActions } from './installResolveActions';
 import { patchAgent } from './patchAgent';
 import { patchResolveThreads } from './patchResolveThreads';
+import { RESOLVE_REPLY_DRAFT } from './resolveReplyDraft';
 
 const SUMMARY =
   'Capped the retry loop, added the exhaustion metric, fixed the typo and moved the retry constant into config.';
@@ -80,6 +81,7 @@ export const resolveWorkingTimeline = ({ state }: TimelineParams): DemoTimeline 
               state: 'fixed',
               stage: 'proposed',
               disposition: 'fix',
+              replyDraft: thread.replyDraft ?? RESOLVE_REPLY_DRAFT,
               commitShas: [shaOf({ index: threadIds.indexOf(thread.threadId) })],
               updatedAt: now,
             }),
