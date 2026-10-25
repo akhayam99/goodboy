@@ -623,4 +623,124 @@ describe('the hint engine', () => {
     expect(scrolled).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
     engine.dispose();
   });
+
+  describe('focus region', () => {
+    type HintOverrides = Partial<DemoHint>;
+
+    const probeHint = (overrides: HintOverrides): DemoHint => ({
+      id: 'probe',
+      copy: 'Probe',
+      outcome: null,
+      anchor: '#go',
+      revealWhen: () => true,
+      doneWhen: () => false,
+      ...overrides,
+    });
+
+    const boxed = (): void => {
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: Element,
+      ) {
+        const [x = 0, y = 0, width = 0, height = 0] = (this.getAttribute('data-box') ?? '')
+          .split(',')
+          .map(Number);
+        return this.hasAttribute('data-box')
+          ? new DOMRect(x, y, width, height)
+          : new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+      });
+    };
+
+    const lastAnchor = (reports: ReadonlyArray<DemoHintReport>) =>
+      reports.filter((report) => report.type === 'anchor').at(-1);
+
+    it('reports the region the hint names, found from the control outward', async () => {
+      document.body.innerHTML = `
+        <section data-box="40,40,700,500">
+          <div id="inner" data-box="60,80,400,200">
+            <button id="go" data-box="100,100,40,24"></button>
+          </div>
+        </section>
+      `;
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({ focus: '#inner' })] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(lastAnchor(reports)).toMatchObject({
+        hintId: 'probe',
+        rect: { x: 100, y: 100, width: 40, height: 24 },
+        focus: { x: 60, y: 80, width: 400, height: 200 },
+      });
+      engine.dispose();
+    });
+
+    it('falls back to the nearest container that holds more than the control', async () => {
+      document.body.innerHTML = `
+        <section data-box="40,40,600,300">
+          <span data-box="100,100,40,24"><button id="go" data-box="100,100,40,24"></button></span>
+        </section>
+      `;
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(lastAnchor(reports)).toMatchObject({
+        focus: { x: 40, y: 40, width: 600, height: 300 },
+      });
+      engine.dispose();
+    });
+
+    it('reports no region when the only container is most of the screen', async () => {
+      document.body.innerHTML = `
+        <section data-box="0,0,1000,760">
+          <button id="go" data-box="100,100,40,24"></button>
+        </section>
+      `;
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(lastAnchor(reports)).toMatchObject({ hintId: 'probe', focus: null });
+      engine.dispose();
+    });
+
+    it('reports nothing to light for a hint whose control is not on the page', async () => {
+      document.body.innerHTML = '<section data-box="0,0,300,300"></section>';
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(lastAnchor(reports)).toMatchObject({ hintId: null, rect: null, focus: null });
+      engine.dispose();
+    });
+
+    it('scrolls a control that is cut by the edge into view once, then leaves the scroll alone', async () => {
+      const edge = window.innerHeight - 20;
+      document.body.innerHTML = `<button id="go" data-box="100,${edge},40,24"></button>`;
+      const scrolled = vi.fn();
+      Element.prototype.scrollIntoView = scrolled;
+      boxed();
+      const { engine } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(scrolled).toHaveBeenCalledTimes(1);
+      expect(scrolled).toHaveBeenCalledWith({ block: 'center', inline: 'nearest' });
+      document.body.dispatchEvent(new Event('scroll'));
+      await frame();
+      expect(scrolled).toHaveBeenCalledTimes(1);
+      engine.dispose();
+    });
+
+    it('scrolls a control below the fold in before offering Show control', async () => {
+      document.body.innerHTML = `<button id="go" data-box="100,${window.innerHeight + 400},40,24"></button>`;
+      const scrolled = vi.fn();
+      Element.prototype.scrollIntoView = scrolled;
+      boxed();
+      const { engine, reports } = engineFor({ hints: [probeHint({})] });
+      engine.setTrack({ chapterId: 'test', settledIds: [] });
+      await frame();
+      expect(scrolled).toHaveBeenCalledTimes(1);
+      expect(lastAnchor(reports)).toMatchObject({ hintId: 'probe', rect: null, isOffscreen: true });
+      engine.dispose();
+    });
+  });
 });
